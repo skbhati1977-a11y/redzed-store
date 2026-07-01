@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>REDZED Admin</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">REDZED ADMIN</div>
+    <a class="admin-link" href="index.html">Store</a>
+  </header>
+  <main class="admin-wrap">
+    <h2>Add Product</h2>
+    <form id="productForm" class="form">
+      <input name="item_name" placeholder="Item name" required />
+      <input name="art_no" placeholder="Art no" />
+      <select name="category_id" id="categorySelect"></select>
+      <input name="size" placeholder="Size e.g. L.XL.XXL" />
+      <input name="pcs" type="number" placeholder="Pcs" />
+      <input name="rate" type="number" placeholder="Rate" />
+      <input name="fabric" placeholder="Fabric" />
+      <textarea name="description" placeholder="Description"></textarea>
+      <label>Product Photo <input name="photo" type="file" accept="image/*" /></label>
+      <label><input name="featured" type="checkbox" /> Featured</label>
+      <button type="submit">Save Product</button>
+    </form>
+    <p id="msg"></p>
+  </main>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="config.js"></script>
+  <script src="admin.js"></script>
+</body>
+</html>
