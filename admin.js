@@ -1,30 +1,11 @@
-async function loadCategories(){
-  const { data } = await supabaseClient.from('categories').select('*').order('name');
-  document.getElementById('categorySelect').innerHTML=(data||[]).map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
-}
-async function uploadPhoto(file){
-  if(!file) return '';
-  const ext=file.name.split('.').pop();
-  const path=`${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-  const { error } = await supabaseClient.storage.from('products').upload(path, file);
-  if(error) throw error;
-  const { data } = supabaseClient.storage.from('products').getPublicUrl(path);
-  return data.publicUrl;
-}
-document.getElementById('productForm').addEventListener('submit', async (e)=>{
-  e.preventDefault();
-  const msg=document.getElementById('msg'); msg.textContent='Saving...';
-  try{
-    const fd=new FormData(e.target);
-    const main_image=await uploadPhoto(fd.get('photo'));
-    const row={
-      item_name: fd.get('item_name'), art_no: fd.get('art_no'), category_id: Number(fd.get('category_id')),
-      size: fd.get('size'), pcs: fd.get('pcs')?Number(fd.get('pcs')):null, rate: fd.get('rate')?Number(fd.get('rate')):null,
-      fabric: fd.get('fabric'), description: fd.get('description'), main_image, featured: fd.get('featured')==='on', in_stock:true
-    };
-    const { error } = await supabaseClient.from('products').insert(row);
-    if(error) throw error;
-    msg.textContent='Product saved successfully.'; e.target.reset();
-  }catch(err){ msg.textContent='Error: '+err.message; }
-});
-loadCategories();
+const loginBox=document.getElementById('loginBox'), adminBox=document.getElementById('adminBox'), msg=document.getElementById('msg');
+function checkLogin(){ if(localStorage.getItem('rz_admin')==='yes'){loginBox.classList.add('hidden'); adminBox.classList.remove('hidden'); initAdmin();}}
+document.getElementById('loginBtn').onclick=()=>{ if(document.getElementById('pin').value===ADMIN_PIN){localStorage.setItem('rz_admin','yes');checkLogin();}else alert('Wrong PIN');};
+document.getElementById('logoutBtn').onclick=()=>{localStorage.removeItem('rz_admin');location.reload();};
+async function initAdmin(){await loadCategories(); await loadList();}
+async function loadCategories(){const {data}=await supabaseClient.from('categories').select('*').order('name');document.getElementById('categorySelect').innerHTML=(data||[]).map(c=>`<option value="${c.id}">${c.name}</option>`).join('');}
+async function uploadPhoto(file){ if(!file||!file.name) return ''; const ext=file.name.split('.').pop(); const path=`${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`; const {error}=await supabaseClient.storage.from('products').upload(path,file,{upsert:false}); if(error) throw error; return supabaseClient.storage.from('products').getPublicUrl(path).data.publicUrl;}
+document.getElementById('productForm').addEventListener('submit',async e=>{e.preventDefault();msg.textContent='Saving...';try{const fd=new FormData(e.target);const image=await uploadPhoto(fd.get('photo'));const row={item_name:fd.get('item_name'),art_no:fd.get('art_no'),category_id:Number(fd.get('category_id')),size:fd.get('size'),pcs:fd.get('pcs')?Number(fd.get('pcs')):null,rate:fd.get('rate')?Number(fd.get('rate')):null,fabric:fd.get('fabric'),colors:fd.get('colors'),description:fd.get('description'),main_image:image,featured:fd.get('featured')==='on',in_stock:fd.get('in_stock')==='on'};const {error}=await supabaseClient.from('products').insert(row);if(error) throw error;msg.textContent='Saved ✅';e.target.reset();await loadList();}catch(err){msg.textContent='Error: '+err.message;}});
+async function loadList(){const {data,error}=await supabaseClient.from('products').select('*').order('created_at',{ascending:false}).limit(50);const box=document.getElementById('productList'); if(error){box.innerHTML='<p>'+error.message+'</p>';return;} box.innerHTML=(data||[]).map(p=>`<div class="row"><img src="${p.main_image||'https://placehold.co/120?text=RZ'}"><div><b>${p.item_name}</b><br><small>${p.art_no||''} • ₹${p.rate||''}</small></div><button class="btn danger" onclick="delProduct(${p.id})">Delete</button></div>`).join('')||'<p>No products yet.</p>';}
+async function delProduct(id){if(!confirm('Delete product?'))return;const {error}=await supabaseClient.from('products').delete().eq('id',id);if(error) alert(error.message); await loadList();}
+checkLogin();
