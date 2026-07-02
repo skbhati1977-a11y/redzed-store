@@ -1,1 +1,25 @@
-<!doctype html><html lang="hi"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>REDZED Admin</title><link rel="stylesheet" href="style.css"></head><body><header class="nav"><div class="logo">REDZED<span>ADMIN</span></div><nav><a href="index.html">Store</a></nav></header><main class="panel"><section class="login" id="loginBox"><h2>Admin Login</h2><p>पहली बार: config.js में ADMIN_PIN set करें.</p><input id="pin" type="password" placeholder="Admin PIN"><button id="loginBtn" class="btn">Login</button></section><section id="adminBox" class="hidden"><div class="panel-head"><h2>Product Manager</h2><button id="logoutBtn" class="btn ghost">Logout</button></div><form id="productForm" class="form"><input name="item_name" placeholder="Item name" required><input name="art_no" placeholder="Art no / Lot no"><select name="category_id" id="categorySelect" required></select><input name="size" placeholder="Size e.g. L.XL.XXL"><input name="pcs" type="number" placeholder="Pcs"><input name="rate" type="number" placeholder="Rate"><input name="fabric" placeholder="Fabric"><input name="colors" placeholder="Colors e.g. Navy, Olive, Onion"><textarea name="description" placeholder="Description"></textarea><label class="check"><input name="featured" type="checkbox"> Featured</label><label class="check"><input name="in_stock" type="checkbox" checked> In Stock</label><label class="upload">Product Photo<input name="photo" type="file" accept="image/*"></label><button class="btn" type="submit">Save Product</button><p id="msg"></p></form><h3>Current Products</h3><div id="productList" class="list"></div></section></main><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="config.js"></script><script src="admin.js"></script></body></html>
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>REDZED Owner Panel</title><link rel="stylesheet" href="style.css"></head><body>
+<header class="top"><div class="brand"><b>OWNER <span>PANEL</span></b><small>REDZED Supabase Admin</small></div><nav><a href="index.html">Website</a></nav></header>
+<section id="loginBox" class="login"><h2>Owner Login</h2><p class="notice">PIN डालें. Default PIN config.js में 9654 है.</p><input id="pin" type="password" placeholder="Owner PIN"><button class="btn" onclick="login()">Open Panel</button></section>
+<section id="adminBox" class="wrap" style="display:none"><h1>Product Add / Edit</h1>
+<div class="notice">
+  <b>Change Admin PIN</b><br>
+  <input id="oldPin" type="password" placeholder="Old PIN">
+  <input id="newPin" type="password" placeholder="New PIN">
+  <button class="btn" type="button" onclick="changePin()">Change PIN</button>
+</div><p class="notice">Photo choose करें, details भरें और Save दबाएँ. Product Supabase में save होगा और website पर live दिखेगा.</p>
+<form id="productForm" class="form"><input type="hidden" id="id"><input type="hidden" id="image_url"><label>Product Photo <input id="imageFile" type="file" accept="image/*"></label><label>Art No. <input id="art_no" required placeholder="RA35"></label><label>Product Name <input id="product_name" required placeholder="Polo T-Shirt"></label><label>Category
+<select id="category">
+  <option value="">Select Category</option>
+  <option value="T-Shirt">T-Shirt</option>
+  <option value="Polo">Polo</option>
+  <option value="Shorts">Shorts</option>
+  <option value="Lowers">Lowers</option>
+  <option value="Drop Shoulder">Drop Shoulder</option>
+  <option value="Karara">Karara</option>
+  <option value="Mario Knit">Mario Knit</option>
+  <option value="Fake Cotton">Fake Cotton</option>
+</select>
+</label><label>Fabric <input id="fabric" placeholder="Fake Cotton / Karara / Mario Knit"></label><label>Sizes <input id="sizes" placeholder="L, XL, XXL"></label><label>Pack Qty <input id="pack_qty" placeholder="18 pcs"></label><label>Rate <input id="rate" type="number" placeholder="135"></label><label>Stock <select id="stock"><option>In Stock</option><option>Limited</option><option>Out of Stock</option></select></label><label>Description <textarea id="description" placeholder="Extra details"></textarea></label><button class="btn" type="submit">Save Product</button><button class="btn ghost" type="button" onclick="clearForm()">Clear</button></form>
+<h2>Current Products</h2><p id="adminStatus" class="loading">Loading...</p><div id="adminProducts"></div></section>
+<script src="config.js"></script><script src="supabase.js"></script><script src="admin.js"></script></body></html>

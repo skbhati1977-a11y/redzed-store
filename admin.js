@@ -1,11 +1,54 @@
-const loginBox=document.getElementById('loginBox'), adminBox=document.getElementById('adminBox'), msg=document.getElementById('msg');
-function checkLogin(){ if(localStorage.getItem('rz_admin')==='yes'){loginBox.classList.add('hidden'); adminBox.classList.remove('hidden'); initAdmin();}}
-document.getElementById('loginBtn').onclick=()=>{ if(document.getElementById('pin').value===ADMIN_PIN){localStorage.setItem('rz_admin','yes');checkLogin();}else alert('Wrong PIN');};
-document.getElementById('logoutBtn').onclick=()=>{localStorage.removeItem('rz_admin');location.reload();};
-async function initAdmin(){await loadCategories(); await loadList();}
-async function loadCategories(){const {data}=await supabaseClient.from('categories').select('*').order('name');document.getElementById('categorySelect').innerHTML=(data||[]).map(c=>`<option value="${c.id}">${c.name}</option>`).join('');}
-async function uploadPhoto(file){ if(!file||!file.name) return ''; const ext=file.name.split('.').pop(); const path=`${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`; const {error}=await supabaseClient.storage.from('products').upload(path,file,{upsert:false}); if(error) throw error; return supabaseClient.storage.from('products').getPublicUrl(path).data.publicUrl;}
-document.getElementById('productForm').addEventListener('submit',async e=>{e.preventDefault();msg.textContent='Saving...';try{const fd=new FormData(e.target);const image=await uploadPhoto(fd.get('photo'));const row={item_name:fd.get('item_name'),art_no:fd.get('art_no'),category_id:Number(fd.get('category_id')),size:fd.get('size'),pcs:fd.get('pcs')?Number(fd.get('pcs')):null,rate:fd.get('rate')?Number(fd.get('rate')):null,fabric:fd.get('fabric'),colors:fd.get('colors'),description:fd.get('description'),main_image:image,featured:fd.get('featured')==='on',in_stock:fd.get('in_stock')==='on'};const {error}=await supabaseClient.from('products').insert(row);if(error) throw error;msg.textContent='Saved ✅';e.target.reset();await loadList();}catch(err){msg.textContent='Error: '+err.message;}});
-async function loadList(){const {data,error}=await supabaseClient.from('products').select('*').order('created_at',{ascending:false}).limit(50);const box=document.getElementById('productList'); if(error){box.innerHTML='<p>'+error.message+'</p>';return;} box.innerHTML=(data||[]).map(p=>`<div class="row"><img src="${p.main_image||'https://placehold.co/120?text=RZ'}"><div><b>${p.item_name}</b><br><small>${p.art_no||''} • ₹${p.rate||''}</small></div><button class="btn danger" onclick="delProduct(${p.id})">Delete</button></div>`).join('')||'<p>No products yet.</p>';}
-async function delProduct(id){if(!confirm('Delete product?'))return;const {error}=await supabaseClient.from('products').delete().eq('id',id);if(error) alert(error.message); await loadList();}
-checkLogin();
+function getAdminPin(){
+  return localStorage.getItem("redzed_admin_pin") || CFG.ADMIN_PIN || "9654";
+}
+function changePin(){
+  const oldPin = document.getElementById("oldPin").value.trim();
+  const newPin = document.getElementById("newPin").value.trim();
+  if(oldPin !== getAdminPin()){ alert("Old PIN wrong"); return; }
+  if(newPin.length < 4){ alert("New PIN minimum 4 digits rakhiye"); return; }
+  localStorage.setItem("redzed_admin_pin", newPin);
+  document.getElementById("oldPin").value = "";
+  document.getElementById("newPin").value = "";
+  alert("PIN changed successfully");
+}
+const fields = ["id","image_url","art_no","product_name","category","fabric","sizes","pack_qty","rate","stock","description"];
+let products = [];
+function login(){
+  if(document.getElementById("pin").value === getAdminPin()){
+    sessionStorage.setItem("redzed_admin","1");
+    document.getElementById("loginBox").style.display="none";
+    document.getElementById("adminBox").style.display="block";
+    loadAdmin();
+  } else alert("Wrong PIN");
+}
+if(sessionStorage.getItem("redzed_admin")==="1"){
+  document.getElementById("loginBox").style.display="none";
+  document.getElementById("adminBox").style.display="block";
+  loadAdmin();
+}
+function v(id){ return document.getElementById(id).value.trim(); }
+function s(id,val){ document.getElementById(id).value = val ?? ""; }
+function clearForm(){ fields.forEach(f=>s(f,"")); s("stock","In Stock"); document.getElementById("imageFile").value=""; }
+document.getElementById("productForm").addEventListener("submit", async e => {
+  e.preventDefault();
+  const btn = e.submitter; btn.disabled=true; btn.textContent="Saving...";
+  try{
+    let image_url = v("image_url");
+    const file = document.getElementById("imageFile").files[0];
+    if(file) image_url = await uploadImage(file);
+    const p = {}; fields.forEach(f => p[f] = v(f)); p.image_url = image_url;
+    await saveProduct(p);
+    alert("Product saved live");
+    clearForm(); await loadAdmin();
+  }catch(err){ alert("Error: " + err.message); }
+  btn.disabled=false; btn.textContent="Save Product";
+});
+async function loadAdmin(){
+  try{ products = await getProducts(); document.getElementById("adminStatus").textContent = `${products.length} products`; renderAdmin(); }
+  catch(e){ document.getElementById("adminStatus").textContent = "Error: " + e.message; }
+}
+function editProduct(id){ const p = products.find(x=>x.id===id); fields.forEach(f=>s(f,p[f])); scrollTo(0,0); }
+async function removeProduct(id){ if(!confirm("Delete product?")) return; try{ await deleteProduct(id); await loadAdmin(); }catch(e){ alert(e.message); } }
+function renderAdmin(){
+  document.getElementById("adminProducts").innerHTML = products.map(p => `<div class="row">${p.image_url?`<img src="${p.image_url}">`:`<img>`}<div><b>${p.art_no || ""} - ${p.product_name || ""}</b><br><small>${p.category||""} | ${p.fabric||""} | ${p.sizes||""} | ₹${p.rate||""} | ${p.stock||""}</small></div><div><button class="btn" onclick="editProduct('${p.id}')">Edit</button><button class="btn danger" onclick="removeProduct('${p.id}')">Delete</button></div></div>`).join("");
+}
