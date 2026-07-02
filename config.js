@@ -6,4 +6,4 @@ const ADMIN_PIN = "9654"; // बाद में बदल दें
 const CFG = {
   ADMIN_PIN: ADMIN_PIN
 };
-const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
