@@ -2,46 +2,157 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1"
+  >
+
   <title>REDZED Owner Panel</title>
-  <link rel="stylesheet" href="style.css">
+
+  <link
+    rel="stylesheet"
+    href="style.css?v=40"
+  >
 </head>
+
 <body>
+
   <header class="top">
     <div class="brand">
       <b>OWNER <span>PANEL</span></b>
+      <br>
       <small>REDZED Supabase Admin</small>
     </div>
-    <nav><a href="index.html">Website</a></nav>
+
+    <nav>
+      <a href="index.html?v=40">Website</a>
+    </nav>
   </header>
+
+
+  <!-- OWNER LOGIN -->
 
   <section id="loginBox" class="login">
     <h2>Owner Login</h2>
-    <p class="notice">PIN डालें. Default PIN: 9654</p>
-    <input id="pin" type="password" placeholder="Owner PIN">
-    <button class="btn" type="button" onclick="login()">Open Panel</button>
+
+    <p class="notice">
+      PIN डालें। Default PIN: 9654
+    </p>
+
+    <input
+      id="pin"
+      type="password"
+      inputmode="numeric"
+      placeholder="Owner PIN"
+    >
+
+    <button
+      class="btn"
+      type="button"
+      onclick="login()"
+    >
+      Open Panel
+    </button>
   </section>
 
-  <section id="adminBox" class="wrap" style="display:none">
+
+  <!-- ADMIN PANEL -->
+
+  <section
+    id="adminBox"
+    class="wrap"
+    style="display:none"
+  >
+
     <h1>Product Add / Edit</h1>
 
+
+    <!-- CHANGE PIN -->
+
     <div class="notice">
-      <b>Change Admin PIN</b><br>
-      <input id="oldPin" type="password" placeholder="Old PIN">
-      <input id="newPin" type="password" placeholder="New PIN">
-      <button class="btn" type="button" onclick="changePin()">Change PIN</button>
+      <b>Change Admin PIN</b>
+      <br><br>
+
+      <input
+        id="oldPin"
+        type="password"
+        inputmode="numeric"
+        placeholder="Old PIN"
+      >
+
+      <input
+        id="newPin"
+        type="password"
+        inputmode="numeric"
+        placeholder="New PIN"
+      >
+
+      <button
+        class="btn"
+        type="button"
+        onclick="changePin()"
+      >
+        Change PIN
+      </button>
     </div>
 
-    <form id="productForm" class="form">
-      <input type="hidden" id="id">
-      <input type="hidden" id="image_url">
 
-      <label>Product Photo <input id="imageFile" type="file" accept="image/*"></label>
-      <label>Item Name <input id="product_name" required placeholder="Item name"></label>
-      <label>Art No / Lot No <input id="art_no" required placeholder="Art no / Lot no"></label>
+    <!-- PRODUCT FORM -->
 
-      <label>Category
-        <select id="category">
+    <form
+      id="productForm"
+      class="form"
+    >
+
+      <input
+        type="hidden"
+        id="id"
+      >
+
+      <input
+        type="hidden"
+        id="image_url"
+      >
+
+
+      <label>
+        Product Photo
+
+        <input
+          id="imageFile"
+          type="file"
+          accept="image/*"
+        >
+      </label>
+
+
+      <label>
+        Item Name
+
+        <input
+          id="product_name"
+          required
+          placeholder="Item name"
+        >
+      </label>
+
+
+      <label>
+        Art No / Lot No
+
+        <input
+          id="art_no"
+          required
+          placeholder="Art no / Lot no"
+        >
+      </label>
+
+
+      <label>
+        Category
+
+        <select id="category" required>
           <option value="">Select Category</option>
           <option value="T-Shirt">T-Shirt</option>
           <option value="Polo">Polo</option>
@@ -54,33 +165,113 @@
         </select>
       </label>
 
-      <label>Size <input id="sizes" placeholder="L, XL, XXL"></label>
-      <label>Pcs / Pack Qty <input id="pack_qty" placeholder="18 pcs"></label>
-      <label>Rate <input id="rate" type="number" placeholder="155"></label>
-      <label>Fabric <input id="fabric" placeholder="Fake Cotton"></label>
 
-      <label>Stock
+      <label>
+        Size
+
+        <input
+          id="sizes"
+          placeholder="L, XL, XXL"
+        >
+      </label>
+
+
+      <label>
+        Pcs / Pack Qty
+
+        <input
+          id="pack_qty"
+          placeholder="18 pcs"
+        >
+      </label>
+
+
+      <label>
+        Rate
+
+        <input
+          id="rate"
+          type="number"
+          placeholder="155"
+        >
+      </label>
+
+
+      <label>
+        Fabric
+
+        <input
+          id="fabric"
+          placeholder="Fake Cotton"
+        >
+      </label>
+
+
+      <label>
+        Stock
+
         <select id="stock">
-          <option>In Stock</option>
-          <option>Limited</option>
-          <option>Out of Stock</option>
+          <option value="In Stock">In Stock</option>
+          <option value="Limited">Limited</option>
+          <option value="Out of Stock">Out of Stock</option>
         </select>
       </label>
 
-      <label>Description <textarea id="description" placeholder="Extra details"></textarea></label>
 
-      <button class="btn" type="submit">Save Product</button>
-      <button class="btn ghost" type="button" onclick="clearForm()">Clear</button>
+      <label>
+        Description
+
+        <textarea
+          id="description"
+          placeholder="Extra details"
+        ></textarea>
+      </label>
+
+
+      <button
+        class="btn"
+        type="submit"
+      >
+        Save Product
+      </button>
+
+
+      <button
+        class="btn ghost"
+        type="button"
+        onclick="clearForm()"
+      >
+        Clear
+      </button>
+
     </form>
 
+
+    <!-- CURRENT PRODUCTS -->
+
     <h2>Current Products</h2>
-    <p id="adminStatus" class="loading">Loading...</p>
+
+    <p
+      id="adminStatus"
+      class="loading"
+    >
+      Loading...
+    </p>
+
     <div id="adminProducts"></div>
+
   </section>
 
+
+  <!-- SCRIPTS: ORDER बहुत जरूरी है -->
+
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="config.js"></script>
-  <script src="supabase.js"></script>
-  <script src="admin.js"></script>
+
+  <script src="config.js?v=40"></script>
+
+  <script src="supabase.js?v=40"></script>
+
+  <script src="admin.js?v=40"></script>
+
 </body>
 </html>
