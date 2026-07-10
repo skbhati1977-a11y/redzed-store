@@ -1,4 +1,4 @@
-// REDZED V2 — Supabase database and storage functions
+
 
 async function getProducts() {
   const { data, error } = await supabaseClient
@@ -100,4 +100,4 @@ async function uploadImage(file) {
     safeFileName(file.name);
 
   const { error } = await supabaseClient.storage
-    .from(STORAGE_BUCKET)
+    .from("product-images")
