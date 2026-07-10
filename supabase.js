@@ -101,3 +101,33 @@ async function uploadImage(file) {
 
   const { error } = await supabaseClient.storage
     .from("product-images")
+    .upload(path, file, {
+      cacheControl: "3600",
+      contentType: file.type || undefined,
+      upsert: false
+    });
+
+  if (error) throw error;
+
+  const { data } = supabaseClient.storage
+    .from("product-images")
+    .getPublicUrl(path);
+
+  return data.publicUrl;
+}
+
+async function uploadImages(files, onProgress) {
+  const list = Array.from(files || []);
+  const urls = [];
+
+  for (let index = 0; index < list.length; index += 1) {
+    const url = await uploadImage(list[index]);
+    urls.push(url);
+
+    if (typeof onProgress === "function") {
+      onProgress(index + 1, list.length);
+    }
+  }
+
+  return urls;
+}
