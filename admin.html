@@ -12,7 +12,7 @@
 
   <link
     rel="stylesheet"
-    href="style.css?v=50"
+    href="style.css?v=205"
   >
 </head>
 
@@ -26,7 +26,7 @@
     </div>
 
     <nav>
-      <a href="index.html?v=50">Website</a>
+      <a href="index.html?v=205">Website</a>
     </nav>
   </header>
 
@@ -136,6 +136,7 @@
         </small>
       </label>
 
+      <div id="uploadStatus"></div>
 
       <div id="imagePreview"></div>
 
@@ -172,9 +173,9 @@
           <option value="Shorts">Shorts</option>
           <option value="Lowers">Lowers</option>
           <option value="Drop Shoulder">Drop Shoulder</option>
-          <option value="crew neck">crew meck</option>
-          <option value="self collar">self collar</option>
-          <option value="hoodies">hoodies</option>
+          <option value="Crew Neck">Crew Neck</option>
+          <option value="Self Collar">Self Collar</option>
+          <option value="Hoodies">Hoodies</option>
         </select>
       </label>
 
@@ -182,36 +183,28 @@
       <label>
         Size
 
-        <input
-          id="sizes"
-          placeholder="L, XL, XXL"
-          <option value="L, XL,XXL">L, XL,XXL</option>
-      </select>
-        <option value="M, L, XL,XXL">M, L, XL,XXL</option>
-      </select>
-        <option value="M, L XL">M, L, XL</option>
-      </select>
-        <option value="2XL, 3XL, 4XL">2XL, 3XL,4XL</option>
-      </select>
+        <select id="sizes">
+          <option value="">Select Size</option>
+          <option value="L, XL, XXL">L, XL, XXL</option>
+          <option value="M, L, XL, XXL">M, L, XL, XXL</option>
+          <option value="M, L, XL">M, L, XL</option>
+          <option value="2XL, 3XL, 4XL">2XL, 3XL, 4XL</option>
+          <option value="Free Size">Free Size</option>
+        </select>
       </label>
 
 
       <label>
         Pcs / Pack Qty
 
-        <input
-          id="pack_qty"
-          placeholder="18 pcs"
-        <option value="18 pcs">18 PCS</option>
-      </select>
-        <option value="12 pcs">12 PCS</option>
-      </select>
-        <option value="24 pcs">24 PCS</option>
-      </select>
-        <option value="30 pcs">30 PCS</option>
-      </select>
-        <option value="36 pcs">36 PCS</option>
-      </select>
+        <select id="pack_qty">
+          <option value="">Select Pack Qty</option>
+          <option value="12 pcs">12 PCS</option>
+          <option value="18 pcs">18 PCS</option>
+          <option value="24 pcs">24 PCS</option>
+          <option value="30 pcs">30 PCS</option>
+          <option value="36 pcs">36 PCS</option>
+        </select>
       </label>
 
 
@@ -221,6 +214,7 @@
         <input
           id="rate"
           type="number"
+          min="0"
           placeholder="155"
         >
       </label>
@@ -229,19 +223,16 @@
       <label>
         Fabric
 
-        <input
-          id="fabric"
-          placeholder="Fake Cotton"
-        <option value="SAP METTY">SAP METTY</option>
-      </select>
+        <select id="fabric">
+          <option value="">Select Fabric</option>
+          <option value="SAP METTY">SAP METTY</option>
           <option value="FAKE COTTON">FAKE COTTON</option>
-      </select>
-        <option value="COTTON">COTTON</option>
-      </select>
-        <option value="SPUN BLACK DORA">SPUN BLACK DORA</option>
-      </select>
-        <option value="STRUCTURE KNIT">FAKE COTTON</option>
-      </select>
+          <option value="COTTON">COTTON</option>
+          <option value="SPUN BLACK DORA">SPUN BLACK DORA</option>
+          <option value="STRUCTURE KNIT">STRUCTURE KNIT</option>
+          <option value="MARIO KNIT">MARIO KNIT</option>
+          <option value="TENCIL LYCRA">TENCIL LYCRA</option>
+        </select>
       </label>
 
 
@@ -267,12 +258,11 @@
 
 
       <button
-         <button
-  id="saveButton"
-  class="btn"
-  type="submit"
->
-  Save Product
+        id="saveButton"
+        class="btn"
+        type="submit"
+      >
+        Save Product
       </button>
 
 
@@ -291,6 +281,12 @@
 
     <h2>Current Products</h2>
 
+    <input
+      id="adminSearch"
+      type="search"
+      placeholder="Search products"
+    >
+
     <p
       id="adminStatus"
       class="loading"
@@ -303,15 +299,15 @@
   </section>
 
 
-  <!-- SCRIPTS: ORDER जरूरी है -->
+  <!-- SCRIPT ORDER जरूरी है -->
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-  <script src="config.js?v=50"></script>
+  <script src="config.js?v=205"></script>
 
-  <script src="supabase.js?v=50"></script>
+  <script src="supabase.js?v=205"></script>
 
-  <script src="admin.js?v=50"></script>
+  <script src="admin.js?v=205"></script>
 
 </body>
 </html>
