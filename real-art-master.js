@@ -188,11 +188,20 @@
     updateTotal();
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
-
   function resetForm() {
     form.reset();
     document.getElementById("artId").value = "";
-    Object.values(costInputs).forEach((input) => { input.value = "0"; });
+
+  costInputs.cut.value = "2.5";
+costInputs.print.value = "0";
+costInputs.sticker.value = "0";
+costInputs.kr.value = "0";
+costInputs.ov.value = "0";
+costInputs.fld.value = "0";
+costInputs.threadCut.value = "2.5";
+costInputs.press.value = "2.25";
+costInputs.pack.value = "0.80";
+costInputs.other.value = "6";
     document.getElementById("defaultMargin").value = "22";
     fileInputs.forEach((input) => { input.value = ""; });
     queuedFiles = [];
@@ -201,7 +210,7 @@
     formTitle.textContent = "Add Design";
     saveButton.textContent = "Save Design";
     cancelEdit.classList.add("rr-hidden");
-    updateTotal();
+updateTotal();
   }
 
   async function saveCosts(artId) {
@@ -323,6 +332,7 @@
   (async () => {
     try {
       await RR.requireOwner();
+      resetForm();
       await loadData();
       updateTotal();
     } catch (error) {
