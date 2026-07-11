@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <title>REDZED REAL Login</title>
+
+  <link rel="stylesheet" href="real-style.css?v=1">
+</head>
+
+<body class="rr-body rr-login-page">
+
+  <main class="rr-login-shell">
+
+    <section class="rr-login-card">
+
+      <div class="rr-brand-mark">R</div>
+
+      <p class="rr-kicker">
+        REDZED REAL
+      </p>
+
+      <h1>Owner Login</h1>
+
+      <p class="rr-muted">
+        Real Factory. Real Control.
+      </p>
+
+      <form id="loginForm" class="rr-form">
+
+        <label>
+          Email
+
+          <input
+            id="email"
+            type="email"
+            autocomplete="email"
+            value="skbhati1977@gmail.com"
+            required
+          >
+        </label>
+
+        <label>
+          Password
+
+          <input
+            id="password"
+            type="password"
+            autocomplete="current-password"
+            required
+          >
+        </label>
+
+        <button
+          id="loginBtn"
+          class="rr-btn rr-btn-primary"
+          type="submit"
+        >
+          Login
+        </button>
+
+        <p
+          id="loginMessage"
+          class="rr-message"
+          role="status"
+        ></p>
+
+      </form>
+
+      <a class="rr-link" href="index.html">
+        Back to Store
+      </a>
+
+    </section>
+
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <script src="config.js?v=1"></script>
+
+  <script src="real-login.js?v=1"></script>
+
+</body>
+</html>
