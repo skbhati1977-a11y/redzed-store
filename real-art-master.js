@@ -132,10 +132,10 @@
               <span>Process Cost</span>
               <strong>${RR.money(processCost)}</strong>
             </div>
-            <div class="rr-card-data">
-              <span>Pricing Rule</span>
-              <strong>${RR.safeText(art.default_margin || 0)}%</strong>
-            </div>
+             <div class="rr-card-data">
+  <span>Flat Profit</span>
+  <strong>${RR.money(art.default_margin || 0)}</strong>
+</div>
           </div>
         </button>
       `;
@@ -155,7 +155,7 @@
     document.getElementById("artNo").value = art.art_no || "";
     document.getElementById("itemName").value = art.item_name || art.product_name || "";
     document.getElementById("description").value = art.description || "";
-    document.getElementById("defaultMargin").value = art.default_margin || 0;
+    document.getElementById("defaultMargin").value = art.default_margin ?? 22;
 
     const costAliasMap = {
       cut: ["cutting_rate", "cut_cost"],
@@ -193,7 +193,7 @@
     form.reset();
     document.getElementById("artId").value = "";
     Object.values(costInputs).forEach((input) => { input.value = "0"; });
-    document.getElementById("defaultMargin").value = "0";
+    document.getElementById("defaultMargin").value = "22";
     fileInputs.forEach((input) => { input.value = ""; });
     queuedFiles = [];
     selectedFiles.textContent = "No new images selected";
