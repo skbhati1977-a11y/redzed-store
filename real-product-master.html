@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>REDZED REAL — Product Master</title>
+  <link rel="stylesheet" href="real-style.css?v=2">
+</head>
+<body class="rr-body">
+  <header class="rr-topbar">
+    <div>
+      <p class="rr-kicker">REDZED REAL</p>
+      <h1>Product Master</h1>
+    </div>
+    <a class="rr-btn rr-btn-secondary" href="real-dashboard.html">Dashboard</a>
+  </header>
+
+  <main class="rr-page">
+    <section class="rr-product-toolbar">
+      <div>
+        <h2>Products</h2>
+        <p class="rr-muted rr-no-margin">CB remains the backend master. Tap a card to view/edit.</p>
+      </div>
+      <button id="addProductBtn" class="rr-btn rr-btn-primary" type="button">+ Add Product</button>
+    </section>
+
+    <section id="productEditor" class="rr-panel rr-hidden">
+      <div class="rr-panel-head">
+        <div>
+          <h2 id="productFormTitle">Add Product</h2>
+          <p class="rr-muted rr-no-margin">Design link, material division, costing and images.</p>
+        </div>
+        <button id="closeProductEditor" class="rr-btn rr-btn-secondary" type="button">Close</button>
+      </div>
+
+      <form id="productForm" class="rr-form">
+        <input id="cbId" type="hidden">
+
+        <div class="rr-form-grid">
+          <label>Product Code
+            <input id="cbCode" type="text" required placeholder="Example: CB-2501">
+          </label>
+          <label>Design
+            <select id="artSelect" required>
+              <option value="">Select design</option>
+            </select>
+          </label>
+          <label>Material Purchase
+            <select id="purchaseSelect" required>
+              <option value="">Select purchase</option>
+            </select>
+          </label>
+          <label>Material Family
+            <select id="sizeFamily">
+              <option value="regular">Regular</option>
+              <option value="small">Small</option>
+              <option value="big">Big</option>
+            </select>
+          </label>
+          <label>Sleeve Type
+            <select id="sleeveType">
+              <option value="full">Full Sleeve</option>
+              <option value="half">Half Sleeve</option>
+            </select>
+          </label>
+          <label>Colour Count
+            <input id="colourCount" type="number" min="1" step="1" value="1">
+          </label>
+          <label>Divided Rolls
+            <input id="dividedRolls" type="number" min="0" step="1" value="0">
+          </label>
+          <label>Divided Weight
+            <input id="dividedWeight" type="number" min="0" step="0.001" value="0">
+          </label>
+          <label>Divided Amount
+            <input id="dividedAmount" type="number" min="0" step="0.01" value="0">
+          </label>
+          <label>Estimated PCS
+            <input id="estimatedPcs" type="number" min="0" step="1" value="0">
+          </label>
+          <label class="rr-span-2">Matching / Collar / Cuff / Other Material Cost per Piece
+            <input id="accessoriesCost" type="number" min="0" step="0.01" value="0">
+          </label>
+          <label>Consumption per Piece
+            <input id="consumptionPerPiece" type="number" min="0" step="0.0001" value="0">
+          </label>
+          <label>Wastage %
+            <input id="wastagePercent" type="number" min="0" step="0.01" value="0">
+          </label>
+          <label class="rr-span-2">Factory Notes
+            <textarea id="cbNotes" rows="2"></textarea>
+          </label>
+        </div>
+
+        <div id="designReference" class="rr-linked-design">
+          <div class="rr-image-placeholder">Select Design</div>
+          <div>
+            <span>Design reference</span>
+            <h3>Nothing selected</h3>
+            <p class="rr-muted">Process cost and reference image will appear here.</p>
+          </div>
+        </div>
+
+        <div class="rr-section-title">
+          <div>
+            <h3>Final Product Images</h3>
+            <p>These images are used for the customer catalog.</p>
+          </div>
+        </div>
+        <div class="rr-upload-row">
+          <label class="rr-upload-btn">📷 Camera
+            <input id="productCamera" type="file" accept="image/*" capture="environment" multiple>
+          </label>
+          <label class="rr-upload-btn">🖼 Gallery
+            <input id="productGallery" type="file" accept="image/jpeg,image/png,image/webp" multiple>
+          </label>
+        </div>
+        <div id="productImagePreview" class="rr-image-strip"></div>
+
+        <div class="rr-price-summary">
+          <div><span>Process Cost</span><strong id="processCostDisplay">₹0.00</strong></div>
+          <div><span>Material Cost</span><strong id="materialCostDisplay">₹0.00</strong></div>
+          <div><span>Production Cost</span><strong id="productionCostDisplay">₹0.00</strong></div>
+          <div><span>Selling Price</span><strong id="sellingPriceDisplay">₹0.00</strong></div>
+        </div>
+
+        <button id="saveProductBtn" class="rr-btn rr-btn-primary" type="submit">Save Product</button>
+      </form>
+      <p id="productMessage" class="rr-message" role="status"></p>
+    </section>
+
+    <section class="rr-panel rr-top-gap">
+      <div class="rr-panel-head">
+        <div>
+          <h2>Product Cards</h2>
+          <p class="rr-muted rr-no-margin">Factory costs are visible only in this Owner/Admin screen.</p>
+        </div>
+        <button id="reloadProducts" class="rr-btn rr-btn-secondary" type="button">Refresh</button>
+      </div>
+      <div id="productCards" class="rr-card-grid">
+        <p class="rr-muted">Loading...</p>
+      </div>
+    </section>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="config.js?v=1"></script>
+  <script src="real-common.js?v=1"></script>
+  <script src="real-product-master.js?v=1"></script>
+</body>
+</html>

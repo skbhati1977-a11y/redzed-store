@@ -356,3 +356,214 @@ body {
     min-width: 92px;
   }
 }
+
+
+/* REDZED REAL Phase-1 frontend */
+.rr-hidden { display: none !important; }
+.rr-no-margin { margin: 0; }
+.rr-top-gap { margin-top: 18px; }
+
+.rr-section-title {
+  margin-top: 8px;
+  padding-top: 18px;
+  border-top: 1px solid #2b2b31;
+}
+.rr-section-title h3 { margin: 0 0 5px; }
+.rr-section-title p { margin: 0; color: #aaaab4; font-size: 13px; }
+
+.rr-upload-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+.rr-upload-btn {
+  display: inline-flex !important;
+  cursor: pointer;
+  background: #292930;
+  border-radius: 12px;
+  padding: 12px 16px;
+  font-weight: 800;
+}
+.rr-upload-btn input { display: none; }
+
+.rr-image-strip {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  min-height: 0;
+}
+.rr-image-strip img {
+  width: 110px;
+  height: 120px;
+  flex: 0 0 auto;
+  object-fit: cover;
+  border-radius: 12px;
+  border: 1px solid #35353d;
+}
+
+.rr-cost-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 12px;
+}
+.rr-cost-grid label {
+  display: grid;
+  gap: 7px;
+  color: #d6d6dc;
+  font-size: 13px;
+}
+.rr-cost-grid input {
+  width: 100%;
+  border: 1px solid #34343d;
+  background: #0f0f12;
+  color: white;
+  border-radius: 12px;
+  padding: 12px;
+}
+
+.rr-price-band,
+.rr-price-summary {
+  display: grid;
+  gap: 12px;
+  background: #101013;
+  border: 1px solid #292930;
+  border-radius: 16px;
+  padding: 16px;
+}
+.rr-price-band { grid-template-columns: 1fr 1fr; align-items: end; }
+.rr-price-band > div,
+.rr-price-summary > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+.rr-price-band span,
+.rr-price-summary span { color: #aaaab4; }
+
+.rr-card-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 16px;
+}
+.rr-product-card {
+  overflow: hidden;
+  border: 1px solid #2b2b31;
+  border-radius: 18px;
+  background: #151519;
+  color: white;
+  text-align: left;
+}
+.rr-card-button {
+  padding: 0;
+  font: inherit;
+  cursor: pointer;
+}
+.rr-product-card:hover { border-color: #e32636; }
+.rr-card-image {
+  height: 260px;
+  position: relative;
+  background: #0f0f12;
+}
+.rr-card-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.rr-image-placeholder {
+  width: 100%;
+  height: 100%;
+  min-height: 110px;
+  display: grid;
+  place-items: center;
+  color: #6f6f78;
+  background: linear-gradient(145deg, #121216, #1d1d22);
+  font-weight: 900;
+  letter-spacing: .12em;
+}
+.rr-image-count {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: rgba(0,0,0,.72);
+  border-radius: 999px;
+  padding: 6px 9px;
+  font-size: 12px;
+}
+.rr-card-body { padding: 16px; }
+.rr-card-code {
+  color: #ff6874;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: .08em;
+}
+.rr-card-body h3 { margin: 8px 0 14px; }
+.rr-card-data {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 7px 0;
+  border-top: 1px solid #28282f;
+  font-size: 13px;
+}
+.rr-card-data span { color: #aaaab4; }
+.rr-card-data.rr-selling strong { color: #65e39c; }
+.rr-card-tags { display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 12px; }
+.rr-card-tags span {
+  background: #292930;
+  color: #d4d4da;
+  border-radius: 999px;
+  padding: 5px 8px;
+  font-size: 11px;
+  text-transform: capitalize;
+}
+
+.rr-product-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+.rr-product-toolbar h2 { margin: 0 0 5px; }
+
+.rr-linked-design {
+  display: grid;
+  grid-template-columns: 150px 1fr;
+  gap: 16px;
+  align-items: stretch;
+  background: #101013;
+  border: 1px solid #292930;
+  border-radius: 16px;
+  overflow: hidden;
+}
+.rr-linked-design img {
+  width: 150px;
+  height: 150px;
+  object-fit: cover;
+}
+.rr-linked-design > div:last-child { padding: 16px; }
+.rr-linked-design h3 { margin: 6px 0; }
+
+.rr-price-summary {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+.rr-price-summary > div {
+  display: grid;
+}
+.rr-price-summary strong { font-size: 18px; }
+
+@media (max-width: 900px) {
+  .rr-cost-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .rr-card-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .rr-price-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 560px) {
+  .rr-card-grid { grid-template-columns: 1fr; }
+  .rr-card-image { height: 330px; }
+  .rr-price-band { grid-template-columns: 1fr; }
+  .rr-product-toolbar { align-items: flex-start; }
+  .rr-linked-design { grid-template-columns: 110px 1fr; }
+  .rr-linked-design img { width: 110px; height: 130px; }
+}
