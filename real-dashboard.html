@@ -1,0 +1,220 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <title>REDZED REAL Dashboard</title>
+
+  <link rel="stylesheet" href="real-style.css?v=1">
+</head>
+
+<body class="rr-body">
+
+  <header class="rr-topbar">
+
+    <div>
+      <p class="rr-kicker">REDZED REAL</p>
+      <h1>Owner Dashboard</h1>
+    </div>
+
+    <div class="rr-top-actions">
+
+      <span id="ownerName" class="rr-owner-name">
+        Loading...
+      </span>
+
+      <button
+        id="logoutBtn"
+        class="rr-btn rr-btn-secondary"
+        type="button"
+      >
+        Logout
+      </button>
+
+    </div>
+
+  </header>
+
+
+  <main class="rr-page">
+
+    <section class="rr-hero">
+
+      <div>
+        <p class="rr-muted">
+          Real Factory. Real Control.
+        </p>
+
+        <h2 id="welcomeText">
+          Welcome
+        </h2>
+      </div>
+
+      <div
+        id="securityStatus"
+        class="rr-status-pill"
+      >
+        Secure session
+      </div>
+
+    </section>
+
+
+    <section class="rr-stat-grid">
+
+      <article class="rr-stat-card">
+        <span>Active Arts</span>
+        <strong id="artCount">—</strong>
+      </article>
+
+      <article class="rr-stat-card">
+        <span>Live Lots</span>
+        <strong id="lotCount">—</strong>
+      </article>
+
+      <article class="rr-stat-card">
+        <span>Open Remakes</span>
+        <strong id="remakeCount">—</strong>
+      </article>
+
+      <article class="rr-stat-card">
+        <span>Available Stock PCS</span>
+        <strong id="stockCount">—</strong>
+      </article>
+
+    </section>
+
+
+    <section class="rr-module-grid">
+
+      <a
+        class="rr-module-card"
+        href="real-art-master.html"
+      >
+        <span class="rr-module-number">01</span>
+
+        <h3>Art Master</h3>
+
+        <p>
+          Item, fabric, sizes, rates, printing
+          and sticker instructions.
+        </p>
+      </a>
+
+
+      <article class="rr-module-card rr-disabled">
+
+        <span class="rr-module-number">02</span>
+
+        <h3>Fabric / CB</h3>
+
+        <p>
+          Purchase, division and material readiness.
+          Coming next.
+        </p>
+
+      </article>
+
+
+      <article class="rr-module-card rr-disabled">
+
+        <span class="rr-module-number">03</span>
+
+        <h3>Cutting & Lots</h3>
+
+        <p>
+          Lot generation, colours and equal
+          size distribution.
+        </p>
+
+      </article>
+
+
+      <article class="rr-module-card rr-disabled">
+
+        <span class="rr-module-number">04</span>
+
+        <h3>Line Control</h3>
+
+        <p>
+          KR to Press, damage and parallel
+          remake tracking.
+        </p>
+
+      </article>
+
+
+      <article class="rr-module-card rr-disabled">
+
+        <span class="rr-module-number">05</span>
+
+        <h3>Packing & Sales</h3>
+
+        <p>
+          Boxes, stock, discount and invoices.
+        </p>
+
+      </article>
+
+
+      <article class="rr-module-card rr-disabled">
+
+        <span class="rr-module-number">06</span>
+
+        <h3>WhatsApp Share</h3>
+
+        <p>
+          Multi-lot images, captions
+          and reseller margin.
+        </p>
+
+      </article>
+
+    </section>
+
+
+    <section class="rr-panel">
+
+      <div class="rr-panel-head">
+
+        <h2>Live Lot Status</h2>
+
+        <button
+          id="refreshBtn"
+          class="rr-btn rr-btn-secondary"
+          type="button"
+        >
+          Refresh
+        </button>
+
+      </div>
+
+      <div id="lotList" class="rr-list">
+
+        <p class="rr-muted">
+          Loading...
+        </p>
+
+      </div>
+
+    </section>
+
+
+    <p
+      id="dashboardMessage"
+      class="rr-message"
+      role="status"
+    ></p>
+
+  </main>
+
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <script src="config.js?v=1"></script>
+
+  <script src="real-dashboard.js?v=1"></script>
+
+</body>
+</html>
