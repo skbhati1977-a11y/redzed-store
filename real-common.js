@@ -52,36 +52,56 @@
     return { session: data.session, user, profile };
   };
 
-  RR.getOpenApi = async () => {
-    if (RR._openApi) return RR._openApi;
+   RR.getTableColumns = async (table) => {
+  const knownColumns = {
+    rr_art_master: [
+      "id",
+      "art_no",
+      "item_name",
+      "product_name",
+      "description",
+      "default_margin",
+      "is_active",
+      "created_at"
+    ],
 
-    const { data } = await supabaseClient.auth.getSession();
-    const accessToken = data?.session?.access_token || SUPABASE_ANON_KEY;
+    rr_art_costs: [
+      "id",
+      "art_id",
+      "cutting_rate",
+      "printing_rate",
+      "sticker_rate",
+      "kr_rate",
+      "ov_rate",
+      "fld_rate",
+      "thread_cut_rate",
+      "press_rate",
+      "packing_rate",
+      "other_rate",
+      "created_at"
+    ],
 
-    const response = await fetch(`${SUPABASE_URL}/rest/v1/`, {
-      headers: {
-        apikey: SUPABASE_ANON_KEY,
-        Authorization: `Bearer ${accessToken}`,
-        Accept: "application/openapi+json"
-      }
-    });
-
-    if (!response.ok) {
-      throw new Error("Database structure could not be read.");
-    }
-
-    RR._openApi = await response.json();
-    return RR._openApi;
+    rr_media: [
+      "id",
+      "entity_type",
+      "entity_id",
+      "media_category",
+      "file_url",
+      "storage_path",
+      "file_name",
+      "mime_type",
+      "caption",
+      "source_type",
+      "visibility_scope",
+      "is_cover",
+      "sort_order",
+      "created_at"
+    ]
   };
 
-  RR.getTableColumns = async (table) => {
-    const spec = await RR.getOpenApi();
-    const schema =
-      spec?.definitions?.[table] ||
-      spec?.components?.schemas?.[table] ||
-      {};
-    return new Set(Object.keys(schema.properties || {}));
-  };
+  return new Set(knownColumns[table] || []);
+};
+
 
   RR.pickColumn = (columns, aliases) =>
     aliases.find((name) => columns.has(name)) || null;
