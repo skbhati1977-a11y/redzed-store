@@ -221,15 +221,21 @@ async function confirmFrameReassignments(frames,currentPrintId,newPrintNo){
   const oldNo=row.oldPrint.print_no||"another Print";
   const oldName=row.oldPrint.print_name?` · ${row.oldPrint.print_name}`:"";
   return `Frame ${row.frame_no} is already assigned to ${oldNo}${oldName}`;
- }).join("\n");
+ }).join("
+");
 
  const ok=confirm(
-  "DUPLICATE FRAME WARNING\n\n" +
-  details +
-  "\n\n" +
-  `Transfer this Frame to ${newPrintNo}?\n\n` +
-  "OK = remove from old Print and assign here\n" +
-  "Cancel = do not save"
+  `DUPLICATE FRAME WARNING
+
+${details}
+
+` +
+  `Transfer this Frame to ${newPrintNo}?
+
+` +
+  `Yes = remove from old Print and assign here
+` +
+  `Cancel = do not save`
  );
 
  if(!ok)throw new Error("Frame transfer cancelled. Nothing was changed.");
