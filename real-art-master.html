@@ -3,161 +3,175 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>REDZED REAL — Art Master</title>
-  <link rel="stylesheet" href="real-style.css?v=310">
-  <link rel="stylesheet" href="real-caption-builder.css?v=310">
-  <link rel="stylesheet" href="real-master-viewer.css?v=310">
+  <title>REDZED REAL — Final Art Master</title>
+  <link rel="stylesheet" href="real-style.css?v=500">
+  <link rel="stylesheet" href="real-caption-builder.css?v=500">
+  <link rel="stylesheet" href="real-master-viewer.css?v=500">
+  <link rel="stylesheet" href="real-art-master-final.css?v=500">
 </head>
 <body>
-  <header class="rr-topbar">
+<header class="rr-topbar">
+  <div><small class="rr-kicker">REDZED REAL</small><h1>Art Master</h1></div>
+  <a class="rr-btn rr-btn-secondary" href="real-dashboard.html">Dashboard</a>
+</header>
+
+<main class="rr-page">
+<section class="rr-panel">
+  <div class="rr-panel-head">
     <div>
-      <small class="rr-kicker">REDZED REAL</small>
-      <h1>Art Master</h1>
+      <h2 id="formTitle">Add New Art</h2>
+      <p>Artwork first, then Category, Add Craft Features and current Art costing.</p>
     </div>
-    <a class="rr-btn rr-btn-secondary" href="real-dashboard.html">Dashboard</a>
-  </header>
-
-  <main class="rr-page">
-    <section class="rr-panel">
-      <div class="rr-panel-head">
-        <div>
-          <h2 id="formTitle">Add Art</h2>
-          <p>Artwork images, construction captions, process cost and other margin.</p>
-        </div>
-        <button id="cancelEdit" class="rr-btn rr-btn-secondary rr-hidden" type="button">Cancel Edit</button>
-      </div>
-
-      <form id="artForm" class="rr-form">
-        <input id="artId" type="hidden">
-
-        <div class="rz-grid-2">
-          <label>
-            Art No *
-            <input id="artNo" required placeholder="RA60" autocomplete="off">
-          </label>
-
-          <label>
-            Design Category *
-            <select id="designCategory" required>
-              <option value="">Select category</option>
-              <option>R.NK / Crew Neck</option>
-              <option>Drop Shoulder</option>
-              <option>Self Collar</option>
-              <option>Flat Polo Collar</option>
-              <option>Hoodies</option>
-              <option>Pre Winter</option>
-              <option>Nikkar / Shorts / Bermuda</option>
-              <option>Lower / Pajama</option>
-            </select>
-          </label>
-
-          <label>
-            Design Name *
-            <input id="itemName" required list="designNameSuggestions" placeholder="Self Collar Polo">
-            <datalist id="designNameSuggestions">
-              <option value="Crew Neck T-Shirt">
-              <option value="Drop Shoulder T-Shirt">
-              <option value="Self Collar Polo">
-              <option value="Flat Polo">
-              <option value="Hoodie">
-              <option value="Sweatshirt">
-              <option value="Nikkar">
-              <option value="Shorts">
-              <option value="Bermuda">
-              <option value="Lower">
-              <option value="Pajama">
-            </datalist>
-          </label>
-
-          <label>
-            Other Margin / Piece (₹)
-            <input id="defaultMargin" type="number" step="0.01" value="22">
-          </label>
-        </div>
-
-        <label>
-          Design Notes
-          <textarea id="designNotes" rows="3" placeholder="Construction or factory notes"></textarea>
-        </label>
-
-        <div id="artCaptionBuilder" class="rr-caption-builder"></div>
-        <input id="description" type="hidden">
-
-        <section class="rr-subpanel">
-          <h3>Artwork Images</h3>
-          <p>The first saved artwork image becomes the Art icon automatically.</p>
-          <div class="rz-upload-row">
-            <label class="rr-btn rr-btn-secondary">📷 Camera
-              <input id="cameraFiles" type="file" accept="image/*" capture="environment" multiple hidden>
-            </label>
-            <label class="rr-btn rr-btn-secondary">🖼 Gallery
-              <input id="galleryFiles" type="file" accept="image/*" multiple hidden>
-            </label>
-            <span id="selectedFiles">No new images selected</span>
-          </div>
-          <div id="imagePreview" class="rz-media-grid"></div>
-        </section>
-
-        <section class="rr-subpanel">
-          <h3>Process Cost</h3>
-          <p>Owner/Admin only. Total updates automatically.</p>
-          <div class="rz-grid-2">
-            <label>Cut <input id="cutCost" type="number" step="0.01"></label>
-            <label>Print <input id="printCost" type="number" step="0.01"></label>
-            <label>Sticker <input id="stickerCost" type="number" step="0.01"></label>
-            <label>KR <input id="krCost" type="number" step="0.01"></label>
-            <label>OV <input id="ovCost" type="number" step="0.01"></label>
-            <label>FLD <input id="fldCost" type="number" step="0.01"></label>
-            <label>Thread Cut <input id="threadCutCost" type="number" step="0.01"></label>
-            <label>Press <input id="pressCost" type="number" step="0.01"></label>
-            <label>Pack <input id="packCost" type="number" step="0.01"></label>
-            <label>Others <input id="otherCost" type="number" step="0.01"></label>
-          </div>
-          <div class="rz-total-box">
-            <span>Process Cost</span>
-            <strong id="makingTotal">₹0.00</strong>
-          </div>
-        </section>
-
-        <p id="artMessage" class="rr-message" aria-live="polite"></p>
-        <button id="saveArtBtn" class="rr-btn rr-btn-wide" type="submit">Save Art</button>
-      </form>
-    </section>
-
-    <section class="rr-panel">
-      <div class="rr-panel-head">
-        <div>
-          <h2>Saved Arts</h2>
-          <p>Tap an image/card to inspect or edit.</p>
-        </div>
-        <button id="reloadArts" class="rr-btn rr-btn-secondary" type="button">Refresh</button>
-      </div>
-      <div id="artCards" class="rz-card-grid">Loading...</div>
-    </section>
-  </main>
-
-  <div id="mediaViewer" class="rz-viewer rr-hidden" aria-hidden="true">
-    <button id="viewerClose" class="rz-viewer-close" type="button">×</button>
-    <div class="rz-viewer-toolbar">
-      <button id="viewerPrev" type="button">‹</button>
-      <button id="viewerZoomOut" type="button">−</button>
-      <button id="viewerReset" type="button">Reset</button>
-      <button id="viewerZoomIn" type="button">+</button>
-      <button id="viewerNext" type="button">›</button>
-    </div>
-    <div id="viewerStage" class="rz-viewer-stage">
-      <img id="viewerImage" alt="Reference preview">
-    </div>
-    <div class="rz-viewer-caption">
-      <h3 id="viewerTitle"></h3>
-      <p id="viewerText"></p>
-    </div>
+    <button id="cancelEdit" class="rr-btn rr-btn-secondary rr-hidden" type="button">Cancel Edit</button>
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="config.js"></script>
-  <script src="real-common.js?v=310"></script>
-  <script src="real-caption-builder.js?v=310"></script>
-  <script src="real-art-master.js?v=310"></script>
+  <form id="artForm" class="rr-form">
+    <input id="artId" type="hidden">
+
+    <section class="rr-subpanel art-image-first">
+      <h3>1. Artwork Images *</h3>
+      <p>Tap to preview. Long press to set icon or remove reference.</p>
+      <div class="art-upload-row">
+        <label class="rr-btn rr-btn-secondary">📷 Camera
+          <input id="cameraFiles" type="file" accept="image/*" capture="environment" multiple hidden>
+        </label>
+        <label class="rr-btn rr-btn-secondary">🖼 Gallery
+          <input id="galleryFiles" type="file" accept="image/*" multiple hidden>
+        </label>
+        <span id="selectedFiles">No new images selected</span>
+      </div>
+      <div id="iconStatus" class="art-icon-status">
+        <span class="art-icon-star">★</span>
+        <div><small>ART ICON</small><strong>No icon selected</strong></div>
+      </div>
+      <div id="imagePreview" class="art-media-grid"></div>
+    </section>
+
+    <section class="rr-subpanel">
+      <h3>2. Art Details</h3>
+      <div class="art-grid-2">
+        <label>Art No *<input id="artNo" required placeholder="RA60"></label>
+
+        <label>Art Category *
+          <div class="art-category-row">
+            <select id="artCategory" required>
+              <option value="">Select category</option>
+            </select>
+            <button id="addCategoryBtn" type="button" class="rr-btn rr-btn-secondary">+ Add</button>
+          </div>
+        </label>
+
+        <label>Design Name *
+          <input id="itemName" required placeholder="Self Collar Polo">
+        </label>
+
+        <label>Other Margin / Piece (₹)
+          <input id="defaultMargin" type="number" step="0.01" value="22">
+          <small>Future Products use the latest Art cost.</small>
+        </label>
+      </div>
+
+      <label>Factory Instructions (Internal Only)
+        <textarea id="designNotes" rows="3"
+          placeholder="Example: Placket sewing line 4 mm, neck tape black, side label left."></textarea>
+      </label>
+    </section>
+
+    <section class="rr-subpanel">
+      <h3>3. Add Craft Features</h3>
+      <p>Tick construction features or add a reusable new fashion detail.</p>
+      <div id="artCaptionBuilder" class="rr-caption-builder"></div>
+      <input id="description" type="hidden">
+    </section>
+
+    <section class="rr-subpanel">
+      <details open>
+        <summary>
+          <span>4. Current Art Process Cost</span>
+          <small>Basic from Category · Extra for this Art</small>
+        </summary>
+
+        <div id="firstCategoryNotice" class="art-first-cost rr-hidden">
+          This Category has no Basic rates yet. The first Basic values saved here
+          will become its default Basic rates.
+        </div>
+
+        <div class="art-cost-table-wrap">
+          <table class="art-cost-table">
+            <thead>
+              <tr>
+                <th>Process</th>
+                <th>Basic</th>
+                <th>Extra</th>
+                <th>Total</th>
+              </tr>
+            </thead>
+            <tbody id="costRows"></tbody>
+          </table>
+        </div>
+
+        <div class="art-total-box">
+          <div><small>CURRENT PROCESS COST</small><strong id="makingTotal">₹0.00</strong></div>
+          <span>Owner/Admin only</span>
+        </div>
+      </details>
+    </section>
+
+    <p id="artMessage" class="rr-message"></p>
+    <button id="saveArtBtn" class="rr-btn art-save-btn" type="submit">Save Art</button>
+  </form>
+</section>
+
+<section class="rr-panel">
+  <div class="rr-panel-head">
+    <div><h2>Saved Arts</h2><p>Current Art cost is used by future Products.</p></div>
+    <button id="reloadArts" class="rr-btn rr-btn-secondary" type="button">Refresh</button>
+  </div>
+  <div id="artCards" class="art-card-grid">Loading...</div>
+</section>
+</main>
+
+<div id="categoryDialog" class="art-dialog-backdrop rr-hidden">
+  <form id="categoryForm" class="art-dialog">
+    <h3>Add Art Category</h3>
+    <label>Category Name *<input id="newCategoryName" required placeholder="Example: Oversized Polo"></label>
+    <label>Default Design Name<input id="newDefaultDesignName" placeholder="Example: Oversized Polo T-Shirt"></label>
+    <p>The first Basic cost entered for this Category will become its default.</p>
+    <div class="art-dialog-actions">
+      <button id="cancelCategory" class="rr-btn rr-btn-secondary" type="button">Cancel</button>
+      <button class="rr-btn" type="submit">Save Category</button>
+    </div>
+  </form>
+</div>
+
+<div id="imageActionSheet" class="art-action-sheet rr-hidden">
+  <div class="art-action-dialog">
+    <h3>Artwork Options</h3>
+    <p id="actionImageLabel"></p>
+    <button id="actionSetIcon" type="button">★ Set as Art Icon</button>
+    <button id="actionView" type="button">🔍 View Full Screen</button>
+    <button id="actionRemove" class="danger" type="button">🗑 Remove Reference</button>
+    <button id="actionCancel" class="secondary" type="button">Cancel</button>
+  </div>
+</div>
+
+<div id="mediaViewer" class="rz-viewer rr-hidden">
+  <button id="viewerClose" class="rz-viewer-close" type="button">×</button>
+  <div class="rz-viewer-toolbar">
+    <button id="viewerPrev" type="button">‹</button>
+    <button id="viewerZoomOut" type="button">−</button>
+    <button id="viewerReset" type="button">Reset</button>
+    <button id="viewerZoomIn" type="button">+</button>
+    <button id="viewerNext" type="button">›</button>
+  </div>
+  <div id="viewerStage" class="rz-viewer-stage"><img id="viewerImage" alt="Artwork preview"></div>
+  <div class="rz-viewer-caption"><h3 id="viewerTitle"></h3><p id="viewerText"></p></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+<script src="real-common.js?v=500"></script>
+<script src="real-caption-builder.js?v=500"></script>
+<script src="real-art-master.js?v=500"></script>
 </body>
 </html>
