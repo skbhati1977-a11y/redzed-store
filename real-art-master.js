@@ -44,6 +44,21 @@ const enableFastNumberInput=(root=document)=>{
   });
  });
 };
+
+const compactNumber=value=>{
+ const n=Number(value||0);
+ return Number.isFinite(n)?String(n):"0";
+};
+
+const normalizeNumberInputs=(root=document)=>{
+ root.querySelectorAll('input[type="number"]').forEach(input=>{
+  if(String(input.value??"").trim()!==""){
+   input.value=compactNumber(input.value);
+  }else{
+   input.value="0";
+  }
+ });
+};
 const rowInput=(code,type)=>document.querySelector(`[data-process="${code}"][data-kind="${type}"]`);
 
 function renderCostRows(basics={}){
@@ -51,11 +66,12 @@ function renderCostRows(basics={}){
   <tr>
    <td>${p.name}</td>
    <td><input data-process="${p.code}" data-kind="basic" type="number" step="0.01" min="0"
-      value="${Number(basics[p.code]||0)}" ${categoryHasCosts?"readonly":""}></td>
+      value="${compactNumber(basics[p.code])}" ${categoryHasCosts?"readonly":""}></td>
    <td><input data-process="${p.code}" data-kind="extra" type="number" step="0.01" value="0"></td>
    <td><strong data-process="${p.code}" data-kind="total">${money(basics[p.code]||0)}</strong></td>
   </tr>`).join("");
  document.querySelectorAll('#costRows input').forEach(i=>i.addEventListener("input",updateCostTotals));
+ normalizeNumberInputs($("costRows"));
  enableFastNumberInput($("costRows"));
  updateCostTotals();
 }
@@ -217,6 +233,6 @@ function openViewer(image){viewer=allImages();index=Math.max(0,viewer.findIndex(
 function openSavedViewer(id){const a=arts.find(x=>String(x.id)===String(id));viewer=mediaMap[String(id)]||[];if(!viewer.length)return;index=0;zoom=1;$("viewerTitle").textContent=`${a.art_no} · ${a.item_name||a.product_name||""}`;$("viewerText").textContent=a.caption_text||a.description||"";$("mediaViewer").classList.remove("rr-hidden");draw()}
 $("viewerClose").onclick=()=>$("mediaViewer").classList.add("rr-hidden");$("viewerZoomIn").onclick=()=>{zoom=Math.min(4,zoom+.25);draw()};$("viewerZoomOut").onclick=()=>{zoom=Math.max(.5,zoom-.25);draw()};$("viewerReset").onclick=()=>{zoom=1;draw()};$("viewerPrev").onclick=()=>{index=(index-1+viewer.length)%viewer.length;zoom=1;draw()};$("viewerNext").onclick=()=>{index=(index+1)%viewer.length;zoom=1;draw()};
 
-(async()=>{try{await RR.requireOwner();builder=new RRCaptionBuilder({masterType:"art",categoryInput:$("artCategory"),container:$("artCaptionBuilder"),outputInput:$("description")});await loadCategories();renderCostRows({});enableFastNumberInput(document);await builder.load();await loadData()}catch(e){console.error(e);say(e.message||"Art Master could not open.","error")}})();
+(async()=>{try{await RR.requireOwner();builder=new RRCaptionBuilder({masterType:"art",categoryInput:$("artCategory"),container:$("artCaptionBuilder"),outputInput:$("description")});await loadCategories();renderCostRows({});normalizeNumberInputs(document);enableFastNumberInput(document);await builder.load();await loadData()}catch(e){console.error(e);say(e.message||"Art Master could not open.","error")}})();
 })();
-  
+                                          
