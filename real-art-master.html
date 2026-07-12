@@ -5,9 +5,9 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>REDZED REAL — Final Art Master</title>
   <link rel="stylesheet" href="real-style.css?v=500">
-  <link rel="stylesheet" href="real-caption-builder.css?v=500">
-  <link rel="stylesheet" href="real-master-viewer.css?v=500">
-  <link rel="stylesheet" href="real-art-master-final.css?v=500">
+  <link rel="stylesheet" href="real-caption-builder.css?v=512">
+  <link rel="stylesheet" href="real-master-viewer.css?v=512">
+  <link rel="stylesheet" href="real-art-master-final.css?v=512">
 </head>
 <body>
 <header class="rr-topbar">
@@ -64,11 +64,6 @@
         <label>Design Name *
           <input id="itemName" required placeholder="Self Collar Polo">
         </label>
-
-        <label>Other Margin / Piece (₹)
-          <input id="defaultMargin" type="number" step="0.01" value="22">
-          <small>Future Products use the latest Art cost.</small>
-        </label>
       </div>
 
       <label>Factory Instructions (Internal Only)
@@ -115,6 +110,33 @@
           <span>Owner/Admin only</span>
         </div>
       </details>
+    </section>
+
+    <section class="rr-subpanel art-margin-section">
+      <h3>5. Other Margin</h3>
+      <p>Margin is kept last. Future Products use the latest Art cost and margin.</p>
+
+      <label>
+        Other Margin / Piece (₹)
+        <input id="defaultMargin" type="number" step="0.01" value="22">
+      </label>
+
+      <div class="art-final-cost-box">
+        <div>
+          <small>PROCESS COST</small>
+          <strong id="finalProcessCost">₹0.00</strong>
+        </div>
+        <span class="art-plus">+</span>
+        <div>
+          <small>OTHER MARGIN</small>
+          <strong id="finalMargin">₹22.00</strong>
+        </div>
+        <span class="art-equals">=</span>
+        <div class="art-final-highlight">
+          <small>FINAL ART COST</small>
+          <strong id="finalArtCost">₹22.00</strong>
+        </div>
+      </div>
     </section>
 
     <p id="artMessage" class="rr-message"></p>
@@ -170,8 +192,8 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="config.js"></script>
-<script src="real-common.js?v=500"></script>
-<script src="real-caption-builder.js?v=500"></script>
-<script src="real-art-master.js?v=500"></script>
+<script src="real-common.js?v=512"></script>
+<script src="real-caption-builder.js?v=512"></script>
+<script src="real-art-master.js?v=512"></script>
 </body>
 </html>
