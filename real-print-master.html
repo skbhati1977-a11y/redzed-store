@@ -4,9 +4,9 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>REDZED REAL — Print Master</title>
-  <link rel="stylesheet" href="real-style.css?v=600">
-  <link rel="stylesheet" href="real-master-viewer.css?v=600">
-  <link rel="stylesheet" href="real-print-master.css?v=600">
+  <link rel="stylesheet" href="real-style.css?v=610">
+  <link rel="stylesheet" href="real-master-viewer.css?v=610">
+  <link rel="stylesheet" href="real-print-master.css?v=610">
 </head>
 <body>
 <header class="rr-topbar">
@@ -78,6 +78,12 @@
         <button id="addFrameBtn" class="rr-btn rr-btn-secondary" type="button">+ Add Frame</button>
       </div>
 
+      <div class="frame-status-legend">
+        <span class="status-active">● Active</span>
+        <span class="status-remaking">● Remaking</span>
+        <span class="status-available">● Available</span>
+        <span class="status-retired">● Retired</span>
+      </div>
       <div id="frameRows" class="print-frame-rows"></div>
     </section>
 
@@ -88,7 +94,7 @@
 
 <section class="rr-panel">
   <div class="rr-panel-head">
-    <div><h2>Saved Prints</h2><p>Search by Print No, Print Name or Frame No.</p></div>
+    <div><h2>Saved Prints</h2><p>Universal search: Print No, Name, Frame No, Status or Short Note.</p></div>
     <button id="reloadPrints" class="rr-btn rr-btn-secondary" type="button">Refresh</button>
   </div>
 
@@ -125,7 +131,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="config.js"></script>
-<script src="real-common.js?v=600"></script>
-<script src="real-print-master.js?v=600"></script>
+<script src="real-common.js?v=610"></script>
+<script src="real-print-master.js?v=610"></script>
 </body>
 </html>
