@@ -176,9 +176,9 @@ function resetForm(){
 $("cancelEdit").onclick=resetForm;
 
 
-async function getFrameTransferConflicts(frames,currentPrintId){
+async function confirmFrameReassignments(frames,currentPrintId,newPrintNo){
  const frameNos=frames.map(x=>x.frame_no).filter(Boolean);
- if(!frameNos.length)return [];
+ if(!frameNos.length)return false;
 
  const {data:frameRows,error:frameError}=await supabaseClient
   .from("rr_print_frames")
@@ -192,10 +192,9 @@ async function getFrameTransferConflicts(frames,currentPrintId){
   String(row.print_id)!==String(currentPrintId||"")
  );
 
- if(!conflicts.length)return [];
+ if(!conflicts.length)return false;
 
- const printIds=[...new Set(conflicts.map(x=>x.print_id))];
-
+ const printIds=[...new Set(conflicts.map(row=>row.print_id))];
  const {data:printRows,error:printError}=await supabaseClient
   .from("rr_print_master")
   .select("id,print_no,print_name")
@@ -204,41 +203,28 @@ async function getFrameTransferConflicts(frames,currentPrintId){
  if(printError)throw printError;
 
  const printMap=Object.fromEntries(
-  (printRows||[]).map(p=>[String(p.id),p])
+  (printRows||[]).map(print=>[String(print.id),print])
  );
 
- return conflicts.map(row=>({
-  ...row,
-  oldPrint:printMap[String(row.print_id)]||{}
- }));
-}
-
-async function confirmFrameReassignments(frames,currentPrintId,newPrintNo){
- const conflicts=await getFrameTransferConflicts(frames,currentPrintId);
- if(!conflicts.length)return false;
-
- const details=conflicts.map(row=>{
-  const oldNo=row.oldPrint.print_no||"another Print";
-  const oldName=row.oldPrint.print_name?` · ${row.oldPrint.print_name}`:"";
+ const lines=conflicts.map(row=>{
+  const oldPrint=printMap[String(row.print_id)]||{};
+  const oldNo=oldPrint.print_no||"another Print";
+  const oldName=oldPrint.print_name?` · ${oldPrint.print_name}`:"";
   return `Frame ${row.frame_no} is already assigned to ${oldNo}${oldName}`;
- }).join("
-");
+ });
 
  const ok=confirm(
-  `DUPLICATE FRAME WARNING
-
-${details}
-
-` +
-  `Transfer this Frame to ${newPrintNo}?
-
-` +
-  `Yes = remove from old Print and assign here
-` +
-  `Cancel = do not save`
+  "DUPLICATE FRAME WARNING\n\n" +
+  lines.join("\n") +
+  "\n\n" +
+  `Transfer this Frame to ${newPrintNo}?\n\n` +
+  "OK = remove from old Print and assign here\n" +
+  "Cancel = do not save"
  );
 
- if(!ok)throw new Error("Frame transfer cancelled. Nothing was changed.");
+ if(!ok){
+  throw new Error("Frame transfer cancelled. Nothing was changed.");
+ }
 
  return true;
 }
@@ -261,12 +247,11 @@ form.onsubmit=async e=>{
    p_allow_reassign:allowFrameTransfer
   });
   if(fr.error){
-   const msg=String(fr.error.message||"");
-   if(msg.includes("FRAME_TRANSFER_REQUIRED")){
-    const parts=msg.split("|");
+   const message=String(fr.error.message||"");
+   if(message.includes("FRAME_TRANSFER_REQUIRED")){
+    const parts=message.split("|");
     throw new Error(
-     `Frame ${parts[1]||""} is already assigned to ${parts[2]||"another Print"}. ` +
-     `Transfer confirmation is required.`
+     `Frame ${parts[1]||""} is already assigned to ${parts[2]||"another Print"}. Transfer confirmation is required.`
     );
    }
    throw fr.error;
