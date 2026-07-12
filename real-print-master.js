@@ -176,57 +176,35 @@ function resetForm(){
 $("cancelEdit").onclick=resetForm;
 
 
-async function confirmFrameReassignments(frames,currentPrintId,newPrintNo){
+async function confirmFrameReassignments(frames,currentPrintId){
  const frameNos=frames.map(x=>x.frame_no).filter(Boolean);
- if(!frameNos.length)return false;
+ if(!frameNos.length)return;
 
- const {data:frameRows,error:frameError}=await supabaseClient
+ const {data,error}=await supabaseClient
   .from("rr_print_frames")
-  .select("frame_no,print_id,frame_status")
+  .select("frame_no,print_id,frame_status,rr_print_master!rr_print_frames_print_id_fkey(print_no,print_name)")
   .in("frame_no",frameNos);
 
- if(frameError)throw frameError;
+ if(error)throw error;
 
- const conflicts=(frameRows||[]).filter(row=>
+ const conflicts=(data||[]).filter(row=>
   row.print_id &&
   String(row.print_id)!==String(currentPrintId||"")
  );
 
- if(!conflicts.length)return false;
-
- const printIds=[...new Set(conflicts.map(row=>row.print_id))];
- const {data:printRows,error:printError}=await supabaseClient
-  .from("rr_print_master")
-  .select("id,print_no,print_name")
-  .in("id",printIds);
-
- if(printError)throw printError;
-
- const printMap=Object.fromEntries(
-  (printRows||[]).map(print=>[String(print.id),print])
- );
+ if(!conflicts.length)return;
 
  const lines=conflicts.map(row=>{
-  const oldPrint=printMap[String(row.print_id)]||{};
-  const oldNo=oldPrint.print_no||"another Print";
-  const oldName=oldPrint.print_name?` · ${oldPrint.print_name}`:"";
-  return `Frame ${row.frame_no} is already assigned to ${oldNo}${oldName}`;
+  const p=row.rr_print_master||{};
+  return `${row.frame_no} is assigned to ${p.print_no||"another Print"}${p.print_name?` · ${p.print_name}`:""}`;
  });
 
  const ok=confirm(
-  "DUPLICATE FRAME WARNING\n\n" +
   lines.join("\n") +
-  "\n\n" +
-  `Transfer this Frame to ${newPrintNo}?\n\n` +
-  "OK = remove from old Print and assign here\n" +
-  "Cancel = do not save"
+  "\n\nReassign these Frame(s) to this Print?"
  );
 
- if(!ok){
-  throw new Error("Frame transfer cancelled. Nothing was changed.");
- }
-
- return true;
+ if(!ok)throw new Error("Frame reassignment cancelled");
 }
 
 form.onsubmit=async e=>{
@@ -237,25 +215,11 @@ form.onsubmit=async e=>{
   if(prints.some(p=>String(p.print_no||"").trim().toUpperCase()===no&&String(p.id)!==String(id||"")))throw new Error(`Print No ${no} already exists`);
   const frames=getFrameRows();if(frames.length!==colours)throw new Error(`Design has ${colours} colour(s), so enter exactly ${colours} Frame No(s)`);
   const dup=frames.map(x=>x.frame_no).find((x,i,a)=>a.indexOf(x)!==i);if(dup)throw new Error(`Duplicate Frame No: ${dup}`);
-  const allowFrameTransfer=await confirmFrameReassignments(frames,id,no);
+  await confirmFrameReassignments(frames,id);
 
   const payload={print_no:no,print_name:name,design_colours:colours,short_note:$("shortNote").value.trim(),is_active:true};
   const r=id?await supabaseClient.from("rr_print_master").update(payload).eq("id",id).select().single():await supabaseClient.from("rr_print_master").insert(payload).select().single();if(r.error)throw r.error;
-  const fr=await supabaseClient.rpc("rr_save_print_frames",{
-   p_print_id:r.data.id,
-   p_rows:frames,
-   p_allow_reassign:allowFrameTransfer
-  });
-  if(fr.error){
-   const message=String(fr.error.message||"");
-   if(message.includes("FRAME_TRANSFER_REQUIRED")){
-    const parts=message.split("|");
-    throw new Error(
-     `Frame ${parts[1]||""} is already assigned to ${parts[2]||"another Print"}. Transfer confirmation is required.`
-    );
-   }
-   throw fr.error;
-  }
+  const fr=await supabaseClient.rpc("rr_save_print_frames",{p_print_id:r.data.id,p_rows:frames});if(fr.error)throw fr.error;
   const uploaded=[];for(const item of queued){const media=await RR.uploadMedia({file:item.file,entityType:"printing",entityId:r.data.id,mediaCategory:"print",sourceType:item.sourceType,visibilityScope:"factory",caption:`${r.data.print_no} print image`});uploaded.push({tempId:item.tempId,media})}
   const iconId=selectedIcon?.type==="saved"?selectedIcon.id:uploaded.find(x=>x.tempId===selectedIcon?.id)?.media?.id;
   if(iconId){await supabaseClient.from("rr_media").update({is_cover:false}).eq("entity_type","printing").eq("entity_id",r.data.id);await supabaseClient.from("rr_media").update({is_cover:true}).eq("id",iconId)}
