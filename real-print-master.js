@@ -7,6 +7,16 @@ const form=$("printForm"),message=$("printMessage"),cards=$("printCards");
 const say=(text,type="")=>{message.textContent=text||"";message.className=`rr-message ${type}`.trim()};
 const compactNumber=value=>{const n=Number(value||0);return Number.isFinite(n)?String(n):"0"};
 
+const statusMeta=status=>{
+ const key=String(status||"active").toLowerCase();
+ return {
+  active:{label:"Active",className:"status-active"},
+  remaking:{label:"Remaking",className:"status-remaking"},
+  available:{label:"Available",className:"status-available"},
+  retired:{label:"Retired",className:"status-retired"}
+ }[key]||{label:key,className:"status-available"};
+};
+
 const enableFastNumberInput=(root=document)=>{
  root.querySelectorAll('input[type="number"]').forEach(input=>{
   if(input.dataset.fastNumberReady==="1")return;
@@ -84,7 +94,16 @@ function frameRow(data={}){
  const row=document.createElement("div");
  row.className="print-frame-row";
  row.innerHTML=`<input class="frame-no" placeholder="Frame No" value="${RR.safeText(data.frame_no||"")}"><select class="frame-status"><option value="active">Active</option><option value="remaking">Remaking</option><option value="retired">Retired</option><option value="available">Available</option></select><input class="frame-note" placeholder="Optional note" value="${RR.safeText(data.note||"")}"><button class="frame-remove" type="button">×</button>`;
- row.querySelector(".frame-status").value=data.frame_status||"active";
+ const statusSelect=row.querySelector(".frame-status");
+ statusSelect.value=data.frame_status||"active";
+
+ const paintStatus=()=>{
+  row.classList.remove("status-active-row","status-remaking-row","status-available-row","status-retired-row");
+  row.classList.add(`status-${statusSelect.value}-row`);
+ };
+ statusSelect.addEventListener("change",paintStatus);
+ paintStatus();
+
  row.querySelector(".frame-remove").onclick=()=>row.remove();
  return row;
 }
@@ -101,18 +120,38 @@ function getFrameRows(){
 }
 
 async function loadData(){
- const btn=$("reloadPrints");btn.disabled=true;btn.textContent="Loading...";
- const [p,m]=await Promise.all([supabaseClient.from("rr_print_library_view").select("*").order("updated_at",{ascending:false}),RR.getMediaMap("printing","print")]);
- btn.disabled=false;btn.textContent="Refresh";
- if(p.error)throw p.error;prints=p.data||[];mediaMap=m||{};renderCards();
+ const btn=$("reloadPrints");
+ btn.disabled=true;
+ btn.textContent="Loading...";
+ try{
+  const [p,m]=await Promise.all([
+   supabaseClient.from("rr_print_library_view").select("*").order("updated_at",{ascending:false}),
+   RR.getMediaMap("printing","print")
+  ]);
+  if(p.error)throw p.error;
+  prints=p.data||[];
+  mediaMap=m||{};
+  renderCards();
+ }finally{
+  btn.disabled=false;
+  btn.textContent="Refresh";
+ }
 }
 
 function renderCards(){
  const q=$("printSearch").value.trim().toLowerCase();
  const list=prints.filter(p=>`${p.print_no} ${p.print_name} ${p.short_note||""} ${(p.frames||[]).map(f=>`${f.frame_no} ${f.frame_status}`).join(" ")}`.toLowerCase().includes(q));
  cards.innerHTML=list.length?list.map(p=>{
-  const imgs=mediaMap[String(p.id)]||[],icon=imgs.find(x=>x.is_cover)||imgs[0],active=(p.frames||[]).filter(f=>f.frame_status==="active");
-  return `<article class="print-master-card"><button class="print-card-image" data-view="${p.id}">${icon?`<img src="${RR.safeText(icon.file_url)}"><span class="print-card-icon-badge">★ ICON</span>`:'<div class="print-placeholder">PRINT</div>'}</button><div class="print-card-body"><small>${compactNumber(p.design_colours)} Colour${Number(p.design_colours)===1?"":"s"}</small><h3>${RR.safeText(p.print_no)} · ${RR.safeText(p.print_name||"")}</h3><div class="print-frame-badges">${active.map(f=>`<span>${RR.safeText(f.frame_no)}</span>`).join("")}</div><p>${RR.safeText(p.short_note||"")}</p><button class="rr-btn rr-btn-secondary" data-edit="${p.id}">Edit</button></div></article>`;
+  const imgs=mediaMap[String(p.id)]||[],icon=imgs.find(x=>x.is_cover)||imgs[0];
+  return `<article class="print-master-card"><button class="print-card-image" data-view="${p.id}">${icon?`<img src="${RR.safeText(icon.file_url)}"><span class="print-card-icon-badge">★ ICON</span>`:'<div class="print-placeholder">PRINT</div>'}</button><div class="print-card-body"><small>${compactNumber(p.design_colours)} Colour${Number(p.design_colours)===1?"":"s"}</small><h3>${RR.safeText(p.print_no)} · ${RR.safeText(p.print_name||"")}</h3><div class="print-card-summary">
+        <span class="print-count-badge">🎨 ${compactNumber(p.design_colours)} Colour${Number(p.design_colours)===1?"":"s"}</span>
+        <span class="print-count-badge">🖼 ${(p.frames||[]).length} Frame${(p.frames||[]).length===1?"":"s"}</span>
+       </div>
+       <div class="print-frame-badges">${(p.frames||[]).map(f=>{
+        const meta=statusMeta(f.frame_status);
+        return `<span class="${meta.className}">${RR.safeText(f.frame_no)} · ${meta.label}</span>`;
+       }).join("")}</div>
+       <p>${RR.safeText(p.short_note||"")}</p><button class="rr-btn rr-btn-secondary" data-edit="${p.id}">Edit</button></div></article>`;
  }).join(""):"<p>No Print found.</p>";
  cards.querySelectorAll("[data-edit]").forEach(b=>b.onclick=()=>editPrint(b.dataset.edit));
  cards.querySelectorAll("[data-view]").forEach(b=>b.onclick=()=>openSavedViewer(b.dataset.view));
@@ -136,6 +175,38 @@ function resetForm(){
 }
 $("cancelEdit").onclick=resetForm;
 
+
+async function confirmFrameReassignments(frames,currentPrintId){
+ const frameNos=frames.map(x=>x.frame_no).filter(Boolean);
+ if(!frameNos.length)return;
+
+ const {data,error}=await supabaseClient
+  .from("rr_print_frames")
+  .select("frame_no,print_id,frame_status,rr_print_master!rr_print_frames_print_id_fkey(print_no,print_name)")
+  .in("frame_no",frameNos);
+
+ if(error)throw error;
+
+ const conflicts=(data||[]).filter(row=>
+  row.print_id &&
+  String(row.print_id)!==String(currentPrintId||"")
+ );
+
+ if(!conflicts.length)return;
+
+ const lines=conflicts.map(row=>{
+  const p=row.rr_print_master||{};
+  return `${row.frame_no} is assigned to ${p.print_no||"another Print"}${p.print_name?` · ${p.print_name}`:""}`;
+ });
+
+ const ok=confirm(
+  lines.join("\n") +
+  "\n\nReassign these Frame(s) to this Print?"
+ );
+
+ if(!ok)throw new Error("Frame reassignment cancelled");
+}
+
 form.onsubmit=async e=>{
  e.preventDefault();const btn=$("savePrintBtn");btn.disabled=true;btn.textContent="Saving...";say("");
  try{
@@ -144,6 +215,8 @@ form.onsubmit=async e=>{
   if(prints.some(p=>String(p.print_no||"").trim().toUpperCase()===no&&String(p.id)!==String(id||"")))throw new Error(`Print No ${no} already exists`);
   const frames=getFrameRows();if(frames.length!==colours)throw new Error(`Design has ${colours} colour(s), so enter exactly ${colours} Frame No(s)`);
   const dup=frames.map(x=>x.frame_no).find((x,i,a)=>a.indexOf(x)!==i);if(dup)throw new Error(`Duplicate Frame No: ${dup}`);
+  await confirmFrameReassignments(frames,id);
+
   const payload={print_no:no,print_name:name,design_colours:colours,short_note:$("shortNote").value.trim(),is_active:true};
   const r=id?await supabaseClient.from("rr_print_master").update(payload).eq("id",id).select().single():await supabaseClient.from("rr_print_master").insert(payload).select().single();if(r.error)throw r.error;
   const fr=await supabaseClient.rpc("rr_save_print_frames",{p_print_id:r.data.id,p_rows:frames});if(fr.error)throw fr.error;
