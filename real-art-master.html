@@ -5,9 +5,9 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>REDZED REAL — Final Art Master</title>
   <link rel="stylesheet" href="real-style.css?v=500">
-  <link rel="stylesheet" href="real-caption-builder.css?v=521">
-  <link rel="stylesheet" href="real-master-viewer.css?v=521">
-  <link rel="stylesheet" href="real-art-master-final.css?v=521">
+  <link rel="stylesheet" href="real-caption-builder.css?v=530">
+  <link rel="stylesheet" href="real-master-viewer.css?v=530">
+  <link rel="stylesheet" href="real-art-master-final.css?v=530">
 </head>
 <body>
 <header class="rr-topbar">
@@ -30,7 +30,7 @@
 
     <section class="rr-subpanel art-image-first">
       <h3>1. Artwork Images *</h3>
-      <p>Tap to preview. Long press to set icon or remove reference.</p>
+      <p>Tap image to preview. Press and hold for Icon or Remove. At least one Artwork image is required for a new Art.</p>
       <div class="art-upload-row">
         <label class="rr-btn rr-btn-secondary">📷 Camera
           <input id="cameraFiles" type="file" accept="image/*" capture="environment" multiple hidden>
@@ -81,7 +81,7 @@
 
     <section class="rr-subpanel">
       <details open>
-        <summary>
+        <summary class="art-cost-summary">
           <span>4. Current Art Process Cost</span>
           <small>Basic from Category · Extra for this Art</small>
         </summary>
@@ -146,7 +146,7 @@
 
 <section class="rr-panel">
   <div class="rr-panel-head">
-    <div><h2>Saved Arts</h2><p>Current Art cost is used by future Products.</p></div>
+    <div><h2>Saved Arts</h2><p>Future Products use the latest saved Art cost. Existing Products remain unchanged.</p></div>
     <button id="reloadArts" class="rr-btn rr-btn-secondary" type="button">Refresh</button>
   </div>
   <div id="artCards" class="art-card-grid">Loading...</div>
@@ -192,8 +192,8 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="config.js"></script>
-<script src="real-common.js?v=521"></script>
-<script src="real-caption-builder.js?v=521"></script>
-<script src="real-art-master.js?v=521"></script>
+<script src="real-common.js?v=530"></script>
+<script src="real-caption-builder.js?v=530"></script>
+<script src="real-art-master.js?v=530"></script>
 </body>
 </html>
