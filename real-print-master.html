@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>REDZED REAL — Print Master</title>
+  <link rel="stylesheet" href="real-style.css?v=310">
+  <link rel="stylesheet" href="real-print-master.css?v=310">
+  <link rel="stylesheet" href="real-caption-builder.css?v=310">
+  <link rel="stylesheet" href="real-master-viewer.css?v=310">
+</head>
+<body>
+<header class="rr-topbar"><div><small class="rr-kicker">REDZED REAL</small><h1>Print Master</h1></div><a class="rr-btn rr-btn-secondary" href="real-dashboard.html">Dashboard</a></header>
+<main class="rr-page">
+<section class="prm-toolbar"><div><h2>Print Library</h2><p>First Print Image becomes the Print icon automatically.</p></div><button id="newPrintBtn" class="rr-btn" type="button">+ Add Print</button></section>
+<section id="printEditor" class="rr-panel prm-hidden">
+<div class="prm-panel-head"><div><h2 id="editorTitle">Add Print</h2><p>Print image, costing, frames and department captions.</p></div><button id="closeEditorBtn" class="rr-btn rr-btn-secondary" type="button">Close</button></div>
+<form id="printForm" class="rr-form"><input id="printId" type="hidden">
+<div class="prm-grid-2">
+<label>Print No *<input id="printNo" required placeholder="P105"></label>
+<label>Print Name *<input id="printName" required placeholder="Front Chest HD"></label>
+<label>Frame Base *<input id="frameBase" required placeholder="105"></label>
+<label>Colours *<input id="colours" type="number" min="1" value="1"></label>
+<label>Placement<select id="placement"><option>Front</option><option>Front Chest</option><option>Center Front</option><option>Back</option><option>Center Back</option><option>Sleeve</option><option>Collar</option><option>Pocket</option><option>Other</option></select></label>
+<label>Print Type<select id="printType"><option>Screen Print</option><option>HD Print</option><option>Puff Print</option><option>Rubber Print</option><option>Discharge Print</option><option>DTF</option><option>Foil</option><option>Flock</option><option>Reflective</option><option>Other</option></select></label>
+<label>Rate per Colour (₹)<input id="ratePerColour" type="number" min="0" step="0.01" value="5"></label>
+<label>Auto Print Cost<input id="printCost" readonly></label>
+</div>
+<div class="prm-frame-box"><div><small>AUTO FRAMES</small><strong id="frameSummary"></strong></div><p>Base + A/B/C automatic suffixes.</p></div>
+<label>Print Notes<textarea id="notes" rows="3"></textarea></label>
+<div id="printCaptionBuilder" class="rr-caption-builder"></div>
+<section class="prm-upload-card"><h3>Print Images</h3><p>The first saved Print Image becomes the icon. No separate icon upload.</p>
+<div class="prm-upload-actions"><label class="rr-btn rr-btn-secondary">📷 Camera<input id="printCamera" type="file" accept="image/*" capture="environment" multiple></label><label class="rr-btn rr-btn-secondary">🖼 Gallery<input id="printGallery" type="file" accept="image/*" multiple></label></div>
+<div id="printImagePreview" class="rz-media-grid"></div></section>
+<p id="printMessage" class="rr-message"></p><button id="savePrintBtn" class="rr-btn prm-save" type="submit">Save Print</button>
+</form></section>
+<section class="rr-panel"><div class="prm-panel-head"><div><h2>Saved Prints</h2><p>Image, Print No or name से search करें।</p></div><button id="refreshBtn" class="rr-btn rr-btn-secondary">Refresh</button></div>
+<input id="searchInput" class="prm-search" type="search" placeholder="Search P105, HD, front..."><div id="printCards" class="prm-card-grid">Loading...</div></section>
+</main>
+<div id="mediaViewer" class="rz-viewer rr-hidden"><button id="viewerClose" class="rz-viewer-close">×</button><div class="rz-viewer-toolbar"><button id="viewerPrev">‹</button><button id="viewerZoomOut">−</button><button id="viewerReset">Reset</button><button id="viewerZoomIn">+</button><button id="viewerNext">›</button></div><div id="viewerStage" class="rz-viewer-stage"><img id="viewerImage"></div><div class="rz-viewer-caption"><h3 id="viewerTitle"></h3><p id="viewerText"></p></div></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="config.js"></script><script src="real-common.js?v=310"></script><script src="real-caption-builder.js?v=310"></script><script src="real-print-master.js?v=310"></script>
+</body></html>
