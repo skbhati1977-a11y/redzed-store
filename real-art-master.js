@@ -20,6 +20,30 @@ const form=$("artForm"),message=$("artMessage"),cards=$("artCards");
 
 const say=(t,k="")=>{message.textContent=t||"";message.className=`rr-message ${k}`.trim()};
 const money=v=>RR.money(Number(v||0));
+
+const enableFastNumberInput=(root=document)=>{
+ root.querySelectorAll('input[type="number"]').forEach(input=>{
+  if(input.dataset.fastNumberReady==="1")return;
+  input.dataset.fastNumberReady="1";
+
+  input.addEventListener("focus",()=>{
+   const value=String(input.value??"").trim();
+   if(value==="0"||value==="0.0"||value==="0.00"){
+    input.value="";
+    input.dispatchEvent(new Event("input",{bubbles:true}));
+   }else{
+    setTimeout(()=>input.select?.(),0);
+   }
+  });
+
+  input.addEventListener("blur",()=>{
+   if(String(input.value??"").trim()===""){
+    input.value="0";
+    input.dispatchEvent(new Event("input",{bubbles:true}));
+   }
+  });
+ });
+};
 const rowInput=(code,type)=>document.querySelector(`[data-process="${code}"][data-kind="${type}"]`);
 
 function renderCostRows(basics={}){
@@ -27,11 +51,12 @@ function renderCostRows(basics={}){
   <tr>
    <td>${p.name}</td>
    <td><input data-process="${p.code}" data-kind="basic" type="number" step="0.01" min="0"
-      value="${Number(basics[p.code]||0).toFixed(2)}" ${categoryHasCosts?"readonly":""}></td>
-   <td><input data-process="${p.code}" data-kind="extra" type="number" step="0.01" value="0.00"></td>
+      value="${Number(basics[p.code]||0)}" ${categoryHasCosts?"readonly":""}></td>
+   <td><input data-process="${p.code}" data-kind="extra" type="number" step="0.01" value="0"></td>
    <td><strong data-process="${p.code}" data-kind="total">${money(basics[p.code]||0)}</strong></td>
   </tr>`).join("");
  document.querySelectorAll('#costRows input').forEach(i=>i.addEventListener("input",updateCostTotals));
+ enableFastNumberInput($("costRows"));
  updateCostTotals();
 }
 function costRows(){
@@ -48,7 +73,11 @@ function updateCostTotals(){
   const out=document.querySelector(`[data-process="${p.code}"][data-kind="total"]`);
   if(out)out.textContent=money(t);grand+=t;
  }
+ const margin=Number($("defaultMargin")?.value||0);
  $("makingTotal").textContent=money(grand);
+ if($("finalProcessCost"))$("finalProcessCost").textContent=money(grand);
+ if($("finalMargin"))$("finalMargin").textContent=money(margin);
+ if($("finalArtCost"))$("finalArtCost").textContent=money(grand+margin);
 }
 
 async function loadCategories(selected=""){
@@ -69,6 +98,7 @@ async function loadCategoryCosts(id){
  if(c?.default_design_name&&!$("itemName").value.trim())$("itemName").value=c.default_design_name;
 }
 $("artCategory").onchange=()=>loadCategoryCosts($("artCategory").value).catch(e=>say(e.message,"error"));
+$("defaultMargin").addEventListener("input",updateCostTotals);
 
 $("addCategoryBtn").onclick=()=>$("categoryDialog").classList.remove("rr-hidden");
 $("cancelCategory").onclick=()=>$("categoryDialog").classList.add("rr-hidden");
@@ -160,7 +190,7 @@ async function editArt(id){
  $("formTitle").textContent=`Edit ${a.art_no}`;$("saveArtBtn").textContent="Update Art";$("cancelEdit").classList.remove("rr-hidden");scrollTo({top:0,behavior:"smooth"});
 }
 function reset(){
- form.reset();$("artId").value="";$("defaultMargin").value=22;queued=[];selectedIcon=null;$("imagePreview").innerHTML="";$("iconStatus").innerHTML='<span class="art-icon-star">★</span><div><small>ART ICON</small><strong>No icon selected</strong></div>';$("formTitle").textContent="Add New Art";$("saveArtBtn").textContent="Save Art";$("cancelEdit").classList.add("rr-hidden");builder?.load();categoryHasCosts=false;renderCostRows({});
+ form.reset();$("artId").value="";$("defaultMargin").value=22;queued=[];selectedIcon=null;$("imagePreview").innerHTML="";$("iconStatus").innerHTML='<span class="art-icon-star">★</span><div><small>ART ICON</small><strong>No icon selected</strong></div>';$("formTitle").textContent="Add New Art";$("saveArtBtn").textContent="Save Art";$("cancelEdit").classList.add("rr-hidden");builder?.load();categoryHasCosts=false;renderCostRows({});updateCostTotals();
 }
 $("cancelEdit").onclick=reset;
 
@@ -187,5 +217,6 @@ function openViewer(image){viewer=allImages();index=Math.max(0,viewer.findIndex(
 function openSavedViewer(id){const a=arts.find(x=>String(x.id)===String(id));viewer=mediaMap[String(id)]||[];if(!viewer.length)return;index=0;zoom=1;$("viewerTitle").textContent=`${a.art_no} · ${a.item_name||a.product_name||""}`;$("viewerText").textContent=a.caption_text||a.description||"";$("mediaViewer").classList.remove("rr-hidden");draw()}
 $("viewerClose").onclick=()=>$("mediaViewer").classList.add("rr-hidden");$("viewerZoomIn").onclick=()=>{zoom=Math.min(4,zoom+.25);draw()};$("viewerZoomOut").onclick=()=>{zoom=Math.max(.5,zoom-.25);draw()};$("viewerReset").onclick=()=>{zoom=1;draw()};$("viewerPrev").onclick=()=>{index=(index-1+viewer.length)%viewer.length;zoom=1;draw()};$("viewerNext").onclick=()=>{index=(index+1)%viewer.length;zoom=1;draw()};
 
-(async()=>{try{await RR.requireOwner();builder=new RRCaptionBuilder({masterType:"art",categoryInput:$("artCategory"),container:$("artCaptionBuilder"),outputInput:$("description")});await loadCategories();renderCostRows({});await builder.load();await loadData()}catch(e){console.error(e);say(e.message||"Art Master could not open.","error")}})();
+(async()=>{try{await RR.requireOwner();builder=new RRCaptionBuilder({masterType:"art",categoryInput:$("artCategory"),container:$("artCaptionBuilder"),outputInput:$("description")});await loadCategories();renderCostRows({});enableFastNumberInput(document);await builder.load();await loadData()}catch(e){console.error(e);say(e.message||"Art Master could not open.","error")}})();
 })();
+  
