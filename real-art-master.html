@@ -6,11 +6,12 @@
   <title>REDZED REAL — Art Master</title>
   <link rel="stylesheet" href="real-style.css?v=310">
   <link rel="stylesheet" href="real-caption-builder.css?v=310">
+  <link rel="stylesheet" href="real-master-viewer.css?v=310">
 </head>
-<body class="rr-body">
+<body>
   <header class="rr-topbar">
     <div>
-      <p class="rr-kicker">REDZED REAL</p>
+      <small class="rr-kicker">REDZED REAL</small>
       <h1>Art Master</h1>
     </div>
     <a class="rr-btn rr-btn-secondary" href="real-dashboard.html">Dashboard</a>
@@ -21,7 +22,7 @@
       <div class="rr-panel-head">
         <div>
           <h2 id="formTitle">Add Art</h2>
-          <p class="rr-muted">Artwork images, smart captions, process cost and Other Margin.</p>
+          <p>Artwork images, construction captions, process cost and other margin.</p>
         </div>
         <button id="cancelEdit" class="rr-btn rr-btn-secondary rr-hidden" type="button">Cancel Edit</button>
       </div>
@@ -29,14 +30,14 @@
       <form id="artForm" class="rr-form">
         <input id="artId" type="hidden">
 
-        <div class="rr-form-grid rr-form">
+        <div class="rz-grid-2">
           <label>
             Art No *
-            <input id="artNo" required autocomplete="off" placeholder="Example: RA60">
+            <input id="artNo" required placeholder="RA60" autocomplete="off">
           </label>
 
           <label>
-            Art Category *
+            Design Category *
             <select id="designCategory" required>
               <option value="">Select category</option>
               <option>R.NK / Crew Neck</option>
@@ -51,114 +52,110 @@
           </label>
 
           <label>
-            Art Name *
-            <input id="itemName" required list="artNameSuggestions"
-                   placeholder="Example: Self Collar Polo">
-            <datalist id="artNameSuggestions">
+            Design Name *
+            <input id="itemName" required list="designNameSuggestions" placeholder="Self Collar Polo">
+            <datalist id="designNameSuggestions">
               <option value="Crew Neck T-Shirt">
               <option value="Drop Shoulder T-Shirt">
               <option value="Self Collar Polo">
               <option value="Flat Polo">
               <option value="Hoodie">
-              <option value="Pre Winter Sweatshirt">
-              <option value="Nikkar / Shorts / Bermuda">
-              <option value="Lower / Pajama">
+              <option value="Sweatshirt">
+              <option value="Nikkar">
+              <option value="Shorts">
+              <option value="Bermuda">
+              <option value="Lower">
+              <option value="Pajama">
             </datalist>
           </label>
 
-          <label class="rr-span-2">
-            Art Notes
-            <textarea id="description" rows="3"
-                      placeholder="Construction or special design notes"></textarea>
-          </label>
-        </div>
-
-        <div id="artCaptionBuilder" class="rr-caption-builder"></div>
-
-        <section class="rr-section-title">
-          <h3>Artwork Images</h3>
-          <p>पहली saved artwork image अपने आप Art Icon बनेगी।</p>
-        </section>
-
-        <div class="rr-upload-row">
-          <label class="rr-upload-btn">
-            📷 Camera
-            <input id="cameraFiles" type="file" accept="image/*" capture="environment" multiple>
-          </label>
-          <label class="rr-upload-btn">
-            🖼 Gallery
-            <input id="galleryFiles" type="file" accept="image/*" multiple>
-          </label>
-          <span id="selectedFiles" class="rr-muted">No new images selected</span>
-        </div>
-
-        <div id="imagePreview" class="rr-image-strip"></div>
-
-        <section class="rr-section-title">
-          <h3>Process Cost</h3>
-          <p>Owner/Admin only. Total updates automatically.</p>
-        </section>
-
-        <div class="rr-cost-grid">
-          <label>Cut<input id="cutCost" type="number" min="0" step="0.01"></label>
-          <label>Print<input id="printCost" type="number" min="0" step="0.01"></label>
-          <label>Sticker<input id="stickerCost" type="number" min="0" step="0.01"></label>
-          <label>KR<input id="krCost" type="number" min="0" step="0.01"></label>
-          <label>OV<input id="ovCost" type="number" min="0" step="0.01"></label>
-          <label>FLD<input id="fldCost" type="number" min="0" step="0.01"></label>
-          <label>Thread Cut<input id="threadCutCost" type="number" min="0" step="0.01"></label>
-          <label>Press<input id="pressCost" type="number" min="0" step="0.01"></label>
-          <label>Pack<input id="packCost" type="number" min="0" step="0.01"></label>
-          <label>Others<input id="otherCost" type="number" min="0" step="0.01"></label>
-        </div>
-
-        <div class="rr-price-band">
           <label>
             Other Margin / Piece (₹)
-            <input id="defaultMargin" type="number" step="0.01">
+            <input id="defaultMargin" type="number" step="0.01" value="22">
           </label>
-          <div>
+        </div>
+
+        <label>
+          Design Notes
+          <textarea id="designNotes" rows="3" placeholder="Construction or factory notes"></textarea>
+        </label>
+
+        <div id="artCaptionBuilder" class="rr-caption-builder"></div>
+        <input id="description" type="hidden">
+
+        <section class="rr-subpanel">
+          <h3>Artwork Images</h3>
+          <p>The first saved artwork image becomes the Art icon automatically.</p>
+          <div class="rz-upload-row">
+            <label class="rr-btn rr-btn-secondary">📷 Camera
+              <input id="cameraFiles" type="file" accept="image/*" capture="environment" multiple hidden>
+            </label>
+            <label class="rr-btn rr-btn-secondary">🖼 Gallery
+              <input id="galleryFiles" type="file" accept="image/*" multiple hidden>
+            </label>
+            <span id="selectedFiles">No new images selected</span>
+          </div>
+          <div id="imagePreview" class="rz-media-grid"></div>
+        </section>
+
+        <section class="rr-subpanel">
+          <h3>Process Cost</h3>
+          <p>Owner/Admin only. Total updates automatically.</p>
+          <div class="rz-grid-2">
+            <label>Cut <input id="cutCost" type="number" step="0.01"></label>
+            <label>Print <input id="printCost" type="number" step="0.01"></label>
+            <label>Sticker <input id="stickerCost" type="number" step="0.01"></label>
+            <label>KR <input id="krCost" type="number" step="0.01"></label>
+            <label>OV <input id="ovCost" type="number" step="0.01"></label>
+            <label>FLD <input id="fldCost" type="number" step="0.01"></label>
+            <label>Thread Cut <input id="threadCutCost" type="number" step="0.01"></label>
+            <label>Press <input id="pressCost" type="number" step="0.01"></label>
+            <label>Pack <input id="packCost" type="number" step="0.01"></label>
+            <label>Others <input id="otherCost" type="number" step="0.01"></label>
+          </div>
+          <div class="rz-total-box">
             <span>Process Cost</span>
             <strong id="makingTotal">₹0.00</strong>
           </div>
-        </div>
+        </section>
 
         <p id="artMessage" class="rr-message" aria-live="polite"></p>
-        <button id="saveArtBtn" class="rr-btn rr-btn-primary" type="submit">Save Art</button>
+        <button id="saveArtBtn" class="rr-btn rr-btn-wide" type="submit">Save Art</button>
       </form>
     </section>
 
-    <section class="rr-panel rr-top-gap">
+    <section class="rr-panel">
       <div class="rr-panel-head">
         <div>
           <h2>Saved Arts</h2>
-          <p class="rr-muted">Image card पर tap करके edit करें।</p>
+          <p>Tap an image/card to inspect or edit.</p>
         </div>
         <button id="reloadArts" class="rr-btn rr-btn-secondary" type="button">Refresh</button>
       </div>
-      <div id="artCards" class="rr-card-grid"><p>Loading...</p></div>
+      <div id="artCards" class="rz-card-grid">Loading...</div>
     </section>
   </main>
 
-  <div id="imageLightbox" class="rr-lightbox rr-hidden" aria-hidden="true">
-    <div class="rr-lightbox-toolbar">
-      <button id="zoomOutBtn" type="button">−</button>
-      <button id="zoomResetBtn" type="button">Reset</button>
-      <button id="zoomInBtn" type="button">+</button>
-      <button id="closeLightboxBtn" type="button">Close</button>
+  <div id="mediaViewer" class="rz-viewer rr-hidden" aria-hidden="true">
+    <button id="viewerClose" class="rz-viewer-close" type="button">×</button>
+    <div class="rz-viewer-toolbar">
+      <button id="viewerPrev" type="button">‹</button>
+      <button id="viewerZoomOut" type="button">−</button>
+      <button id="viewerReset" type="button">Reset</button>
+      <button id="viewerZoomIn" type="button">+</button>
+      <button id="viewerNext" type="button">›</button>
     </div>
-    <div id="lightboxStage" class="rr-lightbox-stage">
-      <img id="lightboxImage" alt="Artwork preview">
+    <div id="viewerStage" class="rz-viewer-stage">
+      <img id="viewerImage" alt="Reference preview">
     </div>
-    <div id="lightboxCaption" class="rr-lightbox-caption"></div>
+    <div class="rz-viewer-caption">
+      <h3 id="viewerTitle"></h3>
+      <p id="viewerText"></p>
+    </div>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="config.js?v=1"></script>
-  <script>
-    window.supabaseClient = window.supabaseClient ||
-      window.supabase?.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
-  </script>
+  <script src="config.js"></script>
   <script src="real-common.js?v=310"></script>
   <script src="real-caption-builder.js?v=310"></script>
   <script src="real-art-master.js?v=310"></script>
