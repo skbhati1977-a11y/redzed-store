@@ -43,3 +43,82 @@
  .frame-note{grid-column:1/2}
  .frame-remove{grid-column:2/3}
 }
+
+/* PRINT MASTER FINAL POLISH V610 */
+.frame-status-legend{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  margin:8px 0 12px;
+}
+.frame-status-legend span,
+.print-frame-badges span{
+  display:inline-flex;
+  align-items:center;
+  gap:4px;
+  padding:5px 8px;
+  border-radius:999px;
+  font-size:11px;
+  font-weight:800;
+}
+.status-active{
+  background:#12351f!important;
+  color:#82e6a0!important;
+  border:1px solid #24683c;
+}
+.status-remaking{
+  background:#3b2d10!important;
+  color:#ffd978!important;
+  border:1px solid #765d1d;
+}
+.status-available{
+  background:#25272c!important;
+  color:#c7c9d0!important;
+  border:1px solid #4a4d55;
+}
+.status-retired{
+  background:#442027!important;
+  color:#ff9ca6!important;
+  border:1px solid #7d3540;
+}
+.status-active-row .frame-status{
+  border-color:#24683c;
+}
+.status-remaking-row .frame-status{
+  border-color:#765d1d;
+}
+.status-available-row .frame-status{
+  border-color:#4a4d55;
+}
+.status-retired-row .frame-status{
+  border-color:#7d3540;
+}
+.print-card-summary{
+  display:flex;
+  flex-wrap:wrap;
+  gap:7px;
+  margin:8px 0 10px;
+}
+.print-count-badge{
+  padding:5px 8px;
+  border-radius:999px;
+  background:#25252c;
+  color:#e7e7ea;
+  font-size:11px;
+  font-weight:800;
+}
+.print-frame-badges{
+  align-items:flex-start;
+}
+#reloadPrints:disabled,
+#savePrintBtn:disabled{
+  opacity:.65;
+  cursor:wait;
+}
+@media(max-width:700px){
+  .print-frame-row{
+    padding:8px;
+    border:1px solid #292930;
+    border-radius:12px;
+  }
+}
