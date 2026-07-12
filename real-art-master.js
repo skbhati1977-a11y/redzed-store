@@ -1,4 +1,3 @@
-          
 (() => {
 "use strict";
 const $=id=>document.getElementById(id);
@@ -109,9 +108,9 @@ function renderCostRows(basics={}){
  $("costRows").innerHTML=PROCESSES.map(p=>`
   <tr>
    <td>${p.name}</td>
-   <td><input data-process="${p.code}" data-kind="basic" type="number" step="0.01" min="0"
+   <td><input data-process="${p.code}" data-kind="basic" type="number" inputmode="decimal" step="0.01" min="0"
       value="${compactNumber(basics[p.code])}" ${categoryHasCosts&&!basicRatesUnlocked?"readonly":""}></td>
-   <td><input data-process="${p.code}" data-kind="extra" type="number" step="0.01" value="0"></td>
+   <td><input data-process="${p.code}" data-kind="extra" type="number" inputmode="decimal" step="0.01" value="0"></td>
    <td><strong data-process="${p.code}" data-kind="total">${money(basics[p.code]||0)}</strong></td>
   </tr>`).join("");
  document.querySelectorAll('#costRows input').forEach(i=>i.addEventListener("input",updateCostTotals));
@@ -212,7 +211,15 @@ $("cameraFiles").onchange=updateFiles;$("galleryFiles").onchange=updateFiles;
 const closeActions=()=>{$("imageActionSheet").classList.add("rr-hidden");activeImage=null};
 $("actionCancel").onclick=closeActions;
 $("actionView").onclick=()=>{const x=activeImage;closeActions();if(x)openViewer(x)};
-$("actionSetIcon").onclick=async()=>{const x=activeImage;closeActions();if(!x)return;selectedIcon={type:x.type,id:x.id};renderImages();if(x.type==="saved")await setSavedIcon(x.id)};
+$("actionSetIcon").onclick=async()=>{
+ const x=activeImage;closeActions();if(!x)return;
+ try{
+  selectedIcon={type:x.type,id:x.id};
+  renderImages();
+  if(x.type==="saved")await setSavedIcon(x.id);
+  say("Art Icon updated.","success");
+ }catch(e){say(e.message||"Icon could not be updated.","error")}
+};
 $("actionRemove").onclick=async()=>{
  const x=activeImage;closeActions();if(!x)return;
  const current=chosenIcon()&&chosenIcon().type===x.type&&chosenIcon().id===x.id;
@@ -229,17 +236,25 @@ async function setSavedIcon(id){
 }
 
 async function loadData(){
+ const reloadBtn=$("reloadArts");
+ if(reloadBtn){reloadBtn.disabled=true;reloadBtn.textContent="Loading...";}
  const [a,s,m]=await Promise.all([
   supabaseClient.from("rr_art_master").select("*").order("created_at",{ascending:false}),
   supabaseClient.from("rr_art_process_cost_summary").select("*"),
   RR.getMediaMap("art","reference")
  ]);
- if(a.error)throw a.error;if(s.error)throw s.error;arts=a.data||[];summaries=s.data||[];mediaMap=m||{};renderCards();
+ if(a.error)throw a.error;
+ if(s.error)throw s.error;
+ arts=a.data||[];
+ summaries=s.data||[];
+ mediaMap=m||{};
+ renderCards();
+ if(reloadBtn){reloadBtn.disabled=false;reloadBtn.textContent="Refresh";}
 }
 const sum=id=>summaries.find(x=>String(x.art_id)===String(id))||{};
 function renderCards(){
  cards.innerHTML=arts.length?arts.map(a=>{const imgs=mediaMap[String(a.id)]||[],ico=imgs.find(x=>x.is_cover)||imgs[0],s=sum(a.id),items=Array.isArray(a.caption_items)?a.caption_items:[];
- return `<article class="art-master-card"><button class="art-card-image" data-view="${a.id}">${ico?`<img src="${RR.safeText(ico.file_url)}">`:'<div class="art-placeholder">ART</div>'}</button><div class="art-card-body"><small>${RR.safeText(s.category_name||a.category||"")}</small><h3>${RR.safeText(a.art_no)} · ${RR.safeText(a.item_name||a.product_name||"")}</h3><div class="art-feature-badges">${items.slice(0,3).map(i=>`<span>${RR.safeText(i.text)}</span>`).join("")}</div><div class="art-card-metrics"><span><small>Process Cost</small><b>${money(s.total_process_cost)}</b></span><span><small>Other Margin</small><b>${money(a.default_margin)}</b></span></div><button class="rr-btn rr-btn-secondary" data-edit="${a.id}">Edit</button></div></article>`}).join(""):"<p>No Art saved yet.</p>";
+ return `<article class="art-master-card"><button class="art-card-image" data-view="${a.id}">${ico?`<img src="${RR.safeText(ico.file_url)}"><span class="art-card-icon-badge">★ ICON</span>`:'<div class="art-placeholder">ART</div>'}</button><div class="art-card-body"><small>${RR.safeText(s.category_name||a.category||"")}</small><h3>${RR.safeText(a.art_no)} · ${RR.safeText(a.item_name||a.product_name||"")}</h3><div class="art-feature-badges">${items.slice(0,3).map(i=>`<span>${RR.safeText(i.text)}</span>`).join("")}</div><div class="art-card-metrics"><span><small>Process Cost</small><b>${money(s.total_process_cost)}</b></span><span><small>Other Margin</small><b>${money(a.default_margin)}</b></span></div><button class="rr-btn rr-btn-secondary" data-edit="${a.id}">Edit</button></div></article>`}).join(""):"<p>No Art saved yet.</p>";
  cards.querySelectorAll("[data-edit]").forEach(b=>b.onclick=()=>editArt(b.dataset.edit));cards.querySelectorAll("[data-view]").forEach(b=>b.onclick=()=>openSavedViewer(b.dataset.view));
 }
 async function editArt(id){
@@ -257,6 +272,7 @@ function reset(){
  form.reset();$("artId").value="";$("defaultMargin").value=22;queued=[];selectedIcon=null;$("imagePreview").innerHTML="";$("iconStatus").innerHTML='<span class="art-icon-star">★</span><div><small>ART ICON</small><strong>No icon selected</strong></div>';$("formTitle").textContent="Add New Art";$("saveArtBtn").textContent="Save Art";$("cancelEdit").classList.add("rr-hidden");builder?.load();categoryHasCosts=false;basicRatesUnlocked=false;renderCostRows({});updateCostTotals();
 }
 $("cancelEdit").onclick=reset;
+$("reloadArts").onclick=()=>loadData().catch(e=>{say(e.message||"Could not refresh Arts","error");$("reloadArts").disabled=false;$("reloadArts").textContent="Refresh";});
 
 
 async function updateCategoryBasicDefaults(categoryId){
@@ -287,10 +303,24 @@ async function updateCategoryBasicDefaults(categoryId){
 form.onsubmit=async e=>{
  e.preventDefault();const btn=$("saveArtBtn");btn.disabled=true;btn.textContent="Saving...";say("");
  try{
-  const categoryId=$("artCategory").value;if(!categoryId)throw new Error("Select Art Category");
+  const categoryId=$("artCategory").value;
+  if(!categoryId)throw new Error("Select Art Category");
+
+  const enteredArtNo=$("artNo").value.trim().toUpperCase();
+  if(!enteredArtNo)throw new Error("Enter Art No");
+
+  if(!artId() && allImages().length===0){
+   throw new Error("Select at least one Artwork image");
+  }
+
+  const duplicate=arts.find(a=>
+   String(a.art_no||"").trim().toUpperCase()===enteredArtNo &&
+   String(a.id)!==String(artId()||"")
+  );
+  if(duplicate)throw new Error(`Art No ${enteredArtNo} already exists`);
   const cols=await RR.getTableColumns("rr_art_master"),existing=artId();
   const category=categories.find(x=>x.id===categoryId);
-  const payload=RR.filterPayload({art_no:$("artNo").value.trim().toUpperCase(),art_category_id:categoryId,category:category?.category_name,item_name:$("itemName").value.trim(),product_name:$("itemName").value.trim(),description:$("description").value.trim(),other_material_note:$("designNotes").value.trim(),default_margin:RR.number($("defaultMargin").value),is_active:true},cols);
+  const payload=RR.filterPayload({art_no:enteredArtNo,art_category_id:categoryId,category:category?.category_name,item_name:$("itemName").value.trim(),product_name:$("itemName").value.trim(),description:$("description").value.trim(),other_material_note:$("designNotes").value.trim(),default_margin:RR.number($("defaultMargin").value),is_active:true},cols);
   const r=existing?await supabaseClient.from("rr_art_master").update(payload).eq("id",existing).select().single():await supabaseClient.from("rr_art_master").insert(payload).select().single();if(r.error)throw r.error;
   if(basicRatesUnlocked&&categoryHasCosts){
    await updateCategoryBasicDefaults(categoryId);
@@ -312,4 +342,4 @@ $("viewerClose").onclick=()=>$("mediaViewer").classList.add("rr-hidden");$("view
 
 (async()=>{try{await RR.requireOwner();builder=new RRCaptionBuilder({masterType:"art",categoryInput:$("artCategory"),container:$("artCaptionBuilder"),outputInput:$("description")});await loadCategories();renderCostRows({});normalizeNumberInputs(document);enableFastNumberInput(document);await builder.load();await loadData()}catch(e){console.error(e);say(e.message||"Art Master could not open.","error")}})();
 })();
-  
+               
