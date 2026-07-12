@@ -1,3 +1,4 @@
+          
 (() => {
 "use strict";
 const $=id=>document.getElementById(id);
@@ -16,6 +17,49 @@ const PROCESSES=[
 
 let categories=[],arts=[],summaries=[],mediaMap={},queued=[],selectedIcon=null,builder,activeImage=null;
 let categoryHasCosts=false;
+let basicRatesUnlocked=false;
+
+function refreshBasicLockIcon(){
+ const lock=$("basicLockToggle");
+ if(!lock)return;
+
+ if(!categoryHasCosts){
+  lock.textContent="🔓";
+  lock.disabled=true;
+  lock.title="Enter first Basic rates";
+  return;
+ }
+
+ lock.disabled=false;
+ lock.textContent=basicRatesUnlocked?"🔓":"🔒";
+ lock.title=basicRatesUnlocked
+  ?"Lock Category Basic Rates"
+  :"Unlock Category Basic Rates";
+}
+
+$("basicLockToggle")?.addEventListener("click",()=>{
+ if(!categoryHasCosts)return;
+
+ if(!basicRatesUnlocked){
+  const ok=confirm(
+   "Update Category Basic Rates for future Arts?\n\nOld Products will remain unchanged."
+  );
+  if(!ok)return;
+ }
+
+ basicRatesUnlocked=!basicRatesUnlocked;
+
+ document.querySelectorAll('[data-kind="basic"]').forEach(input=>{
+  input.readOnly=!basicRatesUnlocked;
+ });
+
+ refreshBasicLockIcon();
+
+ if(basicRatesUnlocked){
+  document.querySelector('[data-kind="basic"]')?.focus();
+ }
+});
+
 const form=$("artForm"),message=$("artMessage"),cards=$("artCards");
 
 const say=(t,k="")=>{message.textContent=t||"";message.className=`rr-message ${k}`.trim()};
@@ -66,15 +110,18 @@ function renderCostRows(basics={}){
   <tr>
    <td>${p.name}</td>
    <td><input data-process="${p.code}" data-kind="basic" type="number" step="0.01" min="0"
-      value="${compactNumber(basics[p.code])}" ${categoryHasCosts?"readonly":""}></td>
+      value="${compactNumber(basics[p.code])}" ${categoryHasCosts&&!basicRatesUnlocked?"readonly":""}></td>
    <td><input data-process="${p.code}" data-kind="extra" type="number" step="0.01" value="0"></td>
    <td><strong data-process="${p.code}" data-kind="total">${money(basics[p.code]||0)}</strong></td>
   </tr>`).join("");
  document.querySelectorAll('#costRows input').forEach(i=>i.addEventListener("input",updateCostTotals));
  normalizeNumberInputs($("costRows"));
  enableFastNumberInput($("costRows"));
+ refreshBasicLockIcon();
  updateCostTotals();
 }
+
+
 function costRows(){
  return PROCESSES.map(p=>({
   process_code:p.code,process_name:p.name,sort_order:p.order,
@@ -103,10 +150,11 @@ async function loadCategories(selected=""){
  if(selected)$("artCategory").value=selected;
 }
 async function loadCategoryCosts(id){
- if(!id){categoryHasCosts=false;$("firstCategoryNotice").classList.add("rr-hidden");renderCostRows({});return}
+ if(!id){categoryHasCosts=false;basicRatesUnlocked=false;$("firstCategoryNotice").classList.add("rr-hidden");renderCostRows({});return}
  const r=await supabaseClient.rpc("rr_get_art_category_costs",{p_category_id:id});
  if(r.error)throw r.error;
  categoryHasCosts=(r.data||[]).length>0;
+ basicRatesUnlocked=!categoryHasCosts;
  const basics={};(r.data||[]).forEach(x=>basics[x.process_code]=x.basic_rate);
  $("firstCategoryNotice").classList.toggle("rr-hidden",categoryHasCosts);
  renderCostRows(basics);
@@ -199,16 +247,42 @@ async function editArt(id){
  $("artId").value=a.id;$("artNo").value=a.art_no||"";$("itemName").value=a.item_name||a.product_name||"";$("defaultMargin").value=a.default_margin??22;$("designNotes").value=a.other_material_note||"";
  await loadCategories(a.art_category_id||"");
  const r=await supabaseClient.from("rr_art_process_costs").select("*").eq("art_id",id).order("sort_order");
- if(r.error)throw r.error;categoryHasCosts=true;$("firstCategoryNotice").classList.add("rr-hidden");
+ if(r.error)throw r.error;categoryHasCosts=true;basicRatesUnlocked=false;$("firstCategoryNotice").classList.add("rr-hidden");
  const basics={};(r.data||[]).forEach(x=>basics[x.process_code]=x.basic_rate);renderCostRows(basics);(r.data||[]).forEach(x=>{const i=rowInput(x.process_code,"extra");if(i)i.value=x.extra_rate});updateCostTotals();
  queued=[];const cover=saved().find(x=>x.is_cover)||saved()[0];selectedIcon=cover?{type:"saved",id:cover.id}:null;renderImages();
  await builder.load(Array.isArray(a.caption_items)?a.caption_items:[]);
  $("formTitle").textContent=`Edit ${a.art_no}`;$("saveArtBtn").textContent="Update Art";$("cancelEdit").classList.remove("rr-hidden");scrollTo({top:0,behavior:"smooth"});
 }
 function reset(){
- form.reset();$("artId").value="";$("defaultMargin").value=22;queued=[];selectedIcon=null;$("imagePreview").innerHTML="";$("iconStatus").innerHTML='<span class="art-icon-star">★</span><div><small>ART ICON</small><strong>No icon selected</strong></div>';$("formTitle").textContent="Add New Art";$("saveArtBtn").textContent="Save Art";$("cancelEdit").classList.add("rr-hidden");builder?.load();categoryHasCosts=false;renderCostRows({});updateCostTotals();
+ form.reset();$("artId").value="";$("defaultMargin").value=22;queued=[];selectedIcon=null;$("imagePreview").innerHTML="";$("iconStatus").innerHTML='<span class="art-icon-star">★</span><div><small>ART ICON</small><strong>No icon selected</strong></div>';$("formTitle").textContent="Add New Art";$("saveArtBtn").textContent="Save Art";$("cancelEdit").classList.add("rr-hidden");builder?.load();categoryHasCosts=false;basicRatesUnlocked=false;renderCostRows({});updateCostTotals();
 }
 $("cancelEdit").onclick=reset;
+
+
+async function updateCategoryBasicDefaults(categoryId){
+ const rows=costRows();
+
+ const { error: deleteError } = await supabaseClient
+  .from("rr_art_category_costs")
+  .delete()
+  .eq("category_id",categoryId);
+
+ if(deleteError)throw deleteError;
+
+ const payload=rows.map(row=>({
+  category_id:categoryId,
+  process_code:row.process_code,
+  process_name:row.process_name,
+  basic_rate:row.basic_rate,
+  sort_order:row.sort_order
+ }));
+
+ const { error } = await supabaseClient
+  .from("rr_art_category_costs")
+  .insert(payload);
+
+ if(error)throw error;
+}
 
 form.onsubmit=async e=>{
  e.preventDefault();const btn=$("saveArtBtn");btn.disabled=true;btn.textContent="Saving...";say("");
@@ -218,11 +292,14 @@ form.onsubmit=async e=>{
   const category=categories.find(x=>x.id===categoryId);
   const payload=RR.filterPayload({art_no:$("artNo").value.trim().toUpperCase(),art_category_id:categoryId,category:category?.category_name,item_name:$("itemName").value.trim(),product_name:$("itemName").value.trim(),description:$("description").value.trim(),other_material_note:$("designNotes").value.trim(),default_margin:RR.number($("defaultMargin").value),is_active:true},cols);
   const r=existing?await supabaseClient.from("rr_art_master").update(payload).eq("id",existing).select().single():await supabaseClient.from("rr_art_master").insert(payload).select().single();if(r.error)throw r.error;
+  if(basicRatesUnlocked&&categoryHasCosts){
+   await updateCategoryBasicDefaults(categoryId);
+  }
   let x=await supabaseClient.rpc("rr_save_art_process_costs",{p_art_id:r.data.id,p_category_id:categoryId,p_rows:costRows()});if(x.error)throw x.error;
   x=await supabaseClient.rpc("rr_save_art_captions",{p_art_id:r.data.id,p_items:builder.getItems()});if(x.error)throw x.error;
   const uploaded=[];for(const q of queued){const media=await RR.uploadMedia({file:q.file,entityType:"art",entityId:r.data.id,mediaCategory:"reference",sourceType:q.sourceType,visibilityScope:"factory",caption:`${r.data.art_no} artwork`});uploaded.push({tempId:q.tempId,media})}
   let iconId=selectedIcon?.type==="saved"?selectedIcon.id:uploaded.find(u=>u.tempId===selectedIcon?.id)?.media?.id;if(iconId){await supabaseClient.from("rr_media").update({is_cover:false}).eq("entity_type","art").eq("entity_id",r.data.id);await supabaseClient.from("rr_media").update({is_cover:true}).eq("id",iconId)}
-  say("Art saved successfully.","success");reset();await loadData();
+  say("Art saved successfully.","success");basicRatesUnlocked=false;refreshBasicLockIcon();reset();await loadData();
  }catch(err){console.error(err);say(err.message||"Art could not be saved.","error")}finally{btn.disabled=false;btn.textContent=artId()?"Update Art":"Save Art"}
 };
 
@@ -235,4 +312,4 @@ $("viewerClose").onclick=()=>$("mediaViewer").classList.add("rr-hidden");$("view
 
 (async()=>{try{await RR.requireOwner();builder=new RRCaptionBuilder({masterType:"art",categoryInput:$("artCategory"),container:$("artCaptionBuilder"),outputInput:$("description")});await loadCategories();renderCostRows({});normalizeNumberInputs(document);enableFastNumberInput(document);await builder.load();await loadData()}catch(e){console.error(e);say(e.message||"Art Master could not open.","error")}})();
 })();
-                                          
+  
