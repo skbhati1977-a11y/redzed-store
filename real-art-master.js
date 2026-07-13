@@ -15,8 +15,153 @@ const PROCESSES=[
 ];
 
 let categories=[],arts=[],summaries=[],mediaMap={},queued=[],selectedIcon=null,builder,activeImage=null;
+let manualMaterials=[];
 let categoryHasCosts=false;
 let basicRatesUnlocked=false;
+
+
+const MATERIAL_LABELS={
+ "regular-cloth":"Regular Cloth",
+ "matching-cloth":"Matching Cloth",
+ "collar-cuff":"Collar & Cuff",
+ "rib":"Rib",
+ "tape":"Tape",
+ "elastic":"Elastic",
+ "zip":"Zip"
+};
+
+const normalizeText=value=>String(value||"")
+ .toLowerCase()
+ .replace(/[&/+_-]+/g," ")
+ .replace(/\s+/g," ")
+ .trim();
+
+function selectedCategoryName(){
+ const category=categories.find(x=>String(x.id)===String($("artCategory").value));
+ return category?.category_name||"";
+}
+
+function currentCraftText(){
+ const items=builder?.getItems?.()||[];
+ return items.map(item=>item?.text||item?.label||item?.name||"").join(" ");
+}
+
+function deriveAutoMaterials(){
+ const category=normalizeText(selectedCategoryName());
+ const craft=normalizeText(currentCraftText());
+ const all=`${category} ${craft}`;
+ const result=new Set(["Regular Cloth"]);
+
+ // Category-based rules.
+ if(category.includes("flat polo")){
+  result.add("Collar & Cuff");
+ }
+ if(category.includes("r nk")||category.includes("crew neck")){
+  result.add("Rib");
+ }
+ if(category.includes("lower")||category.includes("pajama")||
+    category.includes("shorts")||category.includes("bermuda")){
+  result.add("Elastic");
+ }
+
+ // Craft-feature rules.
+ if(/\b(rib|rib neck|ribbed)\b/.test(all)){
+  result.add("Rib");
+ }
+ if(/\b(zip|zipper)\b/.test(all)){
+  result.add("Zip");
+ }
+ if(/\b(elastic|waist band|waistband)\b/.test(all)){
+  result.add("Elastic");
+ }
+ if(/\b(tape|taping)\b/.test(all)){
+  result.add("Tape");
+ }
+ if(
+   /\b(piping|contrast|dual col|dual colour|dual color|two tone|2 tone|upper cut|lower cut|contrast placket|contrast sleeve|contrast panel)\b/.test(all)
+ ){
+  result.add("Matching Cloth");
+ }
+
+ // Self Collar must never auto-add Collar & Cuff.
+ if(category.includes("self collar")){
+  result.delete("Collar & Cuff");
+ }
+
+ return [...result];
+}
+
+function getMaterialRequirements(){
+ const combined=[...deriveAutoMaterials(),...manualMaterials]
+  .map(x=>String(x||"").trim())
+  .filter(Boolean);
+ return [...new Set(combined)];
+}
+
+function renderMaterialRequirements(){
+ const auto=new Set(deriveAutoMaterials());
+ const items=getMaterialRequirements();
+ const box=$("materialRequirements");
+
+ box.innerHTML=items.map(name=>{
+  const isAuto=auto.has(name);
+  return `<span class="art-material-chip ${isAuto?"is-auto":"is-manual"}">
+    ${RR.safeText(name)}
+    <small>${isAuto?"AUTO":"ADDED"}</small>
+    ${isAuto?"":`<button type="button" data-remove-material="${RR.safeText(name)}" aria-label="Remove ${RR.safeText(name)}">×</button>`}
+  </span>`;
+ }).join("");
+
+ box.querySelectorAll("[data-remove-material]").forEach(button=>{
+  button.addEventListener("click",()=>{
+   const name=button.dataset.removeMaterial;
+   manualMaterials=manualMaterials.filter(x=>x!==name);
+   renderMaterialRequirements();
+  });
+ });
+}
+
+function loadMaterialRequirements(savedItems=[]){
+ const saved=Array.isArray(savedItems)?savedItems:[];
+ const auto=new Set(deriveAutoMaterials());
+ manualMaterials=saved
+  .map(item=>typeof item==="string"?item:item?.name||item?.custom||"")
+  .map(item=>String(item||"").trim())
+  .filter(item=>item&&!auto.has(item)&&item!=="Regular Cloth");
+ renderMaterialRequirements();
+}
+
+$("addMaterialBtn").addEventListener("click",()=>{
+ $("customMaterialRow").classList.remove("rr-hidden");
+ $("customMaterialName").focus();
+});
+
+$("cancelCustomMaterial").addEventListener("click",()=>{
+ $("customMaterialName").value="";
+ $("customMaterialRow").classList.add("rr-hidden");
+});
+
+$("saveCustomMaterial").addEventListener("click",()=>{
+ const name=$("customMaterialName").value.trim();
+ if(!name)return;
+ if(!getMaterialRequirements().some(x=>normalizeText(x)===normalizeText(name))){
+  manualMaterials.push(name);
+ }
+ $("customMaterialName").value="";
+ $("customMaterialRow").classList.add("rr-hidden");
+ renderMaterialRequirements();
+});
+
+// Caption Builder changes its own DOM; observe it and keep requirements current.
+const materialObserver=new MutationObserver(()=>{
+ if(builder)renderMaterialRequirements();
+});
+materialObserver.observe($("artCaptionBuilder"),{
+ childList:true,
+ subtree:true,
+ attributes:true,
+ attributeFilter:["class","checked","aria-checked"]
+});
 
 function refreshBasicLockIcon(){
  const lock=$("basicLockToggle");
@@ -160,7 +305,12 @@ async function loadCategoryCosts(id){
  const c=categories.find(x=>x.id===id);
  if(c?.default_design_name&&!$("itemName").value.trim())$("itemName").value=c.default_design_name;
 }
-$("artCategory").onchange=()=>loadCategoryCosts($("artCategory").value).catch(e=>say(e.message,"error"));
+$("artCategory").onchange=async()=>{
+ try{
+  await loadCategoryCosts($("artCategory").value);
+  renderMaterialRequirements();
+ }catch(e){say(e.message,"error")}
+};
 $("defaultMargin").addEventListener("input",updateCostTotals);
 
 $("addCategoryBtn").onclick=()=>$("categoryDialog").classList.remove("rr-hidden");
@@ -253,8 +403,8 @@ async function loadData(){
 }
 const sum=id=>summaries.find(x=>String(x.art_id)===String(id))||{};
 function renderCards(){
- cards.innerHTML=arts.length?arts.map(a=>{const imgs=mediaMap[String(a.id)]||[],ico=imgs.find(x=>x.is_cover)||imgs[0],s=sum(a.id),items=Array.isArray(a.caption_items)?a.caption_items:[];
- return `<article class="art-master-card"><button class="art-card-image" data-view="${a.id}">${ico?`<img src="${RR.safeText(ico.file_url)}"><span class="art-card-icon-badge">★ ICON</span>`:'<div class="art-placeholder">ART</div>'}</button><div class="art-card-body"><small>${RR.safeText(s.category_name||a.category||"")}</small><h3>${RR.safeText(a.art_no)} · ${RR.safeText(a.item_name||a.product_name||"")}</h3><div class="art-feature-badges">${items.slice(0,3).map(i=>`<span>${RR.safeText(i.text)}</span>`).join("")}</div><div class="art-card-metrics"><span><small>Process Cost</small><b>${money(s.total_process_cost)}</b></span><span><small>Other Margin</small><b>${money(a.default_margin)}</b></span></div><button class="rr-btn rr-btn-secondary" data-edit="${a.id}">Edit</button></div></article>`}).join(""):"<p>No Art saved yet.</p>";
+ cards.innerHTML=arts.length?arts.map(a=>{const imgs=mediaMap[String(a.id)]||[],ico=imgs.find(x=>x.is_cover)||imgs[0],s=sum(a.id),items=Array.isArray(a.caption_items)?a.caption_items:[],materials=Array.isArray(a.material_requirements)?a.material_requirements:[];
+ return `<article class="art-master-card"><button class="art-card-image" data-view="${a.id}">${ico?`<img src="${RR.safeText(ico.file_url)}"><span class="art-card-icon-badge">★ ICON</span>`:'<div class="art-placeholder">ART</div>'}</button><div class="art-card-body"><small>${RR.safeText(s.category_name||a.category||"")}</small><h3>${RR.safeText(a.art_no)} · ${RR.safeText(a.item_name||a.product_name||"")}</h3><div class="art-feature-badges">${items.slice(0,3).map(i=>`<span>${RR.safeText(i.text)}</span>`).join("")}</div><div class="art-card-materials">${materials.slice(0,4).map(m=>`<span>${RR.safeText(typeof m==="string"?m:(m.name||m.custom||""))}</span>`).join("")}</div><div class="art-card-metrics"><span><small>Process Cost</small><b>${money(s.total_process_cost)}</b></span><span><small>Other Margin</small><b>${money(a.default_margin)}</b></span></div><button class="rr-btn rr-btn-secondary" data-edit="${a.id}">Edit</button></div></article>`}).join(""):"<p>No Art saved yet.</p>";
  cards.querySelectorAll("[data-edit]").forEach(b=>b.onclick=()=>editArt(b.dataset.edit));cards.querySelectorAll("[data-view]").forEach(b=>b.onclick=()=>openSavedViewer(b.dataset.view));
 }
 async function editArt(id){
@@ -266,10 +416,11 @@ async function editArt(id){
  const basics={};(r.data||[]).forEach(x=>basics[x.process_code]=x.basic_rate);renderCostRows(basics);(r.data||[]).forEach(x=>{const i=rowInput(x.process_code,"extra");if(i)i.value=x.extra_rate});updateCostTotals();
  queued=[];const cover=saved().find(x=>x.is_cover)||saved()[0];selectedIcon=cover?{type:"saved",id:cover.id}:null;renderImages();
  await builder.load(Array.isArray(a.caption_items)?a.caption_items:[]);
+ loadMaterialRequirements(a.material_requirements);
  $("formTitle").textContent=`Edit ${a.art_no}`;$("saveArtBtn").textContent="Update Art";$("cancelEdit").classList.remove("rr-hidden");scrollTo({top:0,behavior:"smooth"});
 }
 function reset(){
- form.reset();$("artId").value="";$("defaultMargin").value=22;queued=[];selectedIcon=null;$("imagePreview").innerHTML="";$("iconStatus").innerHTML='<span class="art-icon-star">★</span><div><small>ART ICON</small><strong>No icon selected</strong></div>';$("formTitle").textContent="Add New Art";$("saveArtBtn").textContent="Save Art";$("cancelEdit").classList.add("rr-hidden");builder?.load();categoryHasCosts=false;basicRatesUnlocked=false;renderCostRows({});updateCostTotals();
+ form.reset();$("artId").value="";$("defaultMargin").value=22;queued=[];selectedIcon=null;manualMaterials=[];$("imagePreview").innerHTML="";$("iconStatus").innerHTML='<span class="art-icon-star">★</span><div><small>ART ICON</small><strong>No icon selected</strong></div>';$("formTitle").textContent="Add New Art";$("saveArtBtn").textContent="Save Art";$("cancelEdit").classList.add("rr-hidden");builder?.load();categoryHasCosts=false;basicRatesUnlocked=false;renderCostRows({});renderMaterialRequirements();updateCostTotals();
 }
 $("cancelEdit").onclick=reset;
 $("reloadArts").onclick=()=>loadData().catch(e=>{say(e.message||"Could not refresh Arts","error");$("reloadArts").disabled=false;$("reloadArts").textContent="Refresh";});
@@ -317,29 +468,4 @@ form.onsubmit=async e=>{
    String(a.art_no||"").trim().toUpperCase()===enteredArtNo &&
    String(a.id)!==String(artId()||"")
   );
-  if(duplicate)throw new Error(`Art No ${enteredArtNo} already exists`);
-  const cols=await RR.getTableColumns("rr_art_master"),existing=artId();
-  const category=categories.find(x=>x.id===categoryId);
-  const payload=RR.filterPayload({art_no:enteredArtNo,art_category_id:categoryId,category:category?.category_name,item_name:$("itemName").value.trim(),product_name:$("itemName").value.trim(),description:$("description").value.trim(),other_material_note:$("designNotes").value.trim(),default_margin:RR.number($("defaultMargin").value),is_active:true},cols);
-  const r=existing?await supabaseClient.from("rr_art_master").update(payload).eq("id",existing).select().single():await supabaseClient.from("rr_art_master").insert(payload).select().single();if(r.error)throw r.error;
-  if(basicRatesUnlocked&&categoryHasCosts){
-   await updateCategoryBasicDefaults(categoryId);
-  }
-  let x=await supabaseClient.rpc("rr_save_art_process_costs",{p_art_id:r.data.id,p_category_id:categoryId,p_rows:costRows()});if(x.error)throw x.error;
-  x=await supabaseClient.rpc("rr_save_art_captions",{p_art_id:r.data.id,p_items:builder.getItems()});if(x.error)throw x.error;
-  const uploaded=[];for(const q of queued){const media=await RR.uploadMedia({file:q.file,entityType:"art",entityId:r.data.id,mediaCategory:"reference",sourceType:q.sourceType,visibilityScope:"factory",caption:`${r.data.art_no} artwork`});uploaded.push({tempId:q.tempId,media})}
-  let iconId=selectedIcon?.type==="saved"?selectedIcon.id:uploaded.find(u=>u.tempId===selectedIcon?.id)?.media?.id;if(iconId){await supabaseClient.from("rr_media").update({is_cover:false}).eq("entity_type","art").eq("entity_id",r.data.id);await supabaseClient.from("rr_media").update({is_cover:true}).eq("id",iconId)}
-  say("Art saved successfully.","success");basicRatesUnlocked=false;refreshBasicLockIcon();reset();await loadData();
- }catch(err){console.error(err);say(err.message||"Art could not be saved.","error")}finally{btn.disabled=false;btn.textContent=artId()?"Update Art":"Save Art"}
-};
-
-// Viewer
-let viewer=[],index=0,zoom=1;
-function draw(){const x=viewer[index];$("viewerImage").src=x?.file_url||x?.url||"";$("viewerImage").style.transform=`scale(${zoom})`}
-function openViewer(image){viewer=allImages();index=Math.max(0,viewer.findIndex(x=>x.id===image.id));zoom=1;$("viewerTitle").textContent=$("artNo").value||"Artwork";$("viewerText").textContent=$("description").value||$("designNotes").value||"";$("mediaViewer").classList.remove("rr-hidden");draw()}
-function openSavedViewer(id){const a=arts.find(x=>String(x.id)===String(id));viewer=mediaMap[String(id)]||[];if(!viewer.length)return;index=0;zoom=1;$("viewerTitle").textContent=`${a.art_no} · ${a.item_name||a.product_name||""}`;$("viewerText").textContent=a.caption_text||a.description||"";$("mediaViewer").classList.remove("rr-hidden");draw()}
-$("viewerClose").onclick=()=>$("mediaViewer").classList.add("rr-hidden");$("viewerZoomIn").onclick=()=>{zoom=Math.min(4,zoom+.25);draw()};$("viewerZoomOut").onclick=()=>{zoom=Math.max(.5,zoom-.25);draw()};$("viewerReset").onclick=()=>{zoom=1;draw()};$("viewerPrev").onclick=()=>{index=(index-1+viewer.length)%viewer.length;zoom=1;draw()};$("viewerNext").onclick=()=>{index=(index+1)%viewer.length;zoom=1;draw()};
-
-(async()=>{try{await RR.requireOwner();builder=new RRCaptionBuilder({masterType:"art",categoryInput:$("artCategory"),container:$("artCaptionBuilder"),outputInput:$("description")});await loadCategories();renderCostRows({});normalizeNumberInputs(document);enableFastNumberInput(document);await builder.load();await loadData()}catch(e){console.error(e);say(e.message||"Art Master could not open.","error")}})();
-})();
-               
+  if(duplicate)throw ne
