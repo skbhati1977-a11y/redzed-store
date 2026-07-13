@@ -1,4 +1,4 @@
-/* REDZED REAL — PRODUCT MASTER V702 ACCURATE */
+/* REDZED REAL — PRODUCT MASTER V706 */
 
 :root{
   color-scheme:dark;
@@ -710,4 +710,4 @@ button:disabled{cursor:not-allowed}
   .pm-grid-2,.pm-live-summary,.pm-bill-summary,.pm-bill-row{grid-template-columns:1fr}
   .pm-colour-slots{grid-template-columns:repeat(2,minmax(0,1fr))}
   .pm-sheet-panel{padding-inline:12px}
-  }
+}
