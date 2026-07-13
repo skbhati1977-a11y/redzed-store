@@ -105,7 +105,10 @@ function regularCategoryId() {
 function updateBillRowAmount(row) {
   const quantity = Number(row.querySelector(".bill-qty").value || 0);
   const rate = Number(row.querySelector(".bill-rate").value || 0);
-  row.querySelector(".bill-amount strong").textContent = money(quantity * rate);
+  const amountNode = row.querySelector(".pm-bill-amount strong");
+  if (amountNode) {
+    amountNode.textContent = money(quantity * rate);
+  }
   updateBillSummary();
 }
 
@@ -430,26 +433,40 @@ async function loadGallerySource() {
     viewResult.error
   );
 
-  const [divisionResult, cbResult] = await Promise.all([
-    supabaseClient.from("rr_cb_divisions").select("*"),
-    supabaseClient.from("rr_cb_master").select("*")
+  const [divisionResult, purchaseResult] = await Promise.all([
+    supabaseClient.from("rr_cb_units").select("*"),
+    supabaseClient.from("rr_fabric_purchases").select("*")
   ]);
 
   if (divisionResult.error) throw divisionResult.error;
-  if (cbResult.error) throw cbResult.error;
+  if (purchaseResult.error) throw purchaseResult.error;
 
-  const cbMap = new Map(
-    (cbResult.data || []).map(cb => [String(cb.id), cb])
+  const purchaseMap = new Map(
+    (purchaseResult.data || []).map(row => [String(row.id), row])
   );
 
+  const statusMap = {
+    available: "planning",
+    art_assigned: "ready_for_cutting",
+    material_pending: "material_pending",
+    cutting: "ready_for_cutting",
+    completed: "ready_for_cutting",
+    cancelled: "hold"
+  };
+
   return (divisionResult.data || []).map(division => {
-    const cb = cbMap.get(String(division.cb_id)) || {};
+    const purchase = purchaseMap.get(String(division.purchase_id)) || {};
 
     return normalizeGalleryRow({
       ...division,
+      cb_id: division.purchase_id,
       division_id: division.id,
-      cb_no: cb.cb_no || "",
-      created_at: division.created_at || cb.created_at || ""
+      division_code: division.cb_code || "",
+      division_status: statusMap[division.status] || "planning",
+      allocated_qty: Number(division.divided_weight || 0),
+      allocated_amount: Number(division.divided_amount || 0),
+      cb_no: purchase.cb_no || division.cb_base_no || "",
+      created_at: division.created_at || purchase.created_at || ""
     });
   });
 }
@@ -750,30 +767,4 @@ function normalizeRpcId(data) {
   );
 }
 
-function normalizeMedia(result) {
-  let raw = result?.data ?? result;
-  if (Array.isArray(raw)) raw = raw[0] || null;
-  return raw || null;
-}
-
-async function uploadColourMedia(cbId, index, name) {
-  const entry = colourFiles.get(index);
-
-  if (!entry?.file) {
-    throw new Error(`Colour ${index + 1} image is missing.`);
-  }
-
-  const result = await RR.uploadMedia({
-    file: entry.file,
-    entityType: "cb",
-    entityId: cbId,
-    mediaCategory: "colour",
-    sourceType: entry.sourceType,
-    visibilityScope: "factory",
-    caption: name
-  });
-
-  const media = normalizeMedia(result);
-
-  if (!media) {
-    throw new Error(`Colour ${index + 1} image upload returned no
+function normalizeMedia(resu
