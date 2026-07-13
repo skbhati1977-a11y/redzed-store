@@ -1,713 +1,766 @@
-/* REDZED REAL — PRODUCT MASTER V706 */
-
-:root{
-  color-scheme:dark;
-  --pm-bg:#0b0b0e;
-  --pm-panel:#15151a;
-  --pm-panel-2:#101014;
-  --pm-border:#303039;
-  --pm-muted:#a3a3ad;
-  --pm-text:#f7f7f8;
-  --pm-red:#ef3340;
-  --pm-red-dark:#5a2129;
-  --pm-green:#2fb166;
-  --pm-yellow:#d4a72c;
-  --pm-orange:#de7a2f;
-}
-
-*{box-sizing:border-box}
-
-html,body{
-  margin:0;
-  min-height:100%;
-  background:var(--pm-bg);
-  color:var(--pm-text);
-  font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
-}
-
-button,input,select,textarea{font:inherit}
-button{cursor:pointer}
-button:disabled{cursor:not-allowed}
-.pm-hidden{display:none!important}
-.pm-no-scroll{overflow:hidden}
-
-.pm-page{
-  width:min(1180px,100%);
-  margin:auto;
-  padding:0 18px 64px;
-}
-
-.pm-topbar{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  gap:18px;
-  padding:24px 0 20px;
-  border-bottom:1px solid #26262d;
-}
-
-.pm-kicker{
-  margin:0 0 4px;
-  color:#ff6070;
-  font-size:14px;
-  font-weight:900;
-  letter-spacing:.2em;
-}
-
-.pm-topbar h1{
-  margin:0;
-  font-size:clamp(34px,7vw,58px);
-  line-height:.95;
-}
-
-.pm-dashboard-link{
-  display:grid;
-  place-items:center;
-  min-height:58px;
-  padding:0 22px;
-  border-radius:20px;
-  background:#292a30;
-  color:#fff;
-  text-decoration:none;
-  font-size:18px;
-  font-weight:900;
-}
-
-.pm-hero-card{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  gap:18px;
-  margin:22px 0;
-  padding:20px;
-  border:1px solid #3a3035;
-  border-radius:24px;
-  background:linear-gradient(145deg,#21161a,#131318);
-}
-
-.pm-hero-card small,.pm-section-head small{
-  color:#ff7b86;
-  font-weight:900;
-  text-transform:uppercase;
-  letter-spacing:.08em;
-}
-
-.pm-hero-card h2{
-  margin:6px 0 8px;
-  font-size:clamp(24px,5vw,38px);
-}
-
-.pm-hero-card p{
-  max-width:720px;
-  margin:0;
-  color:var(--pm-muted);
-  line-height:1.5;
-}
-
-.pm-primary-btn,.pm-secondary-btn{
-  min-height:48px;
-  border:0;
-  border-radius:14px;
-  padding:0 16px;
-  font-weight:900;
-}
-
-.pm-primary-btn{background:var(--pm-red);color:#fff}
-.pm-secondary-btn{background:#2a2b31;color:#fff}
-
-.pm-primary-btn:disabled,.pm-secondary-btn:disabled{
-  opacity:.5;
-}
-
-.pm-toolbar{
-  margin-bottom:24px;
-  padding:16px;
-  border:1px solid var(--pm-border);
-  border-radius:20px;
-  background:var(--pm-panel);
-}
-
-.pm-search span{
-  display:block;
-  margin-bottom:7px;
-  color:var(--pm-muted);
-  font-size:12px;
-  font-weight:800;
-}
-
-.pm-search input,
-.pm-form input,
-.pm-form select,
-.pm-form textarea,
-.pm-remarks textarea{
-  width:100%;
-  border:1px solid #363640;
-  border-radius:13px;
-  background:#0c0c10;
-  color:#fff;
-  padding:13px 14px;
-  outline:none;
-  font-size:16px;
-}
-
-.pm-search input:focus,
-.pm-form input:focus,
-.pm-form select:focus,
-.pm-form textarea:focus{
-  border-color:#9c3e4d;
-  box-shadow:0 0 0 3px #9c3e4d22;
-}
-
-.pm-filter-row{
-  display:flex;
-  gap:8px;
-  overflow-x:auto;
-  margin-top:12px;
-  padding-bottom:2px;
-}
-
-.pm-filter{
-  flex:0 0 auto;
-  border:1px solid #383841;
-  border-radius:999px;
-  background:#111115;
-  color:#babac3;
-  padding:8px 12px;
-  font-weight:800;
-}
-
-.pm-filter.is-active{
-  border-color:#8b3240;
-  background:#31181d;
-  color:#fff;
-}
-
-.pm-section-head{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  gap:12px;
-  margin:20px 0 12px;
-}
-
-.pm-section-head h2{
-  margin:3px 0 0;
-  font-size:26px;
-}
-
-#pmMessage{
-  min-height:0;
-  margin:0 0 14px;
-  border-radius:12px;
-  line-height:1.45;
-}
-
-#pmMessage:not(:empty){
-  padding:11px 13px;
-  border:1px solid #3a3a42;
-  background:#15151a;
-}
-
-#pmMessage.success{
-  border-color:#286a40;
-  background:#14331f;
-  color:#b9efc8;
-}
-
-#pmMessage.error{
-  border-color:#73323d;
-  background:#3c1b20;
-  color:#ffc0c5;
-}
-
-.pm-gallery{
-  display:grid;
-  grid-template-columns:repeat(3,minmax(0,1fr));
-  gap:16px;
-}
-
-.pm-cb-card,.pm-empty-card{
-  border:1px solid var(--pm-border);
-  border-radius:22px;
-  background:var(--pm-panel);
-  overflow:hidden;
-}
-
-.pm-cb-card{padding:17px}
-
-.pm-card-top{
-  display:flex;
-  justify-content:space-between;
-  align-items:flex-start;
-  gap:12px;
-}
-
-.pm-card-top h3{
-  margin:8px 0 2px;
-  font-size:28px;
-}
-
-.pm-card-top p{
-  margin:0;
-  color:var(--pm-muted);
-}
-
-.pm-status{
-  display:inline-flex;
-  padding:5px 9px;
-  border-radius:999px;
-  font-size:11px;
-  font-weight:900;
-  text-transform:capitalize;
-}
-
-.status-purchase,.status-planning{
-  background:#3b2d12;
-  color:#ffe29a;
-  border:1px solid #735a1e;
-}
-
-.status-ready_for_cutting,.status-lot_created{
-  background:#14331f;
-  color:#aeeac0;
-  border:1px solid #286a40;
-}
-
-.status-material_pending{
-  background:#422d14;
-  color:#ffd59a;
-  border:1px solid #8a5d24;
-}
-
-.status-subdivided{
-  background:#182b42;
-  color:#b8d9ff;
-  border:1px solid #335e8c;
-}
-
-.status-hold,.status-returned{
-  background:#3c1b20;
-  color:#ffb2b8;
-  border:1px solid #73323d;
-}
-
-.pm-card-colours{
-  display:flex;
-  flex-wrap:wrap;
-  gap:6px;
-  margin:14px 0;
-}
-
-.pm-card-colours span{
-  display:inline-flex;
-  align-items:center;
-  gap:5px;
-  min-width:0;
-  padding:5px 7px;
-  border:1px solid #303039;
-  border-radius:999px;
-  background:#0d0d11;
-  font-size:11px;
-}
-
-.pm-card-colours img,.pm-colour-fallback{
-  width:20px;
-  height:20px;
-  flex:0 0 auto;
-  border-radius:50%;
-  object-fit:cover;
-}
-
-.pm-colour-fallback{
-  display:grid;
-  place-items:center;
-  background:#2a2a31;
-  color:#bbb;
-  font-size:9px;
-}
-
-.pm-card-metrics{
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:10px;
-}
-
-.pm-card-metrics span{
-  min-width:0;
-  padding:12px;
-  border-radius:14px;
-  background:#0d0d11;
-}
-
-.pm-card-metrics small{
-  display:block;
-  margin-bottom:5px;
-  color:var(--pm-muted);
-}
-
-.pm-card-metrics strong{word-break:break-word}
-
-.pm-division-preview{
-  display:flex;
-  flex-wrap:wrap;
-  gap:8px;
-  margin:16px 0;
-}
-
-.pm-division-preview button{
-  border:1px solid #3d3d47;
-  border-radius:10px;
-  background:#202027;
-  color:#fff;
-  padding:8px 10px;
-  font-weight:800;
-}
-
-.pm-division-preview button:disabled{opacity:1}
-
-.pm-card-footer{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  gap:10px;
-  padding-top:14px;
-  border-top:1px solid #292930;
-}
-
-.pm-card-footer span{
-  color:var(--pm-muted);
-  font-size:12px;
-}
-
-.pm-card-footer button{
-  border:0;
-  border-radius:12px;
-  background:#303038;
-  color:#a5a5ad;
-  padding:10px 14px;
-  font-weight:900;
-  cursor:not-allowed;
-}
-
-.pm-empty-card{
-  grid-column:1/-1;
-  display:grid;
-  place-items:center;
-  align-content:center;
-  min-height:300px;
-  padding:28px;
-  text-align:center;
-  color:var(--pm-muted);
-}
-
-.pm-empty-card h3{
-  margin:10px 0 5px;
-  color:#fff;
-}
-
-.pm-empty-card p{
-  max-width:300px;
-  margin:0;
-  line-height:1.5;
-}
-
-.pm-empty-icon{
-  display:grid;
-  place-items:center;
-  width:66px;
-  height:66px;
-  border-radius:50%;
-  background:#292930;
-  color:#fff;
-  font-size:36px;
-}
-
-.pm-spinner{
-  width:42px;
-  height:42px;
-  border:4px solid #33333b;
-  border-top-color:var(--pm-red);
-  border-radius:50%;
-  animation:pm-spin .8s linear infinite;
-}
-
-@keyframes pm-spin{to{transform:rotate(360deg)}}
-
-.pm-sheet{
-  position:fixed;
-  inset:0;
-  z-index:10000;
-  display:flex;
-  align-items:flex-end;
-  justify-content:center;
-}
-
-.pm-sheet-backdrop{
-  position:absolute;
-  inset:0;
-  background:#000b;
-}
-
-.pm-sheet-panel{
-  position:relative;
-  width:min(760px,100%);
-  max-height:95vh;
-  overflow:auto;
-  overscroll-behavior:contain;
-  -webkit-overflow-scrolling:touch;
-  border:1px solid #3a3a42;
-  border-radius:26px 26px 0 0;
-  background:#111116;
-  padding:10px 16px calc(18px + env(safe-area-inset-bottom));
-}
-
-.pm-sheet-grab{
-  width:54px;
-  height:5px;
-  margin:0 auto 10px;
-  border-radius:999px;
-  background:#4b4b55;
-}
-
-.pm-sheet-head{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  gap:12px;
-  padding:4px 2px 14px;
-}
-
-.pm-sheet-head small{
-  color:#ff7b86;
-  font-weight:900;
-}
-
-.pm-sheet-head h2{
-  margin:3px 0 0;
-  font-size:28px;
-}
-
-.pm-sheet-head>button{
-  width:44px;
-  height:44px;
-  border:0;
-  border-radius:13px;
-  background:#3b1f25;
-  color:#ffb1b8;
-  font-size:28px;
-}
-
-.pm-form{display:grid;gap:13px}
-
-.pm-form-card,.pm-remarks{
-  display:block;
-  padding:14px;
-  border:1px solid var(--pm-border);
-  border-radius:18px;
-  background:var(--pm-panel);
-}
-
-.pm-form-card h3{
-  margin:0 0 13px;
-  font-size:19px;
-}
-
-.pm-form label,.pm-remarks{display:block}
-
-.pm-form label span,.pm-remarks>span{
-  display:block;
-  margin-bottom:6px;
-  color:#bcbcc5;
-  font-size:12px;
-  font-weight:800;
-}
-
-.pm-grid-2{
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:10px;
-}
-
-.pm-live-summary,.pm-bill-summary{
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:10px;
-  margin-top:11px;
-}
-
-.pm-live-summary span,.pm-bill-summary span{
-  padding:11px;
-  border-radius:12px;
-  background:#0d0d11;
-}
-
-.pm-live-summary small,.pm-bill-summary small{
-  display:block;
-  margin-bottom:4px;
-  color:var(--pm-muted);
-}
-
-.pm-form-title-row{
-  display:flex;
-  justify-content:space-between;
-  align-items:flex-start;
-  gap:12px;
-}
-
-.pm-form-title-row p{
-  margin:4px 0 0;
-  color:var(--pm-muted);
-  font-size:12px;
-  line-height:1.45;
-}
-
-.pm-form-title-row>button{
-  flex:0 0 auto;
-  border:1px solid #43434d;
-  border-radius:10px;
-  background:#25252c;
-  color:#fff;
-  padding:8px 10px;
-  font-weight:800;
-}
-
-.pm-bill-list{
-  display:grid;
-  gap:10px;
-  margin-top:12px;
-}
-
-.pm-bill-row{
-  display:grid;
-  grid-template-columns:repeat(2,minmax(0,1fr));
-  gap:10px;
-  padding:12px;
-  border:1px solid #24242b;
-  border-radius:14px;
-  background:#0d0d11;
-}
-
-.pm-bill-amount{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  gap:8px;
-  grid-column:1/-1;
-  padding:9px 10px;
-  border-radius:10px;
-  background:#17171c;
-}
-
-.pm-bill-amount small{color:var(--pm-muted)}
-
-.pm-remove-bill{
-  grid-column:1/-1;
-  border:1px solid #73323d;
-  border-radius:10px;
-  background:#3c1b20;
-  color:#ffb2b8;
-  padding:8px 10px;
-  font-weight:800;
-}
-
-.pm-colour-slots{
-  display:grid;
-  grid-template-columns:repeat(3,minmax(0,1fr));
-  gap:9px;
-  margin-top:12px;
-}
-
-.pm-colour-slot{
-  min-width:0;
-  padding:8px;
-  border:1px dashed #555560;
-  border-radius:15px;
-  background:#0d0d11;
-  color:#fff;
-}
-
-.pm-colour-preview{
-  display:grid;
-  place-items:center;
-  width:100%;
-  height:105px;
-  overflow:hidden;
-  border-radius:11px;
-  background:#17171d;
-}
-
-.pm-colour-preview span{
-  font-size:30px;
-  color:#777781;
-}
-
-.pm-colour-preview img{
-  width:100%;
-  height:100%;
-  object-fit:cover;
-}
-
-.pm-colour-name{
-  width:100%;
-  margin-top:7px;
-  border:1px solid #363640;
-  border-radius:9px;
-  background:#0d0d11;
-  color:#fff;
-  padding:8px;
-  font-size:16px;
-}
-
-.pm-colour-slot input[type=file]{display:none}
-
-.pm-colour-actions{
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:6px;
-  margin-top:6px;
-}
-
-.pm-colour-actions label{
-  display:grid;
-  place-items:center;
-  min-height:36px;
-  margin:0;
-  border-radius:9px;
-  background:#26262d;
-  color:#fff;
-  font-size:11px;
-  font-weight:800;
-  text-align:center;
-}
-
-.pm-sticky-actions{
-  position:sticky;
-  bottom:-18px;
-  display:grid;
-  grid-template-columns:.8fr 1.6fr;
-  gap:10px;
-  padding:13px 0 2px;
-  background:linear-gradient(#11111600,#111116 22%);
-}
-
-.pm-sticky-actions .pm-primary-btn,
-.pm-sticky-actions .pm-secondary-btn{
-  width:100%;
-}
-
-@media(max-width:900px){
-  .pm-gallery{grid-template-columns:repeat(2,minmax(0,1fr))}
-}
-
-@media(max-width:650px){
-  .pm-page{padding-inline:12px}
-  .pm-topbar{padding-top:18px}
-  .pm-topbar h1{font-size:42px}
-  .pm-dashboard-link{min-height:54px;padding-inline:18px;font-size:17px}
-  .pm-hero-card{align-items:stretch;flex-direction:column}
-  .pm-primary-btn{width:100%}
-  .pm-gallery{grid-template-columns:1fr}
-  .pm-grid-2,.pm-live-summary,.pm-bill-summary,.pm-bill-row{grid-template-columns:1fr}
-  .pm-colour-slots{grid-template-columns:repeat(2,minmax(0,1fr))}
-  .pm-sheet-panel{padding-inline:12px}
-}
+(() => {
+"use strict";
+
+window.REDZED_PRODUCT_MASTER_BOOTED = true;
+window.REDZED_PRODUCT_MASTER_VERSION = "710";
+
+const $ = id => document.getElementById(id);
+
+const sheet = $("newCbSheet");
+const form = $("newCbForm");
+const gallery = $("cbGallery");
+const message = $("pmMessage");
+
+let categories = [];
+let galleryRows = [];
+let purchaseRows = [];
+let colourRows = [];
+let currentFilter = "all";
+let colourFiles = new Map();
+let dataReady = false;
+
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+function safe(value) {
+  if (
+    typeof RR !== "undefined" &&
+    typeof RR.safeText === "function"
+  ) {
+    return RR.safeText(value ?? "");
+  }
+  return escapeHtml(value);
+}
+
+function money(value) {
+  if (
+    typeof RR !== "undefined" &&
+    typeof RR.money === "function"
+  ) {
+    return RR.money(Number(value || 0));
+  }
+
+  return new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: "INR",
+    maximumFractionDigits: 2
+  }).format(Number(value || 0));
+}
+
+function localToday() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function say(text, type = "") {
+  message.textContent = text || "";
+  message.className = `rr-message ${type}`.trim();
+}
+
+function openSheet() {
+  if (!dataReady || !categories.length) {
+    say("Material categories are not ready. Press Refresh and try again.", "error");
+    return;
+  }
+
+  sheet.classList.remove("pm-hidden");
+  sheet.setAttribute("aria-hidden", "false");
+  document.body.classList.add("pm-no-scroll");
+  window.setTimeout(() => $("cbNo").focus(), 80);
+}
+
+function closeSheet() {
+  sheet.classList.add("pm-hidden");
+  sheet.setAttribute("aria-hidden", "true");
+  document.body.classList.remove("pm-no-scroll");
+}
+
+function materialOptions(selectedId = "", selectedCode = "regular-cloth") {
+  return categories.map(category => {
+    const selected =
+      selectedId
+        ? String(category.id) === String(selectedId)
+        : category.category_code === selectedCode;
+
+    return `
+      <option value="${safe(category.id)}" ${selected ? "selected" : ""}>
+        ${safe(category.category_name)}
+      </option>
+    `;
+  }).join("");
+}
+
+function regularCategoryId() {
+  return categories.find(
+    category => category.category_code === "regular-cloth"
+  )?.id || "";
+}
+
+function updateBillRowAmount(row) {
+  const quantity = Number(row.querySelector(".bill-qty").value || 0);
+  const rate = Number(row.querySelector(".bill-rate").value || 0);
+  const amountNode = row.querySelector(".pm-bill-amount strong");
+  if (amountNode) {
+    amountNode.textContent = money(quantity * rate);
+  }
+  updateBillSummary();
+}
+
+function addBill(data = {}) {
+  const row = document.createElement("article");
+  row.className = "pm-bill-row";
+
+  row.innerHTML = `
+    <label>
+      <span>Vendor *</span>
+      <input
+        class="bill-vendor"
+        type="text"
+        placeholder="Vendor name"
+        value="${safe(data.vendor_name || "")}"
+      >
+    </label>
+
+    <label>
+      <span>Bill No *</span>
+      <input
+        class="bill-no"
+        type="text"
+        placeholder="Bill number"
+        value="${safe(data.vendor_bill_no || "")}"
+      >
+    </label>
+
+    <label>
+      <span>Bill Date *</span>
+      <input
+        class="bill-date"
+        type="date"
+        value="${safe(data.bill_date || localToday())}"
+      >
+    </label>
+
+    <label>
+      <span>Material *</span>
+      <select class="bill-material">
+        ${materialOptions(
+          data.material_category_id || "",
+          data.category_code || "regular-cloth"
+        )}
+      </select>
+    </label>
+
+    <label>
+      <span>Qty *</span>
+      <input
+        class="bill-qty"
+        type="number"
+        inputmode="decimal"
+        min="0.001"
+        step="0.001"
+        placeholder="Qty"
+        value="${data.quantity ?? ""}"
+      >
+    </label>
+
+    <label>
+      <span>Rate *</span>
+      <input
+        class="bill-rate"
+        type="number"
+        inputmode="decimal"
+        min="0.0001"
+        step="0.0001"
+        placeholder="Rate"
+        value="${data.rate ?? ""}"
+      >
+    </label>
+
+    <div class="pm-bill-amount">
+      <small>Bill Amount</small>
+      <strong>${money(Number(data.quantity || 0) * Number(data.rate || 0))}</strong>
+    </div>
+
+    <button class="pm-remove-bill" type="button">Remove Bill</button>
+  `;
+
+  row.querySelector(".pm-remove-bill").onclick = () => {
+    row.remove();
+    updateBillSummary();
+  };
+
+  [
+    row.querySelector(".bill-qty"),
+    row.querySelector(".bill-rate"),
+    row.querySelector(".bill-material")
+  ].forEach(input => {
+    input.addEventListener("input", () => updateBillRowAmount(row));
+    input.addEventListener("change", () => updateBillRowAmount(row));
+  });
+
+  $("billRows").appendChild(row);
+  updateBillRowAmount(row);
+}
+
+function getBills() {
+  return [...$("billRows").querySelectorAll(".pm-bill-row")]
+    .map(row => ({
+      vendor_name: row.querySelector(".bill-vendor").value.trim(),
+      vendor_bill_no: row.querySelector(".bill-no").value.trim(),
+      bill_date: row.querySelector(".bill-date").value || localToday(),
+      material_category_id: row.querySelector(".bill-material").value,
+      quantity: Number(row.querySelector(".bill-qty").value || 0),
+      rate: Number(row.querySelector(".bill-rate").value || 0)
+    }))
+    .filter(row =>
+      row.vendor_name ||
+      row.vendor_bill_no ||
+      row.quantity ||
+      row.rate
+    );
+}
+
+function updateBillSummary() {
+  if (!categories.length) return;
+
+  const regularId = String(regularCategoryId());
+  const regularBills = getBills().filter(
+    row => String(row.material_category_id) === regularId
+  );
+
+  const quantity = regularBills.reduce(
+    (sum, row) => sum + row.quantity,
+    0
+  );
+
+  const amount = regularBills.reduce(
+    (sum, row) => sum + (row.quantity * row.rate),
+    0
+  );
+
+  $("billSummary").innerHTML = `
+    <span>
+      <small>Regular Bill Qty</small>
+      <strong>${quantity.toFixed(3)} kg</strong>
+    </span>
+    <span>
+      <small>Regular Bill Amount</small>
+      <strong>${money(amount)}</strong>
+    </span>
+  `;
+}
+
+function collectColourNames() {
+  const result = new Map();
+
+  $("colourSlots")
+    .querySelectorAll(".pm-colour-slot")
+    .forEach(slot => {
+      result.set(
+        Number(slot.dataset.index),
+        slot.querySelector(".pm-colour-name").value.trim()
+      );
+    });
+
+  return result;
+}
+
+function renderColourSlots() {
+  const count = Math.max(1, Number($("colourCount").value || 1));
+  const oldNames = collectColourNames();
+
+  for (const [index, entry] of [...colourFiles.entries()]) {
+    if (index >= count) {
+      if (entry.url) URL.revokeObjectURL(entry.url);
+      colourFiles.delete(index);
+    }
+  }
+
+  $("colourSlots").innerHTML = Array.from(
+    { length: count },
+    (_, index) => {
+      const existing = colourFiles.get(index);
+      const preview = existing?.url
+        ? `<img src="${safe(existing.url)}" alt="Colour ${index + 1}">`
+        : `<span>＋</span>`;
+
+      return `
+        <article class="pm-colour-slot" data-index="${index}">
+          <div class="pm-colour-preview">${preview}</div>
+
+          <input
+            class="pm-colour-name"
+            type="text"
+            placeholder="Colour ${index + 1} name"
+            value="${safe(oldNames.get(index) || "")}"
+          >
+
+          <div class="pm-colour-actions">
+            <label>
+              📷 Camera
+              <input
+                class="pm-colour-camera"
+                type="file"
+                accept="image/*"
+                capture="environment"
+              >
+            </label>
+
+            <label>
+              🖼 Gallery
+              <input
+                class="pm-colour-gallery"
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+              >
+            </label>
+          </div>
+        </article>
+      `;
+    }
+  ).join("");
+
+  $("colourSlots")
+    .querySelectorAll(".pm-colour-slot")
+    .forEach(slot => {
+      const index = Number(slot.dataset.index);
+
+      slot.querySelectorAll('input[type="file"]').forEach(input => {
+        input.onchange = () => {
+          const file = input.files?.[0];
+          if (!file) return;
+
+          if (!file.type.startsWith("image/")) {
+            say(`Colour ${index + 1}: select an image file.`, "error");
+            input.value = "";
+            return;
+          }
+
+          const previous = colourFiles.get(index);
+          if (previous?.url) URL.revokeObjectURL(previous.url);
+
+          const url = URL.createObjectURL(file);
+
+          colourFiles.set(index, {
+            file,
+            url,
+            sourceType: input.classList.contains("pm-colour-camera")
+              ? "camera"
+              : "gallery"
+          });
+
+          slot.querySelector(".pm-colour-preview").innerHTML =
+            `<img src="${safe(url)}" alt="Colour ${index + 1}">`;
+        };
+      });
+    });
+}
+
+function updateRegularPreview() {
+  const quantity = Number($("regularQty").value || 0);
+  const amount = Number($("regularAmount").value || 0);
+  const divisions = Math.max(1, Number($("divisionCount").value || 1));
+
+  $("avgRatePreview").textContent = quantity
+    ? `${money(amount / quantity)}/kg`
+    : "₹0/kg";
+
+  $("divisionPreview").textContent =
+    `${(quantity / divisions).toFixed(3)} kg`;
+}
+
+function clearColourFiles() {
+  colourFiles.forEach(entry => {
+    if (entry.url) URL.revokeObjectURL(entry.url);
+  });
+  colourFiles.clear();
+}
+
+function resetForm() {
+  form.reset();
+  $("divisionCount").value = "3";
+  $("colourCount").value = "6";
+  $("billRows").innerHTML = "";
+  clearColourFiles();
+  addBill({ category_code: "regular-cloth" });
+  renderColourSlots();
+  updateRegularPreview();
+  updateBillSummary();
+}
+
+function normalizeGalleryRow(row) {
+  return {
+    ...row,
+    cb_id: row.cb_id,
+    cb_no: row.cb_no || "",
+    division_id: row.division_id || row.id,
+    division_code: row.division_code || "",
+    division_status: row.division_status || row.status || "planning",
+    allocated_qty: Number(
+      row.allocated_qty ??
+      row.regular_allocated_qty ??
+      row.quantity ??
+      0
+    ),
+    allocated_amount: Number(
+      row.allocated_amount ??
+      row.regular_allocated_amount ??
+      row.amount ??
+      0
+    ),
+    lot_no: row.lot_no || "",
+    created_at: row.created_at || ""
+  };
+}
+
+async function loadGallerySource() {
+  const viewResult = await supabaseClient
+    .from("rr_product_gallery_view")
+    .select("*");
+
+  if (!viewResult.error) {
+    return (viewResult.data || []).map(normalizeGalleryRow);
+  }
+
+  console.warn(
+    "rr_product_gallery_view unavailable; using table fallback.",
+    viewResult.error
+  );
+
+  const [divisionResult, purchaseResult] = await Promise.all([
+    supabaseClient.from("rr_cb_units").select("*"),
+    supabaseClient.from("rr_fabric_purchases").select("*")
+  ]);
+
+  if (divisionResult.error) throw divisionResult.error;
+  if (purchaseResult.error) throw purchaseResult.error;
+
+  const purchaseMap = new Map(
+    (purchaseResult.data || []).map(row => [String(row.id), row])
+  );
+
+  const statusMap = {
+    available: "planning",
+    art_assigned: "ready_for_cutting",
+    material_pending: "material_pending",
+    cutting: "ready_for_cutting",
+    completed: "ready_for_cutting",
+    cancelled: "hold"
+  };
+
+  return (divisionResult.data || []).map(division => {
+    const purchase = purchaseMap.get(String(division.purchase_id)) || {};
+
+    return normalizeGalleryRow({
+      ...division,
+      cb_id: division.purchase_id,
+      division_id: division.id,
+      division_code: division.cb_code || "",
+      division_status: statusMap[division.status] || "planning",
+      allocated_qty: Number(division.divided_weight || 0),
+      allocated_amount: Number(division.divided_amount || 0),
+      cb_no: purchase.cb_no || division.cb_base_no || "",
+      created_at: division.created_at || purchase.created_at || ""
+    });
+  });
+}
+
+function groupGalleryRows() {
+  const groups = new Map();
+  const statusPriority = {
+    hold: 50,
+    ready_for_cutting: 40,
+    material_pending: 30,
+    planning: 20,
+    purchase: 10
+  };
+
+  for (const row of galleryRows) {
+    const key = String(row.cb_id);
+
+    if (!groups.has(key)) {
+      groups.set(key, {
+        cb_id: row.cb_id,
+        cb_no: row.cb_no,
+        status: row.division_status || "planning",
+        created_at: row.created_at || "",
+        divisionMap: new Map()
+      });
+    }
+
+    const group = groups.get(key);
+    const divisionKey = String(row.division_id || row.division_code);
+
+    if (!group.divisionMap.has(divisionKey)) {
+      group.divisionMap.set(divisionKey, row);
+    }
+
+    const currentPriority = statusPriority[group.status] || 0;
+    const nextPriority = statusPriority[row.division_status] || 0;
+
+    if (nextPriority > currentPriority) {
+      group.status = row.division_status;
+    }
+
+    if (!group.created_at && row.created_at) {
+      group.created_at = row.created_at;
+    }
+  }
+
+  return [...groups.values()]
+    .map(group => {
+      const divisions = [...group.divisionMap.values()]
+        .sort((a, b) =>
+          String(a.division_code).localeCompare(
+            String(b.division_code),
+            undefined,
+            { numeric: true }
+          )
+        );
+
+      return {
+        ...group,
+        divisions,
+        quantity: divisions.reduce(
+          (sum, row) => sum + Number(row.allocated_qty || 0),
+          0
+        ),
+        amount: divisions.reduce(
+          (sum, row) => sum + Number(row.allocated_amount || 0),
+          0
+        )
+      };
+    })
+    .sort((a, b) => {
+      const dateCompare = String(b.created_at).localeCompare(
+        String(a.created_at)
+      );
+      if (dateCompare) return dateCompare;
+
+      return String(b.cb_no).localeCompare(
+        String(a.cb_no),
+        undefined,
+        { numeric: true }
+      );
+    });
+}
+
+function purchasesFor(cbId) {
+  return purchaseRows.filter(
+    row => String(row.cb_id) === String(cbId)
+  );
+}
+
+function coloursFor(cbId) {
+  return colourRows
+    .filter(row => String(row.cb_id) === String(cbId))
+    .sort(
+      (a, b) =>
+        Number(a.colour_order || 0) -
+        Number(b.colour_order || 0)
+    );
+}
+
+function divisionLabel(group, division) {
+  const fullCode = String(division.division_code || "");
+  const prefix = `${group.cb_no} `;
+
+  if (group.cb_no && fullCode.startsWith(prefix)) {
+    return fullCode.slice(prefix.length);
+  }
+
+  return fullCode || "Division";
+}
+
+function renderGallery() {
+  const query = $("pmSearch").value.trim().toLowerCase();
+
+  const groups = groupGalleryRows().filter(group => {
+    const purchases = purchasesFor(group.cb_id);
+    const colours = coloursFor(group.cb_id);
+
+    const searchText = [
+      group.cb_no,
+      ...group.divisions.map(row =>
+        `${row.division_code || ""} ${row.lot_no || ""}`
+      ),
+      ...purchases.map(row =>
+        `${row.vendor_name || ""} ${row.vendor_bill_no || ""}`
+      ),
+      ...colours.map(row => row.colour_name || "")
+    ].join(" ").toLowerCase();
+
+    let filterMatches = currentFilter === "all";
+
+    if (currentFilter === "purchase") {
+      filterMatches = purchases.length > 0;
+    } else if (currentFilter !== "all") {
+      filterMatches = group.status === currentFilter;
+    }
+
+    return filterMatches && searchText.includes(query);
+  });
+
+  gallery.setAttribute("aria-busy", "false");
+
+  if (!groups.length) {
+    gallery.innerHTML = `
+      <article class="pm-empty-card">
+        <div class="pm-empty-icon">＋</div>
+        <h3>No CB found</h3>
+        <p>Create a new cloth purchase or change the search/filter.</p>
+      </article>
+    `;
+    return;
+  }
+
+  gallery.innerHTML = groups.map(group => {
+    const purchases = purchasesFor(group.cb_id);
+    const colours = coloursFor(group.cb_id);
+
+    const colourHtml = colours.length
+      ? colours.map(colour => {
+          const name = colour.colour_name || `Colour ${colour.colour_order}`;
+          const icon = colour.image_url
+            ? `<img src="${safe(colour.image_url)}" alt="${safe(name)}" loading="lazy">`
+            : `<i class="pm-colour-fallback">C</i>`;
+
+          return `<span>${icon}${safe(name)}</span>`;
+        }).join("")
+      : `<span><i class="pm-colour-fallback">C</i>Colour images pending</span>`;
+
+    const divisionHtml = group.divisions.map(division => `
+      <button type="button" disabled title="Division details will open in V703">
+        ${safe(divisionLabel(group, division))}
+      </button>
+    `).join("");
+
+    return `
+      <article class="pm-cb-card">
+        <div class="pm-card-top">
+          <div>
+            <span class="pm-status status-${safe(group.status)}">
+              ${safe(String(group.status).replaceAll("_", " "))}
+            </span>
+            <h3>${safe(group.cb_no)}</h3>
+            <p>
+              ${group.divisions.length}
+              Division${group.divisions.length === 1 ? "" : "s"}
+              ·
+              ${colours.length}
+              Colour${colours.length === 1 ? "" : "s"}
+            </p>
+          </div>
+        </div>
+
+        <div class="pm-card-colours">${colourHtml}</div>
+
+        <div class="pm-card-metrics">
+          <span>
+            <small>Regular Qty</small>
+            <strong>${group.quantity.toFixed(3)} kg</strong>
+          </span>
+          <span>
+            <small>Amount</small>
+            <strong>${money(group.amount)}</strong>
+          </span>
+        </div>
+
+        <div class="pm-division-preview">${divisionHtml}</div>
+
+        <div class="pm-card-footer">
+          <span>
+            ${purchases.length}
+            Bill Entr${purchases.length === 1 ? "y" : "ies"}
+          </span>
+          <button type="button" disabled>Open in V703</button>
+        </div>
+      </article>
+    `;
+  }).join("");
+}
+
+async function loadData() {
+  const refreshButton = $("refreshCb");
+  const newCbButton = $("openNewCb");
+
+  refreshButton.disabled = true;
+  refreshButton.textContent = "Loading…";
+  newCbButton.disabled = true;
+  gallery.setAttribute("aria-busy", "true");
+
+  try {
+    const [
+      categoryResult,
+      loadedGalleryRows,
+      purchaseResult,
+      colourResult
+    ] = await Promise.all([
+      supabaseClient
+        .from("rr_material_categories")
+        .select("*")
+        .eq("is_active", true)
+        .order("sort_order"),
+
+      loadGallerySource(),
+
+      supabaseClient
+        .from("rr_cb_purchase_entries")
+        .select("*")
+        .order("created_at", { ascending: false }),
+
+      supabaseClient
+        .from("rr_cb_colours")
+        .select("*")
+        .order("colour_order")
+    ]);
+
+    if (categoryResult.error) throw categoryResult.error;
+    if (purchaseResult.error) throw purchaseResult.error;
+    if (colourResult.error) throw colourResult.error;
+
+    categories = categoryResult.data || [];
+    galleryRows = loadedGalleryRows || [];
+    purchaseRows = purchaseResult.data || [];
+    colourRows = colourResult.data || [];
+
+    if (!categories.length) {
+      throw new Error("No active material categories were found.");
+    }
+
+    dataReady = true;
+    newCbButton.disabled = false;
+    renderGallery();
+  } catch (error) {
+    dataReady = false;
+    gallery.setAttribute("aria-busy", "false");
+    gallery.innerHTML = `
+      <article class="pm-empty-card">
+        <h3>Product Master could not load</h3>
+        <p>${safe(error.message || "Unknown loading error")}</p>
+      </article>
+    `;
+    throw error;
+  } finally {
+    refreshButton.disabled = false;
+    refreshButton.textContent = "Refresh";
+  }
+}
+
+function normalizeRpcId(data) {
+  const raw = Array.isArray(data) ? data[0] : data;
+
+  if (typeof raw === "string") return raw;
+
+  return (
+    raw?.id ||
+    raw?.cb_id |
