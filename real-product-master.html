@@ -6,8 +6,8 @@
   <meta name="theme-color" content="#0b0b0e">
   <title>REDZED REAL — Product Master</title>
 
-  <link rel="stylesheet" href="real-style.css?v=709">
-  <link rel="stylesheet" href="real-product-master.css?v=709">
+  <link rel="stylesheet" href="real-style.css?v=710">
+  <link rel="stylesheet" href="real-product-master.css?v=710">
 </head>
 <body>
   <main class="rr-page pm-page">
@@ -184,9 +184,132 @@
     </div>
   </section>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="config.js?v=709"></script>
-  <script src="real-common.js?v=709"></script>
-  <script src="real-product-master.js?v=709"></script>
+  <script>
+    (() => {
+      "use strict";
+
+      const gallery = document.getElementById("cbGallery");
+      const message = document.getElementById("pmMessage");
+      const openButton = document.getElementById("openNewCb");
+
+      function showBoot(title, detail, isError = false) {
+        if (gallery) {
+          gallery.setAttribute("aria-busy", isError ? "false" : "true");
+          gallery.innerHTML = `
+            <article class="pm-empty-card">
+              ${isError ? "" : '<div class="pm-spinner" aria-hidden="true"></div>'}
+              <h3>${title}</h3>
+              <p>${detail}</p>
+            </article>
+          `;
+        }
+
+        if (message) {
+          message.textContent = isError ? `V710 startup error: ${detail}` : "";
+          message.className = isError ? "rr-message error" : "rr-message";
+        }
+
+        if (openButton && isError) openButton.disabled = true;
+      }
+
+      function loadScript(src, timeoutMs = 9000) {
+        return new Promise((resolve, reject) => {
+          const script = document.createElement("script");
+          let settled = false;
+          const timer = window.setTimeout(() => {
+            if (settled) return;
+            settled = true;
+            script.remove();
+            reject(new Error(`Timed out loading ${src}`));
+          }, timeoutMs);
+
+          script.src = src;
+          script.async = false;
+          script.onload = () => {
+            if (settled) return;
+            settled = true;
+            window.clearTimeout(timer);
+            resolve();
+          };
+          script.onerror = () => {
+            if (settled) return;
+            settled = true;
+            window.clearTimeout(timer);
+            reject(new Error(`Could not load ${src}`));
+          };
+          document.body.appendChild(script);
+        });
+      }
+
+      async function ensureSupabaseLibrary() {
+        if (window.supabase && typeof window.supabase.createClient === "function") {
+          return;
+        }
+
+        const sources = [
+          "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2",
+          "https://unpkg.com/@supabase/supabase-js@2"
+        ];
+
+        let lastError = null;
+        for (const source of sources) {
+          try {
+            showBoot("Starting Product Master V710", "Loading database library…");
+            await loadScript(source, 9000);
+            if (window.supabase && typeof window.supabase.createClient === "function") {
+              return;
+            }
+            throw new Error("Database library loaded without the expected Supabase global.");
+          } catch (error) {
+            lastError = error;
+          }
+        }
+
+        throw lastError || new Error("Supabase library could not load.");
+      }
+
+      window.addEventListener("error", event => {
+        const text = event?.message || "Unknown JavaScript error";
+        console.error("V710 page error:", event.error || text);
+      });
+
+      window.addEventListener("unhandledrejection", event => {
+        console.error("V710 unhandled promise rejection:", event.reason);
+      });
+
+      (async () => {
+        try {
+          showBoot("Starting Product Master V710", "Preparing application…");
+          await ensureSupabaseLibrary();
+
+          showBoot("Starting Product Master V710", "Loading secure configuration…");
+          await loadScript("config.js?v=710", 9000);
+
+          showBoot("Starting Product Master V710", "Loading REDZED common tools…");
+          await loadScript("real-common.js?v=710", 9000);
+
+          showBoot("Starting Product Master V710", "Loading Product Master…");
+          await loadScript("real-product-master.js?v=710", 9000);
+
+          window.setTimeout(() => {
+            if (!window.REDZED_PRODUCT_MASTER_BOOTED) {
+              showBoot(
+                "Product Master script did not start",
+                "real-product-master.js loaded, but its startup code did not run.",
+                true
+              );
+            }
+          }, 1200);
+        } catch (error) {
+          console.error("V710 loader failed:", error);
+          showBoot(
+            "Product Master could not load",
+            error?.message || "Unknown startup error",
+            true
+          );
+        }
+      })();
+    })();
+  </script>
 </body>
 </html>
