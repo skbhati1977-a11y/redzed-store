@@ -2,150 +2,226 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#0b0b0e">
   <title>REDZED REAL — Product Master</title>
-  <link rel="stylesheet" href="real-style.css?v=2">
+  <link rel="stylesheet" href="real-style.css?v=700">
+  <link rel="stylesheet" href="real-product-master.css?v=702">
 </head>
-<body class="rr-body">
-  <header class="rr-topbar">
-    <div>
-      <p class="rr-kicker">REDZED REAL</p>
-      <h1>Product Master</h1>
-    </div>
-    <a class="rr-btn rr-btn-secondary" href="real-dashboard.html">Dashboard</a>
-  </header>
-
-  <main class="rr-page">
-    <section class="rr-product-toolbar">
+<body>
+  <main class="rr-page pm-page">
+    <header class="pm-topbar">
       <div>
-        <h2>Products</h2>
-        <p class="rr-muted rr-no-margin">CB remains the backend master. Tap a card to view/edit.</p>
+        <p class="pm-kicker">REDZED REAL</p>
+        <h1>Product Master</h1>
       </div>
-      <button id="addProductBtn" class="rr-btn rr-btn-primary" type="button">+ Add Product</button>
+      <a class="pm-dashboard-link" href="dashboard.html">Dashboard</a>
+    </header>
+
+    <section class="pm-hero-card">
+      <div>
+        <small>Factory Production</small>
+        <h2>CB Purchase → Division → Lot</h2>
+        <p>Card-first mobile workflow. Lot No remains the permanent identity from cutting to sale.</p>
+      </div>
+      <button id="openNewCb" class="pm-primary-btn" type="button">+ New CB</button>
     </section>
 
-    <section id="productEditor" class="rr-panel rr-hidden">
-      <div class="rr-panel-head">
-        <div>
-          <h2 id="productFormTitle">Add Product</h2>
-          <p class="rr-muted rr-no-margin">Design link, material division, costing and images.</p>
-        </div>
-        <button id="closeProductEditor" class="rr-btn rr-btn-secondary" type="button">Close</button>
+    <section class="pm-toolbar">
+      <label class="pm-search">
+        <span>Search</span>
+        <input id="pmSearch" type="search" placeholder="CB No, Division, Lot No, Vendor, Bill">
+      </label>
+
+      <div class="pm-filter-row">
+        <button class="pm-filter is-active" type="button" data-filter="all">All</button>
+        <button class="pm-filter" type="button" data-filter="purchase">Purchase</button>
+        <button class="pm-filter" type="button" data-filter="planning">Planning</button>
+        <button class="pm-filter" type="button" data-filter="ready_for_cutting">Ready</button>
+        <button class="pm-filter" type="button" data-filter="hold">Hold</button>
       </div>
-
-      <form id="productForm" class="rr-form">
-        <input id="cbId" type="hidden">
-
-        <div class="rr-form-grid">
-          <label>Product Code
-            <input id="cbCode" type="text" required placeholder="Example: CB-2501">
-          </label>
-          <label>Design
-            <select id="artSelect" required>
-              <option value="">Select design</option>
-            </select>
-          </label>
-          <label>Material Purchase
-            <select id="purchaseSelect" required>
-              <option value="">Select purchase</option>
-            </select>
-          </label>
-          <label>Material Family
-            <select id="sizeFamily">
-              <option value="regular">Regular</option>
-              <option value="small">Small</option>
-              <option value="big">Big</option>
-            </select>
-          </label>
-          <label>Sleeve Type
-            <select id="sleeveType">
-              <option value="full">Full Sleeve</option>
-              <option value="half">Half Sleeve</option>
-            </select>
-          </label>
-          <label>Colour Count
-            <input id="colourCount" type="number" min="1" step="1" value="1">
-          </label>
-          <label>Divided Rolls
-            <input id="dividedRolls" type="number" min="0" step="1" value="0">
-          </label>
-          <label>Divided Weight
-            <input id="dividedWeight" type="number" min="0" step="0.001" value="0">
-          </label>
-          <label>Divided Amount
-            <input id="dividedAmount" type="number" min="0" step="0.01" value="0">
-          </label>
-          <label>Estimated PCS
-            <input id="estimatedPcs" type="number" min="0" step="1" value="0">
-          </label>
-          <label class="rr-span-2">Matching / Collar / Cuff / Other Material Cost per Piece
-            <input id="accessoriesCost" type="number" min="0" step="0.01" value="0">
-          </label>
-          <label>Consumption per Piece
-            <input id="consumptionPerPiece" type="number" min="0" step="0.0001" value="0">
-          </label>
-          <label>Wastage %
-            <input id="wastagePercent" type="number" min="0" step="0.01" value="0">
-          </label>
-          <label class="rr-span-2">Factory Notes
-            <textarea id="cbNotes" rows="2"></textarea>
-          </label>
-        </div>
-
-        <div id="designReference" class="rr-linked-design">
-          <div class="rr-image-placeholder">Select Design</div>
-          <div>
-            <span>Design reference</span>
-            <h3>Nothing selected</h3>
-            <p class="rr-muted">Process cost and reference image will appear here.</p>
-          </div>
-        </div>
-
-        <div class="rr-section-title">
-          <div>
-            <h3>Final Product Images</h3>
-            <p>These images are used for the customer catalog.</p>
-          </div>
-        </div>
-        <div class="rr-upload-row">
-          <label class="rr-upload-btn">📷 Camera
-            <input id="productCamera" type="file" accept="image/*" capture="environment" multiple>
-          </label>
-          <label class="rr-upload-btn">🖼 Gallery
-            <input id="productGallery" type="file" accept="image/jpeg,image/png,image/webp" multiple>
-          </label>
-        </div>
-        <div id="productImagePreview" class="rr-image-strip"></div>
-
-        <div class="rr-price-summary">
-          <div><span>Process Cost</span><strong id="processCostDisplay">₹0.00</strong></div>
-          <div><span>Material Cost</span><strong id="materialCostDisplay">₹0.00</strong></div>
-          <div><span>Production Cost</span><strong id="productionCostDisplay">₹0.00</strong></div>
-          <div><span>Selling Price</span><strong id="sellingPriceDisplay">₹0.00</strong></div>
-        </div>
-
-        <button id="saveProductBtn" class="rr-btn rr-btn-primary" type="submit">Save Product</button>
-      </form>
-      <p id="productMessage" class="rr-message" role="status"></p>
     </section>
 
-    <section class="rr-panel rr-top-gap">
-      <div class="rr-panel-head">
-        <div>
-          <h2>Product Cards</h2>
-          <p class="rr-muted rr-no-margin">Factory costs are visible only in this Owner/Admin screen.</p>
+    <section class="pm-section-head">
+      <div>
+        <small>CB Gallery</small>
+        <h2>Current Cloth Batches</h2>
+      </div>
+      <button id="refreshCb" class="pm-secondary-btn" type="button">Refresh</button>
+    </section>
+
+    <section id="cbGallery" class="pm-gallery">
+      <article class="pm-cb-card pm-demo-card">
+        <div class="pm-card-top">
+          <div>
+            <span class="pm-status status-planning">Planning</span>
+            <h3>CB135</h3>
+            <p>3 Divisions · 6 Colours</p>
+          </div>
+          <div class="pm-health waiting">Waiting</div>
         </div>
-        <button id="reloadProducts" class="rr-btn rr-btn-secondary" type="button">Refresh</button>
-      </div>
-      <div id="productCards" class="rr-card-grid">
-        <p class="rr-muted">Loading...</p>
-      </div>
+
+        <div class="pm-colour-strip">
+          <span style="--chip:#14151a" title="Black"></span>
+          <span style="--chip:#1b2b46" title="Navy"></span>
+          <span style="--chip:#52613a" title="Olive"></span>
+          <span style="--chip:#934b31" title="Rust"></span>
+          <span style="--chip:#7b7e86" title="Grey"></span>
+          <span style="--chip:#e9e5dc" title="White"></span>
+        </div>
+
+        <div class="pm-card-metrics">
+          <span><small>Regular Qty</small><strong>300 kg</strong></span>
+          <span><small>Amount</small><strong>₹30,000</strong></span>
+        </div>
+
+        <div class="pm-division-preview">
+          <button type="button">S3:1</button>
+          <button type="button">S3:2</button>
+          <button type="button">S3:3</button>
+        </div>
+
+        <div class="pm-card-footer">
+          <span>Vendor/Bill details inside</span>
+          <button type="button">Open</button>
+        </div>
+      </article>
+
+      <article class="pm-empty-card">
+        <div class="pm-empty-icon">＋</div>
+        <h3>Your CB cards will appear here</h3>
+        <p>Create the first cloth purchase after the JavaScript step is connected.</p>
+      </article>
     </section>
   </main>
+
+  <section id="newCbSheet" class="pm-sheet pm-hidden" aria-hidden="true">
+    <div class="pm-sheet-backdrop" data-close-sheet></div>
+    <div class="pm-sheet-panel">
+      <div class="pm-sheet-grab"></div>
+
+      <header class="pm-sheet-head">
+        <div>
+          <small>Step 1</small>
+          <h2>New Cloth Purchase</h2>
+        </div>
+        <button type="button" data-close-sheet>×</button>
+      </header>
+
+      <form id="newCbForm" class="pm-form">
+        <section class="pm-form-card">
+          <h3>Purchase Identity</h3>
+
+          <label>
+            <span>CB No *</span>
+            <input id="cbNo" placeholder="CB135" autocomplete="off">
+          </label>
+
+          <div class="pm-grid-2">
+            <label>
+              <span>Set Division *</span>
+              <select id="divisionCount">
+                <option value="1">1 Division</option>
+                <option value="2">2 Divisions</option>
+                <option value="3" selected>3 Divisions</option>
+                <option value="4">4 Divisions</option>
+                <option value="5">5 Divisions</option>
+                <option value="6">6 Divisions</option>
+              </select>
+            </label>
+
+            <label>
+              <span>Total Colours *</span>
+              <select id="colourCount">
+                <option value="1">1 Colour</option>
+                <option value="2">2 Colours</option>
+                <option value="3">3 Colours</option>
+                <option value="4">4 Colours</option>
+                <option value="5">5 Colours</option>
+                <option value="6" selected>6 Colours</option>
+                <option value="7">7 Colours</option>
+                <option value="8">8 Colours</option>
+                <option value="9">9 Colours</option>
+                <option value="10">10 Colours</option>
+              </select>
+            </label>
+          </div>
+        </section>
+
+        <section class="pm-form-card">
+          <h3>Regular Cloth</h3>
+
+          <div class="pm-grid-2">
+            <label>
+              <span>Total Qty (kg) *</span>
+              <input id="regularQty" type="number" inputmode="decimal" min="0" step="0.001" placeholder="300">
+            </label>
+
+            <label>
+              <span>Total Amount *</span>
+              <input id="regularAmount" type="number" inputmode="decimal" min="0" step="0.01" placeholder="30000">
+            </label>
+          </div>
+
+          <div class="pm-live-summary">
+            <span><small>Average Rate</small><strong id="avgRatePreview">₹0/kg</strong></span>
+            <span><small>Per Division</small><strong id="divisionPreview">0 kg</strong></span>
+          </div>
+        </section>
+
+        <section class="pm-form-card">
+          <div class="pm-form-title-row">
+            <h3>Vendor Bill</h3>
+            <button id="addBillRow" type="button">+ Add Bill</button>
+          </div>
+
+          <div id="billRows" class="pm-bill-list">
+            <div class="pm-bill-row">
+              <label><span>Vendor *</span><input class="bill-vendor" placeholder="Vendor name"></label>
+              <label><span>Bill No *</span><input class="bill-no" placeholder="Bill number"></label>
+              <label><span>Bill Date</span><input class="bill-date" type="date"></label>
+              <label><span>Material</span><select class="bill-material"></select></label>
+              <label><span>Qty</span><input class="bill-qty" type="number" inputmode="decimal" min="0" step="0.001" value="0"></label>
+              <label><span>Rate</span><input class="bill-rate" type="number" inputmode="decimal" min="0" step="0.0001" value="0"></label>
+              <button class="pm-remove-bill" type="button">Remove</button>
+            </div>
+          </div>
+        </section>
+
+        <section class="pm-form-card">
+          <div class="pm-form-title-row">
+            <div>
+              <h3>Colour Images</h3>
+              <p>Camera/Gallery selection and colour-name suggestion will connect in the JS step.</p>
+            </div>
+          </div>
+
+          <div id="colourSlots" class="pm-colour-slots">
+            <button type="button"><span>＋</span><small>Colour 1</small></button>
+            <button type="button"><span>＋</span><small>Colour 2</small></button>
+            <button type="button"><span>＋</span><small>Colour 3</small></button>
+            <button type="button"><span>＋</span><small>Colour 4</small></button>
+            <button type="button"><span>＋</span><small>Colour 5</small></button>
+            <button type="button"><span>＋</span><small>Colour 6</small></button>
+          </div>
+        </section>
+
+        <label class="pm-remarks">
+          <span>Remarks</span>
+          <textarea id="cbRemarks" rows="3" placeholder="Optional"></textarea>
+        </label>
+
+        <div class="pm-sticky-actions">
+          <button class="pm-secondary-btn" type="button" data-close-sheet>Cancel</button>
+          <button class="pm-primary-btn" type="submit">Save CB & Create Cards</button>
+        </div>
+      </form>
+    </div>
+  </section>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="config.js?v=1"></script>
   <script src="real-common.js?v=1"></script>
-  <script src="real-product-master.js?v=1"></script>
+  <script src="real-product-master.js?v=702"></script>
 </body>
 </html>
