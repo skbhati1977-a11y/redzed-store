@@ -7,7 +7,7 @@
   <link rel="stylesheet" href="real-style.css?v=541">
   <link rel="stylesheet" href="real-caption-builder.css?v=541">
   <link rel="stylesheet" href="real-master-viewer.css?v=541">
-  <link rel="stylesheet" href="real-art-master-final.css?v=541">
+  <link rel="stylesheet" href="real-art-master-final.css?v=542">
 </head>
 <body>
 <header class="rr-topbar">
@@ -77,6 +77,24 @@
       <p>Tick construction features or add a reusable new fashion detail.</p>
       <div id="artCaptionBuilder" class="rr-caption-builder"></div>
       <input id="description" type="hidden">
+
+      <div class="art-material-compact">
+        <div class="art-material-title">
+          <div>
+            <strong>Material Requirements</strong>
+            <small>Category aur selected Craft Features se auto</small>
+          </div>
+          <button id="addCustomMaterialBtn" class="rr-btn rr-btn-secondary" type="button">+ Add</button>
+        </div>
+
+        <div id="artMaterialRequirements" class="art-material-chips"></div>
+
+        <div id="customMaterialEditor" class="art-material-editor rr-hidden">
+          <input id="customMaterialInput" placeholder="Custom material name">
+          <button id="saveCustomMaterialBtn" class="rr-btn" type="button">Add</button>
+          <button id="cancelCustomMaterialBtn" class="rr-btn rr-btn-secondary" type="button">Cancel</button>
+        </div>
+      </div>
     </section>
 
     <section class="rr-subpanel">
@@ -194,6 +212,6 @@
 <script src="config.js"></script>
 <script src="real-common.js?v=541"></script>
 <script src="real-caption-builder.js?v=541"></script>
-<script src="real-art-master.js?v=541"></script>
+<script src="real-art-master.js?v=542"></script>
 </body>
 </html>
