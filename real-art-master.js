@@ -15,6 +15,7 @@ const PROCESSES=[
 ];
 
 let categories=[],arts=[],summaries=[],mediaMap={},queued=[],selectedIcon=null,builder,activeImage=null;
+let manualMaterialRequirements=[];
 let categoryHasCosts=false;
 let basicRatesUnlocked=false;
 
@@ -160,7 +161,131 @@ async function loadCategoryCosts(id){
  const c=categories.find(x=>x.id===id);
  if(c?.default_design_name&&!$("itemName").value.trim())$("itemName").value=c.default_design_name;
 }
-$("artCategory").onchange=()=>loadCategoryCosts($("artCategory").value).catch(e=>say(e.message,"error"));
+
+function materialNormalize(value){
+ return String(value||"")
+  .toLowerCase()
+  .replace(/[&/+_-]+/g," ")
+  .replace(/\s+/g," ")
+  .trim();
+}
+
+function selectedArtCategoryName(){
+ const row=categories.find(x=>String(x.id)===String($("artCategory").value));
+ return row?.category_name||"";
+}
+
+function selectedCraftText(){
+ const items=builder?.getItems?.()||[];
+ return items.map(item=>item?.text||item?.label||item?.name||"").join(" ");
+}
+
+function deriveArtMaterials(){
+ const category=materialNormalize(selectedArtCategoryName());
+ const craft=materialNormalize(selectedCraftText());
+ const text=`${category} ${craft}`;
+ const materials=new Set(["Regular Cloth"]);
+
+ // Category rules
+ if(category.includes("flat polo"))materials.add("Collar & Cuff");
+ if(category.includes("r nk")||category.includes("crew neck"))materials.add("Rib");
+ if(category.includes("lower")||category.includes("pajama")||
+    category.includes("shorts")||category.includes("bermuda")){
+  materials.add("Elastic");
+ }
+
+ // Craft-feature rules
+ if(/\b(rib|rib neck|ribbed)\b/.test(text))materials.add("Rib");
+ if(/\b(zip|zipper)\b/.test(text))materials.add("Zip");
+ if(/\b(elastic|waist band|waistband)\b/.test(text))materials.add("Elastic");
+ if(/\b(tape|taping)\b/.test(text))materials.add("Tape");
+
+ if(/\b(piping|contrast|dual col|dual colour|dual color|two tone|2 tone|upper cut|lower cut|contrast placket|contrast sleeve|contrast panel)\b/.test(text)){
+  materials.add("Matching Cloth");
+ }
+
+ // Self Collar uses body cloth collar.
+ if(category.includes("self collar"))materials.delete("Collar & Cuff");
+
+ return [...materials];
+}
+
+function currentArtMaterials(){
+ return [...new Set([
+  ...deriveArtMaterials(),
+  ...manualMaterialRequirements.map(x=>String(x||"").trim()).filter(Boolean)
+ ])];
+}
+
+function renderArtMaterials(){
+ const container=$("artMaterialRequirements");
+ if(!container)return;
+
+ const auto=new Set(deriveArtMaterials());
+
+ container.innerHTML=currentArtMaterials().map(name=>{
+  const automatic=auto.has(name);
+  return `<span class="art-material-chip ${automatic?"auto":"manual"}">
+    ${RR.safeText(name)}
+    <small>${automatic?"AUTO":"ADDED"}</small>
+    ${automatic?"":`<button type="button" data-remove-material="${RR.safeText(name)}">×</button>`}
+  </span>`;
+ }).join("");
+
+ container.querySelectorAll("[data-remove-material]").forEach(button=>{
+  button.onclick=()=>{
+   manualMaterialRequirements=manualMaterialRequirements.filter(
+    name=>name!==button.dataset.removeMaterial
+   );
+   renderArtMaterials();
+  };
+ });
+}
+
+function restoreArtMaterials(saved){
+ const auto=new Set(deriveArtMaterials());
+ const list=Array.isArray(saved)?saved:[];
+ manualMaterialRequirements=list
+  .map(item=>typeof item==="string"?item:(item?.name||item?.custom||""))
+  .map(item=>String(item||"").trim())
+  .filter(item=>item&&item!=="Regular Cloth"&&!auto.has(item));
+ renderArtMaterials();
+}
+
+$("addCustomMaterialBtn").onclick=()=>{
+ $("customMaterialEditor").classList.remove("rr-hidden");
+ $("customMaterialInput").focus();
+};
+
+$("cancelCustomMaterialBtn").onclick=()=>{
+ $("customMaterialInput").value="";
+ $("customMaterialEditor").classList.add("rr-hidden");
+};
+
+$("saveCustomMaterialBtn").onclick=()=>{
+ const value=$("customMaterialInput").value.trim();
+ if(!value)return;
+
+ if(!currentArtMaterials().some(item=>materialNormalize(item)===materialNormalize(value))){
+  manualMaterialRequirements.push(value);
+ }
+
+ $("customMaterialInput").value="";
+ $("customMaterialEditor").classList.add("rr-hidden");
+ renderArtMaterials();
+};
+
+// Caption Builder already handles its own clicks.
+// Recalculate after its click/change has completed.
+$("artCaptionBuilder").addEventListener("click",()=>setTimeout(renderArtMaterials,0));
+$("artCaptionBuilder").addEventListener("change",()=>setTimeout(renderArtMaterials,0));
+
+$("artCategory").onchange=async()=>{
+ try{
+  await loadCategoryCosts($("artCategory").value);
+  renderArtMaterials();
+ }catch(e){say(e.message,"error")}
+};
 $("defaultMargin").addEventListener("input",updateCostTotals);
 
 $("addCategoryBtn").onclick=()=>$("categoryDialog").classList.remove("rr-hidden");
@@ -266,10 +391,11 @@ async function editArt(id){
  const basics={};(r.data||[]).forEach(x=>basics[x.process_code]=x.basic_rate);renderCostRows(basics);(r.data||[]).forEach(x=>{const i=rowInput(x.process_code,"extra");if(i)i.value=x.extra_rate});updateCostTotals();
  queued=[];const cover=saved().find(x=>x.is_cover)||saved()[0];selectedIcon=cover?{type:"saved",id:cover.id}:null;renderImages();
  await builder.load(Array.isArray(a.caption_items)?a.caption_items:[]);
+ restoreArtMaterials(a.material_requirements);
  $("formTitle").textContent=`Edit ${a.art_no}`;$("saveArtBtn").textContent="Update Art";$("cancelEdit").classList.remove("rr-hidden");scrollTo({top:0,behavior:"smooth"});
 }
 function reset(){
- form.reset();$("artId").value="";$("defaultMargin").value=22;queued=[];selectedIcon=null;$("imagePreview").innerHTML="";$("iconStatus").innerHTML='<span class="art-icon-star">★</span><div><small>ART ICON</small><strong>No icon selected</strong></div>';$("formTitle").textContent="Add New Art";$("saveArtBtn").textContent="Save Art";$("cancelEdit").classList.add("rr-hidden");builder?.load();categoryHasCosts=false;basicRatesUnlocked=false;renderCostRows({});updateCostTotals();
+ form.reset();$("artId").value="";$("defaultMargin").value=22;queued=[];selectedIcon=null;manualMaterialRequirements=[];$("imagePreview").innerHTML="";$("iconStatus").innerHTML='<span class="art-icon-star">★</span><div><small>ART ICON</small><strong>No icon selected</strong></div>';$("formTitle").textContent="Add New Art";$("saveArtBtn").textContent="Save Art";$("cancelEdit").classList.add("rr-hidden");builder?.load();categoryHasCosts=false;basicRatesUnlocked=false;renderCostRows({});renderArtMaterials();updateCostTotals();
 }
 $("cancelEdit").onclick=reset;
 $("reloadArts").onclick=()=>loadData().catch(e=>{say(e.message||"Could not refresh Arts","error");$("reloadArts").disabled=false;$("reloadArts").textContent="Refresh";});
@@ -320,26 +446,4 @@ form.onsubmit=async e=>{
   if(duplicate)throw new Error(`Art No ${enteredArtNo} already exists`);
   const cols=await RR.getTableColumns("rr_art_master"),existing=artId();
   const category=categories.find(x=>x.id===categoryId);
-  const payload=RR.filterPayload({art_no:enteredArtNo,art_category_id:categoryId,category:category?.category_name,item_name:$("itemName").value.trim(),product_name:$("itemName").value.trim(),description:$("description").value.trim(),other_material_note:$("designNotes").value.trim(),default_margin:RR.number($("defaultMargin").value),is_active:true},cols);
-  const r=existing?await supabaseClient.from("rr_art_master").update(payload).eq("id",existing).select().single():await supabaseClient.from("rr_art_master").insert(payload).select().single();if(r.error)throw r.error;
-  if(basicRatesUnlocked&&categoryHasCosts){
-   await updateCategoryBasicDefaults(categoryId);
-  }
-  let x=await supabaseClient.rpc("rr_save_art_process_costs",{p_art_id:r.data.id,p_category_id:categoryId,p_rows:costRows()});if(x.error)throw x.error;
-  x=await supabaseClient.rpc("rr_save_art_captions",{p_art_id:r.data.id,p_items:builder.getItems()});if(x.error)throw x.error;
-  const uploaded=[];for(const q of queued){const media=await RR.uploadMedia({file:q.file,entityType:"art",entityId:r.data.id,mediaCategory:"reference",sourceType:q.sourceType,visibilityScope:"factory",caption:`${r.data.art_no} artwork`});uploaded.push({tempId:q.tempId,media})}
-  let iconId=selectedIcon?.type==="saved"?selectedIcon.id:uploaded.find(u=>u.tempId===selectedIcon?.id)?.media?.id;if(iconId){await supabaseClient.from("rr_media").update({is_cover:false}).eq("entity_type","art").eq("entity_id",r.data.id);await supabaseClient.from("rr_media").update({is_cover:true}).eq("id",iconId)}
-  say("Art saved successfully.","success");basicRatesUnlocked=false;refreshBasicLockIcon();reset();await loadData();
- }catch(err){console.error(err);say(err.message||"Art could not be saved.","error")}finally{btn.disabled=false;btn.textContent=artId()?"Update Art":"Save Art"}
-};
-
-// Viewer
-let viewer=[],index=0,zoom=1;
-function draw(){const x=viewer[index];$("viewerImage").src=x?.file_url||x?.url||"";$("viewerImage").style.transform=`scale(${zoom})`}
-function openViewer(image){viewer=allImages();index=Math.max(0,viewer.findIndex(x=>x.id===image.id));zoom=1;$("viewerTitle").textContent=$("artNo").value||"Artwork";$("viewerText").textContent=$("description").value||$("designNotes").value||"";$("mediaViewer").classList.remove("rr-hidden");draw()}
-function openSavedViewer(id){const a=arts.find(x=>String(x.id)===String(id));viewer=mediaMap[String(id)]||[];if(!viewer.length)return;index=0;zoom=1;$("viewerTitle").textContent=`${a.art_no} · ${a.item_name||a.product_name||""}`;$("viewerText").textContent=a.caption_text||a.description||"";$("mediaViewer").classList.remove("rr-hidden");draw()}
-$("viewerClose").onclick=()=>$("mediaViewer").classList.add("rr-hidden");$("viewerZoomIn").onclick=()=>{zoom=Math.min(4,zoom+.25);draw()};$("viewerZoomOut").onclick=()=>{zoom=Math.max(.5,zoom-.25);draw()};$("viewerReset").onclick=()=>{zoom=1;draw()};$("viewerPrev").onclick=()=>{index=(index-1+viewer.length)%viewer.length;zoom=1;draw()};$("viewerNext").onclick=()=>{index=(index+1)%viewer.length;zoom=1;draw()};
-
-(async()=>{try{await RR.requireOwner();builder=new RRCaptionBuilder({masterType:"art",categoryInput:$("artCategory"),container:$("artCaptionBuilder"),outputInput:$("description")});await loadCategories();renderCostRows({});normalizeNumberInputs(document);enableFastNumberInput(document);await builder.load();await loadData()}catch(e){console.error(e);say(e.message||"Art Master could not open.","error")}})();
-})();
-                    
+  const payload=RR.filterPayload({art_no:enteredArtNo,art_category_id:categoryId,category:category?.category_name,item_name:$("itemName").value.trim(),product_name:$("itemName").value.trim(),description:$("description").value.trim(),other_material_note:$("designNotes").value.trim(),material_requirements:currentArtMaterials(),default_margin:RR.number($("defaultMargin").value),is_active:
