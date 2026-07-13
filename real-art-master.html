@@ -4,10 +4,10 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>REDZED REAL — Final Art Master</title>
-  <link rel="stylesheet" href="real-style.css?v=500">
-  <link rel="stylesheet" href="real-caption-builder.css?v=530">
-  <link rel="stylesheet" href="real-master-viewer.css?v=530">
-  <link rel="stylesheet" href="real-art-master-final.css?v=530">
+  <link rel="stylesheet" href="real-style.css?v=540">
+  <link rel="stylesheet" href="real-caption-builder.css?v=540">
+  <link rel="stylesheet" href="real-master-viewer.css?v=540">
+  <link rel="stylesheet" href="real-art-master-final.css?v=540">
 </head>
 <body>
 <header class="rr-topbar">
@@ -77,6 +77,28 @@
       <p>Tick construction features or add a reusable new fashion detail.</p>
       <div id="artCaptionBuilder" class="rr-caption-builder"></div>
       <input id="description" type="hidden">
+
+      <div class="art-material-box">
+        <div class="art-material-head">
+          <div>
+            <strong>Material Requirements</strong>
+            <small>Auto from Art Category + selected Craft Features</small>
+          </div>
+          <button id="addMaterialBtn" class="rr-btn rr-btn-secondary" type="button">+ Add</button>
+        </div>
+
+        <div id="materialRequirements" class="art-material-badges"></div>
+
+        <div id="customMaterialRow" class="art-custom-material rr-hidden">
+          <input id="customMaterialName" placeholder="Custom material name">
+          <button id="saveCustomMaterial" class="rr-btn" type="button">Add</button>
+          <button id="cancelCustomMaterial" class="rr-btn rr-btn-secondary" type="button">Cancel</button>
+        </div>
+
+        <p class="art-material-note">
+          Regular Cloth is always included. Quantity and rate will be entered in Product Master.
+        </p>
+      </div>
     </section>
 
     <section class="rr-subpanel">
@@ -192,8 +214,8 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="config.js"></script>
-<script src="real-common.js?v=530"></script>
-<script src="real-caption-builder.js?v=530"></script>
-<script src="real-art-master.js?v=530"></script>
+<script src="real-common.js?v=540"></script>
+<script src="real-caption-builder.js?v=540"></script>
+<script src="real-art-master.js?v=540"></script>
 </body>
 </html>
