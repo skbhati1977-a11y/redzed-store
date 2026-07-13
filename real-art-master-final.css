@@ -179,3 +179,88 @@
     width:25.33%;
   }
 }
+
+
+/* ART MASTER MATERIAL REQUIREMENTS — STABLE V542 */
+.art-material-compact{
+  margin-top:14px;
+  padding:12px;
+  border:1px solid #34343d;
+  border-radius:13px;
+  background:#101014;
+}
+.art-material-title{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:10px;
+}
+.art-material-title strong,
+.art-material-title small{
+  display:block;
+}
+.art-material-title small{
+  margin-top:3px;
+  color:#aaaab4;
+}
+.art-material-chips{
+  display:flex;
+  flex-wrap:wrap;
+  gap:7px;
+  margin-top:11px;
+}
+.art-material-chip{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  padding:5px 8px;
+  border-radius:999px;
+  font-size:11px;
+  font-weight:800;
+}
+.art-material-chip.auto{
+  color:#aeeac0;
+  background:#14331f;
+  border:1px solid #286a40;
+}
+.art-material-chip.manual{
+  color:#ffe4a0;
+  background:#372b13;
+  border:1px solid #72591e;
+}
+.art-material-chip small{
+  font-size:8px;
+  opacity:.75;
+}
+.art-material-chip button{
+  width:19px;
+  height:19px;
+  padding:0;
+  border:0;
+  border-radius:50%;
+  color:inherit;
+  background:#0005;
+  font-size:15px;
+  line-height:18px;
+}
+.art-material-editor{
+  display:grid;
+  grid-template-columns:1fr auto auto;
+  gap:7px;
+  margin-top:11px;
+}
+.art-material-editor input{
+  width:100%;
+  box-sizing:border-box;
+}
+@media(max-width:700px){
+  .art-material-title{
+    align-items:flex-start;
+  }
+  .art-material-editor{
+    grid-template-columns:1fr 1fr;
+  }
+  .art-material-editor input{
+    grid-column:1/-1;
+  }
+  }
