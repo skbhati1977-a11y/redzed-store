@@ -2,136 +2,226 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>REDZED REAL — Print Master</title>
-  <link rel="stylesheet" href="real-style.css?v=610">
-  <link rel="stylesheet" href="real-master-viewer.css?v=610">
-  <link rel="stylesheet" href="real-print-master.css?v=610">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#0b0b0e">
+  <title>REDZED REAL — Product Master</title>
+  <link rel="stylesheet" href="real-style.css?v=700">
+  <link rel="stylesheet" href="real-product-master.css?v=702">
 </head>
 <body>
-<header class="rr-topbar">
-  <div><small class="rr-kicker">REDZED REAL</small><h1>Print Master</h1></div>
-  <a class="rr-btn rr-btn-secondary" href="real-dashboard.html">Dashboard</a>
-</header>
-
-<main class="rr-page">
-<section class="rr-panel">
-  <div class="rr-panel-head">
-    <div>
-      <h2 id="formTitle">Add New Print</h2>
-      <p>Compact print library: icon, Print No, Name, colours and physical frames.</p>
-    </div>
-    <button id="cancelEdit" class="rr-btn rr-btn-secondary rr-hidden" type="button">Cancel Edit</button>
-  </div>
-
-  <form id="printForm" class="rr-form">
-    <input id="printId" type="hidden">
-
-    <section class="rr-subpanel print-image-first">
-      <h3>1. Print Images *</h3>
-      <p>Tap to preview. Press and hold for Icon or Remove.</p>
-      <div class="print-upload-row">
-        <label class="rr-btn rr-btn-secondary">📷 Camera
-          <input id="cameraFiles" type="file" accept="image/*" capture="environment" multiple hidden>
-        </label>
-        <label class="rr-btn rr-btn-secondary">🖼 Gallery
-          <input id="galleryFiles" type="file" accept="image/*" multiple hidden>
-        </label>
-        <span id="selectedFiles">No new images selected</span>
+  <main class="rr-page pm-page">
+    <header class="pm-topbar">
+      <div>
+        <p class="pm-kicker">REDZED REAL</p>
+        <h1>Product Master</h1>
       </div>
+      <a class="pm-dashboard-link" href="dashboard.html">Dashboard</a>
+    </header>
 
-      <div id="iconStatus" class="print-icon-status">
-        <span class="print-icon-star">★</span>
-        <div><small>PRINT ICON</small><strong>No icon selected</strong></div>
+    <section class="pm-hero-card">
+      <div>
+        <small>Factory Production</small>
+        <h2>CB Purchase → Division → Lot</h2>
+        <p>Card-first mobile workflow. Lot No remains the permanent identity from cutting to sale.</p>
       </div>
-
-      <div id="imagePreview" class="print-media-grid"></div>
+      <button id="openNewCb" class="pm-primary-btn" type="button">+ New CB</button>
     </section>
 
-    <section class="rr-subpanel">
-      <h3>2. Print Details</h3>
-      <div class="print-grid-2">
-        <label>Print No *
-          <input id="printNo" required placeholder="P105" autocomplete="off">
-        </label>
+    <section class="pm-toolbar">
+      <label class="pm-search">
+        <span>Search</span>
+        <input id="pmSearch" type="search" placeholder="CB No, Division, Lot No, Vendor, Bill">
+      </label>
 
-        <label>Print Name *
-          <input id="printName" required placeholder="Ferrari Front">
-        </label>
-
-        <label>Design Colours *
-          <input id="designColours" type="number" inputmode="numeric" min="1" value="1" required>
-        </label>
-
-        <label>Short Note
-          <input id="shortNote" placeholder="White base + red + black">
-        </label>
+      <div class="pm-filter-row">
+        <button class="pm-filter is-active" type="button" data-filter="all">All</button>
+        <button class="pm-filter" type="button" data-filter="purchase">Purchase</button>
+        <button class="pm-filter" type="button" data-filter="planning">Planning</button>
+        <button class="pm-filter" type="button" data-filter="ready_for_cutting">Ready</button>
+        <button class="pm-filter" type="button" data-filter="hold">Hold</button>
       </div>
     </section>
 
-    <section class="rr-subpanel">
-      <div class="rr-panel-head compact">
-        <div>
-          <h3>3. Associated Physical Frames</h3>
-          <p>Frame No permanent रहेगा; association और status बदल सकते हैं।</p>
+    <section class="pm-section-head">
+      <div>
+        <small>CB Gallery</small>
+        <h2>Current Cloth Batches</h2>
+      </div>
+      <button id="refreshCb" class="pm-secondary-btn" type="button">Refresh</button>
+    </section>
+
+    <section id="cbGallery" class="pm-gallery">
+      <article class="pm-cb-card pm-demo-card">
+        <div class="pm-card-top">
+          <div>
+            <span class="pm-status status-planning">Planning</span>
+            <h3>CB135</h3>
+            <p>3 Divisions · 6 Colours</p>
+          </div>
+          <div class="pm-health waiting">Waiting</div>
         </div>
-        <button id="addFrameBtn" class="rr-btn rr-btn-secondary" type="button">+ Add Frame</button>
-      </div>
 
-      <div class="frame-status-legend">
-        <span class="status-active">● Active</span>
-        <span class="status-remaking">● Remaking</span>
-        <span class="status-available">● Available</span>
-        <span class="status-retired">● Retired</span>
-      </div>
-      <div id="frameRows" class="print-frame-rows"></div>
+        <div class="pm-colour-strip">
+          <span style="--chip:#14151a" title="Black"></span>
+          <span style="--chip:#1b2b46" title="Navy"></span>
+          <span style="--chip:#52613a" title="Olive"></span>
+          <span style="--chip:#934b31" title="Rust"></span>
+          <span style="--chip:#7b7e86" title="Grey"></span>
+          <span style="--chip:#e9e5dc" title="White"></span>
+        </div>
+
+        <div class="pm-card-metrics">
+          <span><small>Regular Qty</small><strong>300 kg</strong></span>
+          <span><small>Amount</small><strong>₹30,000</strong></span>
+        </div>
+
+        <div class="pm-division-preview">
+          <button type="button">S3:1</button>
+          <button type="button">S3:2</button>
+          <button type="button">S3:3</button>
+        </div>
+
+        <div class="pm-card-footer">
+          <span>Vendor/Bill details inside</span>
+          <button type="button">Open</button>
+        </div>
+      </article>
+
+      <article class="pm-empty-card">
+        <div class="pm-empty-icon">＋</div>
+        <h3>Your CB cards will appear here</h3>
+        <p>Create the first cloth purchase after the JavaScript step is connected.</p>
+      </article>
     </section>
+  </main>
 
-    <p id="printMessage" class="rr-message"></p>
-    <button id="savePrintBtn" class="rr-btn print-save-btn" type="submit">Save Print</button>
-  </form>
-</section>
+  <section id="newCbSheet" class="pm-sheet pm-hidden" aria-hidden="true">
+    <div class="pm-sheet-backdrop" data-close-sheet></div>
+    <div class="pm-sheet-panel">
+      <div class="pm-sheet-grab"></div>
 
-<section class="rr-panel">
-  <div class="rr-panel-head">
-    <div><h2>Saved Prints</h2><p>Universal search: Print No, Name, Frame No, Status or Short Note.</p></div>
-    <button id="reloadPrints" class="rr-btn rr-btn-secondary" type="button">Refresh</button>
-  </div>
+      <header class="pm-sheet-head">
+        <div>
+          <small>Step 1</small>
+          <h2>New Cloth Purchase</h2>
+        </div>
+        <button type="button" data-close-sheet>×</button>
+      </header>
 
-  <input id="printSearch" class="print-search" type="search"
-         placeholder="Search P105, Ferrari, 211...">
+      <form id="newCbForm" class="pm-form">
+        <section class="pm-form-card">
+          <h3>Purchase Identity</h3>
 
-  <div id="printCards" class="print-card-grid">Loading...</div>
-</section>
-</main>
+          <label>
+            <span>CB No *</span>
+            <input id="cbNo" placeholder="CB135" autocomplete="off">
+          </label>
 
-<div id="imageActionSheet" class="print-action-sheet rr-hidden">
-  <div class="print-action-dialog">
-    <h3>Print Image Options</h3>
-    <p id="actionImageLabel"></p>
-    <button id="actionSetIcon" type="button">★ Set as Print Icon</button>
-    <button id="actionView" type="button">🔍 View Full Screen</button>
-    <button id="actionRemove" class="danger" type="button">🗑 Remove Reference</button>
-    <button id="actionCancel" class="secondary" type="button">Cancel</button>
-  </div>
-</div>
+          <div class="pm-grid-2">
+            <label>
+              <span>Set Division *</span>
+              <select id="divisionCount">
+                <option value="1">1 Division</option>
+                <option value="2">2 Divisions</option>
+                <option value="3" selected>3 Divisions</option>
+                <option value="4">4 Divisions</option>
+                <option value="5">5 Divisions</option>
+                <option value="6">6 Divisions</option>
+              </select>
+            </label>
 
-<div id="mediaViewer" class="rz-viewer rr-hidden">
-  <button id="viewerClose" class="rz-viewer-close" type="button">×</button>
-  <div class="rz-viewer-toolbar">
-    <button id="viewerPrev" type="button">‹</button>
-    <button id="viewerZoomOut" type="button">−</button>
-    <button id="viewerReset" type="button">Reset</button>
-    <button id="viewerZoomIn" type="button">+</button>
-    <button id="viewerNext" type="button">›</button>
-  </div>
-  <div id="viewerStage" class="rz-viewer-stage"><img id="viewerImage" alt="Print preview"></div>
-  <div class="rz-viewer-caption"><h3 id="viewerTitle"></h3><p id="viewerText"></p></div>
-</div>
+            <label>
+              <span>Total Colours *</span>
+              <select id="colourCount">
+                <option value="1">1 Colour</option>
+                <option value="2">2 Colours</option>
+                <option value="3">3 Colours</option>
+                <option value="4">4 Colours</option>
+                <option value="5">5 Colours</option>
+                <option value="6" selected>6 Colours</option>
+                <option value="7">7 Colours</option>
+                <option value="8">8 Colours</option>
+                <option value="9">9 Colours</option>
+                <option value="10">10 Colours</option>
+              </select>
+            </label>
+          </div>
+        </section>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="config.js"></script>
-<script src="real-common.js?v=610"></script>
-<script src="real-print-master.js?v=610"></script>
+        <section class="pm-form-card">
+          <h3>Regular Cloth</h3>
+
+          <div class="pm-grid-2">
+            <label>
+              <span>Total Qty (kg) *</span>
+              <input id="regularQty" type="number" inputmode="decimal" min="0" step="0.001" placeholder="300">
+            </label>
+
+            <label>
+              <span>Total Amount *</span>
+              <input id="regularAmount" type="number" inputmode="decimal" min="0" step="0.01" placeholder="30000">
+            </label>
+          </div>
+
+          <div class="pm-live-summary">
+            <span><small>Average Rate</small><strong id="avgRatePreview">₹0/kg</strong></span>
+            <span><small>Per Division</small><strong id="divisionPreview">0 kg</strong></span>
+          </div>
+        </section>
+
+        <section class="pm-form-card">
+          <div class="pm-form-title-row">
+            <h3>Vendor Bill</h3>
+            <button id="addBillRow" type="button">+ Add Bill</button>
+          </div>
+
+          <div id="billRows" class="pm-bill-list">
+            <div class="pm-bill-row">
+              <label><span>Vendor *</span><input class="bill-vendor" placeholder="Vendor name"></label>
+              <label><span>Bill No *</span><input class="bill-no" placeholder="Bill number"></label>
+              <label><span>Bill Date</span><input class="bill-date" type="date"></label>
+              <label><span>Material</span><select class="bill-material"></select></label>
+              <label><span>Qty</span><input class="bill-qty" type="number" inputmode="decimal" min="0" step="0.001" value="0"></label>
+              <label><span>Rate</span><input class="bill-rate" type="number" inputmode="decimal" min="0" step="0.0001" value="0"></label>
+              <button class="pm-remove-bill" type="button">Remove</button>
+            </div>
+          </div>
+        </section>
+
+        <section class="pm-form-card">
+          <div class="pm-form-title-row">
+            <div>
+              <h3>Colour Images</h3>
+              <p>Camera/Gallery selection and colour-name suggestion will connect in the JS step.</p>
+            </div>
+          </div>
+
+          <div id="colourSlots" class="pm-colour-slots">
+            <button type="button"><span>＋</span><small>Colour 1</small></button>
+            <button type="button"><span>＋</span><small>Colour 2</small></button>
+            <button type="button"><span>＋</span><small>Colour 3</small></button>
+            <button type="button"><span>＋</span><small>Colour 4</small></button>
+            <button type="button"><span>＋</span><small>Colour 5</small></button>
+            <button type="button"><span>＋</span><small>Colour 6</small></button>
+          </div>
+        </section>
+
+        <label class="pm-remarks">
+          <span>Remarks</span>
+          <textarea id="cbRemarks" rows="3" placeholder="Optional"></textarea>
+        </label>
+
+        <div class="pm-sticky-actions">
+          <button class="pm-secondary-btn" type="button" data-close-sheet>Cancel</button>
+          <button class="pm-primary-btn" type="submit">Save CB & Create Cards</button>
+        </div>
+      </form>
+    </div>
+  </section>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="config.js?v=1"></script>
+  <script src="real-common.js?v=1"></script>
+  <script src="real-product-master.js?v=702"></script>
 </body>
 </html>
