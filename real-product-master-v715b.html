@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+
+  <meta
+    name="viewport"
+    content="width=device-width,initial-scale=1,viewport-fit=cover"
+  >
+
+  <meta name="theme-color" content="#0b0b0e">
+
+  <title>REDZED REAL — Product Master V715B</title>
+
+  <style>
+    html,
+    body {
+      margin: 0;
+      min-height: 100%;
+      background: #0b0b0e;
+      color: #ffffff;
+      font-family: Arial, sans-serif;
+    }
+
+    .boot-screen {
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+      box-sizing: border-box;
+      text-align: center;
+    }
+
+    .boot-screen h1 {
+      margin: 0 0 10px;
+      font-size: 28px;
+    }
+
+    .boot-screen p {
+      margin: 0;
+      color: #aaaaaf;
+    }
+
+    .boot-spinner {
+      width: 42px;
+      height: 42px;
+      margin: 0 auto 18px;
+      border: 4px solid #33333b;
+      border-top-color: #ef3340;
+      border-radius: 50%;
+      animation: spin .8s linear infinite;
+    }
+
+    .boot-error {
+      max-width: 650px;
+      padding: 20px;
+      border: 1px solid #73323d;
+      border-radius: 18px;
+      background: #3c1b20;
+      color: #ffc0c5;
+      text-align: left;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <main class="boot-screen">
+    <div>
+      <div class="boot-spinner"></div>
+      <h1>Loading Product Master V715B</h1>
+      <p>Connecting Art Master and Print Master…</p>
+    </div>
+  </main>
+
+  <script>
+    (() => {
+      "use strict";
+
+      const ROOT = "/redzed-store/";
+
+      const TEMPLATE_URL =
+        ROOT + "real-product-master_v713.html?v=7158";
+
+      const CSS_FILES = [
+        ROOT + "real-style.css?v=7158",
+        ROOT + "real-product-master-v713.css?v=7158",
+        ROOT + "real-product-master-v715b-print-choice.css?v=7158"
+      ];
+
+      const SCRIPT_FILES = [
+        "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2",
+        ROOT + "config.js?v=1",
+        ROOT + "real-common.js?v=1",
+        ROOT + "real-product-master-v715b-app.js?v=7158"
+      ];
+
+      async function fetchText(url, label) {
+        const response = await fetch(url, {
+          cache: "no-store"
+        });
+
+        if (!response.ok) {
+          throw new Error(
+            `${label} could not load\n${url}\nHTTP ${response.status}`
+          );
+        }
+
+        return response.text();
+      }
+
+      function loadScript(url) {
+        return new Promise((resolve, reject) => {
+          const script = document.createElement("script");
+
+          script.src = url;
+          script.async = false;
+
+          script.onload = resolve;
+
+          script.onerror = () => {
+            reject(
+              new Error(`JavaScript could not load\n${url}`)
+            );
+          };
+
+          document.body.appendChild(script);
+        });
+      }
+
+      function showError(error) {
+        document.body.innerHTML = "";
+
+        const screen = document.createElement("main");
+        screen.className = "boot-screen";
+
+        const box = document.createElement("div");
+        box.className = "boot-error";
+
+        const title = document.createElement("strong");
+        title.textContent =
+          "Product Master V715B could not start";
+
+        const details = document.createElement("div");
+        details.style.marginTop = "12px";
+        details.textContent =
+          error?.message || String(error);
+
+        box.append(title, details);
+        screen.appendChild(box);
+        document.body.appendChild(screen);
+      }
+
+      async function start() {
+        try {
+          /*
+           * Fetch CSS as text and insert it directly.
+           * This avoids the previous stylesheet-cache/loading issue.
+           */
+          const cssParts = await Promise.all(
+            CSS_FILES.map((url, index) =>
+              fetchText(url, `CSS file ${index + 1}`)
+            )
+          );
+
+          const combinedStyle =
+            document.createElement("style");
+
+          combinedStyle.id =
+            "redzed-product-master-v715b-styles";
+
+          combinedStyle.textContent =
+            cssParts.join("\n\n");
+
+          document.head.appendChild(combinedStyle);
+
+          /*
+           * Pull the already-correct Product Master HTML body.
+           * Its old script tags are removed before insertion.
+           */
+          const templateText = await fetchText(
+            TEMPLATE_URL,
+            "Product Master HTML template"
+          );
+
+          const parsed = new DOMParser().parseFromString(
+            templateText,
+            "text/html"
+          );
+
+          parsed.body
+            .querySelectorAll("script")
+            .forEach(script => script.remove());
+
+          document.body.className =
+            parsed.body.className || "";
+
+          document.body.innerHTML =
+            parsed.body.innerHTML;
+
+          /*
+           * Load runtime files in the correct order.
+           */
+          for (const url of SCRIPT_FILES) {
+            await loadScript(url);
+          }
+
+        } catch (error) {
+          console.error(error);
+          showError(error);
+        }
+      }
+
+      start();
+    })();
+  </script>
+
+</body>
+</html>
