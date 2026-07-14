@@ -273,6 +273,74 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="config.js?v=1"></script>
   <script src="real-common.js?v=1"></script>
-  <script src="/redzed-store/real-product-master-v715b-app.js?v=7162"></script>
+  <script>
+(async () => {
+  "use strict";
+
+  const base = "/redzed-store/";
+
+  const parts = [
+    "real-product-master-v715b-part1.js?v=7163",
+    "real-product-master-v715b-part2.js?v=7163",
+    "real-product-master-v715b-part3.js?v=7163"
+  ];
+
+  try {
+    const codeParts = [];
+
+    for (const file of parts) {
+      const response = await fetch(base + file, {
+        cache: "no-store"
+      });
+
+      if (!response.ok) {
+        throw new Error(
+          `${file} could not load — HTTP ${response.status}`
+        );
+      }
+
+      codeParts.push(await response.text());
+    }
+
+    const combinedCode =
+      codeParts.join("\n") +
+      "\n//# sourceURL=real-product-master-v715b-combined.js";
+
+    const blob = new Blob(
+      [combinedCode],
+      { type: "text/javascript" }
+    );
+
+    const blobUrl = URL.createObjectURL(blob);
+    const script = document.createElement("script");
+
+    script.src = blobUrl;
+
+    script.onload = () => {
+      URL.revokeObjectURL(blobUrl);
+      console.info("Product Master split JS loaded successfully.");
+    };
+
+    script.onerror = () => {
+      URL.revokeObjectURL(blobUrl);
+      throw new Error("Combined Product Master JavaScript could not start.");
+    };
+
+    document.body.appendChild(script);
+
+  } catch (error) {
+    console.error("Product Master split loader error:", error);
+
+    const message = document.getElementById("pmMessage");
+
+    if (message) {
+      message.textContent =
+        `Split JS error: ${error.message || error}`;
+
+      message.className = "rr-message error";
+    }
+  }
+})();
+  </script>
 </body>
 </html>
