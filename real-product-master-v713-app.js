@@ -2,11 +2,12 @@
 "use strict";
 
 window.REDZED_PRODUCT_MASTER_BOOTED = true;
-window.REDZED_PRODUCT_MASTER_VERSION = "713D";
+window.REDZED_PRODUCT_MASTER_VERSION = "714";
 
 const $ = id => document.getElementById(id);
 const purchaseSheet = $("purchaseSheet");
 const detailSheet = $("cbDetailSheet");
+const artSheet = $("artAssignmentSheet");
 const purchaseForm = $("purchaseForm");
 const gallery = $("cbGallery");
 const message = $("pmMessage");
@@ -18,6 +19,11 @@ let purchaseRows = [];
 let colourRows = [];
 let rollRows = [];
 let allocationRows = [];
+let artRows = [];
+let printRows = [];
+let artPrintRows = [];
+let assignmentRows = [];
+let mediaRows = [];
 let currentFilter = "all";
 let dataReady = false;
 
@@ -27,6 +33,9 @@ let activeDetailCbId = null;
 let entrySequence = 0;
 let formEntries = [];
 let cbColourDrafts = [];
+let activeArtDivisionId = null;
+let selectedArtId = null;
+let cardColumnCount = Number(localStorage.getItem("redzedProductCardColumns") || 3);
 
 function escapeHtml(value) {
   return String(value ?? "")
@@ -248,7 +257,7 @@ function openSheet(sheet) {
 function closeSheet(sheet) {
   sheet.classList.add("pm-hidden");
   sheet.setAttribute("aria-hidden", "true");
-  if (purchaseSheet.classList.contains("pm-hidden") && detailSheet.classList.contains("pm-hidden")) {
+  if (purchaseSheet.classList.contains("pm-hidden") && detailSheet.classList.contains("pm-hidden") && artSheet.classList.contains("pm-hidden")) {
     document.body.classList.remove("pm-no-scroll");
   }
 }
@@ -612,7 +621,7 @@ function validateEntries() {
   }
 
   formEntries.forEach((entry, index) => {
-     const number = index + 1;
+    const number = index + 1;
     if (!entry.materialCategoryId) throw new Error(`Purchase ${number}: select Material.`);
     if (!entry.vendorName.trim()) throw new Error(`Purchase ${number}: enter Vendor Name.`);
     if (!entry.fabricName.trim()) throw new Error(`Purchase ${number}: enter Fabric Name.`);
@@ -1101,84 +1110,444 @@ function purchaseById(id) {
   return purchaseRows.find(row => String(row.id) === String(id)) || null;
 }
 
+function normalizeKey(value) {
+  return String(value ?? "").trim().toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+}
+
+function artById(id) {
+  return artRows.find(row => String(row.id) === String(id)) || null;
+}
+
+function printById(id) {
+  return printRows.find(row => String(row.id) === String(id)) || null;
+}
+
+function assignmentForDivision(divisionId) {
+  return assignmentRows
+    .filter(row => String(row.cb_id) === String(divisionId))
+    .sort((a, b) => String(b.updated_at || b.created_at || "").localeCompare(String(a.updated_at || a.created_at || "")))[0] || null;
+}
+
+function linkedPrintsForArt(artId) {
+  const links = artPrintRows
+    .filter(row => String(row.art_id) === String(artId) && row.is_active !== false)
+    .sort((a, b) => Number(a.sequence_no || 0) - Number(b.sequence_no || 0));
+  const result = [];
+  const seen = new Set();
+
+  links.forEach(link => {
+    let print = link.print_id ? printById(link.print_id) : null;
+    if (!print) {
+      const designKey = normalizeKey(link.design_name);
+      const noteKey = normalizeKey(link.notes);
+      print = printRows.find(candidate => {
+        const noKey = normalizeKey(candidate.print_no);
+        const nameKey = normalizeKey(candidate.print_name);
+        return Boolean(
+          (designKey && (
+            (noKey && (designKey === noKey || designKey.includes(noKey))) ||
+            (nameKey && designKey === nameKey)
+          )) ||
+          (noteKey && noKey && noteKey.includes(noKey))
+        );
+      }) || null;
+    }
+    if (print && !seen.has(String(print.id))) {
+      seen.add(String(print.id));
+      result.push(print);
+    }
+  });
+  return result;
+}
+
+function mediaForEntity(entityId, kind) {
+  const list = mediaRows.filter(row => String(row.entity_id) === String(entityId));
+  return list.sort((a, b) => {
+    const aKind = kind === "print" ? String(a.entity_type || "").toLowerCase() === "printing" : String(a.entity_type || "").toLowerCase() !== "printing";
+    const bKind = kind === "print" ? String(b.entity_type || "").toLowerCase() === "printing" : String(b.entity_type || "").toLowerCase() !== "printing";
+    if (aKind !== bKind) return aKind ? -1 : 1;
+    if (Boolean(a.is_cover) !== Boolean(b.is_cover)) return a.is_cover ? -1 : 1;
+    return Number(a.sort_order || 0) - Number(b.sort_order || 0);
+  });
+}
+
+function artImageUrl(art) {
+  if (!art) return "";
+  return art.hero_image_url || art.image_url || art.artwork_url || art.reference_image_url || mediaForEntity(art.id, "art")[0]?.file_url || "";
+}
+
+function printImageUrl(print) {
+  if (!print) return "";
+  return print.artwork_url || print.garment_preview_url || print.image_url || mediaForEntity(print.id, "print")[0]?.file_url || "";
+}
+
+function carouselItemsForArt(art) {
+  if (!art) return [];
+  const items = [{
+    url: artImageUrl(art),
+    label: `ART ${art.art_no || ""}`,
+    kind: "art"
+  }];
+  linkedPrintsForArt(art.id).forEach(print => {
+    items.push({
+      url: printImageUrl(print),
+      label: `PRINT ${print.print_no || ""}`,
+      kind: "print"
+    });
+  });
+  return items;
+}
+
+function carouselHtml(items, instanceId, emptyLabel = "ART PHOTO") {
+  if (!items.length) {
+    return `<div class="pm-art-placeholder"><span>${safe(emptyLabel)}</span><small>Photo will pull from Master</small></div>`;
+  }
+  return `
+    <div class="pm-swipe-track" data-carousel="${safe(instanceId)}">
+      ${items.map((item, index) => `
+        <figure class="pm-swipe-slide ${index === 0 ? "is-active" : ""}" data-slide-index="${index}">
+          ${item.url
+            ? `<img src="${safe(item.url)}" alt="${safe(item.label)}" loading="lazy">`
+            : `<div class="pm-art-placeholder"><span>${safe(item.label)}</span><small>Photo not added in Master</small></div>`}
+          <figcaption>${safe(item.label)}</figcaption>
+        </figure>`).join("")}
+    </div>
+    ${items.length > 1 ? `
+      <button class="pm-carousel-nav pm-carousel-prev" type="button" data-carousel-move="-1" aria-label="Previous photo">‹</button>
+      <button class="pm-carousel-nav pm-carousel-next" type="button" data-carousel-move="1" aria-label="Next photo">›</button>
+      <span class="pm-carousel-count" data-carousel-count>1/${items.length}</span>` : ""}`;
+}
+
+function bindCarousels(root) {
+  root.querySelectorAll("[data-carousel-move]").forEach(button => {
+    button.addEventListener("click", event => {
+      event.preventDefault();
+      event.stopPropagation();
+      const holder = button.closest(".pm-card-hero,.pm-selected-carousel");
+      const slides = [...holder.querySelectorAll(".pm-swipe-slide")];
+      if (slides.length < 2) return;
+      const current = Math.max(0, slides.findIndex(slide => slide.classList.contains("is-active")));
+      const next = (current + Number(button.dataset.carouselMove || 1) + slides.length) % slides.length;
+      slides.forEach((slide, index) => slide.classList.toggle("is-active", index === next));
+      const counter = holder.querySelector("[data-carousel-count]");
+      if (counter) counter.textContent = `${next + 1}/${slides.length}`;
+    });
+  });
+
+  root.querySelectorAll(".pm-swipe-track").forEach(track => {
+    let startX = null;
+    track.addEventListener("pointerdown", event => { startX = event.clientX; });
+    track.addEventListener("pointerup", event => {
+      if (startX === null) return;
+      const delta = event.clientX - startX;
+      startX = null;
+      if (Math.abs(delta) < 35) return;
+      const holder = track.closest(".pm-card-hero,.pm-selected-carousel");
+      holder?.querySelector(delta < 0 ? ".pm-carousel-next" : ".pm-carousel-prev")?.click();
+    });
+    track.addEventListener("pointercancel", () => { startX = null; });
+  });
+}
+
+function divisionCards() {
+  return groupGalleryRows().flatMap(group => group.divisions.map(division => ({
+    group,
+    division,
+    assignment: assignmentForDivision(division.division_id)
+  }))).sort((a, b) => {
+    const dateCompare = String(b.division.created_at || b.group.created_at || "").localeCompare(String(a.division.created_at || a.group.created_at || ""));
+    if (dateCompare) return dateCompare;
+    return String(b.division.division_code || "").localeCompare(String(a.division.division_code || ""), undefined, { numeric: true });
+  });
+}
+
+function applyCardColumns() {
+  const valid = [2, 3, 4, 6];
+  if (!valid.includes(cardColumnCount)) cardColumnCount = 3;
+  gallery.classList.remove("pm-cols-2", "pm-cols-3", "pm-cols-4", "pm-cols-6");
+  gallery.classList.add(`pm-cols-${cardColumnCount}`);
+  if ($("pmCardColumns")) $("pmCardColumns").value = String(cardColumnCount);
+}
+
 function renderGallery() {
   const query = $("pmSearch").value.trim().toLowerCase();
-  const groups = groupGalleryRows().filter(group => {
+  const cards = divisionCards().filter(({ group, division, assignment }) => {
+    const art = assignment ? artById(assignment.art_id) : null;
+    const linkedPrints = art ? linkedPrintsForArt(art.id) : [];
     const purchases = purchasesFor(group.cb_id);
     const colours = coloursFor(group.cb_id);
     const searchText = [
       group.cb_no,
-      ...group.divisions.map(row => `${row.division_code || ""} ${row.lot_no || ""}`),
-      ...purchases.map(row => {
-        const category = categoryById(row.material_category_id);
-        return `${row.vendor_name || ""} ${row.vendor_bill_no || ""} ${row.fabric_name || ""} ${category?.category_name || ""}`;
-      }),
+      division.division_code,
+      art?.art_no,
+      art?.product_name,
+      art?.item_name,
+      art?.category,
+      ...linkedPrints.map(row => `${row.print_no || ""} ${row.print_name || ""}`),
+      ...purchases.map(row => `${row.vendor_name || ""} ${row.vendor_bill_no || ""} ${row.fabric_name || ""}`),
       ...colours.map(row => row.colour_name || "")
     ].join(" ").toLowerCase();
 
     let filterMatches = currentFilter === "all";
     if (currentFilter === "purchase") filterMatches = purchases.length > 0;
-    else if (currentFilter !== "all") filterMatches = group.status === currentFilter;
+    else if (currentFilter === "planning") filterMatches = !assignment;
+    else if (currentFilter === "ready_for_cutting") filterMatches = Boolean(assignment);
+    else if (currentFilter === "hold") filterMatches = group.status === "hold";
     return filterMatches && searchText.includes(query);
   });
 
   gallery.setAttribute("aria-busy", "false");
-  if (!groups.length) {
+  applyCardColumns();
+  if (!cards.length) {
     gallery.innerHTML = `
       <article class="pm-empty-card">
         <div class="pm-empty-icon">＋</div>
-        <h3>No CB found</h3>
-        <p>Create a new CB or change the search/filter.</p>
+        <h3>No CB Child found</h3>
+        <p>Create a CB or change the search/filter.</p>
       </article>`;
     return;
   }
 
-  gallery.innerHTML = groups.map(group => {
-    const purchases = purchasesFor(group.cb_id);
+  gallery.innerHTML = cards.map(({ group, division, assignment }) => {
+    const art = assignment ? artById(assignment.art_id) : null;
+    const linkedPrints = art ? linkedPrintsForArt(art.id) : [];
     const colours = coloursFor(group.cb_id);
-    const colourHtml = colours.length
-      ? colours.map(colour => {
-          const name = colour.colour_name || `Colour ${colour.colour_order}`;
-          const icon = colour.image_url
-            ? `<img src="${safe(colour.image_url)}" alt="${safe(name)}" loading="lazy">`
-            : `<i class="pm-colour-fallback">C</i>`;
-          return `<span>${icon}${safe(name)}</span>`;
-        }).join("")
-      : `<span><i class="pm-colour-fallback">C</i>Colours pending</span>`;
-
-    const divisionHtml = group.divisions.map(division =>
-      `<span>${safe(division.division_code || `S${division.division_index}`)}</span>`
-    ).join("");
-
+    let items = carouselItemsForArt(art);
+    if (!items.length && !art) {
+      const colourImage = colours.find(row => row.image_url)?.image_url;
+      if (colourImage) items = [{ url: colourImage, label: "CB COLOUR", kind: "colour" }];
+    }
+    const instanceId = `division-${division.division_id}`;
+    const printCaption = linkedPrints.length ? linkedPrints.map(row => row.print_no).filter(Boolean).join(" · ") : "No linked Print";
     return `
-      <article class="pm-cb-card">
-        <div class="pm-card-top">
-          <div>
-            <span class="pm-status status-${safe(group.status)}">${safe(String(group.status).replaceAll("_", " "))}</span>
-            <h3>${safe(group.cb_no)}</h3>
-            <p>${group.divisions.length} Division${group.divisions.length === 1 ? "" : "s"} · ${colours.length} Colour${colours.length === 1 ? "" : "s"}</p>
+      <article class="pm-work-card ${assignment ? "is-art-decided" : "is-art-due"}" data-open-art="${safe(division.division_id)}" tabindex="0" role="button" aria-label="${assignment ? "Change" : "Assign"} Art for ${safe(division.division_code)}">
+        <div class="pm-card-hero">
+          ${carouselHtml(items, instanceId, art ? "ART PHOTO" : "ART DUE")}
+        </div>
+        <div class="pm-work-caption">
+          <div class="pm-caption-id-row">
+            <span><small>CB NO</small><strong>${safe(group.cb_no)}</strong></span>
+            <span><small>CB CHILD</small><strong>${safe(division.division_code || `S${division.division_index}`)}</strong></span>
           </div>
-        </div>
-
-        <div class="pm-card-colours">${colourHtml}</div>
-
-        <div class="pm-card-metrics">
-          <span><small>Total Qty</small><strong>${qty(group.quantity)}</strong></span>
-          <span><small>Total Amount</small><strong>${money(group.amount)}</strong></span>
-        </div>
-
-        <div class="pm-division-preview">${divisionHtml}</div>
-
-        <div class="pm-card-footer">
-          <span>${purchases.length} Purchase Entr${purchases.length === 1 ? "y" : "ies"}</span>
-          <button class="pm-open-cb" type="button" data-open-cb="${safe(group.cb_id)}">Open CB</button>
+          <div class="pm-caption-status-row">
+            <span class="pm-progress-chip ${assignment ? "is-complete" : "is-due"}">${assignment ? "✓ Art Decided" : "Art Due"}</span>
+            <span class="pm-progress-chip is-next">Cutting Due</span>
+          </div>
+          <h3>${art ? safe(art.art_no) : "Select Art Number"}</h3>
+          <p class="pm-product-line">${safe(art?.product_name || art?.item_name || art?.category || "Art Master selection pending")}</p>
+          <p class="pm-print-line"><small>PRINT</small>${safe(printCaption)}</p>
+          <div class="pm-caption-metrics">
+            <span><small>Qty</small><strong>${qty(division.allocated_qty)}</strong></span>
+            <span><small>Amount</small><strong>${money(division.allocated_amount)}</strong></span>
+          </div>
+          <div class="pm-card-footer">
+            <button class="pm-open-cb" type="button" data-open-parent="${safe(group.cb_id)}">CB Details</button>
+            <button class="pm-assign-art" type="button" data-open-art-button="${safe(division.division_id)}">${assignment ? "Change Art" : "Assign Art"}</button>
+          </div>
         </div>
       </article>`;
   }).join("");
 
-  gallery.querySelectorAll("[data-open-cb]").forEach(button => {
-    button.addEventListener("click", () => openCbDetails(button.dataset.openCb));
+  bindCarousels(gallery);
+  gallery.querySelectorAll("[data-open-art]").forEach(card => {
+    const open = event => {
+      if (event.target.closest("button")) return;
+      openArtAssignment(card.dataset.openArt);
+    };
+    card.addEventListener("click", open);
+    card.addEventListener("keydown", event => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        openArtAssignment(card.dataset.openArt);
+      }
+    });
   });
+  gallery.querySelectorAll("[data-open-art-button]").forEach(button => {
+    button.addEventListener("click", event => {
+      event.stopPropagation();
+      openArtAssignment(button.dataset.openArtButton);
+    });
+  });
+  gallery.querySelectorAll("[data-open-parent]").forEach(button => {
+    button.addEventListener("click", event => {
+      event.stopPropagation();
+      openCbDetails(button.dataset.openParent);
+    });
+  });
+}
+
+function artAssignmentSay(text, type = "") {
+  const node = $("artAssignmentMessage");
+  node.textContent = text || "";
+  node.className = `rr-message ${type}`.trim();
+}
+
+function divisionContext(divisionId) {
+  for (const group of groupGalleryRows()) {
+    const division = group.divisions.find(row => String(row.division_id) === String(divisionId));
+    if (division) return { group, division, assignment: assignmentForDivision(divisionId) };
+  }
+  return null;
+}
+
+function artPickerCardHtml(art) {
+  const linked = linkedPrintsForArt(art.id);
+  const image = artImageUrl(art);
+  const selected = String(selectedArtId) === String(art.id);
+  return `
+    <button class="pm-art-option ${selected ? "is-selected" : ""}" type="button" data-select-art="${safe(art.id)}">
+      <span class="pm-art-option-image">
+        ${image ? `<img src="${safe(image)}" alt="${safe(art.art_no)}" loading="lazy">` : `<i>ART</i>`}
+      </span>
+      <span class="pm-art-option-copy">
+        <small>ART NUMBER</small>
+        <strong>${safe(art.art_no)}</strong>
+        <em>${safe(art.product_name || art.item_name || art.category || "")}</em>
+        <b>${linked.length ? `${linked.length} linked Print${linked.length === 1 ? "" : "s"}` : "No linked Print"}</b>
+      </span>
+    </button>`;
+}
+
+function renderArtPicker() {
+  const query = $("artSearch").value.trim().toLowerCase();
+  const list = artRows.filter(art => {
+    const linked = linkedPrintsForArt(art.id);
+    const haystack = [
+      art.art_no,
+      art.product_name,
+      art.item_name,
+      art.category,
+      art.description,
+      ...linked.map(print => `${print.print_no || ""} ${print.print_name || ""}`)
+    ].join(" ").toLowerCase();
+    return haystack.includes(query);
+  });
+
+  $("artPickerGrid").innerHTML = list.length
+    ? list.map(artPickerCardHtml).join("")
+    : `<div class="pm-art-empty">No matching Art found in Art Master.</div>`;
+
+  $("artPickerGrid").querySelectorAll("[data-select-art]").forEach(button => {
+    button.addEventListener("click", () => {
+      selectedArtId = button.dataset.selectArt;
+      renderArtPicker();
+      renderSelectedArtPreview();
+    });
+  });
+}
+
+function renderSelectedArtPreview() {
+  const preview = $("selectedArtPreview");
+  const art = artById(selectedArtId);
+  if (!art) {
+    preview.classList.add("pm-hidden");
+    preview.innerHTML = "";
+    $("saveArtAssignment").disabled = true;
+    return;
+  }
+
+  const linked = linkedPrintsForArt(art.id);
+  const items = carouselItemsForArt(art);
+  preview.classList.remove("pm-hidden");
+  preview.innerHTML = `
+    <div class="pm-selected-carousel">
+      ${carouselHtml(items, `selected-${art.id}`, "ART PHOTO")}
+    </div>
+    <div class="pm-selected-art-copy">
+      <small>SELECTED ART</small>
+      <h3>${safe(art.art_no)}</h3>
+      <p>${safe(art.product_name || art.item_name || art.category || "")}</p>
+      <div class="pm-linked-print-list">
+        ${linked.length
+          ? linked.map(print => `<span><small>PRINT</small><strong>${safe(print.print_no)}</strong><em>${safe(print.print_name || "")}</em></span>`).join("")
+          : `<span class="is-empty"><strong>No Print linked in Art Master</strong></span>`}
+      </div>
+      <div class="pm-fixed-flow-caption">
+        <span class="pm-progress-chip is-complete">✓ Art Decided</span>
+        <span class="pm-progress-chip is-next">Cutting Due</span>
+      </div>
+    </div>`;
+  bindCarousels(preview);
+  $("saveArtAssignment").disabled = false;
+}
+
+function openArtAssignment(divisionId) {
+  const context = divisionContext(divisionId);
+  if (!context) {
+    say("CB Child not found.", "error");
+    return;
+  }
+  activeArtDivisionId = divisionId;
+  selectedArtId = context.assignment?.art_id || null;
+  $("artAssignmentKicker").textContent = context.assignment ? "Change Art" : "Assign Art";
+  $("artAssignmentTitle").textContent = context.division.division_code || `S${context.division.division_index}`;
+  $("artCbNo").textContent = context.group.cb_no || "—";
+  $("artCbChild").textContent = context.division.division_code || `S${context.division.division_index}`;
+  $("artCbQty").textContent = qty(context.division.allocated_qty);
+  $("artSearch").value = "";
+  artAssignmentSay("");
+  renderArtPicker();
+  renderSelectedArtPreview();
+  openSheet(artSheet);
+}
+
+async function saveArtAssignmentRecord(cbUnitId, artId) {
+  const rpc = await supabaseClient.rpc("rr_save_cb_art_assignment", {
+    p_cb_unit_id: cbUnitId,
+    p_art_id: artId
+  });
+  if (!rpc.error) return rpc.data;
+
+  const missingRpc = String(rpc.error.code || "") === "PGRST202" || /function|rpc|schema cache/i.test(rpc.error.message || "");
+  if (!missingRpc) throw rpc.error;
+
+  console.warn("V714 RPC unavailable; using owner direct-write fallback.", rpc.error);
+  const existing = assignmentForDivision(cbUnitId);
+  let assignmentResult;
+  if (existing) {
+    assignmentResult = await supabaseClient
+      .from("rr_cb_art_assignments")
+      .update({ art_id: artId, status: "material_check", bypass_reason: null, bypassed_by: null, bypassed_at: null })
+      .eq("id", existing.id)
+      .select()
+      .single();
+  } else {
+    assignmentResult = await supabaseClient
+      .from("rr_cb_art_assignments")
+      .insert({ cb_id: cbUnitId, art_id: artId, status: "material_check" })
+      .select()
+      .single();
+  }
+  if (assignmentResult.error) throw assignmentResult.error;
+  const unitResult = await supabaseClient
+    .from("rr_cb_units")
+    .update({ status: "art_assigned" })
+    .eq("id", cbUnitId);
+  if (unitResult.error) throw unitResult.error;
+  return assignmentResult.data;
+}
+
+async function saveSelectedArtAssignment() {
+  if (!activeArtDivisionId || !selectedArtId) return;
+  const button = $("saveArtAssignment");
+  const original = button.textContent;
+  button.disabled = true;
+  button.textContent = "Saving…";
+  artAssignmentSay("");
+  try {
+    const art = artById(selectedArtId);
+    await saveArtAssignmentRecord(activeArtDivisionId, selectedArtId);
+    artAssignmentSay(`Art ${art?.art_no || ""} saved. Linked Print auto-pulled.`, "success");
+    await loadData();
+    closeSheet(artSheet);
+    say(`Art ${art?.art_no || ""} decided. Cutting Due.`, "success");
+  } catch (error) {
+    console.error(error);
+    artAssignmentSay(error.message || "Art assignment could not be saved.", "error");
+  } finally {
+    button.disabled = !selectedArtId;
+    button.textContent = original;
+  }
 }
 
 function rollSummaryForPurchase(purchaseEntryId) {
@@ -1216,26 +1585,38 @@ function renderCbDetails(cbId) {
 
   const divisionHtml = group.divisions.map(division => {
     const allocations = allocationsForDivision(division.division_id);
-    const baseChip = Number(division.base_qty || 0) > 0
-      ? `<span>Regular Cloth · ${qty(division.base_qty)}</span>`
-      : "";
-    const allocationChips = allocations.map(allocation => {
-      const purchase = purchaseById(allocation.purchase_entry_id);
-      const category = categoryById(purchase?.material_category_id);
-      return `<span>${safe(category?.category_name || "Material")} · ${qty(allocation.allocated_qty)}</span>`;
-    }).join("");
-    const materialChips = baseChip || allocationChips
-      ? `${baseChip}${allocationChips}`
-      : `<span>No material allocated</span>`;
+    const assignment = assignmentForDivision(division.division_id);
+    const art = assignment ? artById(assignment.art_id) : null;
+    const linked = art ? linkedPrintsForArt(art.id) : [];
+    const materialChips = allocations.length
+      ? allocations.map(allocation => {
+          const purchase = purchaseById(allocation.purchase_entry_id);
+          const category = categoryById(purchase?.material_category_id);
+          return `<span>${safe(category?.category_name || "Material")} · ${qty(allocation.allocated_qty)}</span>`;
+        }).join("")
+      : `<span>Legacy allocation</span>`;
+    const items = carouselItemsForArt(art);
 
     return `
-      <article class="pm-division-card">
-        <h4>${safe(division.division_code || `S${division.division_index}`)}</h4>
-        <div class="pm-division-card-metrics">
-          <span><small>Total Qty</small><strong>${qty(division.allocated_qty)}</strong></span>
-          <span><small>Total Amount</small><strong>${money(division.allocated_amount)}</strong></span>
+      <article class="pm-division-card ${assignment ? "is-art-decided" : ""}">
+        <div class="pm-division-art-hero">
+          <div class="pm-card-hero">${carouselHtml(items, `detail-${division.division_id}`, assignment ? "ART PHOTO" : "ART DUE")}</div>
         </div>
-        <div class="pm-material-chip-list">${materialChips}</div>
+        <div class="pm-division-card-copy">
+          <h4>${safe(division.division_code || `S${division.division_index}`)}</h4>
+          <div class="pm-caption-status-row">
+            <span class="pm-progress-chip ${assignment ? "is-complete" : "is-due"}">${assignment ? "✓ Art Decided" : "Art Due"}</span>
+            <span class="pm-progress-chip is-next">Cutting Due</span>
+          </div>
+          <p class="pm-detail-art-no">${art ? `ART ${safe(art.art_no)}` : "Select Art Number"}</p>
+          <p class="pm-detail-print-no">PRINT ${linked.length ? safe(linked.map(row => row.print_no).filter(Boolean).join(" · ")) : "—"}</p>
+          <div class="pm-division-card-metrics">
+            <span><small>Total Qty</small><strong>${qty(division.allocated_qty)}</strong></span>
+            <span><small>Total Amount</small><strong>${money(division.allocated_amount)}</strong></span>
+          </div>
+          <div class="pm-material-chip-list">${materialChips}</div>
+          <button class="pm-assign-art pm-detail-assign" type="button" data-detail-art="${safe(division.division_id)}">${assignment ? "Change Art" : "Assign Art"}</button>
+        </div>
       </article>`;
   }).join("");
 
@@ -1270,7 +1651,7 @@ function renderCbDetails(cbId) {
     </section>
 
     <section class="pm-detail-section">
-      <h3>Division Cards</h3>
+      <h3>CB Child Art Cards</h3>
       <div class="pm-division-card-grid">${divisionHtml}</div>
     </section>
 
@@ -1280,13 +1661,81 @@ function renderCbDetails(cbId) {
     </section>`;
 }
 
+function bindDetailInteractions() {
+  const body = $("cbDetailBody");
+  bindCarousels(body);
+  body.querySelectorAll("[data-detail-art]").forEach(button => {
+    button.addEventListener("click", () => openArtAssignment(button.dataset.detailArt));
+  });
+}
+
+function refreshOpenDetail() {
+  if (!activeDetailCbId || detailSheet.classList.contains("pm-hidden")) return;
+  $("cbDetailBody").innerHTML = renderCbDetails(activeDetailCbId);
+  bindDetailInteractions();
+}
+
 function openCbDetails(cbId) {
   const group = groupFor(cbId);
   if (!group) return;
   activeDetailCbId = cbId;
   $("cbDetailTitle").textContent = group.cb_no;
   $("cbDetailBody").innerHTML = renderCbDetails(cbId);
+  bindDetailInteractions();
   openSheet(detailSheet);
+}
+
+async function loadPrintSource() {
+  const viewResult = await supabaseClient
+    .from("rr_print_library_view")
+    .select("*")
+    .order("updated_at", { ascending: false });
+  if (!viewResult.error) return viewResult.data || [];
+
+  console.warn("rr_print_library_view unavailable; using rr_print_master.", viewResult.error);
+  const tableResult = await supabaseClient
+    .from("rr_print_master")
+    .select("*")
+    .order("updated_at", { ascending: false });
+  if (tableResult.error) throw tableResult.error;
+  return tableResult.data || [];
+}
+
+async function loadArtPrintLinks() {
+  const withPrintId = await supabaseClient
+    .from("rr_art_print_instructions")
+    .select("id,art_id,sequence_no,location_code,design_name,notes,is_active,print_id")
+    .order("sequence_no");
+  if (!withPrintId.error) return withPrintId.data || [];
+
+  const missingColumn = /print_id|column/i.test(withPrintId.error.message || "");
+  if (!missingColumn) throw withPrintId.error;
+  console.warn("V714 print_id column not installed yet; using legacy Art print names.", withPrintId.error);
+  const legacy = await supabaseClient
+    .from("rr_art_print_instructions")
+    .select("id,art_id,sequence_no,location_code,design_name,notes,is_active")
+    .order("sequence_no");
+  if (legacy.error) throw legacy.error;
+  return legacy.data || [];
+}
+
+async function loadMasterMedia(arts, prints) {
+  const ids = [...new Set([...arts, ...prints].map(row => String(row.id || "")).filter(Boolean))];
+  if (!ids.length) return [];
+  const result = [];
+  for (let start = 0; start < ids.length; start += 80) {
+    const chunk = ids.slice(start, start + 80);
+    const query = await supabaseClient
+      .from("rr_media")
+      .select("id,entity_type,entity_id,media_category,file_url,file_name,caption,is_cover,sort_order,created_at")
+      .in("entity_id", chunk);
+    if (query.error) {
+      console.warn("Master media could not load.", query.error);
+      return result;
+    }
+    result.push(...(query.data || []));
+  }
+  return result;
 }
 
 async function loadData() {
@@ -1304,14 +1753,22 @@ async function loadData() {
       purchaseResult,
       colourResult,
       rollResult,
-      allocationResult
+      allocationResult,
+      artResult,
+      loadedPrintRows,
+      loadedArtPrintRows,
+      assignmentResult
     ] = await Promise.all([
       supabaseClient.from("rr_material_categories").select("*").eq("is_active", true).order("sort_order"),
       loadGallerySource(),
       supabaseClient.from("rr_cb_purchase_entries").select("*").order("created_at", { ascending: false }),
       supabaseClient.from("rr_cb_colours").select("*").order("colour_order"),
       supabaseClient.from("rr_cb_purchase_rolls").select("*").order("roll_no"),
-      supabaseClient.from("rr_cb_material_allocations").select("*")
+      supabaseClient.from("rr_cb_material_allocations").select("*"),
+      supabaseClient.from("rr_art_master").select("*").eq("is_active", true).order("updated_at", { ascending: false }),
+      loadPrintSource(),
+      loadArtPrintLinks(),
+      supabaseClient.from("rr_cb_art_assignments").select("*").order("updated_at", { ascending: false })
     ]);
 
     if (categoryResult.error) throw categoryResult.error;
@@ -1319,6 +1776,8 @@ async function loadData() {
     if (colourResult.error) throw colourResult.error;
     if (rollResult.error) throw new Error(`Run V713 SQL patch: ${rollResult.error.message}`);
     if (allocationResult.error) throw new Error(`Run V713 SQL patch: ${allocationResult.error.message}`);
+    if (artResult.error) throw new Error(`Art Master could not load: ${artResult.error.message}`);
+    if (assignmentResult.error) throw new Error(`Run V714 Art assignment SQL: ${assignmentResult.error.message}`);
 
     categories = categoryResult.data || [];
     galleryRows = loadedGalleryRows || [];
@@ -1326,11 +1785,17 @@ async function loadData() {
     colourRows = colourResult.data || [];
     rollRows = rollResult.data || [];
     allocationRows = allocationResult.data || [];
+    artRows = artResult.data || [];
+    printRows = loadedPrintRows || [];
+    artPrintRows = loadedArtPrintRows || [];
+    assignmentRows = assignmentResult.data || [];
+    mediaRows = await loadMasterMedia(artRows, printRows);
 
     if (!categories.length) throw new Error("No active material categories were found.");
     dataReady = true;
     newCbButton.disabled = false;
     renderGallery();
+    refreshOpenDetail();
   } catch (error) {
     dataReady = false;
     gallery.setAttribute("aria-busy", "false");
@@ -1388,10 +1853,22 @@ purchaseSheet.querySelectorAll("[data-close-purchase-sheet]").forEach(button => 
 detailSheet.querySelectorAll("[data-close-detail-sheet]").forEach(button => {
   button.addEventListener("click", () => closeSheet(detailSheet));
 });
+artSheet.querySelectorAll("[data-close-art-sheet]").forEach(button => {
+  button.addEventListener("click", () => closeSheet(artSheet));
+});
+$("artSearch").addEventListener("input", renderArtPicker);
+$("saveArtAssignment").addEventListener("click", saveSelectedArtAssignment);
+
+$("pmCardColumns").addEventListener("change", () => {
+  cardColumnCount = Number($("pmCardColumns").value || 3);
+  localStorage.setItem("redzedProductCardColumns", String(cardColumnCount));
+  applyCardColumns();
+});
 
 document.addEventListener("keydown", event => {
   if (event.key !== "Escape") return;
-  if (!purchaseSheet.classList.contains("pm-hidden")) closeSheet(purchaseSheet);
+  if (!artSheet.classList.contains("pm-hidden")) closeSheet(artSheet);
+  else if (!purchaseSheet.classList.contains("pm-hidden")) closeSheet(purchaseSheet);
   else if (!detailSheet.classList.contains("pm-hidden")) closeSheet(detailSheet);
 });
 
@@ -1502,23 +1979,23 @@ async function ensureOwnerAccess() {
   }
 }
 
-console.info("REDZED Product Master V713F save-fix boot script loaded.");
+console.info("REDZED Product Master V714 Art + Print boot script loaded.");
 
 (async () => {
   try {
     gallery.innerHTML = `
       <article class="pm-empty-card">
         <div class="pm-spinner" aria-hidden="true"></div>
-        <h3>Connecting Product Master V713</h3>
+        <h3>Connecting Product Master V714</h3>
         <p>Checking login and CB Purchase database…</p>
       </article>`;
-    say("Starting Product Master V713…");
+    say("Starting Product Master V714…");
     await waitForRuntime();
     await ensureOwnerAccess();
     say("");
     await withTimeout(loadData(), 30000, "Product Master database loading");
   } catch (error) {
-    console.error("Product Master V713 boot failed:", error);
+    console.error("Product Master V714 boot failed:", error);
     $("openNewCb").disabled = true;
     gallery.setAttribute("aria-busy", "false");
     gallery.innerHTML = `
@@ -1526,8 +2003,7 @@ console.info("REDZED Product Master V713F save-fix boot script loaded.");
         <h3>Product Master could not start</h3>
         <p>${safe(error.message || "Unknown startup error")}</p>
       </article>`;
-    say(`V713 error: ${error.message || "Product Master could not open."}`, "error");
+    say(`V714 error: ${error.message || "Product Master could not open."}`, "error");
   }
 })();
 })();
-      
