@@ -145,9 +145,10 @@ async function saveCreateMode() {
     const colourPayload = cbColourDrafts.map((draft, index) => {
       const media = mediaByIndex[index];
       return {
-        cb_id: cbPurchaseId,
-        colour_order: index + 1,
-        colour_name: draft.name.trim(),
+  cb_id: cbPurchaseId,
+  col_no: index + 1,
+  colour_order: index + 1,
+  colour_name: draft.name.trim(),
         suggested_colour_name: null,
         image_url: media?.file_url || media?.public_url || media?.url || null,
         media_id: media?.id || media?.media_id || null,
