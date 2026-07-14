@@ -97,11 +97,16 @@
       ];
 
       const SCRIPT_FILES = [
-        "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2",
-        ROOT + "config.js?v=1",
-        ROOT + "real-common.js?v=1",
-        ROOT + "real-product-master-v715b-app.js?v=7163"
-      ];
+  "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2",
+  ROOT + "config.js?v=1",
+  ROOT + "real-common.js?v=1"
+];
+
+const PART_FILES = [
+  ROOT + "real-product-master-v715b-part1.js?v=7163",
+  ROOT + "real-product-master-v715b-part2.js?v=7163",
+  ROOT + "real-product-master-v715b-part3.js?v=7163"
+];
 
       async function fetchText(url, label) {
         const response = await fetch(url, {
@@ -136,7 +141,44 @@
         });
       }
 
-      function showError(error) {
+      async function loadSplitProductMaster() {
+  const codeParts = [];
+
+  for (const url of PART_FILES) {
+    const response = await fetch(url, {
+      cache: "no-store"
+    });
+
+    if (!response.ok) {
+      throw new Error(
+        `Split JavaScript could not load\n${url}\nHTTP ${response.status}`
+      );
+    }
+
+    codeParts.push(await response.text());
+  }
+
+  const combinedCode =
+    codeParts.join("\n") +
+    "\n//# sourceURL=real-product-master-v715b-combined.js";
+
+  const blob = new Blob(
+    [combinedCode],
+    { type: "text/javascript" }
+  );
+
+  const blobUrl = URL.createObjectURL(blob);
+
+  await loadScript(blobUrl);
+
+  URL.revokeObjectURL(blobUrl);
+
+  console.info(
+    "Product Master split JavaScript loaded successfully."
+  );
+}
+
+function showError(error) {
         document.body.innerHTML = "";
 
         const screen = document.createElement("main");
@@ -210,8 +252,10 @@
            * Load runtime files in the correct order.
            */
           for (const url of SCRIPT_FILES) {
-            await loadScript(url);
-          }
+  await loadScript(url);
+}
+
+await loadSplitProductMaster();
 
         } catch (error) {
           console.error(error);
@@ -222,375 +266,5 @@
       start();
     })();
   </script>
-<script>
-(() => {
-  "use strict";
-
-  const errors = [];
-
-  window.addEventListener("error", event => {
-    errors.push(
-      `JS ERROR: ${event.message || "Unknown error"} ` +
-      `${event.filename || ""}:${event.lineno || ""}`
-    );
-  });
-
-  window.addEventListener("unhandledrejection", event => {
-    const reason =
-      event.reason?.message ||
-      event.reason ||
-      "Unknown Promise error";
-
-    errors.push(`PROMISE ERROR: ${reason}`);
-  });
-
-  const checkFiles = [
-    {
-      name: "Main Style",
-      url: "/redzed-store/real-style.css?v=7163",
-      type: "css"
-    },
-    {
-      name: "Product Main CSS",
-      url: "/redzed-store/real-product-master-v713.css?v=7163",
-      type: "css"
-    },
-    {
-      name: "Print Choice CSS",
-      url: "/redzed-store/real-product-master-v715b-print-choice.css?v=7163",
-      type: "css"
-    },
-    {
-      name: "Config JS",
-      url: "/redzed-store/config.js?v=1",
-      type: "js"
-    },
-    {
-      name: "Common JS",
-      url: "/redzed-store/real-common.js?v=1",
-      type: "js"
-    },
-    {
-      name: "Product V715B JS",
-      url: "/redzed-store/real-product-master-v715b-app.js?v=7163",
-      type: "js"
-    }
-  ];
-
-  function createPanel() {
-    let panel = document.getElementById("pmSystemCheck");
-
-    if (panel) return panel;
-
-    panel = document.createElement("section");
-    panel.id = "pmSystemCheck";
-
-    panel.style.cssText = `
-      margin:16px;
-      padding:16px;
-      border:2px solid #ef3340;
-      border-radius:16px;
-      background:#211217;
-      color:#ffffff;
-      font-family:Arial,sans-serif;
-      position:relative;
-      z-index:99999;
-    `;
-
-    panel.innerHTML = `
-      <div style="
-        display:flex;
-        justify-content:space-between;
-        align-items:center;
-        gap:10px;
-        margin-bottom:12px;
-      ">
-        <div>
-          <strong style="font-size:20px">
-            Product Master System Check
-          </strong>
-          <div style="color:#c9c9cf;font-size:13px;margin-top:4px">
-            CSS, JavaScript और runtime status
-          </div>
-        </div>
-
-        <button
-          id="runPmSystemCheck"
-          type="button"
-          style="
-            border:0;
-            border-radius:10px;
-            padding:10px 12px;
-            background:#ef3340;
-            color:#fff;
-            font-weight:800;
-          "
-        >
-          Check Again
-        </button>
-      </div>
-
-      <div id="pmCheckResults">
-        Checking files…
-      </div>
-    `;
-
-    document.body.prepend(panel);
-
-    panel
-      .querySelector("#runPmSystemCheck")
-      .addEventListener("click", runSystemCheck);
-
-    return panel;
-  }
-
-  function resultRow(ok, title, detail) {
-    const row = document.createElement("div");
-
-    row.style.cssText = `
-      margin-top:8px;
-      padding:10px;
-      border-radius:10px;
-      background:${ok ? "#12351f" : "#481d25"};
-      color:${ok ? "#a9efbc" : "#ffc0c7"};
-      overflow-wrap:anywhere;
-      line-height:1.4;
-    `;
-
-    const heading = document.createElement("strong");
-    heading.textContent = `${ok ? "✅" : "❌"} ${title}`;
-
-    const description = document.createElement("div");
-    description.style.cssText =
-      "margin-top:4px;font-size:12px;color:#e0e0e4;";
-
-    description.textContent = detail;
-
-    row.append(heading, description);
-    return row;
-  }
-
-  async function inspectFile(file) {
-    try {
-      const response = await fetch(file.url, {
-        cache: "no-store"
-      });
-
-      const text = await response.text();
-      const trimmed = text.trim();
-      const startsAsHtml =
-        trimmed.startsWith("<!doctype") ||
-        trimmed.startsWith("<html") ||
-        trimmed.includes("<title>404");
-
-      const enoughContent = text.length > 50;
-
-      let validType = true;
-
-      if (file.type === "css") {
-        validType =
-          !startsAsHtml &&
-          (
-            text.includes("{") ||
-            text.includes(".pm-") ||
-            text.includes(":root")
-          );
-      }
-
-      if (file.type === "js") {
-        validType =
-          !startsAsHtml &&
-          (
-            text.includes("function") ||
-            text.includes("const ") ||
-            text.includes("(() =>")
-          );
-      }
-
-      const ok =
-        response.ok &&
-        enoughContent &&
-        validType;
-
-      return {
-        ok,
-        title: file.name,
-        detail:
-          `HTTP ${response.status} | ` +
-          `${text.length} bytes | ` +
-          `${file.url}` +
-          (startsAsHtml
-            ? " | ERROR: HTML/404 content मिला"
-            : "")
-      };
-
-    } catch (error) {
-      return {
-        ok: false,
-        title: file.name,
-        detail:
-          `${error.message || error} | ${file.url}`
-      };
-    }
-  }
-
-  async function runSystemCheck() {
-    const panel = createPanel();
-    const results =
-      panel.querySelector("#pmCheckResults");
-
-    results.innerHTML = "";
-
-    results.append(
-      resultRow(
-        true,
-        "V715B HTML",
-        location.pathname
-      )
-    );
-
-    for (const file of checkFiles) {
-      const result = await inspectFile(file);
-
-      results.append(
-        resultRow(
-          result.ok,
-          result.title,
-          result.detail
-        )
-      );
-    }
-
-    const combinedStyle =
-      document.getElementById(
-        "redzed-product-master-v715b-styles"
-      );
-
-    results.append(
-      resultRow(
-        Boolean(
-          combinedStyle &&
-          combinedStyle.textContent.length > 100
-        ),
-        "Combined CSS Applied",
-        combinedStyle
-          ? `${combinedStyle.textContent.length} CSS characters inserted`
-          : "Combined CSS style tag नहीं मिला"
-      )
-    );
-
-    const productPage =
-      document.querySelector(".pm-page");
-
-    if (productPage) {
-      const computed =
-        getComputedStyle(productPage);
-
-      const cssApplied =
-        computed.paddingLeft !== "0px" ||
-        computed.maxWidth !== "none";
-
-      results.append(
-        resultRow(
-          cssApplied,
-          "Product CSS Visual Check",
-          `padding-left: ${computed.paddingLeft} | ` +
-          `max-width: ${computed.maxWidth}`
-        )
-      );
-    } else {
-      results.append(
-        resultRow(
-          false,
-          "Product HTML Elements",
-          ".pm-page element नहीं मिला"
-        )
-      );
-    }
-
-    results.append(
-      resultRow(
-        Boolean(window.supabase),
-        "Supabase Library",
-        window.supabase
-          ? "Supabase library available"
-          : "Supabase CDN load नहीं हुई"
-      )
-    );
-
-    results.append(
-      resultRow(
-        Boolean(
-          window.supabaseClient ||
-          window.supabaseDb ||
-          window.redzedSupabase ||
-          window.sb
-        ),
-        "Config / Supabase Client",
-        (
-          window.supabaseClient ||
-          window.supabaseDb ||
-          window.redzedSupabase ||
-          window.sb
-        )
-          ? "Supabase client available"
-          : "config.js से client नहीं मिला"
-      )
-    );
-
-    results.append(
-      resultRow(
-        Boolean(window.RR),
-        "Common Runtime",
-        window.RR
-          ? "RR runtime available"
-          : "real-common.js load नहीं हुई"
-      )
-    );
-
-    results.append(
-      resultRow(
-        Boolean(
-          window.REDZED_PRODUCT_MASTER_BOOTED
-        ),
-        "Product Master Boot",
-        window.REDZED_PRODUCT_MASTER_BOOTED
-          ? `Booted | Version: ${
-              window.REDZED_PRODUCT_MASTER_VERSION ||
-              "unknown"
-            }`
-          : "V715B app.js boot नहीं हुई"
-      )
-    );
-
-    if (errors.length) {
-      errors.forEach((error, index) => {
-        results.append(
-          resultRow(
-            false,
-            `Captured Error ${index + 1}`,
-            error
-          )
-        );
-      });
-    } else {
-      results.append(
-        resultRow(
-          true,
-          "Captured JavaScript Errors",
-          "अभी कोई browser JavaScript error capture नहीं हुई"
-        )
-      );
-    }
-  }
-
-  setTimeout(() => {
-    createPanel();
-    runSystemCheck();
-  }, 2500);
-
-  setTimeout(runSystemCheck, 8000);
-})();
-      </script>
 </body>
 </html>
