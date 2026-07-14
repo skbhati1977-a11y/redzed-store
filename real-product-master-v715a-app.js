@@ -2,7 +2,7 @@
 "use strict";
 
 window.REDZED_PRODUCT_MASTER_BOOTED = true;
-window.REDZED_PRODUCT_MASTER_VERSION = "715A";
+window.REDZED_PRODUCT_MASTER_VERSION = "715B";
 
 const $ = id => document.getElementById(id);
 const purchaseSheet = $("purchaseSheet");
@@ -1039,8 +1039,9 @@ async function loadGallerySource() {
       created_at: division.created_at || purchase.created_at
     });
   });
-      }
-  function groupGalleryRows() {
+}
+
+function groupGalleryRows() {
   const groups = new Map();
   const statusPriority = {
     hold: 50,
@@ -1432,18 +1433,23 @@ function printPickerCardHtml(print) {
   const image = printImageUrl(print);
   const selected = selectedPrintIds.some(id => String(id) === String(print.id));
   const colours = Number(print.design_colours ?? print.colours ?? 0);
+  const frameText = printFrameSummary(print);
+  const metaText = colours > 0
+    ? `${colours} Colour${colours === 1 ? "" : "s"}`
+    : "Print Master";
+
   return `
-    <button class="pm-print-option ${selected ? "is-selected" : ""}" type="button" data-select-print="${safe(print.id)}">
-      <span class="pm-print-option-image">
-        ${image ? `<img src="${safe(image)}" alt="${safe(print.print_no)}" loading="lazy">` : `<i>PRINT</i>`}
-        ${selected ? `<b class="pm-print-selected-badge">✓ SELECTED</b>` : ""}
+    <button class="pm-art-option pm-print-choice ${selected ? "is-selected" : ""}" type="button" data-select-print="${safe(print.id)}" aria-pressed="${selected ? "true" : "false"}">
+      <span class="pm-art-option-image pm-print-choice-image">
+        ${image ? `<img src="${safe(image)}" alt="${safe(print.print_no || "Print")}" loading="lazy">` : `<i>PRINT</i>`}
+        ${selected ? `<b class="pm-print-choice-check">✓</b>` : ""}
       </span>
-      <span class="pm-print-option-copy">
+      <span class="pm-art-option-copy pm-print-choice-copy">
         <small>PRINT NUMBER</small>
         <strong>${safe(print.print_no || "")}</strong>
-        <em>${safe(print.print_name || "")}</em>
-        <b>${colours > 0 ? `${colours} Colour${colours === 1 ? "" : "s"}` : "Print Master"}</b>
-        <span>${safe(printFrameSummary(print))}</span>
+        <em>${safe(print.print_name || "Unnamed Print")}</em>
+        <b>${safe(metaText)}</b>
+        <span class="pm-print-frame-caption">${safe(frameText)}</span>
       </span>
     </button>`;
 }
@@ -1511,8 +1517,7 @@ function renderSelectedArtPreview() {
         <span class="pm-progress-chip is-complete">✓ Art Decided</span>
         <span class="pm-progress-chip is-next">Cutting Due</span>
       </div>
-    </div>`;
-  bindCarousels(preview);
+ bindCarousels(preview);
   $("saveArtAssignment").disabled = false;
 }
 
@@ -1530,7 +1535,6 @@ function openArtAssignment(divisionId) {
   $("artCbNo").textContent = context.group.cb_no || "—";
   $("artCbChild").textContent = context.division.division_code || `S${context.division.division_index}`;
   $("artCbQty").textContent = qty(context.division.allocated_qty);
-  $("artSearch").value = "";
   $("artSearch").value = "";
   $("printSearch").value = "";
   artAssignmentSay("");
@@ -1977,7 +1981,7 @@ function withTimeout(promise, milliseconds, label) {
   });
 }
 
- function getSupabaseClient() {
+function getSupabaseClient() {
   let client = null;
   try {
     if (
@@ -2024,6 +2028,7 @@ async function ensureOwnerAccess() {
 
   const sessionResult = await withTimeout(client.auth.getSession(), 10000, "Supabase session check");
   if (sessionResult?.error) throw sessionResult.error;
+  if (sessionResult?.error) throw sessionResult.error;
   const session = sessionResult?.data?.session || null;
 
   if (!session) {
@@ -2045,23 +2050,23 @@ async function ensureOwnerAccess() {
   }
 }
 
-console.info("REDZED Product Master V715A separate Art + Print boot script loaded.");
+console.info("REDZED Product Master V715B Print choice cards boot script loaded.");
 
 (async () => {
   try {
     gallery.innerHTML = `
       <article class="pm-empty-card">
         <div class="pm-spinner" aria-hidden="true"></div>
-        <h3>Connecting Product Master V715A</h3>
+        <h3>Connecting Product Master V715B</h3>
         <p>Checking login and CB Purchase database…</p>
       </article>`;
-    say("Starting Product Master V715A…");
+    say("Starting Product Master V715B…");
     await waitForRuntime();
     await ensureOwnerAccess();
     say("");
     await withTimeout(loadData(), 30000, "Product Master database loading");
   } catch (error) {
-    console.error("Product Master V715A boot failed:", error);
+    console.error("Product Master V715B boot failed:", error);
     $("openNewCb").disabled = true;
     gallery.setAttribute("aria-busy", "false");
     gallery.innerHTML = `
@@ -2069,7 +2074,7 @@ console.info("REDZED Product Master V715A separate Art + Print boot script loade
         <h3>Product Master could not start</h3>
         <p>${safe(error.message || "Unknown startup error")}</p>
       </article>`;
-    say(`V715A error: ${error.message || "Product Master could not open."}`, "error");
+    say(`V715B error: ${error.message || "Product Master could not open."}`, "error");
   }
 })();
 })();
