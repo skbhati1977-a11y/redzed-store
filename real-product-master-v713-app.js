@@ -2,7 +2,7 @@
 "use strict";
 
 window.REDZED_PRODUCT_MASTER_BOOTED = true;
-window.REDZED_PRODUCT_MASTER_VERSION = "713";
+window.REDZED_PRODUCT_MASTER_VERSION = "713D";
 
 const $ = id => document.getElementById(id);
 const purchaseSheet = $("purchaseSheet");
@@ -10,6 +10,7 @@ const detailSheet = $("cbDetailSheet");
 const purchaseForm = $("purchaseForm");
 const gallery = $("cbGallery");
 const message = $("pmMessage");
+const purchaseMessage = $("purchaseMessage");
 
 let categories = [];
 let galleryRows = [];
@@ -71,6 +72,23 @@ function say(text, type = "") {
   message.className = `rr-message ${type}`.trim();
 }
 
+function formatSaveError(error) {
+  const parts = [
+    error?.message,
+    error?.details,
+    error?.hint,
+    error?.code ? `Code: ${error.code}` : ""
+  ].filter(Boolean);
+  return [...new Set(parts.map(part => String(part).trim()).filter(Boolean))].join(" — ")
+    || "Purchase could not be saved.";
+}
+
+function showPurchaseMessage(text = "", type = "") {
+  if (!purchaseMessage) return;
+  purchaseMessage.textContent = text;
+  purchaseMessage.className = `pm-save-message ${text ? "" : "pm-hidden"} ${type ? `is-${type}` : ""}`.trim();
+}
+
 function categoryById(id) {
   return categories.find(item => String(item.id) === String(id)) || null;
 }
@@ -112,6 +130,57 @@ function currentColourCount() {
   return Math.max(1, Math.min(12, Number($("colourCount").value || 1)));
 }
 
+function defaultRollRowCount() {
+  return Math.max(1, currentDivisionChoices().length || getSelectedDivisionCount());
+}
+
+function makeColourRollDraft(rollCount = defaultRollRowCount()) {
+  return {
+    rolls: Array.from({ length: Math.max(1, rollCount) }, () => ({ quantity: "" })),
+    autoRollTemplate: true
+  };
+}
+
+function isEmptyRollDraft(roll) {
+  const raw = String(roll?.quantity ?? "").trim();
+  return raw === "" || Number(raw) <= 0;
+}
+
+function syncAutoRollRows(colour, targetCount = defaultRollRowCount()) {
+  if (!colour) return;
+  if (!Array.isArray(colour.rolls) || !colour.rolls.length) {
+    colour.rolls = [{ quantity: "" }];
+  }
+
+  // Once + Add Roll or × Remove is used, preserve that colour's uneven roll count.
+  if (colour.autoRollTemplate === false) return;
+
+  const target = Math.max(1, Number(targetCount || 1));
+  while (colour.rolls.length < target) {
+    colour.rolls.push({ quantity: "" });
+  }
+
+  // Never delete a row containing quantity when Division count is reduced.
+  while (colour.rolls.length > target) {
+    let removableIndex = -1;
+    for (let index = colour.rolls.length - 1; index >= 1; index -= 1) {
+      if (isEmptyRollDraft(colour.rolls[index])) {
+        removableIndex = index;
+        break;
+      }
+    }
+    if (removableIndex < 0) break;
+    colour.rolls.splice(removableIndex, 1);
+  }
+}
+
+function syncAllAutoRollRows() {
+  const target = defaultRollRowCount();
+  formEntries.forEach(entry => {
+    entry.colours.forEach(colour => syncAutoRollRows(colour, target));
+  });
+}
+
 function ensureColourDrafts(count) {
   while (cbColourDrafts.length < count) {
     cbColourDrafts.push({
@@ -130,11 +199,13 @@ function ensureColourDrafts(count) {
     if (removed?.objectUrl) URL.revokeObjectURL(removed.objectUrl);
   }
 
+  const defaultRows = defaultRollRowCount();
   formEntries.forEach(entry => {
     while (entry.colours.length < count) {
-      entry.colours.push({ rolls: [{ quantity: "" }] });
+      entry.colours.push(makeColourRollDraft(defaultRows));
     }
     while (entry.colours.length > count) entry.colours.pop();
+    entry.colours.forEach(colour => syncAutoRollRows(colour, defaultRows));
   });
 }
 
@@ -154,9 +225,10 @@ function makeEntry({ regularLocked = false, categoryCode = null } = {}) {
     rate: "",
     allocationScope: "all",
     selectedDivisionIndexes: currentDivisionChoices().map(item => item.index),
-    colours: Array.from({ length: currentColourCount() }, () => ({
-      rolls: [{ quantity: "" }]
-    }))
+    colours: Array.from(
+      { length: currentColourCount() },
+      () => makeColourRollDraft(defaultRollRowCount())
+    )
   };
 }
 
@@ -231,7 +303,9 @@ function renderRolls(entry, colourIndex) {
     <div class="pm-roll-row" data-roll-index="${rollIndex}">
       <b>Roll ${rollIndex + 1}</b>
       <input class="pm-roll-qty" type="number" inputmode="decimal" min="0" step="0.001" placeholder="Qty kg" value="${safe(roll.quantity)}">
-      <button class="pm-remove-roll" type="button" aria-label="Remove roll">×</button>
+      ${rollIndex > 0
+        ? `<button class="pm-remove-roll" type="button" aria-label="Remove Roll ${rollIndex + 1}">×</button>`
+        : `<span class="pm-roll-remove-spacer" aria-hidden="true"></span>`}
     </div>
   `).join("");
 }
@@ -395,17 +469,20 @@ function bindEntryEvents(entry, entryIndex, node) {
         updateGrandSummary();
       });
 
-      rollNode.querySelector(".pm-remove-roll").addEventListener("click", () => {
-        entry.colours[colourIndex].rolls.splice(rollIndex, 1);
-        if (!entry.colours[colourIndex].rolls.length) {
-          entry.colours[colourIndex].rolls.push({ quantity: "" });
-        }
+      rollNode.querySelector(".pm-remove-roll")?.addEventListener("click", () => {
+        if (rollIndex === 0) return;
+        const colour = entry.colours[colourIndex];
+        colour.rolls.splice(rollIndex, 1);
+        colour.autoRollTemplate = false;
+        if (!colour.rolls.length) colour.rolls.push({ quantity: "" });
         renderPurchaseEntries();
       });
     });
 
     colourNode.querySelector(".pm-add-roll").addEventListener("click", () => {
-      entry.colours[colourIndex].rolls.push({ quantity: "" });
+      const colour = entry.colours[colourIndex];
+      colour.rolls.push({ quantity: "" });
+      colour.autoRollTemplate = false;
       renderPurchaseEntries();
     });
   });
@@ -453,6 +530,7 @@ function updateGrandSummary() {
 }
 
 function resetCreateForm() {
+  showPurchaseMessage();
   formMode = "create";
   activeCbId = null;
   entrySequence = 0;
@@ -483,6 +561,7 @@ function openCreateForm() {
 }
 
 function openAppendForm(cbId) {
+  showPurchaseMessage();
   const group = groupFor(cbId);
   if (!group) return;
 
@@ -533,7 +612,7 @@ function validateEntries() {
   }
 
   formEntries.forEach((entry, index) => {
-    const number = index + 1;
+     const number = index + 1;
     if (!entry.materialCategoryId) throw new Error(`Purchase ${number}: select Material.`);
     if (!entry.vendorName.trim()) throw new Error(`Purchase ${number}: enter Vendor Name.`);
     if (!entry.fabricName.trim()) throw new Error(`Purchase ${number}: enter Fabric Name.`);
@@ -604,7 +683,7 @@ async function uploadColourMedia(cbPurchaseId, index, name) {
   return media;
 }
 
-async function insertPurchaseEntry(cbPurchaseId, entry, divisions, colours, entryNotes = null) {
+async function insertPurchaseEntry(cbPurchaseId, entry, divisions, colours, entryNotes = null, skipAllocation = false) {
   const totalQuantity = entryQuantity(entry);
   const payload = {
     cb_id: cbPurchaseId,
@@ -641,16 +720,19 @@ async function insertPurchaseEntry(cbPurchaseId, entry, divisions, colours, entr
     if (rollError) throw rollError;
   }
 
-  const divisionIds = selectedDivisionIds(entry, divisions);
-  if (!divisionIds.length) throw new Error("No division selected for material allocation.");
+  if (!skipAllocation) {
+    const divisionIds = selectedDivisionIds(entry, divisions);
+    if (!divisionIds.length) throw new Error("No division selected for material allocation.");
 
-  const { error: allocationError } = await supabaseClient
-    .rpc("rr_allocate_cb_purchase_entry", {
-      p_purchase_entry_id: data.id,
-      p_division_ids: divisionIds
-    });
+    const { error: allocationError } = await supabaseClient
+      .rpc("rr_allocate_cb_purchase_entry", {
+        p_purchase_entry_id: data.id,
+        p_division_ids: divisionIds
+      });
 
-  if (allocationError) throw allocationError;
+    if (allocationError) throw allocationError;
+  }
+
   return data;
 }
 
@@ -715,6 +797,7 @@ async function saveCreateMode() {
   }
 
   try {
+    showPurchaseMessage("Creating CB identity and divisions…", "progress");
     const { data: rpcData, error: cbError } = await supabaseClient
       .rpc("rr_create_cb_v713", {
         p_cb_no: cbNo,
@@ -724,6 +807,9 @@ async function saveCreateMode() {
         p_regular_amount: Number(regularAmount.toFixed(2)),
         p_total_rolls: regularRolls,
         p_fabric_name: regularEntry.fabricName.trim(),
+        p_regular_division_indexes: regularEntry.allocationScope === "all"
+          ? currentDivisionChoices().map(item => item.index)
+          : regularEntry.selectedDivisionIndexes.map(Number),
         p_remarks: $("cbRemarks").value.trim() || null
       });
 
@@ -740,6 +826,7 @@ async function saveCreateMode() {
 
     const mediaByIndex = [];
     for (let index = 0; index < colourCount; index++) {
+      showPurchaseMessage(`Uploading colour image ${index + 1} of ${colourCount}…`, "progress");
       const media = await uploadColourMedia(cbPurchaseId, index, cbColourDrafts[index].name.trim());
       uploadedMedia.push(media);
       mediaByIndex[index] = media;
@@ -758,6 +845,7 @@ async function saveCreateMode() {
       };
     });
 
+    showPurchaseMessage("Saving colour cards…", "progress");
     const { data: createdColours, error: colourError } = await supabaseClient
       .from("rr_cb_colours")
       .insert(colourPayload)
@@ -770,8 +858,17 @@ async function saveCreateMode() {
       division_id: row.id
     }));
 
-    for (const entry of formEntries) {
-      await insertPurchaseEntry(cbPurchaseId, entry, divisions, createdColours, null);
+    for (let entryIndex = 0; entryIndex < formEntries.length; entryIndex += 1) {
+      showPurchaseMessage(`Saving purchase ${entryIndex + 1} of ${formEntries.length}…`, "progress");
+      const entry = formEntries[entryIndex];
+      await insertPurchaseEntry(
+        cbPurchaseId,
+        entry,
+        divisions,
+        createdColours,
+        null,
+        entryIndex === 0
+      );
     }
 
     return { cbNo, cbPurchaseId };
@@ -822,6 +919,7 @@ purchaseForm.addEventListener("submit", async event => {
   button.disabled = true;
   button.textContent = "Saving…";
   say("");
+  showPurchaseMessage("Checking entries…", "progress");
 
   try {
     if (
@@ -832,10 +930,21 @@ purchaseForm.addEventListener("submit", async event => {
       throw new Error("real-common.js owner/media helpers are not available.");
     }
 
+    await ensureOwnerAccess();
     validateEntries();
-    const result = formMode === "create"
-      ? await saveCreateMode()
-      : await saveAppendMode();
+
+    const result = await withTimeout(
+      formMode === "create" ? saveCreateMode() : saveAppendMode(),
+      120000,
+      formMode === "create" ? "CB save" : "Material purchase save"
+    );
+
+    showPurchaseMessage(
+      formMode === "create"
+        ? `CB ${result.cbNo} created successfully.`
+        : `${result.cbNo} material purchase added successfully.`,
+      "success"
+    );
 
     closeSheet(purchaseSheet);
     say(
@@ -844,10 +953,19 @@ purchaseForm.addEventListener("submit", async event => {
         : `${result.cbNo} material purchase added successfully.`,
       "success"
     );
-    await loadData();
+
+    try {
+      await loadData();
+    } catch (refreshError) {
+      console.error("Saved, but refresh failed:", refreshError);
+      say(`Saved successfully. Refresh warning: ${formatSaveError(refreshError)}`, "error");
+    }
   } catch (error) {
-    console.error(error);
-    say(error.message || "Purchase could not be saved.", "error");
+    console.error("CB save failed:", error);
+    const text = formatSaveError(error);
+    showPurchaseMessage(text, "error");
+    say(text, "error");
+    if (navigator.vibrate) navigator.vibrate(120);
   } finally {
     button.disabled = false;
     button.textContent = originalLabel;
@@ -865,6 +983,8 @@ function normalizeGalleryRow(row) {
     division_status: row.division_status || "planning",
     allocated_qty: Number(row.allocated_qty || 0),
     allocated_amount: Number(row.allocated_amount || 0),
+    base_qty: Number(row.base_qty ?? row.divided_weight ?? 0),
+    base_amount: Number(row.base_amount ?? row.divided_amount ?? 0),
     created_at: row.created_at || ""
   };
 }
@@ -903,6 +1023,8 @@ async function loadGallerySource() {
       division_status: statusMap[division.status] || "planning",
       allocated_qty: division.divided_weight,
       allocated_amount: division.divided_amount,
+      base_qty: division.divided_weight,
+      base_amount: division.divided_amount,
       cb_no: purchase.cb_no || division.cb_base_no,
       created_at: division.created_at || purchase.created_at
     });
@@ -1094,13 +1216,17 @@ function renderCbDetails(cbId) {
 
   const divisionHtml = group.divisions.map(division => {
     const allocations = allocationsForDivision(division.division_id);
-    const materialChips = allocations.length
-      ? allocations.map(allocation => {
-          const purchase = purchaseById(allocation.purchase_entry_id);
-          const category = categoryById(purchase?.material_category_id);
-          return `<span>${safe(category?.category_name || "Material")} · ${qty(allocation.allocated_qty)}</span>`;
-        }).join("")
-      : `<span>Legacy allocation</span>`;
+    const baseChip = Number(division.base_qty || 0) > 0
+      ? `<span>Regular Cloth · ${qty(division.base_qty)}</span>`
+      : "";
+    const allocationChips = allocations.map(allocation => {
+      const purchase = purchaseById(allocation.purchase_entry_id);
+      const category = categoryById(purchase?.material_category_id);
+      return `<span>${safe(category?.category_name || "Material")} · ${qty(allocation.allocated_qty)}</span>`;
+    }).join("");
+    const materialChips = baseChip || allocationChips
+      ? `${baseChip}${allocationChips}`
+      : `<span>No material allocated</span>`;
 
     return `
       <article class="pm-division-card">
@@ -1234,6 +1360,7 @@ $("divisionCount").addEventListener("change", () => {
     if (entry.allocationScope === "all") entry.selectedDivisionIndexes = [...validIndexes];
     else entry.selectedDivisionIndexes = entry.selectedDivisionIndexes.filter(index => validIndexes.includes(index));
   });
+  syncAllAutoRollRows();
   renderPurchaseEntries();
 });
 
@@ -1242,6 +1369,7 @@ $("customDivisionCount").addEventListener("input", () => {
   formEntries.forEach(entry => {
     if (entry.allocationScope === "all") entry.selectedDivisionIndexes = [...validIndexes];
   });
+  syncAllAutoRollRows();
   renderPurchaseEntries();
 });
 
@@ -1374,7 +1502,7 @@ async function ensureOwnerAccess() {
   }
 }
 
-console.info("REDZED Product Master V713 boot script loaded.");
+console.info("REDZED Product Master V713F save-fix boot script loaded.");
 
 (async () => {
   try {
@@ -1402,4 +1530,4 @@ console.info("REDZED Product Master V713 boot script loaded.");
   }
 })();
 })();
-          
+      
