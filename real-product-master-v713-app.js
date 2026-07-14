@@ -2,7 +2,7 @@
 "use strict";
 
 window.REDZED_PRODUCT_MASTER_BOOTED = true;
-window.REDZED_PRODUCT_MASTER_VERSION = "714";
+window.REDZED_PRODUCT_MASTER_VERSION = "715";
 
 const $ = id => document.getElementById(id);
 const purchaseSheet = $("purchaseSheet");
@@ -21,7 +21,7 @@ let rollRows = [];
 let allocationRows = [];
 let artRows = [];
 let printRows = [];
-let artPrintRows = [];
+let printAssignmentRows = [];
 let assignmentRows = [];
 let mediaRows = [];
 let currentFilter = "all";
@@ -35,6 +35,7 @@ let formEntries = [];
 let cbColourDrafts = [];
 let activeArtDivisionId = null;
 let selectedArtId = null;
+let selectedPrintIds = [];
 let cardColumnCount = Number(localStorage.getItem("redzedProductCardColumns") || 3);
 
 function escapeHtml(value) {
@@ -1038,9 +1039,8 @@ async function loadGallerySource() {
       created_at: division.created_at || purchase.created_at
     });
   });
-}
-
-function groupGalleryRows() {
+      }
+          function groupGalleryRows() {
   const groups = new Map();
   const statusPriority = {
     hold: 50,
