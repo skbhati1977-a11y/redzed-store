@@ -194,4 +194,38 @@ button:disabled{cursor:not-allowed;opacity:.55}
 
 .pm-roll-summary{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px}
 .pm-roll-summary span{padding:5px 7px;border:1px solid #34343d;border-radius:999px;background:#17171d;color:#d7d7dc;font-size:11px}
-                    
+
+
+/* V713F — save progress/error stays visible inside the open sheet */
+.pm-save-message {
+  position: sticky;
+  z-index: 18;
+  bottom: calc(82px + env(safe-area-inset-bottom));
+  margin: 14px 0 8px;
+  padding: 12px 14px;
+  border: 1px solid rgba(255,255,255,.16);
+  border-radius: 14px;
+  background: rgba(20,20,25,.97);
+  color: #f7f7f8;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.4;
+  box-shadow: 0 12px 30px rgba(0,0,0,.38);
+}
+.pm-save-message.is-error {
+  border-color: rgba(255,69,86,.72);
+  background: rgba(77,17,25,.98);
+  color: #fff1f3;
+}
+.pm-save-message.is-success {
+  border-color: rgba(63,206,132,.68);
+  background: rgba(12,64,40,.98);
+  color: #eafff4;
+}
+.pm-save-message.is-progress {
+  border-color: rgba(238,181,80,.6);
+  background: rgba(63,43,10,.98);
+  color: #fff3d5;
+}
+.pm-save-message.pm-hidden { display: none !important; }
+                        
