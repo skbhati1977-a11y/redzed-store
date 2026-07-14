@@ -4,10 +4,10 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#0b0b0e">
-  <title>REDZED REAL — Product Master V714</title>
+  <title>REDZED REAL — Product Master V715A</title>
 
   <link rel="stylesheet" href="real-style.css?v=700">
-  <link rel="stylesheet" href="real-product-master-v713.css?v=714">
+  <link rel="stylesheet" href="real-product-master-v713.css?v=715">
 </head>
 <body>
   <main class="rr-page pm-page">
@@ -22,8 +22,8 @@
     <section class="pm-hero-card">
       <div>
         <small>Product Master</small>
-        <h2>CB → Art Decision → Linked Print</h2>
-        <p>Each CB child gets its Art from Art Master and linked Prints pull automatically.</p>
+        <h2>CB → Art Decision → Print Decision</h2>
+        <p>Art pulls from Art Master and Print is selected separately from Print Master for each CB child.</p>
       </div>
       <button id="openNewCb" class="pm-primary-btn" type="button" disabled>+ New CB</button>
     </section>
@@ -203,7 +203,7 @@
     </div>
   </section>
 
-  <!-- CB Child Art + linked Print assignment -->
+  <!-- CB Child Art + separate Print assignment -->
   <section id="artAssignmentSheet" class="pm-sheet pm-hidden" aria-hidden="true">
     <div class="pm-sheet-backdrop" data-close-art-sheet></div>
 
@@ -224,12 +224,39 @@
         <span><small>Qty</small><strong id="artCbQty">0 kg</strong></span>
       </section>
 
-      <label class="pm-art-search">
-        <span>Search Art Number</span>
-        <input id="artSearch" type="search" placeholder="Art No, product or category" autocomplete="off">
-      </label>
+      <section class="pm-master-select-block">
+        <div class="pm-master-select-head">
+          <div>
+            <small>STEP 1 · ART MASTER</small>
+            <h3>Select Art</h3>
+          </div>
+        </div>
 
-      <div id="artPickerGrid" class="pm-art-picker-grid"></div>
+        <label class="pm-art-search">
+          <span>Search Art Number</span>
+          <input id="artSearch" type="search" placeholder="Art No, product or category" autocomplete="off">
+        </label>
+
+        <div id="artPickerGrid" class="pm-art-picker-grid"></div>
+      </section>
+
+      <section class="pm-master-select-block pm-print-select-block">
+        <div class="pm-master-select-head">
+          <div>
+            <small>STEP 2 · PRINT MASTER</small>
+            <h3>Select Print</h3>
+          </div>
+          <span id="selectedPrintCount" class="pm-selection-count">0 selected</span>
+        </div>
+
+        <label class="pm-art-search">
+          <span>Search Print Number</span>
+          <input id="printSearch" type="search" placeholder="Print No, name or frame" autocomplete="off">
+        </label>
+
+        <div id="printPickerGrid" class="pm-print-picker-grid"></div>
+        <p class="pm-select-note">Select one or multiple Prints. Leave all unselected when this Art has no Print.</p>
+      </section>
 
       <section id="selectedArtPreview" class="pm-selected-art-preview pm-hidden"></section>
 
@@ -237,7 +264,7 @@
 
       <div class="pm-sticky-actions pm-art-actions">
         <button class="pm-secondary-btn" type="button" data-close-art-sheet>Cancel</button>
-        <button id="saveArtAssignment" class="pm-primary-btn" type="button" disabled>Save Art & Linked Print</button>
+        <button id="saveArtAssignment" class="pm-primary-btn" type="button" disabled>Save Art & Print</button>
       </div>
     </div>
   </section>
@@ -245,7 +272,6 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="config.js?v=1"></script>
   <script src="real-common.js?v=1"></script>
-  <script src="real-product-master-v713-app.js?v=714"></script>
+  <script src="real-product-master-v715a-app.js?v=7151"></script>
 </body>
-    </html>
-    
+</html>
