@@ -165,3 +165,630 @@
   .pm-print-choice-copy em{font-size:12px!important}
   .pm-print-choice-copy b{font-size:10px!important}
   }
+/* =========================================================
+   PRODUCT MASTER V715B — GALLERY + ART/PRINT VISUAL PATCH
+   ========================================================= */
+
+.pm-gallery{
+  width:100%;
+  align-items:start;
+}
+
+.pm-gallery.pm-cols-2{
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
+}
+
+.pm-gallery.pm-cols-3{
+  grid-template-columns:repeat(3,minmax(0,1fr))!important;
+}
+
+.pm-gallery.pm-cols-4{
+  grid-template-columns:repeat(4,minmax(0,1fr))!important;
+}
+
+.pm-gallery.pm-cols-6{
+  grid-template-columns:repeat(6,minmax(0,1fr))!important;
+}
+
+.pm-work-card{
+  min-width:0;
+  overflow:hidden;
+  border:1px solid #34343d;
+  border-radius:20px;
+  background:#15151a;
+  box-shadow:0 10px 28px #0005;
+}
+
+.pm-work-card.is-art-due{
+  border-color:#61404a;
+}
+
+.pm-work-card.is-art-decided{
+  border-color:#286a40;
+}
+
+.pm-card-hero{
+  position:relative;
+  width:100%;
+  aspect-ratio:4/5;
+  min-height:0;
+  overflow:hidden;
+  background:#09090c;
+}
+
+.pm-swipe-track{
+  position:relative;
+  width:100%;
+  height:100%;
+  overflow:hidden;
+}
+
+.pm-swipe-slide{
+  display:none;
+  position:absolute;
+  inset:0;
+  margin:0;
+  width:100%;
+  height:100%;
+  background:#09090c;
+}
+
+.pm-swipe-slide.is-active{
+  display:block;
+}
+
+.pm-swipe-slide img{
+  display:block;
+  width:100%;
+  height:100%;
+  max-width:100%;
+  object-fit:cover;
+  object-position:center;
+}
+
+.pm-swipe-slide figcaption{
+  position:absolute;
+  left:8px;
+  bottom:8px;
+  max-width:calc(100% - 16px);
+  padding:5px 8px;
+  border-radius:999px;
+  background:#000b;
+  color:#fff;
+  font-size:9px;
+  font-weight:900;
+  letter-spacing:.05em;
+  text-transform:uppercase;
+}
+
+.pm-art-placeholder{
+  display:grid;
+  place-items:center;
+  align-content:center;
+  width:100%;
+  height:100%;
+  padding:20px;
+  text-align:center;
+  background:
+    radial-gradient(circle at 50% 35%,#292931,#111116 70%);
+  color:#fff;
+}
+
+.pm-art-placeholder span{
+  display:block;
+  font-size:22px;
+  font-weight:950;
+}
+
+.pm-art-placeholder small{
+  display:block;
+  margin-top:6px;
+  color:#9999a3;
+  font-size:11px;
+}
+
+.pm-carousel-nav{
+  position:absolute;
+  z-index:4;
+  top:50%;
+  transform:translateY(-50%);
+  display:grid;
+  place-items:center;
+  width:34px;
+  height:44px;
+  border:0;
+  border-radius:11px;
+  background:#000a;
+  color:#fff;
+  font-size:28px;
+  line-height:1;
+}
+
+.pm-carousel-prev{
+  left:7px;
+}
+
+.pm-carousel-next{
+  right:7px;
+}
+
+.pm-carousel-count{
+  position:absolute;
+  z-index:4;
+  top:8px;
+  right:8px;
+  padding:5px 8px;
+  border-radius:999px;
+  background:#000b;
+  color:#fff;
+  font-size:10px;
+  font-weight:900;
+}
+
+.pm-work-caption{
+  padding:13px;
+}
+
+.pm-caption-id-row{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:8px;
+}
+
+.pm-caption-id-row span{
+  min-width:0;
+  padding:9px;
+  border-radius:12px;
+  background:#0d0d11;
+}
+
+.pm-caption-id-row small,
+.pm-caption-metrics small{
+  display:block;
+  margin-bottom:4px;
+  color:#8f8f99;
+  font-size:9px;
+  font-weight:900;
+}
+
+.pm-caption-id-row strong{
+  display:block;
+  overflow:hidden;
+  color:#fff;
+  font-size:13px;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+
+.pm-caption-status-row{
+  display:flex;
+  flex-wrap:wrap;
+  gap:6px;
+  margin:10px 0;
+}
+
+.pm-progress-chip{
+  display:inline-flex;
+  align-items:center;
+  min-height:27px;
+  padding:5px 8px;
+  border-radius:999px;
+  font-size:9px;
+  font-weight:950;
+}
+
+.pm-progress-chip.is-due{
+  border:1px solid #85404b;
+  background:#391b21;
+  color:#ffb9c0;
+}
+
+.pm-progress-chip.is-complete{
+  border:1px solid #286a40;
+  background:#14331f;
+  color:#b9efc8;
+}
+
+.pm-progress-chip.is-next{
+  border:1px solid #665221;
+  background:#2c2412;
+  color:#f0d48c;
+}
+
+.pm-work-caption h3{
+  margin:8px 0 4px;
+  overflow:hidden;
+  color:#fff;
+  font-size:21px;
+  line-height:1.1;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+
+.pm-product-line{
+  min-height:34px;
+  margin:0;
+  overflow:hidden;
+  color:#aaaab3;
+  font-size:11px;
+  line-height:1.45;
+  display:-webkit-box;
+  -webkit-box-orient:vertical;
+  -webkit-line-clamp:2;
+}
+
+.pm-print-line{
+  min-height:32px;
+  margin:10px 0;
+  padding:8px 9px;
+  overflow:hidden;
+  border:1px solid #302d22;
+  border-radius:10px;
+  background:#1b1810;
+  color:#ead389;
+  font-size:11px;
+  line-height:1.35;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+
+.pm-print-line small{
+  margin-right:6px;
+  color:#9d8c55;
+  font-size:8px;
+  font-weight:950;
+}
+
+.pm-caption-metrics{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:8px;
+  margin-bottom:11px;
+}
+
+.pm-caption-metrics span{
+  min-width:0;
+  padding:9px;
+  border-radius:11px;
+  background:#0d0d11;
+}
+
+.pm-caption-metrics strong{
+  display:block;
+  overflow:hidden;
+  color:#fff;
+  font-size:13px;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+
+.pm-work-card .pm-card-footer{
+  display:grid;
+  grid-template-columns:1fr 1.25fr;
+  gap:7px;
+  padding-top:10px;
+}
+
+.pm-work-card .pm-card-footer button{
+  min-width:0;
+  min-height:40px;
+  padding:7px;
+  border:0;
+  border-radius:11px;
+  font-size:10px;
+  font-weight:950;
+}
+
+.pm-assign-art{
+  background:#ef3340;
+  color:#fff;
+}
+
+/* ART + PRINT ASSIGNMENT SHEET */
+
+.pm-art-context{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:8px;
+  margin-bottom:12px;
+}
+
+.pm-art-context span{
+  min-width:0;
+  padding:10px;
+  border:1px solid #303039;
+  border-radius:13px;
+  background:#0d0d11;
+}
+
+.pm-art-context small{
+  display:block;
+  margin-bottom:4px;
+  color:#8f8f99;
+  font-size:9px;
+  font-weight:900;
+}
+
+.pm-art-context strong{
+  display:block;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+
+.pm-master-select-block{
+  margin-top:12px;
+  padding:13px;
+  border:1px solid #303039;
+  border-radius:18px;
+  background:#15151a;
+}
+
+.pm-master-select-head{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:10px;
+  margin-bottom:10px;
+}
+
+.pm-master-select-head small{
+  color:#ff7b86;
+  font-size:9px;
+  font-weight:950;
+  letter-spacing:.08em;
+}
+
+.pm-master-select-head h3{
+  margin:3px 0 0;
+  font-size:20px;
+}
+
+.pm-selection-count{
+  flex:0 0 auto;
+  padding:6px 9px;
+  border-radius:999px;
+  background:#2b2411;
+  color:#ffda73;
+  font-size:10px;
+  font-weight:950;
+}
+
+.pm-art-search span{
+  display:block;
+  margin-bottom:6px;
+  color:#aaaab3;
+  font-size:10px;
+  font-weight:900;
+}
+
+.pm-art-search input{
+  width:100%;
+  min-height:44px;
+  border:1px solid #383842;
+  border-radius:12px;
+  background:#0b0b0f;
+  color:#fff;
+  padding:10px 12px;
+  outline:none;
+}
+
+.pm-art-picker-grid{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:9px;
+  max-height:43vh;
+  margin-top:10px;
+  overflow:auto;
+  padding:1px 1px 9px;
+}
+
+.pm-art-option{
+  display:grid;
+  grid-template-columns:82px minmax(0,1fr);
+  align-items:center;
+  gap:9px;
+  width:100%;
+  min-width:0;
+  min-height:100px;
+  padding:8px;
+  overflow:hidden;
+  border:1px solid #3a3a43;
+  border-radius:15px;
+  background:#111116;
+  color:#fff;
+  text-align:left;
+}
+
+.pm-art-option.is-selected{
+  border:2px solid #ef3340;
+  background:#32171d;
+  box-shadow:0 0 0 2px #ef334022;
+}
+
+.pm-art-option-image{
+  display:grid;
+  place-items:center;
+  width:82px;
+  height:82px;
+  overflow:hidden;
+  border-radius:11px;
+  background:#09090c;
+  color:#777;
+  font-weight:950;
+}
+
+.pm-art-option-image img{
+  display:block;
+  width:100%;
+  height:100%;
+  object-fit:contain;
+}
+
+.pm-art-option-copy{
+  display:flex;
+  min-width:0;
+  flex-direction:column;
+  overflow:hidden;
+}
+
+.pm-art-option-copy small{
+  color:#ff7b86;
+  font-size:8px;
+  font-weight:950;
+}
+
+.pm-art-option-copy strong{
+  margin:3px 0;
+  overflow:hidden;
+  font-size:17px;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+
+.pm-art-option-copy em{
+  overflow:hidden;
+  color:#b5b5bd;
+  font-size:11px;
+  font-style:normal;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+
+.pm-art-option-copy b{
+  margin-top:5px;
+  overflow:hidden;
+  color:#e7ce82;
+  font-size:9px;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+
+.pm-art-empty{
+  grid-column:1/-1;
+  padding:24px;
+  border:1px dashed #41414b;
+  border-radius:14px;
+  color:#aaaab3;
+  text-align:center;
+}
+
+.pm-select-note{
+  margin:8px 0 0;
+  color:#8f8f99;
+  font-size:10px;
+  line-height:1.4;
+}
+
+.pm-selected-art-preview{
+  margin-top:12px;
+  overflow:hidden;
+  border:1px solid #3a3a42;
+  border-radius:17px;
+  background:#0d0d11;
+}
+
+/* CB DETAILS CHILD CARDS */
+
+.pm-division-card{
+  overflow:hidden;
+  padding:0!important;
+}
+
+.pm-division-art-hero{
+  width:100%;
+}
+
+.pm-division-card-copy{
+  padding:13px;
+}
+
+.pm-division-card-copy h4{
+  margin:0 0 8px;
+}
+
+.pm-detail-art-no,
+.pm-detail-print-no{
+  margin:8px 0;
+  overflow-wrap:anywhere;
+  color:#d8d8dd;
+  font-size:11px;
+}
+
+.pm-detail-assign{
+  width:100%;
+  min-height:42px;
+  margin-top:11px;
+  border:0;
+  border-radius:11px;
+  background:#ef3340;
+  color:#fff;
+  font-weight:950;
+}
+
+/* TABLET */
+
+@media(max-width:1000px){
+  .pm-gallery.pm-cols-3,
+  .pm-gallery.pm-cols-4,
+  .pm-gallery.pm-cols-6{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  }
+
+  .pm-art-picker-grid,
+  .pm-print-picker-grid{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  }
+}
+
+/* MOBILE */
+
+@media(max-width:650px){
+  .pm-gallery.pm-cols-2,
+  .pm-gallery.pm-cols-3,
+  .pm-gallery.pm-cols-4,
+  .pm-gallery.pm-cols-6{
+    grid-template-columns:1fr!important;
+  }
+
+.pm-work-card{
+    width:100%;
+    max-width:100%;
+  }
+
+  .pm-card-hero{
+    aspect-ratio:4/4.7;
+    max-height:72vh;
+  }
+
+  .pm-work-caption{
+    padding:12px;
+  }
+
+  .pm-work-caption h3{
+    font-size:22px;
+  }
+
+  .pm-art-context{
+    grid-template-columns:1fr 1fr 1fr;
+  }
+
+  .pm-art-picker-grid,
+  .pm-print-picker-grid{
+    grid-template-columns:1fr!important;
+  }
+
+  .pm-art-option{
+    grid-template-columns:88px minmax(0,1fr);
+    min-height:106px;
+  }
+
+  .pm-art-option-image{
+    width:88px;
+    height:88px;
+  }
+
+  .pm-master-select-block{
+    padding:11px;
+  }
+}
