@@ -630,17 +630,44 @@ function renderGallery() {
 
   gallery.innerHTML = cards.map(({ group, division, assignment }) => {
     const art = assignment ? artById(assignment.art_id) : null;
-    const assignedPrints = assignedPrintsForDivision(division.division_id);
-    const colours = coloursFor(group.cb_id);
-    let items = carouselItemsForAssignment(art, assignedPrints);
-    if (!items.length && !art) {
-      const colourImage = colours.find(row => row.image_url)?.image_url;
-      if (colourImage) items = [{ url: colourImage, label: "CB COLOUR", kind: "colour" }];
-    }
-    const instanceId = `division-${division.division_id}`;
-    const printCaption = assignedPrints.length
-      ? assignedPrints.map(row => row.print_no).filter(Boolean).join(" · ")
-      : "No Print Selected";
+const assignedPrints =
+  assignedPrintsForDivision(division.division_id);
+
+const printNotApplicable =
+  Boolean(assignment?.print_not_applicable);
+
+const printDecisionComplete =
+  printNotApplicable || assignedPrints.length > 0;
+
+const colours = coloursFor(group.cb_id);
+
+let items =
+  carouselItemsForAssignment(art, assignedPrints);
+
+if (!items.length && !art) {
+  const colourImage =
+    colours.find(row => row.image_url)?.image_url;
+
+  if (colourImage) {
+    items = [{
+      url: colourImage,
+      label: "CB COLOUR",
+      kind: "colour"
+    }];
+  }
+}
+
+const instanceId =
+  `division-${division.division_id}`;
+
+const printCaption = printNotApplicable
+  ? "N/A — No Print Required"
+  : assignedPrints.length
+    ? assignedPrints
+        .map(row => row.print_no)
+        .filter(Boolean)
+        .join(" · ")
+    : "No Print Selected";
     return `
       <article class="pm-work-card ${assignment ? "is-art-decided" : "is-art-due"}" data-open-art="${safe(division.division_id)}" tabindex="0" role="button" aria-label="${assignment ? "Change" : "Assign"} Art and Print for ${safe(division.division_code)}">
         <div class="pm-card-hero">
