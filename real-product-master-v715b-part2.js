@@ -557,6 +557,29 @@ function applyCardColumns() {
   if ($("pmCardColumns")) $("pmCardColumns").value = String(cardColumnCount);
 }
 
+/* Add Print Decided filter before Part 3 binds filter events */
+const pmFilterRow = $("pmFilters");
+
+if (
+  pmFilterRow &&
+  !pmFilterRow.querySelector('[data-filter="print_decided"]')
+) {
+  const printDecidedFilter = document.createElement("button");
+
+  printDecidedFilter.className = "pm-filter";
+  printDecidedFilter.type = "button";
+  printDecidedFilter.dataset.filter = "print_decided";
+  printDecidedFilter.textContent = "Print Decided";
+
+  const purchaseFilter =
+    pmFilterRow.querySelector('[data-filter="purchase"]');
+
+  pmFilterRow.insertBefore(
+    printDecidedFilter,
+    purchaseFilter || null
+  );
+}
+
 function renderGallery() {
   const query = $("pmSearch").value.trim().toLowerCase();
   const cards = divisionCards().filter(({ group, division, assignment }) => {
@@ -577,10 +600,19 @@ function renderGallery() {
     ].join(" ").toLowerCase();
 
     let filterMatches = currentFilter === "all";
-    if (currentFilter === "purchase") filterMatches = purchases.length > 0;
-    else if (currentFilter === "planning") filterMatches = !assignment;
-    else if (currentFilter === "ready_for_cutting") filterMatches = Boolean(assignment);
-    else if (currentFilter === "hold") filterMatches = group.status === "hold";
+
+    if (currentFilter === "purchase") {
+      filterMatches = purchases.length > 0;
+    } else if (currentFilter === "planning") {
+      filterMatches = !assignment;
+    } else if (currentFilter === "ready_for_cutting") {
+      filterMatches = Boolean(assignment);
+    } else if (currentFilter === "print_decided") {
+      filterMatches = assignedPrints.length > 0;
+    } else if (currentFilter === "hold") {
+      filterMatches = group.status === "hold";
+    }
+
     return filterMatches && searchText.includes(query);
   });
 
