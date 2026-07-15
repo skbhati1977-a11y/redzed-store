@@ -22,6 +22,7 @@ let allocationRows = [];
 let artRows = [];
 let printRows = [];
 let printAssignmentRows = [];
+let cuttingComboRows = [];
 let assignmentRows = [];
 let mediaRows = [];
 let currentFilter = "all";
