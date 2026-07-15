@@ -90,6 +90,7 @@ function renderPrintPicker() {
 function renderSelectedArtPreview() {
   const preview = $("selectedArtPreview");
   const art = artById(selectedArtId);
+
   if (!art) {
     preview.classList.add("pm-hidden");
     preview.innerHTML = "";
@@ -98,66 +99,101 @@ function renderSelectedArtPreview() {
   }
 
   const prints = selectedPrintRows();
+
+  const printNotApplicable = selectedPrintIds.some(
+    id => String(id) === "__PRINT_NA__"
+  );
+
   const items = carouselItemsForAssignment(art, prints);
+
   preview.classList.remove("pm-hidden");
+
   preview.innerHTML = `
     <div class="pm-selected-carousel">
-      ${carouselHtml(items, `selected-${art.id}`, "ART PHOTO")}
+      ${carouselHtml(
+        items,
+        `selected-${art.id}`,
+        "ART PHOTO"
+      )}
     </div>
+
     <div class="pm-selected-art-copy">
       <small>FINAL SELECTION</small>
+
       <h3>${safe(art.art_no)}</h3>
-      <p>${safe(art.product_name || art.item_name || art.category || "")}</p>
+
+      <p>
+        ${safe(
+          art.product_name ||
+          art.item_name ||
+          art.category ||
+          ""
+        )}
+      </p>
+
       <div class="pm-linked-print-list">
-  ${printNotApplicable
-    ? `
-      <span>
-        <small>PRINT</small>
-        <strong>N/A — No Print Required</strong>
-        <em>Final no-print decision</em>
-      </span>
-    `
-    : prints.length
-      ? prints.map(print => `
-          <span>
-            <small>PRINT</small>
-            <strong>${safe(print.print_no)}</strong>
-            <em>${safe(print.print_name || "")}</em>
-          </span>
-        `).join("")
-      : `
-        <span class="is-empty">
-          <strong>Print Due</strong>
-          <em>Select Print or choose N/A.</em>
+        ${
+          printNotApplicable
+            ? `
+              <span>
+                <small>PRINT</small>
+                <strong>N/A — No Print Required</strong>
+                <em>Final no-print decision</em>
+              </span>
+            `
+            : prints.length
+              ? prints.map(print => `
+                  <span>
+                    <small>PRINT</small>
+                    <strong>${safe(print.print_no)}</strong>
+                    <em>${safe(print.print_name || "")}</em>
+                  </span>
+                `).join("")
+              : `
+                <span class="is-empty">
+                  <strong>Print Due</strong>
+                  <em>Select Print or choose N/A.</em>
+                </span>
+              `
+        }
+      </div>
+
+      <div class="pm-fixed-flow-caption">
+        <span class="pm-progress-chip is-complete">
+          ✓ Art Decided
         </span>
-      `}
-</div>
 
-<div class="pm-fixed-flow-caption">
-  <span class="pm-progress-chip is-complete">
-    ✓ Art Decided
-  </span>
+        <span class="pm-progress-chip ${
+          printNotApplicable || prints.length
+            ? "is-complete"
+            : "is-due"
+        }">
+          ${
+            printNotApplicable
+              ? "✓ Print N/A"
+              : prints.length
+                ? "✓ Print Decided"
+                : "Print Due"
+          }
+        </span>
 
-  <span class="pm-progress-chip ${
-    printNotApplicable || prints.length
-      ? "is-complete"
-      : "is-due"
-  }">
-    ${
-      printNotApplicable
-        ? "✓ Print N/A"
-        : prints.length
-          ? "✓ Print Decided"
-          : "Print Due"
-    }
-  </span>
+        <span class="pm-progress-chip ${
+          printNotApplicable || prints.length
+            ? "is-next"
+            : "is-due"
+        }">
+          Cutting Due
+        </span>
+      </div>
+    </div>
+  `;
 
-  <span class="pm-progress-chip is-next">
-    Cutting Due
-  </span>
-</div>
+  bindCarousels(preview);
   $("saveArtAssignment").disabled = false;
 }
+
+
+   
 
 function openArtAssignment(divisionId) {
   const context = divisionContext(divisionId);
