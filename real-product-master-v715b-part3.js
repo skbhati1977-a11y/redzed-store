@@ -56,35 +56,107 @@ function printPickerCardHtml(print) {
 
 function renderPrintPicker() {
   const query = $("printSearch").value.trim().toLowerCase();
+
+  const printNotApplicable = selectedPrintIds.some(
+    id => String(id) === "__PRINT_NA__"
+  );
+
   const list = printRows.filter(print => {
     if (print.is_active === false) return false;
-    const frames = Array.isArray(print.frames) ? print.frames : [];
+
+    const frames = Array.isArray(print.frames)
+      ? print.frames
+      : [];
+
     const haystack = [
       print.print_no,
       print.print_name,
       print.short_note,
       print.notes,
       printFrameSummary(print),
-      ...frames.map(frame => `${frame.frame_no || ""} ${frame.frame_status || ""}`)
+      ...frames.map(frame =>
+        `${frame.frame_no || ""} ${frame.frame_status || ""}`
+      )
     ].join(" ").toLowerCase();
+
     return haystack.includes(query);
   });
 
-  $("printPickerGrid").innerHTML = list.length
+  const printCards = list.length
     ? list.map(printPickerCardHtml).join("")
-    : `<div class="pm-art-empty">No matching Print found in Print Master.</div>`;
+    : `<div class="pm-art-empty">
+        No matching Print found in Print Master.
+      </div>`;
 
-  $("selectedPrintCount").textContent = `${selectedPrintIds.length} selected`;
-  $("printPickerGrid").querySelectorAll("[data-select-print]").forEach(button => {
-    button.addEventListener("click", () => {
-      const id = button.dataset.selectPrint;
-      const index = selectedPrintIds.findIndex(item => String(item) === String(id));
-      if (index >= 0) selectedPrintIds.splice(index, 1);
-      else selectedPrintIds.push(id);
+  $("printPickerGrid").innerHTML = `
+    <button
+      class="pm-art-option pm-print-choice ${
+        printNotApplicable ? "is-selected" : ""
+      }"
+      type="button"
+      data-select-print-na
+      aria-pressed="${printNotApplicable ? "true" : "false"}"
+    >
+      <span class="pm-art-option-image pm-print-choice-image">
+        <i>N/A</i>
+
+        ${
+          printNotApplicable
+            ? `<b class="pm-print-choice-check">✓</b>`
+            : ""
+        }
+      </span>
+
+      <span class="pm-art-option-copy pm-print-choice-copy">
+        <small>PRINT DECISION</small>
+        <strong>N/A — NO PRINT</strong>
+        <em>No Print Required</em>
+        <b>Final no-print decision</b>
+      </span>
+    </button>
+
+    ${printCards}
+  `;
+
+  $("selectedPrintCount").textContent = printNotApplicable
+    ? "Print N/A selected"
+    : `${selectedPrintIds.length} selected`;
+
+  $("printPickerGrid")
+    .querySelector("[data-select-print-na]")
+    ?.addEventListener("click", () => {
+      selectedPrintIds = printNotApplicable
+        ? []
+        : ["__PRINT_NA__"];
+
       renderPrintPicker();
       renderSelectedArtPreview();
     });
-  });
+
+  $("printPickerGrid")
+    .querySelectorAll("[data-select-print]")
+    .forEach(button => {
+      button.addEventListener("click", () => {
+        const id = button.dataset.selectPrint;
+
+        selectedPrintIds = selectedPrintIds.filter(
+          item => String(item) !== "__PRINT_NA__"
+        );
+
+        const index = selectedPrintIds.findIndex(
+          item => String(item) === String(id)
+        );
+
+        if (index >= 0) {
+          selectedPrintIds.splice(index, 1);
+        } else {
+          selectedPrintIds.push(id);
+        }
+
+        renderPrintPicker();
+        renderSelectedArtPreview();
+      });
+    });
 }
 
 function renderSelectedArtPreview() {
