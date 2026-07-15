@@ -677,16 +677,28 @@ const printCaption = printNotApplicable
           <div class="pm-caption-id-row">
             <span><small>CB NO</small><strong>${safe(group.cb_no)}</strong></span>
             <span><small>CB CHILD</small><strong>${safe(division.division_code || `S${division.division_index}`)}</strong></span>
-          <div class="pm-caption-status-row">
+<div class="pm-caption-status-row">
   <span class="pm-progress-chip ${assignment ? "is-complete" : "is-due"}">
     ${assignment ? "✓ Art Decided" : "Art Due"}
   </span>
 
-  <span class="pm-progress-chip ${assignedPrints.length ? "is-complete" : "is-due"}">
-    ${assignedPrints.length ? "✓ Print Decided" : "Print Due"}
+  <span class="pm-progress-chip ${printDecisionComplete ? "is-complete" : "is-due"}">
+    ${
+      printNotApplicable
+        ? "✓ Print N/A"
+        : assignedPrints.length
+          ? "✓ Print Decided"
+          : "Print Due"
+    }
   </span>
 
-  <span class="pm-progress-chip is-next">Cutting Due</span>
+  <span class="pm-progress-chip ${
+    assignment && printDecisionComplete
+      ? "is-next"
+      : "is-due"
+  }">
+    Cutting Due
+  </span>
 </div>
           <h3>${art ? safe(art.art_no) : "Select Art Number"}</h3>
           <p class="pm-product-line">${safe(art?.product_name || art?.item_name || art?.category || "Art Master selection pending")}</p>
