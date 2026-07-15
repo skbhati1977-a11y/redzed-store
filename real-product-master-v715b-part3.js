@@ -653,49 +653,55 @@ async function loadData() {
 
   try {
     const [
-      categoryResult,
-      loadedGalleryRows,
-      purchaseResult,
-      colourResult,
-      rollResult,
-      allocationResult,
-      artResult,
-      loadedPrintRows,
-      assignmentResult,
-      loadedPrintAssignments
-    ] = await Promise.all([
-      supabaseClient.from("rr_material_categories").select("*").eq("is_active", true).order("sort_order"),
-      loadGallerySource(),
-      supabaseClient.from("rr_cb_purchase_entries").select("*").order("created_at", { ascending: false }),
-      supabaseClient.from("rr_cb_colours").select("*").order("colour_order"),
-      supabaseClient.from("rr_cb_purchase_rolls").select("*").order("roll_no"),
-      supabaseClient.from("rr_cb_material_allocations").select("*"),
-      supabaseClient.from("rr_art_master").select("*").eq("is_active", true).order("updated_at", { ascending: false }),
-      loadPrintSource(),
-      supabaseClient.from("rr_cb_art_assignments").select("*").order("updated_at", { ascending: false }),
-      loadCbPrintAssignments()
-    ]);
+   const [
+  categoryResult,
+  loadedGalleryRows,
+  purchaseResult,
+  colourResult,
+  rollResult,
+  allocationResult,
+  artResult,
+  loadedPrintRows,
+  assignmentResult,
+  loadedPrintAssignments,
+  cuttingComboResult
+] = await Promise.all([
+  supabaseClient.from("rr_material_categories").select("*").eq("is_active", true).order("sort_order"),
+  loadGallerySource(),
+  supabaseClient.from("rr_cb_purchase_entries").select("*").order("created_at", { ascending: false }),
+  supabaseClient.from("rr_cb_colours").select("*").order("colour_order"),
+  supabaseClient.from("rr_cb_purchase_rolls").select("*").order("roll_no"),
+  supabaseClient.from("rr_cb_material_allocations").select("*"),
+  supabaseClient.from("rr_art_master").select("*").eq("is_active", true).order("updated_at", { ascending: false }),
+  loadPrintSource(),
+  supabaseClient.from("rr_cb_art_assignments").select("*").order("updated_at", { ascending: false }),
+  loadCbPrintAssignments(),
+  supabaseClient.rpc("rr_get_cutting_combo_rows")
+]);
 
-    if (categoryResult.error) throw categoryResult.error;
-    if (purchaseResult.error) throw purchaseResult.error;
-    if (colourResult.error) throw colourResult.error;
-    if (rollResult.error) throw new Error(`Run V713 SQL patch: ${rollResult.error.message}`);
-    if (allocationResult.error) throw new Error(`Run V713 SQL patch: ${allocationResult.error.message}`);
-    if (artResult.error) throw new Error(`Art Master could not load: ${artResult.error.message}`);
-    if (assignmentResult.error) throw new Error(`Run V714 Art assignment SQL: ${assignmentResult.error.message}`);
+if (categoryResult.error) throw categoryResult.error;
+if (purchaseResult.error) throw purchaseResult.error;
+if (colourResult.error) throw colourResult.error;
+if (rollResult.error) throw new Error(`Run V713 SQL patch: ${rollResult.error.message}`);
+if (allocationResult.error) throw new Error(`Run V713 SQL patch: ${allocationResult.error.message}`);
+if (artResult.error) throw new Error(`Art Master could not load: ${artResult.error.message}`);
+if (assignmentResult.error) throw new Error(`Run V714 Art assignment SQL: ${assignmentResult.error.message}`);
+if (cuttingComboResult.error) {
+  throw new Error(`Cutting Combo could not load: ${cuttingComboResult.error.message}`);
+}
 
-    categories = categoryResult.data || [];
-    galleryRows = loadedGalleryRows || [];
-    purchaseRows = purchaseResult.data || [];
-    colourRows = colourResult.data || [];
-    rollRows = rollResult.data || [];
-    allocationRows = allocationResult.data || [];
-    artRows = artResult.data || [];
-    printRows = loadedPrintRows || [];
-    assignmentRows = assignmentResult.data || [];
-    printAssignmentRows = loadedPrintAssignments || [];
-    mediaRows = await loadMasterMedia(artRows, printRows);
-
+categories = categoryResult.data || [];
+galleryRows = loadedGalleryRows || [];
+purchaseRows = purchaseResult.data || [];
+colourRows = colourResult.data || [];
+rollRows = rollResult.data || [];
+allocationRows = allocationResult.data || [];
+artRows = artResult.data || [];
+printRows = loadedPrintRows || [];
+assignmentRows = assignmentResult.data || [];
+printAssignmentRows = loadedPrintAssignments || [];
+cuttingComboRows = cuttingComboResult.data || [];
+mediaRows = await loadMasterMedia(artRows, printRows);
     if (!categories.length) throw new Error("No active material categories were found.");
     dataReady = true;
     newCbButton.disabled = false;
