@@ -109,16 +109,53 @@ function renderSelectedArtPreview() {
       <h3>${safe(art.art_no)}</h3>
       <p>${safe(art.product_name || art.item_name || art.category || "")}</p>
       <div class="pm-linked-print-list">
-        ${prints.length
-          ? prints.map(print => `<span><small>PRINT</small><strong>${safe(print.print_no)}</strong><em>${safe(print.print_name || "")}</em></span>`).join("")
-          : `<span class="is-empty"><strong>No Print Selected</strong><em>Save as a no-print Art when required.</em></span>`}
-      </div>
-      <div class="pm-fixed-flow-caption">
-        <span class="pm-progress-chip is-complete">✓ Art Decided</span>
-        <span class="pm-progress-chip is-next">Cutting Due</span>
-      </div>
-    </div>`;
-  bindCarousels(preview);
+  ${printNotApplicable
+    ? `
+      <span>
+        <small>PRINT</small>
+        <strong>N/A — No Print Required</strong>
+        <em>Final no-print decision</em>
+      </span>
+    `
+    : prints.length
+      ? prints.map(print => `
+          <span>
+            <small>PRINT</small>
+            <strong>${safe(print.print_no)}</strong>
+            <em>${safe(print.print_name || "")}</em>
+          </span>
+        `).join("")
+      : `
+        <span class="is-empty">
+          <strong>Print Due</strong>
+          <em>Select Print or choose N/A.</em>
+        </span>
+      `}
+</div>
+
+<div class="pm-fixed-flow-caption">
+  <span class="pm-progress-chip is-complete">
+    ✓ Art Decided
+  </span>
+
+  <span class="pm-progress-chip ${
+    printNotApplicable || prints.length
+      ? "is-complete"
+      : "is-due"
+  }">
+    ${
+      printNotApplicable
+        ? "✓ Print N/A"
+        : prints.length
+          ? "✓ Print Decided"
+          : "Print Due"
+    }
+  </span>
+
+  <span class="pm-progress-chip is-next">
+    Cutting Due
+  </span>
+</div>
   $("saveArtAssignment").disabled = false;
 }
 
@@ -130,7 +167,11 @@ function openArtAssignment(divisionId) {
   }
   activeArtDivisionId = divisionId;
   selectedArtId = context.assignment?.art_id || null;
-  selectedPrintIds = assignedPrintsForDivision(divisionId).map(print => String(print.id));
+  selectedPrintIds = context.assignment?.print_not_applicable
+  ? ["__PRINT_NA__"]
+  : assignedPrintsForDivision(divisionId).map(
+      print => String(print.id)
+    );
   $("artAssignmentKicker").textContent = context.assignment ? "Change Art & Print" : "Assign Art & Print";
   $("artAssignmentTitle").textContent = context.division.division_code || `S${context.division.division_index}`;
   $("artCbNo").textContent = context.group.cb_no || "—";
@@ -146,16 +187,59 @@ function openArtAssignment(divisionId) {
 }
 
 async function saveArtPrintAssignmentRecord(cbUnitId, artId, printIds) {
-  const cleanPrintIds = [...new Set((printIds || []).map(String).filter(Boolean))];
-  const rpc = await supabaseClient.rpc("rr_save_cb_art_print_assignment", {
-    p_cb_unit_id: cbUnitId,
-    p_art_id: artId,
-    p_print_ids: cleanPrintIds
-  });
-  if (!rpc.error) return rpc.data;
+  const printNotApplicable = (printIds || []).some(
+    id => String(id) === "__PRINT_NA__"
+  );
 
-  const missingRpc = String(rpc.error.code || "") === "PGRST202" || /function|rpc|schema cache/i.test(rpc.error.message || "");
-  if (!missingRpc) throw rpc.error;
+  const cleanPrintIds = [
+    ...new Set(
+      (printIds || [])
+        .map(String)
+        .filter(id => id && id !== "__PRINT_NA__")
+    )
+  ];
+
+  let rpc = {
+    data: null,
+    error: null
+  };
+
+  if (!printNotApplicable) {
+    rpc = await supabaseClient.rpc(
+      "rr_save_cb_art_print_assignment",
+      {
+        p_cb_unit_id: cbUnitId,
+        p_art_id: artId,
+        p_print_ids: cleanPrintIds
+      }
+    );
+
+    if (!rpc.error) {
+      const resetNaResult = await supabaseClient
+        .from("rr_cb_art_assignments")
+        .update({
+          print_not_applicable: false
+        })
+        .eq("cb_id", cbUnitId);
+
+      if (resetNaResult.error) {
+        throw resetNaResult.error;
+      }
+
+      return rpc.data;
+    }
+  }
+
+  const missingRpc =
+    printNotApplicable ||
+    String(rpc.error?.code || "") === "PGRST202" ||
+    /function|rpc|schema cache/i.test(
+      rpc.error?.message || ""
+    );
+
+  if (!missingRpc) {
+    throw rpc.error;
+  }
 
   console.warn("V715 RPC unavailable; using owner direct-write fallback.", rpc.error);
   const existing = assignmentForDivision(cbUnitId);
@@ -163,14 +247,26 @@ async function saveArtPrintAssignmentRecord(cbUnitId, artId, printIds) {
   if (existing) {
     assignmentResult = await supabaseClient
       .from("rr_cb_art_assignments")
-      .update({ art_id: artId, status: "material_check", bypass_reason: null, bypassed_by: null, bypassed_at: null })
+      .update({
+  art_id: artId,
+  print_not_applicable: printNotApplicable,
+  status: "material_check",
+  bypass_reason: null,
+  bypassed_by: null,
+  bypassed_at: null
+})
       .eq("id", existing.id)
       .select()
       .single();
   } else {
     assignmentResult = await supabaseClient
       .from("rr_cb_art_assignments")
-      .insert({ cb_id: cbUnitId, art_id: artId, status: "material_check" })
+      .insert({
+  cb_id: cbUnitId,
+  art_id: artId,
+  print_not_applicable: printNotApplicable,
+  status: "material_check"
+})
       .select()
       .single();
   }
@@ -204,23 +300,54 @@ async function saveArtPrintAssignmentRecord(cbUnitId, artId, printIds) {
 
 async function saveSelectedArtAssignment() {
   if (!activeArtDivisionId || !selectedArtId) return;
+
   const button = $("saveArtAssignment");
   const original = button.textContent;
+
   button.disabled = true;
   button.textContent = "Saving…";
   artAssignmentSay("");
+
   try {
     const art = artById(selectedArtId);
     const prints = selectedPrintRows();
-    await saveArtPrintAssignmentRecord(activeArtDivisionId, selectedArtId, selectedPrintIds);
-    const printText = prints.length ? `${prints.length} Print${prints.length === 1 ? "" : "s"}` : "No Print";
-    artAssignmentSay(`Art ${art?.art_no || ""} and ${printText} saved.`, "success");
+
+    const printNotApplicable = selectedPrintIds.some(
+      id => String(id) === "__PRINT_NA__"
+    );
+
+    await saveArtPrintAssignmentRecord(
+      activeArtDivisionId,
+      selectedArtId,
+      selectedPrintIds
+    );
+
+    const printText = printNotApplicable
+      ? "Print N/A"
+      : prints.length
+        ? `${prints.length} Print${prints.length === 1 ? "" : "s"}`
+        : "Print Due";
+
+    artAssignmentSay(
+      `Art ${art?.art_no || ""} and ${printText} saved.`,
+      "success"
+    );
+
     await loadData();
     closeSheet(artSheet);
-    say(`Art ${art?.art_no || ""} and ${printText} decided. Cutting Due.`, "success");
+
+    say(
+      `Art ${art?.art_no || ""} and ${printText} decided. Cutting Due.`,
+      "success"
+    );
   } catch (error) {
     console.error(error);
-    artAssignmentSay(error.message || "Art and Print assignment could not be saved.", "error");
+
+    artAssignmentSay(
+      error.message ||
+        "Art and Print assignment could not be saved.",
+      "error"
+    );
   } finally {
     button.disabled = !selectedArtId;
     button.textContent = original;
