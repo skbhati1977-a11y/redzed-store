@@ -1,0 +1,251 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#0b0b0e">
+  <title>REDZED REAL — Product Master V714</title>
+
+  <link rel="stylesheet" href="real-style.css?v=700">
+  <link rel="stylesheet" href="real-product-master-v713.css?v=714">
+</head>
+<body>
+  <main class="rr-page pm-page">
+    <header class="pm-topbar">
+      <div>
+        <p class="pm-kicker">REDZED REAL</p>
+        <h1>Product Master</h1>
+      </div>
+      <a class="pm-dashboard-link" href="real-dashboard.html">Dashboard</a>
+    </header>
+
+    <section class="pm-hero-card">
+      <div>
+        <small>Product Master</small>
+        <h2>CB → Art Decision → Linked Print</h2>
+        <p>Each CB child gets its Art from Art Master and linked Prints pull automatically.</p>
+      </div>
+      <button id="openNewCb" class="pm-primary-btn" type="button" disabled>+ New CB</button>
+    </section>
+
+    <section class="pm-toolbar">
+      <label class="pm-search">
+        <span>Search</span>
+        <input id="pmSearch" type="search" placeholder="CB No, CB Child, Art No, Print No, Vendor or Fabric" autocomplete="off">
+      </label>
+
+      <div id="pmFilters" class="pm-filter-row">
+        <button class="pm-filter is-active" type="button" data-filter="all">All</button>
+        <button class="pm-filter" type="button" data-filter="planning">Art Due</button>
+        <button class="pm-filter" type="button" data-filter="ready_for_cutting">Art Decided</button>
+        <button class="pm-filter" type="button" data-filter="purchase">Purchase</button>
+        <button class="pm-filter" type="button" data-filter="hold">Hold</button>
+      </div>
+    </section>
+
+    <section class="pm-section-head">
+      <div>
+        <small>Forward Cards</small>
+        <h2>CB Child Art Cards</h2>
+      </div>
+      <div class="pm-gallery-actions">
+        <label class="pm-view-control">
+          <span>Cards</span>
+          <select id="pmCardColumns" aria-label="Cards per row">
+            <option value="2">2</option>
+            <option value="3" selected>3</option>
+            <option value="4">4</option>
+            <option value="6">6</option>
+          </select>
+        </label>
+        <button id="refreshCb" class="pm-secondary-btn" type="button">Refresh</button>
+      </div>
+    </section>
+
+    <p id="pmMessage" class="rr-message" role="status" aria-live="polite"></p>
+
+    <section id="cbGallery" class="pm-gallery" aria-busy="true">
+      <article class="pm-empty-card">
+        <div class="pm-spinner" aria-hidden="true"></div>
+        <h3>Loading Product Master</h3>
+        <p>Please wait…</p>
+      </article>
+    </section>
+  </main>
+
+  <!-- Create CB / Add material purchase -->
+  <section id="purchaseSheet" class="pm-sheet pm-hidden" aria-hidden="true">
+    <div class="pm-sheet-backdrop" data-close-purchase-sheet></div>
+
+    <div class="pm-sheet-panel pm-sheet-panel-wide" role="dialog" aria-modal="true" aria-labelledby="purchaseSheetTitle">
+      <div class="pm-sheet-grab"></div>
+
+      <header class="pm-sheet-head">
+        <div>
+          <small id="purchaseSheetKicker">CB Purchase</small>
+          <h2 id="purchaseSheetTitle">New CB</h2>
+        </div>
+        <button type="button" data-close-purchase-sheet aria-label="Close">×</button>
+      </header>
+
+      <form id="purchaseForm" class="pm-form" novalidate>
+        <section id="newCbIdentityCard" class="pm-form-card">
+          <h3>CB Identity</h3>
+
+          <label>
+            <span>CB No *</span>
+            <input id="cbNo" type="text" placeholder="CB135" autocomplete="off" maxlength="30">
+          </label>
+
+          <div class="pm-grid-2">
+            <label>
+              <span>Division *</span>
+              <select id="divisionCount">
+                <option value="2" selected>2 Divisions</option>
+                <option value="3">3 Divisions</option>
+                <option value="4">4 Divisions</option>
+                <option value="5">5 Divisions</option>
+                <option value="6">6 Divisions</option>
+                <option value="custom">Custom</option>
+              </select>
+            </label>
+
+            <label id="customDivisionWrap" class="pm-hidden">
+              <span>Custom Division *</span>
+              <input id="customDivisionCount" type="number" inputmode="numeric" min="1" max="50" step="1" placeholder="Enter division count">
+            </label>
+
+            <label>
+              <span>Total Colours *</span>
+              <select id="colourCount">
+                <option value="1">1 Colour</option>
+                <option value="2">2 Colours</option>
+                <option value="3">3 Colours</option>
+                <option value="4">4 Colours</option>
+                <option value="5">5 Colours</option>
+                <option value="6" selected>6 Colours</option>
+                <option value="7">7 Colours</option>
+                <option value="8">8 Colours</option>
+                <option value="9">9 Colours</option>
+                <option value="10">10 Colours</option>
+                <option value="11">11 Colours</option>
+                <option value="12">12 Colours</option>
+              </select>
+            </label>
+          </div>
+        </section>
+
+        <section id="existingCbContext" class="pm-form-card pm-hidden">
+          <small>Add Purchase To</small>
+          <h3 id="existingCbName">CB</h3>
+          <p id="existingCbMeta" class="pm-muted-copy"></p>
+        </section>
+
+        <section class="pm-form-card">
+          <div class="pm-form-title-row">
+            <div>
+              <h3>Purchase Details</h3>
+              <p>First entry is Regular Cloth. Add Collar/Cuff, Rib or another material when required.</p>
+            </div>
+            <button id="addMaterialEntry" type="button">+ Add Material</button>
+          </div>
+
+          <div id="purchaseEntries" class="pm-purchase-list"></div>
+        </section>
+
+        <section class="pm-grand-summary" aria-live="polite">
+          <span>
+            <small>Total Qty</small>
+            <strong id="grandQty">0 kg</strong>
+          </span>
+          <span>
+            <small>Total Amount</small>
+            <strong id="grandAmount">₹0</strong>
+          </span>
+        </section>
+
+        <label class="pm-remarks">
+          <span>Remarks</span>
+          <textarea id="cbRemarks" rows="3" placeholder="Optional"></textarea>
+        </label>
+
+        <div id="purchaseMessage" class="pm-save-message pm-hidden" role="alert" aria-live="assertive"></div>
+
+        <div class="pm-sticky-actions">
+          <button class="pm-secondary-btn" type="button" data-close-purchase-sheet>Cancel</button>
+          <button id="savePurchaseBtn" class="pm-primary-btn" type="submit">Create CB</button>
+        </div>
+      </form>
+    </div>
+  </section>
+
+  <!-- CB details -->
+  <section id="cbDetailSheet" class="pm-sheet pm-hidden" aria-hidden="true">
+    <div class="pm-sheet-backdrop" data-close-detail-sheet></div>
+
+    <div class="pm-sheet-panel pm-sheet-panel-wide" role="dialog" aria-modal="true" aria-labelledby="cbDetailTitle">
+      <div class="pm-sheet-grab"></div>
+
+      <header class="pm-sheet-head">
+        <div>
+          <small>Product Master</small>
+          <h2 id="cbDetailTitle">CB Details</h2>
+        </div>
+        <button type="button" data-close-detail-sheet aria-label="Close">×</button>
+      </header>
+
+      <div id="cbDetailBody" class="pm-detail-body"></div>
+
+      <div class="pm-sticky-actions pm-detail-actions">
+        <button class="pm-secondary-btn" type="button" data-close-detail-sheet>Close</button>
+        <button id="addPurchaseToCb" class="pm-primary-btn" type="button">+ Add Material Purchase</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- CB Child Art + linked Print assignment -->
+  <section id="artAssignmentSheet" class="pm-sheet pm-hidden" aria-hidden="true">
+    <div class="pm-sheet-backdrop" data-close-art-sheet></div>
+
+    <div class="pm-sheet-panel pm-sheet-panel-wide" role="dialog" aria-modal="true" aria-labelledby="artAssignmentTitle">
+      <div class="pm-sheet-grab"></div>
+
+      <header class="pm-sheet-head">
+        <div>
+          <small id="artAssignmentKicker">CB Child</small>
+          <h2 id="artAssignmentTitle">Assign Art</h2>
+        </div>
+        <button type="button" data-close-art-sheet aria-label="Close">×</button>
+      </header>
+
+      <section class="pm-art-context">
+        <span><small>CB No</small><strong id="artCbNo">—</strong></span>
+        <span><small>CB Child</small><strong id="artCbChild">—</strong></span>
+        <span><small>Qty</small><strong id="artCbQty">0 kg</strong></span>
+      </section>
+
+      <label class="pm-art-search">
+        <span>Search Art Number</span>
+        <input id="artSearch" type="search" placeholder="Art No, product or category" autocomplete="off">
+      </label>
+
+      <div id="artPickerGrid" class="pm-art-picker-grid"></div>
+
+      <section id="selectedArtPreview" class="pm-selected-art-preview pm-hidden"></section>
+
+      <p id="artAssignmentMessage" class="rr-message" role="status" aria-live="polite"></p>
+
+      <div class="pm-sticky-actions pm-art-actions">
+        <button class="pm-secondary-btn" type="button" data-close-art-sheet>Cancel</button>
+        <button id="saveArtAssignment" class="pm-primary-btn" type="button" disabled>Save Art & Linked Print</button>
+      </div>
+    </div>
+  </section>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="config.js?v=1"></script>
+  <script src="real-common.js?v=1"></script>
+  <script src="real-product-master-v713-app.js?v=714"></script>
+</body>
+  </html>
+      
