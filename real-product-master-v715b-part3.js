@@ -596,50 +596,33 @@ function openCbDetails(cbId) {
   bindDetailInteractions();
   openSheet(detailSheet);
 }
-
-async function loadPrintSource() {
-  const viewResult = await supabaseClient
-    .from("rr_print_library_view")
-    .select("*")
-    .order("updated_at", { ascending: false });
-  if (!viewResult.error) return viewResult.data || [];
-
-  console.warn("rr_print_library_view unavailable; using rr_print_master.", viewResult.error);
-  const tableResult = await supabaseClient
-    .from("rr_print_master")
-    .select("*")
-    .order("updated_at", { ascending: false });
-  if (tableResult.error) throw tableResult.error;
-  return tableResult.data || [];
-}
-
-async function loadCbPrintAssignments() {
-  const result = await supabaseClient
-    .from("rr_cb_print_assignments")
-    .select("id,assignment_id,print_id,sequence_no,created_at,updated_at")
-    .order("sequence_no");
-  if (result.error) {
-    throw new Error(`Run V715 separate Art/Print SQL: ${result.error.message}`);
-  }
-  return result.data || [];
-}
-
 async function loadMasterMedia(arts, prints) {
-  const ids = [...new Set([...arts, ...prints].map(row => String(row.id || "")).filter(Boolean))];
+  const ids = [
+    ...new Set(
+      [...arts, ...prints]
+        .map(row => row?.id)
+        .filter(id => id !== null && id !== undefined)
+        .map(id => String(id))
+    )
+  ];
+
   if (!ids.length) return [];
+
   const result = [];
+
   for (let start = 0; start < ids.length; start += 80) {
     const chunk = ids.slice(start, start + 80);
-    const query = await supabaseClient
+
+    const { data, error } = await supabaseClient
       .from("rr_media")
       .select("id,entity_type,entity_id,media_category,file_url,file_name,caption,is_cover,sort_order,created_at")
       .in("entity_id", chunk);
-    if (query.error) {
-      console.warn("Master media could not load.", query.error);
-      return result;
-    }
-    result.push(...(query.data || []));
+
+    if (error) throw error;
+
+    result.push(...(data || []));
   }
+
   return result;
 }
 
