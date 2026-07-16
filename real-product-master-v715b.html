@@ -95,6 +95,36 @@
         transform: rotate(360deg);
       }
     }
+    /* ===== New CB Colour Preview Fix ===== */
+
+.pm-colour-preview,
+.pm-colour-preview img,
+.pm-colour-image,
+.pm-colour-image img {
+    width: 70px !important;
+    height: 70px !important;
+    max-width: 70px !important;
+    max-height: 70px !important;
+    object-fit: cover !important;
+    border-radius: 10px;
+    display: block;
+    flex-shrink: 0;
+}
+
+@media (max-width:600px){
+
+    .pm-colour-preview,
+    .pm-colour-preview img,
+    .pm-colour-image,
+    .pm-colour-image img{
+
+        width:56px !important;
+        height:56px !important;
+        max-width:56px !important;
+        max-height:56px !important;
+    }
+
+}
   </style>
 </head>
 
