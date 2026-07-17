@@ -3092,7 +3092,7 @@ async function loadColours(client) {
 
 async function loadLots(client) {
   const result = await client
-    .from("rr_cutting_lots")
+    .from("rr_cutting_lots_v3")
     .select("*")
     .order("created_at", {
       ascending: false
