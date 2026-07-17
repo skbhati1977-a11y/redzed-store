@@ -2467,7 +2467,7 @@ function childPayloads(
       is_final: true,
 
       status: "ready"
-    }))
+    })
   );
 }
 
