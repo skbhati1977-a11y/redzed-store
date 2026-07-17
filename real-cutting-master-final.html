@@ -1251,10 +1251,32 @@ window.REDZED = window.REDZED || {
     }
 };
 </script>
+  <script src="real-cutting-master-ok.js?v=3"></script>
+<script src="real-cutting-master-patch.js?v=2"></script>
 
-<script src="real-cutting-master-ok.js?v=2"></script>
-<script src="real-cutting-master-patch.js?v=1"></script>
-<script src="plugins/cutting.plugin.js?v=2"></script>
+<script>
+window.RRCuttingMaster = window.RRCuttingMaster || {};
+
+window.REDZED = window.REDZED || {
+    plugins: {},
+
+    use: function(name, plugin) {
+        this.plugins[name] = plugin;
+
+        if (plugin && typeof plugin.init === "function") {
+            plugin.init(window.RRCuttingMaster);
+        }
+
+        return plugin;
+    },
+
+    get: function(name) {
+        return this.plugins[name] || null;
+    }
+};
+</script>
+
+ <script src="plugins/cutting.plugin.js?v=3"></script>
 
 <button
     type="button"
@@ -1285,9 +1307,5 @@ function testCuttingPlugin() {
     );
 }
 </script>
- 
-
-
-
 </body>
 </html>
