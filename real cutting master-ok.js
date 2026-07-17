@@ -2889,3 +2889,605 @@ async function markLotCompleted(
     );
   }
 }
+async function loadCostSettings(client) {
+  try {
+    const result = await client
+      .from("rr_cutting_cost_settings")
+      .select("*")
+      .eq("settings_key", "default")
+      .maybeSingle();
+
+    if (result.error) {
+      throw result.error;
+    }
+
+    if (result.data) {
+      costSettings = {
+        ...costSettings,
+        ...result.data
+      };
+    }
+  } catch (error) {
+    console.warn(
+      "Cutting cost settings unavailable:",
+      error
+    );
+  }
+
+  renderCostSettings();
+}
+
+async function loadPurchases(client) {
+  const attempts = [
+    {
+      table: "rr_cb_purchases",
+      query: () =>
+        client
+          .from("rr_cb_purchases")
+          .select("*")
+          .order("created_at", {
+            ascending: false
+          })
+    },
+    {
+      table: "rr_purchase_master",
+      query: () =>
+        client
+          .from("rr_purchase_master")
+          .select("*")
+          .order("created_at", {
+            ascending: false
+          })
+    },
+    {
+      table: "rr_cb_master",
+      query: () =>
+        client
+          .from("rr_cb_master")
+          .select("*")
+          .order("created_at", {
+            ascending: false
+          })
+    }
+  ];
+
+  let lastError = null;
+
+  for (const attempt of attempts) {
+    const result =
+      await attempt.query();
+
+    if (!result.error) {
+      console.info(
+        `Purchases loaded from ${attempt.table}`
+      );
+
+      return result.data || [];
+    }
+
+    lastError = result.error;
+  }
+
+  throw lastError ||
+    new Error(
+      "Purchase Master table unavailable."
+    );
+}
+
+async function loadUnits(client) {
+  const attempts = [
+    {
+      table: "rr_cb_divisions",
+      query: () =>
+        client
+          .from("rr_cb_divisions")
+          .select("*")
+          .order("created_at", {
+            ascending: true
+          })
+    },
+    {
+      table: "rr_cb_units",
+      query: () =>
+        client
+          .from("rr_cb_units")
+          .select("*")
+          .order("created_at", {
+            ascending: true
+          })
+    },
+    {
+      table: "rr_cb_children",
+      query: () =>
+        client
+          .from("rr_cb_children")
+          .select("*")
+          .order("created_at", {
+            ascending: true
+          })
+    }
+  ];
+
+  let lastError = null;
+
+  for (const attempt of attempts) {
+    const result =
+      await attempt.query();
+
+    if (!result.error) {
+      console.info(
+        `CB units loaded from ${attempt.table}`
+      );
+
+      return result.data || [];
+    }
+
+    lastError = result.error;
+  }
+
+  throw lastError ||
+    new Error(
+      "CB division table unavailable."
+    );
+}
+
+async function loadColours(client) {
+  const attempts = [
+    {
+      table: "rr_cb_colours",
+      query: () =>
+        client
+          .from("rr_cb_colours")
+          .select("*")
+          .order("colour_order", {
+            ascending: true
+          })
+    },
+    {
+      table: "rr_purchase_colours",
+      query: () =>
+        client
+          .from("rr_purchase_colours")
+          .select("*")
+          .order("colour_order", {
+            ascending: true
+          })
+    },
+    {
+      table: "rr_cb_color_breakup",
+      query: () =>
+        client
+          .from("rr_cb_color_breakup")
+          .select("*")
+          .order("colour_order", {
+            ascending: true
+          })
+    }
+  ];
+
+  let lastError = null;
+
+  for (const attempt of attempts) {
+    const result =
+      await attempt.query();
+
+    if (!result.error) {
+      console.info(
+        `Colours loaded from ${attempt.table}`
+      );
+
+      return result.data || [];
+    }
+
+    lastError = result.error;
+  }
+
+  console.warn(
+    "CB colour table unavailable:",
+    lastError
+  );
+
+  return [];
+}
+
+async function loadLots(client) {
+  const result = await client
+    .from("rr_cutting_lots")
+    .select("*")
+    .order("created_at", {
+      ascending: false
+    });
+
+  if (result.error) {
+    if (
+      result.error.code === "42P01" ||
+      String(
+        result.error.message || ""
+      )
+        .toLowerCase()
+        .includes("does not exist")
+    ) {
+      console.warn(
+        "rr_cutting_lots table not found."
+      );
+
+      return [];
+    }
+
+    throw result.error;
+  }
+
+  return result.data || [];
+}
+
+async function loadBreakup(client) {
+  const result = await client
+    .from("rr_cutting_breakup")
+    .select("*")
+    .order("created_at", {
+      ascending: false
+    });
+
+  if (result.error) {
+    if (
+      result.error.code === "42P01" ||
+      String(
+        result.error.message || ""
+      )
+        .toLowerCase()
+        .includes("does not exist")
+    ) {
+      console.warn(
+        "rr_cutting_breakup table not found."
+      );
+
+      return [];
+    }
+
+    throw result.error;
+  }
+
+  return result.data || [];
+}
+
+function normalizePurchaseRows(rows) {
+  return (rows || []).map(row => ({
+    ...row,
+
+    id:
+      row.id ||
+      row.purchase_id ||
+      row.cb_id,
+
+    cb_no:
+      row.cb_no ||
+      row.cb_code ||
+      row.purchase_no ||
+      row.purchase_code ||
+      row.lot_no
+  }));
+}
+
+function normalizeUnitRows(rows) {
+  return (rows || []).map(
+    (row, index) => ({
+      ...row,
+
+      id:
+        row.id ||
+        row.division_id ||
+        row.unit_id,
+
+      purchase_id:
+        row.purchase_id ||
+        row.cb_id ||
+        row.parent_cb_id,
+
+      cb_id:
+        row.cb_id ||
+        row.purchase_id ||
+        row.parent_cb_id,
+
+      cb_code:
+        row.cb_code ||
+        row.division_code ||
+        row.unit_code ||
+        `S${index + 1}`,
+
+      divided_weight:
+        Number(
+          row.divided_weight ??
+          row.allocated_qty ??
+          row.base_qty ??
+          row.weight ??
+          0
+        ),
+
+      is_final:
+        row.is_final !== false
+    })
+  );
+}
+
+function normalizeColourRows(rows) {
+  return (rows || []).map(
+    (row, index) => ({
+      ...row,
+
+      id:
+        row.id ||
+        row.colour_id ||
+        row.color_id ||
+        `${row.cb_id || "cb"}-${index}`,
+
+      cb_id:
+        row.cb_id ||
+        row.purchase_id ||
+        row.parent_cb_id,
+
+      colour_name:
+        row.colour_name ||
+        row.color_name ||
+        row.name ||
+        `Colour ${index + 1}`,
+
+      colour_order:
+        Number(
+          row.colour_order ??
+          row.color_order ??
+          row.sequence_no ??
+          index + 1
+        ),
+
+      image_url:
+        row.image_url ||
+        row.colour_image_url ||
+        row.color_image_url ||
+        row.swatch_url ||
+        ""
+    })
+  );
+}
+
+function normalizeLotRows(rows) {
+  return (rows || []).map(row => ({
+    ...row,
+
+    cb_unit_id:
+      row.cb_unit_id ||
+      row.unit_id ||
+      row.division_id,
+
+    planned_pcs:
+      Number(
+        row.planned_pcs ??
+        row.total_pcs ??
+        row.pieces ??
+        0
+      ),
+
+    final_cost_per_piece:
+      Number(
+        row.final_cost_per_piece ??
+        row.cost_per_piece ??
+        0
+      ),
+
+    total_cutting_cost:
+      Number(
+        row.total_cutting_cost ??
+        row.total_cost ??
+        0
+      )
+  }));
+}
+
+async function loadAllData() {
+  const client = getClient();
+
+  if (!client) {
+    throw new Error(
+      "Supabase client unavailable. Check config.js."
+    );
+  }
+
+  gallery?.setAttribute(
+    "aria-busy",
+    "true"
+  );
+
+  if (gallery) {
+    gallery.innerHTML = `
+      <article class="cm-empty">
+        <h3>Loading Cutting Master</h3>
+
+        <p>
+          Connecting CB Children,
+          Product Master and Lot data...
+        </p>
+      </article>
+    `;
+  }
+
+  say(
+    "Cutting Master data load हो रहा है...",
+    "info"
+  );
+
+  const [
+    purchaseRows,
+    unitRows,
+    colourRows,
+    lotRows,
+    breakupRows
+  ] = await Promise.all([
+    loadPurchases(client),
+    loadUnits(client),
+    loadColours(client),
+    loadLots(client),
+    loadBreakup(client)
+  ]);
+
+  purchases =
+    normalizePurchaseRows(
+      purchaseRows
+    );
+
+  units =
+    normalizeUnitRows(
+      unitRows
+    );
+
+  colours =
+    normalizeColourRows(
+      colourRows
+    );
+
+  lots =
+    normalizeLotRows(
+      lotRows
+    );
+
+  breakup =
+    breakupRows || [];
+
+  await Promise.all([
+    loadProductRefs(client),
+    loadCostSettings(client)
+  ]);
+
+  renderGallery();
+
+  say(
+    `${units.filter(isFinal).length} final CB children loaded.`,
+    "success"
+  );
+}
+
+async function refreshCuttingMaster() {
+  const refreshButton =
+    $("refreshCutting");
+
+  try {
+    if (refreshButton) {
+      refreshButton.disabled = true;
+      refreshButton.textContent =
+        "Refreshing...";
+    }
+
+    await loadAllData();
+  } catch (error) {
+    console.error(
+      "Cutting Master refresh failed:",
+      error
+    );
+
+    showFatalError(error);
+  } finally {
+    if (refreshButton) {
+      refreshButton.disabled = false;
+      refreshButton.textContent =
+        "Refresh";
+    }
+  }
+}
+
+function resetLotAdjustments() {
+  [
+    "bigAdjustment",
+    "fullSleeveAdjustment",
+    "borderAdjustment"
+  ].forEach(id => {
+    const checkbox = $(id);
+
+    if (checkbox) {
+      checkbox.checked = false;
+    }
+  });
+
+  setInputValue(
+    "customAdjustment",
+    "0"
+  );
+
+  setInputValue(
+    "baseCost",
+    costSettings.default_base_cost
+  );
+
+  updateCostPreview();
+}
+
+function resetLotForm() {
+  $("lotForm")?.reset();
+
+  setInputValue(
+    "lotDate",
+    today()
+  );
+
+  setInputValue(
+    "sizeSet",
+    "L,XL,XXL"
+  );
+
+  setInputValue(
+    "bundleQty",
+    "1"
+  );
+
+  setInputValue(
+    "plannedPcs",
+    ""
+  );
+
+  if ($("cuttingMatrix")) {
+    $("cuttingMatrix").innerHTML = "";
+  }
+
+  if ($("totalPieces")) {
+    $("totalPieces").textContent = "0";
+  }
+
+  if ($("totalBundles")) {
+    $("totalBundles").textContent = "0";
+  }
+
+  if ($("lotDecisionV4")) {
+    $("lotDecisionV4").innerHTML = "";
+  }
+
+  resetLotAdjustments();
+}
+
+function resetSplitForm() {
+  $("splitForm")?.reset();
+
+  setInputValue(
+    "childCount",
+    "2"
+  );
+
+  if ($("childRows")) {
+    $("childRows").innerHTML = "";
+  }
+
+  if ($("childWeightTotal")) {
+    $("childWeightTotal").textContent =
+      "0.000 kg";
+  }
+}
+
+function closeAndResetSheet(sheet) {
+  closeSheet(sheet);
+
+  if (sheet === lotSheet) {
+    resetLotForm();
+  }
+
+  if (sheet === splitSheet) {
+    resetSplitForm();
+  }
+
+  activeUnit = null;
+}
