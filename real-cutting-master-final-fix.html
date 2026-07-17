@@ -1,0 +1,265 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#0b0b0e">
+  <title>REDZED REAL — Cutting Master Final V3</title>
+  <link rel="stylesheet" href="real-style.css?v=716">
+  <link rel="stylesheet" href="real-cutting-master-final.css?v=3">
+</head>
+<body>
+<main class="rr-page cm-page">
+  <header class="cm-topbar">
+    <div><p class="cm-kicker">REDZED REAL</p><h1>Cutting Master</h1></div>
+    <div class="cm-links">
+      <button id="openCostSettings" class="cm-settings-btn" type="button">Cost Settings</button>
+      <a href="real-product-master-v715b.html?v=7159">Product Master</a>
+      <a href="real-dashboard.html">Dashboard</a>
+    </div>
+  </header>
+
+  <section class="cm-hero">
+    <div>
+      <small>LOCKED CUTTING FLOW</small>
+      <h2>Single → Direct Lot · Multi Combo → Child CB → Lot</h2>
+      <p>One final CB child gets one permanent Lot No and one complete cutting sheet. No Cut Batch 1/2/3. Owner Testing Mode: costing and all controls are visible.</p>
+    </div>
+    <button id="refreshCutting" class="cm-primary" type="button">Refresh</button>
+  </section>
+
+  <section id="cmStats" class="cm-stats"></section>
+
+  <section class="cm-toolbar">
+    <label><span>Search</span><input id="cmSearch" type="search" placeholder="CB, child, lot, art, print, style"></label>
+    <div id="cmFilters" class="cm-filters">
+      <button class="is-active" data-filter="all" type="button">All</button>
+      <button data-filter="ready" type="button">Ready</button>
+      <button data-filter="child" type="button">Child Batches</button>
+      <button data-filter="released" type="button">Lot Released</button>
+      <button data-filter="completed" type="button">Completed</button>
+    </div>
+  </section>
+
+  <p id="cmMessage" class="rr-message" role="status" aria-live="polite"></p>
+  <section class="cm-section-head"><small>CUTTING GALLERY</small><h2>CB Children & Lots</h2></section>
+  <section id="divisionGallery" class="cm-gallery" aria-busy="true">
+    <article class="cm-empty"><div class="cm-spinner"></div><h3>Loading Cutting Master Final V3</h3><p>Connecting CB Children…</p></article>
+  </section>
+</main>
+
+<section id="splitSheet" class="cm-sheet cm-hidden" aria-hidden="true">
+  <div class="cm-backdrop" data-close-split></div>
+  <div class="cm-sheet-panel" role="dialog" aria-modal="true">
+    <div class="cm-grab"></div>
+    <header class="cm-sheet-head">
+      <div><small>MULTI COMBO</small><h2>Create Child CB Batches</h2><p id="splitContext"></p></div>
+      <button type="button" data-close-split>×</button>
+    </header>
+    <form id="splitForm" class="cm-form">
+      <input id="splitParentId" type="hidden">
+      <section class="cm-form-card">
+        <div class="cm-grid-2">
+          <label><span>Child Count *</span>
+            <select id="childCount">
+              <option value="2">2 Children</option><option value="3">3 Children</option>
+              <option value="4">4 Children</option><option value="5">5 Children</option>
+              <option value="6">6 Children</option>
+            </select>
+          </label>
+          <div class="cm-summary"><small>Parent Weight</small><strong id="splitParentWeight">0 kg</strong></div>
+        </div>
+        <div class="cm-form-title">
+          <div><h3>Child Batch Weight</h3><p>Total must equal parent weight.</p></div>
+          <button id="equalChildSplit" type="button">Equal Split</button>
+        </div>
+        <div id="childRows" class="cm-child-rows"></div>
+        <div class="cm-total-line"><span>Children Total</span><strong id="childWeightTotal">0 kg</strong></div>
+      </section>
+      <div class="cm-sticky">
+        <button class="cm-secondary" type="button" data-close-split>Cancel</button>
+        <button id="saveChildrenBtn" class="cm-primary" type="submit">Create Child CBs</button>
+      </div>
+    </form>
+  </div>
+</section>
+
+<section id="lotSheet" class="cm-sheet cm-hidden" aria-hidden="true">
+  <div class="cm-backdrop" data-close-lot></div>
+  <div class="cm-sheet-panel cm-wide" role="dialog" aria-modal="true">
+    <div class="cm-grab"></div>
+    <header class="cm-sheet-head">
+      <div><small>SINGLE LOT RELEASE</small><h2>Release Permanent Lot No</h2><p id="lotContext"></p></div>
+      <button type="button" data-close-lot>×</button>
+    </header>
+    <form id="lotForm" class="cm-form">
+      <input id="lotUnitId" type="hidden">
+      <section class="cm-form-card">
+        <h3>Lot Identity</h3>
+        <div class="cm-grid-2">
+          <label><span>Lot No *</span><input id="lotNo" type="text" placeholder="2N2526"></label>
+          <label><span>Release Date *</span><input id="lotDate" type="date"></label>
+        </div>
+        <div class="cm-grid-2">
+          <label><span>Style *</span><input id="styleName" type="text" placeholder="Round Neck"></label>
+          <label><span>Cutting Master</span><input id="operatorName" type="text" placeholder="Name"></label>
+        </div>
+        <div class="cm-grid-2">
+          <label><span>Art No</span><input id="artNo" type="text" placeholder="RA35"></label>
+          <label><span>Print No</span><input id="printNo" type="text" placeholder="P105"></label>
+        </div>
+      </section>
+
+      <section class="cm-form-card">
+        <h3>Complete Weight Settlement</h3>
+        <div class="cm-grid-3">
+          <label><span>Fabric Used *</span><input id="fabricUsed" type="number" min="0" step="0.001"></label>
+          <label><span>Wastage</span><input id="wastageWeight" type="number" min="0" step="0.001" value="0"></label>
+          <label><span>Remnant</span><input id="remnantWeight" type="number" min="0" step="0.001" value="0"></label>
+        </div>
+        <div class="cm-weight-summary">
+          <span><small>CB Child Weight</small><strong id="lotUnitWeight">0 kg</strong></span>
+          <span><small>Entered Total</small><strong id="settledWeight">0 kg</strong></span>
+          <span><small>Difference</small><strong id="weightDifference">0 kg</strong></span>
+        </div>
+      </section>
+
+      <section class="cm-form-card cm-cost-card">
+        <div class="cm-form-title cm-cost-title">
+          <div>
+            <h3>Owner Costing</h3>
+            <p>Visible during Owner Testing Mode. Final permissions will be controlled later.</p>
+          </div>
+          <span class="cm-owner-chip">OWNER TEST</span>
+        </div>
+
+        <div class="cm-grid-2">
+          <label>
+            <span>Base Cutting Cost / Piece *</span>
+            <input id="baseCost" type="number" min="0" step="0.01" value="0">
+          </label>
+          <label>
+            <span>Custom Adjustment / Piece</span>
+            <input id="customAdjustment" type="number" step="0.01" value="0">
+          </label>
+        </div>
+
+        <div class="cm-grid-3">
+          <label>
+            <span>Size Type</span>
+            <select id="sizeType">
+              <option value="small">Small (₹0)</option>
+              <option value="big">Big (+₹5 default)</option>
+            </select>
+          </label>
+          <label>
+            <span>Sleeve</span>
+            <select id="sleeveType">
+              <option value="half">Half (₹0)</option>
+              <option value="full">Full (+₹5 default)</option>
+            </select>
+          </label>
+          <label>
+            <span>Border</span>
+            <select id="borderType">
+              <option value="without">Without Border (₹0)</option>
+              <option value="with">With Border (+₹5 default)</option>
+            </select>
+          </label>
+        </div>
+
+        <div class="cm-cost-breakup">
+          <span><small>Big Adjustment</small><strong id="sizeCostPreview">₹0</strong></span>
+          <span><small>Full Adjustment</small><strong id="sleeveCostPreview">₹0</strong></span>
+          <span><small>Border Adjustment</small><strong id="borderCostPreview">₹0</strong></span>
+          <span><small>Final / Piece</small><strong id="finalCostPreview">₹0</strong></span>
+          <span><small>Total Cutting Cost</small><strong id="totalCostPreview">₹0</strong></span>
+        </div>
+      </section>
+
+      <section class="cm-form-card">
+        <div class="cm-grid-2">
+          <label><span>Sizes *</span><input id="sizeSet" type="text" value="L,XL,XXL"></label>
+          <label><span>Bundle Qty *</span><input id="bundleQty" type="number" min="1" value="12"></label>
+        </div>
+        <div class="cm-form-title">
+          <div><h3>Colour × Size Cutting</h3><p>Only cutting sheet for this Lot.</p></div>
+          <button id="equalPieceSplit" type="button">Equal Pieces</button>
+        </div>
+        <div id="cuttingMatrix" class="cm-matrix"></div>
+        <div class="cm-total-line"><span>Total</span><strong><b id="totalPieces">0</b> pcs · <b id="totalBundles">0</b> bundles</strong></div>
+      </section>
+
+      <label class="cm-notes"><span>Notes</span><textarea id="lotNotes" rows="3"></textarea></label>
+      <div class="cm-sticky">
+        <button class="cm-secondary" type="button" data-close-lot>Cancel</button>
+        <button id="releaseLotBtn" class="cm-primary" type="submit">Release Lot No</button>
+      </div>
+    </form>
+  </div>
+</section>
+
+
+<section id="costSheet" class="cm-sheet cm-hidden" aria-hidden="true">
+  <div class="cm-backdrop" data-close-cost></div>
+  <div class="cm-sheet-panel" role="dialog" aria-modal="true">
+    <div class="cm-grab"></div>
+    <header class="cm-sheet-head">
+      <div>
+        <small>OWNER / MANAGER SETTINGS</small>
+        <h2>Custom Cutting Cost Rules</h2>
+        <p>These values become the defaults for future Lots.</p>
+      </div>
+      <button type="button" data-close-cost>×</button>
+    </header>
+
+    <form id="costSettingsForm" class="cm-form">
+      <section class="cm-form-card">
+        <div class="cm-grid-2">
+          <label>
+            <span>Default Base Cost / Piece</span>
+            <input id="settingBaseCost" type="number" min="0" step="0.01" value="0">
+          </label>
+          <label>
+            <span>Big Size Adjustment</span>
+            <input id="settingBigAdjustment" type="number" step="0.01" value="5">
+          </label>
+        </div>
+
+        <div class="cm-grid-2">
+          <label>
+            <span>Full Sleeve Adjustment</span>
+            <input id="settingFullAdjustment" type="number" step="0.01" value="5">
+          </label>
+          <label>
+            <span>With Border Adjustment</span>
+            <input id="settingBorderAdjustment" type="number" step="0.01" value="5">
+          </label>
+        </div>
+
+        <label class="cm-check-row">
+          <input id="settingAllowCustom" type="checkbox" checked>
+          <span>Allow custom per-Lot adjustment</span>
+        </label>
+
+        <p class="cm-rule-note">
+          Locked default: Small ₹0 · Half ₹0 · Without Border ₹0.
+          Big, Full and With Border use the amounts above.
+        </p>
+      </section>
+
+      <div class="cm-sticky">
+        <button class="cm-secondary" type="button" data-close-cost>Cancel</button>
+        <button id="saveCostSettings" class="cm-primary" type="submit">Save Cost Settings</button>
+      </div>
+    </form>
+  </div>
+</section>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js?v=1"></script>
+<script src="real-common.js?v=1"></script>
+<script src="real-cutting-master-final.js?v=3001"></script>
+<script src="real-cutting-master-v5.js?v=5004"></script>
+</body>
+</html>
