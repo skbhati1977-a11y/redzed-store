@@ -3491,3 +3491,215 @@ function closeAndResetSheet(sheet) {
 
   activeUnit = null;
 }
+function bindCuttingMasterEvents() {
+  const splitForm = $("splitForm");
+  const lotForm = $("lotForm");
+  const costForm = $("costForm");
+
+  if (splitForm) {
+    splitForm.onsubmit = createSplit;
+  }
+
+  if (lotForm) {
+    lotForm.onsubmit = createLot;
+  }
+
+  if (costForm) {
+    costForm.onsubmit =
+      saveCostSettings;
+  }
+
+  const childCount =
+    $("childCount");
+
+  if (childCount) {
+    childCount.onchange = () => {
+      renderChildRows();
+      equalChildSplit();
+    };
+  }
+
+  const equalSplitButton =
+    $("equalChildSplit");
+
+  if (equalSplitButton) {
+    equalSplitButton.onclick =
+      equalChildSplit;
+  }
+
+  const sizeSet =
+    $("sizeSet");
+
+  if (sizeSet) {
+    sizeSet.onchange =
+      renderMatrix;
+
+    sizeSet.onblur =
+      renderMatrix;
+  }
+
+  const bundleQty =
+    $("bundleQty");
+
+  if (bundleQty) {
+    bundleQty.oninput =
+      updatePieceTotals;
+  }
+
+  [
+    "baseCost",
+    "customAdjustment"
+  ].forEach(id => {
+    const input = $(id);
+
+    if (input) {
+      input.oninput =
+        updateCostPreview;
+    }
+  });
+
+  [
+    "bigAdjustment",
+    "fullSleeveAdjustment",
+    "borderAdjustment"
+  ].forEach(id => {
+    const input = $(id);
+
+    if (input) {
+      input.onchange =
+        updateCostPreview;
+    }
+  });
+
+  const openCostButton =
+    $("openCostSettings");
+
+  if (openCostButton) {
+    openCostButton.onclick =
+      openCostSettings;
+  }
+
+  document
+    .querySelectorAll(
+      "[data-close-split]"
+    )
+    .forEach(button => {
+      button.onclick = () => {
+        closeAndResetSheet(
+          splitSheet
+        );
+      };
+    });
+
+  document
+    .querySelectorAll(
+      "[data-close-lot]"
+    )
+    .forEach(button => {
+      button.onclick = () => {
+        closeAndResetSheet(
+          lotSheet
+        );
+      };
+    });
+
+  document
+    .querySelectorAll(
+      "[data-close-cost]"
+    )
+    .forEach(button => {
+      button.onclick = () => {
+        closeSheet(costSheet);
+      };
+    });
+
+  const searchInput =
+    $("cmSearch");
+
+  if (searchInput) {
+    searchInput.oninput =
+      renderGallery;
+  }
+
+  const filters =
+    $("cmFilters");
+
+  if (filters) {
+    filters
+      .querySelectorAll(
+        "[data-filter]"
+      )
+      .forEach(button => {
+        button.onclick = () => {
+          currentFilter =
+            button.dataset.filter ||
+            "all";
+
+          filters
+            .querySelectorAll(
+              "[data-filter]"
+            )
+            .forEach(item => {
+              item.classList.toggle(
+                "is-active",
+                item === button
+              );
+            });
+
+          renderGallery();
+        };
+      });
+  }
+
+  const refreshButton =
+    $("refreshCutting");
+
+  if (refreshButton) {
+    refreshButton.onclick =
+      refreshCuttingMaster;
+  }
+}
+
+async function startCuttingMaster() {
+  try {
+    ensureDecisionUi();
+
+    bindCuttingMasterEvents();
+
+    await ensureOwner();
+
+    await withTimeout(
+      loadAllData(),
+      30000,
+      "Cutting Master loading"
+    );
+
+    console.info(
+      "REDZED Cutting Master standalone V5 loaded."
+    );
+  } catch (error) {
+    console.error(
+      "Cutting Master startup failed:",
+      error
+    );
+
+    showFatalError(error);
+  }
+}
+
+if (
+  document.readyState ===
+  "loading"
+) {
+  document.addEventListener(
+    "DOMContentLoaded",
+    startCuttingMaster,
+    {
+      once: true
+    }
+  );
+} else {
+  startCuttingMaster();
+}
+
+})();
