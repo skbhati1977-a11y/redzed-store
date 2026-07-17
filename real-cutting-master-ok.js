@@ -3320,18 +3320,38 @@ say("STEP 3", "info");
   );
 
   const [
-    purchaseRows,
-    unitRows,
-    colourRows,
-    lotRows,
-    breakupRows
-  ] = await Promise.all([
+  purchaseRows,
+  unitRows,
+  colourRows,
+  lotRows,
+  breakupRows
+] = await Promise.all([
+  withTimeout(
     loadPurchases(client),
+    12000,
+    "Purchases loading"
+  ),
+  withTimeout(
     loadUnits(client),
+    12000,
+    "CB Children loading"
+  ),
+  withTimeout(
     loadColours(client),
+    12000,
+    "Colours loading"
+  ),
+  withTimeout(
     loadLots(client),
-    loadBreakup(client)
-  ]);
+    12000,
+    "Cutting Lots loading"
+  ),
+  withTimeout(
+    loadBreakup(client),
+    12000,
+    "Cutting Breakup loading"
+  )
+]);
 
   purchases =
     normalizePurchaseRows(
@@ -3356,10 +3376,18 @@ say("STEP 3", "info");
   breakup =
     breakupRows || [];
 
-  await Promise.all([
+   await Promise.all([
+  withTimeout(
     loadProductRefs(client),
-    loadCostSettings(client)
-  ]);
+    12000,
+    "Product Master references loading"
+  ),
+  withTimeout(
+    loadCostSettings(client),
+    12000,
+    "Cost Settings loading"
+  )
+]);
 
   renderGallery();
 
