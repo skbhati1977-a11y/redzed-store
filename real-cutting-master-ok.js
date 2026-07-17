@@ -3284,7 +3284,7 @@ function normalizeLotRows(rows) {
 
 async function loadAllData() {
   const client = getClient();
-
+say("STEP 1", "info");
   if (!client) {
     throw new Error(
       "Supabase client unavailable. Check config.js."
