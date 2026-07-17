@@ -3707,7 +3707,7 @@ async function startCuttingMaster() {
 
     say("START C", "info");
 
-    await ensureOwner();
+    // await ensureOwner();
 
     say("START D", "success");
 
