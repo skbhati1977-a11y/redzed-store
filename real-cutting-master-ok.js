@@ -1,5 +1,3 @@
-// BUILD 21
-alert("BUILD 21 LOADED");
 (() => {
 "use strict";
 
@@ -3315,11 +3313,6 @@ say("STEP 3", "info");
   say(
     "Cutting Master data load हो रहा है...",
     "info"
-  );
-await withTimeout(
-  new Promise(() => {}),
-  5000,
-  "MANUAL TEST"
 );
   const [
   purchaseRows,
