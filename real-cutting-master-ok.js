@@ -1,6 +1,7 @@
 // BUILD 21
 alert("BUILD 21 LOADED");
 (() => {
+"use strict";
 
 const $ = id => document.getElementById(id);
 const gallery = $("divisionGallery");
