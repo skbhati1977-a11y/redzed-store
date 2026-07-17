@@ -2228,7 +2228,7 @@ async function createLot(event) {
       lotPayload(validation);
 
     const duplicate = await client
-      .from("rr_cutting_lots")
+      .from("rr_cutting_lots_v3")
       .select("id, lot_no")
       .eq("lot_no", payload.lot_no)
       .maybeSingle();
@@ -2244,7 +2244,7 @@ async function createLot(event) {
     }
 
     const insertedLot = await client
-      .from("rr_cutting_lots")
+      .from("rr_cutting_lots_v3")
       .insert(payload)
       .select("*")
       .single();
@@ -2273,7 +2273,7 @@ async function createLot(event) {
 
       if (insertedBreakup.error) {
         await client
-          .from("rr_cutting_lots")
+          .from("rr_cutting_lots_v3")
           .delete()
           .eq("id", lotRow.id);
 
@@ -2850,7 +2850,7 @@ async function markLotCompleted(
   try {
     const result =
       await client
-        .from("rr_cutting_lots")
+        .from("rr_cutting_lots_v3")
         .update({
           status: "completed",
           completed_at:
