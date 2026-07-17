@@ -3291,7 +3291,7 @@ say("STEP 1", "info");
       "Supabase client unavailable. Check config.js."
     );
   }
-
+say("STEP 3", "info");
   gallery?.setAttribute(
     "aria-busy",
     "true"
