@@ -1233,68 +1233,60 @@ $("refreshCutting").onclick = () => {
 })();
 })();
  
- <script src="real-cutting-master-ok.js?v=2"></script>
+ <script>
+window.REDZED = window.REDZED || {
+    plugins: {},
+
+    use(name, plugin) {
+        this.plugins[name] = plugin;
+
+        if (typeof plugin.init === "function") {
+            plugin.init(window.RRCuttingMaster || null);
+        }
+
+        return plugin;
+    },
+
+    get(name) {
+        return this.plugins[name] || null;
+    }
+};
+</script>
+
+<script src="real-cutting-master-ok.js?v=2"></script>
 <script src="real-cutting-master-patch.js?v=1"></script>
 <script src="plugins/cutting.plugin.js?v=2"></script>
 
-<button
-  type="button"
-  onclick="testCuttingPlugin()"
-  style="
-    position:fixed;
-    right:16px;
-    bottom:16px;
-    z-index:99999;
-    padding:12px 16px;
-    border:0;
-    border-radius:10px;
-    background:#ef3340;
-    color:#fff;
-    font-weight:700;
-  "
->
-  Test Cutting Plugin
+<!-- Test button yahan <button
+    type="button"
+    onclick="testCuttingPlugin()"
+    style="
+        position:fixed;
+        right:16px;
+        bottom:16px;
+        z-index:99999;
+        padding:12px 16px;
+        border:0;
+        border-radius:10px;
+        background:#ef3340;
+        color:#fff;
+        font-weight:700;
+    ">
+    Test Cutting Plugin
 </button>
 
 <script>
 function testCuttingPlugin() {
-    try {
-        const cutting =
-            window.REDZED?.plugins?.cutting ||
-            window.REDZED?.get?.("cutting");
 
-        if (!window.REDZED) {
-            alert("REDZED Core NOT Loaded");
-            return;
-        }
+    alert(
+        "REDZED : " + (window.REDZED ? "YES" : "NO") +
+        "\nRRCuttingMaster : " + (window.RRCuttingMaster ? "YES" : "NO") +
+        "\nPlugin : " + ((window.REDZED && window.REDZED.get("cutting")) ? "YES" : "NO")
+    );
 
-        if (!window.RRCuttingMaster) {
-            alert("Cutting Master Core NOT Loaded");
-            return;
-        }
-
-        if (!cutting) {
-            alert("Cutting Plugin NOT Loaded");
-            return;
-        }
-
-        if (!cutting.api) {
-            alert("Plugin Loaded but API Missing");
-            return;
-        }
-
-        alert(
-            "Cutting Plugin Loaded Successfully\n\n" +
-            "Name: " + cutting.name + "\n" +
-            "Version: " + cutting.version + "\n" +
-            "API: Ready"
-        );
-
-    } catch (error) {
-        alert("Plugin Test Error:\n" + error.message);
-    }
 }
-</script>
+</script>rahega -->
 
 </body>
 </html>
+
