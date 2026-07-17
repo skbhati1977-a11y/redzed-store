@@ -3701,5 +3701,102 @@ if (
 } else {
   startCuttingMaster();
 }
+/* ==========================================================
+   REDZED ERP GLOBAL BRIDGE v2
+   Paste BEFORE the final })();
+========================================================== */
 
+window.RRCuttingMaster = {
+
+    version: "2.0",
+
+    state() {
+        return {
+            purchases,
+            units,
+            colours,
+            lots,
+            breakup,
+            costSettings,
+            productRefs,
+            activeUnit
+        };
+    },
+
+    actions: {
+
+        startCuttingMaster,
+
+        renderGallery,
+
+        openLot,
+
+        openSplit,
+
+        createLot,
+
+        createSplit,
+
+        updateCostPreview,
+
+        renderMatrix,
+
+        renderCostSettings,
+
+        closeSheet,
+
+        openSheet,
+
+        showFatalError,
+
+        say
+    },
+
+    helpers: {
+
+        unitId,
+
+        unitCode,
+
+        unitWeight,
+
+        purchaseFor,
+
+        coloursFor,
+
+        childrenFor,
+
+        lotForUnit,
+
+        productDecision,
+
+        nextLotNumber
+    },
+
+    hooks: {
+
+        beforeOpenLot:null,
+
+        afterOpenLot:null,
+
+        beforeCreateSplit:null,
+
+        afterCreateSplit:null,
+
+        beforeCreateLot:null,
+
+        afterCreateLot:null,
+
+        beforeRenderGallery:null,
+
+        afterRenderGallery:null
+    }
+
+};
+
+console.info(
+    "REDZED ERP Bridge v2 Ready"
+);
+
+/* ========================================================== */
 })();
