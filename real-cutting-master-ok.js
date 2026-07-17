@@ -2892,7 +2892,7 @@ async function markLotCompleted(
 async function loadCostSettings(client) {
   try {
     const result = await client
-      .from("rr_cutting_cost_settings")
+      .from("rr_cutting_cost_settings_v3")
       .select("*")
       .eq("settings_key", "default")
       .maybeSingle();
@@ -3122,7 +3122,7 @@ async function loadLots(client) {
 
 async function loadBreakup(client) {
   const result = await client
-    .from("rr_cutting_breakup")
+    .from("rr_cutting_breakup_v3")
     .select("*")
     .order("created_at", {
       ascending: false
