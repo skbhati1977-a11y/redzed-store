@@ -1232,7 +1232,6 @@ $("refreshCutting").onclick = () => {
 
 })();
 })();
- 
  <script>
 window.REDZED = window.REDZED || {
     plugins: {},
@@ -1257,36 +1256,35 @@ window.REDZED = window.REDZED || {
 <script src="real-cutting-master-patch.js?v=1"></script>
 <script src="plugins/cutting.plugin.js?v=2"></script>
 
-<!-- Test button yahan <button
+<button
     type="button"
     onclick="testCuttingPlugin()"
-    style="
-        position:fixed;
-        right:16px;
-        bottom:16px;
-        z-index:99999;
-        padding:12px 16px;
-        border:0;
-        border-radius:10px;
-        background:#ef3340;
-        color:#fff;
-        font-weight:700;
-    ">
+>
     Test Cutting Plugin
 </button>
 
 <script>
 function testCuttingPlugin() {
+    var redzedLoaded = !!window.REDZED;
+    var coreLoaded = !!window.RRCuttingMaster;
+    var cutting = null;
+
+    if (redzedLoaded) {
+        cutting =
+            (window.REDZED.plugins &&
+             window.REDZED.plugins.cutting) ||
+            (typeof window.REDZED.get === "function"
+                ? window.REDZED.get("cutting")
+                : null);
+    }
 
     alert(
-        "REDZED : " + (window.REDZED ? "YES" : "NO") +
-        "\nRRCuttingMaster : " + (window.RRCuttingMaster ? "YES" : "NO") +
-        "\nPlugin : " + ((window.REDZED && window.REDZED.get("cutting")) ? "YES" : "NO")
+        "REDZED : " + (redzedLoaded ? "YES" : "NO") +
+        "\nRRCuttingMaster : " + (coreLoaded ? "YES" : "NO") +
+        "\nPlugin : " + (cutting ? "YES" : "NO")
     );
-
 }
-</script>rahega -->
+</script>
 
 </body>
 </html>
-
