@@ -1278,34 +1278,6 @@ window.REDZED = window.REDZED || {
 
  <script src="plugins/cutting.plugin.js?v=3"></script>
 
-<button
-    type="button"
-    onclick="testCuttingPlugin()"
->
-    Test Cutting Plugin
-</button>
 
-<script>
-function testCuttingPlugin() {
-    var redzedLoaded = !!window.REDZED;
-    var coreLoaded = !!window.RRCuttingMaster;
-    var cutting = null;
-
-    if (redzedLoaded) {
-        cutting =
-            (window.REDZED.plugins &&
-             window.REDZED.plugins.cutting) ||
-            (typeof window.REDZED.get === "function"
-                ? window.REDZED.get("cutting")
-                : null);
-    }
-
-    alert(
-        "REDZED : " + (redzedLoaded ? "YES" : "NO") +
-        "\nRRCuttingMaster : " + (coreLoaded ? "YES" : "NO") +
-        "\nPlugin : " + (cutting ? "YES" : "NO")
-    );
-}
-</script>
 </body>
 </html>
