@@ -3699,17 +3699,27 @@ function bindCuttingMasterEvents() {
 
 async function startCuttingMaster() {
   try {
+    say("START A", "info");
+
     ensureDecisionUi();
+
+    say("START B", "info");
 
     bindCuttingMasterEvents();
 
+    say("START C", "info");
+
     await ensureOwner();
+
+    say("START D", "success");
 
     await withTimeout(
       loadAllData(),
       30000,
       "Cutting Master loading"
     );
+
+    say("START E", "success");
 
     console.info(
       "REDZED Cutting Master standalone V5 loaded."
@@ -3722,7 +3732,7 @@ async function startCuttingMaster() {
 
     showFatalError(error);
   }
-}
+      }
 
 if (
   document.readyState ===
