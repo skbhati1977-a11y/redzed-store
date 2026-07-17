@@ -1,4 +1,3 @@
-<script>
 (() => {
 "use strict";
 
@@ -32,4 +31,3 @@ const CuttingPlugin = {
 REDZED.use("cutting", CuttingPlugin);
 
 })();
-</script>
