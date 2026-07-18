@@ -2459,10 +2459,6 @@ function childPayloads(
           weight.toFixed(3)
         ),
 
-      base_qty:
-        Number(
-          weight.toFixed(3)
-        ),
 
       is_final: true,
 
