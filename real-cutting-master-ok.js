@@ -2027,35 +2027,18 @@ function validateLotForm() {
     );
   }
 
-  const sizes = parseSizes();
-
-  if (!sizes.length) {
-    throw new Error(
-      "At least one size required."
-    );
-  }
+  const sizes =
+    parseSizes();
 
   const entries =
     cuttingEntries();
 
-  if (!entries.length) {
-    throw new Error(
-      "Enter colour and size quantities."
-    );
-  }
-
   const totalPieces =
     entries.reduce(
       (sum, row) =>
-        sum + row.quantity,
+        sum + Number(row.quantity || 0),
       0
     );
-
-  if (totalPieces <= 0) {
-    throw new Error(
-      "Total pieces must be greater than zero."
-    );
-  }
 
   return {
     decision,
@@ -2066,7 +2049,7 @@ function validateLotForm() {
     totalPieces
   };
 }
-
+  
 function adjustmentDetails() {
   const selected =
     selectedAdjustmentTypes()
