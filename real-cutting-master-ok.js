@@ -3015,15 +3015,27 @@ async function loadUnits(client) {
     [
       ...new Map(
         combinedRows.map(
-          (row, index) => [
-            String(
-              row.id ||
-              row.division_id ||
-              row.unit_id ||
-              `row-${index}`
-            ),
-            row
-          ]
+          (row, index) => {
+            const identity = [
+              row.purchase_id ||
+                row.cb_id ||
+                row.parent_cb_id ||
+                "cb",
+
+              row.cb_code ||
+                row.division_code ||
+                row.unit_code ||
+                `row-${index}`,
+
+              row.parent_unit_id ||
+                "root"
+            ].join("|");
+
+            return [
+              identity,
+              row
+            ];
+          }
         )
       ).values()
     ];
