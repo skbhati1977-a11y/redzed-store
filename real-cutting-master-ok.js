@@ -2951,98 +2951,52 @@ async function loadPurchases(client) {
 }
 
 async function loadUnits(client) {
-  const attempts = [
-    {
-      table: "rr_cb_divisions",
-      query: () =>
-        client
-          .from("rr_cb_divisions")
-          .select("*")
-          .order("created_at", {
-            ascending: true
-          })
-    },
-    {
-      table: "rr_cb_units",
-      query: () =>
-        client
-          .from("rr_cb_units")
-          .select("*")
-          .order("created_at", {
-            ascending: true
-          })
-    }
+  const tables = [
+    "rr_cb_divisions",
+    "rr_cb_units"
   ];
 
-  const combinedRows = [];
-  let lastError = null;
-  let successfulTables = 0;
+  const allRows = [];
 
-  for (const attempt of attempts) {
-    const result =
-      await attempt.query();
+  for (const table of tables) {
+    const result = await client
+      .from(table)
+      .select("*")
+      .order("created_at", {
+        ascending: true
+      });
 
     if (result.error) {
       console.warn(
-        `${attempt.table} load failed:`,
+        `${table} unavailable:`,
         result.error
       );
 
-      lastError = result.error;
       continue;
     }
 
-    successfulTables += 1;
-
-    const rows =
-      result.data || [];
-
     console.info(
-      `${rows.length} CB rows found in ${attempt.table}`
+      `${result.data?.length || 0} CB units loaded from ${table}`
     );
 
-    combinedRows.push(...rows);
+    allRows.push(
+      ...(result.data || [])
+    );
   }
 
-  if (!successfulTables) {
-    throw lastError ||
-      new Error(
-        "CB division/unit tables unavailable."
-      );
-  }
-
-  const uniqueRows =
-    [
-      ...new Map(
-        combinedRows.map(
-          (row, index) => {
-            const identity = [
-              row.purchase_id ||
-                row.cb_id ||
-                row.parent_cb_id ||
-                "cb",
-
-              row.cb_code ||
-                row.division_code ||
-                row.unit_code ||
-                `row-${index}`,
-
-              row.parent_unit_id ||
-                "root"
-            ].join("|");
-
-            return [
-              identity,
-              row
-            ];
-          }
-        )
-      ).values()
-    ];
-
-  console.info(
-    `${uniqueRows.length} combined CB rows loaded.`
-  );
+  const uniqueRows = [
+    ...new Map(
+      allRows.map((row, index) => [
+        String(
+          row.id ||
+          row.division_id ||
+          row.unit_id ||
+          `${row.cb_code || row.unit_code}-${index}`
+        ),
+        row
+      ])
+    ).values()
+  ];
 
   return uniqueRows;
 }
