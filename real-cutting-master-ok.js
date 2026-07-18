@@ -2972,7 +2972,7 @@ async function loadUnits(client) {
             ascending: true
           })
     },
-
+];
   let lastError = null;
 
   for (const attempt of attempts) {
