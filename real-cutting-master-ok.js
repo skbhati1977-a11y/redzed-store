@@ -1282,10 +1282,11 @@ function buildUnitsFromProductRefs() {
 
   productRefs.assignments.forEach((row, index) => {
     const id =
-      row.cb_id ||
+      row.division_id ||
       row.cb_unit_id ||
       row.unit_id ||
-      row.child_id;
+      row.child_id ||
+      row.cb_id;
 
     if (!id) {
       return;
@@ -1298,18 +1299,21 @@ function buildUnitsFromProductRefs() {
     }
 
     const purchaseId =
+      row.cb_id ||
       row.purchase_id ||
       row.cb_purchase_id ||
       row.parent_cb_id ||
-      row.cb_id ||
       id;
 
     map.set(key, {
       id,
+      division_id: id,
+
       purchase_id: purchaseId,
       cb_id: purchaseId,
 
       cb_code:
+        row.division_code ||
         row.cb_code ||
         row.child_code ||
         row.child_no ||
@@ -1319,6 +1323,7 @@ function buildUnitsFromProductRefs() {
 
       division_code:
         row.division_code ||
+        row.cb_code ||
         row.child_code ||
         row.child_no ||
         row.dev_code ||
@@ -1327,24 +1332,23 @@ function buildUnitsFromProductRefs() {
 
       parent_unit_id:
         row.parent_unit_id ||
+        row.parent_division_id ||
         row.parent_child_id ||
         null,
 
-      divided_weight:
-        Number(
-          row.divided_weight ??
-          row.allocated_qty ??
-          row.weight ??
-          0
-        ),
+      divided_weight: Number(
+        row.divided_weight ??
+        row.allocated_qty ??
+        row.weight ??
+        0
+      ),
 
-      allocated_qty:
-        Number(
-          row.allocated_qty ??
-          row.divided_weight ??
-          row.weight ??
-          0
-        ),
+      allocated_qty: Number(
+        row.allocated_qty ??
+        row.divided_weight ??
+        row.weight ??
+        0
+      ),
 
       is_final: true,
       status: "ready",
