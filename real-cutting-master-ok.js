@@ -1277,7 +1277,83 @@ function normalizeLotRows(rows) {
     total_cutting_cost: Number(row.total_cutting_cost ?? row.total_cost ?? 0)
   }));
 }
+function buildUnitsFromProductRefs() {
+  const map = new Map();
 
+  productRefs.assignments.forEach((row, index) => {
+    const id =
+      row.cb_id ||
+      row.cb_unit_id ||
+      row.unit_id ||
+      row.child_id;
+
+    if (!id) {
+      return;
+    }
+
+    const key = String(id);
+
+    if (map.has(key)) {
+      return;
+    }
+
+    const purchaseId =
+      row.purchase_id ||
+      row.cb_purchase_id ||
+      row.parent_cb_id ||
+      row.cb_id ||
+      id;
+
+    map.set(key, {
+      id,
+      purchase_id: purchaseId,
+      cb_id: purchaseId,
+
+      cb_code:
+        row.cb_code ||
+        row.child_code ||
+        row.child_no ||
+        row.dev_code ||
+        row.dev_no ||
+        `PM-${index + 1}`,
+
+      division_code:
+        row.division_code ||
+        row.child_code ||
+        row.child_no ||
+        row.dev_code ||
+        row.dev_no ||
+        `PM-${index + 1}`,
+
+      parent_unit_id:
+        row.parent_unit_id ||
+        row.parent_child_id ||
+        null,
+
+      divided_weight:
+        Number(
+          row.divided_weight ??
+          row.allocated_qty ??
+          row.weight ??
+          0
+        ),
+
+      allocated_qty:
+        Number(
+          row.allocated_qty ??
+          row.divided_weight ??
+          row.weight ??
+          0
+        ),
+
+      is_final: true,
+      status: "ready",
+      source: "product_master_assignment"
+    });
+  });
+
+  return [...map.values()];
+}
 async function loadAllData() {
   const client = getClient();
   if (!client) throw new Error("Supabase client unavailable. Check config.js.");
