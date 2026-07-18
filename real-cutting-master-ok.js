@@ -2446,9 +2446,6 @@ function childPayloads(
       division_index:
         index + 1,
 
-      batch_index:
-        index + 1,
-
       divided_weight:
         Number(
           weight.toFixed(3)
