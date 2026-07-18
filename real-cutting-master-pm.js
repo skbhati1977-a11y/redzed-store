@@ -1533,8 +1533,8 @@ function updateCostPreview() {
 }
 
 // ===== REDZED CUTTING MASTER PM CORE PART 3 END ======
-  
-// ===== REDZED CUTTING MASTER PM CORE PART 4 START =====
+
+ // ===== REDZED CUTTING MASTER PM CORE PART 4 START =====
 
 function validateLot() {
   if (!activeCard) {
