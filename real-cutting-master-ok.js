@@ -3011,18 +3011,48 @@ async function loadUnits(client) {
   let lastError = null;
 
   for (const attempt of attempts) {
-    const result =
-      await attempt.query();
+    const result = await attempt.query();
 
-    if (!result.error) {
-      console.info(
-        `CB units loaded from ${attempt.table}`
+    if (result.error) {
+      console.warn(
+        `${attempt.table} load failed:`,
+        result.error
       );
 
-      return result.data || [];
+      lastError = result.error;
+      continue;
     }
 
-    lastError = result.error;
+    const rows = result.data || [];
+
+    console.info(
+      `${rows.length} CB rows found in ${attempt.table}`
+    );
+
+    /*
+     * Table exist karti ho lekin empty ho,
+     * to next possible table check karo.
+     */
+    if (rows.length === 0) {
+      continue;
+    }
+
+    console.info(
+      `CB units loaded from ${attempt.table}`
+    );
+
+    return rows;
+  }
+
+  /*
+   * Saari tables available thin lekin empty thin.
+   */
+  if (!lastError) {
+    console.warn(
+      "All CB division/unit/children tables are empty."
+    );
+
+    return [];
   }
 
   throw lastError ||
