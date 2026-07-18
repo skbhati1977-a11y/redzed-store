@@ -1389,7 +1389,19 @@ async function loadAllData() {
     withTimeout(loadProductRefs(client), 12000, "Product Master references loading"),
     withTimeout(loadCostSettings(client), 12000, "Cost Settings loading")
   ]);
+if (
+    !units.filter(isFinal).length &&
+    productRefs.assignments.length
+  ) {
+    console.warn(
+      "No CB unit rows found. Building Cutting cards from Product Master assignments."
+    );
 
+    units = normalizeUnitRows(
+      buildUnitsFromProductRefs()
+    );
+}
+  
   renderGallery();
   say(`${units.filter(isFinal).length} final CB children loaded.`, "success");
 }
