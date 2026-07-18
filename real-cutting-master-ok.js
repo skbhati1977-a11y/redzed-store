@@ -2971,12 +2971,16 @@ async function loadUnits(client) {
           .order("created_at", {
             ascending: true
           })
-    },
-];
+    }
+  ];
+
+  const combinedRows = [];
   let lastError = null;
+  let successfulTables = 0;
 
   for (const attempt of attempts) {
-    const result = await attempt.query();
+    const result =
+      await attempt.query();
 
     if (result.error) {
       console.warn(
@@ -2988,44 +2992,49 @@ async function loadUnits(client) {
       continue;
     }
 
-    const rows = result.data || [];
+    successfulTables += 1;
+
+    const rows =
+      result.data || [];
 
     console.info(
       `${rows.length} CB rows found in ${attempt.table}`
     );
 
-    /*
-     * Table exist karti ho lekin empty ho,
-     * to next possible table check karo.
-     */
-    if (rows.length === 0) {
-      continue;
-    }
-
-    console.info(
-      `CB units loaded from ${attempt.table}`
-    );
-
-    return rows;
+    combinedRows.push(...rows);
   }
 
-  /*
-   * Saari tables available thin lekin empty thin.
-   */
-  if (!lastError) {
-    console.warn(
-      "All CB division/unit/children tables are empty."
-    );
-
-    return [];
+  if (!successfulTables) {
+    throw lastError ||
+      new Error(
+        "CB division/unit tables unavailable."
+      );
   }
 
-  throw lastError ||
-    new Error(
-      "CB division table unavailable."
-    );
+  const uniqueRows =
+    [
+      ...new Map(
+        combinedRows.map(
+          (row, index) => [
+            String(
+              row.id ||
+              row.division_id ||
+              row.unit_id ||
+              `row-${index}`
+            ),
+            row
+          ]
+        )
+      ).values()
+    ];
+
+  console.info(
+    `${uniqueRows.length} combined CB rows loaded.`
+  );
+
+  return uniqueRows;
 }
-
+  
 async function loadColours(client) {
   const attempts = [
     {
