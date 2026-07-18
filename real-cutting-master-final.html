@@ -365,8 +365,11 @@ window.REDZED = window.REDZED || {
 <script src="plugins/cutting.plugin.js?v=4"></script>
 -->
 
-<script src="real-cutting-master-pm.js?v=3"></script>
-      
+<script
+  src="real-cutting-master-pm.js?v=4"
+  onload="document.getElementById('cmMessage').textContent='PM JS file loaded';"
+  onerror="document.getElementById('cmMessage').textContent='PM JS file NOT loaded';"
+></script>    
 
 </body>
 </html>
