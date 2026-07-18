@@ -293,7 +293,6 @@ function assignmentForUnit(id) {
 
   return { assignment: null, inherited: false };
 }
-
 function productDecision(id) {
   const source = assignmentForUnit(id);
   const assignment = source.assignment;
