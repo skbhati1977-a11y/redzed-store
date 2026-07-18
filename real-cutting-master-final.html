@@ -365,11 +365,66 @@ window.REDZED = window.REDZED || {
 <script src="plugins/cutting.plugin.js?v=4"></script>
 -->
 
+<script>
+window.onerror = function(message, source, line, column, error) {
+  const msg =
+    "PM JS ERROR: " +
+    message +
+    " | line " +
+    line +
+    ":" +
+    column;
+
+  const box = document.getElementById("cmMessage");
+  const gallery = document.getElementById("divisionGallery");
+
+  if (box) {
+    box.textContent = msg;
+    box.className = "rr-message error";
+  }
+
+  if (gallery) {
+    gallery.setAttribute("aria-busy", "false");
+    gallery.innerHTML =
+      '<article class="cm-empty">' +
+      '<h3>PM JS Error</h3>' +
+      '<p>' + msg + '</p>' +
+      '</article>';
+  }
+
+  return false;
+};
+
+window.onunhandledrejection = function(event) {
+  const reason = event.reason || {};
+  const msg =
+    "PM PROMISE ERROR: " +
+    (reason.message || String(reason));
+
+  const box = document.getElementById("cmMessage");
+  const gallery = document.getElementById("divisionGallery");
+
+  if (box) {
+    box.textContent = msg;
+    box.className = "rr-message error";
+  }
+
+  if (gallery) {
+    gallery.setAttribute("aria-busy", "false");
+    gallery.innerHTML =
+      '<article class="cm-empty">' +
+      '<h3>PM Promise Error</h3>' +
+      '<p>' + msg + '</p>' +
+      '</article>';
+  }
+};
+</script>
+
 <script
-  src="real-cutting-master-pm.js?v=4"
-  onload="document.getElementById('cmMessage').textContent='PM JS file loaded';"
+  src="real-cutting-master-pm.js?v=5"
+  onload="document.getElementById('cmMessage').textContent='PM JS file loaded and executed check';"
   onerror="document.getElementById('cmMessage').textContent='PM JS file NOT loaded';"
-></script>    
+></script>  
 
 </body>
 </html>
