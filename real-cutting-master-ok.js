@@ -2972,17 +2972,6 @@ async function loadUnits(client) {
             ascending: true
           })
     },
-    {
-      table: "rr_cb_children",
-      query: () =>
-        client
-          .from("rr_cb_children")
-          .select("*")
-          .order("created_at", {
-            ascending: true
-          })
-    }
-  ];
 
   let lastError = null;
 
