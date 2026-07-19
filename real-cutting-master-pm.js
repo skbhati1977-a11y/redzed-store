@@ -4024,12 +4024,7 @@ async function loadCostSettings(
   }
 }
 
-async function loadAllData(
-  options = {}
-) {
-  const announce =
-    options.announce !== false;
-
+async function loadAllData() {
   const client = getClient();
 
   if (!client) {
@@ -4038,403 +4033,116 @@ async function loadAllData(
     );
   }
 
-  if (
-    typeof loadGallerySource !==
-    "function"
-  ) {
-    throw new Error(
-      "loadGallerySource function unavailable."
-    );
-  }
+  if (gallery) {
+    gallery.setAttribute("aria-busy", "true");
 
-  if (
-    typeof loadPrintSource !==
-    "function"
-  ) {
-    throw new Error(
-      "loadPrintSource function unavailable."
-    );
-  }
-
-  if (
-    typeof selectRows !==
-    "function"
-  ) {
-    throw new Error(
-      "selectRows function unavailable."
-    );
-  }
-
-  const galleryRoot =
-    typeof gallery !==
-      "undefined"
-      ? gallery
-      : (
-          $("cuttingGallery") ||
-          $("cmGallery")
-        );
-
-  if (galleryRoot) {
-    galleryRoot.setAttribute(
-      "aria-busy",
-      "true"
-    );
-
-    galleryRoot.innerHTML = `
+    gallery.innerHTML = `
       <article class="cm-empty">
         <div class="cm-spinner"></div>
 
-        <h3>
-          Loading Cutting Master PM
-        </h3>
+        <h3>Loading Cutting Master PM Core</h3>
 
         <p>
-          Connecting Product Master
-          cards and Cutting Lots...
+          Connecting Product Master cards...
         </p>
       </article>
     `;
   }
 
-  if (announce) {
-    say(
-      "Product Master cutting cards load हो रहे हैं...",
-      "info"
-    );
-  }
+  say(
+    "Product Master cutting cards load हो रहे हैं...",
+    "info"
+  );
 
-  try {
-    const mediaPromise =
-      typeof optionalRows ===
-      "function"
-        ? optionalRows(
-            client,
-            "rr_media"
-          )
-        : Promise.resolve([]);
+  const [
+    loadedGalleryRows,
+    purchaseResult,
+    colourResult,
+    artResult,
+    loadedPrintRows,
+    assignmentResult,
+    printAssignmentResult,
+    loadedMediaRows,
+    lotResult,
+    breakupResult
+  ] = await Promise.all([
+    withTimeout(
+      loadGallerySource(client),
+      15000,
+      "Product gallery"
+    ),
 
-    const [
-      loadedGalleryRows,
-      purchaseResult,
-      colourResult,
-      artResult,
-      loadedPrintRows,
-      assignmentResult,
-      printAssignmentResult,
-      loadedMediaRows,
-      lotResult,
-      breakupResult
-    ] = await Promise.all([
-      cmWithTimeout(
-        loadGallerySource(client),
-        15000,
-        "Product gallery"
-      ),
+    selectRows(client, "rr_cb_purchase_entries", {
+      order: "created_at",
+      ascending: false
+    }),
 
-      cmWithTimeout(
-        selectRows(
-          client,
-          "rr_cb_purchase_entries",
-          {
-            order:
-              "created_at",
+    selectRows(client, "rr_cb_colours", {
+      order: "colour_order",
+      ascending: true
+    }),
 
-            ascending:
-              false
-          }
-        ),
-        15000,
-        "Purchase rows"
-      ),
+    selectRows(client, "rr_art_master", {
+      eq: { is_active: true },
+      order: "updated_at",
+      ascending: false
+    }),
 
-      cmWithTimeout(
-        selectRows(
-          client,
-          "rr_cb_colours",
-          {
-            order:
-              "colour_order",
+    loadPrintSource(client),
 
-            ascending:
-              true
-          }
-        ),
-        15000,
-        "Colour rows"
-      ),
+    selectRows(client, "rr_cb_art_assignments", {
+      order: "updated_at",
+      ascending: false
+    }),
 
-      cmWithTimeout(
-        selectRows(
-          client,
-          "rr_art_master",
-          {
-            eq: {
-              is_active:
-                true
-            },
+    selectRows(client, "rr_cb_print_assignments", {
+      order: "sequence_no",
+      ascending: true
+    }),
 
-            order:
-              "updated_at",
+    optionalRows(client, "rr_media"),
 
-            ascending:
-              false
-          }
-        ),
-        15000,
-        "Art Master"
-      ),
+    selectRows(client, "rr_cutting_lots_v3", {
+      order: "created_at",
+      ascending: false
+    }),
 
-      cmWithTimeout(
-        loadPrintSource(client),
-        15000,
-        "Print Master"
-      ),
+    selectRows(client, "rr_cutting_breakup_v3", {
+      order: "created_at",
+      ascending: false
+    })
+  ]);
 
-      cmWithTimeout(
-        selectRows(
-          client,
-          "rr_cb_art_assignments",
-          {
-            order:
-              "updated_at",
+  galleryRows = loadedGalleryRows || [];
+  purchaseRows = requiredData(purchaseResult, "Purchase rows");
+  colourRows = requiredData(colourResult, "Colour rows");
+  artRows = requiredData(artResult, "Art Master");
+  printRows = loadedPrintRows || [];
+  assignmentRows = requiredData(assignmentResult, "Art assignments");
+  printAssignmentRows = requiredData(
+    printAssignmentResult,
+    "Print assignments"
+  );
+  mediaRows = loadedMediaRows || [];
+  lotRows = requiredData(lotResult, "Cutting lots");
+  breakupRows = requiredData(breakupResult, "Cutting breakup");
 
-            ascending:
-              false
-          }
-        ),
-        15000,
-        "Art assignments"
-      ),
+  await loadCostSettings(client);
 
-      cmWithTimeout(
-        selectRows(
-          client,
-          "rr_cb_print_assignments",
-          {
-            order:
-              "sequence_no",
+  renderGallery();
 
-            ascending:
-              true
-          }
-        ),
-        15000,
-        "Print assignments"
-      ),
-
-      cmWithTimeout(
-        mediaPromise,
-        15000,
-        "Media"
-      ),
-
-      cmWithTimeout(
-        selectRows(
-          client,
-          "rr_cutting_lots_v3",
-          {
-            order:
-              "created_at",
-
-            ascending:
-              false
-          }
-        ),
-        15000,
-        "Cutting lots"
-      ),
-
-      cmWithTimeout(
-        selectRows(
-          client,
-          "rr_cutting_breakup_v3",
-          {
-            order:
-              "created_at",
-
-            ascending:
-              false
-          }
-        ),
-        15000,
-        "Cutting breakup"
-      )
-    ]);
-
-    galleryRows =
-      Array.isArray(
-        loadedGalleryRows
-      )
-        ? loadedGalleryRows
-        : [];
-
-    purchaseRows =
-      cmRequiredRows(
-        purchaseResult,
-        "Purchase rows"
-      );
-
-    colourRows =
-      cmRequiredRows(
-        colourResult,
-        "Colour rows"
-      );
-
-    artRows =
-      cmRequiredRows(
-        artResult,
-        "Art Master"
-      );
-
-    printRows =
-      Array.isArray(
-        loadedPrintRows
-      )
-        ? loadedPrintRows
-        : [];
-
-    assignmentRows =
-      cmRequiredRows(
-        assignmentResult,
-        "Art assignments"
-      );
-
-    printAssignmentRows =
-      cmRequiredRows(
-        printAssignmentResult,
-        "Print assignments"
-      );
-
-    mediaRows =
-      Array.isArray(
-        loadedMediaRows
-      )
-        ? loadedMediaRows
-        : (
-            loadedMediaRows
-              ?.data || []
-          );
-
-    lotRows =
-      cmRequiredRows(
-        lotResult,
-        "Cutting lots"
-      );
-
-    breakupRows =
-      cmRequiredRows(
-        breakupResult,
-        "Cutting breakup"
-      );
-
-    /*
-      PART 4A अभी पुराने lots / breakup
-      array names को भी support करता है।
-
-      इसलिए दोनों state arrays को sync
-      रखा जा रहा है।
-    */
-    if (
-      typeof lots !==
-        "undefined" &&
-      Array.isArray(lots)
-    ) {
-      lots.splice(
-        0,
-        lots.length,
-        ...lotRows
-      );
-    }
-
-    if (
-      typeof breakup !==
-        "undefined" &&
-      Array.isArray(breakup)
-    ) {
-      breakup.splice(
-        0,
-        breakup.length,
-        ...breakupRows
-      );
-    }
-
-    await loadCostSettings(
-      client
-    );
-
-    if (
-      typeof renderGallery ===
-      "function"
-    ) {
-      renderGallery();
-    } else {
-      throw new Error(
-        "renderGallery function unavailable."
-      );
-    }
-
-    if (announce) {
-      say(
-        `${galleryRows.length} Product Master cutting cards loaded.`,
-        "success"
-      );
-    }
-
-    console.info(
-      "REDZED Cutting Master PM loaded",
-      {
-        galleryRows:
-          galleryRows.length,
-
-        purchaseRows:
-          purchaseRows.length,
-
-        colourRows:
-          colourRows.length,
-
-        artRows:
-          artRows.length,
-
-        printRows:
-          printRows.length,
-
-        assignmentRows:
-          assignmentRows.length,
-
-        printAssignmentRows:
-          printAssignmentRows.length,
-
-        mediaRows:
-          mediaRows.length,
-
-        lotRows:
-          lotRows.length,
-
-        breakupRows:
-          breakupRows.length
-      }
-    );
-
-    return {
-      galleryRows,
-      purchaseRows,
-      colourRows,
-      artRows,
-      printRows,
-      assignmentRows,
-      printAssignmentRows,
-      mediaRows,
-      lotRows,
-      breakupRows
-    };
-  } finally {
-    if (galleryRoot) {
-      galleryRoot.setAttribute(
-        "aria-busy",
-        "false"
-      );
-    }
-  }
+  console.info("REDZED Cutting Master PM Core loaded", {
+    galleryRows: galleryRows.length,
+    purchaseRows: purchaseRows.length,
+    colourRows: colourRows.length,
+    artRows: artRows.length,
+    printRows: printRows.length,
+    assignmentRows: assignmentRows.length,
+    printAssignmentRows: printAssignmentRows.length,
+    mediaRows: mediaRows.length,
+    lotRows: lotRows.length,
+    breakupRows: breakupRows.length
+  });
 }
 
 function cmInjectPart4Styles() {
