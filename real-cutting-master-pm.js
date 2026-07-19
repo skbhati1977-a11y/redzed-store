@@ -987,6 +987,8 @@ function renderStats(cards) {
  // ===== REDZED CUTTING MASTER PM CORE PART 3 START =====
 
 let comboDevRows = [];
+let currentLotMode = "single";
+let matrixQtyMemory = new Map();
 
 const SIZE_COMBO_OPTIONS = [
   "M",
@@ -994,21 +996,26 @@ const SIZE_COMBO_OPTIONS = [
   "XL",
   "2XL",
   "M.L.XL",
+  "L.XL.XXL",
   "M.L.XL.XXL",
   "2XL.3XL.4XL",
   "3XL.4XL.5XL"
 ];
 
-const SIZE_FACTOR_MAP = {
-  "M": -5,
-  "L": -5,
-  "XL": -5,
-  "2XL": 5,
-  "M.L.XL": -5,
-  "M.L.XL.XXL": 0,
-  "2XL.3XL.4XL": 5,
-  "3XL.4XL.5XL": 5
-};
+const DEFAULT_SIZE_COMBO = "L.XL.XXL";
+
+const SMALL_SIZE_COMBOS = new Set([
+  "M",
+  "L",
+  "XL",
+  "M.L.XL"
+]);
+
+const BIG_SIZE_COMBOS = new Set([
+  "2XL",
+  "2XL.3XL.4XL",
+  "3XL.4XL.5XL"
+]);
 
 function renderGallery() {
   if (!gallery) return;
@@ -1214,7 +1221,7 @@ function sizesForCard(card) {
     if (sizes.length) return sizes;
   }
 
-  return ["M", "L", "XL"];
+  return sizesFromText(DEFAULT_SIZE_COMBO);
 }
 
 function nextLotNumber() {
@@ -1258,9 +1265,10 @@ function openLotByDivision(divisionId) {
   }
 
   activeCard = card;
+  currentLotMode = "single";
+  matrixQtyMemory = new Map();
 
   const sizes = sizesForCard(card);
-  const defaultCombo = sizes.join(".");
 
   setInputValue("lotUnitId", card.division.division_id);
   setInputValue("lotNo", nextLotNumber());
@@ -1296,8 +1304,15 @@ function openLotByDivision(divisionId) {
   }
 
   ensureComboUi();
-  setComboDefaults(defaultCombo);
-  buildComboDevRows();
+  hideLegacyOwnerCosting();
+  setLotMode("single");
+  setComboDefaults();
+
+  buildComboDevRows({
+    keepManual: false,
+    autoDistribute: true,
+    resetMatrix: true
+  });
 
   renderCuttingMatrix();
   updateWeightSettlement();
@@ -1324,163 +1339,319 @@ function ensureComboUi() {
   panel.className = "cm-form-card";
 
   panel.innerHTML = `
-    <h3>Combo / Dev Setup</h3>
-
-    <div class="cm-grid-3">
-      <label>
-        <span>Size Combo</span>
-        <select id="cmSizeComboMode">
-          <option value="single">Single Size Combo</option>
-          <option value="multi">Multi Size Combo</option>
-          <option value="custom">Custom Combo</option>
-        </select>
-      </label>
-
-      <label>
-        <span>Sleeve Combo</span>
-        <select id="cmSleeveComboMode">
-          <option value="half">Half Sleeve</option>
-          <option value="full">Full Sleeve</option>
-          <option value="half_full">Half + Full</option>
-        </select>
-      </label>
-
-      <label>
-        <span>Border Combo</span>
-        <select id="cmBorderComboMode">
-          <option value="without">Without Border</option>
-          <option value="with">With Border</option>
-          <option value="with_without">With + Without</option>
-        </select>
-      </label>
-    </div>
-
-    <div class="cm-grid-2">
-      <label>
-        <span>Primary Size Combo</span>
-        <select id="cmPrimarySizeCombo"></select>
-      </label>
-
-      <label>
-        <span>Secondary Size Combo</span>
-        <select id="cmSecondarySizeCombo"></select>
-      </label>
-    </div>
-
-    <label>
-      <span>Custom Combo Text</span>
-      <input
-        id="cmCustomComboText"
-        placeholder="Example: M.L.XL + 2XL.3XL.4XL"
-      >
-    </label>
-
-    <div class="cm-grid-3">
-      <label>
-        <span>Total Cutting Pcs</span>
-        <input
-          id="cmTotalCuttingPcs"
-          type="number"
-          min="0"
-          step="1"
-          placeholder="0"
-        >
-      </label>
-
-      <label>
-        <span>Art Avg Cost</span>
-        <input
-          id="cmArtAvgCost"
-          type="number"
-          min="0"
-          step="0.01"
-          placeholder="From Art Master"
-        >
-      </label>
-
-      <label>
-        <span>Matching Cloth Avg Cost</span>
-        <input
-          id="cmMatchingAvgCost"
-          type="number"
-          min="0"
-          step="0.01"
-          placeholder="₹ / kg or meter"
-        >
-      </label>
-    </div>
+    <h3>Cutting Lot Decision</h3>
 
     <div class="cm-actions">
       <button
-        id="cmBuildDevRows"
+        id="cmLotTypeSingle"
         type="button"
-        class="cm-secondary"
+        class="cm-secondary is-active"
       >
-        Build Dev Rows
+        Single Lot
       </button>
 
       <button
-        id="cmEqualDevPcs"
+        id="cmLotTypeMulti"
         type="button"
         class="cm-secondary"
       >
-        Equal Pcs
+        Multi Lot
       </button>
     </div>
 
-    <div id="cmDevRows"></div>
+    <section id="cmSinglePanel">
+      <h3>Single Lot Setup</h3>
+
+      <div class="cm-grid-3">
+        <label>
+          <span>Size Combo</span>
+          <select id="cmSingleSizeCombo"></select>
+        </label>
+
+        <label>
+          <span>Sleeve</span>
+          <select id="cmSingleSleeve">
+            <option value="Half">Half Sleeve</option>
+            <option value="Full">Full Sleeve</option>
+          </select>
+        </label>
+
+        <label>
+          <span>Border</span>
+          <select id="cmSingleBorder">
+            <option value="Without Border">Without Border</option>
+            <option value="With Border">With Border</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="cm-grid-3">
+        <label>
+          <span>Matching Cloth Qty</span>
+          <input
+            id="cmSingleMatchingQty"
+            type="number"
+            min="0"
+            step="0.001"
+            placeholder="0"
+          >
+        </label>
+
+        <label>
+          <span>Matching Cloth Avg Cost</span>
+          <input
+            id="cmSingleMatchingAvgCost"
+            type="number"
+            min="0"
+            step="0.01"
+            placeholder="₹ / kg or meter"
+          >
+        </label>
+
+        <label>
+          <span>Cutting Pcs</span>
+          <input
+            id="cmSingleCuttingPcs"
+            type="number"
+            min="0"
+            step="1"
+            placeholder="0"
+          >
+        </label>
+      </div>
+    </section>
+
+    <section id="cmMultiPanel" class="cm-hidden">
+      <h3>Multi Dev / Sub-dev Setup</h3>
+
+      <div class="cm-grid-3">
+        <label>
+          <span>Dev Count</span>
+          <select id="cmDevCount">
+            <option value="2">2 Dev</option>
+            <option value="3">3 Dev</option>
+            <option value="4">4 Dev</option>
+            <option value="custom">Custom</option>
+          </select>
+        </label>
+
+        <label>
+          <span>Custom Dev Count</span>
+          <input
+            id="cmCustomDevCount"
+            type="number"
+            min="2"
+            step="1"
+            placeholder="2"
+          >
+        </label>
+
+        <label>
+          <span>Total Parent Cutting Pcs</span>
+          <input
+            id="cmParentCuttingPcs"
+            type="number"
+            min="0"
+            step="1"
+            placeholder="0"
+          >
+        </label>
+      </div>
+
+      <div class="cm-actions">
+        <button
+          id="cmBuildDevRows"
+          type="button"
+          class="cm-secondary"
+        >
+          Build Dev Cards
+        </button>
+
+        <button
+          id="cmEqualDevPcs"
+          type="button"
+          class="cm-secondary"
+        >
+          Equal Dev Pcs
+        </button>
+      </div>
+
+      <div id="cmDevRows"></div>
+    </section>
   `;
 
   firstCard.insertAdjacentElement("afterend", panel);
 
-  fillSizeComboOptions("cmPrimarySizeCombo");
-  fillSizeComboOptions("cmSecondarySizeCombo");
+  fillSizeComboOptions("cmSingleSizeCombo");
 
-  $("cmBuildDevRows")?.addEventListener("click", () => {
-    buildComboDevRows();
-    renderCuttingMatrix();
-    updateCostPreview();
+  $("cmLotTypeSingle")?.addEventListener("click", () => {
+    setLotMode("single");
   });
 
-  $("cmEqualDevPcs")?.addEventListener("click", () => {
-    equalDevPcs();
+  $("cmLotTypeMulti")?.addEventListener("click", () => {
+    setLotMode("multi");
+  });
+
+  [
+    "cmSingleSizeCombo",
+    "cmSingleSleeve",
+    "cmSingleBorder"
+  ].forEach(id => {
+    $(id)?.addEventListener("change", () => {
+      matrixQtyMemory = new Map();
+
+      buildComboDevRows({
+        keepManual: false,
+        autoDistribute: true,
+        resetMatrix: true
+      });
+
+      renderCuttingMatrix();
+      updateCostPreview();
+    });
+  });
+
+  [
+    "cmSingleMatchingQty",
+    "cmSingleMatchingAvgCost"
+  ].forEach(id => {
+    $(id)?.addEventListener("input", () => {
+      buildComboDevRows({
+        keepManual: true,
+        autoDistribute: false,
+        resetMatrix: false
+      });
+
+      updateCostPreview();
+    });
+  });
+
+  $("cmSingleCuttingPcs")?.addEventListener("input", () => {
+    matrixQtyMemory = new Map();
+
+    buildComboDevRows({
+      keepManual: true,
+      autoDistribute: true,
+      resetMatrix: true
+    });
+
+    renderCuttingMatrix();
     updatePieceTotals();
     updateCostPreview();
   });
 
   [
-    "cmSizeComboMode",
-    "cmSleeveComboMode",
-    "cmBorderComboMode",
-    "cmPrimarySizeCombo",
-    "cmSecondarySizeCombo",
-    "cmCustomComboText",
-    "cmTotalCuttingPcs",
-    "cmArtAvgCost",
-    "cmMatchingAvgCost"
+    "cmDevCount",
+    "cmCustomDevCount"
   ].forEach(id => {
-    $(id)?.addEventListener("input", () => {
-      if (
-        id === "cmSizeComboMode" ||
-        id === "cmSleeveComboMode" ||
-        id === "cmBorderComboMode" ||
-        id === "cmPrimarySizeCombo" ||
-        id === "cmSecondarySizeCombo" ||
-        id === "cmCustomComboText"
-      ) {
-        buildComboDevRows();
-        renderCuttingMatrix();
-      }
+    $(id)?.addEventListener("change", () => {
+      matrixQtyMemory = new Map();
 
+      buildComboDevRows({
+        keepManual: true,
+        autoDistribute: true,
+        resetMatrix: true
+      });
+
+      renderCuttingMatrix();
       updateCostPreview();
     });
 
-    $(id)?.addEventListener("change", () => {
-      buildComboDevRows();
+    $(id)?.addEventListener("input", () => {
+      matrixQtyMemory = new Map();
+
+      buildComboDevRows({
+        keepManual: true,
+        autoDistribute: true,
+        resetMatrix: true
+      });
+
       renderCuttingMatrix();
       updateCostPreview();
     });
   });
+
+  $("cmParentCuttingPcs")?.addEventListener("input", () => {
+    matrixQtyMemory = new Map();
+
+    distributeDevPcs();
+    renderDevRows();
+    renderCuttingMatrix();
+    updatePieceTotals();
+    updateCostPreview();
+  });
+
+  $("cmBuildDevRows")?.addEventListener("click", () => {
+    matrixQtyMemory = new Map();
+
+    buildComboDevRows({
+      keepManual: true,
+      autoDistribute: true,
+      resetMatrix: true
+    });
+
+    renderCuttingMatrix();
+    updateCostPreview();
+  });
+
+  $("cmEqualDevPcs")?.addEventListener("click", () => {
+    matrixQtyMemory = new Map();
+
+    distributeDevPcs();
+    renderDevRows();
+    renderCuttingMatrix();
+    updatePieceTotals();
+    updateCostPreview();
+  });
+}
+
+function hideLegacyOwnerCosting() {
+  const base = $("baseCost");
+
+  const card =
+    base?.closest(".cm-form-card") ||
+    base?.closest("section") ||
+    null;
+
+  if (card && card.id !== "cmComboPanel") {
+    card.style.display = "none";
+  }
+}
+
+function setLotMode(mode) {
+  currentLotMode = mode === "multi" ? "multi" : "single";
+
+  $("cmLotTypeSingle")?.classList.toggle(
+    "is-active",
+    currentLotMode === "single"
+  );
+
+  $("cmLotTypeMulti")?.classList.toggle(
+    "is-active",
+    currentLotMode === "multi"
+  );
+
+  $("cmSinglePanel")?.classList.toggle(
+    "cm-hidden",
+    currentLotMode !== "single"
+  );
+
+  $("cmMultiPanel")?.classList.toggle(
+    "cm-hidden",
+    currentLotMode !== "multi"
+  );
+
+  matrixQtyMemory = new Map();
+
+  buildComboDevRows({
+    keepManual: false,
+    autoDistribute: true,
+    resetMatrix: true
+  });
+
+  renderCuttingMatrix();
+  updatePieceTotals();
+  updateCostPreview();
 }
 
 function fillSizeComboOptions(id) {
@@ -1501,133 +1672,187 @@ function fillSizeComboOptions(id) {
     .join("");
 }
 
-function setComboDefaults(defaultCombo) {
-  const normalized = String(defaultCombo || "")
-    .replace(/,/g, ".")
-    .toUpperCase();
+function fillSizeComboSelect(select, value) {
+  if (!select) return;
 
-  const primary = $("cmPrimarySizeCombo");
+  select.innerHTML = SIZE_COMBO_OPTIONS
+    .map(
+      option => `
+        <option
+          value="${safe(option)}"
+          ${option === value ? "selected" : ""}
+        >
+          ${safe(option)}
+        </option>
+      `
+    )
+    .join("");
+}
 
-  if (primary) {
-    if (
-      SIZE_COMBO_OPTIONS.includes(normalized)
-    ) {
-      primary.value = normalized;
-    } else {
-      primary.value = "M.L.XL";
-    }
+function setComboDefaults() {
+  const singleSize = $("cmSingleSizeCombo");
+
+  if (singleSize) {
+    singleSize.value = DEFAULT_SIZE_COMBO;
   }
 
-  const secondary = $("cmSecondarySizeCombo");
-
-  if (secondary) {
-    secondary.value = "2XL.3XL.4XL";
+  if ($("cmSingleSleeve")) {
+    $("cmSingleSleeve").value = "Half";
   }
 
-  const artCost = $("cmArtAvgCost");
-
-  if (artCost && !artCost.value) {
-    artCost.value = String(readArtAverageCost() || 0);
+  if ($("cmSingleBorder")) {
+    $("cmSingleBorder").value = "Without Border";
   }
+
+  setInputValue("cmSingleMatchingQty", "");
+  setInputValue("cmSingleMatchingAvgCost", "");
+  setInputValue("cmSingleCuttingPcs", "");
+
+  if ($("cmDevCount")) {
+    $("cmDevCount").value = "2";
+  }
+
+  setInputValue("cmCustomDevCount", "");
+  setInputValue("cmParentCuttingPcs", "");
 }
 
 function readArtAverageCost() {
-  const art = activeCard
-    ? cardDecision(activeCard).art
-    : null;
+  const decision = activeCard
+    ? cardDecision(activeCard)
+    : {};
+
+  const art = decision.art || {};
+  const assignment = activeCard?.assignment || {};
 
   return Number(
-    art?.avg_cost ??
-    art?.average_cost ??
-    art?.calculated_avg_cost ??
-    art?.cost_avg ??
-    art?.base_cost ??
+    art.avg_cost ??
+    art.average_cost ??
+    art.calculated_avg_cost ??
+    art.cost_avg ??
+    art.base_cost ??
+    art.final_cost ??
+    art.cost ??
+    art.rate ??
+    assignment.avg_cost ??
+    assignment.average_cost ??
+    assignment.base_cost ??
+    assignment.cost ??
     0
   );
 }
 
-function selectedSizeCombos() {
-  const mode = selectValue("cmSizeComboMode");
+function devCount() {
+  const mode = selectValue("cmDevCount");
 
   if (mode === "custom") {
-    const text = readText("cmCustomComboText");
-
-    return text
-      .split("+")
-      .map(item =>
-        item.trim().replace(/,/g, ".").toUpperCase()
-      )
-      .filter(Boolean);
+    return Math.max(
+      2,
+      Math.floor(numberValue("cmCustomDevCount") || 2)
+    );
   }
 
-  if (mode === "multi") {
-    return [
-      selectValue("cmPrimarySizeCombo"),
-      selectValue("cmSecondarySizeCombo")
-    ].filter(Boolean);
-  }
+  return Math.max(
+    2,
+    Math.floor(Number(mode || 2))
+  );
+}
 
-  return [
-    selectValue("cmPrimarySizeCombo") || "M.L.XL"
+function defaultDevSizeCombo(index) {
+  const defaults = [
+    "M.L.XL",
+    "2XL.3XL.4XL",
+    "L.XL.XXL",
+    "M.L.XL.XXL"
   ];
+
+  return defaults[index] || DEFAULT_SIZE_COMBO;
 }
 
-function selectedSleeves() {
-  const mode = selectValue("cmSleeveComboMode");
-
-  if (mode === "half_full") {
-    return ["Half", "Full"];
-  }
-
-  if (mode === "full") {
-    return ["Full"];
-  }
-
-  return ["Half"];
+function devKey(row) {
+  return [
+    row.dev_no,
+    row.size_combo,
+    row.sleeve,
+    row.border
+  ].join("|");
 }
 
-function selectedBorders() {
-  const mode = selectValue("cmBorderComboMode");
+function singleRowFromInputs(old = {}) {
+  const sizeCombo =
+    selectValue("cmSingleSizeCombo") ||
+    DEFAULT_SIZE_COMBO;
 
-  if (mode === "with_without") {
-    return ["With Border", "Without Border"];
-  }
-
-  if (mode === "with") {
-    return ["With Border"];
-  }
-
-  return ["Without Border"];
+  return {
+    ...old,
+    lot_mode: "single",
+    dev_no: "SINGLE",
+    size_combo: sizeCombo,
+    sizes: sizesFromText(sizeCombo),
+    sleeve: selectValue("cmSingleSleeve") || "Half",
+    border: selectValue("cmSingleBorder") || "Without Border",
+    cutting_pcs: Math.max(
+      0,
+      Math.floor(numberValue("cmSingleCuttingPcs"))
+    ),
+    matching_consumption: numberValue("cmSingleMatchingQty"),
+    matching_avg_cost: numberValue("cmSingleMatchingAvgCost"),
+    custom_adjustment: Number(old.custom_adjustment || 0)
+  };
 }
 
-function buildComboDevRows() {
-  const sizeCombos = selectedSizeCombos();
-  const sleeves = selectedSleeves();
-  const borders = selectedBorders();
+function buildComboDevRows(options = {}) {
+  const existing = new Map(
+    comboDevRows.map(row => [
+      row.dev_no,
+      row
+    ])
+  );
 
-  let serial = 0;
+  if (currentLotMode === "single") {
+    comboDevRows = [
+      singleRowFromInputs(
+        options.keepManual
+          ? existing.get("SINGLE") || {}
+          : {}
+      )
+    ];
 
-  comboDevRows = [];
+    return;
+  }
 
-  sizeCombos.forEach(sizeCombo => {
-    sleeves.forEach(sleeve => {
-      borders.forEach(border => {
-        serial += 1;
+  const count = devCount();
+  const rows = [];
 
-        comboDevRows.push({
-          dev_no: `D${serial}`,
-          size_combo: sizeCombo,
-          sizes: sizesFromText(sizeCombo),
-          sleeve,
-          border,
-          cutting_pcs: 0,
-          matching_consumption: 0,
-          matching_avg_cost: numberValue("cmMatchingAvgCost"),
-          custom_adjustment: 0
-        });
-      });
+  for (let index = 0; index < count; index += 1) {
+    const devNo = `D${index + 1}`;
+    const old = options.keepManual
+      ? existing.get(devNo) || {}
+      : {};
+
+    const sizeCombo =
+      old.size_combo ||
+      defaultDevSizeCombo(index);
+
+    rows.push({
+      ...old,
+      lot_mode: "multi",
+      dev_no: devNo,
+      size_combo: sizeCombo,
+      sizes: sizesFromText(sizeCombo),
+      sleeve: old.sleeve || "Half",
+      border: old.border || "Without Border",
+      cutting_pcs: Number(old.cutting_pcs || 0),
+      matching_consumption: Number(old.matching_consumption || 0),
+      matching_avg_cost: Number(old.matching_avg_cost || 0),
+      custom_adjustment: Number(old.custom_adjustment || 0)
     });
-  });
+  }
+
+  comboDevRows = rows;
+
+  if (options.autoDistribute) {
+    distributeDevPcs();
+  }
 
   renderDevRows();
 }
@@ -1639,107 +1864,191 @@ function renderDevRows() {
     return;
   }
 
+  if (currentLotMode !== "multi") {
+    holder.innerHTML = "";
+    return;
+  }
+
   if (!comboDevRows.length) {
     holder.innerHTML = `
       <div class="cm-empty">
-        <p>No Dev rows. Build combo first.</p>
+        <p>No Dev cards. Select Dev Count.</p>
       </div>
     `;
     return;
   }
 
-  holder.innerHTML = `
-    <div class="cm-dev-table">
-      ${comboDevRows
-        .map((row, index) => `
-          <article class="cm-matrix-card" data-dev-index="${index}">
-            <div class="cm-matrix-head">
-              <strong>${safe(row.dev_no)}</strong>
-              <span>
-                ${safe(row.size_combo)} ·
-                ${safe(row.sleeve)} ·
-                ${safe(row.border)}
-              </span>
-            </div>
+  holder.innerHTML = comboDevRows
+    .map((row, index) => `
+      <article class="cm-matrix-card" data-dev-card="${index}">
+        <div class="cm-matrix-head">
+          <strong>${safe(row.dev_no)}</strong>
+          <span>
+            ${safe(row.size_combo)} ·
+            ${safe(row.sleeve)} ·
+            ${safe(row.border)}
+          </span>
+        </div>
 
-            <div class="cm-grid-3">
-              <label>
-                <span>Cutting Pcs</span>
-                <input
-                  class="cm-dev-pcs"
-                  type="number"
-                  min="0"
-                  step="1"
-                  value="${Number(row.cutting_pcs || 0)}"
-                  data-dev-index="${index}"
-                >
-              </label>
+        <div class="cm-grid-3">
+          <label>
+            <span>Size Combo</span>
+            <select
+              class="cm-dev-size"
+              data-dev-index="${index}"
+            ></select>
+          </label>
 
-              <label>
-                <span>Matching Consumption</span>
-                <input
-                  class="cm-dev-match-cons"
-                  type="number"
-                  min="0"
-                  step="0.001"
-                  value="${Number(row.matching_consumption || 0)}"
-                  data-dev-index="${index}"
-                >
-              </label>
+          <label>
+            <span>Sleeve</span>
+            <select
+              class="cm-dev-sleeve"
+              data-dev-index="${index}"
+            >
+              <option value="Half">Half Sleeve</option>
+              <option value="Full">Full Sleeve</option>
+            </select>
+          </label>
 
-              <label>
-                <span>Matching Avg Cost</span>
-                <input
-                  class="cm-dev-match-cost"
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value="${Number(row.matching_avg_cost || 0)}"
-                  data-dev-index="${index}"
-                >
-              </label>
-            </div>
+                    <label>
+            <span>Border</span>
+            <select
+              class="cm-dev-border"
+              data-dev-index="${index}"
+            >
+              <option value="Without Border">Without Border</option>
+              <option value="With Border">With Border</option>
+            </select>
+          </label>
+        </div>
 
-            <div class="cm-grid-2">
-              <label>
-                <span>Custom Adjustment / Pc</span>
-                <input
-                  class="cm-dev-custom"
-                  type="number"
-                  step="0.01"
-                  value="${Number(row.custom_adjustment || 0)}"
-                  data-dev-index="${index}"
-                >
-              </label>
+        <div class="cm-grid-3">
+          <label>
+            <span>Matching Cloth Qty</span>
+            <input
+              class="cm-dev-match-cons"
+              type="number"
+              min="0"
+              step="0.001"
+              value="${Number(row.matching_consumption || 0)}"
+              data-dev-index="${index}"
+            >
+          </label>
 
-              <label>
-                <span>Dev Cost Preview</span>
-                <input
-                  class="cm-dev-cost-preview"
-                  type="text"
-                  readonly
-                  value="${safe(devCostText(row))}"
-                >
-              </label>
-            </div>
-          </article>
-        `)
-        .join("")}
-    </div>
-  `;
+          <label>
+            <span>Matching Cloth Avg Cost</span>
+            <input
+              class="cm-dev-match-cost"
+              type="number"
+              min="0"
+              step="0.01"
+              value="${Number(row.matching_avg_cost || 0)}"
+              data-dev-index="${index}"
+            >
+          </label>
+
+          <label>
+            <span>Cutting Pcs</span>
+            <input
+              class="cm-dev-pcs"
+              type="number"
+              min="0"
+              step="1"
+              value="${Number(row.cutting_pcs || 0)}"
+              data-dev-index="${index}"
+            >
+          </label>
+        </div>
+
+        <div class="cm-grid-2">
+          <label>
+            <span>Custom Adjustment / Pc</span>
+            <input
+              class="cm-dev-custom"
+              type="number"
+              step="0.01"
+              value="${Number(row.custom_adjustment || 0)}"
+              data-dev-index="${index}"
+            >
+          </label>
+
+          <label>
+            <span>Dev Cost Preview</span>
+            <input
+              class="cm-dev-cost-preview"
+              type="text"
+              readonly
+              value="${safe(devCostText(row))}"
+            >
+          </label>
+        </div>
+      </article>
+    `)
+    .join("");
+
+  holder
+    .querySelectorAll(".cm-dev-size")
+    .forEach(select => {
+      const index = Number(select.dataset.devIndex);
+
+      fillSizeComboSelect(
+        select,
+        comboDevRows[index]?.size_combo || DEFAULT_SIZE_COMBO
+      );
+
+      select.addEventListener("change", () => {
+        updateDevRowFromInput(select, {
+          resetMatrix: true
+        });
+      });
+    });
+
+  holder
+    .querySelectorAll(".cm-dev-sleeve")
+    .forEach(select => {
+      const index = Number(select.dataset.devIndex);
+      select.value = comboDevRows[index]?.sleeve || "Half";
+
+      select.addEventListener("change", () => {
+        updateDevRowFromInput(select, {
+          resetMatrix: true
+        });
+      });
+    });
+
+  holder
+    .querySelectorAll(".cm-dev-border")
+    .forEach(select => {
+      const index = Number(select.dataset.devIndex);
+      select.value = comboDevRows[index]?.border || "Without Border";
+
+      select.addEventListener("change", () => {
+        updateDevRowFromInput(select, {
+          resetMatrix: true
+        });
+      });
+    });
 
   holder
     .querySelectorAll("[data-dev-index]")
     .forEach(input => {
+      if (
+        input.classList.contains("cm-dev-size") ||
+        input.classList.contains("cm-dev-sleeve") ||
+        input.classList.contains("cm-dev-border")
+      ) {
+        return;
+      }
+
       input.addEventListener("input", () => {
         updateDevRowFromInput(input);
-        updatePieceTotals();
-        updateCostPreview();
       });
     });
+
+  updatePieceTotals();
 }
 
-function updateDevRowFromInput(input) {
+function updateDevRowFromInput(input, options = {}) {
   const index = Number(input.dataset.devIndex);
   const row = comboDevRows[index];
 
@@ -1747,11 +2056,17 @@ function updateDevRowFromInput(input) {
     return;
   }
 
-  if (input.classList.contains("cm-dev-pcs")) {
-    row.cutting_pcs = Math.max(
-      0,
-      Math.floor(Number(input.value || 0))
-    );
+  if (input.classList.contains("cm-dev-size")) {
+    row.size_combo = input.value || DEFAULT_SIZE_COMBO;
+    row.sizes = sizesFromText(row.size_combo);
+  }
+
+  if (input.classList.contains("cm-dev-sleeve")) {
+    row.sleeve = input.value || "Half";
+  }
+
+  if (input.classList.contains("cm-dev-border")) {
+    row.border = input.value || "Without Border";
   }
 
   if (input.classList.contains("cm-dev-match-cons")) {
@@ -1762,22 +2077,44 @@ function updateDevRowFromInput(input) {
     row.matching_avg_cost = Number(input.value || 0);
   }
 
+  if (input.classList.contains("cm-dev-pcs")) {
+    row.cutting_pcs = Math.max(
+      0,
+      Math.floor(Number(input.value || 0))
+    );
+
+    clearMatrixMemoryForDev(row.dev_no);
+  }
+
   if (input.classList.contains("cm-dev-custom")) {
     row.custom_adjustment = Number(input.value || 0);
   }
 
-  const card = input.closest("[data-dev-index]");
-  const preview = card?.querySelector(".cm-dev-cost-preview");
+  if (options.resetMatrix) {
+    clearMatrixMemoryForDev(row.dev_no);
+    renderDevRows();
+    renderCuttingMatrix();
+  } else {
+    const card = input.closest("[data-dev-card]");
+    const preview = card?.querySelector(".cm-dev-cost-preview");
 
-  if (preview) {
-    preview.value = devCostText(row);
+    if (preview) {
+      preview.value = devCostText(row);
+    }
   }
+
+  updatePieceTotals();
+  updateCostPreview();
 }
 
-function equalDevPcs() {
+function distributeDevPcs() {
+  if (currentLotMode !== "multi") {
+    return;
+  }
+
   const total = Math.max(
     0,
-    Math.floor(numberValue("cmTotalCuttingPcs"))
+    Math.floor(numberValue("cmParentCuttingPcs"))
   );
 
   if (!comboDevRows.length || total <= 0) {
@@ -1785,27 +2122,39 @@ function equalDevPcs() {
   }
 
   const base = Math.floor(total / comboDevRows.length);
-  let used = 0;
+  const remainder = total - base * comboDevRows.length;
 
   comboDevRows.forEach((row, index) => {
-    const pcs =
-      index === comboDevRows.length - 1
-        ? total - used
-        : base;
-
-    row.cutting_pcs = pcs;
-    used += pcs;
+    row.cutting_pcs =
+      base +
+      (index === comboDevRows.length - 1 ? remainder : 0);
   });
-
-  renderDevRows();
-  renderCuttingMatrix();
 }
 
-function sizeFactorForCombo(sizeCombo) {
-  return Number(
-    SIZE_FACTOR_MAP[String(sizeCombo || "").toUpperCase()] ??
-    0
-  );
+function clearMatrixMemoryForDev(devNo) {
+  [...matrixQtyMemory.keys()].forEach(key => {
+    if (key.startsWith(`${devNo}|`)) {
+      matrixQtyMemory.delete(key);
+    }
+  });
+}
+
+function sizeFactorForCombo(row) {
+  if (row.lot_mode !== "multi") {
+    return 0;
+  }
+
+  const combo = String(row.size_combo || "").toUpperCase();
+
+  if (SMALL_SIZE_COMBOS.has(combo)) {
+    return -5;
+  }
+
+  if (BIG_SIZE_COMBOS.has(combo)) {
+    return 5;
+  }
+
+  return 0;
 }
 
 function sleeveFactorFor(row) {
@@ -1826,11 +2175,11 @@ function matchingCostFor(row) {
 }
 
 function devCost(row) {
-  const base = Number(numberValue("cmArtAvgCost") || readArtAverageCost() || 0);
+  const base = Number(readArtAverageCost() || 0);
 
   const perPiece =
     base +
-    sizeFactorForCombo(row.size_combo) +
+    sizeFactorForCombo(row) +
     sleeveFactorFor(row) +
     borderFactorFor(row) +
     Number(row.custom_adjustment || 0);
@@ -1876,9 +2225,7 @@ function parseSizes() {
     ];
   }
 
-  return sizesFromText(
-    $("sizeSet")?.value || "M,L,XL"
-  );
+  return sizesFromText(DEFAULT_SIZE_COMBO);
 }
 
 function matrixColours() {
@@ -1898,6 +2245,32 @@ function matrixColours() {
   ];
 }
 
+function matrixKey(dev, colour, size) {
+  return [
+    dev.dev_no,
+    colour.id || colour.colour_name || "",
+    size
+  ].join("|");
+}
+
+function autoQtyForCell(dev, colourIndex, sizeIndex, colourCount) {
+  const sizeCount = dev.sizes.length || 1;
+  const totalCells = Math.max(1, colourCount * sizeCount);
+
+  const pcs = Math.max(
+    0,
+    Math.floor(Number(dev.cutting_pcs || 0))
+  );
+
+  const base = Math.floor(pcs / totalCells);
+  const remainder = pcs - base * totalCells;
+
+  const flatIndex = colourIndex * sizeCount + sizeIndex;
+  const lastIndex = totalCells - 1;
+
+  return base + (flatIndex === lastIndex ? remainder : 0);
+}
+
 function renderCuttingMatrix() {
   const holder = $("cuttingMatrix");
 
@@ -1906,7 +2279,10 @@ function renderCuttingMatrix() {
   const colours = matrixColours();
 
   if (!comboDevRows.length) {
-    buildComboDevRows();
+    buildComboDevRows({
+      keepManual: true,
+      autoDistribute: true
+    });
   }
 
   holder.innerHTML = comboDevRows
@@ -1923,7 +2299,7 @@ function renderCuttingMatrix() {
           </div>
 
           ${colours
-            .map(colour => {
+            .map((colour, colourIndex) => {
               const colourName =
                 colour.colour_name ||
                 colour.color_name ||
@@ -1948,8 +2324,19 @@ function renderCuttingMatrix() {
 
                   <div class="cm-size-grid">
                     ${dev.sizes
-                      .map(
-                        size => `
+                      .map((size, sizeIndex) => {
+                        const key = matrixKey(dev, colour, size);
+
+                        const qty = matrixQtyMemory.has(key)
+                          ? matrixQtyMemory.get(key)
+                          : autoQtyForCell(
+                              dev,
+                              colourIndex,
+                              sizeIndex,
+                              colours.length
+                            );
+
+                        return `
                           <label>
                             <span>${safe(size)}</span>
 
@@ -1958,7 +2345,7 @@ function renderCuttingMatrix() {
                               type="number"
                               min="0"
                               step="1"
-                              placeholder="0"
+                              value="${qty || ""}"
                               data-dev-index="${devIndex}"
                               data-dev-no="${safe(dev.dev_no)}"
                               data-size-combo="${safe(dev.size_combo)}"
@@ -1967,10 +2354,11 @@ function renderCuttingMatrix() {
                               data-colour-id="${safe(colour.id || "")}"
                               data-colour-name="${safe(colourName)}"
                               data-size="${safe(size)}"
+                              data-matrix-key="${safe(key)}"
                             >
                           </label>
-                        `
-                      )
+                        `;
+                      })
                       .join("")}
                   </div>
                 </div>
@@ -1983,7 +2371,18 @@ function renderCuttingMatrix() {
     .join("");
 
   matrixInputs().forEach(input => {
-    input.addEventListener("input", updatePieceTotals);
+    input.addEventListener("input", () => {
+      matrixQtyMemory.set(
+        input.dataset.matrixKey,
+        Math.max(
+          0,
+          Math.floor(Number(input.value || 0))
+        )
+      );
+
+      updatePieceTotals();
+      updateCostPreview();
+    });
   });
 
   updatePieceTotals();
@@ -1997,6 +2396,7 @@ function cuttingEntries() {
 
       return {
         dev_no: input.dataset.devNo || dev.dev_no || "",
+        lot_mode: dev.lot_mode || currentLotMode,
         size_combo: input.dataset.sizeCombo || dev.size_combo || "",
         sleeve: input.dataset.sleeve || dev.sleeve || "",
         border: input.dataset.border || dev.border || "",
@@ -2013,17 +2413,10 @@ function cuttingEntries() {
 }
 
 function updatePieceTotals() {
-  const matrixPieces = cuttingEntries().reduce(
+  const pieces = cuttingEntries().reduce(
     (sum, row) => sum + row.quantity,
     0
   );
-
-  const devPieces = comboDevRows.reduce(
-    (sum, row) => sum + Number(row.cutting_pcs || 0),
-    0
-  );
-
-  const pieces = matrixPieces || devPieces;
 
   if ($("totalPieces")) {
     $("totalPieces").textContent = String(pieces);
@@ -2085,7 +2478,7 @@ function costResult() {
         : 0;
 
     return {
-      base: Number(numberValue("cmArtAvgCost") || readArtAverageCost() || 0),
+      base: Number(readArtAverageCost() || 0),
       adjustments: [],
       adjustmentTotal: 0,
       final,
