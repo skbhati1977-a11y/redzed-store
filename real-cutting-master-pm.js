@@ -2607,7 +2607,7 @@ function updateCostPreview() {
 }
 
 // ===== REDZED CUTTING MASTER PM CORE PART 3B END =====
-  // ===== REDZED CUTTING MASTER PM — PART 4 FINAL START =====
+  // ===== REDZED CUTTING MASTER PM — FINAL PART 4A START =====
 
 let cmLastReleasedLotNos = [];
 
@@ -2626,66 +2626,277 @@ function cmDevNo(value) {
     .toUpperCase()
     .replace(/\s+/g, "");
 
-  if (!clean || clean === "SINGLE") {
-    return "D1";
-  }
-
-  return clean;
+  return clean || "D1";
 }
 
 function cmNumber(value, fallback = 0) {
   const number = Number(value);
-  return Number.isFinite(number) ? number : fallback;
+
+  return Number.isFinite(number)
+    ? number
+    : fallback;
 }
 
 function cmMode() {
-  return currentLotMode === "multi" ? "multi" : "single";
+  const mode =
+    typeof currentLotMode !== "undefined"
+      ? cmText(currentLotMode).toLowerCase()
+      : "single";
+
+  return mode === "multi"
+    ? "multi"
+    : "single";
 }
 
-function cmGetDivision() {
-  return activeCard?.division || {};
+function cmReadFirstValue(ids = []) {
+  for (const id of ids) {
+    const element = $(id);
+
+    if (element) {
+      return cmText(element.value);
+    }
+  }
+
+  return "";
 }
 
-function cmGetGroup() {
-  return activeCard?.group || {};
-}
-
-function cmGetDecision() {
-  return cardDecision(activeCard);
-}
-
-function cmGetSingleLotNo() {
+function cmSingleLotNo() {
   return cmLotNo(
-    $("cmSingleLotNo")?.value ||
-    $("lotNo")?.value ||
-    readText("lotNo")
+    cmReadFirstValue([
+      "cmSingleLotNo",
+      "manualLotNo",
+      "lotNo"
+    ])
   );
 }
 
-function cmGetRowLotNo(row, fallbackLotNo = "") {
-  return cmLotNo(
-    row?.lot_no ||
-    row?.lotNo ||
-    row?.manual_lot_no ||
-    fallbackLotNo
+function cmSingleTotalInput() {
+  return cmNumber(
+    cmReadFirstValue([
+      "cmSingleCuttingPcs",
+      "totalCuttingPcs",
+      "cuttingPcs",
+      "plannedPcs"
+    ])
   );
 }
 
-function cmGetRowDevNo(row, mode) {
-  if (mode === "single") {
+function cmElementDevNo(element) {
+  if (!element) {
     return "D1";
   }
 
+  const ownDevNo =
+    element.dataset?.devNo ||
+    element.dataset?.dev ||
+    element.dataset?.divisionNo;
+
+  if (ownDevNo) {
+    return cmDevNo(ownDevNo);
+  }
+
+  const container = element.closest(
+    [
+      "[data-dev-no]",
+      "[data-dev]",
+      ".cm-dev-card"
+    ].join(",")
+  );
+
   return cmDevNo(
-    row?.dev_no ||
-    row?.devNo ||
-    row?.division_no ||
+    container?.dataset?.devNo ||
+    container?.dataset?.dev ||
+    container?.dataset?.divisionNo ||
     "D1"
   );
 }
 
-function cmFindDev(devNo) {
-  const cleanDevNo = cmDevNo(devNo);
+function cuttingEntries() {
+  const inputs = [
+    ...(
+      $("cuttingMatrix")
+        ?.querySelectorAll(".cm-size-qty") ||
+      []
+    )
+  ];
+
+  return inputs
+    .map(input => {
+      const quantity = Math.max(
+        0,
+        Math.floor(
+          cmNumber(input.value)
+        )
+      );
+
+      return {
+        colour_id:
+          input.dataset.colourId ||
+          input.dataset.colorId ||
+          null,
+
+        colour_name:
+          cmText(
+            input.dataset.colourName ||
+            input.dataset.colorName
+          ),
+
+        size_name:
+          cmText(
+            input.dataset.size ||
+            input.dataset.sizeName
+          ),
+
+        quantity,
+
+        dev_no:
+          cmElementDevNo(input),
+
+        lot_no:
+          cmLotNo(
+            input.dataset.lotNo
+          )
+      };
+    })
+    .filter(row => row.quantity > 0);
+}
+
+function cmDevCardElements() {
+  const selectors = [
+    "#cmDevCards .cm-dev-card",
+    "#cmDevCards [data-dev-no]",
+    "#multiDevCards .cm-dev-card",
+    "#multiDevCards [data-dev-no]",
+    ".cm-multi-dev-card",
+    ".cm-dev-card[data-dev-no]"
+  ];
+
+  const found = [];
+
+  document
+    .querySelectorAll(
+      selectors.join(",")
+    )
+    .forEach(element => {
+      if (!found.includes(element)) {
+        found.push(element);
+      }
+    });
+
+  return found;
+}
+
+function cmDevCardLotNo(card) {
+  const input = card?.querySelector(
+    [
+      "[data-dev-lot-no]",
+      ".cm-dev-lot-no",
+      'input[name="dev_lot_no"]',
+      'input[name*="lot_no"]',
+      'input[id*="LotNo"]'
+    ].join(",")
+  );
+
+  return cmLotNo(
+    input?.value ||
+    card?.dataset?.lotNo
+  );
+}
+
+function cmDevCardTotal(card) {
+  const input = card?.querySelector(
+    [
+      "[data-dev-total-pcs]",
+      ".cm-dev-total-pcs",
+      ".cm-dev-pcs",
+      'input[name="dev_total_pcs"]',
+      'input[name*="cutting_pcs"]',
+      'input[id*="CuttingPcs"]'
+    ].join(",")
+  );
+
+  return cmNumber(
+    input?.value ||
+    card?.dataset?.totalPcs
+  );
+}
+
+function cmReadDevCardsFromDom() {
+  return cmDevCardElements()
+    .map((card, index) => {
+      const devNo = cmDevNo(
+        card.dataset?.devNo ||
+        card.dataset?.dev ||
+        card.dataset?.divisionNo ||
+        `D${index + 1}`
+      );
+
+      return {
+        dev_no: devNo,
+        lot_no: cmDevCardLotNo(card),
+        total_cutting_pcs:
+          cmDevCardTotal(card),
+        element: card
+      };
+    });
+}
+
+function cmReadDevCardsFromState() {
+  if (
+    typeof comboDevRows === "undefined" ||
+    !Array.isArray(comboDevRows)
+  ) {
+    return [];
+  }
+
+  return comboDevRows.map(
+    (row, index) => ({
+      dev_no: cmDevNo(
+        row?.dev_no ||
+        row?.devNo ||
+        row?.division_no ||
+        `D${index + 1}`
+      ),
+
+      lot_no: cmLotNo(
+        row?.lot_no ||
+        row?.lotNo ||
+        row?.manual_lot_no
+      ),
+
+      total_cutting_pcs:
+        cmNumber(
+          row?.total_cutting_pcs ??
+          row?.cutting_pcs ??
+          row?.quantity
+        ),
+
+      state: row
+    })
+  );
+}
+
+function cmReadDevCards() {
+  const fromDom =
+    cmReadDevCardsFromDom();
+
+  if (fromDom.length) {
+    return fromDom;
+  }
+
+  return cmReadDevCardsFromState();
+}
+
+function cmFindDevState(devNo) {
+  const cleanDevNo =
+    cmDevNo(devNo);
+
+  if (
+    typeof comboDevRows === "undefined" ||
+    !Array.isArray(comboDevRows)
+  ) {
+    return {};
+  }
 
   return (
     comboDevRows.find(row => {
@@ -2695,129 +2906,209 @@ function cmFindDev(devNo) {
         row?.division_no
       ) === cleanDevNo;
     }) ||
-    comboDevRows[0] ||
     {}
   );
 }
 
-function cmNormaliseEntries() {
-  const mode = cmMode();
-  const singleLotNo = cmGetSingleLotNo();
-  const sourceEntries = cuttingEntries();
+function cmGroupSingleEntries(entries) {
+  const lotNo =
+    cmSingleLotNo();
 
-  return sourceEntries
-    .map(row => {
-      const quantity = cmNumber(
-        row?.quantity ??
-        row?.qty ??
-        row?.cutting_pcs
-      );
+  const matrixTotal = entries.reduce(
+    (sum, row) => {
+      return sum +
+        cmNumber(row.quantity);
+    },
+    0
+  );
 
-      const devNo = cmGetRowDevNo(row, mode);
+  const enteredTotal =
+    cmSingleTotalInput();
 
-      const lotNo =
-        mode === "single"
-          ? singleLotNo
-          : cmGetRowLotNo(row);
+  const totalPieces =
+    enteredTotal > 0
+      ? enteredTotal
+      : matrixTotal;
 
-      return {
+  return [
+    {
+      devNo: "D1",
+      lotNo,
+      lotMode: "single",
+
+      entries: entries.map(row => ({
         ...row,
+        dev_no: "D1",
+        lot_no: lotNo
+      })),
 
-        quantity,
-        lot_mode: mode,
-        lot_no: lotNo,
-        dev_no: devNo,
-
-        colour_id:
-          row?.colour_id ||
-          row?.color_id ||
-          null,
-
-        colour_name:
-          row?.colour_name ||
-          row?.color_name ||
-          "",
-
-        size_name:
-          row?.size_name ||
-          row?.size ||
-          ""
-      };
-    })
-    .filter(row => row.quantity > 0);
+      matrixTotal,
+      totalPieces
+    }
+  ];
 }
 
-function cmGroupEntries(entries) {
-  const groups = new Map();
+function cmGroupMultiEntries(entries) {
+  const devCards =
+    cmReadDevCards();
 
-  entries.forEach(row => {
-    const lotNo = cmLotNo(row.lot_no);
+  if (devCards.length < 2) {
+    throw new Error(
+      "Multi Lot में कम-से-कम 2 Dev required हैं."
+    );
+  }
 
-    if (!groups.has(lotNo)) {
-      groups.set(lotNo, {
-        lotNo,
-        lotMode: row.lot_mode,
-        entries: [],
-        totalPieces: 0
-      });
-    }
+  if (devCards.length > 4) {
+    throw new Error(
+      "Multi Lot में maximum 4 Dev allowed हैं."
+    );
+  }
 
-    const group = groups.get(lotNo);
+  return devCards.map(
+    (devCard, index) => {
+      const devNo =
+        cmDevNo(
+          devCard.dev_no ||
+          `D${index + 1}`
+        );
 
-    group.entries.push(row);
-    group.totalPieces += cmNumber(row.quantity);
-  });
+      const lotNo =
+        cmLotNo(devCard.lot_no);
 
-  return [...groups.values()].map(group => {
-    const devSummary = [
-      ...new Set(
-        group.entries
-          .map(row => cmDevNo(row.dev_no))
-          .filter(Boolean)
-      )
-    ];
+      const devEntries =
+        entries.filter(row => {
+          return cmDevNo(
+            row.dev_no
+          ) === devNo;
+        });
 
-    const devQtySummary = devSummary.map(devNo => {
-      const quantity = group.entries
-        .filter(row => {
-          return cmDevNo(row.dev_no) === devNo;
-        })
-        .reduce((sum, row) => {
-          return sum + cmNumber(row.quantity);
-        }, 0);
+      const matrixTotal =
+        devEntries.reduce(
+          (sum, row) => {
+            return sum +
+              cmNumber(row.quantity);
+          },
+          0
+        );
+
+      const enteredTotal =
+        cmNumber(
+          devCard.total_cutting_pcs
+        );
+
+      const totalPieces =
+        enteredTotal > 0
+          ? enteredTotal
+          : matrixTotal;
 
       return {
-        dev_no: devNo,
-        quantity
+        devNo,
+        lotNo,
+        lotMode: "multi",
+
+        entries:
+          devEntries.map(row => ({
+            ...row,
+            dev_no: devNo,
+            lot_no: lotNo
+          })),
+
+        matrixTotal,
+        totalPieces,
+
+        devState:
+          cmFindDevState(devNo)
       };
+    }
+  );
+}
+
+function cmBuildGroups(entries) {
+  return cmMode() === "multi"
+    ? cmGroupMultiEntries(entries)
+    : cmGroupSingleEntries(entries);
+}
+
+function cmValidateGroup(group) {
+  if (!group.lotNo) {
+    throw new Error(
+      group.lotMode === "multi"
+        ? `${group.devNo} का Manual Lot No required है.`
+        : "Manual Lot No required है."
+    );
+  }
+
+  if (!group.entries.length) {
+    throw new Error(
+      group.lotMode === "multi"
+        ? `${group.devNo} में Colour × Size quantity required है.`
+        : "Colour × Size cutting quantity required है."
+    );
+  }
+
+  const invalidEntry =
+    group.entries.find(row => {
+      return (
+        !row.colour_name ||
+        !row.size_name ||
+        cmNumber(row.quantity) <= 0
+      );
     });
 
-    return {
-      ...group,
-      devSummary,
-      devQtySummary
-    };
-  });
+  if (invalidEntry) {
+    throw new Error(
+      `${group.devNo} के cutting breakup में Colour, Size और Quantity required हैं.`
+    );
+  }
+
+  if (group.totalPieces <= 0) {
+    throw new Error(
+      `${group.devNo} के Total Cutting Pcs required हैं.`
+    );
+  }
+
+  if (
+    group.matrixTotal !==
+    group.totalPieces
+  ) {
+    throw new Error(
+      `${group.devNo} Total Cutting Pcs ${group.totalPieces} है, लेकिन Colour × Size total ${group.matrixTotal} है.`
+    );
+  }
 }
 
 function validateLot() {
-  if (!activeCard) {
-    throw new Error("Product Master card select कीजिए.");
+  if (
+    typeof activeUnit === "undefined" ||
+    !activeUnit
+  ) {
+    throw new Error(
+      "No CB Child/Sub Division selected."
+    );
   }
 
-  const decision = cmGetDecision();
+  const decision =
+    lotDecisionForActiveUnit();
 
   if (!decision?.ready) {
-    throw new Error("Art / Print decision complete नहीं है.");
+    throw new Error(
+      "Product Master Art/Print decision incomplete है."
+    );
   }
 
-  const styleName = cmText(readText("styleName"));
+  const styleName =
+    cmReadFirstValue([
+      "styleName"
+    ]);
 
   if (!styleName) {
-    throw new Error("Style Name required है.");
+    throw new Error(
+      "Style Name required है."
+    );
   }
 
-  const entries = cmNormaliseEntries();
+  const entries =
+    cuttingEntries();
 
   if (!entries.length) {
     throw new Error(
@@ -2825,71 +3116,23 @@ function validateLot() {
     );
   }
 
-  const mode = cmMode();
+  const groups =
+    cmBuildGroups(entries);
 
-  const missingLotRow = entries.find(row => {
-    return !cmLotNo(row.lot_no);
-  });
+  groups.forEach(
+    cmValidateGroup
+  );
 
-  if (missingLotRow) {
-    if (mode === "single") {
-      throw new Error("Manual Lot No required है.");
-    }
+  const lotNos =
+    groups.map(group => group.lotNo);
 
-    throw new Error(
-      `${cmDevNo(missingLotRow.dev_no)} का Manual Lot No required है.`
-    );
-  }
-
-  const missingColourOrSize = entries.find(row => {
-    return !row.colour_name || !row.size_name;
-  });
-
-  if (missingColourOrSize) {
-    throw new Error(
-      "Cutting breakup में Colour और Size required हैं."
-    );
-  }
-
-  const totalPieces = entries.reduce((sum, row) => {
-    return sum + cmNumber(row.quantity);
-  }, 0);
-
-  if (totalPieces <= 0) {
-    throw new Error("Total Cutting Pcs zero नहीं हो सकता.");
-  }
-
-  const groups = cmGroupEntries(entries);
-
-  if (!groups.length) {
-    throw new Error("Valid cutting lot नहीं मिला.");
-  }
-
-  if (mode === "single" && groups.length !== 1) {
-    throw new Error(
-      "Single Lot mode में केवल एक Manual Lot No allowed है."
-    );
-  }
-
-  if (mode === "multi") {
-    if (groups.length < 2) {
-      throw new Error(
-        "Multi Lot mode में कम-से-कम 2 अलग Manual Lot No required हैं."
+  const duplicateLotNo =
+    lotNos.find((lotNo, index) => {
+      return (
+        lotNos.indexOf(lotNo) !==
+        index
       );
-    }
-
-    if (groups.length > 4) {
-      throw new Error(
-        "Multi Lot mode में maximum 4 Dev/Lot allowed हैं."
-      );
-    }
-  }
-
-  const lotNos = groups.map(group => group.lotNo);
-
-  const duplicateLotNo = lotNos.find((lotNo, index) => {
-    return lotNos.indexOf(lotNo) !== index;
-  });
+    });
 
   if (duplicateLotNo) {
     throw new Error(
@@ -2897,184 +3140,340 @@ function validateLot() {
     );
   }
 
-  groups.forEach(group => {
-    if (group.totalPieces <= 0) {
-      throw new Error(
-        `${group.lotNo} के Total Cutting Pcs required हैं.`
-      );
-    }
-  });
-
-  if (groups.length === 1) {
-    setInputValue("lotNo", groups[0].lotNo);
-  }
+  const totalPieces =
+    groups.reduce(
+      (sum, group) => {
+        return sum +
+          group.totalPieces;
+      },
+      0
+    );
 
   return {
     decision,
     styleName,
-    sizes: parseSizes(),
+    sizes:
+      typeof parseSizes === "function"
+        ? parseSizes()
+        : [],
+
     entries,
     groups,
     totalPieces,
-    lotMode: mode
+    lotMode:
+      cmMode()
   };
 }
 
+function cmBaseCalculatedCost() {
+  if (
+    typeof calculatedCost ===
+    "function"
+  ) {
+    return calculatedCost() || {};
+  }
+
+  return {};
+}
+
 function cmGroupCost(group) {
-  const baseCost = cmNumber(readArtAverageCost());
-  let calculatedTotal = 0;
+  const result =
+    cmBaseCalculatedCost();
 
-  group.devQtySummary.forEach(item => {
-    const dev = cmFindDev(item.dev_no);
-    const quantity = cmNumber(item.quantity);
+  const base =
+    cmNumber(
+      result.base ??
+      result.baseCost ??
+      result.perPiece
+    );
 
-    if (
-      dev &&
-      Object.keys(dev).length &&
-      typeof devCost === "function"
-    ) {
-      const costResult = devCost(dev, quantity);
+  const standardAdjustments =
+    cmNumber(
+      result.standardAdjustments
+    );
 
-      calculatedTotal += cmNumber(
-        costResult?.total,
-        baseCost * quantity
-      );
-    } else {
-      calculatedTotal += baseCost * quantity;
-    }
-  });
+  const custom =
+    cmNumber(result.custom);
 
-  const finalPerPiece =
-    group.totalPieces > 0
-      ? calculatedTotal / group.totalPieces
-      : baseCost;
+  const perPiece =
+    cmNumber(
+      result.perPiece,
+      base +
+      standardAdjustments +
+      custom
+    );
 
   return {
-    baseCost,
-    finalPerPiece,
+    base,
+
     adjustmentPerPiece:
-      finalPerPiece - baseCost,
-    totalCost: calculatedTotal
+      standardAdjustments +
+      custom,
+
+    finalPerPiece:
+      perPiece,
+
+    total:
+      perPiece *
+      group.totalPieces
   };
 }
 
 function cmGroupSizes(group) {
-  const firstDevNo =
-    group.devSummary?.[0] || "D1";
-
-  const dev = cmFindDev(firstDevNo);
-
-  if (Array.isArray(dev?.sizes) && dev.sizes.length) {
-    return dev.sizes;
-  }
-
-  return [
+  const sizes = [
     ...new Set(
       group.entries
-        .map(row => cmText(row.size_name))
+        .map(row =>
+          cmText(row.size_name)
+        )
         .filter(Boolean)
     )
   ];
+
+  if (sizes.length) {
+    return sizes;
+  }
+
+  if (
+    typeof parseSizes ===
+    "function"
+  ) {
+    return parseSizes();
+  }
+
+  return [];
+}
+
+function cmDecisionArtNo(decision) {
+  if (decision?.art) {
+    if (
+      typeof artNumber ===
+      "function"
+    ) {
+      return (
+        artNumber(decision.art) ||
+        ""
+      );
+    }
+
+    return cmText(
+      decision.art.art_no ||
+      decision.art.artNo
+    );
+  }
+
+  return cmText(
+    decision?.artNo ||
+    decision?.art_no
+  );
+}
+
+function cmDecisionPrintNo(decision) {
+  if (decision?.noPrintRequired) {
+    return "N/A";
+  }
+
+  if (
+    Array.isArray(decision?.prints)
+  ) {
+    return decision.prints
+      .map(print => {
+        if (
+          typeof printNumber ===
+          "function"
+        ) {
+          return printNumber(print);
+        }
+
+        return (
+          print?.print_no ||
+          print?.printNo ||
+          ""
+        );
+      })
+      .filter(Boolean)
+      .join(", ");
+  }
+
+  return cmText(
+    decision?.printNo ||
+    decision?.print_no
+  );
+}
+
+function cmUnitChildNo() {
+  return cmText(
+    activeUnit?.division_code ||
+    activeUnit?.child_no ||
+    activeUnit?.cb_child_no ||
+    activeUnit?.unit_code ||
+    activeUnit?.code
+  );
+}
+
+function cmUnitCbNo() {
+  return cmText(
+    activeUnit?.cb_no ||
+    activeUnit?.purchase_no ||
+    activeUnit?.cb_number
+  );
 }
 
 function cmDevDetails(group) {
-  return group.devSummary.map(devNo => {
-    const dev = cmFindDev(devNo);
+  const dev =
+    group.devState ||
+    cmFindDevState(group.devNo);
 
-    return {
-      dev_no: devNo,
+  return {
+    dev_no:
+      group.devNo,
 
-      quantity:
-        group.devQtySummary.find(item => {
-          return item.dev_no === devNo;
-        })?.quantity || 0,
+    manual_lot_no:
+      group.lotNo,
 
-      size_combo:
-        dev?.size_combo ||
-        dev?.sizeCombo ||
-        null,
+    total_cutting_pcs:
+      group.totalPieces,
 
-      sleeve:
-        dev?.sleeve ||
-        dev?.sleeve_type ||
-        null,
+    size_combo:
+      dev?.size_combo ||
+      dev?.sizeCombo ||
+      null,
 
-      border:
-        dev?.border ||
-        dev?.border_type ||
-        null,
+    sleeve:
+      dev?.sleeve ||
+      dev?.sleeve_type ||
+      null,
 
-      matching_qty: cmNumber(
-        dev?.matching_consumption ||
-        dev?.matching_qty
+    border:
+      dev?.border ||
+      dev?.border_type ||
+      null,
+
+    matching_qty:
+      cmNumber(
+        dev?.matching_qty ??
+        dev?.matching_consumption
       ),
 
-      matching_avg_cost: cmNumber(
+    matching_avg_cost:
+      cmNumber(
         dev?.matching_avg_cost
       )
-    };
-  });
+  };
 }
 
-function lotPayload(valid, group) {
-  const division = cmGetDivision();
-  const cbGroup = cmGetGroup();
-  const cost = cmGroupCost(group);
-  const devDetails = cmDevDetails(group);
+function cmCostAdjustmentItems() {
+  if (
+    typeof adjustmentDetails ===
+    "function"
+  ) {
+    const items =
+      adjustmentDetails();
 
-  const cbNo = cmText(
-    cbGroup.cb_no ||
-    cbGroup.cbNo
-  );
+    return Array.isArray(items)
+      ? items
+      : [];
+  }
 
-  const cbId =
-    cbGroup.cb_id ||
-    cbGroup.id ||
-    null;
+  return [];
+}
 
-  const childNo = cmText(
-    division.division_code ||
-    division.child_no ||
-    division.cb_child_no
-  );
+function cmAdjustmentPayload(
+  validation,
+  group
+) {
+  const normalAdjustments =
+    cmCostAdjustmentItems();
 
-  const childId =
-    division.division_id ||
-    division.id ||
-    null;
+  return [
+    ...normalAdjustments,
 
-  const operatorName = cmText(
-    readText("operatorName")
-  );
+    {
+      type:
+        "release_context",
 
-  const manualNotes = cmText(
-    readText("lotNotes")
-  );
+      label:
+        "Cutting Release Context",
+
+      amount:
+        0,
+
+      data: {
+        source:
+          "CM-PM-FINAL-4A",
+
+        lot_mode:
+          validation.lotMode,
+
+        manual_lot_no:
+          group.lotNo,
+
+        total_cutting_pcs:
+          group.totalPieces,
+
+        dev_summary: [
+          group.devNo
+        ],
+
+        dev_details:
+          cmDevDetails(group),
+
+        cb_no:
+          cmUnitCbNo() ||
+          null,
+
+        cb_child_no:
+          cmUnitChildNo() ||
+          null,
+
+        next_process:
+          "KR_OV",
+
+        ready_for_kr_ov:
+          true,
+
+        bundle_archived:
+          true,
+
+        bundle_visible:
+          false
+      }
+    }
+  ];
+}
+
+function lotPayload(
+  validation,
+  group
+) {
+  const result =
+    cmGroupCost(group);
+
+  const decision =
+    validation.decision;
+
+  const existingNotes =
+    cmReadFirstValue([
+      "lotNotes",
+      "remarks"
+    ]);
 
   const remarks = [
-    manualNotes,
+    existingNotes,
 
-    operatorName
-      ? `Operator: ${operatorName}`
+    cmUnitCbNo()
+      ? `CB No: ${cmUnitCbNo()}`
       : "",
 
-    cbNo
-      ? `CB No: ${cbNo}`
+    cmUnitChildNo()
+      ? `Child/Sub Division: ${cmUnitChildNo()}`
       : "",
 
-    childNo
-      ? `Child/Sub Division: ${childNo}`
-      : "",
+    `Dev: ${group.devNo}`,
 
     `Manual Lot No: ${group.lotNo}`,
 
-    `Dev: ${group.devSummary.join(", ")}`,
-
-    `Lot Mode: ${
-      group.lotMode === "multi"
-        ? "Multi"
-        : "Single"
-    }`,
+    `Total Cutting Pcs: ${group.totalPieces}`,
 
     "Ready for KR / OV"
   ]
@@ -3082,142 +3481,108 @@ function lotPayload(valid, group) {
     .join("\n");
 
   return {
-    cb_unit_id: childId,
-    cb_id: cbId,
+    cb_unit_id:
+      unitId(activeUnit),
 
-    lot_no: group.lotNo,
+    cb_id:
+      unitPurchaseId(activeUnit),
+
+    lot_no:
+      group.lotNo,
 
     lot_date:
-      cmText(readText("lotDate")) ||
+      cmReadFirstValue([
+        "lotDate"
+      ]) ||
       today(),
 
-    style_name: valid.styleName,
+    style_name:
+      validation.styleName,
 
     art_no:
-      valid.decision.artNo ||
-      valid.decision.art_no ||
-      null,
+      cmDecisionArtNo(decision),
 
     print_no:
-      valid.decision.printNo ||
-      valid.decision.print_no ||
-      null,
+      cmDecisionPrintNo(decision),
 
-    size_set: cmGroupSizes(group),
+    size_set:
+      cmGroupSizes(group),
 
-    planned_pcs: group.totalPieces,
+    planned_pcs:
+      group.totalPieces,
 
     /*
-      BUNDLE SYSTEM ARCHIVED
-
-      UI में bundle नहीं दिखेगा.
-      Existing database compatibility के लिए
-      bundle_qty value रखी गई है.
+      Archived bundle compatibility.
+      Bundle UI में नहीं दिखेगा.
     */
-    bundle_qty: 1,
+    bundle_qty:
+      1,
 
     base_cost_per_piece:
-      cost.baseCost,
+      result.base,
 
     adjustment_cost_per_piece:
-      cost.adjustmentPerPiece,
+      result.adjustmentPerPiece,
 
     final_cost_per_piece:
-      cost.finalPerPiece,
+      result.finalPerPiece,
 
     total_cutting_cost:
-      cost.totalCost,
+      result.total,
 
-    adjustments: {
-      source:
-        "CM-PM-PART4-FINAL-R1",
-
-      lot_mode:
-        group.lotMode,
-
-      manual_lot_no:
-        group.lotNo,
-
-      total_cutting_pcs:
-        group.totalPieces,
-
-      cb_no:
-        cbNo || null,
-
-      cb_id:
-        cbId,
-
-      cb_child_no:
-        childNo || null,
-
-      cb_child_id:
-        childId,
-
-      dev_summary:
-        group.devSummary,
-
-      dev_qty_summary:
-        group.devQtySummary,
-
-      dev_details:
-        devDetails,
-
-      next_process:
-        "KR_OV",
-
-      ready_for_kr_ov:
-        true,
-
-      bundle_archived:
-        true,
-
-      bundle_visible:
-        false
-    },
+    adjustments:
+      cmAdjustmentPayload(
+        validation,
+        group
+      ),
 
     remarks:
       remarks || null,
 
+    /*
+      Existing DB/gallery compatibility
+      के लिए released रखा गया है.
+      UI में Ready for KR / OV दिखेगा.
+    */
     status:
-      "ready_for_production"
+      "released"
   };
 }
 
-function breakupPayloads(lotId, group) {
-  const division = cmGetDivision();
+function breakupPayloads(
+  lotId,
+  group
+) {
+  return group.entries.map(row => ({
+    lot_id:
+      lotId,
 
-  return group.entries.map(row => {
-    return {
-      lot_id: lotId,
+    cb_unit_id:
+      unitId(activeUnit),
 
-      cb_unit_id:
-        division.division_id ||
-        division.id ||
-        null,
+    colour_id:
+      row.colour_id ||
+      null,
 
-      colour_id:
-        row.colour_id || null,
+    colour_name:
+      row.colour_name,
 
-      colour_name:
-        row.colour_name,
+    size_name:
+      row.size_name,
 
-      size_name:
-        row.size_name,
+    quantity:
+      cmNumber(row.quantity),
 
-      quantity:
-        cmNumber(row.quantity),
+    /*
+      Archived database compatibility only.
+      Visible bundle system बंद रहेगा.
+    */
+    bundle_qty:
+      1,
 
-      /*
-        Archived bundle compatibility only.
-        Bundle UI permanently hidden.
-      */
-      bundle_qty:
-        cmNumber(row.quantity),
-
-      bundle_count:
-        1
-    };
-  });
+    bundle_count:
+      cmNumber(row.quantity)
+  }));
 }
 
 async function cmCheckDuplicateLots(
@@ -3229,9 +3594,16 @@ async function cmCheckDuplicateLots(
   }
 
   const result = await client
-    .from("rr_cutting_lots_v3")
-    .select("id, lot_no")
-    .in("lot_no", lotNos);
+    .from(
+      "rr_cutting_lots_v3"
+    )
+    .select(
+      "id, lot_no"
+    )
+    .in(
+      "lot_no",
+      lotNos
+    );
 
   if (result.error) {
     throw result.error;
@@ -3250,128 +3622,86 @@ async function cmRollbackLots(
 
   try {
     await client
-      .from("rr_cutting_breakup_v3")
+      .from(
+        "rr_cutting_breakup_v3"
+      )
       .delete()
-      .in("lot_id", lotIds);
+      .in(
+        "lot_id",
+        lotIds
+      );
   } catch (error) {
     console.warn(
-      "Cutting breakup rollback failed",
+      "Breakup rollback failed:",
       error
     );
   }
 
   try {
     await client
-      .from("rr_cutting_lots_v3")
+      .from(
+        "rr_cutting_lots_v3"
+      )
       .delete()
-      .in("id", lotIds);
+      .in(
+        "id",
+        lotIds
+      );
   } catch (error) {
     console.warn(
-      "Cutting lot rollback failed",
+      "Lot rollback failed:",
       error
     );
   }
 }
 
-function cmHighlightReleasedLots() {
-  if (!cmLastReleasedLotNos.length) {
-    return;
-  }
-
-  const lotNos = new Set(
-    cmLastReleasedLotNos.map(cmLotNo)
-  );
-
-  const galleryRoot =
-    gallery ||
-    $("cuttingGallery") ||
-    $("cmGallery");
-
-  if (!galleryRoot) {
-    return;
-  }
-
-  galleryRoot
-    .querySelectorAll(
-      "[data-lot-no], .cm-lot-card, article, .card"
-    )
-    .forEach(card => {
-      const dataLotNo = cmLotNo(
-        card.dataset?.lotNo
-      );
-
-      const cardText = cmLotNo(
-        card.textContent
-      );
-
-      const matched = [...lotNos].some(lotNo => {
-        return (
-          dataLotNo === lotNo ||
-          cardText.includes(lotNo)
-        );
-      });
-
-      card.classList.toggle(
-        "cm-newly-released",
-        matched
-      );
-
-      if (matched) {
-        card.setAttribute(
-          "data-ready-for",
-          "KR_OV"
-        );
-      }
-    });
-
-  const firstMatched =
-    galleryRoot.querySelector(
-      ".cm-newly-released"
-    );
-
-  firstMatched?.scrollIntoView?.({
-    behavior: "smooth",
-    block: "center"
-  });
-}
-
-async function createLot(event = {}) {
+async function createLot(
+  event = {}
+) {
   event?.preventDefault?.();
 
   if (createLot.busy) {
     return;
   }
 
-  const client = getClient();
+  const client =
+    getClient();
 
   if (!client) {
     say(
       "Supabase client unavailable.",
       "error"
     );
+
     return;
   }
 
   createLot.busy = true;
 
-  const button =
+  const form =
+    $("lotForm");
+
+  const submitButton =
     event.submitter ||
-    $("lotForm")?.querySelector(
-      '[data-release-lot]'
+    $("releaseLotBtn") ||
+    form?.querySelector(
+      "[data-release-lot]"
     ) ||
-    $("lotForm")?.querySelector(
+    form?.querySelector(
       'button[type="submit"]'
     );
 
   const originalButtonText =
-    button?.textContent || "Release Lot";
+    submitButton?.textContent ||
+    "Release Lot";
 
   const insertedLotIds = [];
 
   try {
-    if (button) {
-      button.disabled = true;
-      button.textContent =
+    if (submitButton) {
+      submitButton.disabled = true;
+
+      submitButton.textContent =
         "Releasing Lot...";
     }
 
@@ -3380,11 +3710,13 @@ async function createLot(event = {}) {
       "info"
     );
 
-    const valid = validateLot();
+    const validation =
+      validateLot();
 
-    const lotNos = valid.groups.map(group => {
-      return group.lotNo;
-    });
+    const lotNos =
+      validation.groups.map(
+        group => group.lotNo
+      );
 
     const duplicateRows =
       await cmCheckDuplicateLots(
@@ -3405,67 +3737,110 @@ async function createLot(event = {}) {
     const createdLots = [];
     const createdBreakups = [];
 
-    for (const group of valid.groups) {
-      const lotInsert = await client
-        .from("rr_cutting_lots_v3")
-        .insert(
-          lotPayload(valid, group)
-        )
-        .select("*")
-        .single();
+    for (
+      const group of
+      validation.groups
+    ) {
+      const insertedLot =
+        await client
+          .from(
+            "rr_cutting_lots_v3"
+          )
+          .insert(
+            lotPayload(
+              validation,
+              group
+            )
+          )
+          .select("*")
+          .single();
 
-      if (lotInsert.error) {
-        throw lotInsert.error;
+      if (insertedLot.error) {
+        throw insertedLot.error;
       }
 
-      const createdLot = lotInsert.data;
+      const lotRow =
+        insertedLot.data;
 
       insertedLotIds.push(
-        createdLot.id
+        lotRow.id
       );
 
       createdLots.push(
-        createdLot
+        lotRow
       );
 
-      const breakupRowsToInsert =
+      const rows =
         breakupPayloads(
-          createdLot.id,
+          lotRow.id,
           group
         );
 
-      const breakupInsert = await client
-        .from("rr_cutting_breakup_v3")
-        .insert(breakupRowsToInsert)
-        .select("*");
+      const insertedBreakup =
+        await client
+          .from(
+            "rr_cutting_breakup_v3"
+          )
+          .insert(rows)
+          .select("*");
 
-      if (breakupInsert.error) {
-        throw breakupInsert.error;
+      if (insertedBreakup.error) {
+        throw insertedBreakup.error;
       }
 
       createdBreakups.push(
-        ...(breakupInsert.data || [])
+        ...(
+          insertedBreakup.data ||
+          []
+        )
       );
     }
 
     cmLastReleasedLotNos =
-      createdLots.map(row => row.lot_no);
+      createdLots.map(
+        row => row.lot_no
+      );
 
-    /*
-      Local gallery data update.
-      Full page reload की जरूरत नहीं.
-    */
-    lotRows.unshift(...createdLots);
-    breakupRows.unshift(...createdBreakups);
+    if (
+      typeof lots !== "undefined" &&
+      Array.isArray(lots)
+    ) {
+      lots.unshift(
+        ...createdLots
+      );
+    }
 
-    renderGallery();
+    if (
+      typeof breakup !== "undefined" &&
+      Array.isArray(breakup)
+    ) {
+      breakup.unshift(
+        ...createdBreakups
+      );
+    }
 
-    requestAnimationFrame(() => {
-      cmHighlightReleasedLots();
+    if (
+      typeof closeSheet ===
+      "function"
+    ) {
+      closeSheet(lotSheet);
+    }
+
+    if (
+      typeof renderGallery ===
+      "function"
+    ) {
+      renderGallery();
+    }
+
+        requestAnimationFrame(() => {
+      if (
+        typeof cmHighlightReleasedLots ===
+        "function"
+      ) {
+        cmHighlightReleasedLots();
+      }
     });
-
-    closeSheet(lotSheet);
-    activeCard = null;
 
     if (createdLots.length === 1) {
       say(
@@ -3480,7 +3855,7 @@ async function createLot(event = {}) {
     }
   } catch (error) {
     console.error(
-      "Release Lot failed",
+      "Release Lot failed:",
       error
     );
 
@@ -3496,297 +3871,397 @@ async function createLot(event = {}) {
   } finally {
     createLot.busy = false;
 
-    if (button) {
-      button.disabled = false;
-      button.textContent =
+    if (submitButton) {
+      submitButton.disabled = false;
+
+      submitButton.textContent =
         originalButtonText ||
         "Release Lot";
+    }
+
+    if (
+      typeof autofillProductDecision ===
+      "function"
+    ) {
+      autofillProductDecision();
     }
   }
 }
 
 createLot.busy = false;
 
-async function loadCostSettings(client) {
-  const result = await client
-    .from(
-      "rr_cutting_cost_settings_v3"
-    )
-    .select("*")
-    .eq("settings_key", "default")
-    .maybeSingle();
+// ===== REDZED CUTTING MASTER PM — FINAL PART 4A END =====
+    // ===== REDZED CUTTING MASTER PM — FINAL PART 4B START =====
 
-  if (!result.error && result.data) {
-    costSettings = {
-      ...costSettings,
-      ...result.data
-    };
+function cmInjectPart4Styles() {
+  if ($("cmPart4FinalStyles")) {
+    return;
   }
 
-  setInputValue(
-    "baseCost",
-    costSettings.default_base_cost
-  );
+  const style = document.createElement("style");
 
-  if ($("customAdjustment")) {
-    $("customAdjustment").disabled =
-      costSettings
-        .allow_custom_adjustment === false;
-  }
+  style.id = "cmPart4FinalStyles";
+
+  style.textContent = `
+    .cm-newly-released {
+      position: relative;
+      outline: 3px solid #111827;
+      outline-offset: 3px;
+      border-radius: 14px;
+      scroll-margin-top: 90px;
+    }
+
+    .cm-release-highlight {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-top: 10px;
+      padding: 10px 12px;
+      border: 2px solid #111827;
+      border-radius: 10px;
+      background: #ffffff;
+      color: #111827;
+      font-size: 12px;
+      line-height: 1.3;
+    }
+
+    .cm-release-highlight strong {
+      font-size: 13px;
+      font-weight: 900;
+      letter-spacing: .04em;
+    }
+
+    .cm-release-highlight span {
+      display: inline-flex;
+      align-items: center;
+      min-height: 24px;
+      padding: 4px 8px;
+      border-radius: 999px;
+      background: #111827;
+      color: #ffffff;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    #releaseLotBtn[disabled],
+    [data-release-lot][disabled] {
+      cursor: wait;
+      opacity: .65;
+    }
+  `;
+
+  document.head.appendChild(style);
 }
 
-async function loadAllData() {
-  const client = getClient();
-
-  if (!client) {
-    throw new Error(
-      "Supabase client unavailable. Check config.js."
-    );
+function cmGalleryRoot() {
+  if (
+    typeof gallery !== "undefined" &&
+    gallery
+  ) {
+    return gallery;
   }
 
-  if (gallery) {
-    gallery.setAttribute(
-      "aria-busy",
-      "true"
-    );
+  return (
+    $("cuttingGallery") ||
+    $("cmGallery") ||
+    $("gallery") ||
+    document.querySelector(
+      ".cm-gallery"
+    )
+  );
+}
 
-    gallery.innerHTML = `
-      <article class="cm-empty">
-        <div class="cm-spinner"></div>
-
-        <h3>
-          Loading Cutting Master PM
-        </h3>
-
-        <p>
-          Connecting Product Master cards...
-        </p>
-      </article>
-    `;
+function cmCardLotNo(card) {
+  if (!card) {
+    return "";
   }
 
-  say(
-    "Product Master cutting cards load हो रहे हैं...",
-    "info"
+  const directLotNo = cmLotNo(
+    card.dataset?.lotNo ||
+    card.getAttribute?.("data-lot-no")
   );
 
-  const [
-    loadedGalleryRows,
-    purchaseResult,
-    colourResult,
-    artResult,
-    loadedPrintRows,
-    assignmentResult,
-    printAssignmentResult,
-    loadedMediaRows,
-    lotResult,
-    breakupResult
-  ] = await Promise.all([
-    withTimeout(
-      loadGallerySource(client),
-      15000,
-      "Product gallery"
-    ),
+  if (directLotNo) {
+    return directLotNo;
+  }
 
-    selectRows(
-      client,
-      "rr_cb_purchase_entries",
-      {
-        order: "created_at",
-        ascending: false
-      }
-    ),
+  const lotElement = card.querySelector?.(
+    [
+      "[data-lot-no]",
+      ".cm-lot-no",
+      ".lot-no",
+      ".cm-lot-number",
+      ".lot-number"
+    ].join(",")
+  );
 
-    selectRows(
-      client,
-      "rr_cb_colours",
-      {
-        order: "colour_order",
-        ascending: true
-      }
-    ),
+  return cmLotNo(
+    lotElement?.dataset?.lotNo ||
+    lotElement?.textContent
+  );
+}
 
-    selectRows(
-      client,
-      "rr_art_master",
-      {
-        eq: {
-          is_active: true
-        },
-        order: "updated_at",
-        ascending: false
-      }
-    ),
+function cmRemoveOldHighlights(root) {
+  if (!root) {
+    return;
+  }
 
-    loadPrintSource(client),
-
-    selectRows(
-      client,
-      "rr_cb_art_assignments",
-      {
-        order: "updated_at",
-        ascending: false
-      }
-    ),
-
-    selectRows(
-      client,
-      "rr_cb_print_assignments",
-      {
-        order: "sequence_no",
-        ascending: true
-      }
-    ),
-
-    optionalRows(
-      client,
-      "rr_media"
-    ),
-
-    selectRows(
-      client,
-      "rr_cutting_lots_v3",
-      {
-        order: "created_at",
-        ascending: false
-      }
-    ),
-
-    selectRows(
-      client,
-      "rr_cutting_breakup_v3",
-      {
-        order: "created_at",
-        ascending: false
-      }
+  root
+    .querySelectorAll(
+      ".cm-newly-released"
     )
-  ]);
+    .forEach(card => {
+      card.classList.remove(
+        "cm-newly-released"
+      );
+    });
 
-  galleryRows =
-    loadedGalleryRows || [];
+  root
+    .querySelectorAll(
+      ".cm-release-highlight"
+    )
+    .forEach(badge => {
+      badge.remove();
+    });
+}
 
-  purchaseRows =
-    requiredData(
-      purchaseResult,
-      "Purchase rows"
+function cmFindLotCard(
+  root,
+  lotNo
+) {
+  if (!root || !lotNo) {
+    return null;
+  }
+
+  const cleanLotNo =
+    cmLotNo(lotNo);
+
+  const directCard =
+    root.querySelector(
+      `[data-lot-no="${CSS.escape(cleanLotNo)}"]`
     );
 
-  colourRows =
-    requiredData(
-      colourResult,
-      "Colour rows"
-    );
+  if (directCard) {
+    return directCard;
+  }
 
-  artRows =
-    requiredData(
-      artResult,
-      "Art Master"
-    );
+  const candidates = [
+    ...root.querySelectorAll(
+      [
+        ".cm-lot-card",
+        ".cutting-lot-card",
+        ".cm-gallery-card",
+        "[data-card-id]",
+        "article"
+      ].join(",")
+    )
+  ];
 
-  printRows =
-    loadedPrintRows || [];
+  return (
+    candidates.find(card => {
+      const cardLotNo =
+        cmCardLotNo(card);
 
-  assignmentRows =
-    requiredData(
-      assignmentResult,
-      "Art assignments"
-    );
+      if (cardLotNo === cleanLotNo) {
+        return true;
+      }
 
-  printAssignmentRows =
-    requiredData(
-      printAssignmentResult,
-      "Print assignments"
-    );
+      const cardText =
+        cmLotNo(card.textContent);
 
-  mediaRows =
-    loadedMediaRows || [];
+      return cardText.includes(
+        cleanLotNo
+      );
+    }) ||
+    null
+  );
+}
 
-  lotRows =
-    requiredData(
-      lotResult,
-      "Cutting lots"
-    );
+function cmAddReadyBadge(
+  card,
+  lotNo
+) {
+  if (!card) {
+    return;
+  }
 
-  breakupRows =
-    requiredData(
-      breakupResult,
-      "Cutting breakup"
-    );
+  card
+    .querySelectorAll(
+      ".cm-release-highlight"
+    )
+    .forEach(element => {
+      element.remove();
+    });
 
-  await loadCostSettings(client);
+  const badge =
+    document.createElement("div");
 
-  renderGallery();
+  badge.className =
+    "cm-release-highlight";
 
-  requestAnimationFrame(() => {
-    cmHighlightReleasedLots();
-  });
+  const lotLabel =
+    document.createElement("strong");
 
-  console.info(
-    "REDZED Cutting Master PM loaded",
-    {
-      galleryRows:
-        galleryRows.length,
+  lotLabel.textContent =
+    `LOT ${cmLotNo(lotNo)}`;
 
-      purchaseRows:
-        purchaseRows.length,
+  const status =
+    document.createElement("span");
 
-      colourRows:
-        colourRows.length,
+  status.textContent =
+    "Ready for KR / OV";
 
-      artRows:
-        artRows.length,
+  badge.append(
+    lotLabel,
+    status
+  );
 
-      printRows:
-        printRows.length,
+  card.appendChild(badge);
+}
 
-      assignmentRows:
-        assignmentRows.length,
+function cmHighlightReleasedLots() {
+  if (
+    !Array.isArray(
+      cmLastReleasedLotNos
+    ) ||
+    !cmLastReleasedLotNos.length
+  ) {
+    return;
+  }
 
-      printAssignmentRows:
-        printAssignmentRows.length,
+  const root =
+    cmGalleryRoot();
 
-      mediaRows:
-        mediaRows.length,
+  if (!root) {
+    return;
+  }
 
-      lotRows:
-           lotRows.length,
+  cmRemoveOldHighlights(root);
 
-      breakupRows:
-        breakupRows.length
+  let firstMatched = null;
+
+  cmLastReleasedLotNos.forEach(
+    lotNo => {
+      const card =
+        cmFindLotCard(
+          root,
+          lotNo
+        );
+
+      if (!card) {
+        return;
+      }
+
+      card.classList.add(
+        "cm-newly-released"
+      );
+
+      card.setAttribute(
+        "data-ready-for",
+        "KR_OV"
+      );
+
+      cmAddReadyBadge(
+        card,
+        lotNo
+      );
+
+      if (!firstMatched) {
+        firstMatched = card;
+      }
     }
   );
+
+  firstMatched
+    ?.scrollIntoView?.({
+      behavior: "smooth",
+      block: "center"
+    });
 }
 
 async function refreshCuttingMaster() {
   try {
+    say(
+      "Cutting Master refresh हो रहा है...",
+      "info"
+    );
+
+    if (
+      typeof loadAllData !==
+      "function"
+    ) {
+      throw new Error(
+        "loadAllData function unavailable."
+      );
+    }
+
     await loadAllData();
+
+    requestAnimationFrame(() => {
+      cmHighlightReleasedLots();
+    });
   } catch (error) {
-    showFatal(error);
+    console.error(
+      "Cutting Master refresh failed:",
+      error
+    );
+
+    if (
+      typeof showFatal ===
+      "function"
+    ) {
+      showFatal(error);
+    } else {
+      say(
+        errorText(error),
+        "error"
+      );
+    }
   }
 }
 
-function cmHandleReleaseClick(event) {
-  const button = event.target.closest(
+function cmReleaseButtonFromEvent(
+  event
+) {
+  return event.target?.closest?.(
     [
+      "#releaseLotBtn",
       "[data-release-lot]",
       "#releaseLot",
       "#cmReleaseLot",
-      ".cm-release-lot",
-      '#lotForm button[type="submit"]'
+      ".cm-release-lot"
     ].join(",")
   );
+}
+
+function cmHandleReleaseButtonClick(
+  event
+) {
+  const button =
+    cmReleaseButtonFromEvent(
+      event
+    );
 
   if (!button) {
     return;
   }
 
-  const form = $("lotForm");
+  const form =
+    $("lotForm");
+
+  const belongsToLotForm =
+    form?.contains(button) ||
+    button.form === form;
 
   const belongsToLotSheet =
-    form?.contains(button) ||
-    lotSheet?.contains(button);
+    typeof lotSheet !== "undefined" &&
+    lotSheet?.contains?.(button);
 
-  if (!belongsToLotSheet) {
+  if (
+    !belongsToLotForm &&
+    !belongsToLotSheet
+  ) {
     return;
   }
 
@@ -3799,58 +4274,118 @@ function cmHandleReleaseClick(event) {
   });
 }
 
-function bindEvents() {
-  const form = $("lotForm");
-
-  if (form && form.dataset.cmBound !== "1") {
-    form.dataset.cmBound = "1";
-
-    form.addEventListener(
-      "submit",
-      event => {
-        event.preventDefault();
-
-        createLot({
-          preventDefault() {},
-          submitter:
-            event.submitter ||
-            form.querySelector(
-              '[data-release-lot]'
-            ) ||
-            form.querySelector(
-              'button[type="submit"]'
-            )
-        });
-      }
-    );
+function cmBindOnce(
+  element,
+  key,
+  eventName,
+  handler
+) {
+  if (!element) {
+    return;
   }
+
+  const datasetKey =
+    `cmBound${key}`;
+
+  if (
+    element.dataset?.[datasetKey] ===
+    "1"
+  ) {
+    return;
+  }
+
+  element.dataset[datasetKey] =
+    "1";
+
+  element.addEventListener(
+    eventName,
+    handler
+  );
+}
+
+function bindEvents() {
+  const form =
+    $("lotForm");
+
+  cmBindOnce(
+    form,
+    "LotSubmit",
+    "submit",
+    event => {
+      event.preventDefault();
+
+      const submitter =
+        event.submitter ||
+        $("releaseLotBtn") ||
+        form.querySelector(
+          "[data-release-lot]"
+        ) ||
+        form.querySelector(
+          'button[type="submit"]'
+        );
+
+      createLot({
+        preventDefault() {},
+        submitter
+      });
+    }
+  );
 
   if (
     document.documentElement
-      .dataset.cmReleaseBound !== "1"
+      .dataset.cmFinalReleaseClickBound !==
+    "1"
   ) {
     document.documentElement
-      .dataset.cmReleaseBound = "1";
+      .dataset.cmFinalReleaseClickBound =
+      "1";
 
     document.addEventListener(
       "click",
-      cmHandleReleaseClick
+      cmHandleReleaseButtonClick
     );
   }
 
-  $("cmSearch")?.addEventListener(
+  cmBindOnce(
+    $("cmSearch"),
+    "Search",
     "input",
-    renderGallery
+    () => {
+      if (
+        typeof renderGallery ===
+        "function"
+      ) {
+        renderGallery();
+      }
+    }
   );
 
-  $("sizeSet")?.addEventListener(
+  cmBindOnce(
+    $("sizeSet"),
+    "SizeChange",
     "change",
-    renderCuttingMatrix
+    () => {
+      if (
+        typeof renderCuttingMatrix ===
+        "function"
+      ) {
+        renderCuttingMatrix();
+      }
+    }
   );
 
-  $("sizeSet")?.addEventListener(
+  cmBindOnce(
+    $("sizeSet"),
+    "SizeBlur",
     "blur",
-    renderCuttingMatrix
+    () => {
+      if (
+        typeof renderCuttingMatrix ===
+        "function"
+      ) {
+        renderCuttingMatrix();
+      }
+    }
   );
 
   [
@@ -3858,9 +4393,18 @@ function bindEvents() {
     "wastageWeight",
     "remnantWeight"
   ].forEach(id => {
-    $(id)?.addEventListener(
+    cmBindOnce(
+      $(id),
+      `Weight${id}`,
       "input",
-      updateWeightSettlement
+      () => {
+        if (
+          typeof updateWeightSettlement ===
+          "function"
+        ) {
+          updateWeightSettlement();
+        }
+      }
     );
   });
 
@@ -3868,9 +4412,18 @@ function bindEvents() {
     "baseCost",
     "customAdjustment"
   ].forEach(id => {
-    $(id)?.addEventListener(
+    cmBindOnce(
+      $(id),
+      `Cost${id}`,
       "input",
-      updateCostPreview
+      () => {
+        if (
+          typeof updateCostPreview ===
+          "function"
+        ) {
+          updateCostPreview();
+        }
+      }
     );
   });
 
@@ -3879,26 +4432,52 @@ function bindEvents() {
     "sleeveType",
     "borderType"
   ].forEach(id => {
-    $(id)?.addEventListener(
+    cmBindOnce(
+      $(id),
+      `Option${id}`,
       "change",
-      updateCostPreview
+      () => {
+        if (
+          typeof updateCostPreview ===
+          "function"
+        ) {
+          updateCostPreview();
+        }
+      }
     );
   });
 
-  $("refreshCutting")?.addEventListener(
+  cmBindOnce(
+    $("refreshCutting"),
+    "Refresh",
     "click",
-    refreshCuttingMaster
+    event => {
+      event.preventDefault();
+
+      refreshCuttingMaster();
+    }
   );
 
   $("cmFilters")
-    ?.querySelectorAll("[data-filter]")
+    ?.querySelectorAll(
+      "[data-filter]"
+    )
     .forEach(button => {
-      button.addEventListener(
+      cmBindOnce(
+        button,
+        `Filter${
+          button.dataset.filter || "All"
+        }`,
         "click",
         () => {
-          currentFilter =
-            button.dataset.filter ||
-            "all";
+          if (
+            typeof currentFilter !==
+            "undefined"
+          ) {
+            currentFilter =
+              button.dataset.filter ||
+              "all";
+          }
 
           $("cmFilters")
             ?.querySelectorAll(
@@ -3911,7 +4490,12 @@ function bindEvents() {
               );
             });
 
-          renderGallery();
+          if (
+            typeof renderGallery ===
+            "function"
+          ) {
+            renderGallery();
+          }
         }
       );
     });
@@ -3921,11 +4505,19 @@ function bindEvents() {
       "[data-close-lot]"
     )
     .forEach(button => {
-      button.addEventListener(
+      cmBindOnce(
+        button,
+        "CloseLot",
         "click",
-        () => {
-          closeSheet(lotSheet);
-          activeCard = null;
+        event => {
+          event.preventDefault();
+
+          if (
+            typeof closeSheet ===
+            "function"
+          ) {
+            closeSheet(lotSheet);
+          }
         }
       );
     });
@@ -3935,10 +4527,21 @@ function bindEvents() {
       "[data-close-split]"
     )
     .forEach(button => {
-      button.addEventListener(
+      cmBindOnce(
+        button,
+        "CloseSplit",
         "click",
-        () => {
-          closeSheet(splitSheet);
+        event => {
+          event.preventDefault();
+
+          if (
+            typeof closeSheet ===
+            "function"
+          ) {
+            closeSheet(
+              splitSheet
+            );
+          }
         }
       );
     });
@@ -3948,27 +4551,42 @@ function bindEvents() {
       "[data-close-cost]"
     )
     .forEach(button => {
-      button.addEventListener(
+      cmBindOnce(
+        button,
+        "CloseCost",
         "click",
-        () => {
-          closeSheet(costSheet);
+        event => {
+          event.preventDefault();
+
+          if (
+            typeof closeSheet ===
+            "function"
+          ) {
+            closeSheet(
+              costSheet
+            );
+          }
         }
       );
     });
 
-  $("splitForm")?.addEventListener(
+  cmBindOnce(
+    $("splitForm"),
+    "SplitSubmit",
     "submit",
     event => {
       event.preventDefault();
 
       say(
-        "Multi Dev setup Cutting Lot sheet में connected है.",
+        "Multi Dev Cutting setup connected है.",
         "info"
       );
     }
   );
 
-  $("costSettingsForm")?.addEventListener(
+  cmBindOnce(
+    $("costSettingsForm"),
+    "CostSettingsSubmit",
     "submit",
     event => {
       event.preventDefault();
@@ -3983,49 +4601,117 @@ function bindEvents() {
 
 async function start() {
   try {
-    injectStyles();
+    if (
+      typeof injectStyles ===
+      "function"
+    ) {
+      injectStyles();
+    }
+
+    cmInjectPart4Styles();
     bindEvents();
 
+    if (
+      typeof loadAllData !==
+      "function"
+    ) {
+      throw new Error(
+        "loadAllData function unavailable."
+      );
+    }
+
     await loadAllData();
+
+    requestAnimationFrame(() => {
+      cmHighlightReleasedLots();
+    });
+
+    console.info(
+      "REDZED Cutting Master PM Final Part 4 loaded."
+    );
   } catch (error) {
-    showFatal(error);
+    console.error(
+      "Cutting Master startup failed:",
+      error
+    );
+
+    if (
+      typeof showFatal ===
+      "function"
+    ) {
+      showFatal(error);
+    } else {
+      say(
+        errorText(error),
+        "error"
+      );
+    }
   }
 }
 
 window.RRCuttingMasterPM = {
   version:
-    "CM-PM-PART4-FINAL-R1",
-
-  state() {
-    return {
-      galleryRows,
-      purchaseRows,
-      colourRows,
-      artRows,
-      printRows,
-      assignmentRows,
-      printAssignmentRows,
-      mediaRows,
-      lotRows,
-      breakupRows,
-      currentFilter,
-      activeCard,
-      currentLotMode,
-      comboDevRows,
-      lastReleasedLotNos:
-        [...cmLastReleasedLotNos]
-    };
-  },
+    "CM-PM-FINAL-PART4-A-B-R1",
 
   releaseLot:
     createLot,
 
   refresh:
-    refreshCuttingMaster
+    refreshCuttingMaster,
+
+  highlightReleasedLots:
+    cmHighlightReleasedLots,
+
+  state() {
+    return {
+      activeUnit:
+        typeof activeUnit !==
+        "undefined"
+          ? activeUnit
+          : null,
+
+      currentLotMode:
+        typeof currentLotMode !==
+        "undefined"
+          ? currentLotMode
+          : "single",
+
+      comboDevRows:
+        typeof comboDevRows !==
+        "undefined" &&
+        Array.isArray(comboDevRows)
+          ? comboDevRows
+          : [],
+
+      lots:
+        typeof lots !==
+        "undefined" &&
+        Array.isArray(lots)
+          ? lots
+          : [],
+
+      breakup:
+        typeof breakup !==
+        "undefined" &&
+        Array.isArray(breakup)
+          ? breakup
+          : [],
+
+      lastReleasedLotNos:
+        Array.isArray(
+          cmLastReleasedLotNos
+        )
+          ? [
+              ...cmLastReleasedLotNos
+            ]
+          : []
+    };
+  }
 };
 
 if (
-  document.readyState === "loading"
+  document.readyState ===
+  "loading"
 ) {
   document.addEventListener(
     "DOMContentLoaded",
@@ -4040,6 +4726,4 @@ if (
 
 })();
 
-// ===== REDZED CUTTING MASTER PM — PART 4 FINAL END =====
-        
-  
+// ===== REDZED CUTTING MASTER PM — FINAL PART 4B END =====
