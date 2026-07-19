@@ -2607,59 +2607,7 @@ function updateCostPreview() {
 }
 
 // ===== REDZED CUTTING MASTER PM CORE PART 3B END =====
- // ===== REDZED CUTTING MASTER PM CORE PART 4 START =====
-
-function cleanLotNo(value) {
-  return String(value || "")
-    .trim()
-    .toUpperCase();
-}
-
-function cleanDevNo(value) {
-  return String(value || "")
-    .trim()
-    .toUpperCase()
-    .replace(/\s+/g, "") || "D1";
-}
-
-function rowDevMeta(devNo) {
-  return comboDevRows.find(row => {
-    return cleanDevNo(row.dev_no) === cleanDevNo(devNo);
-  }) || {};
-}
-
-function groupEntriesByLot(entries) {
-  const map = new Map();
-
-  entries.forEach(row => {
-    const lotNo = cleanLotNo(row.lot_no);
-    const devNo = cleanDevNo(row.dev_no);
-
-    const key = `${lotNo}||${devNo}`;
-
-    if (!map.has(key)) {
-      map.set(key, {
-        lotNo,
-        devNo,
-        lotMode: row.lot_mode || currentLotMode,
-        entries: [],
-        totalPieces: 0
-      });
-    }
-
-    const group = map.get(key);
-
-    group.entries.push({
-      ...row,
-      lot_no: lotNo,
-      dev_no: devNo
-    });
-
-    group.totalPieces += Number(row.quantity || 0);
-  });
-
-  return [...map.values()];
-}
+// ===== REDZED CUTTING MASTER PM CORE PART 4 START =====
 
 function validateLot() {
   if (!activeCard) {
@@ -2672,16 +2620,41 @@ function validateLot() {
     throw new Error("Art decision missing.");
   }
 
+  const lotNo = readText("lotNo");
+
+  if (!lotNo) {
+    throw new Error("Lot No required.");
+  }
+
   const styleName = readText("styleName");
 
   if (!styleName) {
     throw new Error("Style name required.");
   }
 
-  const rawEntries = cuttingEntries();
+  const lotMode = currentLotMode || "single";
 
-  const totalPieces = rawEntries.reduce(
-    (sum, row) => sum + Number(row.quantity || 0),
+  const entries = cuttingEntries().map(row => {
+    const rawDev = String(row.dev_no || "D1")
+      .trim()
+      .toUpperCase();
+
+    return {
+      ...row,
+
+      // Single lot me Dev No D1 lock
+      // Multi me D1 / D2 jo card se aa raha hai wahi
+      dev_no:
+        lotMode === "single" || rawDev === "SINGLE"
+          ? "D1"
+          : rawDev,
+
+      lot_no: String(lotNo).trim().toUpperCase()
+    };
+  });
+
+  const totalPieces = entries.reduce(
+    (sum, row) => sum + row.quantity,
     0
   );
 
@@ -2689,125 +2662,60 @@ function validateLot() {
     throw new Error("Colour × Size cutting quantity required.");
   }
 
-  let entries = [];
-
-  if (currentLotMode === "multi") {
-    entries = rawEntries.map(row => {
-      const dev = rowDevMeta(row.dev_no);
-
-      return {
-        ...row,
-        lot_mode: "multi",
-        dev_no: cleanDevNo(row.dev_no),
-        lot_no: cleanLotNo(row.lot_no || dev.lot_no)
-      };
-    });
-
-    const missingLot = entries.find(row => !row.lot_no);
-
-    if (missingLot) {
-      throw new Error(
-        `Multi Lot में ${missingLot.dev_no || "Dev"} का manual Lot No required है.`
-      );
-    }
-  } else {
-    const lotNo = cleanLotNo(readText("lotNo"));
-
-    if (!lotNo) {
-      throw new Error("Lot No required.");
-    }
-
-    entries = rawEntries.map(row => ({
-      ...row,
-      lot_mode: "single",
-      dev_no: cleanDevNo(row.dev_no || "D1"),
-      lot_no: lotNo
-    }));
-  }
-
-  const groups = groupEntriesByLot(entries);
-
-  if (!groups.length) {
-    throw new Error("No cutting lot group found.");
-  }
-
   return {
     decision,
+    lotNo: String(lotNo).trim().toUpperCase(),
     styleName,
-    lotMode: currentLotMode,
     sizes: parseSizes(),
     entries,
-    groups,
-    totalPieces
+    totalPieces,
+    lotMode
   };
 }
 
-function groupCost(group) {
-  const dev = rowDevMeta(group.devNo);
+function lotPayload(valid) {
+  const cost = costResult();
 
-  if (dev && Object.keys(dev).length) {
-    return devCost(dev, group.totalPieces);
-  }
+  const cbNo = activeCard?.group?.cb_no || "";
+  const cbId = activeCard?.group?.cb_id || "";
+  const cbChildNo = activeCard?.division?.division_code || "";
+  const cbChildId = activeCard?.division?.division_id || "";
 
-  const base = Number(readArtAverageCost() || 0);
-  const total = base * Number(group.totalPieces || 0);
-
-  return {
-    base,
-    perPiece: base,
-    matchingTotal: 0,
-    matchingPerPiece: 0,
-    finalPerPiece: base,
-    total
-  };
-}
-
-function groupSizeSet(group) {
-  const dev = rowDevMeta(group.devNo);
-
-  if (dev?.sizes?.length) {
-    return dev.sizes;
-  }
-
-  return [
+  const devSummary = [
     ...new Set(
-      group.entries
-        .map(row => row.size_name)
+      valid.entries
+        .map(row => row.dev_no || "D1")
         .filter(Boolean)
     )
   ];
-}
 
-function lotPayload(valid, group) {
-  const cost = groupCost(group);
-  const dev = rowDevMeta(group.devNo);
+  const devQtySummary = devSummary.map(devNo => {
+    const qty = valid.entries
+      .filter(row => String(row.dev_no) === String(devNo))
+      .reduce(
+        (sum, row) => sum + Number(row.quantity || 0),
+        0
+      );
 
-  const meta = {
-    source: "CM-PM-U4",
-    cb_no: activeCard.group.cb_no || null,
-    cb_child: activeCard.division.division_code || null,
-    lot_mode: group.lotMode,
-    dev_no: group.devNo,
-    manual_lot_no: group.lotNo,
-    size_combo: dev.size_combo || null,
-    sleeve: dev.sleeve || null,
-    border: dev.border || null,
-    matching_qty: Number(dev.matching_consumption || 0),
-    matching_avg_cost: Number(dev.matching_avg_cost || 0),
-    matching_total_cost: Number(dev.matching_consumption || 0) *
-      Number(dev.matching_avg_cost || 0),
-    cutting_pcs: group.totalPieces
-  };
+    return {
+      dev_no: devNo,
+      quantity: qty
+    };
+  });
 
   const notes = [
     readText("lotNotes"),
     readText("operatorName")
       ? `Operator: ${readText("operatorName")}`
       : "",
-    `CB: ${activeCard.group.cb_no || ""}`,
-    `CB Child: ${activeCard.division.division_code || ""}`,
-    `Dev: ${group.devNo}`,
-    `Lot Mode: ${group.lotMode}`
+    cbNo
+      ? `CB: ${cbNo}`
+      : "",
+    cbChildNo
+      ? `CB Child/Sub Div: ${cbChildNo}`
+      : "",
+    `Dev: ${devSummary.join(", ")}`,
+    `Lot Mode: ${valid.lotMode}`
   ]
     .filter(Boolean)
     .join("\n");
@@ -2816,31 +2724,49 @@ function lotPayload(valid, group) {
     cb_unit_id: activeCard.division.division_id,
     cb_id: activeCard.group.cb_id,
 
-    lot_no: group.lotNo,
+    lot_no: valid.lotNo,
     lot_date: readText("lotDate") || today(),
 
     style_name: valid.styleName,
     art_no: valid.decision.artNo,
     print_no: valid.decision.printNo,
 
-    size_set: groupSizeSet(group),
-    planned_pcs: group.totalPieces,
+    size_set: valid.sizes,
+    planned_pcs: valid.totalPieces,
+
+    // archived legacy bundle compatibility
+    // UI/business me bundle hidden hai
+    bundle_qty: 1,
 
     base_cost_per_piece: cost.base,
-    adjustment_cost_per_piece:
-      cost.finalPerPiece - cost.base,
-    final_cost_per_piece: cost.finalPerPiece,
+    adjustment_cost_per_piece: cost.adjustmentTotal,
+    final_cost_per_piece: cost.final,
     total_cutting_cost: cost.total,
 
-    adjustments: meta,
+    adjustments: {
+      source: "CM-PM-U4-R3",
+      lot_mode: valid.lotMode,
+
+      cb_no: cbNo,
+      cb_id: cbId,
+      cb_child_no: cbChildNo,
+      cb_child_id: cbChildId,
+
+      dev_summary: devSummary,
+      dev_qty_summary: devQtySummary,
+
+      bundle_archived: true,
+      bundle_visible: false
+    },
+
     remarks: notes || null,
 
     status: "ready_for_production"
   };
 }
 
-function breakupPayloads(lotId, group) {
-  return group.entries.map(row => ({
+function breakupPayloads(lotId, valid) {
+  return valid.entries.map(row => ({
     lot_id: lotId,
     cb_unit_id: activeCard.division.division_id,
 
@@ -2848,24 +2774,13 @@ function breakupPayloads(lotId, group) {
     colour_name: row.colour_name,
     size_name: row.size_name,
 
-    quantity: row.quantity
+    quantity: row.quantity,
+
+    // archived legacy bundle compatibility
+    // UI/business me bundle hidden hai
+    bundle_qty: row.quantity,
+    bundle_count: 1
   }));
-}
-
-async function rollbackLots(client, lotIds) {
-  if (!lotIds.length) {
-    return;
-  }
-
-  await client
-    .from("rr_cutting_breakup_v3")
-    .delete()
-    .in("lot_id", lotIds);
-
-  await client
-    .from("rr_cutting_lots_v3")
-    .delete()
-    .in("id", lotIds);
 }
 
 async function createLot(event = {}) {
@@ -2889,7 +2804,7 @@ async function createLot(event = {}) {
     $("lotForm")?.querySelector('button[type="submit"]') ||
     $("lotForm")?.querySelector("button");
 
-  const insertedLotIds = [];
+  let insertedLotId = null;
 
   try {
     if (button) {
@@ -2900,67 +2815,53 @@ async function createLot(event = {}) {
     say("Cutting Lot save हो रहा है...", "info");
 
     const valid = validateLot();
-
-    const lotNos = [
-      ...new Set(
-        valid.groups.map(group => group.lotNo)
-      )
-    ];
+    const payload = lotPayload(valid);
 
     const duplicate = await client
       .from("rr_cutting_lots_v3")
       .select("id, lot_no")
-      .in("lot_no", lotNos);
+      .eq("lot_no", payload.lot_no)
+      .maybeSingle();
 
     if (duplicate.error) {
       throw duplicate.error;
     }
 
-    if (duplicate.data?.length) {
+    if (duplicate.data) {
       throw new Error(
-        `Lot No already exists: ${
-          duplicate.data.map(row => row.lot_no).join(", ")
-        }`
+        `Lot No ${payload.lot_no} already exists.`
       );
     }
 
-    const createdLots = [];
-    const createdBreakups = [];
+    const insertedLot = await client
+      .from("rr_cutting_lots_v3")
+      .insert(payload)
+      .select("*")
+      .single();
 
-    for (const group of valid.groups) {
-      const payload = lotPayload(valid, group);
-
-      const insertedLot = await client
-        .from("rr_cutting_lots_v3")
-        .insert(payload)
-        .select("*")
-        .single();
-
-      if (insertedLot.error) {
-        throw insertedLot.error;
-      }
-
-      const lot = insertedLot.data;
-
-      insertedLotIds.push(lot.id);
-      createdLots.push(lot);
-
-      const breakupPayload = breakupPayloads(lot.id, group);
-
-      const insertedBreakup = await client
-        .from("rr_cutting_breakup_v3")
-        .insert(breakupPayload)
-        .select("*");
-
-      if (insertedBreakup.error) {
-        throw insertedBreakup.error;
-      }
-
-      createdBreakups.push(...(insertedBreakup.data || []));
+    if (insertedLot.error) {
+      throw insertedLot.error;
     }
 
-    lotRows.unshift(...createdLots);
-    breakupRows.unshift(...createdBreakups);
+    const lot = insertedLot.data;
+    insertedLotId = lot.id;
+
+    const insertedBreakup = await client
+      .from("rr_cutting_breakup_v3")
+      .insert(breakupPayloads(lot.id, valid))
+      .select("*");
+
+    if (insertedBreakup.error) {
+      await client
+        .from("rr_cutting_lots_v3")
+        .delete()
+        .eq("id", lot.id);
+
+      throw insertedBreakup.error;
+    }
+
+    lotRows.unshift(lot);
+    breakupRows.unshift(...(insertedBreakup.data || []));
 
     closeSheet(lotSheet);
     activeCard = null;
@@ -2968,15 +2869,23 @@ async function createLot(event = {}) {
     renderGallery();
 
     say(
-      valid.groups.length === 1
-        ? `Lot ${valid.groups[0].lotNo} released successfully.`
-        : `${valid.groups.length} manual lots released successfully.`,
+      `Lot ${lot.lot_no} ready for production.`,
       "success"
     );
   } catch (error) {
     console.error(error);
 
-    await rollbackLots(client, insertedLotIds);
+    if (insertedLotId) {
+      await client
+        .from("rr_cutting_breakup_v3")
+        .delete()
+        .eq("lot_id", insertedLotId);
+
+      await client
+        .from("rr_cutting_lots_v3")
+        .delete()
+        .eq("id", insertedLotId);
+    }
 
     say(errorText(error), "error");
   } finally {
@@ -3305,7 +3214,7 @@ async function start() {
 }
 
 window.RRCuttingMasterPM = {
-  version: "pm-core-v1-u4-manual-lot-dev",
+  version: "pm-core-v1-u4-r3-child-dev-release",
 
   state() {
     return {
