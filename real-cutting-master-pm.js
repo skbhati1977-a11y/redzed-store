@@ -3053,31 +3053,57 @@ async function refreshCuttingMaster() {
 }
 
 function bindEvents() {
-  $("lotForm")?.addEventListener(
-    "submit",
-    createLot
-  );
+  const form = $("lotForm");
 
-  $("lotForm")
-    ?.querySelectorAll("button")
-    .forEach(button => {
-      const text = String(
-        button.textContent || ""
-      ).toLowerCase();
+  if (form) {
+    form.addEventListener("submit", event => {
+      event.preventDefault();
 
-      if (!text.includes("release")) {
-        return;
-      }
-
-      button.addEventListener("click", event => {
-        event.preventDefault();
-
-        createLot({
-          preventDefault() {},
-          submitter: button
-        });
+      createLot({
+        preventDefault() {},
+        submitter:
+          event.submitter ||
+          form.querySelector('button[type="submit"]') ||
+          form.querySelector("button")
       });
     });
+  }
+
+  // Strong delegated Release Lot handler
+  // Isse button type="button" ho ya submit, dono me release chalega
+  document.addEventListener("click", event => {
+    const button = event.target.closest("button");
+
+    if (!button) {
+      return;
+    }
+
+    const insideLotForm = button.closest("#lotForm");
+
+    if (!insideLotForm) {
+      return;
+    }
+
+    const text = String(button.textContent || "")
+      .trim()
+      .toLowerCase();
+
+    const isReleaseButton =
+      text.includes("release") ||
+      text.includes("lot") ||
+      button.type === "submit";
+
+    if (!isReleaseButton) {
+      return;
+    }
+
+    event.preventDefault();
+
+    createLot({
+      preventDefault() {},
+      submitter: button
+    });
+  });
 
   $("cmSearch")?.addEventListener(
     "input",
