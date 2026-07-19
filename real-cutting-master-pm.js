@@ -1272,6 +1272,13 @@ function openLotByDivision(divisionId) {
   currentLotMode = "single";
   matrixQtyMemory = new Map();
 
+  // Sync global activeUnit for helpers.js / validateLot compatibility
+  if (typeof setActiveUnit === "function") {
+    setActiveUnit(card.division);
+  } else {
+    console.warn("[CuttingMasterPM] setActiveUnit not available — Release Lot validation may fail.");
+  }
+
   const sizes = sizesForCard(card);
 
   setInputValue("lotUnitId", card.division.division_id);
@@ -5383,6 +5390,19 @@ window.RRCuttingMasterPM = {
           : []
     };
   }
+};
+
+// Override helpers.js lotDecisionForActiveUnit so pm.js internal
+// activeCard and cardDecision are used for Release Lot validation.
+//
+// helpers.js defines this function at global scope but has no access
+// to activeCard/cardDecision which live inside this IIFE. Overriding
+// here (after helpers.js has already loaded) is the established pattern
+// in this codebase for bridging the two modules without restructuring
+// the loader chain.
+window.lotDecisionForActiveUnit = function() {
+  if (!activeCard) return null;
+  return cardDecision(activeCard);
 };
 
 if (

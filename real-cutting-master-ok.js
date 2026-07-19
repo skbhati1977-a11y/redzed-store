@@ -282,11 +282,12 @@ function assignmentForUnit(id) {
     visited.add(String(current.parent_unit_id));
     const parentId = current.parent_unit_id;
     const inherited = productRefs.assignments
-      .filter(row =>         String(row.division_id) === String(parentId) ||
+      .filter(row => String(row.division_id) === String(parentId) ||
         String(row.cb_id) === String(parentId) ||
         String(row.cb_unit_id) === String(parentId) ||
         String(row.unit_id) === String(parentId) ||
         String(row.child_id) === String(parentId)
+      )
       .sort((a, b) => String(b.updated_at || b.created_at || "").localeCompare(String(a.updated_at || a.created_at || "")))[0];
     if (inherited) return { assignment: inherited, inherited: true };
     current = units.find(row => String(unitId(row)) === String(parentId)) || null;
