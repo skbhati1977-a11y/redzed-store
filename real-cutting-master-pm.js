@@ -3892,8 +3892,145 @@ createLot.busy = false;
 
 // ===== REDZED CUTTING MASTER PM — FINAL PART 4A END =====
     // ===== REDZED CUTTING MASTER PM — FINAL PART 4B START =====
+async function loadAllData() {
+  const client = getClient();
 
-function cmInjectPart4Styles() {
+  if (!client) {
+    throw new Error(
+      "Supabase client unavailable. Check config.js."
+    );
+  }
+
+  if (gallery) {
+    gallery.setAttribute(
+      "aria-busy",
+      "true"
+    );
+
+    gallery.innerHTML = `
+      <article class="cm-empty">
+        <div class="cm-spinner"></div>
+
+        <h3>Loading Cutting Master</h3>
+
+        <p>
+          Connecting CB Children,
+          Product Master and Lot data...
+        </p>
+      </article>
+    `;
+  }
+
+  say(
+    "Cutting Master data load हो रहा है...",
+    "info"
+  );
+
+  const [
+    purchaseRows,
+    unitRows,
+    colourRows,
+    lotRows,
+    breakupRows
+  ] = await Promise.all([
+    withTimeout(
+      loadPurchases(client),
+      12000,
+      "Purchases loading"
+    ),
+
+    withTimeout(
+      loadUnits(client),
+      12000,
+      "CB Children loading"
+    ),
+
+    withTimeout(
+      loadColours(client),
+      12000,
+      "Colours loading"
+    ),
+
+    withTimeout(
+      loadLots(client),
+      12000,
+      "Cutting Lots loading"
+    ),
+
+    withTimeout(
+      loadBreakup(client),
+      12000,
+      "Cutting Breakup loading"
+    )
+  ]);
+
+  purchases =
+    typeof normalizePurchaseRows === "function"
+      ? normalizePurchaseRows(purchaseRows)
+      : purchaseRows || [];
+
+  units =
+    typeof normalizeUnitRows === "function"
+      ? normalizeUnitRows(unitRows)
+      : unitRows || [];
+
+  colours =
+    typeof normalizeColourRows === "function"
+      ? normalizeColourRows(colourRows)
+      : colourRows || [];
+
+  lots =
+    typeof normalizeLotRows === "function"
+      ? normalizeLotRows(lotRows)
+      : lotRows || [];
+
+  breakup =
+    breakupRows || [];
+
+  const extraLoads = [];
+
+  if (
+    typeof loadProductRefs ===
+    "function"
+  ) {
+    extraLoads.push(
+      withTimeout(
+        loadProductRefs(client),
+        12000,
+        "Product Master references loading"
+      )
+    );
+  }
+
+  if (
+    typeof loadCostSettings ===
+    "function"
+  ) {
+    extraLoads.push(
+      withTimeout(
+        loadCostSettings(client),
+        12000,
+        "Cost Settings loading"
+      )
+    );
+  }
+
+  await Promise.all(extraLoads);
+
+  renderGallery();
+
+  const finalChildren =
+    typeof isFinal === "function"
+      ? units.filter(isFinal).length
+      : units.length;
+
+  say(
+    `${finalChildren} final CB children loaded.`,
+    "success"
+  );
+}
+
+  function cmInjectPart4Styles() {
   if ($("cmPart4FinalStyles")) {
     return;
   }
