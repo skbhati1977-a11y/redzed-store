@@ -3892,7 +3892,137 @@ createLot.busy = false;
 
 // ===== REDZED CUTTING MASTER PM — FINAL PART 4A END =====
     // ===== REDZED CUTTING MASTER PM — FINAL PART 4B START =====
-async function loadAllData() {
+
+const cmPart4BoundEvents = new WeakMap();
+
+let cmReleaseWorkflowBusy = false;
+
+function cmWithTimeout(
+  promise,
+  milliseconds,
+  label
+) {
+  if (
+    typeof withTimeout === "function"
+  ) {
+    return withTimeout(
+      promise,
+      milliseconds,
+      label
+    );
+  }
+
+  return promise;
+}
+
+function cmRequiredRows(
+  result,
+  label
+) {
+  if (
+    typeof requiredData === "function"
+  ) {
+    return requiredData(
+      result,
+      label
+    );
+  }
+
+  if (result?.error) {
+    throw result.error;
+  }
+
+  if (Array.isArray(result)) {
+    return result;
+  }
+
+  return result?.data || [];
+}
+
+async function loadCostSettings(
+  client
+) {
+  try {
+    const result = await client
+      .from(
+        "rr_cutting_cost_settings_v3"
+      )
+      .select("*")
+      .eq(
+        "settings_key",
+        "default"
+      )
+      .maybeSingle();
+
+    if (result.error) {
+      console.warn(
+        "Cost settings load skipped:",
+        result.error
+      );
+
+      return;
+    }
+
+    if (
+      result.data &&
+      typeof costSettings !==
+        "undefined"
+    ) {
+      costSettings = {
+        ...costSettings,
+        ...result.data
+      };
+    }
+
+    const defaultBaseCost =
+      typeof costSettings !==
+      "undefined"
+        ? costSettings
+            ?.default_base_cost
+        : result.data
+            ?.default_base_cost;
+
+    if (
+      typeof setInputValue ===
+        "function" &&
+      defaultBaseCost !==
+        undefined
+    ) {
+      setInputValue(
+        "baseCost",
+        defaultBaseCost
+      );
+    }
+
+    const customAdjustment =
+      $("customAdjustment");
+
+    if (customAdjustment) {
+      const allowed =
+        typeof costSettings !==
+        "undefined"
+          ? costSettings
+              ?.allow_custom_adjustment
+          : result.data
+              ?.allow_custom_adjustment;
+
+      customAdjustment.disabled =
+        allowed === false;
+    }
+  } catch (error) {
+    console.warn(
+      "Cost settings unavailable:",
+      error
+    );
+  }
+}
+
+async function loadAllData(
+  options = {}
+) {
+  const announce =
+    options.announce !== false;
+
   const client = getClient();
 
   if (!client) {
@@ -3901,148 +4031,422 @@ async function loadAllData() {
     );
   }
 
-  if (gallery) {
-    gallery.setAttribute(
+  if (
+    typeof loadGallerySource !==
+    "function"
+  ) {
+    throw new Error(
+      "loadGallerySource function unavailable."
+    );
+  }
+
+  if (
+    typeof loadPrintSource !==
+    "function"
+  ) {
+    throw new Error(
+      "loadPrintSource function unavailable."
+    );
+  }
+
+  if (
+    typeof selectRows !==
+    "function"
+  ) {
+    throw new Error(
+      "selectRows function unavailable."
+    );
+  }
+
+  const galleryRoot =
+    typeof gallery !==
+      "undefined"
+      ? gallery
+      : (
+          $("cuttingGallery") ||
+          $("cmGallery")
+        );
+
+  if (galleryRoot) {
+    galleryRoot.setAttribute(
       "aria-busy",
       "true"
     );
 
-    gallery.innerHTML = `
+    galleryRoot.innerHTML = `
       <article class="cm-empty">
         <div class="cm-spinner"></div>
 
-        <h3>Loading Cutting Master</h3>
+        <h3>
+          Loading Cutting Master PM
+        </h3>
 
         <p>
-          Connecting CB Children,
-          Product Master and Lot data...
+          Connecting Product Master
+          cards and Cutting Lots...
         </p>
       </article>
     `;
   }
 
-  say(
-    "Cutting Master data load हो रहा है...",
-    "info"
-  );
-
-  const [
-    purchaseRows,
-    unitRows,
-    colourRows,
-    lotRows,
-    breakupRows
-  ] = await Promise.all([
-    withTimeout(
-      loadPurchases(client),
-      12000,
-      "Purchases loading"
-    ),
-
-    withTimeout(
-      loadUnits(client),
-      12000,
-      "CB Children loading"
-    ),
-
-    withTimeout(
-      loadColours(client),
-      12000,
-      "Colours loading"
-    ),
-
-    withTimeout(
-      loadLots(client),
-      12000,
-      "Cutting Lots loading"
-    ),
-
-    withTimeout(
-      loadBreakup(client),
-      12000,
-      "Cutting Breakup loading"
-    )
-  ]);
-
-  purchases =
-    typeof normalizePurchaseRows === "function"
-      ? normalizePurchaseRows(purchaseRows)
-      : purchaseRows || [];
-
-  units =
-    typeof normalizeUnitRows === "function"
-      ? normalizeUnitRows(unitRows)
-      : unitRows || [];
-
-  colours =
-    typeof normalizeColourRows === "function"
-      ? normalizeColourRows(colourRows)
-      : colourRows || [];
-
-  lots =
-    typeof normalizeLotRows === "function"
-      ? normalizeLotRows(lotRows)
-      : lotRows || [];
-
-  breakup =
-    breakupRows || [];
-
-  const extraLoads = [];
-
-  if (
-    typeof loadProductRefs ===
-    "function"
-  ) {
-    extraLoads.push(
-      withTimeout(
-        loadProductRefs(client),
-        12000,
-        "Product Master references loading"
-      )
+  if (announce) {
+    say(
+      "Product Master cutting cards load हो रहे हैं...",
+      "info"
     );
   }
 
-  if (
-    typeof loadCostSettings ===
-    "function"
-  ) {
-    extraLoads.push(
-      withTimeout(
-        loadCostSettings(client),
-        12000,
-        "Cost Settings loading"
+  try {
+    const mediaPromise =
+      typeof optionalRows ===
+      "function"
+        ? optionalRows(
+            client,
+            "rr_media"
+          )
+        : Promise.resolve([]);
+
+    const [
+      loadedGalleryRows,
+      purchaseResult,
+      colourResult,
+      artResult,
+      loadedPrintRows,
+      assignmentResult,
+      printAssignmentResult,
+      loadedMediaRows,
+      lotResult,
+      breakupResult
+    ] = await Promise.all([
+      cmWithTimeout(
+        loadGallerySource(client),
+        15000,
+        "Product gallery"
+      ),
+
+      cmWithTimeout(
+        selectRows(
+          client,
+          "rr_cb_purchase_entries",
+          {
+            order:
+              "created_at",
+
+            ascending:
+              false
+          }
+        ),
+        15000,
+        "Purchase rows"
+      ),
+
+      cmWithTimeout(
+        selectRows(
+          client,
+          "rr_cb_colours",
+          {
+            order:
+              "colour_order",
+
+            ascending:
+              true
+          }
+        ),
+        15000,
+        "Colour rows"
+      ),
+
+      cmWithTimeout(
+        selectRows(
+          client,
+          "rr_art_master",
+          {
+            eq: {
+              is_active:
+                true
+            },
+
+            order:
+              "updated_at",
+
+            ascending:
+              false
+          }
+        ),
+        15000,
+        "Art Master"
+      ),
+
+      cmWithTimeout(
+        loadPrintSource(client),
+        15000,
+        "Print Master"
+      ),
+
+      cmWithTimeout(
+        selectRows(
+          client,
+          "rr_cb_art_assignments",
+          {
+            order:
+              "updated_at",
+
+            ascending:
+              false
+          }
+        ),
+        15000,
+        "Art assignments"
+      ),
+
+      cmWithTimeout(
+        selectRows(
+          client,
+          "rr_cb_print_assignments",
+          {
+            order:
+              "sequence_no",
+
+            ascending:
+              true
+          }
+        ),
+        15000,
+        "Print assignments"
+      ),
+
+      cmWithTimeout(
+        mediaPromise,
+        15000,
+        "Media"
+      ),
+
+      cmWithTimeout(
+        selectRows(
+          client,
+          "rr_cutting_lots_v3",
+          {
+            order:
+              "created_at",
+
+            ascending:
+              false
+          }
+        ),
+        15000,
+        "Cutting lots"
+      ),
+
+      cmWithTimeout(
+        selectRows(
+          client,
+          "rr_cutting_breakup_v3",
+          {
+            order:
+              "created_at",
+
+            ascending:
+              false
+          }
+        ),
+        15000,
+        "Cutting breakup"
       )
+    ]);
+
+    galleryRows =
+      Array.isArray(
+        loadedGalleryRows
+      )
+        ? loadedGalleryRows
+        : [];
+
+    purchaseRows =
+      cmRequiredRows(
+        purchaseResult,
+        "Purchase rows"
+      );
+
+    colourRows =
+      cmRequiredRows(
+        colourResult,
+        "Colour rows"
+      );
+
+    artRows =
+      cmRequiredRows(
+        artResult,
+        "Art Master"
+      );
+
+    printRows =
+      Array.isArray(
+        loadedPrintRows
+      )
+        ? loadedPrintRows
+        : [];
+
+    assignmentRows =
+      cmRequiredRows(
+        assignmentResult,
+        "Art assignments"
+      );
+
+    printAssignmentRows =
+      cmRequiredRows(
+        printAssignmentResult,
+        "Print assignments"
+      );
+
+    mediaRows =
+      Array.isArray(
+        loadedMediaRows
+      )
+        ? loadedMediaRows
+        : (
+            loadedMediaRows
+              ?.data || []
+          );
+
+    lotRows =
+      cmRequiredRows(
+        lotResult,
+        "Cutting lots"
+      );
+
+    breakupRows =
+      cmRequiredRows(
+        breakupResult,
+        "Cutting breakup"
+      );
+
+    /*
+      PART 4A अभी पुराने lots / breakup
+      array names को भी support करता है।
+
+      इसलिए दोनों state arrays को sync
+      रखा जा रहा है।
+    */
+    if (
+      typeof lots !==
+        "undefined" &&
+      Array.isArray(lots)
+    ) {
+      lots.splice(
+        0,
+        lots.length,
+        ...lotRows
+      );
+    }
+
+    if (
+      typeof breakup !==
+        "undefined" &&
+      Array.isArray(breakup)
+    ) {
+      breakup.splice(
+        0,
+        breakup.length,
+        ...breakupRows
+      );
+    }
+
+    await loadCostSettings(
+      client
     );
+
+    if (
+      typeof renderGallery ===
+      "function"
+    ) {
+      renderGallery();
+    } else {
+      throw new Error(
+        "renderGallery function unavailable."
+      );
+    }
+
+    if (announce) {
+      say(
+        `${galleryRows.length} Product Master cutting cards loaded.`,
+        "success"
+      );
+    }
+
+    console.info(
+      "REDZED Cutting Master PM loaded",
+      {
+        galleryRows:
+          galleryRows.length,
+
+        purchaseRows:
+          purchaseRows.length,
+
+        colourRows:
+          colourRows.length,
+
+        artRows:
+          artRows.length,
+
+        printRows:
+          printRows.length,
+
+        assignmentRows:
+          assignmentRows.length,
+
+        printAssignmentRows:
+          printAssignmentRows.length,
+
+        mediaRows:
+          mediaRows.length,
+
+        lotRows:
+          lotRows.length,
+
+        breakupRows:
+          breakupRows.length
+      }
+    );
+
+    return {
+      galleryRows,
+      purchaseRows,
+      colourRows,
+      artRows,
+      printRows,
+      assignmentRows,
+      printAssignmentRows,
+      mediaRows,
+      lotRows,
+      breakupRows
+    };
+  } finally {
+    if (galleryRoot) {
+      galleryRoot.setAttribute(
+        "aria-busy",
+        "false"
+      );
+    }
   }
-
-  await Promise.all(extraLoads);
-
-  renderGallery();
-
-  const finalChildren =
-    typeof isFinal === "function"
-      ? units.filter(isFinal).length
-      : units.length;
-
-  say(
-    `${finalChildren} final CB children loaded.`,
-    "success"
-  );
 }
 
-  function cmInjectPart4Styles() {
+function cmInjectPart4Styles() {
   if ($("cmPart4FinalStyles")) {
     return;
   }
 
-  const style = document.createElement("style");
+  const style =
+    document.createElement(
+      "style"
+    );
 
-  style.id = "cmPart4FinalStyles";
+  style.id =
+    "cmPart4FinalStyles";
 
   style.textContent = `
     .cm-newly-released {
       position: relative;
-      outline: 3px solid #111827;
+      outline: 3px solid currentColor;
       outline-offset: 3px;
       border-radius: 14px;
       scroll-margin-top: 90px;
@@ -4055,10 +4459,8 @@ async function loadAllData() {
       gap: 10px;
       margin-top: 10px;
       padding: 10px 12px;
-      border: 2px solid #111827;
+      border: 2px solid currentColor;
       border-radius: 10px;
-      background: #ffffff;
-      color: #111827;
       font-size: 12px;
       line-height: 1.3;
     }
@@ -4074,9 +4476,8 @@ async function loadAllData() {
       align-items: center;
       min-height: 24px;
       padding: 4px 8px;
+      border: 1px solid currentColor;
       border-radius: 999px;
-      background: #111827;
-      color: #ffffff;
       font-weight: 800;
       white-space: nowrap;
     }
@@ -4088,12 +4489,15 @@ async function loadAllData() {
     }
   `;
 
-  document.head.appendChild(style);
+  document.head.appendChild(
+    style
+  );
 }
 
 function cmGalleryRoot() {
   if (
-    typeof gallery !== "undefined" &&
+    typeof gallery !==
+      "undefined" &&
     gallery
   ) {
     return gallery;
@@ -4109,37 +4513,9 @@ function cmGalleryRoot() {
   );
 }
 
-function cmCardLotNo(card) {
-  if (!card) {
-    return "";
-  }
-
-  const directLotNo = cmLotNo(
-    card.dataset?.lotNo ||
-    card.getAttribute?.("data-lot-no")
-  );
-
-  if (directLotNo) {
-    return directLotNo;
-  }
-
-  const lotElement = card.querySelector?.(
-    [
-      "[data-lot-no]",
-      ".cm-lot-no",
-      ".lot-no",
-      ".cm-lot-number",
-      ".lot-number"
-    ].join(",")
-  );
-
-  return cmLotNo(
-    lotElement?.dataset?.lotNo ||
-    lotElement?.textContent
-  );
-}
-
-function cmRemoveOldHighlights(root) {
+function cmRemoveOldHighlights(
+  root
+) {
   if (!root) {
     return;
   }
@@ -4158,12 +4534,12 @@ function cmRemoveOldHighlights(root) {
     .querySelectorAll(
       ".cm-release-highlight"
     )
-    .forEach(badge => {
-      badge.remove();
+    .forEach(element => {
+      element.remove();
     });
 }
 
-function cmFindLotCard(
+function cmFindReleasedLotCard(
   root,
   lotNo
 ) {
@@ -4174,18 +4550,10 @@ function cmFindLotCard(
   const cleanLotNo =
     cmLotNo(lotNo);
 
-  const directCard =
-    root.querySelector(
-      `[data-lot-no="${CSS.escape(cleanLotNo)}"]`
-    );
-
-  if (directCard) {
-    return directCard;
-  }
-
   const candidates = [
     ...root.querySelectorAll(
       [
+        "[data-lot-no]",
         ".cm-lot-card",
         ".cutting-lot-card",
         ".cm-gallery-card",
@@ -4197,15 +4565,25 @@ function cmFindLotCard(
 
   return (
     candidates.find(card => {
-      const cardLotNo =
-        cmCardLotNo(card);
+      const dataLotNo =
+        cmLotNo(
+          card.dataset?.lotNo ||
+          card.getAttribute?.(
+            "data-lot-no"
+          )
+        );
 
-      if (cardLotNo === cleanLotNo) {
+      if (
+        dataLotNo ===
+        cleanLotNo
+      ) {
         return true;
       }
 
       const cardText =
-        cmLotNo(card.textContent);
+        cmLotNo(
+          card.textContent
+        );
 
       return cardText.includes(
         cleanLotNo
@@ -4232,19 +4610,25 @@ function cmAddReadyBadge(
     });
 
   const badge =
-    document.createElement("div");
+    document.createElement(
+      "div"
+    );
 
   badge.className =
     "cm-release-highlight";
 
   const lotLabel =
-    document.createElement("strong");
+    document.createElement(
+      "strong"
+    );
 
   lotLabel.textContent =
     `LOT ${cmLotNo(lotNo)}`;
 
   const status =
-    document.createElement("span");
+    document.createElement(
+      "span"
+    );
 
   status.textContent =
     "Ready for KR / OV";
@@ -4254,7 +4638,9 @@ function cmAddReadyBadge(
     status
   );
 
-  card.appendChild(badge);
+  card.appendChild(
+    badge
+  );
 }
 
 function cmHighlightReleasedLots() {
@@ -4274,14 +4660,16 @@ function cmHighlightReleasedLots() {
     return;
   }
 
-  cmRemoveOldHighlights(root);
+  cmRemoveOldHighlights(
+    root
+  );
 
   let firstMatched = null;
 
   cmLastReleasedLotNos.forEach(
     lotNo => {
       const card =
-        cmFindLotCard(
+        cmFindReleasedLotCard(
           root,
           lotNo
         );
@@ -4317,27 +4705,29 @@ function cmHighlightReleasedLots() {
     });
 }
 
-async function refreshCuttingMaster() {
-  try {
-    say(
-      "Cutting Master refresh हो रहा है...",
-      "info"
-    );
+async function refreshCuttingMaster(
+  options = {}
+) {
+  const announce =
+    options.announce !== false;
 
-    if (
-      typeof loadAllData !==
-      "function"
-    ) {
-      throw new Error(
-        "loadAllData function unavailable."
+  try {
+    if (announce) {
+      say(
+        "Cutting Master refresh हो रहा है...",
+        "info"
       );
     }
 
-    await loadAllData();
-
-    requestAnimationFrame(() => {
-      cmHighlightReleasedLots();
+    await loadAllData({
+      announce
     });
+
+    requestAnimationFrame(
+      () => {
+        cmHighlightReleasedLots();
+      }
+    );
   } catch (error) {
     console.error(
       "Cutting Master refresh failed:",
@@ -4358,21 +4748,73 @@ async function refreshCuttingMaster() {
   }
 }
 
+async function cmRunReleaseWorkflow(
+  button
+) {
+  if (cmReleaseWorkflowBusy) {
+    return;
+  }
+
+  cmReleaseWorkflowBusy = true;
+
+  /*
+    पुराना highlight clear किया जा रहा है।
+    Successful createLot इसे नये Lot No
+    से दोबारा fill करेगा।
+  */
+  cmLastReleasedLotNos = [];
+
+  try {
+    await createLot({
+      preventDefault() {},
+      submitter: button
+    });
+
+    /*
+      Database से fresh reload जरूरी है,
+      ताकि Part 4A में lots/lotRows का
+      कोई नाम mismatch gallery को न रोके।
+    */
+    await loadAllData({
+      announce: false
+    });
+
+    requestAnimationFrame(
+      () => {
+        cmHighlightReleasedLots();
+      }
+    );
+  } catch (error) {
+    console.error(
+      "Release workflow failed:",
+      error
+    );
+
+    say(
+      errorText(error),
+      "error"
+    );
+  } finally {
+    cmReleaseWorkflowBusy = false;
+  }
+}
+
 function cmReleaseButtonFromEvent(
   event
 ) {
-  return event.target?.closest?.(
-    [
-      "#releaseLotBtn",
-      "[data-release-lot]",
-      "#releaseLot",
-      "#cmReleaseLot",
-      ".cm-release-lot"
-    ].join(",")
-  );
+  return event.target
+    ?.closest?.(
+      [
+        "#releaseLotBtn",
+        "[data-release-lot]",
+        "#releaseLot",
+        "#cmReleaseLot",
+        ".cm-release-lot"
+      ].join(",")
+    );
 }
 
-function cmHandleReleaseButtonClick(
+async function cmHandleReleaseClick(
   event
 ) {
   const button =
@@ -4387,17 +4829,20 @@ function cmHandleReleaseButtonClick(
   const form =
     $("lotForm");
 
-  const belongsToLotForm =
+  const belongsToForm =
     form?.contains(button) ||
     button.form === form;
 
-  const belongsToLotSheet =
-    typeof lotSheet !== "undefined" &&
-    lotSheet?.contains?.(button);
+  const belongsToSheet =
+    typeof lotSheet !==
+      "undefined" &&
+    lotSheet?.contains?.(
+      button
+    );
 
   if (
-    !belongsToLotForm &&
-    !belongsToLotSheet
+    !belongsToForm &&
+    !belongsToSheet
   ) {
     return;
   }
@@ -4405,10 +4850,9 @@ function cmHandleReleaseButtonClick(
   event.preventDefault();
   event.stopPropagation();
 
-  createLot({
-    preventDefault() {},
-    submitter: button
-  });
+  await cmRunReleaseWorkflow(
+    button
+  );
 }
 
 function cmBindOnce(
@@ -4421,18 +4865,28 @@ function cmBindOnce(
     return;
   }
 
-  const datasetKey =
-    `cmBound${key}`;
+  let boundSet =
+    cmPart4BoundEvents.get(
+      element
+    );
 
-  if (
-    element.dataset?.[datasetKey] ===
-    "1"
-  ) {
+  if (!boundSet) {
+    boundSet = new Set();
+
+    cmPart4BoundEvents.set(
+      element,
+      boundSet
+    );
+  }
+
+  const token =
+    `${eventName}:${key}`;
+
+  if (boundSet.has(token)) {
     return;
   }
 
-  element.dataset[datasetKey] =
-    "1";
+  boundSet.add(token);
 
   element.addEventListener(
     eventName,
@@ -4446,9 +4900,9 @@ function bindEvents() {
 
   cmBindOnce(
     form,
-    "LotSubmit",
+    "lot-submit",
     "submit",
-    event => {
+    async event => {
       event.preventDefault();
 
       const submitter =
@@ -4461,31 +4915,26 @@ function bindEvents() {
           'button[type="submit"]'
         );
 
-      createLot({
-        preventDefault() {},
+      await cmRunReleaseWorkflow(
         submitter
-      });
+      );
     }
   );
 
-  if (
-    document.documentElement
-      .dataset.cmFinalReleaseClickBound !==
-    "1"
-  ) {
-    document.documentElement
-      .dataset.cmFinalReleaseClickBound =
-      "1";
-
-    document.addEventListener(
-      "click",
-      cmHandleReleaseButtonClick
-    );
-  }
+  /*
+    Release button dynamic हो सकता है,
+    इसलिए delegated click listener।
+  */
+  cmBindOnce(
+    document,
+    "release-click",
+    "click",
+    cmHandleReleaseClick
+  );
 
   cmBindOnce(
     $("cmSearch"),
-    "Search",
+    "search",
     "input",
     () => {
       if (
@@ -4499,7 +4948,7 @@ function bindEvents() {
 
   cmBindOnce(
     $("sizeSet"),
-    "SizeChange",
+    "size-change",
     "change",
     () => {
       if (
@@ -4513,7 +4962,7 @@ function bindEvents() {
 
   cmBindOnce(
     $("sizeSet"),
-    "SizeBlur",
+    "size-blur",
     "blur",
     () => {
       if (
@@ -4532,7 +4981,7 @@ function bindEvents() {
   ].forEach(id => {
     cmBindOnce(
       $(id),
-      `Weight${id}`,
+      `weight-${id}`,
       "input",
       () => {
         if (
@@ -4551,7 +5000,7 @@ function bindEvents() {
   ].forEach(id => {
     cmBindOnce(
       $(id),
-      `Cost${id}`,
+      `cost-${id}`,
       "input",
       () => {
         if (
@@ -4571,7 +5020,7 @@ function bindEvents() {
   ].forEach(id => {
     cmBindOnce(
       $(id),
-      `Option${id}`,
+      `option-${id}`,
       "change",
       () => {
         if (
@@ -4586,7 +5035,7 @@ function bindEvents() {
 
   cmBindOnce(
     $("refreshCutting"),
-    "Refresh",
+    "refresh",
     "click",
     event => {
       event.preventDefault();
@@ -4602,8 +5051,9 @@ function bindEvents() {
     .forEach(button => {
       cmBindOnce(
         button,
-        `Filter${
-          button.dataset.filter || "All"
+        `filter-${
+          button.dataset
+            .filter || "all"
         }`,
         "click",
         () => {
@@ -4612,7 +5062,8 @@ function bindEvents() {
             "undefined"
           ) {
             currentFilter =
-              button.dataset.filter ||
+              button.dataset
+                .filter ||
               "all";
           }
 
@@ -4644,16 +5095,20 @@ function bindEvents() {
     .forEach(button => {
       cmBindOnce(
         button,
-        "CloseLot",
+        "close-lot",
         "click",
         event => {
           event.preventDefault();
 
           if (
             typeof closeSheet ===
-            "function"
+              "function" &&
+            typeof lotSheet !==
+              "undefined"
           ) {
-            closeSheet(lotSheet);
+            closeSheet(
+              lotSheet
+            );
           }
         }
       );
@@ -4666,18 +5121,20 @@ function bindEvents() {
     .forEach(button => {
       cmBindOnce(
         button,
-        "CloseSplit",
+        "close-split",
         "click",
         event => {
           event.preventDefault();
 
           if (
             typeof closeSheet ===
-            "function"
+              "function" &&
+            typeof splitSheet !==
+              "undefined"
           ) {
             closeSheet(
               splitSheet
-            );
+              );
           }
         }
       );
@@ -4690,14 +5147,16 @@ function bindEvents() {
     .forEach(button => {
       cmBindOnce(
         button,
-        "CloseCost",
+        "close-cost",
         "click",
         event => {
           event.preventDefault();
 
           if (
             typeof closeSheet ===
-            "function"
+              "function" &&
+            typeof costSheet !==
+              "undefined"
           ) {
             closeSheet(
               costSheet
@@ -4709,7 +5168,7 @@ function bindEvents() {
 
   cmBindOnce(
     $("splitForm"),
-    "SplitSubmit",
+    "split-submit",
     "submit",
     event => {
       event.preventDefault();
@@ -4723,7 +5182,7 @@ function bindEvents() {
 
   cmBindOnce(
     $("costSettingsForm"),
-    "CostSettingsSubmit",
+    "cost-settings-submit",
     "submit",
     event => {
       event.preventDefault();
@@ -4746,25 +5205,21 @@ async function start() {
     }
 
     cmInjectPart4Styles();
+
     bindEvents();
 
-    if (
-      typeof loadAllData !==
-      "function"
-    ) {
-      throw new Error(
-        "loadAllData function unavailable."
-      );
-    }
-
-    await loadAllData();
-
-    requestAnimationFrame(() => {
-      cmHighlightReleasedLots();
+    await loadAllData({
+      announce: true
     });
 
+    requestAnimationFrame(
+      () => {
+        cmHighlightReleasedLots();
+      }
+    );
+
     console.info(
-      "REDZED Cutting Master PM Final Part 4 loaded."
+      "REDZED Cutting Master PM Final Part 4B started."
     );
   } catch (error) {
     console.error(
@@ -4788,7 +5243,7 @@ async function start() {
 
 window.RRCuttingMasterPM = {
   version:
-    "CM-PM-FINAL-PART4-A-B-R1",
+    "CM-PM-FINAL-PART4B-R2",
 
   releaseLot:
     createLot,
@@ -4801,37 +5256,121 @@ window.RRCuttingMasterPM = {
 
   state() {
     return {
+      galleryRows:
+        typeof galleryRows !==
+          "undefined" &&
+        Array.isArray(
+          galleryRows
+        )
+          ? galleryRows
+          : [],
+
+      purchaseRows:
+        typeof purchaseRows !==
+          "undefined" &&
+        Array.isArray(
+          purchaseRows
+        )
+          ? purchaseRows
+          : [],
+
+      colourRows:
+        typeof colourRows !==
+          "undefined" &&
+        Array.isArray(
+          colourRows
+        )
+          ? colourRows
+          : [],
+
+      artRows:
+        typeof artRows !==
+          "undefined" &&
+        Array.isArray(
+          artRows
+        )
+          ? artRows
+          : [],
+
+      printRows:
+        typeof printRows !==
+          "undefined" &&
+        Array.isArray(
+          printRows
+        )
+          ? printRows
+          : [],
+
+      assignmentRows:
+        typeof assignmentRows !==
+          "undefined" &&
+        Array.isArray(
+          assignmentRows
+        )
+          ? assignmentRows
+          : [],
+
+      printAssignmentRows:
+        typeof printAssignmentRows !==
+          "undefined" &&
+        Array.isArray(
+          printAssignmentRows
+        )
+          ? printAssignmentRows
+          : [],
+
+      mediaRows:
+        typeof mediaRows !==
+          "undefined" &&
+        Array.isArray(
+          mediaRows
+        )
+          ? mediaRows
+          : [],
+
+      lotRows:
+        typeof lotRows !==
+          "undefined" &&
+        Array.isArray(
+          lotRows
+        )
+          ? lotRows
+          : [],
+
+      breakupRows:
+        typeof breakupRows !==
+          "undefined" &&
+        Array.isArray(
+          breakupRows
+        )
+          ? breakupRows
+          : [],
+
+      activeCard:
+        typeof activeCard !==
+          "undefined"
+          ? activeCard
+          : null,
+
       activeUnit:
         typeof activeUnit !==
-        "undefined"
+          "undefined"
           ? activeUnit
           : null,
 
       currentLotMode:
         typeof currentLotMode !==
-        "undefined"
+          "undefined"
           ? currentLotMode
           : "single",
 
       comboDevRows:
         typeof comboDevRows !==
-        "undefined" &&
-        Array.isArray(comboDevRows)
+          "undefined" &&
+        Array.isArray(
+          comboDevRows
+        )
           ? comboDevRows
-          : [],
-
-      lots:
-        typeof lots !==
-        "undefined" &&
-        Array.isArray(lots)
-          ? lots
-          : [],
-
-      breakup:
-        typeof breakup !==
-        "undefined" &&
-        Array.isArray(breakup)
-          ? breakup
           : [],
 
       lastReleasedLotNos:
