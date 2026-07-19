@@ -984,7 +984,7 @@ function renderStats(cards) {
 
 // ===== REDZED CUTTING MASTER PM CORE PART 2 END =====
   
- // ===== REDZED CUTTING MASTER PM CORE PART 3 START =====
+ // ===== REDZED CUTTING MASTER PM CORE PART 3A START =====
 
 let comboDevRows = [];
 let currentLotMode = "single";
@@ -1057,6 +1057,7 @@ function renderGallery() {
     .map(card => {
       const decision = cardDecision(card);
       const state = cardState(card);
+
       const lot = lotForDivision(
         card.division.division_id
       );
@@ -1232,7 +1233,10 @@ function nextLotNumber() {
   const nums = lotRows
     .map(row => {
       const match = String(row.lot_no || "").match(/(\d+)$/);
-      return match ? Number(match[1]) : 0;
+
+      return match
+        ? Number(match[1])
+        : 0;
     })
     .filter(Number.isFinite);
 
@@ -1277,11 +1281,12 @@ function openLotByDivision(divisionId) {
   setInputValue("artNo", decision.artNo);
   setInputValue("printNo", decision.printNo);
   setInputValue("sizeSet", sizes.join(","));
-  setInputValue("bundleQty", "1");
   setInputValue("lotNotes", "");
   setInputValue("fabricUsed", "");
   setInputValue("wastageWeight", "0");
   setInputValue("remnantWeight", "0");
+
+  hideBundleUi();
 
   if ($("lotContext")) {
     $("lotContext").textContent =
@@ -1295,13 +1300,6 @@ function openLotByDivision(divisionId) {
       input.readOnly = true;
     }
   });
-
-  const bundle = $("bundleQty");
-
-  if (bundle) {
-    bundle.value = "1";
-    bundle.readOnly = true;
-  }
 
   ensureComboUi();
   hideLegacyOwnerCosting();
@@ -1321,8 +1319,37 @@ function openLotByDivision(divisionId) {
   openSheet(lotSheet);
 }
 
+function hideBundleUi() {
+  const bundle = $("bundleQty");
+
+  if (bundle) {
+    bundle.value = "";
+    const label = bundle.closest("label");
+    if (label) label.style.display = "none";
+  }
+
+  const totalBundles = $("totalBundles");
+
+  if (totalBundles) {
+    totalBundles.textContent = "";
+    const holder =
+      totalBundles.closest("span") ||
+      totalBundles.closest("article") ||
+      totalBundles.parentElement;
+
+    if (holder) holder.style.display = "none";
+  }
+
+  document
+    .querySelectorAll("[data-bundle], .bundle, .bundle-count, .bundle-qty")
+    .forEach(el => {
+      el.style.display = "none";
+    });
+}
+
 function ensureComboUi() {
   if ($("cmComboPanel")) {
+    hideBundleUi();
     return;
   }
 
@@ -1603,6 +1630,8 @@ function ensureComboUi() {
     updatePieceTotals();
     updateCostPreview();
   });
+
+  hideBundleUi();
 }
 
 function hideLegacyOwnerCosting() {
@@ -1652,7 +1681,11 @@ function setLotMode(mode) {
   renderCuttingMatrix();
   updatePieceTotals();
   updateCostPreview();
+  hideBundleUi();
 }
+
+// ===== REDZED CUTTING MASTER PM CORE PART 3A END =====
+  // ===== REDZED CUTTING MASTER PM CORE PART 3B START =====
 
 function fillSizeComboOptions(id) {
   const select = $(id);
@@ -1714,6 +1747,8 @@ function setComboDefaults() {
 
   setInputValue("cmCustomDevCount", "");
   setInputValue("cmParentCuttingPcs", "");
+
+  hideBundleUi();
 }
 
 function readArtAverageCost() {
@@ -1759,22 +1794,13 @@ function devCount() {
 
 function defaultDevSizeCombo(index) {
   const defaults = [
-    "M.L.XL",
-    "2XL.3XL.4XL",
     "L.XL.XXL",
+    "2XL.3XL.4XL",
+    "M.L.XL",
     "M.L.XL.XXL"
   ];
 
   return defaults[index] || DEFAULT_SIZE_COMBO;
-}
-
-function devKey(row) {
-  return [
-    row.dev_no,
-    row.size_combo,
-    row.sleeve,
-    row.border
-  ].join("|");
 }
 
 function singleRowFromInputs(old = {}) {
@@ -1817,6 +1843,7 @@ function buildComboDevRows(options = {}) {
       )
     ];
 
+    hideBundleUi();
     return;
   }
 
@@ -1825,6 +1852,7 @@ function buildComboDevRows(options = {}) {
 
   for (let index = 0; index < count; index += 1) {
     const devNo = `D${index + 1}`;
+
     const old = options.keepManual
       ? existing.get(devNo) || {}
       : {};
@@ -1855,6 +1883,7 @@ function buildComboDevRows(options = {}) {
   }
 
   renderDevRows();
+  hideBundleUi();
 }
 
 function renderDevRows() {
@@ -1866,6 +1895,7 @@ function renderDevRows() {
 
   if (currentLotMode !== "multi") {
     holder.innerHTML = "";
+    hideBundleUi();
     return;
   }
 
@@ -1875,6 +1905,8 @@ function renderDevRows() {
         <p>No Dev cards. Select Dev Count.</p>
       </div>
     `;
+
+    hideBundleUi();
     return;
   }
 
@@ -1910,7 +1942,7 @@ function renderDevRows() {
             </select>
           </label>
 
-                    <label>
+          <label>
             <span>Border</span>
             <select
               class="cm-dev-border"
@@ -2046,6 +2078,7 @@ function renderDevRows() {
     });
 
   updatePieceTotals();
+  hideBundleUi();
 }
 
 function updateDevRowFromInput(input, options = {}) {
@@ -2055,6 +2088,8 @@ function updateDevRowFromInput(input, options = {}) {
   if (!row) {
     return;
   }
+
+  let rebuildMatrixOnly = false;
 
   if (input.classList.contains("cm-dev-size")) {
     row.size_combo = input.value || DEFAULT_SIZE_COMBO;
@@ -2084,6 +2119,7 @@ function updateDevRowFromInput(input, options = {}) {
     );
 
     clearMatrixMemoryForDev(row.dev_no);
+    rebuildMatrixOnly = true;
   }
 
   if (input.classList.contains("cm-dev-custom")) {
@@ -2093,6 +2129,8 @@ function updateDevRowFromInput(input, options = {}) {
   if (options.resetMatrix) {
     clearMatrixMemoryForDev(row.dev_no);
     renderDevRows();
+    renderCuttingMatrix();
+  } else if (rebuildMatrixOnly) {
     renderCuttingMatrix();
   } else {
     const card = input.closest("[data-dev-card]");
@@ -2105,6 +2143,7 @@ function updateDevRowFromInput(input, options = {}) {
 
   updatePieceTotals();
   updateCostPreview();
+  hideBundleUi();
 }
 
 function distributeDevPcs() {
@@ -2174,8 +2213,30 @@ function matchingCostFor(row) {
     Number(row.matching_avg_cost || 0);
 }
 
-function devCost(row) {
+function devMatrixQuantity(row, index) {
+  const inputs = matrixInputs().filter(input => {
+    return (
+      String(input.dataset.devIndex) === String(index) ||
+      String(input.dataset.devNo) === String(row.dev_no)
+    );
+  });
+
+  const qty = inputs.reduce((sum, input) => {
+    return sum + Math.max(
+      0,
+      Math.floor(Number(input.value || 0))
+    );
+  }, 0);
+
+  return qty || Number(row.cutting_pcs || 0);
+}
+
+function devCost(row, pcsOverride = null) {
   const base = Number(readArtAverageCost() || 0);
+
+  const pcs = pcsOverride === null
+    ? Number(row.cutting_pcs || 0)
+    : Number(pcsOverride || 0);
 
   const perPiece =
     base +
@@ -2185,7 +2246,6 @@ function devCost(row) {
     Number(row.custom_adjustment || 0);
 
   const matchingTotal = matchingCostFor(row);
-  const pcs = Number(row.cutting_pcs || 0);
 
   const matchingPerPiece =
     pcs > 0
@@ -2382,10 +2442,12 @@ function renderCuttingMatrix() {
 
       updatePieceTotals();
       updateCostPreview();
+      hideBundleUi();
     });
   });
 
   updatePieceTotals();
+  hideBundleUi();
 }
 
 function cuttingEntries() {
@@ -2423,9 +2485,10 @@ function updatePieceTotals() {
   }
 
   if ($("totalBundles")) {
-    $("totalBundles").textContent = String(pieces);
+    $("totalBundles").textContent = "";
   }
 
+  hideBundleUi();
   updateCostPreview();
 }
 
@@ -2463,18 +2526,20 @@ function selectedAdjustments() {
 
 function costResult() {
   if (comboDevRows.length) {
-    const total = comboDevRows.reduce(
-      (sum, row) => sum + devCost(row).total,
-      0
-    );
+    let total = 0;
+    let pcs = 0;
 
-    const pcs = Number(
-      $("totalPieces")?.textContent || 0
-    );
+    comboDevRows.forEach((row, index) => {
+      const rowPcs = devMatrixQuantity(row, index);
+      const rowCost = devCost(row, rowPcs);
+
+      pcs += rowPcs;
+      total += rowCost.total;
+    });
 
     const final =
       pcs > 0
-        ? total / pcs
+            ? total / pcs
         : 0;
 
     return {
@@ -2518,9 +2583,12 @@ function updateCostPreview() {
   setMoneyText("costAdjustmentPreview", result.adjustmentTotal);
   setMoneyText("costPerPiecePreview", result.final);
   setMoneyText("costTotalPreview", result.total);
+
+  hideBundleUi();
 }
 
-// ===== REDZED CUTTING MASTER PM CORE PART 3 END =====
+// ===== REDZED CUTTING MASTER PM CORE PART 3B END =====
+  
 
  // ===== REDZED CUTTING MASTER PM CORE PART 4 START =====
 
