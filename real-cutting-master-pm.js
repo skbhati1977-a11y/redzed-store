@@ -2482,16 +2482,35 @@ function updatePieceTotals() {
 
   if ($("totalPieces")) {
     $("totalPieces").textContent = String(pieces);
+
+    const holder =
+      $("totalPieces").closest(".cm-total-card") ||
+      $("totalPieces").closest(".cm-summary-card") ||
+      $("totalPieces").closest("article") ||
+      $("totalPieces").parentElement;
+
+    if (holder) {
+      holder.style.display = "none";
+    }
   }
 
   if ($("totalBundles")) {
     $("totalBundles").textContent = "";
+
+    const holder =
+      $("totalBundles").closest(".cm-total-card") ||
+      $("totalBundles").closest(".cm-summary-card") ||
+      $("totalBundles").closest("article") ||
+      $("totalBundles").parentElement;
+
+    if (holder) {
+      holder.style.display = "none";
+    }
   }
 
   hideBundleUi();
   updateCostPreview();
 }
-
 function updateWeightSettlement() {
   const unitWeight = Number(
     activeCard?.division?.allocated_qty || 0
