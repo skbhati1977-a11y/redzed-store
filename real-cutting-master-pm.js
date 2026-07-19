@@ -2607,9 +2607,59 @@ function updateCostPreview() {
 }
 
 // ===== REDZED CUTTING MASTER PM CORE PART 3B END =====
-  
-
  // ===== REDZED CUTTING MASTER PM CORE PART 4 START =====
+
+function cleanLotNo(value) {
+  return String(value || "")
+    .trim()
+    .toUpperCase();
+}
+
+function cleanDevNo(value) {
+  return String(value || "")
+    .trim()
+    .toUpperCase()
+    .replace(/\s+/g, "") || "D1";
+}
+
+function rowDevMeta(devNo) {
+  return comboDevRows.find(row => {
+    return cleanDevNo(row.dev_no) === cleanDevNo(devNo);
+  }) || {};
+}
+
+function groupEntriesByLot(entries) {
+  const map = new Map();
+
+  entries.forEach(row => {
+    const lotNo = cleanLotNo(row.lot_no);
+    const devNo = cleanDevNo(row.dev_no);
+
+    const key = `${lotNo}||${devNo}`;
+
+    if (!map.has(key)) {
+      map.set(key, {
+        lotNo,
+        devNo,
+        lotMode: row.lot_mode || currentLotMode,
+        entries: [],
+        totalPieces: 0
+      });
+    }
+
+    const group = map.get(key);
+
+    group.entries.push({
+      ...row,
+      lot_no: lotNo,
+      dev_no: devNo
+    });
+
+    group.totalPieces += Number(row.quantity || 0);
+  });
+
+  return [...map.values()];
+}
 
 function validateLot() {
   if (!activeCard) {
@@ -2622,22 +2672,16 @@ function validateLot() {
     throw new Error("Art decision missing.");
   }
 
-  const lotNo = readText("lotNo");
-
-  if (!lotNo) {
-    throw new Error("Lot No required.");
-  }
-
   const styleName = readText("styleName");
 
   if (!styleName) {
     throw new Error("Style name required.");
   }
 
-  const entries = cuttingEntries();
+  const rawEntries = cuttingEntries();
 
-  const totalPieces = entries.reduce(
-    (sum, row) => sum + row.quantity,
+  const totalPieces = rawEntries.reduce(
+    (sum, row) => sum + Number(row.quantity || 0),
     0
   );
 
@@ -2645,24 +2689,125 @@ function validateLot() {
     throw new Error("Colour × Size cutting quantity required.");
   }
 
+  let entries = [];
+
+  if (currentLotMode === "multi") {
+    entries = rawEntries.map(row => {
+      const dev = rowDevMeta(row.dev_no);
+
+      return {
+        ...row,
+        lot_mode: "multi",
+        dev_no: cleanDevNo(row.dev_no),
+        lot_no: cleanLotNo(row.lot_no || dev.lot_no)
+      };
+    });
+
+    const missingLot = entries.find(row => !row.lot_no);
+
+    if (missingLot) {
+      throw new Error(
+        `Multi Lot में ${missingLot.dev_no || "Dev"} का manual Lot No required है.`
+      );
+    }
+  } else {
+    const lotNo = cleanLotNo(readText("lotNo"));
+
+    if (!lotNo) {
+      throw new Error("Lot No required.");
+    }
+
+    entries = rawEntries.map(row => ({
+      ...row,
+      lot_mode: "single",
+      dev_no: cleanDevNo(row.dev_no || "D1"),
+      lot_no: lotNo
+    }));
+  }
+
+  const groups = groupEntriesByLot(entries);
+
+  if (!groups.length) {
+    throw new Error("No cutting lot group found.");
+  }
+
   return {
     decision,
-    lotNo,
     styleName,
+    lotMode: currentLotMode,
     sizes: parseSizes(),
     entries,
+    groups,
     totalPieces
   };
 }
 
-function lotPayload(valid) {
-  const cost = costResult();
+function groupCost(group) {
+  const dev = rowDevMeta(group.devNo);
+
+  if (dev && Object.keys(dev).length) {
+    return devCost(dev, group.totalPieces);
+  }
+
+  const base = Number(readArtAverageCost() || 0);
+  const total = base * Number(group.totalPieces || 0);
+
+  return {
+    base,
+    perPiece: base,
+    matchingTotal: 0,
+    matchingPerPiece: 0,
+    finalPerPiece: base,
+    total
+  };
+}
+
+function groupSizeSet(group) {
+  const dev = rowDevMeta(group.devNo);
+
+  if (dev?.sizes?.length) {
+    return dev.sizes;
+  }
+
+  return [
+    ...new Set(
+      group.entries
+        .map(row => row.size_name)
+        .filter(Boolean)
+    )
+  ];
+}
+
+function lotPayload(valid, group) {
+  const cost = groupCost(group);
+  const dev = rowDevMeta(group.devNo);
+
+  const meta = {
+    source: "CM-PM-U4",
+    cb_no: activeCard.group.cb_no || null,
+    cb_child: activeCard.division.division_code || null,
+    lot_mode: group.lotMode,
+    dev_no: group.devNo,
+    manual_lot_no: group.lotNo,
+    size_combo: dev.size_combo || null,
+    sleeve: dev.sleeve || null,
+    border: dev.border || null,
+    matching_qty: Number(dev.matching_consumption || 0),
+    matching_avg_cost: Number(dev.matching_avg_cost || 0),
+    matching_total_cost: Number(dev.matching_consumption || 0) *
+      Number(dev.matching_avg_cost || 0),
+    cutting_pcs: group.totalPieces
+  };
 
   const notes = [
     readText("lotNotes"),
     readText("operatorName")
       ? `Operator: ${readText("operatorName")}`
-      : ""
+      : "",
+    `CB: ${activeCard.group.cb_no || ""}`,
+    `CB Child: ${activeCard.division.division_code || ""}`,
+    `Dev: ${group.devNo}`,
+    `Lot Mode: ${group.lotMode}`
   ]
     .filter(Boolean)
     .join("\n");
@@ -2671,31 +2816,31 @@ function lotPayload(valid) {
     cb_unit_id: activeCard.division.division_id,
     cb_id: activeCard.group.cb_id,
 
-    lot_no: valid.lotNo,
+    lot_no: group.lotNo,
     lot_date: readText("lotDate") || today(),
 
     style_name: valid.styleName,
     art_no: valid.decision.artNo,
     print_no: valid.decision.printNo,
 
-    size_set: valid.sizes,
-    planned_pcs: valid.totalPieces,
-    bundle_qty: 1,
+    size_set: groupSizeSet(group),
+    planned_pcs: group.totalPieces,
 
     base_cost_per_piece: cost.base,
-    adjustment_cost_per_piece: cost.adjustmentTotal,
-    final_cost_per_piece: cost.final,
+    adjustment_cost_per_piece:
+      cost.finalPerPiece - cost.base,
+    final_cost_per_piece: cost.finalPerPiece,
     total_cutting_cost: cost.total,
 
-    adjustments: cost.adjustments,
+    adjustments: meta,
     remarks: notes || null,
 
-    status: "released"
+    status: "ready_for_production"
   };
 }
 
-function breakupPayloads(lotId, valid) {
-  return valid.entries.map(row => ({
+function breakupPayloads(lotId, group) {
+  return group.entries.map(row => ({
     lot_id: lotId,
     cb_unit_id: activeCard.division.division_id,
 
@@ -2703,10 +2848,24 @@ function breakupPayloads(lotId, valid) {
     colour_name: row.colour_name,
     size_name: row.size_name,
 
-    quantity: row.quantity,
-    bundle_qty: 1,
-    bundle_count: row.quantity
+    quantity: row.quantity
   }));
+}
+
+async function rollbackLots(client, lotIds) {
+  if (!lotIds.length) {
+    return;
+  }
+
+  await client
+    .from("rr_cutting_breakup_v3")
+    .delete()
+    .in("lot_id", lotIds);
+
+  await client
+    .from("rr_cutting_lots_v3")
+    .delete()
+    .in("id", lotIds);
 }
 
 async function createLot(event = {}) {
@@ -2730,6 +2889,8 @@ async function createLot(event = {}) {
     $("lotForm")?.querySelector('button[type="submit"]') ||
     $("lotForm")?.querySelector("button");
 
+  const insertedLotIds = [];
+
   try {
     if (button) {
       button.disabled = true;
@@ -2739,52 +2900,67 @@ async function createLot(event = {}) {
     say("Cutting Lot save हो रहा है...", "info");
 
     const valid = validateLot();
-    const payload = lotPayload(valid);
+
+    const lotNos = [
+      ...new Set(
+        valid.groups.map(group => group.lotNo)
+      )
+    ];
 
     const duplicate = await client
       .from("rr_cutting_lots_v3")
       .select("id, lot_no")
-      .eq("lot_no", payload.lot_no)
-      .maybeSingle();
+      .in("lot_no", lotNos);
 
     if (duplicate.error) {
       throw duplicate.error;
     }
 
-    if (duplicate.data) {
+    if (duplicate.data?.length) {
       throw new Error(
-        `Lot No ${payload.lot_no} already exists.`
+        `Lot No already exists: ${
+          duplicate.data.map(row => row.lot_no).join(", ")
+        }`
       );
     }
 
-    const insertedLot = await client
-      .from("rr_cutting_lots_v3")
-      .insert(payload)
-      .select("*")
-      .single();
+    const createdLots = [];
+    const createdBreakups = [];
 
-    if (insertedLot.error) {
-      throw insertedLot.error;
-    }
+    for (const group of valid.groups) {
+      const payload = lotPayload(valid, group);
 
-    const lot = insertedLot.data;
-
-    const insertedBreakup = await client
-      .from("rr_cutting_breakup_v3")
-      .insert(breakupPayloads(lot.id, valid))
-      .select("*");
-
-    if (insertedBreakup.error) {
-      await client
+      const insertedLot = await client
         .from("rr_cutting_lots_v3")
-        .delete()
-        .eq("id", lot.id);
+        .insert(payload)
+        .select("*")
+        .single();
 
-      throw insertedBreakup.error;
+      if (insertedLot.error) {
+        throw insertedLot.error;
+      }
+
+      const lot = insertedLot.data;
+
+      insertedLotIds.push(lot.id);
+      createdLots.push(lot);
+
+      const breakupPayload = breakupPayloads(lot.id, group);
+
+      const insertedBreakup = await client
+        .from("rr_cutting_breakup_v3")
+        .insert(breakupPayload)
+        .select("*");
+
+      if (insertedBreakup.error) {
+        throw insertedBreakup.error;
+      }
+
+      createdBreakups.push(...(insertedBreakup.data || []));
     }
 
-    lotRows.unshift(lot);
-    breakupRows.unshift(...(insertedBreakup.data || []));
+    lotRows.unshift(...createdLots);
+    breakupRows.unshift(...createdBreakups);
 
     closeSheet(lotSheet);
     activeCard = null;
@@ -2792,11 +2968,16 @@ async function createLot(event = {}) {
     renderGallery();
 
     say(
-      `Lot ${lot.lot_no} released successfully.`,
+      valid.groups.length === 1
+        ? `Lot ${valid.groups[0].lotNo} released successfully.`
+        : `${valid.groups.length} manual lots released successfully.`,
       "success"
     );
   } catch (error) {
     console.error(error);
+
+    await rollbackLots(client, insertedLotIds);
+
     say(errorText(error), "error");
   } finally {
     createLot.busy = false;
@@ -3093,7 +3274,7 @@ function bindEvents() {
       event.preventDefault();
 
       say(
-        "Multi combo next phase में connect होगा. अभी Single Lot locked है.",
+        "Multi combo Cutting Lot sheet में connect हो चुका है.",
         "info"
       );
     }
@@ -3124,7 +3305,7 @@ async function start() {
 }
 
 window.RRCuttingMasterPM = {
-  version: "pm-core-v1-u1",
+  version: "pm-core-v1-u4-manual-lot-dev",
 
   state() {
     return {
@@ -3139,7 +3320,9 @@ window.RRCuttingMasterPM = {
       lotRows,
       breakupRows,
       currentFilter,
-      activeCard
+      activeCard,
+      currentLotMode,
+      comboDevRows
     };
   },
 
