@@ -3078,13 +3078,14 @@ function cmValidateGroup(group) {
 
   // Allow matrixTotal to differ from entered totalPieces (user may
   // type a total separately from the per-cell breakdown).
-  // Only warn in the console; do not block release.
+  // Auto-correct to matrix total and notify the user via say().
   if (
     group.matrixTotal > 0 &&
     group.matrixTotal !== group.totalPieces
   ) {
-    console.warn(
-      `[CuttingMasterPM] ${group.devNo}: entered pcs ${group.totalPieces} ≠ matrix total ${group.matrixTotal}. Using matrix total.`
+    say(
+      `${group.devNo}: Entered Pcs (${group.totalPieces}) ≠ Matrix Total (${group.matrixTotal}). Matrix Total use होगा.`,
+      "info"
     );
     group.totalPieces = group.matrixTotal;
   }
@@ -3693,7 +3694,10 @@ async function cmReleaseSingleViaRpc(client, validation, group) {
     : "without";
 
   const sizeComboUp = String(devRow.size_combo || "").toUpperCase();
-  const sizeTypeVal = BIG_SIZE_COMBOS.has(sizeComboUp) ? "big" : "small";
+  // BIG_SIZE_COMBOS is defined at the top of this IIFE (Part 1).
+  const sizeTypeVal = (typeof BIG_SIZE_COMBOS !== "undefined" && BIG_SIZE_COMBOS.has(sizeComboUp))
+    ? "big"
+    : "small";
 
   const artBase = readArtAverageCost();
   const baseCostVal = artBase > 0
