@@ -1165,6 +1165,7 @@ function renderGallery() {
             <button
               type="button"
               data-release-lot="${safe(card.division.division_id)}"
+              data-single="${safe(card.division.division_id)}"
               ${!decision.ready || lot ? "disabled" : ""}
             >
               Single · Release Lot
@@ -1181,6 +1182,35 @@ function renderGallery() {
       button.addEventListener("click", () => {
         openLotByDivision(button.dataset.releaseLot);
       });
+    });
+
+  gallery
+    .querySelectorAll("[data-single]")
+    .forEach(button => {
+      button.onclick = event => {
+        event.preventDefault();
+        event.stopPropagation();
+
+        const divisionId =
+          button.dataset.single ||
+          button.dataset.divisionId;
+
+        if (!divisionId) {
+          say("CB Child ID missing.", "error");
+          return;
+        }
+
+        try {
+          openLotByDivision(divisionId);
+        } catch (error) {
+          console.error(
+            "Opening Single Lot sheet failed:",
+            error
+          );
+
+          say(errorText(error), "error");
+        }
+      };
     });
 
   say(
