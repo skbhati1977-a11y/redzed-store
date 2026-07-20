@@ -294,14 +294,17 @@ function ensureColourDrafts(count) {
 }
 
 function makeEntry({ regularLocked = false, categoryCode = null } = {}) {
-  const defaultCategory = categoryCode
+  const preferredCategory = categoryCode
     ? categoryByCode(categoryCode)
-    : categoryByCode("regular-cloth") || categories[0];
+    : categoryByCode("cuff-collar") ||
+      categoryByCode("regular-cloth") ||
+      categories[0] ||
+      null;
 
   return {
     key: `entry-${++entrySequence}`,
-    regularLocked: false,
-    materialCategoryId: defaultCategory?.id || "",
+    regularLocked: Boolean(regularLocked),
+    materialCategoryId: preferredCategory?.id || "",
     vendorName: "",
     fabricName: "",
     billNo: "",
@@ -315,7 +318,7 @@ function makeEntry({ regularLocked = false, categoryCode = null } = {}) {
     )
   };
 }
-function clearDraftImages() {
+  function clearDraftImages() {
   cbColourDrafts.forEach(item => {
     if (item.objectUrl) URL.revokeObjectURL(item.objectUrl);
   });
