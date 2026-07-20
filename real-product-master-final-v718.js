@@ -296,11 +296,11 @@ function ensureColourDrafts(count) {
 function makeEntry({ regularLocked = false, categoryCode = null } = {}) {
   const defaultCategory = categoryCode
     ? categoryByCode(categoryCode)
-    : categories.find(item => item.category_code !== "regular-cloth") || categories[0];
+    : categoryByCode("regular-cloth") || categories[0];
 
   return {
     key: `entry-${++entrySequence}`,
-    regularLocked,
+    regularLocked: false,
     materialCategoryId: defaultCategory?.id || "",
     vendorName: "",
     fabricName: "",
@@ -315,7 +315,6 @@ function makeEntry({ regularLocked = false, categoryCode = null } = {}) {
     )
   };
 }
-
 function clearDraftImages() {
   cbColourDrafts.forEach(item => {
     if (item.objectUrl) URL.revokeObjectURL(item.objectUrl);
@@ -425,7 +424,6 @@ function renderColourCard(entry, entryIndex, colourIndex) {
 
 function renderEntry(entry, entryIndex) {
   const canRemove = !(formMode === "create" && entryIndex === 0);
-  const locked = entry.regularLocked;
 
   return `
     <article class="pm-purchase-entry" data-entry-key="${safe(entry.key)}">
@@ -437,8 +435,8 @@ function renderEntry(entry, entryIndex) {
       <div class="pm-entry-fields">
         <label>
           <span>Material *</span>
-          <select class="pm-material-select ${locked ? "pm-locked-material" : ""}" ${locked ? "disabled" : ""}>
-            ${materialOptions(entry.materialCategoryId, locked)}
+          <select class="pm-material-select">
+            ${materialOptions(entry.materialCategoryId, false)}
           </select>
         </label>
 
@@ -476,7 +474,6 @@ function renderEntry(entry, entryIndex) {
     </article>
   `;
 }
-
 function bindEntryEvents(entry, entryIndex, node) {
   const bindValue = (selector, key) => {
     const input = node.querySelector(selector);
@@ -688,7 +685,6 @@ function openAppendForm(cbId) {
 function validateEntries() {
   if (!formEntries.length) throw new Error("Add at least one material purchase.");
 
-
   formEntries.forEach((entry, index) => {
     const number = index + 1;
     if (!entry.materialCategoryId) throw new Error(`Purchase ${number}: select Material.`);
@@ -704,11 +700,12 @@ function validateEntries() {
     }
   });
 
- if (formMode === "create") {
-  cbColourDrafts.forEach((colour, index) => {
-    if (!colour.name.trim()) throw new Error(`Enter Colour ${index + 1} name.`);
-    if (!colour.file) throw new Error(`Select Colour ${index + 1} image.`);
-  });
+  if (formMode === "create") {
+    cbColourDrafts.forEach((colour, index) => {
+      if (!colour.name.trim()) throw new Error(`Enter Colour ${index + 1} name.`);
+      if (!colour.file) throw new Error(`Select Colour ${index + 1} image.`);
+    });
+  }
 }
 function selectedDivisionIds(entry, divisions) {
   const selectedIndexes = entry.allocationScope === "all"
