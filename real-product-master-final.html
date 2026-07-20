@@ -1,0 +1,392 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+
+  <meta
+    name="viewport"
+    content="width=device-width,initial-scale=1,viewport-fit=cover"
+  >
+
+  <meta name="theme-color" content="#0b0b0e">
+
+  <title>REDZED REAL — Product Master V718 Matching</title>
+
+  <link
+    rel="stylesheet"
+    href="/redzed-store/real-style.css?v=7168"
+  >
+
+  <link
+    rel="stylesheet"
+    href="/redzed-store/real-product-master-v713.css?v=7168"
+  >
+
+  <link
+    rel="stylesheet"
+    href="/redzed-store/real-product-master-v715b-print-choice.css?v=7168"
+  >
+
+  <style>
+    html,
+    body {
+      margin: 0;
+      min-height: 100%;
+      background: #0b0b0e;
+      color: #ffffff;
+      font-family: Arial, sans-serif;
+    }
+
+    .boot-screen {
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+      box-sizing: border-box;
+      text-align: center;
+    }
+
+    .boot-screen h1 {
+      margin: 0 0 10px;
+      font-size: 28px;
+    }
+
+    .boot-screen p {
+      margin: 0;
+      color: #aaaaaf;
+    }
+
+    .boot-spinner {
+      width: 42px;
+      height: 42px;
+      margin: 0 auto 18px;
+      border: 4px solid #33333b;
+      border-top-color: #ef3340;
+      border-radius: 50%;
+      animation: spin .8s linear infinite;
+    }
+
+    .boot-error {
+      width: min(650px, 100%);
+      padding: 20px;
+      border: 1px solid #73323d;
+      border-radius: 18px;
+      box-sizing: border-box;
+      background: #3c1b20;
+      color: #ffc0c5;
+      text-align: left;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+    }
+
+    .boot-error strong {
+      display: block;
+      margin-bottom: 12px;
+      color: #ffffff;
+      font-size: 20px;
+    }
+
+    .boot-error-details {
+      line-height: 1.55;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+    /* ===== New CB Colour Preview Fix ===== */
+
+.pm-colour-preview,
+.pm-colour-preview img,
+.pm-colour-image,
+.pm-colour-image img {
+    width: 70px !important;
+    height: 70px !important;
+    max-width: 70px !important;
+    max-height: 70px !important;
+    object-fit: cover !important;
+    border-radius: 10px;
+    display: block;
+    flex-shrink: 0;
+}
+
+@media (max-width:600px){
+
+    .pm-colour-preview,
+    .pm-colour-preview img,
+    .pm-colour-image,
+    .pm-colour-image img{
+
+        width:56px !important;
+        height:56px !important;
+        max-width:56px !important;
+        max-height:56px !important;
+    }
+
+}
+    /* ===== V717 exact New-CB colour preview fix ===== */
+
+.pm-material-colour-card .pm-colour-card-head {
+  ...
+}
+
+.pm-material-colour-card .pm-colour-thumb {
+  ...
+}
+
+/* baaki poora CSS */
+
+@media (max-width: 600px) {
+  ...
+}
+  </style>
+</head>
+
+<body>
+  <main class="boot-screen">
+    <div>
+      <div class="boot-spinner"></div>
+      <h1>Loading Product Master V718</h1>
+      <p>Connecting Art Master and Print Master…</p>
+    </div>
+  </main>
+
+  <script>
+    (() => {
+      "use strict";
+
+      const ROOT = "/redzed-store/";
+
+      const TEMPLATE_URL =
+        ROOT + "real-product-master_v713.html?v=7168";
+
+      const CSS_FILES = [
+        ROOT + "real-style.css?v=7168",
+        ROOT + "real-product-master-v713.css?v=7168",
+        ROOT + "real-product-master-v715b-print-choice.css?v=7168"
+      ];
+
+      const SCRIPT_FILES = [
+        "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2",
+        ROOT + "config.js?v=1",
+        ROOT + "real-common.js?v=1"
+      ];
+
+const PRODUCT_MASTER_SCRIPT =
+    ROOT + "real-product-master-final-v718.js?v=7180";
+
+      async function fetchText(url, label) {
+        const response = await fetch(url, {
+          cache: "no-store"
+        });
+
+        if (!response.ok) {
+          throw new Error(
+            `${label} could not load\n${url}\nHTTP ${response.status}`
+          );
+        }
+
+        return response.text();
+      }
+
+      function loadScript(url) {
+        return new Promise((resolve, reject) => {
+          const script = document.createElement("script");
+
+          script.src = url;
+          script.async = false;
+
+          script.onload = () => {
+            resolve();
+          };
+
+          script.onerror = () => {
+            reject(
+              new Error(
+                `JavaScript could not load\n${url}`
+              )
+            );
+          };
+
+          document.body.appendChild(script);
+        });
+      }
+
+      function errorDetails(error, extra = {}) {
+        const details = [
+          error?.message || String(error || "Unknown error"),
+          error?.details
+            ? `Details: ${error.details}`
+            : "",
+          error?.hint
+            ? `Hint: ${error.hint}`
+            : "",
+          error?.code
+            ? `Code: ${error.code}`
+            : "",
+          extra.file
+            ? `File: ${extra.file}`
+            : "",
+          extra.line
+            ? `Line: ${extra.line}:${extra.column || 0}`
+            : ""
+        ].filter(Boolean);
+
+        return details.join("\n");
+      }
+
+      function showError(error, extra = {}) {
+        document.body.innerHTML = "";
+
+        const screen =
+          document.createElement("main");
+
+        screen.className = "boot-screen";
+
+        const box =
+          document.createElement("div");
+
+        box.className = "boot-error";
+
+        const title =
+          document.createElement("strong");
+
+        title.textContent =
+          "Product Master V718 could not start";
+
+        const details =
+          document.createElement("div");
+
+        details.className =
+          "boot-error-details";
+
+        details.textContent =
+          errorDetails(error, extra);
+
+        box.append(title, details);
+        screen.appendChild(box);
+        document.body.appendChild(screen);
+      }
+
+      window.addEventListener(
+        "error",
+        event => {
+          console.error(
+            "Frontend JavaScript error:",
+            event.error || event.message
+          );
+
+          showError(
+            event.error ||
+            new Error(
+              event.message ||
+              "JavaScript error"
+            ),
+            {
+              file: event.filename || "",
+              line: event.lineno || 0,
+              column: event.colno || 0
+            }
+          );
+        }
+      );
+
+      window.addEventListener(
+        "unhandledrejection",
+        event => {
+          console.error(
+            "Unhandled Promise error:",
+            event.reason
+          );
+
+          const reason = event.reason;
+
+          showError(
+            reason instanceof Error
+              ? reason
+              : new Error(
+                  typeof reason === "string"
+                    ? reason
+                    : JSON.stringify(reason)
+                )
+          );
+        }
+      );
+
+      async function start() {
+        try {
+          const cssParts =
+            await Promise.all(
+              CSS_FILES.map(
+                (url, index) =>
+                  fetchText(
+                    url,
+                    `CSS file ${index + 1}`
+                  )
+              )
+            );
+
+          const combinedStyle =
+            document.createElement("style");
+
+          combinedStyle.id =
+            "redzed-product-master-v716-styles";
+
+          combinedStyle.textContent =
+            cssParts.join("\n\n");
+
+          document.head.appendChild(
+            combinedStyle
+          );
+
+          const templateText =
+            await fetchText(
+              TEMPLATE_URL,
+              "Product Master HTML template"
+            );
+
+          const parsed =
+            new DOMParser().parseFromString(
+              templateText,
+              "text/html"
+            );
+
+          parsed.body
+            .querySelectorAll("script")
+            .forEach(script => {
+              script.remove();
+            });
+
+          document.body.className =
+            parsed.body.className || "";
+
+          document.body.innerHTML =
+            parsed.body.innerHTML;
+
+          for (const url of SCRIPT_FILES) {
+            await loadScript(url);
+          }
+
+          await loadScript(
+            PRODUCT_MASTER_SCRIPT
+          );
+
+          console.info(
+            "REDZED Product Master V718 loaded successfully."
+          );
+        } catch (error) {
+          console.error(
+            "Product Master loader failed:",
+            error
+          );
+
+          showError(error);
+        }
+      }
+
+      start();
+    })();
+  </script>
+</body>
+</html>
