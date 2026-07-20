@@ -630,7 +630,7 @@ function resetCreateForm() {
   $("savePurchaseBtn").textContent = "Create CB";
   $("cbRemarks").value = "";
   ensureColourDrafts(6);
-  formEntries = [makeEntry({ regularLocked: false, categoryCode: "regular-cloth" })];
+  formEntries = [makeEntry({ regularLocked: false })];
   renderPurchaseEntries();
 }
 
@@ -704,21 +704,12 @@ function validateEntries() {
     }
   });
 
-  if (formMode === "create") {
-    cbColourDrafts.forEach((colour, index) => {
-      if (!colour.name.trim()) throw new Error(`Enter Colour ${index + 1} name.`);
-      if (!colour.file) throw new Error(`Select Colour ${index + 1} image.`);
-      const colourQty = formEntries[0].colours[index].rolls.reduce(
-        (sum, roll) => sum + Number(roll.quantity || 0),
-        0
-      );
-      if (colourQty <= 0) {
-        throw new Error(`Regular Cloth: enter roll quantity for ${colour.name.trim() || `Colour ${index + 1}`}.`);
-      }
-    });
-  }
+ if (formMode === "create") {
+  cbColourDrafts.forEach((colour, index) => {
+    if (!colour.name.trim()) throw new Error(`Enter Colour ${index + 1} name.`);
+    if (!colour.file) throw new Error(`Select Colour ${index + 1} image.`);
+  });
 }
-
 function selectedDivisionIds(entry, divisions) {
   const selectedIndexes = entry.allocationScope === "all"
     ? divisions.map(item => Number(item.division_index))
@@ -892,12 +883,11 @@ async function saveCreateMode() {
         p_regular_amount: Number(regularAmount.toFixed(2)),
         p_total_rolls: regularRolls,
         p_fabric_name: (regularEntry || identityEntry).fabricName.trim(),
-        p_regular_division_indexes: !regularEntry
-          ? []
-          : regularEntry.allocationScope === "all"
-            ? currentDivisionChoices().map(item => item.index)
-            : regularEntry.selectedDivisionIndexes.map(Number),
-        p_remarks: $("cbRemarks").value.trim() || null
+        p_regular_division_indexes: (!regularEntry || regularQuantity <= 0)
+  ? []
+  : regularEntry.allocationScope === "all"
+    ? currentDivisionChoices().map(item => item.index)
+    : regularEntry.selectedDivisionIndexes.map(Number),        p_remarks: $("cbRemarks").value.trim() || null
       });
 
     if (cbError) throw cbError;
