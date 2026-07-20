@@ -2615,8 +2615,6 @@ function updateCostPreview() {
   hideBundleUi();
 }
 
-// ===== REDZED CUTTING MASTER PM CORE PART 3B END =====
- 
 // ===== REDZED CUTTING MASTER PM CORE PART 4 START =====
 
 function validateLot() {
@@ -2795,20 +2793,15 @@ function breakupPayloads(lotId, valid) {
 
 async function createLot(event = {}) {
   event?.preventDefault?.();
- if (releaseLock) {
-    return;
-  }
-  releaseLock = true;
+
   const client = getClient();
 
   if (!client) {
     say("Supabase client unavailable.", "error");
-     releaseLock = false;
     return;
   }
 
   if (createLot.busy) {
-    releaseLock = false;
     return;
   }
 
@@ -2905,7 +2898,7 @@ async function createLot(event = {}) {
     say(errorText(error), "error");
   } finally {
     createLot.busy = false;
-releaseLock = false;
+
     if (button) {
       button.disabled = false;
       button.textContent = "Release Lot";
@@ -3073,7 +3066,27 @@ function bindEvents() {
     createLot
   );
 
-  
+  $("lotForm")
+    ?.querySelectorAll("button")
+    .forEach(button => {
+      const text = String(
+        button.textContent || ""
+      ).toLowerCase();
+
+      if (!text.includes("release")) {
+        return;
+      }
+
+      button.addEventListener("click", event => {
+        event.preventDefault();
+
+        createLot({
+          preventDefault() {},
+          submitter: button
+        });
+      });
+    });
+
   $("cmSearch")?.addEventListener(
     "input",
     renderGallery
