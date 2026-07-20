@@ -1173,9 +1173,11 @@ function renderGallery() {
               <small>Purchase</small>
               <strong>${purchases.length}</strong>
             </span>
-            <span>
+            <span class="${isNewLot ? "cm-lot-metric-new" : ""}">
               <small>Lot</small>
-              <strong>${lotNos.length ? safe(lotNos.join(" · ")) : "Due"}</strong>
+              <strong class="cm-lot-number ${isNewLot ? "cm-lot-number-highlight" : ""}">
+                ${lotNos.length ? safe(lotNos.join(" · ")) : "Due"}
+              </strong>
             </span>
           </div>
 
@@ -1183,7 +1185,12 @@ function renderGallery() {
             lots.length
               ? `
                 <div class="cm-lot-box">
-                  <h4>${lots.length > 1 ? "MULTI LOT" : "LOT"} ${safe(lotNos.join(" · "))}</h4>
+                  <h4 class="${isNewLot ? "cm-lot-title-new" : ""}">
+                    ${lots.length > 1 ? "MULTI LOT" : "LOT"}
+                    <span class="cm-lot-number ${isNewLot ? "cm-lot-number-highlight" : ""}">
+                      ${safe(lotNos.join(" · "))}
+                    </span>
+                  </h4>
                   <p>${safe(lot?.style_name || decision.styleName || "")}</p>
                   <p>
                     ${totalPcs} pcs ·
@@ -1379,7 +1386,7 @@ function openLotByDivision(divisionId, requestedMode = "single") {
 
     window.setTimeout(() => {
       const target = currentLotMode === "multi"
-        ? $("cmParentCuttingPcs")
+        ? $("cmDevRows")?.querySelector(".cm-dev-lot-no")
         : $("cmManualLotNo");
       target?.focus();
     }, 50);
@@ -1394,6 +1401,29 @@ function openLotByDivision(divisionId, requestedMode = "single") {
 }
 
 function hideBundleUi() {
+  const legacySizeSet = $("sizeSet");
+
+  if (legacySizeSet) {
+    const label = legacySizeSet.closest("label");
+    if (label) label.style.display = "none";
+  }
+
+  const parentTotal = $("cmParentCuttingPcs");
+
+  if (parentTotal) {
+    const label = parentTotal.closest("label");
+    if (label) label.style.display = "none";
+  }
+
+  const equalDevButton = $("cmEqualDevPcs");
+  if (equalDevButton) equalDevButton.style.display = "none";
+
+  const totalPieces = $("totalPieces");
+  if (totalPieces) {
+    const totalLine = totalPieces.closest(".cm-total-line");
+    if (totalLine) totalLine.style.display = "none";
+  }
+
   const bundle = $("bundleQty");
 
   if (bundle) {
@@ -2494,10 +2524,15 @@ function updatePieceTotals() {
     0
   );
 
+  if ($("cmParentCuttingPcs") && currentLotMode === "multi") {
+    $("cmParentCuttingPcs").value = String(pieces);
+  }
+
   if ($("totalPieces")) {
     $("totalPieces").textContent = String(pieces);
 
     const holder =
+      $("totalPieces").closest(".cm-total-line") ||
       $("totalPieces").closest(".cm-total-card") ||
       $("totalPieces").closest(".cm-summary-card") ||
       $("totalPieces").closest("article") ||
@@ -2784,16 +2819,10 @@ function validateLot() {
     0
   );
 
-  const enteredParent = Math.floor(numberValue("cmParentCuttingPcs"));
-
-  if (enteredParent <= 0) {
-    throw new Error("Multi Total Cutting Pcs required.");
-  }
-
-  if (enteredParent !== totalPieces) {
-    throw new Error(
-      `Multi Total ${enteredParent} है, लेकिन सभी Dev का total ${totalPieces} है.`
-    );
+  // Parent total is derived automatically from all Dev matrices.
+  // It is intentionally hidden so it cannot block the Release action.
+  if ($("cmParentCuttingPcs")) {
+    $("cmParentCuttingPcs").value = String(totalPieces);
   }
 
   return {
@@ -2950,13 +2979,25 @@ async function createLot(event = {}) {
 
     await loadAllData();
 
+    window.setTimeout(() => {
+      gallery
+        ?.querySelector(".cm-newly-released")
+        ?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 80);
+
     say(
       `Lot ${releasedNos.join(" · ")} Ready for KR / OV.`,
       "success"
     );
   } catch (error) {
     console.error("Lot release failed:", error);
-    say(errorText(error), "error");
+    const messageText = errorText(error);
+    say(messageText, "error");
+
+    if (lotSheet && !lotSheet.classList.contains("cm-hidden")) {
+      const releaseButton = $("releaseLotBtn");
+      releaseButton?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
   } finally {
     createLot.busy = false;
 
@@ -3354,7 +3395,7 @@ async function start() {
 }
 
 window.RRCuttingMasterPM = {
-  version: "pm-core-v38-single-multi-rpc",
+  version: "pm-core-v38.2-multi-release-fix",
 
   state() {
     return {

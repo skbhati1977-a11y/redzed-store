@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#0b0b0e">
-  <title>REDZED REAL — Cutting Master Final V3</title>
+  <title>REDZED REAL — Cutting Master V38.2</title>
   <link rel="stylesheet" href="real-style.css?v=716">
 <style>
 :root{
@@ -89,6 +89,10 @@ button:disabled{cursor:not-allowed;opacity:.48}
 .cm-spinner{width:32px;height:32px;border:3px solid #444;border-top-color:var(--red);border-radius:50%;animation:cm-spin .8s linear infinite}
 @keyframes cm-spin{to{transform:rotate(360deg)}}
 .cm-newly-released{outline:3px solid var(--green);outline-offset:3px;scroll-margin-top:80px}
+.cm-lot-metric-new{border-color:var(--green)!important;box-shadow:0 0 0 2px rgba(39,211,123,.18)}
+.cm-lot-number{display:inline-block;padding:4px 9px;border-radius:999px;background:#2b171c;color:#ff7280!important;border:1px solid #75303a;font-weight:1000;letter-spacing:.5px}
+.cm-lot-number-highlight{background:var(--green);color:#07110b!important;border-color:var(--green);box-shadow:0 0 0 3px rgba(39,211,123,.18)}
+.cm-lot-title-new{color:var(--green)}
 .cm-sheet{position:fixed;inset:0;z-index:10000;display:flex;align-items:flex-end;justify-content:center}
 .cm-backdrop{position:absolute;inset:0;background:#000c}
 .cm-sheet-panel{position:relative;width:min(760px,100%);max-height:94vh;overflow:auto;padding:14px 16px 20px;border:1px solid #34343c;border-radius:24px 24px 0 0;background:#111116;box-shadow:0 -20px 60px #0008}
@@ -456,7 +460,7 @@ window.onunhandledrejection = function(event) {
 
 <!-- MAIN PM SCRIPT -->
 <script
-  src="real-cutting-master-pm.js?v=38"
+  src="real-cutting-master-pm.js?v=38.2"
   onerror="document.getElementById('cmMessage').textContent='✗ Failed to load PM script';"
 ></script>  
 
