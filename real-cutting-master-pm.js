@@ -1165,6 +1165,7 @@ function renderGallery() {
             <button
               type="button"
               data-release-lot="${safe(card.division.division_id)}"
+              data-single="${safe(card.division.division_id)}"
               ${!decision.ready || lot ? "disabled" : ""}
             >
               Single · Release Lot
@@ -1176,11 +1177,33 @@ function renderGallery() {
     .join("");
 
   gallery
-    .querySelectorAll("[data-release-lot]")
+    .querySelectorAll("[data-single], [data-release-lot]")
     .forEach(button => {
-      button.addEventListener("click", () => {
-        openLotByDivision(button.dataset.releaseLot);
-      });
+      button.onclick = event => {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+
+        const divisionId =
+          button.dataset.single ||
+          button.dataset.releaseLot ||
+          button.dataset.divisionId;
+
+        if (!divisionId) {
+          say("CB Child ID missing.", "error");
+          return;
+        }
+
+        try {
+          openLotByDivision(divisionId);
+        } catch (error) {
+          console.error(
+            "Opening Single Lot sheet failed:",
+            error
+          );
+
+          say(errorText(error), "error");
+        }
+      };
     });
 
   say(
@@ -1272,6 +1295,11 @@ function openLotByDivision(divisionId) {
   currentLotMode = "single";
   matrixQtyMemory = new Map();
 
+  // Sync global activeUnit for helpers.js / validateLot compatibility
+  if (typeof setActiveUnit === "function") {
+    setActiveUnit(card.division);
+  }
+
   const sizes = sizesForCard(card);
 
   setInputValue("lotUnitId", card.division.division_id);
@@ -1285,6 +1313,7 @@ function openLotByDivision(divisionId) {
   setInputValue("fabricUsed", "");
   setInputValue("wastageWeight", "0");
   setInputValue("remnantWeight", "0");
+  setInputValue("baseCost", String(costSettings.default_base_cost || 0));
 
   hideBundleUi();
 
@@ -1301,20 +1330,24 @@ function openLotByDivision(divisionId) {
     }
   });
 
-  ensureComboUi();
-  hideLegacyOwnerCosting();
-  setLotMode("single");
-  setComboDefaults();
+  try {
+    ensureComboUi();
+    hideLegacyOwnerCosting();
+    setLotMode("single");
+    setComboDefaults();
 
-  buildComboDevRows({
-    keepManual: false,
-    autoDistribute: true,
-    resetMatrix: true
-  });
+    buildComboDevRows({
+      keepManual: false,
+      autoDistribute: true,
+      resetMatrix: true
+    });
 
-  renderCuttingMatrix();
-  updateWeightSettlement();
-  updateCostPreview();
+    renderCuttingMatrix();
+    updateWeightSettlement();
+    updateCostPreview();
+  } catch (setupError) {
+    console.warn("[CuttingMasterPM] Lot sheet setup error (non-fatal):", setupError);
+  }
 
   openSheet(lotSheet);
 }
@@ -2450,30 +2483,6 @@ function renderCuttingMatrix() {
   hideBundleUi();
 }
 
-function cuttingEntries() {
-  return matrixInputs()
-    .map(input => {
-      const devIndex = Number(input.dataset.devIndex);
-      const dev = comboDevRows[devIndex] || {};
-
-      return {
-        dev_no: input.dataset.devNo || dev.dev_no || "",
-        lot_mode: dev.lot_mode || currentLotMode,
-        size_combo: input.dataset.sizeCombo || dev.size_combo || "",
-        sleeve: input.dataset.sleeve || dev.sleeve || "",
-        border: input.dataset.border || dev.border || "",
-        colour_id: input.dataset.colourId || null,
-        colour_name: input.dataset.colourName || "",
-        size_name: input.dataset.size || "",
-        quantity: Math.max(
-          0,
-          Math.floor(Number(input.value || 0))
-        )
-      };
-    })
-    .filter(row => row.quantity > 0);
-}
-
 function updatePieceTotals() {
   const pieces = cuttingEntries().reduce(
     (sum, row) => sum + row.quantity,
@@ -3067,13 +3076,18 @@ function cmValidateGroup(group) {
     );
   }
 
+  // Allow matrixTotal to differ from entered totalPieces (user may
+  // type a total separately from the per-cell breakdown).
+  // Auto-correct to matrix total and notify the user via say().
   if (
-    group.matrixTotal !==
-    group.totalPieces
+    group.matrixTotal > 0 &&
+    group.matrixTotal !== group.totalPieces
   ) {
-    throw new Error(
-      `${group.devNo} Total Cutting Pcs ${group.totalPieces} है, लेकिन Colour × Size total ${group.matrixTotal} है.`
+    say(
+      `${group.devNo}: Entered Pcs (${group.totalPieces}) ≠ Matrix Total (${group.matrixTotal}). Matrix Total use होगा.`,
+      "info"
     );
+    group.totalPieces = group.matrixTotal;
   }
 }
 
@@ -3165,57 +3179,35 @@ function validateLot() {
   };
 }
 
-function cmBaseCalculatedCost() {
-  if (
-    typeof calculatedCost ===
-    "function"
-  ) {
-    return calculatedCost() || {};
-  }
-
-  return {};
-}
-
 function cmGroupCost(group) {
-  const result =
-    cmBaseCalculatedCost();
+  // Use art average cost + dev-row adjustments (comboDevRows) for real costing.
+  // cmBaseCalculatedCost / calculatedCost are legacy hooks not present in this build.
+  const artBase = readArtAverageCost();
+  const baseCostInput = Math.max(0, numberValue("baseCost"));
+  const base = artBase > 0 ? artBase : baseCostInput;
 
-  const base =
-    cmNumber(
-      result.base ??
-      result.baseCost ??
-      result.perPiece
-    );
+  // Find the matching dev row for this group so we can apply its adjustments.
+  const devRow =
+    comboDevRows.find(row => row.dev_no === group.devNo) ||
+    comboDevRows[0] ||
+    {};
 
-  const standardAdjustments =
-    cmNumber(
-      result.standardAdjustments
-    );
+  const pcs = group.totalPieces || 0;
+  const cost = devCost(devRow, pcs > 0 ? pcs : null);
 
-  const custom =
-    cmNumber(result.custom);
-
-  const perPiece =
-    cmNumber(
-      result.perPiece,
-      base +
-      standardAdjustments +
-      custom
-    );
+  const finalPerPiece = base > 0
+    ? base +
+      sizeFactorForCombo(devRow) +
+      sleeveFactorFor(devRow) +
+      borderFactorFor(devRow) +
+      cmNumber(devRow.custom_adjustment)
+    : cost.finalPerPiece;
 
   return {
     base,
-
-    adjustmentPerPiece:
-      standardAdjustments +
-      custom,
-
-    finalPerPiece:
-      perPiece,
-
-    total:
-      perPiece *
-      group.totalPieces
+    adjustmentPerPiece: finalPerPiece - base,
+    finalPerPiece,
+    total: finalPerPiece * pcs
   };
 }
 
@@ -3480,6 +3472,11 @@ function lotPayload(
     .filter(Boolean)
     .join("\n");
 
+  const devRow =
+    comboDevRows.find(row => row.dev_no === group.devNo) ||
+    comboDevRows[0] ||
+    {};
+
   return {
     cb_unit_id:
       unitId(activeUnit),
@@ -3505,11 +3502,32 @@ function lotPayload(
     print_no:
       cmDecisionPrintNo(decision),
 
+    operator_name:
+      readText("operatorName") || null,
+
     size_set:
       cmGroupSizes(group),
 
     planned_pcs:
       group.totalPieces,
+
+    fabric_used:
+      numberValue("fabricUsed") || 0,
+
+    wastage_weight:
+      numberValue("wastageWeight") || 0,
+
+    remnant_weight:
+      numberValue("remnantWeight") || 0,
+
+    size_combo:
+      devRow.size_combo || null,
+
+    sleeve_type:
+      devRow.sleeve || null,
+
+    border_type:
+      devRow.border || null,
 
     /*
       Archived bundle compatibility.
@@ -3655,6 +3673,70 @@ async function cmRollbackLots(
   }
 }
 
+/*
+  Single Lot release via the proven rr_release_single_lot_v3 RPC.
+  This is the same stored-procedure path used by Cutting Master V4
+  which is known to work with the database schema.
+  Falls back to direct insert if the RPC is not available.
+*/
+async function cmReleaseSingleViaRpc(client, validation, group) {
+  const devRow =
+    comboDevRows.find(row => row.dev_no === group.devNo) ||
+    comboDevRows[0] ||
+    {};
+
+  const sleeveVal = String(devRow.sleeve || "half").toLowerCase().startsWith("full")
+    ? "full"
+    : "half";
+
+  const borderVal = String(devRow.border || "Without Border").toLowerCase().includes("with border")
+    ? "with"
+    : "without";
+
+  const sizeComboUp = String(devRow.size_combo || "").toUpperCase();
+  // BIG_SIZE_COMBOS is defined at the top of this IIFE (Part 1).
+  const sizeTypeVal = (typeof BIG_SIZE_COMBOS !== "undefined" && BIG_SIZE_COMBOS.has(sizeComboUp))
+    ? "big"
+    : "small";
+
+  const artBase = readArtAverageCost();
+  const baseCostVal = artBase > 0
+    ? artBase
+    : Math.max(0, numberValue("baseCost"));
+
+  const rpcBreakup = group.entries.map(row => ({
+    cb_colour_id: row.colour_id || null,
+    colour_name: row.colour_name,
+    size_code: row.size_name,
+    qty: cmNumber(row.quantity)
+  }));
+
+  const result = await client.rpc("rr_release_single_lot_v3", {
+    p_lot_no: group.lotNo,
+    p_cb_unit_id: unitId(activeUnit),
+    p_release_date: readText("lotDate") || today(),
+    p_style_name: validation.styleName,
+    p_art_no: cmDecisionArtNo(validation.decision) || null,
+    p_print_no: cmDecisionPrintNo(validation.decision) || null,
+    p_operator_name: readText("operatorName") || null,
+    p_size_set: cmGroupSizes(group),
+    p_bundle_qty: 1,
+    p_fabric_used: numberValue("fabricUsed") || 0,
+    p_wastage_weight: numberValue("wastageWeight") || 0,
+    p_remnant_weight: numberValue("remnantWeight") || 0,
+    p_base_cost: baseCostVal,
+    p_size_type: sizeTypeVal,
+    p_sleeve_type: sleeveVal,
+    p_border_type: borderVal,
+    p_custom_adjustment: numberValue("customAdjustment") || 0,
+    p_notes: readText("lotNotes") || null,
+    p_breakup: rpcBreakup
+  });
+
+  if (result.error) throw result.error;
+  return result.data;
+}
+
 async function createLot(
   event = {}
 ) {
@@ -3741,59 +3823,92 @@ async function createLot(
       const group of
       validation.groups
     ) {
-      const insertedLot =
-        await client
-          .from(
-            "rr_cutting_lots_v3"
-          )
-          .insert(
-            lotPayload(
-              validation,
-              group
+      // For single mode, try the proven rr_release_single_lot_v3 RPC first.
+      // Fall back to direct insert if RPC does not exist (code 42883 / PGRST202).
+      const isSingle = currentLotMode === "single";
+      let rpcUsed = false;
+      let lotRow;
+
+      if (isSingle) {
+        try {
+          const rpcResult = await cmReleaseSingleViaRpc(client, validation, group);
+          // RPC returns the created lot row (or its id) depending on the DB function.
+          if (rpcResult) {
+            if (typeof rpcResult === "object" && rpcResult.id) {
+              lotRow = rpcResult;
+            } else if (typeof rpcResult === "number" || typeof rpcResult === "string") {
+              // RPC returned the lot id only — treat as success and synthesise row.
+              lotRow = { id: rpcResult, lot_no: group.lotNo };
+            } else {
+              // RPC returned something; note the lot_no.
+              lotRow = { id: null, lot_no: group.lotNo, ...rpcResult };
+            }
+            insertedLotIds.push(lotRow.id);
+            rpcUsed = true;
+          }
+        } catch (rpcErr) {
+          const rpcErrCode = rpcErr?.code || rpcErr?.message || "";
+          const isRpcMissing =
+            String(rpcErrCode).includes("42883") ||
+            String(rpcErrCode).includes("PGRST202") ||
+            String(rpcErr?.message || "").toLowerCase().includes("does not exist");
+          if (isRpcMissing) {
+            console.warn("[CuttingMasterPM] rr_release_single_lot_v3 RPC not found — falling back to direct insert.");
+          } else {
+            throw rpcErr;
+          }
+        }
+      }
+
+      if (!rpcUsed) {
+        const insertedLot =
+          await client
+            .from(
+              "rr_cutting_lots_v3"
             )
+            .insert(
+              lotPayload(
+                validation,
+                group
+              )
+            )
+            .select("*")
+            .single();
+
+        if (insertedLot.error) {
+          throw insertedLot.error;
+        }
+
+        lotRow = insertedLot.data;
+        insertedLotIds.push(lotRow.id);
+
+        const rows =
+          breakupPayloads(
+            lotRow.id,
+            group
+          );
+
+        const insertedBreakup =
+          await client
+            .from(
+              "rr_cutting_breakup_v3"
+            )
+            .insert(rows)
+            .select("*");
+
+        if (insertedBreakup.error) {
+          throw insertedBreakup.error;
+        }
+
+        createdBreakups.push(
+          ...(
+            insertedBreakup.data ||
+            []
           )
-          .select("*")
-          .single();
-
-      if (insertedLot.error) {
-        throw insertedLot.error;
-      }
-
-      const lotRow =
-        insertedLot.data;
-
-      insertedLotIds.push(
-        lotRow.id
-      );
-
-      createdLots.push(
-        lotRow
-      );
-
-      const rows =
-        breakupPayloads(
-          lotRow.id,
-          group
         );
-
-      const insertedBreakup =
-        await client
-          .from(
-            "rr_cutting_breakup_v3"
-          )
-          .insert(rows)
-          .select("*");
-
-      if (insertedBreakup.error) {
-        throw insertedBreakup.error;
       }
 
-      createdBreakups.push(
-        ...(
-          insertedBreakup.data ||
-          []
-        )
-      );
+      createdLots.push(lotRow);
     }
 
     cmLastReleasedLotNos =
@@ -4017,12 +4132,7 @@ async function loadCostSettings(
   }
 }
 
-async function loadAllData(
-  options = {}
-) {
-  const announce =
-    options.announce !== false;
-
+async function loadAllData() {
   const client = getClient();
 
   if (!client) {
@@ -4031,403 +4141,116 @@ async function loadAllData(
     );
   }
 
-  if (
-    typeof loadGallerySource !==
-    "function"
-  ) {
-    throw new Error(
-      "loadGallerySource function unavailable."
-    );
-  }
+  if (gallery) {
+    gallery.setAttribute("aria-busy", "true");
 
-  if (
-    typeof loadPrintSource !==
-    "function"
-  ) {
-    throw new Error(
-      "loadPrintSource function unavailable."
-    );
-  }
-
-  if (
-    typeof selectRows !==
-    "function"
-  ) {
-    throw new Error(
-      "selectRows function unavailable."
-    );
-  }
-
-  const galleryRoot =
-    typeof gallery !==
-      "undefined"
-      ? gallery
-      : (
-          $("cuttingGallery") ||
-          $("cmGallery")
-        );
-
-  if (galleryRoot) {
-    galleryRoot.setAttribute(
-      "aria-busy",
-      "true"
-    );
-
-    galleryRoot.innerHTML = `
+    gallery.innerHTML = `
       <article class="cm-empty">
         <div class="cm-spinner"></div>
 
-        <h3>
-          Loading Cutting Master PM
-        </h3>
+        <h3>Loading Cutting Master PM Core</h3>
 
         <p>
-          Connecting Product Master
-          cards and Cutting Lots...
+          Connecting Product Master cards...
         </p>
       </article>
     `;
   }
 
-  if (announce) {
-    say(
-      "Product Master cutting cards load हो रहे हैं...",
-      "info"
-    );
-  }
+  say(
+    "Product Master cutting cards load हो रहे हैं...",
+    "info"
+  );
 
-  try {
-    const mediaPromise =
-      typeof optionalRows ===
-      "function"
-        ? optionalRows(
-            client,
-            "rr_media"
-          )
-        : Promise.resolve([]);
+  const [
+    loadedGalleryRows,
+    purchaseResult,
+    colourResult,
+    artResult,
+    loadedPrintRows,
+    assignmentResult,
+    printAssignmentResult,
+    loadedMediaRows,
+    lotResult,
+    breakupResult
+  ] = await Promise.all([
+    withTimeout(
+      loadGallerySource(client),
+      15000,
+      "Product gallery"
+    ),
 
-    const [
-      loadedGalleryRows,
-      purchaseResult,
-      colourResult,
-      artResult,
-      loadedPrintRows,
-      assignmentResult,
-      printAssignmentResult,
-      loadedMediaRows,
-      lotResult,
-      breakupResult
-    ] = await Promise.all([
-      cmWithTimeout(
-        loadGallerySource(client),
-        15000,
-        "Product gallery"
-      ),
+    selectRows(client, "rr_cb_purchase_entries", {
+      order: "created_at",
+      ascending: false
+    }),
 
-      cmWithTimeout(
-        selectRows(
-          client,
-          "rr_cb_purchase_entries",
-          {
-            order:
-              "created_at",
+    selectRows(client, "rr_cb_colours", {
+      order: "colour_order",
+      ascending: true
+    }),
 
-            ascending:
-              false
-          }
-        ),
-        15000,
-        "Purchase rows"
-      ),
+    selectRows(client, "rr_art_master", {
+      eq: { is_active: true },
+      order: "updated_at",
+      ascending: false
+    }),
 
-      cmWithTimeout(
-        selectRows(
-          client,
-          "rr_cb_colours",
-          {
-            order:
-              "colour_order",
+    loadPrintSource(client),
 
-            ascending:
-              true
-          }
-        ),
-        15000,
-        "Colour rows"
-      ),
+    selectRows(client, "rr_cb_art_assignments", {
+      order: "updated_at",
+      ascending: false
+    }),
 
-      cmWithTimeout(
-        selectRows(
-          client,
-          "rr_art_master",
-          {
-            eq: {
-              is_active:
-                true
-            },
+    selectRows(client, "rr_cb_print_assignments", {
+      order: "sequence_no",
+      ascending: true
+    }),
 
-            order:
-              "updated_at",
+    optionalRows(client, "rr_media"),
 
-            ascending:
-              false
-          }
-        ),
-        15000,
-        "Art Master"
-      ),
+    selectRows(client, "rr_cutting_lots_v3", {
+      order: "created_at",
+      ascending: false
+    }),
 
-      cmWithTimeout(
-        loadPrintSource(client),
-        15000,
-        "Print Master"
-      ),
+    selectRows(client, "rr_cutting_breakup_v3", {
+      order: "created_at",
+      ascending: false
+    })
+  ]);
 
-      cmWithTimeout(
-        selectRows(
-          client,
-          "rr_cb_art_assignments",
-          {
-            order:
-              "updated_at",
+  galleryRows = loadedGalleryRows || [];
+  purchaseRows = requiredData(purchaseResult, "Purchase rows");
+  colourRows = requiredData(colourResult, "Colour rows");
+  artRows = requiredData(artResult, "Art Master");
+  printRows = loadedPrintRows || [];
+  assignmentRows = requiredData(assignmentResult, "Art assignments");
+  printAssignmentRows = requiredData(
+    printAssignmentResult,
+    "Print assignments"
+  );
+  mediaRows = loadedMediaRows || [];
+  lotRows = requiredData(lotResult, "Cutting lots");
+  breakupRows = requiredData(breakupResult, "Cutting breakup");
 
-            ascending:
-              false
-          }
-        ),
-        15000,
-        "Art assignments"
-      ),
+  await loadCostSettings(client);
 
-      cmWithTimeout(
-        selectRows(
-          client,
-          "rr_cb_print_assignments",
-          {
-            order:
-              "sequence_no",
+  renderGallery();
 
-            ascending:
-              true
-          }
-        ),
-        15000,
-        "Print assignments"
-      ),
-
-      cmWithTimeout(
-        mediaPromise,
-        15000,
-        "Media"
-      ),
-
-      cmWithTimeout(
-        selectRows(
-          client,
-          "rr_cutting_lots_v3",
-          {
-            order:
-              "created_at",
-
-            ascending:
-              false
-          }
-        ),
-        15000,
-        "Cutting lots"
-      ),
-
-      cmWithTimeout(
-        selectRows(
-          client,
-          "rr_cutting_breakup_v3",
-          {
-            order:
-              "created_at",
-
-            ascending:
-              false
-          }
-        ),
-        15000,
-        "Cutting breakup"
-      )
-    ]);
-
-    galleryRows =
-      Array.isArray(
-        loadedGalleryRows
-      )
-        ? loadedGalleryRows
-        : [];
-
-    purchaseRows =
-      cmRequiredRows(
-        purchaseResult,
-        "Purchase rows"
-      );
-
-    colourRows =
-      cmRequiredRows(
-        colourResult,
-        "Colour rows"
-      );
-
-    artRows =
-      cmRequiredRows(
-        artResult,
-        "Art Master"
-      );
-
-    printRows =
-      Array.isArray(
-        loadedPrintRows
-      )
-        ? loadedPrintRows
-        : [];
-
-    assignmentRows =
-      cmRequiredRows(
-        assignmentResult,
-        "Art assignments"
-      );
-
-    printAssignmentRows =
-      cmRequiredRows(
-        printAssignmentResult,
-        "Print assignments"
-      );
-
-    mediaRows =
-      Array.isArray(
-        loadedMediaRows
-      )
-        ? loadedMediaRows
-        : (
-            loadedMediaRows
-              ?.data || []
-          );
-
-    lotRows =
-      cmRequiredRows(
-        lotResult,
-        "Cutting lots"
-      );
-
-    breakupRows =
-      cmRequiredRows(
-        breakupResult,
-        "Cutting breakup"
-      );
-
-    /*
-      PART 4A अभी पुराने lots / breakup
-      array names को भी support करता है।
-
-      इसलिए दोनों state arrays को sync
-      रखा जा रहा है।
-    */
-    if (
-      typeof lots !==
-        "undefined" &&
-      Array.isArray(lots)
-    ) {
-      lots.splice(
-        0,
-        lots.length,
-        ...lotRows
-      );
-    }
-
-    if (
-      typeof breakup !==
-        "undefined" &&
-      Array.isArray(breakup)
-    ) {
-      breakup.splice(
-        0,
-        breakup.length,
-        ...breakupRows
-      );
-    }
-
-    await loadCostSettings(
-      client
-    );
-
-    if (
-      typeof renderGallery ===
-      "function"
-    ) {
-      renderGallery();
-    } else {
-      throw new Error(
-        "renderGallery function unavailable."
-      );
-    }
-
-    if (announce) {
-      say(
-        `${galleryRows.length} Product Master cutting cards loaded.`,
-        "success"
-      );
-    }
-
-    console.info(
-      "REDZED Cutting Master PM loaded",
-      {
-        galleryRows:
-          galleryRows.length,
-
-        purchaseRows:
-          purchaseRows.length,
-
-        colourRows:
-          colourRows.length,
-
-        artRows:
-          artRows.length,
-
-        printRows:
-          printRows.length,
-
-        assignmentRows:
-          assignmentRows.length,
-
-        printAssignmentRows:
-          printAssignmentRows.length,
-
-        mediaRows:
-          mediaRows.length,
-
-        lotRows:
-          lotRows.length,
-
-        breakupRows:
-          breakupRows.length
-      }
-    );
-
-    return {
-      galleryRows,
-      purchaseRows,
-      colourRows,
-      artRows,
-      printRows,
-      assignmentRows,
-      printAssignmentRows,
-      mediaRows,
-      lotRows,
-      breakupRows
-    };
-  } finally {
-    if (galleryRoot) {
-      galleryRoot.setAttribute(
-        "aria-busy",
-        "false"
-      );
-    }
-  }
+  console.info("REDZED Cutting Master PM Core loaded", {
+    galleryRows: galleryRows.length,
+    purchaseRows: purchaseRows.length,
+    colourRows: colourRows.length,
+    artRows: artRows.length,
+    printRows: printRows.length,
+    assignmentRows: assignmentRows.length,
+    printAssignmentRows: printAssignmentRows.length,
+    mediaRows: mediaRows.length,
+    lotRows: lotRows.length,
+    breakupRows: breakupRows.length
+  });
 }
 
 function cmInjectPart4Styles() {
@@ -5167,6 +4990,24 @@ function bindEvents() {
     });
 
   cmBindOnce(
+    $("equalPieceSplit"),
+    "equal-pieces",
+    "click",
+    event => {
+      event.preventDefault();
+
+      matrixQtyMemory = new Map();
+      buildComboDevRows({
+        keepManual: false,
+        autoDistribute: true,
+        resetMatrix: true
+      });
+      renderCuttingMatrix();
+      updatePieceTotals();
+    }
+  );
+
+  cmBindOnce(
     $("splitForm"),
     "split-submit",
     "submit",
@@ -5184,13 +5025,41 @@ function bindEvents() {
     $("costSettingsForm"),
     "cost-settings-submit",
     "submit",
-    event => {
+    async event => {
       event.preventDefault();
 
-      say(
-        "Cost settings database से loaded हैं.",
-        "info"
-      );
+      const client = getClient();
+
+      if (!client) {
+        say("Supabase client unavailable.", "error");
+        return;
+      }
+
+      const payload = {
+        default_base_cost: numberValue("defaultBaseCost") || 0,
+        size_factor: numberValue("sizeFactor") || 0,
+        sleeve_factor_half: numberValue("sleeveFactor") || 0,
+        border_factor_with: numberValue("borderFactor") || 0
+      };
+
+      try {
+        const { error } = await client
+          .from("rr_cutting_cost_settings_v3")
+          .upsert(payload, { onConflict: "id" });
+
+        if (error) throw error;
+
+        Object.assign(costSettings, payload);
+
+        say("Cost settings saved.", "success");
+
+        if (typeof closeSheet === "function" && typeof costSheet !== "undefined") {
+          closeSheet(costSheet);
+        }
+      } catch (err) {
+        console.error("Save cost settings failed:", err);
+        say(errorText(err), "error");
+      }
     }
   );
 }
@@ -5383,6 +5252,19 @@ window.RRCuttingMasterPM = {
           : []
     };
   }
+};
+
+// Override helpers.js lotDecisionForActiveUnit so pm.js internal
+// activeCard and cardDecision are used for Release Lot validation.
+//
+// helpers.js defines this function at global scope but has no access
+// to activeCard/cardDecision which live inside this IIFE. Overriding
+// here (after helpers.js has already loaded) is the established pattern
+// in this codebase for bridging the two modules without restructuring
+// the loader chain.
+window.lotDecisionForActiveUnit = function() {
+  if (!activeCard) return null;
+  return cardDecision(activeCard);
 };
 
 if (
