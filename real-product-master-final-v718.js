@@ -317,7 +317,8 @@ function makeEntry({ regularLocked = false, categoryCode = null } = {}) {
       () => makeColourRollDraft(defaultRollRowCount())
     )
   };
-}
+} 
+  
   function clearDraftImages() {
   cbColourDrafts.forEach(item => {
     if (item.objectUrl) URL.revokeObjectURL(item.objectUrl);
@@ -684,12 +685,37 @@ function openAppendForm(cbId) {
   closeSheet(detailSheet);
   openSheet(purchaseSheet);
 }
+function entryHasAnyPurchaseData(entry) {
+  if (!entry) return false;
 
-function validateEntries() {
-  if (!formEntries.length) throw new Error("Add at least one material purchase.");
+  const hasText =
+    entry.vendorName.trim() ||
+    entry.fabricName.trim() ||
+    entry.billNo.trim();
 
-  formEntries.forEach((entry, index) => {
-    const number = index + 1;
+  const hasRate = Number(entry.rate || 0) > 0;
+  const hasQty = entryQuantity(entry) > 0;
+  const hasMaterial = String(entry.materialCategoryId || "").trim() !== "";
+
+  return Boolean(hasText || hasRate || hasQty || hasMaterial);
+}
+
+  function validateEntries() {
+  if (formMode === "create") {
+    cbColourDrafts.forEach((colour, index) => {
+      if (!colour.name.trim()) throw new Error(`Enter Colour ${index + 1} name.`);
+      if (!colour.file) throw new Error(`Select Colour ${index + 1} image.`);
+    });
+  }
+
+  const activeEntries = formEntries.filter(entry => entryHasAnyPurchaseData(entry));
+
+  if (!activeEntries.length) {
+    throw new Error("Add at least one material purchase.");
+  }
+
+  activeEntries.forEach(entry => {
+    const number = formEntries.indexOf(entry) + 1;
     if (!entry.materialCategoryId) throw new Error(`Purchase ${number}: select Material.`);
     if (!entry.vendorName.trim()) throw new Error(`Purchase ${number}: enter Vendor Name.`);
     if (!entry.fabricName.trim()) throw new Error(`Purchase ${number}: enter Fabric Name.`);
@@ -702,15 +728,8 @@ function validateEntries() {
       throw new Error(`Purchase ${number}: select at least one Division.`);
     }
   });
-
-  if (formMode === "create") {
-    cbColourDrafts.forEach((colour, index) => {
-      if (!colour.name.trim()) throw new Error(`Enter Colour ${index + 1} name.`);
-      if (!colour.file) throw new Error(`Select Colour ${index + 1} image.`);
-    });
-  }
 }
-function selectedDivisionIds(entry, divisions) {
+ function selectedDivisionIds(entry, divisions) {
   const selectedIndexes = entry.allocationScope === "all"
     ? divisions.map(item => Number(item.division_index))
     : entry.selectedDivisionIndexes.map(Number);
@@ -850,17 +869,27 @@ async function saveCreateMode() {
   const cbNo = $("cbNo").value.trim().toUpperCase();
   const divisionCount = getSelectedDivisionCount();
   const colourCount = currentColourCount();
+
+  const activeEntries = formEntries.filter(entry => entryHasAnyPurchaseData(entry));
+
   const regularCategoryId = categoryByCode("regular-cloth")?.id || null;
-  const regularEntryIndex = formEntries.findIndex(entry =>
+  const regularEntryIndex = activeEntries.findIndex(entry =>
     regularCategoryId && String(entry.materialCategoryId) === String(regularCategoryId)
   );
-  const regularEntry = regularEntryIndex >= 0 ? formEntries[regularEntryIndex] : null;
-  const identityEntry = formEntries[0];
+  const regularEntry = regularEntryIndex >= 0 ? activeEntries[regularEntryIndex] : null;
+
+  const identityEntry =
+    activeEntries[0] ||
+    formEntries[0] || {
+      fabricName: ""
+    };
+
   const regularQuantity = regularEntry ? entryQuantity(regularEntry) : 0;
   const regularAmount = regularEntry
     ? regularQuantity * Number(regularEntry.rate || 0)
     : 0;
   const regularRolls = regularEntry ? entryRolls(regularEntry).length : 0;
+
   const uploadedMedia = [];
   let cbPurchaseId = null;
 
@@ -882,12 +911,13 @@ async function saveCreateMode() {
         p_regular_qty: Number(regularQuantity.toFixed(3)),
         p_regular_amount: Number(regularAmount.toFixed(2)),
         p_total_rolls: regularRolls,
-        p_fabric_name: (regularEntry || identityEntry).fabricName.trim(),
+       p_fabric_name: (regularEntry || identityEntry).fabricName.trim() || cbNo,
         p_regular_division_indexes: (!regularEntry || regularQuantity <= 0)
-  ? []
-  : regularEntry.allocationScope === "all"
-    ? currentDivisionChoices().map(item => item.index)
-    : regularEntry.selectedDivisionIndexes.map(Number),        p_remarks: $("cbRemarks").value.trim() || null
+          ? []
+          : regularEntry.allocationScope === "all"
+            ? currentDivisionChoices().map(item => item.index)
+            : regularEntry.selectedDivisionIndexes.map(Number),
+        p_remarks: $("cbRemarks").value.trim() || null
       });
 
     if (cbError) throw cbError;
@@ -935,16 +965,16 @@ async function saveCreateMode() {
       division_id: row.id
     }));
 
-    for (let entryIndex = 0; entryIndex < formEntries.length; entryIndex += 1) {
-      showPurchaseMessage(`Saving purchase ${entryIndex + 1} of ${formEntries.length}…`, "progress");
-      const entry = formEntries[entryIndex];
+    for (let entryIndex = 0; entryIndex < activeEntries.length; entryIndex += 1) {
+      showPurchaseMessage(`Saving purchase ${entryIndex + 1} of ${activeEntries.length}…`, "progress");
+      const entry = activeEntries[entryIndex];
       await insertPurchaseEntry(
         cbPurchaseId,
         entry,
         divisions,
         createdColours,
         null,
-        entryIndex === regularEntryIndex
+        regularEntry && String(entry.key) === String(regularEntry.key)
       );
     }
 
@@ -959,7 +989,6 @@ async function saveCreateMode() {
     throw error;
   }
 }
-
 async function saveAppendMode() {
   const group = groupFor(activeCbId);
   if (!group) throw new Error("CB could not be found.");
