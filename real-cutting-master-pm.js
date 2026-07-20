@@ -5266,7 +5266,51 @@ window.lotDecisionForActiveUnit = function() {
   if (!activeCard) return null;
   return cardDecision(activeCard);
 };
+// ===== SINGLE LOT DIRECT OPEN FIX START =====
 
+if (!window.__redzedSingleLotDirectOpenBound) {
+  window.__redzedSingleLotDirectOpenBound = true;
+
+  document.addEventListener(
+    "click",
+    event => {
+      const button = event.target?.closest?.(
+        "#divisionGallery [data-single]"
+      );
+
+      if (!button) return;
+
+      event.preventDefault();
+      event.stopPropagation();
+      event.stopImmediatePropagation();
+
+      const divisionId = String(
+        button.dataset.single ||
+        button.dataset.divisionId ||
+        button.getAttribute("data-single") ||
+        ""
+      ).trim();
+
+      if (!divisionId) {
+        say("CB Child/Division ID missing.", "error");
+        return;
+      }
+
+      try {
+        openLotByDivision(divisionId);
+      } catch (error) {
+        console.error(
+          "Single Lot sheet open failed:",
+          error
+        );
+        say(errorText(error), "error");
+      }
+    },
+    true
+  );
+}
+
+// ===== SINGLE LOT DIRECT OPEN FIX END =====
 if (
   document.readyState ===
   "loading"
