@@ -688,25 +688,36 @@ function openAppendForm(cbId) {
 function entryHasAnyPurchaseData(entry) {
   if (!entry) return false;
 
-  const hasText =
-    entry.vendorName.trim() ||
-    entry.fabricName.trim() ||
-    entry.billNo.trim();
+  const hasVendor =
+    String(entry.vendorName || "").trim() !== "";
 
-  const hasRate = Number(entry.rate || 0) > 0;
-  const hasQty = entryQuantity(entry) > 0;
-  const hasMaterial = String(entry.materialCategoryId || "").trim() !== "";
+  const hasFabric =
+    String(entry.fabricName || "").trim() !== "";
 
-  return Boolean(hasText || hasRate || hasQty || hasMaterial);
+  const hasBill =
+    String(entry.billNo || "").trim() !== "";
+
+  const hasRate =
+    Number(entry.rate || 0) > 0;
+
+  const hasQty =
+    entryQuantity(entry) > 0;
+
+  // Material OR Regular — दोनों में से कोई भी category हो तो entry active मानी जाएगी
+  const hasCategory =
+    String(entry.materialCategoryId || "").trim() !== "" ||
+    String(entry.fabricCategoryId || "").trim() !== "" ||
+    String(entry.categoryId || "").trim() !== "";
+
+  return (
+    hasVendor ||
+    hasFabric ||
+    hasBill ||
+    hasRate ||
+    hasQty ||
+    hasCategory
+  );
 }
-
-  function validateEntries() {
-  if (formMode === "create") {
-    cbColourDrafts.forEach((colour, index) => {
-      if (!colour.name.trim()) throw new Error(`Enter Colour ${index + 1} name.`);
-      if (!colour.file) throw new Error(`Select Colour ${index + 1} image.`);
-    });
-  }
 
   const activeEntries = formEntries.filter(entry => entryHasAnyPurchaseData(entry));
 
@@ -716,7 +727,17 @@ function entryHasAnyPurchaseData(entry) {
 
   activeEntries.forEach(entry => {
     const number = formEntries.indexOf(entry) + 1;
-    if (!entry.materialCategoryId) throw new Error(`Purchase ${number}: select Material.`);
+    const hasRegular =
+  String(entry.fabricName || "").trim() !== "";
+
+const hasMaterial =
+  String(entry.materialCategoryId || "").trim() !== "";
+
+if (!hasRegular && !hasMaterial) {
+  throw new Error(
+    `Purchase ${number}: Enter Regular Cloth or Matching Material.`
+  );
+}
     if (!entry.vendorName.trim()) throw new Error(`Purchase ${number}: enter Vendor Name.`);
     if (!entry.fabricName.trim()) throw new Error(`Purchase ${number}: enter Fabric Name.`);
     if (!entry.billNo.trim()) throw new Error(`Purchase ${number}: enter Bill No.`);
