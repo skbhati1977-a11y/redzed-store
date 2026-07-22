@@ -479,7 +479,11 @@ function renderEntry(entry, entryIndex) {
         <label>
           <span>Material *</span>
           <select class="pm-material-select">
-            ${materialOptions(entry.materialCategoryId, false)}
+            ${
+  entry.entryType === "matching"
+    ? matchingMaterialOptions(entry.materialCategoryId)
+    : materialOptions(entry.materialCategoryId, false)
+            }
           </select>
         </label>
 
@@ -2129,7 +2133,13 @@ async function loadData() {
 
 $("openNewCb").addEventListener("click", openCreateForm);
 $("addMaterialEntry").addEventListener("click", () => {
-  formEntries.push(makeEntry({ regularLocked: false, categoryCode: "cuff-collar" }));
+  formEntries.push(
+    makeEntry({
+      entryType: "cb-material",
+      categoryCode: "cuff-collar"
+    })
+  );
+
   renderPurchaseEntries();
 });
 
