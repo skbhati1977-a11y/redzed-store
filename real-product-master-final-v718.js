@@ -887,7 +887,81 @@ async function insertPurchaseEntry(cbPurchaseId, entry, divisions, colours, entr
 
   return data;
 }
+async function insertMatchingPurchase(
+  cbPurchaseId,
+  entry,
+  colours,
+  entryNotes = null
+) {
+  const totalQuantity = entryQuantity(entry);
 
+  const rolls = entryRolls(entry).map(roll => {
+    const colour = colours[roll.colourIndex];
+
+    if (!colour?.id) {
+      throw new Error(
+        `Matching Purchase: Colour ${roll.colourIndex + 1} could not be found.`
+      );
+    }
+
+    return {
+      cb_colour_id: colour.id,
+      roll_no: Number(roll.rollNo),
+      quantity: Number(roll.quantity.toFixed(3))
+    };
+  });
+
+  const { data, error } = await supabaseClient
+    .rpc("rr_save_matching_purchase", {
+      p_cb_id: cbPurchaseId,
+      p_material_category_id: entry.materialCategoryId,
+      p_vendor_name: String(entry.vendorName || "").trim(),
+      p_vendor_bill_no: String(entry.billNo || "").trim(),
+      p_bill_date: entry.billDate,
+      p_fabric_name: String(entry.fabricName || "").trim(),
+      p_quantity: Number(totalQuantity.toFixed(3)),
+      p_rate: Number(entry.rate || 0),
+      p_entry_notes: entryNotes,
+      p_rolls: rolls
+    });
+
+  if (error) throw error;
+
+  const matchingPurchaseId =
+    typeof data === "string"
+      ? data
+      : normalizeRpcId(data);
+
+  if (!matchingPurchaseId) {
+    throw new Error(
+      "Matching Purchase was saved but its ID was not returned."
+    );
+  }
+
+  return {
+    id: matchingPurchaseId
+  };
+}
+
+async function rollbackAppendedMatchingEntries(entryIds) {
+  const failures = [];
+
+  for (const entryId of [...entryIds].reverse()) {
+    const { error } = await supabaseClient
+      .rpc("rr_rollback_matching_purchase", {
+        p_purchase_entry_id: entryId
+      });
+
+    if (error) {
+      failures.push(
+        error.message ||
+        String(error)
+      );
+    }
+  }
+
+  return failures;
+}
 async function rollbackCreatedCb(cbPurchaseId, uploadedMedia) {
   const failures = [];
   async function attempt(label, action) {
