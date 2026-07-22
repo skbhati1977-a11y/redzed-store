@@ -688,68 +688,64 @@ function openAppendForm(cbId) {
 function entryHasAnyPurchaseData(entry) {
   if (!entry) return false;
 
-  const hasVendor =
-    String(entry.vendorName || "").trim() !== "";
-
-  const hasFabric =
-    String(entry.fabricName || "").trim() !== "";
-
-  const hasBill =
-    String(entry.billNo || "").trim() !== "";
-
-  const hasRate =
-    Number(entry.rate || 0) > 0;
-
-  const hasQty =
-    entryQuantity(entry) > 0;
-
-  // Material OR Regular — दोनों में से कोई भी category हो तो entry active मानी जाएगी
-  const hasCategory =
-    String(entry.materialCategoryId || "").trim() !== "" ||
-    String(entry.fabricCategoryId || "").trim() !== "" ||
-    String(entry.categoryId || "").trim() !== "";
-
   return (
-    hasVendor ||
-    hasFabric ||
-    hasBill ||
-    hasRate ||
-    hasQty ||
-    hasCategory
+    String(entry.vendorName || "").trim() !== "" ||
+    String(entry.fabricName || "").trim() !== "" ||
+    String(entry.billNo || "").trim() !== "" ||
+    Number(entry.rate || 0) > 0 ||
+    entryQuantity(entry) > 0
   );
 }
 
-  const activeEntries = formEntries.filter(entry => entryHasAnyPurchaseData(entry));
+   function validateEntries() {
+
+  const activeEntries = formEntries.filter(entryHasAnyPurchaseData);
 
   if (!activeEntries.length) {
     throw new Error("Add at least one material purchase.");
   }
 
-  activeEntries.forEach(entry => {
-    const number = formEntries.indexOf(entry) + 1;
-    const hasRegular =
-  String(entry.fabricName || "").trim() !== "";
+  activeEntries.forEach((entry, index) => {
 
-const hasMaterial =
-  String(entry.materialCategoryId || "").trim() !== "";
+    const purchaseNo = index + 1;
 
-if (!hasRegular && !hasMaterial) {
-  throw new Error(
-    `Purchase ${number}: Enter Regular Cloth or Matching Material.`
-  );
-}
-    if (!entry.vendorName.trim()) throw new Error(`Purchase ${number}: enter Vendor Name.`);
-    if (!entry.fabricName.trim()) throw new Error(`Purchase ${number}: enter Fabric Name.`);
-    if (!entry.billNo.trim()) throw new Error(`Purchase ${number}: enter Bill No.`);
-    if (!entry.billDate) throw new Error(`Purchase ${number}: select Bill Date.`);
-    if (Number(entry.rate || 0) <= 0) throw new Error(`Purchase ${number}: enter Rate.`);
-    if (entryQuantity(entry) <= 0) throw new Error(`Purchase ${number}: enter colour-wise roll quantity.`);
-
-    if (entry.allocationScope === "selected" && !entry.selectedDivisionIndexes.length) {
-      throw new Error(`Purchase ${number}: select at least one Division.`);
+    if (!String(entry.vendorName || "").trim()) {
+      throw new Error(`Purchase ${purchaseNo}: Enter Vendor Name.`);
     }
+
+    if (!String(entry.fabricName || "").trim()) {
+      throw new Error(`Purchase ${purchaseNo}: Enter Fabric Name.`);
+    }
+
+    if (!String(entry.billNo || "").trim()) {
+      throw new Error(`Purchase ${purchaseNo}: Enter Bill No.`);
+    }
+
+    if (!entry.billDate) {
+      throw new Error(`Purchase ${purchaseNo}: Select Bill Date.`);
+    }
+
+    if (Number(entry.rate || 0) <= 0) {
+      throw new Error(`Purchase ${purchaseNo}: Enter Rate.`);
+    }
+
+    if (entryQuantity(entry) <= 0) {
+      throw new Error(`Purchase ${purchaseNo}: Enter colour-wise roll quantity.`);
+    }
+
+    if (
+      entry.allocationScope === "selected" &&
+      (!entry.selectedDivisionIndexes ||
+       !entry.selectedDivisionIndexes.length)
+    ) {
+      throw new Error(
+        `Purchase ${purchaseNo}: Select at least one Division.`
+      );
+    }
+
   });
-}
+
+   }
  function selectedDivisionIds(entry, divisions) {
   const selectedIndexes = entry.allocationScope === "all"
     ? divisions.map(item => Number(item.division_index))
