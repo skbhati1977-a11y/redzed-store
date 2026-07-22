@@ -293,51 +293,90 @@ function ensureColourDrafts(count) {
   });
 }
 
-function makeEntry({ regularLocked = false, categoryCode = null } = {}) {
-  const preferredCategory = categoryCode
+function makeEntry({
+  regularLocked = false,
+  categoryCode = null,
+  entryType = "cb-material"
+} = {}) {
+
+  const normalizedEntryType =
+    entryType === "matching"
+      ? "matching"
+      : "cb-material";
+
+  const isMatchingPurchase =
+    normalizedEntryType === "matching";
+
+  const requestedCategory = categoryCode
     ? categoryByCode(categoryCode)
-    : categoryByCode("cuff-collar") ||
-      categoryByCode("regular-cloth") ||
-      categories[0] ||
-      null;
+    : null;
+
+  const matchingCategory =
+    categories.find(category =>
+      isMatchingCategory(category)
+    ) || null;
+
+  const defaultCbMaterialCategory =
+    categoryByCode("cuff-collar") ||
+    categoryByCode("regular-cloth") ||
+    categories.find(category =>
+      !isMatchingCategory(category)
+    ) ||
+    null;
+
+  const preferredCategory = isMatchingPurchase
+    ? (
+        requestedCategory &&
+        isMatchingCategory(requestedCategory)
+          ? requestedCategory
+          : matchingCategory
+      )
+    : (
+        requestedCategory &&
+        !isMatchingCategory(requestedCategory)
+          ? requestedCategory
+          : defaultCbMaterialCategory
+      );
 
   return {
     key: `entry-${++entrySequence}`,
-    regularLocked: Boolean(regularLocked),
-    materialCategoryId: preferredCategory?.id || "",
+
+    entryType: normalizedEntryType,
+
+    regularLocked:
+      Boolean(regularLocked) &&
+      !isMatchingPurchase,
+
+    materialCategoryId:
+      preferredCategory?.id || "",
+
     vendorName: "",
     fabricName: "",
     billNo: "",
     billDate: localToday(),
     rate: "",
-    allocationScope: "all",
-    selectedDivisionIndexes: currentDivisionChoices().map(item => item.index),
+
+    allocationScope:
+      isMatchingPurchase
+        ? "matching-stock"
+        : "all",
+
+    selectedDivisionIndexes:
+      isMatchingPurchase
+        ? []
+        : currentDivisionChoices()
+            .map(item => item.index),
+
     colours: Array.from(
-      { length: currentColourCount() },
-      () => makeColourRollDraft(defaultRollRowCount())
+      {
+        length: currentColourCount()
+      },
+      () =>
+        makeColourRollDraft(
+          defaultRollRowCount()
+        )
     )
   };
-} 
-  
-  function clearDraftImages() {
-  cbColourDrafts.forEach(item => {
-    if (item.objectUrl) URL.revokeObjectURL(item.objectUrl);
-  });
-  cbColourDrafts = [];
-}
-
-function openSheet(sheet) {
-  sheet.classList.remove("pm-hidden");
-  sheet.setAttribute("aria-hidden", "false");
-  document.body.classList.add("pm-no-scroll");
-}
-
-function closeSheet(sheet) {
-  sheet.classList.add("pm-hidden");
-  sheet.setAttribute("aria-hidden", "true");
-  if (purchaseSheet.classList.contains("pm-hidden") && detailSheet.classList.contains("pm-hidden") && artSheet.classList.contains("pm-hidden")) {
-    document.body.classList.remove("pm-no-scroll");
-  }
 }
 
 function materialOptions(selectedId, locked) {
