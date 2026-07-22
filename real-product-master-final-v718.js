@@ -2132,6 +2132,20 @@ async function loadData() {
 }
 
 $("openNewCb").addEventListener("click", openCreateForm);
+  const addMaterialButton = $("addMaterialEntry");
+
+if (addMaterialButton && !$("addMatchingEntry")) {
+  const addMatchingButton = addMaterialButton.cloneNode(true);
+
+  addMatchingButton.id = "addMatchingEntry";
+  addMatchingButton.type = "button";
+  addMatchingButton.textContent = "+ Add Matching Purchase";
+
+  addMaterialButton.insertAdjacentElement(
+    "afterend",
+    addMatchingButton
+  );
+}
 $("addMaterialEntry").addEventListener("click", () => {
   formEntries.push(
     makeEntry({
@@ -2142,7 +2156,15 @@ $("addMaterialEntry").addEventListener("click", () => {
 
   renderPurchaseEntries();
 });
+$("addMatchingEntry")?.addEventListener("click", () => {
+  formEntries.push(
+    makeEntry({
+      entryType: "matching"
+    })
+  );
 
+  renderPurchaseEntries();
+});
 $("divisionCount").addEventListener("change", () => {
   const custom = $("divisionCount").value === "custom";
   $("customDivisionWrap").classList.toggle("pm-hidden", !custom);
