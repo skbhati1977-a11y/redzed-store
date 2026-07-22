@@ -513,7 +513,11 @@ function renderEntry(entry, entryIndex) {
         </label>
       </div>
 
-      ${renderDivisionSelection(entry)}
+      ${
+  entry.entryType === "matching"
+    ? ""
+    : renderDivisionSelection(entry)
+      }
 
       <div class="pm-material-colours">
         ${entry.colours.map((_, colourIndex) => renderColourCard(entry, entryIndex, colourIndex)).join("")}
@@ -1029,14 +1033,19 @@ async function saveCreateMode() {
       showPurchaseMessage(`Saving purchase ${entryIndex + 1} of ${activeEntries.length}…`, "progress");
       const entry = activeEntries[entryIndex];
       await insertPurchaseEntry(
-        cbPurchaseId,
-        entry,
-        divisions,
-        createdColours,
-        null,
-        regularEntry && String(entry.key) === String(regularEntry.key)
-      );
-    }
+  cbPurchaseId,
+  entry,
+  divisions,
+  createdColours,
+  null,
+  Boolean(
+    (
+      regularEntry &&
+      String(entry.key) === String(regularEntry.key)
+    ) ||
+    entry.entryType === "matching"
+  )
+);
 
     return { cbNo, cbPurchaseId };
   } catch (error) {
