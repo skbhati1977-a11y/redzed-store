@@ -17,6 +17,10 @@ const purchaseMessage = $("purchaseMessage");
 let categories = [];
 let galleryRows = [];
 let purchaseRows = [];
+let matchingPurchaseRows = [];
+let matchingRollRows = [];
+let matchingStockRows = [];
+let matchingLedgerRows = [];
 let colourRows = [];
 let rollRows = [];
 let allocationRows = [];
@@ -2216,28 +2220,85 @@ async function loadData() {
   try {
     clearFrontendError();
     const [
-      categoryResult,
-      loadedGalleryRows,
-      purchaseResult,
-      colourResult,
-      rollResult,
-      allocationResult,
-      artResult,
-      loadedPrintRows,
-      assignmentResult,
-      loadedPrintAssignments
-    ] = await Promise.all([
-      supabaseClient.from("rr_material_categories").select("*").eq("is_active", true).order("sort_order"),
-      loadGallerySource(),
-      supabaseClient.from("rr_cb_purchase_entries").select("*").order("created_at", { ascending: false }),
-      supabaseClient.from("rr_cb_colours").select("*").order("colour_order"),
-      supabaseClient.from("rr_cb_purchase_rolls").select("*").order("roll_no"),
-      supabaseClient.from("rr_cb_material_allocations").select("*"),
-      supabaseClient.from("rr_art_master").select("*").eq("is_active", true).order("updated_at", { ascending: false }),
-      loadPrintSource(),
-      supabaseClient.from("rr_cb_art_assignments").select("*").order("updated_at", { ascending: false }),
-      loadCbPrintAssignments()
-    ]);
+  categoryResult,
+  loadedGalleryRows,
+  purchaseResult,
+
+  matchingPurchaseResult,
+  matchingRollResult,
+  matchingStockResult,
+  matchingLedgerResult,
+
+  colourResult,
+  rollResult,
+  allocationResult,
+  artResult,
+  loadedPrintRows,
+  assignmentResult,
+  loadedPrintAssignments
+] = await Promise.all([
+  supabaseClient
+    .from("rr_material_categories")
+    .select("*")
+    .eq("is_active", true)
+    .order("sort_order"),
+
+  loadGallerySource(),
+
+  supabaseClient
+    .from("rr_cb_purchase_entries")
+    .select("*")
+    .order("created_at", { ascending: false }),
+
+  supabaseClient
+    .from("rr_matching_purchase_entries")
+    .select("*")
+    .order("created_at", { ascending: false }),
+
+  supabaseClient
+    .from("rr_matching_purchase_rolls")
+    .select("*")
+    .order("created_at", { ascending: false }),
+
+  supabaseClient
+    .from("rr_matching_stock_balance")
+    .select("*")
+    .order("updated_at", { ascending: false }),
+
+  supabaseClient
+    .from("rr_matching_stock_ledger")
+    .select("*")
+    .order("created_at", { ascending: false }),
+
+  supabaseClient
+    .from("rr_cb_colours")
+    .select("*")
+    .order("colour_order"),
+
+  supabaseClient
+    .from("rr_cb_purchase_rolls")
+    .select("*")
+    .order("roll_no"),
+
+  supabaseClient
+    .from("rr_cb_material_allocations")
+    .select("*"),
+
+  supabaseClient
+    .from("rr_art_master")
+    .select("*")
+    .eq("is_active", true)
+    .order("updated_at", { ascending: false }),
+
+  loadPrintSource(),
+
+  supabaseClient
+    .from("rr_cb_art_assignments")
+    .select("*")
+    .order("updated_at", { ascending: false }),
+
+  loadCbPrintAssignments()
+]);
 
     if (categoryResult.error) throw categoryResult.error;
     if (purchaseResult.error) throw purchaseResult.error;
