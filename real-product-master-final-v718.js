@@ -2302,15 +2302,51 @@ async function loadData() {
 
     if (categoryResult.error) throw categoryResult.error;
     if (purchaseResult.error) throw purchaseResult.error;
+    if (matchingPurchaseResult.error) {
+  throw new Error(
+    `Matching purchases could not load: ${matchingPurchaseResult.error.message}`
+  );
+}
+
+if (matchingRollResult.error) {
+  throw new Error(
+    `Matching rolls could not load: ${matchingRollResult.error.message}`
+  );
+}
+
+if (matchingStockResult.error) {
+  throw new Error(
+    `Matching stock could not load: ${matchingStockResult.error.message}`
+  );
+}
+
+if (matchingLedgerResult.error) {
+  throw new Error(
+    `Matching ledger could not load: ${matchingLedgerResult.error.message}`
+  );
+}
     if (colourResult.error) throw colourResult.error;
     if (rollResult.error) throw new Error(`Run V713 SQL patch: ${rollResult.error.message}`);
     if (allocationResult.error) throw new Error(`Run V713 SQL patch: ${allocationResult.error.message}`);
     if (artResult.error) throw new Error(`Art Master could not load: ${artResult.error.message}`);
     if (assignmentResult.error) throw new Error(`Run V714 Art assignment SQL: ${assignmentResult.error.message}`);
 
-    categories = categoryResult.data || [];
+        categories = categoryResult.data || [];
     galleryRows = loadedGalleryRows || [];
     purchaseRows = purchaseResult.data || [];
+
+    matchingPurchaseRows =
+      matchingPurchaseResult.data || [];
+
+    matchingRollRows =
+      matchingRollResult.data || [];
+
+    matchingStockRows =
+      matchingStockResult.data || [];
+
+    matchingLedgerRows =
+      matchingLedgerResult.data || [];
+
     colourRows = colourResult.data || [];
     rollRows = rollResult.data || [];
     allocationRows = allocationResult.data || [];
