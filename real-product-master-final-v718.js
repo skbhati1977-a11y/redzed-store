@@ -966,35 +966,107 @@ async function rollbackAppendedMatchingEntries(entryIds) {
 
   return failures;
 }
-async function rollbackCreatedCb(cbPurchaseId, uploadedMedia) {
+async function rollbackCreatedCb(
+  cbPurchaseId,
+  uploadedMedia
+) {
   const failures = [];
+
   async function attempt(label, action) {
     try {
       const result = await action();
-      if (result?.error) throw result.error;
+
+      if (result?.error) {
+        throw result.error;
+      }
     } catch (error) {
-      failures.push(`${label}: ${error.message || error}`);
+      failures.push(
+        `${label}: ${error.message || error}`
+      );
     }
   }
 
-  await attempt("purchase entries", () =>
-    supabaseClient.from("rr_cb_purchase_entries").delete().eq("cb_id", cbPurchaseId)
-  );
-  await attempt("colour rows", () =>
-    supabaseClient.from("rr_cb_colours").delete().eq("cb_id", cbPurchaseId)
-  );
-  await attempt("division rows", () =>
-    supabaseClient.from("rr_cb_units").delete().eq("purchase_id", cbPurchaseId)
-  );
-  await attempt("fabric purchase", () =>
-    supabaseClient.from("rr_fabric_purchases").delete().eq("id", cbPurchaseId)
+  await attempt(
+    "matching purchases",
+    async () => {
+      const { data, error } =
+        await supabaseClient
+          .from("rr_matching_purchase_entries")
+          .select("id, created_at")
+          .eq("cb_id", cbPurchaseId)
+          .order("created_at", {
+            ascending: false
+          });
+
+      if (error) throw error;
+
+      for (const entry of data || []) {
+        const { error: rollbackError } =
+          await supabaseClient
+            .rpc(
+              "rr_rollback_matching_purchase",
+              {
+                p_purchase_entry_id: entry.id
+              }
+            );
+
+        if (rollbackError) {
+          throw rollbackError;
+        }
+      }
+    }
   );
 
-  if (typeof RR !== "undefined" && typeof RR.deleteMedia === "function") {
-    for (const media of [...uploadedMedia].reverse()) {
-      await attempt("uploaded media", () => RR.deleteMedia(media));
+  await attempt(
+    "purchase entries",
+    () =>
+      supabaseClient
+        .from("rr_cb_purchase_entries")
+        .delete()
+        .eq("cb_id", cbPurchaseId)
+  );
+
+  await attempt(
+    "colour rows",
+    () =>
+      supabaseClient
+        .from("rr_cb_colours")
+        .delete()
+        .eq("cb_id", cbPurchaseId)
+  );
+
+  await attempt(
+    "division rows",
+    () =>
+      supabaseClient
+        .from("rr_cb_units")
+        .delete()
+        .eq("purchase_id", cbPurchaseId)
+  );
+
+  await attempt(
+    "fabric purchase",
+    () =>
+      supabaseClient
+        .from("rr_fabric_purchases")
+        .delete()
+        .eq("id", cbPurchaseId)
+  );
+
+  if (
+    typeof RR !== "undefined" &&
+    typeof RR.deleteMedia === "function"
+  ) {
+    for (
+      const media of [...uploadedMedia].reverse()
+    ) {
+      await attempt(
+        "uploaded media",
+        () => RR.deleteMedia(media)
+      );
     }
   }
+
   return failures;
 }
 
