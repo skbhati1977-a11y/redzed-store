@@ -1427,8 +1427,42 @@ function groupFor(cbId) {
   return groupGalleryRows().find(group => String(group.cb_id) === String(cbId)) || null;
 }
 
-function purchasesFor(cbId) {
-  return purchaseRows.filter(row => String(row.cb_id) === String(cbId));
+function matchingPurchasesFor(cbId) {
+  return matchingPurchaseRows
+    .filter(row =>
+      String(row.cb_id) === String(cbId)
+    )
+    .sort((a, b) =>
+      String(b.created_at || b.bill_date || "")
+        .localeCompare(
+          String(a.created_at || a.bill_date || "")
+        )
+    );
+}
+
+function matchingStockFor(cbId) {
+  return matchingStockRows
+    .filter(row =>
+      String(row.cb_id) === String(cbId)
+    )
+    .sort((a, b) =>
+      String(a.fabric_name || "")
+        .localeCompare(
+          String(b.fabric_name || "")
+        )
+    );
+}
+
+function matchingRollsFor(purchaseEntryId) {
+  return matchingRollRows
+    .filter(row =>
+      String(row.purchase_entry_id) ===
+      String(purchaseEntryId)
+    )
+    .sort((a, b) =>
+      Number(a.roll_no || 0) -
+      Number(b.roll_no || 0)
+    );
 }
 
 function coloursFor(cbId) {
