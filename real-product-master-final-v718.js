@@ -1104,23 +1104,34 @@ async function saveCreateMode() {
     }));
 
     for (let entryIndex = 0; entryIndex < activeEntries.length; entryIndex += 1) {
-      showPurchaseMessage(`Saving purchase ${entryIndex + 1} of ${activeEntries.length}…`, "progress");
-      const entry = activeEntries[entryIndex];
-      await insertPurchaseEntry(
-  cbPurchaseId,
-  entry,
-  divisions,
-  createdColours,
-  null,
-  Boolean(
-    (
-      regularEntry &&
-      String(entry.key) === String(regularEntry.key)
-    ) ||
-    entry.entryType === "matching"
-  )
-);
+  showPurchaseMessage(
+    `Saving purchase ${entryIndex + 1} of ${activeEntries.length}…`,
+    "progress"
+  );
 
+  const entry = activeEntries[entryIndex];
+
+  if (entry.entryType === "matching") {
+    await insertMatchingPurchase(
+      cbPurchaseId,
+      entry,
+      createdColours,
+      null
+    );
+  } else {
+    await insertPurchaseEntry(
+      cbPurchaseId,
+      entry,
+      divisions,
+      createdColours,
+      null,
+      Boolean(
+        regularEntry &&
+        String(entry.key) === String(regularEntry.key)
+      )
+    );
+  }
+    }
     return { cbNo, cbPurchaseId };
   } catch (error) {
     if (cbPurchaseId) {
@@ -1132,34 +1143,89 @@ async function saveCreateMode() {
     throw error;
   }
 }
-async function saveAppendMode() {
+ async function saveAppendMode() {
   const group = groupFor(activeCbId);
-  if (!group) throw new Error("CB could not be found.");
+
+  if (!group) {
+    throw new Error("CB could not be found.");
+  }
 
   const colours = coloursFor(activeCbId);
   const divisions = group.divisions;
-  const insertedIds = [];
+
+  const insertedEntryIds = [];
+  const insertedMatchingIds = [];
+
+  const entryNotes =
+    $("cbRemarks").value.trim() || null;
 
   try {
     for (const entry of formEntries) {
-      const saved = await insertPurchaseEntry(
-        activeCbId,
-        entry,
-        divisions,
-        colours,
-        $("cbRemarks").value.trim() || null
-      );
-      insertedIds.push(saved.id);
+
+      if (!entryHasAnyPurchaseData(entry)) {
+        continue;
+      }
+
+      if (entry.entryType === "matching") {
+        const savedMatching =
+          await insertMatchingPurchase(
+            activeCbId,
+            entry,
+            colours,
+            entryNotes
+          );
+
+        insertedMatchingIds.push(
+          savedMatching.id
+        );
+
+      } else {
+        const savedEntry =
+          await insertPurchaseEntry(
+            activeCbId,
+            entry,
+            divisions,
+            colours,
+            entryNotes,
+            false
+          );
+
+        insertedEntryIds.push(
+          savedEntry.id
+        );
+      }
     }
-    return { cbNo: group.cb_no, cbPurchaseId: activeCbId };
+
+    return {
+      cbNo: group.cb_no,
+      cbPurchaseId: activeCbId
+    };
+
   } catch (error) {
-    const failures = await rollbackAppendedEntries(insertedIds);
+
+    const matchingFailures =
+      await rollbackAppendedMatchingEntries(
+        insertedMatchingIds
+      );
+
+    const materialFailures =
+      await rollbackAppendedEntries(
+        insertedEntryIds
+      );
+
+    const failures = [
+      ...matchingFailures,
+      ...materialFailures
+    ];
+
     if (failures.length) {
-      error.message = `${error.message} Automatic cleanup was incomplete; check Supabase records.`;
+      error.message =
+        `${error.message} Automatic cleanup was incomplete; check Supabase records.`;
     }
+
     throw error;
   }
-}
+ }
 
 purchaseForm.addEventListener("submit", async event => {
   event.preventDefault();
