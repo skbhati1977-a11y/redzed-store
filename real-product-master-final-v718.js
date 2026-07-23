@@ -470,18 +470,33 @@ function renderColourCard(entry, entryIndex, colourIndex) {
 }
 
 function renderEntry(entry, entryIndex) {
-  const canRemove = !(formMode === "create" && entryIndex === 0);
+  const canRemove = !(
+    formMode === "create" &&
+    entryIndex === 0
+  );
+
+  const entryTypeNumber = formEntries
+    .slice(0, entryIndex + 1)
+    .filter(item =>
+      item.entryType === entry.entryType
+    )
+    .length;
+
+  const entryTitle =
+    entry.entryType === "matching"
+      ? `Matching Purchase ${entryTypeNumber}`
+      : `CB Material Purchase ${entryTypeNumber}`;
 
   return `
     <article class="pm-purchase-entry" data-entry-key="${safe(entry.key)}">
       <div class="pm-purchase-entry-head">
-        <h4>Purchase ${entryIndex + 1}</h4>
+        <h4>${entryTitle}</h4>
         ${canRemove ? `<button class="pm-remove-entry" type="button">Remove</button>` : ""}
       </div>
 
       <div class="pm-entry-fields">
         <label>
-          <span>Material *</span>
+          <span>${entry.entryType === "matching" ? "Matching Fabric *" : "Material *"}</span>
           <select class="pm-material-select">
             ${
   entry.entryType === "matching"
