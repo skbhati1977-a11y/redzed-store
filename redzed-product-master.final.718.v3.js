@@ -2,7 +2,7 @@
 "use strict";
 
 window.REDZED_PRODUCT_MASTER_BOOTED = true;
-window.REDZED_PRODUCT_MASTER_VERSION = "718.3-UNIVERSAL-MATCHING-AUDITED";
+window.REDZED_PRODUCT_MASTER_VERSION = "718.4-FIRST-PURCHASE-SWITCH";
 window.REDZED_PRODUCT_MASTER_SINGLE_FILE = true;
 
 const $ = id => document.getElementById(id);
@@ -450,6 +450,121 @@ function matchingMaterialOptions(selectedId) {
     .join("");
 }
 
+function firstPurchaseTypeHtml() {
+  if (formMode !== "create") return "";
+
+  const firstEntry = formEntries[0] || null;
+  const selectedType =
+    firstEntry?.entryType === "matching"
+      ? "matching"
+      : "regular";
+
+  const matchingAvailable =
+    categories.some(isMatchingCategory);
+
+  return `
+    <div class="pm-allocation-box pm-first-purchase-type">
+      <label><span>First Purchase Type *</span></label>
+
+      <div class="pm-allocation-row">
+        <label class="pm-radio-chip">
+          <input
+            type="radio"
+            name="pm-first-purchase-type"
+            value="regular"
+            ${selectedType === "regular" ? "checked" : ""}
+          >
+          Regular Cloth
+        </label>
+
+        <label class="pm-radio-chip">
+          <input
+            type="radio"
+            name="pm-first-purchase-type"
+            value="matching"
+            ${selectedType === "matching" ? "checked" : ""}
+            ${matchingAvailable ? "" : "disabled"}
+          >
+          Matching Cloth
+        </label>
+      </div>
+
+      <small class="pm-muted-copy">
+        Select Matching Cloth to replace and hide the Regular Cloth purchase card.
+      </small>
+    </div>
+  `;
+}
+
+function changeFirstPurchaseType(type) {
+  if (formMode !== "create") return;
+
+  
+const targetType =
+    type === "matching"
+      ? "matching"
+      : "regular";
+
+  let firstEntry = formEntries[0] || null;
+
+  if (!firstEntry) {
+    firstEntry = makeEntry({
+      entryType:
+        targetType === "matching"
+          ? "matching"
+          : "cb-material",
+      categoryCode:
+        targetType === "matching"
+          ? null
+          : "regular-cloth",
+      regularLocked:
+        targetType === "regular"
+    });
+
+    formEntries.unshift(firstEntry);
+  }
+
+  if (targetType === "matching") {
+    const matchingCategory =
+      categories.find(isMatchingCategory) || null;
+
+    if (!matchingCategory) {
+      say(
+        "Matching Cloth category is not available in Material Categories.",
+        "error"
+      );
+      renderPurchaseEntries();
+      return;
+    }
+
+    firstEntry.entryType = "matching";
+    firstEntry.regularLocked = false;
+    firstEntry.materialCategoryId =
+      matchingCategory.id;
+    firstEntry.allocationScope =
+      "matching-stock";
+    firstEntry.selectedDivisionIndexes = [];
+  } else {
+    const regularCategory =
+      categoryByCode("regular-cloth") ||
+      categories.find(category =>
+        !isMatchingCategory(category)
+      ) ||
+      null;
+
+    firstEntry.entryType = "cb-material";
+    firstEntry.regularLocked = true;
+    firstEntry.materialCategoryId =
+      regularCategory?.id || "";
+    firstEntry.allocationScope = "all";
+    firstEntry.selectedDivisionIndexes =
+      currentDivisionChoices()
+        .map(item => item.index);
+  }
+
+  renderPurchaseEntries();
+}
+
 function renderDivisionSelection(entry) {
   const choices = currentDivisionChoices();
   const selected = new Set(entry.selectedDivisionIndexes.map(Number));
@@ -642,7 +757,7 @@ function bindEntryEvents(entry, entryIndex, node) {
   selectedBox?.querySelectorAll('input[type="checkbox"]').forEach(input => {
     input.addEventListener("change", () => {
       const selected = [...selectedBox.querySelectorAll('input[type="checkbox"]:checked')]
-                .map(item => Number(item.value));
+        .map(item => Number(item.value));
       entry.selectedDivisionIndexes = selected;
     });
   });
@@ -702,11 +817,33 @@ function bindEntryEvents(entry, entryIndex, node) {
 
 function renderPurchaseEntries() {
   ensureColourDrafts(currentColourCount());
+
   const container = $("purchaseEntries");
-  container.innerHTML = formEntries.map(renderEntry).join("");
-  container.querySelectorAll(".pm-purchase-entry").forEach((node, index) => {
-    bindEntryEvents(formEntries[index], index, node);
-  });
+
+  container.innerHTML = `
+    ${firstPurchaseTypeHtml()}
+    ${formEntries.map(renderEntry).join("")}
+  `;
+
+  container
+    .querySelectorAll('input[name="pm-first-purchase-type"]')
+    .forEach(input => {
+      input.addEventListener("change", () => {
+        if (!input.checked) return;
+        changeFirstPurchaseType(input.value);
+      });
+    });
+
+  container
+    .querySelectorAll(".pm-purchase-entry")
+    .forEach((node, index) => {
+      bindEntryEvents(
+        formEntries[index],
+        index,
+        node
+      );
+    });
+
   updateGrandSummary();
 }
 
@@ -854,6 +991,15 @@ function validateEntries() {
     ) {
       throw new Error(
         `Purchase ${purchaseNo}: Select Matching Fabric category.`
+      );
+    }
+
+    if (
+      !isMatchingPurchase &&
+      isMatchingCategory(category)
+    ) {
+      throw new Error(
+      `Purchase ${purchaseNo}: Select Matching Fabric category.`
       );
     }
 
@@ -1238,7 +1384,7 @@ async function saveCreateMode() {
 
     if (cbError) throw cbError;
     cbPurchaseId = normalizeRpcId(rpcData);
-if (!cbPurchaseId) throw new Error("CB was created but its ID was not returned.");
+    if (!cbPurchaseId) throw new Error("CB was created but its ID was not returned.");
 
     const { data: divisionData, error: divisionError } = await supabaseClient
       .from("rr_cb_units")
@@ -1568,7 +1714,7 @@ function groupGalleryRows() {
 
     const group = groups.get(key);
     const divisionKey = String(row.division_id || row.division_code);
-    if (!group.divisionMap.has(divisionKey)) group.divisionMap.set(divisionKey, row);
+      if (!group.divisionMap.has(divisionKey)) group.divisionMap.set(divisionKey, row);
 
     if ((statusPriority[row.division_status] || 0) > (statusPriority[group.status] || 0)) {
       group.status = row.division_status;
@@ -2057,7 +2203,7 @@ function renderPrintPicker() {
     ${printCards}`;
 
   const realPrintCount = selectedPrintIds.filter(id => String(id) !== "__PRINT_NA__").length;
-  $("selectedPrintCount").textContent = printNotApplicable
+    $("selectedPrintCount").textContent = printNotApplicable
     ? "Explicit N/A selected"
     : realPrintCount
       ? `${realPrintCount} selected`
@@ -2412,6 +2558,7 @@ function renderCbDetails(cbId) {
             <div class="pm-roll-summary">${matchingRollHtml}</div>
           </article>`;
       }).join("")
+    )
     : `<p class="pm-muted-copy">No matching purchase entry found.</p>`;
 
   const matchingStockHtml = matchingStock.length
@@ -2702,6 +2849,19 @@ $("openNewCb").addEventListener("click", openCreateForm);
 
 const addMaterialButton = $("addMaterialEntry");
 
+const purchaseIntroCopy = [
+  ...document.querySelectorAll("p")
+].find(node =>
+  /first entry is regular cloth/i.test(
+    String(node.textContent || "")
+  )
+);
+
+if (purchaseIntroCopy) {
+  purchaseIntroCopy.textContent =
+    "Choose Regular Cloth or Matching Cloth for the first purchase. Add more material purchases whenever required.";
+}
+
 if (addMaterialButton) {
   addMaterialButton.textContent =
     "+ Add CB Material Purchase";
@@ -2817,6 +2977,7 @@ $("pmFilters").querySelectorAll("[data-filter]").forEach(button => {
     renderGallery();
   });
 });
+
 function withTimeout(promise, milliseconds, label) {
   return new Promise((resolve, reject) => {
     const timer = window.setTimeout(() => {
@@ -2913,16 +3074,16 @@ console.info("REDZED Product Master V718.3 audited single-file boot script loade
     gallery.innerHTML = `
       <article class="pm-empty-card">
         <div class="pm-spinner" aria-hidden="true"></div>
-        <h3>Connecting Product Master V718.3</h3>
+        <h3>Connecting Product Master V718.4</h3>
         <p>Checking login and Universal Purchase database…</p>
       </article>`;
-    say("Starting Product Master V718.3…");
+    say("Starting Product Master V718.4…");
     await waitForRuntime();
     await ensureOwnerAccess();
     say("");
     await withTimeout(loadData(), 30000, "Product Master database loading");
   } catch (error) {
-    console.error("Product Master V718.3 boot failed:", error);
+    console.error("Product Master V718.4 boot failed:", error);
     showFrontendError("Product Master Start", error);
     $("openNewCb").disabled = true;
     gallery.setAttribute("aria-busy", "false");
@@ -2931,8 +3092,8 @@ console.info("REDZED Product Master V718.3 audited single-file boot script loade
         <h3>Product Master could not start</h3>
         <p>${safe(error.message || "Unknown startup error")}</p>
       </article>`;
-    say(`V718.3 error: ${error.message || "Product Master could not open."}`, "error");
+    say(`V718.4 error: ${error.message || "Product Master could not open."}`, "error");
   }
 })();
 })();
-
+    
