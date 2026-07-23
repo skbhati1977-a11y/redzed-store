@@ -2166,11 +2166,496 @@ function renderCbDetails(cbId) {
       <h3>CB Child Art & Print Cards</h3>
       <div class="pm-division-card-grid">${divisionHtml}</div>
     </section>
+function renderCbDetails(cbId) {
+  const group = groupFor(cbId);
+
+  if (!group) {
+    return "<p>CB not found.</p>";
+  }
+
+  const colours = coloursFor(cbId);
+
+  const purchases = purchasesFor(cbId)
+    .sort((a, b) =>
+      String(a.created_at || "")
+        .localeCompare(String(b.created_at || ""))
+    );
+
+  const matchingPurchases =
+    matchingPurchasesFor(cbId);
+
+  const matchingStock =
+    matchingStockFor(cbId);
+
+  const colourHtml = colours.map(colour => {
+    const image = colour.image_url
+      ? `
+        <img
+          src="${safe(colour.image_url)}"
+          alt="${safe(colour.colour_name)}"
+        >
+      `
+      : `<i class="pm-colour-fallback">C</i>`;
+
+    return `
+      <span>
+        ${image}
+        ${safe(colour.colour_name)}
+      </span>
+    `;
+  }).join("");
+
+  const divisionHtml = group.divisions.map(division => {
+    const allocations =
+      allocationsForDivision(division.division_id);
+
+    const assignment =
+      assignmentForDivision(division.division_id);
+
+    const art = assignment
+      ? artById(assignment.art_id)
+      : null;
+
+    const assignedPrints =
+      assignedPrintsForDivision(
+        division.division_id
+      );
+
+    const printDecision =
+      printDecisionForDivision(
+        division.division_id
+      );
+
+    const materialChips = allocations.length
+      ? allocations.map(allocation => {
+          const purchase =
+            purchaseById(
+              allocation.purchase_entry_id
+            );
+
+          const category =
+            categoryById(
+              purchase?.material_category_id
+            );
+
+          return `
+            <span>
+              ${safe(
+                category?.category_name ||
+                "Material"
+              )}
+              · ${qty(allocation.allocated_qty)}
+            </span>
+          `;
+        }).join("")
+      : `<span>Legacy allocation</span>`;
+
+    const items =
+      carouselItemsForAssignment(
+        art,
+        assignedPrints
+      );
+
+    return `
+      <article
+        class="pm-division-card ${
+          assignment
+            ? "is-art-decided"
+            : ""
+        }"
+      >
+        <div class="pm-division-art-hero">
+          <div class="pm-card-hero">
+            ${carouselHtml(
+              items,
+              `detail-${division.division_id}`,
+              assignment
+                ? "ART PHOTO"
+                : "ART DUE"
+            )}
+          </div>
+        </div>
+
+        <div class="pm-division-card-copy">
+          <h4>
+            ${safe(
+              canonicalCbChildCode(division)
+            )}
+          </h4>
+
+          <div class="pm-caption-status-row">
+            <span
+              class="pm-progress-chip ${
+                assignment
+                  ? "is-complete"
+                  : "is-due"
+              }"
+            >
+              ${
+                assignment
+                  ? "✓ Art Decided"
+                  : "Art Due"
+              }
+            </span>
+
+            <span
+              class="pm-progress-chip ${
+                printDecision.key === "due"
+                  ? "is-due"
+                  : "is-complete"
+              }"
+            >
+              ${
+                printDecision.key === "na"
+                  ? "✓ Print N/A"
+                  : printDecision.key === "decided"
+                    ? "✓ Print Decided"
+                    : "Print Due"
+              }
+            </span>
+
+            <span
+              class="pm-progress-chip ${
+                printDecision.key === "due"
+                  ? "is-due"
+                  : "is-next"
+              }"
+            >
+              Cutting Due
+            </span>
+          </div>
+
+          <p class="pm-detail-art-no">
+            ${
+              art
+                ? `ART ${safe(art.art_no)}`
+                : "Select Art Number"
+            }
+          </p>
+
+          <p class="pm-detail-print-no">
+            PRINT ${
+              printDecision.key === "na"
+                ? "N/A — No Print Required"
+                : assignedPrints.length
+                  ? safe(
+                      assignedPrints
+                        .map(row => row.print_no)
+                        .filter(Boolean)
+                        .join(" · ")
+                    )
+                  : "Due"
+            }
+          </p>
+
+          <div class="pm-division-card-metrics">
+            <span>
+              <small>Total Qty</small>
+              <strong>
+                ${qty(division.allocated_qty)}
+              </strong>
+            </span>
+
+            <span>
+              <small>Total Amount</small>
+              <strong>
+                ${money(division.allocated_amount)}
+              </strong>
+            </span>
+          </div>
+
+          <div class="pm-material-chip-list">
+            ${materialChips}
+          </div>
+
+          <button
+            class="pm-assign-art pm-detail-assign"
+            type="button"
+            data-detail-art="${safe(
+              division.division_id
+            )}"
+          >
+            ${
+              assignment
+                ? "Change Art & Print"
+                : "Assign Art & Print"
+            }
+          </button>
+        </div>
+      </article>
+    `;
+  }).join("");
+
+  const historyHtml = purchases.length
+    ? purchases.map(purchase => {
+        const category =
+          categoryById(
+            purchase.material_category_id
+          );
+
+        return `
+          <article class="pm-history-card">
+            <div class="pm-history-card-head">
+              <div>
+                <h4>
+                  ${safe(
+                    category?.category_name ||
+                    "Material"
+                  )}
+                </h4>
+
+                <p>
+                  ${safe(
+                    purchase.fabric_name ||
+                    "Fabric not recorded"
+                  )}
+                  · ${safe(purchase.vendor_name)}
+                </p>
+
+                <p>
+                  Bill ${safe(
+                    purchase.vendor_bill_no
+                  )}
+                  · ${safe(purchase.bill_date)}
+                  · ${safe(
+                    purchase.allocation_scope ||
+                    "all"
+                  )} divisions
+                </p>
+              </div>
+
+              <strong>
+                ${money(purchase.amount)}
+              </strong>
+            </div>
+
+            <p>
+              ${qty(purchase.quantity)}
+              × ${money(purchase.rate)}/kg
+            </p>
+
+            <div class="pm-roll-summary">
+              ${
+                rollSummaryForPurchase(
+                  purchase.id
+                ) ||
+                "<span>Roll details not recorded</span>"
+              }
+            </div>
+          </article>
+        `;
+      }).join("")
+    : `
+      <p class="pm-muted-copy">
+        No CB material purchase entry found.
+      </p>
+    `;
+
+  const matchingHistoryHtml =
+    matchingPurchases.length
+      ? matchingPurchases.map(purchase => {
+          const category =
+            categoryById(
+              purchase.material_category_id
+            );
+
+          const purchaseRolls =
+            matchingRollsFor(purchase.id);
+
+          const matchingRollHtml =
+            purchaseRolls.length
+              ? purchaseRolls.map(roll => {
+                  const colour =
+                    colours.find(item =>
+                      String(item.id) ===
+                      String(roll.cb_colour_id)
+                    );
+
+                  return `
+                    <span>
+                      ${safe(
+                        colour?.colour_name ||
+                        "Colour"
+                      )}
+                      · Roll ${safe(roll.roll_no)}
+                      · ${qty(roll.quantity)} kg
+                    </span>
+                  `;
+                }).join("")
+              : `
+                <span>
+                  Roll details not recorded
+                </span>
+              `;
+
+          return `
+            <article class="pm-history-card">
+              <div class="pm-history-card-head">
+                <div>
+                  <h4>
+                    ${safe(
+                      category?.category_name ||
+                      "Matching Fabric"
+                    )}
+                  </h4>
+
+                  <p>
+                    ${safe(
+                      purchase.fabric_name ||
+                      "Matching fabric not recorded"
+                    )}
+                    · ${safe(
+                      purchase.vendor_name
+                    )}
+                  </p>
+
+                  <p>
+                    Bill ${safe(
+                      purchase.vendor_bill_no
+                    )}
+                    · ${safe(
+                      purchase.bill_date
+                    )}
+                  </p>
+                </div>
+
+                <strong>
+                  ${money(purchase.amount)}
+                </strong>
+              </div>
+
+              <p>
+                ${qty(purchase.quantity)}
+                × ${money(purchase.rate)}/kg
+              </p>
+
+              <div class="pm-roll-summary">
+                ${matchingRollHtml}
+              </div>
+            </article>
+          `;
+        }).join("")
+      : `
+        <p class="pm-muted-copy">
+          No matching purchase entry found.
+        </p>
+      `;
+
+  const matchingStockHtml =
+    matchingStock.length
+      ? matchingStock.map(stock => `
+          <article class="pm-history-card">
+            <div class="pm-history-card-head">
+              <div>
+                <h4>
+                  ${safe(
+                    stock.fabric_name ||
+                    "Matching Fabric"
+                  )}
+                </h4>
+
+                <p>
+                  ${safe(
+                    stock.category_name ||
+                    "Matching Cloth"
+                  )}
+                </p>
+              </div>
+
+              <strong>
+                ${qty(stock.current_qty)} kg
+              </strong>
+            </div>
+
+            <div class="pm-division-card-metrics">
+              <span>
+                <small>Available Qty</small>
+                <strong>
+                  ${qty(stock.current_qty)} kg
+                </strong>
+              </span>
+
+              <span>
+                <small>Average Rate</small>
+                <strong>
+                  ${money(
+                    stock.current_avg_rate
+                  )}/kg
+                </strong>
+              </span>
+
+              <span>
+                <small>Stock Value</small>
+                <strong>
+                  ${money(stock.current_value)}
+                </strong>
+              </span>
+            </div>
+          </article>
+        `).join("")
+      : `
+        <p class="pm-muted-copy">
+          No matching stock balance found.
+        </p>
+      `;
+
+  return `
+    <section class="pm-detail-summary">
+      <span>
+        <small>Total Qty</small>
+        <strong>
+          ${qty(group.quantity)}
+        </strong>
+      </span>
+
+      <span>
+        <small>Total Amount</small>
+        <strong>
+          ${money(group.amount)}
+        </strong>
+      </span>
+    </section>
 
     <section class="pm-detail-section">
-      <h3>Purchase History</h3>
-      <div class="pm-purchase-history">${historyHtml}</div>
-    </section>`;
+      <h3>Colours</h3>
+
+      <div class="pm-detail-colours">
+        ${colourHtml || "No colours"}
+      </div>
+    </section>
+
+    <section class="pm-detail-section">
+      <h3>CB Child Art & Print Cards</h3>
+
+      <div class="pm-division-card-grid">
+        ${divisionHtml}
+      </div>
+    </section>
+
+    <section class="pm-detail-section">
+      <h3>Matching Stock Balance</h3>
+
+      <div class="pm-purchase-history">
+        ${matchingStockHtml}
+      </div>
+    </section>
+
+    <section class="pm-detail-section">
+      <h3>CB Material Purchase History</h3>
+
+      <div class="pm-purchase-history">
+        ${historyHtml}
+      </div>
+    </section>
+
+    <section class="pm-detail-section">
+      <h3>Matching Purchase History</h3>
+
+      <div class="pm-purchase-history">
+        ${matchingHistoryHtml}
+      </div>
+    </section>
+  `;
 }
 
 function bindDetailInteractions() {
