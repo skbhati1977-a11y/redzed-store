@@ -2558,8 +2558,7 @@ function renderCbDetails(cbId) {
             <div class="pm-roll-summary">${matchingRollHtml}</div>
           </article>`;
       }).join("")
-    )
-    : `<p class="pm-muted-copy">No matching purchase entry found.</p>`;
+  : `<p class="pm-muted-copy">No matching purchase entry found.</p>`;
 
   const matchingStockHtml = matchingStock.length
     ? matchingStock.map(stock => `
