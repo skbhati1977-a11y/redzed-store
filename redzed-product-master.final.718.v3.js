@@ -2,7 +2,7 @@
 "use strict";
 
 window.REDZED_PRODUCT_MASTER_BOOTED = true;
-window.REDZED_PRODUCT_MASTER_VERSION = "718.4-FIRST-PURCHASE-SWITCH";
+window.REDZED_PRODUCT_MASTER_VERSION = "719-OPTIONAL-PURCHASE-D-CHILD";
 window.REDZED_PRODUCT_MASTER_SINGLE_FILE = true;
 
 const $ = id => document.getElementById(id);
@@ -83,6 +83,7 @@ function localToday() {
 }
 
 function say(text, type = "") {
+  if (!message) return;
   message.textContent = text || "";
   message.className = `rr-message ${type}`.trim();
 }
@@ -116,6 +117,22 @@ function materialName(entry) {
   return categoryById(entry.materialCategoryId)?.category_name || "Material";
 }
 
+function canonicalDevelopmentCode(value, fallbackIndex = 0) {
+  const raw = String(value || "")
+    .trim()
+    .toUpperCase()
+    .replace(/\s+/g, "");
+
+  const direct = raw.match(/D(\d+)([A-Z]*)$/);
+  if (direct) return `D${Number(direct[1])}${direct[2] || ""}`;
+
+  const legacy = raw.match(/S(\d+)([A-Z]*)$/);
+  if (legacy) return `D${Number(legacy[1])}${legacy[2] || ""}`;
+
+  const index = Number(fallbackIndex || 0);
+  return index > 0 ? `D${index}` : "CB Child";
+}
+
 function getSelectedDivisionCount() {
   const value = $("divisionCount").value;
   if (value === "custom") {
@@ -129,14 +146,14 @@ function currentDivisionChoices() {
     return groupFor(activeCbId)?.divisions.map(row => ({
       index: Number(row.division_index || 0),
       id: row.division_id,
-      label: row.division_code || `S${row.division_index}`
+      label: canonicalCbChildCode(row)
     })) || [];
   }
 
   return Array.from({ length: getSelectedDivisionCount() }, (_, index) => ({
     index: index + 1,
     id: null,
-    label: `S${index + 1}`
+    label: `D${index + 1}`
   }));
 }
 
@@ -239,16 +256,11 @@ function syncAutoRollRows(colour, targetCount = defaultRollRowCount()) {
   if (!Array.isArray(colour.rolls) || !colour.rolls.length) {
     colour.rolls = [{ quantity: "" }];
   }
-
-  // Once + Add Roll or × Remove is used, preserve that colour's uneven roll count.
   if (colour.autoRollTemplate === false) return;
 
   const target = Math.max(1, Number(targetCount || 1));
-  while (colour.rolls.length < target) {
-    colour.rolls.push({ quantity: "" });
-  }
+  while (colour.rolls.length < target) colour.rolls.push({ quantity: "" });
 
-  // Never delete a row containing quantity when Division count is reduced.
   while (colour.rolls.length > target) {
     let removableIndex = -1;
     for (let index = colour.rolls.length - 1; index >= 1; index -= 1) {
@@ -302,75 +314,37 @@ function makeEntry({
   categoryCode = null,
   entryType = "cb-material"
 } = {}) {
-  const normalizedEntryType =
-    entryType === "matching"
-      ? "matching"
-      : "cb-material";
-
-  const isMatchingPurchase =
-    normalizedEntryType === "matching";
-
-  const requestedCategory = categoryCode
-    ? categoryByCode(categoryCode)
-    : null;
-
-  const matchingCategory =
-    categories.find(category =>
-      isMatchingCategory(category)
-    ) || null;
-
+  const normalizedEntryType = entryType === "matching" ? "matching" : "cb-material";
+  const isMatchingPurchase = normalizedEntryType === "matching";
+  const requestedCategory = categoryCode ? categoryByCode(categoryCode) : null;
+  const matchingCategory = categories.find(category => isMatchingCategory(category)) || null;
   const defaultCbMaterialCategory =
-    (regularLocked
-      ? categoryByCode("regular-cloth")
-      : categoryByCode("cuff-collar")) ||
+    (regularLocked ? categoryByCode("regular-cloth") : categoryByCode("cuff-collar")) ||
     categoryByCode("regular-cloth") ||
-    categories.find(category =>
-      !isMatchingCategory(category)
-    ) ||
+    categories.find(category => !isMatchingCategory(category)) ||
     null;
 
   const preferredCategory = isMatchingPurchase
-    ? (
-        requestedCategory &&
-        isMatchingCategory(requestedCategory)
-          ? requestedCategory
-          : matchingCategory
-      )
-    : (
-        requestedCategory &&
-        !isMatchingCategory(requestedCategory)
-          ? requestedCategory
-          : defaultCbMaterialCategory
-      );
+    ? (requestedCategory && isMatchingCategory(requestedCategory) ? requestedCategory : matchingCategory)
+    : (requestedCategory && !isMatchingCategory(requestedCategory) ? requestedCategory : defaultCbMaterialCategory);
 
   return {
     key: `entry-${++entrySequence}`,
     entryType: normalizedEntryType,
-    regularLocked:
-      Boolean(regularLocked) &&
-      !isMatchingPurchase,
-    materialCategoryId:
-      preferredCategory?.id || "",
+    regularLocked: Boolean(regularLocked) && !isMatchingPurchase,
+    materialCategoryId: preferredCategory?.id || "",
     vendorName: "",
     fabricName: "",
     billNo: "",
     billDate: localToday(),
     rate: "",
-    allocationScope:
-      isMatchingPurchase
-        ? "matching-stock"
-        : "all",
-    selectedDivisionIndexes:
-      isMatchingPurchase
-        ? []
-        : currentDivisionChoices()
-            .map(item => item.index),
+    allocationScope: isMatchingPurchase ? "matching-stock" : "all",
+    selectedDivisionIndexes: isMatchingPurchase
+      ? []
+      : currentDivisionChoices().map(item => item.index),
     colours: Array.from(
       { length: currentColourCount() },
-      () =>
-        makeColourRollDraft(
-          defaultRollRowCount()
-        )
+      () => makeColourRollDraft(defaultRollRowCount())
     )
   };
 }
@@ -424,15 +398,13 @@ function isMatchingCategory(category) {
     name.includes("matching cloth") ||
     name.includes("matching fabric")
   );
-}
-
-function materialOptions(selectedId, locked) {
+ }
+  
+function materialOptions(selectedId) {
   return categories
     .filter(category => !isMatchingCategory(category))
     .map(category => {
-      const selected =
-        String(category.id) === String(selectedId);
-
+      const selected = String(category.id) === String(selectedId);
       return `<option value="${safe(category.id)}" ${selected ? "selected" : ""}>${safe(category.category_name)}</option>`;
     })
     .join("");
@@ -442,9 +414,7 @@ function matchingMaterialOptions(selectedId) {
   return categories
     .filter(isMatchingCategory)
     .map(category => {
-      const selected =
-        String(category.id) === String(selectedId);
-
+      const selected = String(category.id) === String(selectedId);
       return `<option value="${safe(category.id)}" ${selected ? "selected" : ""}>${safe(category.category_name)}</option>`;
     })
     .join("");
@@ -454,43 +424,27 @@ function firstPurchaseTypeHtml() {
   if (formMode !== "create") return "";
 
   const firstEntry = formEntries[0] || null;
-  const selectedType =
-    firstEntry?.entryType === "matching"
-      ? "matching"
-      : "regular";
-
-  const matchingAvailable =
-    categories.some(isMatchingCategory);
+  const selectedType = firstEntry?.entryType === "matching" ? "matching" : "regular";
+  const matchingAvailable = categories.some(isMatchingCategory);
 
   return `
     <div class="pm-allocation-box pm-first-purchase-type">
-      <label><span>First Purchase Type *</span></label>
+      <label><span>First Purchase Type (Optional)</span></label>
 
       <div class="pm-allocation-row">
         <label class="pm-radio-chip">
-          <input
-            type="radio"
-            name="pm-first-purchase-type"
-            value="regular"
-            ${selectedType === "regular" ? "checked" : ""}
-          >
+          <input type="radio" name="pm-first-purchase-type" value="regular" ${selectedType === "regular" ? "checked" : ""}>
           Regular Cloth
         </label>
 
         <label class="pm-radio-chip">
-          <input
-            type="radio"
-            name="pm-first-purchase-type"
-            value="matching"
-            ${selectedType === "matching" ? "checked" : ""}
-            ${matchingAvailable ? "" : "disabled"}
-          >
+          <input type="radio" name="pm-first-purchase-type" value="matching" ${selectedType === "matching" ? "checked" : ""} ${matchingAvailable ? "" : "disabled"}>
           Matching Cloth
         </label>
       </div>
 
       <small class="pm-muted-copy">
-        Select Matching Cloth to replace and hide the Regular Cloth purchase card.
+        Purchase is optional while creating the CB. Leave the purchase card blank to create only the CB, colours and D1/D2 child structure.
       </small>
     </div>
   `;
@@ -499,67 +453,42 @@ function firstPurchaseTypeHtml() {
 function changeFirstPurchaseType(type) {
   if (formMode !== "create") return;
 
-  
-const targetType =
-    type === "matching"
-      ? "matching"
-      : "regular";
-
+  const targetType = type === "matching" ? "matching" : "regular";
   let firstEntry = formEntries[0] || null;
 
   if (!firstEntry) {
     firstEntry = makeEntry({
-      entryType:
-        targetType === "matching"
-          ? "matching"
-          : "cb-material",
-      categoryCode:
-        targetType === "matching"
-          ? null
-          : "regular-cloth",
-      regularLocked:
-        targetType === "regular"
+      entryType: targetType === "matching" ? "matching" : "cb-material",
+      categoryCode: targetType === "matching" ? null : "regular-cloth",
+      regularLocked: targetType === "regular"
     });
-
     formEntries.unshift(firstEntry);
   }
 
   if (targetType === "matching") {
-    const matchingCategory =
-      categories.find(isMatchingCategory) || null;
-
+    const matchingCategory = categories.find(isMatchingCategory) || null;
     if (!matchingCategory) {
-      say(
-        "Matching Cloth category is not available in Material Categories.",
-        "error"
-      );
+      say("Matching Cloth category is not available in Material Categories.", "error");
       renderPurchaseEntries();
       return;
     }
 
     firstEntry.entryType = "matching";
     firstEntry.regularLocked = false;
-    firstEntry.materialCategoryId =
-      matchingCategory.id;
-    firstEntry.allocationScope =
-      "matching-stock";
+    firstEntry.materialCategoryId = matchingCategory.id;
+    firstEntry.allocationScope = "matching-stock";
     firstEntry.selectedDivisionIndexes = [];
   } else {
     const regularCategory =
       categoryByCode("regular-cloth") ||
-      categories.find(category =>
-        !isMatchingCategory(category)
-      ) ||
+      categories.find(category => !isMatchingCategory(category)) ||
       null;
 
     firstEntry.entryType = "cb-material";
     firstEntry.regularLocked = true;
-    firstEntry.materialCategoryId =
-      regularCategory?.id || "";
+    firstEntry.materialCategoryId = regularCategory?.id || "";
     firstEntry.allocationScope = "all";
-    firstEntry.selectedDivisionIndexes =
-      currentDivisionChoices()
-        .map(item => item.index);
+    firstEntry.selectedDivisionIndexes = currentDivisionChoices().map(item => item.index);
   }
 
   renderPurchaseEntries();
@@ -645,22 +574,15 @@ function renderColourCard(entry, entryIndex, colourIndex) {
 }
 
 function renderEntry(entry, entryIndex) {
-  const canRemove = !(
-    formMode === "create" &&
-    entryIndex === 0
-  );
-
+  const canRemove = !(formMode === "create" && entryIndex === 0);
   const entryTypeNumber = formEntries
     .slice(0, entryIndex + 1)
-    .filter(item =>
-      item.entryType === entry.entryType
-    )
+    .filter(item => item.entryType === entry.entryType)
     .length;
 
-  const entryTitle =
-    entry.entryType === "matching"
-      ? `Matching Purchase ${entryTypeNumber}`
-      : `CB Material Purchase ${entryTypeNumber}`;
+  const entryTitle = entry.entryType === "matching"
+    ? `Matching Purchase ${entryTypeNumber}`
+    : `CB Material Purchase ${entryTypeNumber}`;
 
   return `
     <article class="pm-purchase-entry" data-entry-key="${safe(entry.key)}">
@@ -673,45 +595,20 @@ function renderEntry(entry, entryIndex) {
         <label>
           <span>${entry.entryType === "matching" ? "Matching Fabric *" : "Material *"}</span>
           <select class="pm-material-select">
-            ${
-              entry.entryType === "matching"
-                ? matchingMaterialOptions(entry.materialCategoryId)
-                : materialOptions(entry.materialCategoryId, false)
-            }
+            ${entry.entryType === "matching"
+              ? matchingMaterialOptions(entry.materialCategoryId)
+              : materialOptions(entry.materialCategoryId)}
           </select>
         </label>
 
-        <label>
-          <span>Vendor Name *</span>
-          <input class="pm-vendor-name" type="text" placeholder="Vendor name" value="${safe(entry.vendorName)}">
-        </label>
-
-        <label>
-          <span>Fabric Name *</span>
-          <input class="pm-fabric-name" type="text" placeholder="Fabric name" value="${safe(entry.fabricName)}">
-        </label>
-
-        <label>
-          <span>Bill No *</span>
-          <input class="pm-bill-no" type="text" placeholder="Bill number" value="${safe(entry.billNo)}">
-        </label>
-
-        <label>
-          <span>Bill Date *</span>
-          <input class="pm-bill-date" type="date" value="${safe(entry.billDate)}">
-        </label>
-
-        <label>
-          <span>Rate / kg *</span>
-          <input class="pm-rate" type="number" inputmode="decimal" min="0.0001" step="0.0001" placeholder="Rate" value="${safe(entry.rate)}">
-        </label>
+        <label><span>Vendor Name *</span><input class="pm-vendor-name" type="text" placeholder="Vendor name" value="${safe(entry.vendorName)}"></label>
+        <label><span>Fabric Name *</span><input class="pm-fabric-name" type="text" placeholder="Fabric name" value="${safe(entry.fabricName)}"></label>
+        <label><span>Bill No *</span><input class="pm-bill-no" type="text" placeholder="Bill number" value="${safe(entry.billNo)}"></label>
+        <label><span>Bill Date *</span><input class="pm-bill-date" type="date" value="${safe(entry.billDate)}"></label>
+        <label><span>Rate / kg *</span><input class="pm-rate" type="number" inputmode="decimal" min="0.0001" step="0.0001" placeholder="Rate" value="${safe(entry.rate)}"></label>
       </div>
 
-      ${
-        entry.entryType === "matching"
-          ? ""
-          : renderDivisionSelection(entry)
-      }
+      ${entry.entryType === "matching" ? "" : renderDivisionSelection(entry)}
 
       <div class="pm-material-colours">
         ${entry.colours.map((_, colourIndex) => renderColourCard(entry, entryIndex, colourIndex)).join("")}
@@ -756,9 +653,8 @@ function bindEntryEvents(entry, entryIndex, node) {
   const selectedBox = node.querySelector(".pm-selected-divisions");
   selectedBox?.querySelectorAll('input[type="checkbox"]').forEach(input => {
     input.addEventListener("change", () => {
-      const selected = [...selectedBox.querySelectorAll('input[type="checkbox"]:checked')]
+      entry.selectedDivisionIndexes = [...selectedBox.querySelectorAll('input[type="checkbox"]:checked')]
         .map(item => Number(item.value));
-      entry.selectedDivisionIndexes = selected;
     });
   });
 
@@ -817,7 +713,6 @@ function bindEntryEvents(entry, entryIndex, node) {
 
 function renderPurchaseEntries() {
   ensureColourDrafts(currentColourCount());
-
   const container = $("purchaseEntries");
 
   container.innerHTML = `
@@ -825,24 +720,15 @@ function renderPurchaseEntries() {
     ${formEntries.map(renderEntry).join("")}
   `;
 
-  container
-    .querySelectorAll('input[name="pm-first-purchase-type"]')
-    .forEach(input => {
-      input.addEventListener("change", () => {
-        if (!input.checked) return;
-        changeFirstPurchaseType(input.value);
-      });
+  container.querySelectorAll('input[name="pm-first-purchase-type"]').forEach(input => {
+    input.addEventListener("change", () => {
+      if (input.checked) changeFirstPurchaseType(input.value);
     });
+  });
 
-  container
-    .querySelectorAll(".pm-purchase-entry")
-    .forEach((node, index) => {
-      bindEntryEvents(
-        formEntries[index],
-        index,
-        node
-      );
-    });
+  container.querySelectorAll(".pm-purchase-entry").forEach((node, index) => {
+    bindEntryEvents(formEntries[index], index, node);
+  });
 
   updateGrandSummary();
 }
@@ -913,7 +799,7 @@ function openAppendForm(cbId) {
   showPurchaseMessage();
   const group = groupFor(cbId);
   if (!group) return;
-
+  
   formMode = "append";
   activeCbId = cbId;
   entrySequence = 0;
@@ -949,6 +835,7 @@ function openAppendForm(cbId) {
   closeSheet(detailSheet);
   openSheet(purchaseSheet);
 }
+
 function entryHasAnyPurchaseData(entry) {
   if (!entry) return false;
 
@@ -962,103 +849,66 @@ function entryHasAnyPurchaseData(entry) {
 }
 
 function validateEntries() {
-  const activeEntries =
-    formEntries.filter(entryHasAnyPurchaseData);
+  const activeEntries = formEntries.filter(entryHasAnyPurchaseData);
 
+  // Creating a CB without any purchase is allowed. Append mode exists only
+  // to add a purchase, so it still requires at least one completed card.
   if (!activeEntries.length) {
+    if (formMode === "create") return [];
     throw new Error("Add at least one purchase.");
   }
 
   activeEntries.forEach(entry => {
-    const purchaseNo =
-      formEntries.indexOf(entry) + 1;
-
-    const category =
-      categoryById(entry.materialCategoryId);
-
-    const isMatchingPurchase =
-      entry.entryType === "matching";
+    const purchaseNo = formEntries.indexOf(entry) + 1;
+    const category = categoryById(entry.materialCategoryId);
+    const isMatchingPurchase = entry.entryType === "matching";
 
     if (!category) {
-      throw new Error(
-        `Purchase ${purchaseNo}: Select Material.`
-      );
+      throw new Error(`Purchase ${purchaseNo}: Select Material.`);
     }
 
-    if (
-      isMatchingPurchase &&
-      !isMatchingCategory(category)
-    ) {
-      throw new Error(
-        `Purchase ${purchaseNo}: Select Matching Fabric category.`
-      );
+    if (isMatchingPurchase && !isMatchingCategory(category)) {
+      throw new Error(`Purchase ${purchaseNo}: Select Matching Fabric category.`);
     }
 
-    if (
-      !isMatchingPurchase &&
-      isMatchingCategory(category)
-    ) {
-      throw new Error(
-      `Purchase ${purchaseNo}: Select Matching Fabric category.`
-      );
-    }
-
-    if (
-      !isMatchingPurchase &&
-      isMatchingCategory(category)
-    ) {
-      throw new Error(
-        `Purchase ${purchaseNo}: Add Matching through Matching Purchase card.`
-      );
+    if (!isMatchingPurchase && isMatchingCategory(category)) {
+      throw new Error(`Purchase ${purchaseNo}: Add Matching through Matching Purchase card.`);
     }
 
     if (!String(entry.vendorName || "").trim()) {
-      throw new Error(
-        `Purchase ${purchaseNo}: Enter Vendor Name.`
-      );
+      throw new Error(`Purchase ${purchaseNo}: Enter Vendor Name.`);
     }
 
     if (!String(entry.fabricName || "").trim()) {
-      throw new Error(
-        `Purchase ${purchaseNo}: Enter Fabric Name.`
-      );
+      throw new Error(`Purchase ${purchaseNo}: Enter Fabric Name.`);
     }
 
     if (!String(entry.billNo || "").trim()) {
-      throw new Error(
-        `Purchase ${purchaseNo}: Enter Bill No.`
-      );
+      throw new Error(`Purchase ${purchaseNo}: Enter Bill No.`);
     }
 
     if (!entry.billDate) {
-      throw new Error(
-        `Purchase ${purchaseNo}: Select Bill Date.`
-      );
+      throw new Error(`Purchase ${purchaseNo}: Select Bill Date.`);
     }
 
     if (Number(entry.rate || 0) <= 0) {
-      throw new Error(
-        `Purchase ${purchaseNo}: Enter Rate.`
-      );
+      throw new Error(`Purchase ${purchaseNo}: Enter Rate.`);
     }
 
     if (entryQuantity(entry) <= 0) {
-      throw new Error(
-        `Purchase ${purchaseNo}: Enter colour-wise roll quantity.`
-      );
+      throw new Error(`Purchase ${purchaseNo}: Enter colour-wise roll quantity.`);
     }
 
     if (
       !isMatchingPurchase &&
       entry.allocationScope === "selected" &&
-      (!Array.isArray(entry.selectedDivisionIndexes) ||
-       !entry.selectedDivisionIndexes.length)
+      (!Array.isArray(entry.selectedDivisionIndexes) || !entry.selectedDivisionIndexes.length)
     ) {
-      throw new Error(
-        `Purchase ${purchaseNo}: Select at least one Division.`
-      );
+      throw new Error(`Purchase ${purchaseNo}: Select at least one Division.`);
     }
   });
+
+  return activeEntries;
 }
 
 function selectedDivisionIds(entry, divisions) {
@@ -1129,9 +979,7 @@ async function insertPurchaseEntry(cbPurchaseId, entry, divisions, colours, entr
   const rolls = entryRolls(entry).map(roll => {
     const colour = colours[roll.colourIndex];
     if (!colour?.id) {
-      throw new Error(
-        `Purchase: Colour ${roll.colourIndex + 1} could not be found.`
-      );
+      throw new Error(`Purchase: Colour ${roll.colourIndex + 1} could not be found.`);
     }
 
     return {
@@ -1167,21 +1015,14 @@ async function insertPurchaseEntry(cbPurchaseId, entry, divisions, colours, entr
   return data;
 }
 
-async function insertMatchingPurchase(
-  cbPurchaseId,
-  entry,
-  colours,
-  entryNotes = null
-) {
+async function insertMatchingPurchase(cbPurchaseId, entry, colours, entryNotes = null) {
   const totalQuantity = entryQuantity(entry);
 
   const rolls = entryRolls(entry).map(roll => {
     const colour = colours[roll.colourIndex];
 
     if (!colour?.id) {
-      throw new Error(
-        `Matching Purchase: Colour ${roll.colourIndex + 1} could not be found.`
-      );
+      throw new Error(`Matching Purchase: Colour ${roll.colourIndex + 1} could not be found.`);
     }
 
     return {
@@ -1207,15 +1048,10 @@ async function insertMatchingPurchase(
 
   if (error) throw error;
 
-  const matchingPurchaseId =
-    typeof data === "string"
-      ? data
-      : normalizeRpcId(data);
+  const matchingPurchaseId = typeof data === "string" ? data : normalizeRpcId(data);
 
   if (!matchingPurchaseId) {
-    throw new Error(
-      "Matching Purchase was saved but its ID was not returned."
-    );
+    throw new Error("Matching Purchase was saved but its ID was not returned.");
   }
 
   return { id: matchingPurchaseId };
@@ -1230,18 +1066,13 @@ async function rollbackAppendedMatchingEntries(entryIds) {
         p_purchase_entry_id: entryId
       });
 
-    if (error) {
-      failures.push(error.message || String(error));
-    }
+    if (error) failures.push(error.message || String(error));
   }
 
   return failures;
 }
 
-async function rollbackCreatedCb(
-  cbPurchaseId,
-  uploadedMedia
-) {
+async function rollbackCreatedCb(cbPurchaseId, uploadedMedia) {
   const failures = [];
 
   async function attempt(label, action) {
@@ -1249,9 +1080,7 @@ async function rollbackCreatedCb(
       const result = await action();
       if (result?.error) throw result.error;
     } catch (error) {
-      failures.push(
-        `${label}: ${error.message || error}`
-      );
+      failures.push(`${label}: ${error.message || error}`);
     }
   }
 
@@ -1270,48 +1099,29 @@ async function rollbackCreatedCb(
         .rpc("rr_rollback_matching_purchase", {
           p_purchase_entry_id: entry.id
         });
-
       if (rollbackError) throw rollbackError;
     }
   });
 
   await attempt("purchase entries", () =>
-    supabaseClient
-      .from("rr_cb_purchase_entries")
-      .delete()
-      .eq("cb_id", cbPurchaseId)
+    supabaseClient.from("rr_cb_purchase_entries").delete().eq("cb_id", cbPurchaseId)
   );
 
   await attempt("colour rows", () =>
-    supabaseClient
-      .from("rr_cb_colours")
-      .delete()
-      .eq("cb_id", cbPurchaseId)
+    supabaseClient.from("rr_cb_colours").delete().eq("cb_id", cbPurchaseId)
   );
 
   await attempt("division rows", () =>
-    supabaseClient
-      .from("rr_cb_units")
-      .delete()
-      .eq("purchase_id", cbPurchaseId)
+    supabaseClient.from("rr_cb_units").delete().eq("purchase_id", cbPurchaseId)
   );
 
   await attempt("fabric purchase", () =>
-    supabaseClient
-      .from("rr_fabric_purchases")
-      .delete()
-      .eq("id", cbPurchaseId)
+    supabaseClient.from("rr_fabric_purchases").delete().eq("id", cbPurchaseId)
   );
 
-  if (
-    typeof RR !== "undefined" &&
-    typeof RR.deleteMedia === "function"
-  ) {
+  if (typeof RR !== "undefined" && typeof RR.deleteMedia === "function") {
     for (const media of [...uploadedMedia].reverse()) {
-      await attempt(
-        "uploaded media",
-        () => RR.deleteMedia(media)
-      );
+      await attempt("uploaded media", () => RR.deleteMedia(media));
     }
   }
 
@@ -1331,25 +1141,17 @@ async function saveCreateMode() {
   const cbNo = $("cbNo").value.trim().toUpperCase();
   const divisionCount = getSelectedDivisionCount();
   const colourCount = currentColourCount();
-
-  const activeEntries = formEntries.filter(entry => entryHasAnyPurchaseData(entry));
+  const activeEntries = formEntries.filter(entryHasAnyPurchaseData);
 
   const regularCategoryId = categoryByCode("regular-cloth")?.id || null;
   const regularEntryIndex = activeEntries.findIndex(entry =>
     regularCategoryId && String(entry.materialCategoryId) === String(regularCategoryId)
   );
   const regularEntry = regularEntryIndex >= 0 ? activeEntries[regularEntryIndex] : null;
-
-  const identityEntry =
-    activeEntries[0] ||
-    formEntries[0] || {
-      fabricName: ""
-    };
+  const identityEntry = activeEntries[0] || formEntries[0] || { fabricName: "" };
 
   const regularQuantity = regularEntry ? entryQuantity(regularEntry) : 0;
-  const regularAmount = regularEntry
-    ? regularQuantity * Number(regularEntry.rate || 0)
-    : 0;
+  const regularAmount = regularEntry ? regularQuantity * Number(regularEntry.rate || 0) : 0;
   const regularRolls = regularEntry ? entryRolls(regularEntry).length : 0;
 
   const uploadedMedia = [];
@@ -1364,7 +1166,7 @@ async function saveCreateMode() {
   }
 
   try {
-    showPurchaseMessage("Creating CB identity and divisions…", "progress");
+    showPurchaseMessage("Creating CB identity and D child divisions…", "progress");
     const { data: rpcData, error: cbError } = await supabaseClient
       .rpc("rr_create_cb_v713", {
         p_cb_no: cbNo,
@@ -1373,7 +1175,7 @@ async function saveCreateMode() {
         p_regular_qty: Number(regularQuantity.toFixed(3)),
         p_regular_amount: Number(regularAmount.toFixed(2)),
         p_total_rolls: regularRolls,
-       p_fabric_name: (regularEntry || identityEntry).fabricName.trim() || cbNo,
+        p_fabric_name: String((regularEntry || identityEntry).fabricName || "").trim() || cbNo,
         p_regular_division_indexes: (!regularEntry || regularQuantity <= 0)
           ? []
           : regularEntry.allocationScope === "all"
@@ -1399,9 +1201,8 @@ async function saveCreateMode() {
       const media = await uploadColourMedia(cbPurchaseId, index, cbColourDrafts[index].name.trim());
       uploadedMedia.push(media);
       mediaByIndex[index] = media;
-    }
-
-    const colourPayload = cbColourDrafts.map((draft, index) => {
+}
+      const colourPayload = cbColourDrafts.map((draft, index) => {
       const media = mediaByIndex[index];
       return {
         cb_id: cbPurchaseId,
@@ -1424,24 +1225,16 @@ async function saveCreateMode() {
 
     const divisions = (divisionData || []).map(row => ({
       ...row,
-      division_id: row.id
+      division_id: row.id,
+      division_code: canonicalDevelopmentCode(row.cb_code, row.division_index)
     }));
 
     for (let entryIndex = 0; entryIndex < activeEntries.length; entryIndex += 1) {
-      showPurchaseMessage(
-        `Saving purchase ${entryIndex + 1} of ${activeEntries.length}…`,
-        "progress"
-      );
-
+      showPurchaseMessage(`Saving purchase ${entryIndex + 1} of ${activeEntries.length}…`, "progress");
       const entry = activeEntries[entryIndex];
 
       if (entry.entryType === "matching") {
-        await insertMatchingPurchase(
-          cbPurchaseId,
-          entry,
-          createdColours,
-          null
-        );
+        await insertMatchingPurchase(cbPurchaseId, entry, createdColours, null);
       } else {
         await insertPurchaseEntry(
           cbPurchaseId,
@@ -1449,15 +1242,12 @@ async function saveCreateMode() {
           divisions,
           createdColours,
           null,
-          Boolean(
-            regularEntry &&
-            String(entry.key) === String(regularEntry.key)
-          )
+          Boolean(regularEntry && String(entry.key) === String(regularEntry.key))
         );
       }
     }
 
-    return { cbNo, cbPurchaseId };
+    return { cbNo, cbPurchaseId, purchaseCount: activeEntries.length };
   } catch (error) {
     if (cbPurchaseId) {
       const failures = await rollbackCreatedCb(cbPurchaseId, uploadedMedia);
@@ -1468,78 +1258,46 @@ async function saveCreateMode() {
     throw error;
   }
 }
+
 async function saveAppendMode() {
   const group = groupFor(activeCbId);
 
-  if (!group) {
-    throw new Error("CB could not be found.");
-  }
+  if (!group) throw new Error("CB could not be found.");
 
   const colours = coloursFor(activeCbId);
   const divisions = group.divisions;
   const insertedEntryIds = [];
   const insertedMatchingIds = [];
-  const entryNotes =
-    $("cbRemarks").value.trim() || null;
+  const entryNotes = $("cbRemarks").value.trim() || null;
 
   try {
     for (const entry of formEntries) {
-      if (!entryHasAnyPurchaseData(entry)) {
-        continue;
-      }
+      if (!entryHasAnyPurchaseData(entry)) continue;
 
       if (entry.entryType === "matching") {
-        const savedMatching =
-          await insertMatchingPurchase(
-            activeCbId,
-            entry,
-            colours,
-            entryNotes
-          );
-
-        insertedMatchingIds.push(
-          savedMatching.id
-        );
+        const savedMatching = await insertMatchingPurchase(activeCbId, entry, colours, entryNotes);
+        insertedMatchingIds.push(savedMatching.id);
       } else {
-        const savedEntry =
-          await insertPurchaseEntry(
-            activeCbId,
-            entry,
-            divisions,
-            colours,
-            entryNotes,
-            false
-          );
-
-        insertedEntryIds.push(
-          savedEntry.id
+        const savedEntry = await insertPurchaseEntry(
+          activeCbId,
+          entry,
+          divisions,
+          colours,
+          entryNotes,
+          false
         );
+        insertedEntryIds.push(savedEntry.id);
       }
     }
 
-    return {
-      cbNo: group.cb_no,
-      cbPurchaseId: activeCbId
-    };
+    return { cbNo: group.cb_no, cbPurchaseId: activeCbId };
   } catch (error) {
-    const matchingFailures =
-      await rollbackAppendedMatchingEntries(
-        insertedMatchingIds
-      );
-
-    const materialFailures =
-      await rollbackAppendedEntries(
-        insertedEntryIds
-      );
-
-    const failures = [
-      ...matchingFailures,
-      ...materialFailures
-    ];
+    const matchingFailures = await rollbackAppendedMatchingEntries(insertedMatchingIds);
+    const materialFailures = await rollbackAppendedEntries(insertedEntryIds);
+    const failures = [...matchingFailures, ...materialFailures];
 
     if (failures.length) {
-      error.message =
-        `${error.message} Automatic cleanup was incomplete; check Supabase records.`;
+      error.message = `${error.message} Automatic cleanup was incomplete; check Supabase records.`;
     }
 
     throw error;
@@ -1565,7 +1323,7 @@ purchaseForm.addEventListener("submit", async event => {
     }
 
     await ensureOwnerAccess();
-    validateEntries();
+    const activeEntries = validateEntries();
 
     const result = await withTimeout(
       formMode === "create" ? saveCreateMode() : saveAppendMode(),
@@ -1573,20 +1331,16 @@ purchaseForm.addEventListener("submit", async event => {
       formMode === "create" ? "CB save" : "Purchase save"
     );
 
-    showPurchaseMessage(
-      formMode === "create"
-        ? `CB ${result.cbNo} created successfully.`
-        : `${result.cbNo} purchase added successfully.`,
-      "success"
-    );
+    const createdWithoutPurchase = formMode === "create" && activeEntries.length === 0;
+    const successText = formMode === "create"
+      ? createdWithoutPurchase
+        ? `CB ${result.cbNo} created without purchase. Purchase can be added later.`
+        : `CB ${result.cbNo} created successfully.`
+      : `${result.cbNo} purchase added successfully.`;
 
+    showPurchaseMessage(successText, "success");
     closeSheet(purchaseSheet);
-    say(
-      formMode === "create"
-        ? `CB ${result.cbNo} created successfully.`
-        : `${result.cbNo} purchase added successfully.`,
-      "success"
-    );
+    say(successText, "success");
 
     try {
       await loadData();
@@ -1609,15 +1363,20 @@ purchaseForm.addEventListener("submit", async event => {
 });
 
 function canonicalCbChildCode(row) {
-  const direct = String(row?.division_code || row?.cb_code || "").trim();
-  if (direct) return direct;
+  const direct =
+    row?.division_code ||
+    row?.cb_child ||
+    row?.child_code ||
+    row?.child_no ||
+    row?.cb_code ||
+    row?.unit_code ||
+    "";
 
-  const parentCode = String(
-    row?.parent_division_code ||
-    row?.parent_cb_code ||
-    row?.parent_code ||
-    ""
-  ).trim();
+  const directCode = canonicalDevelopmentCode(
+    direct,
+    row?.division_index || 0
+  );
+
   const suffix = String(
     row?.child_suffix ||
     row?.combo_suffix ||
@@ -1625,10 +1384,11 @@ function canonicalCbChildCode(row) {
     ""
   ).trim().toUpperCase();
 
-  if (parentCode && suffix) return `${parentCode}${suffix}`;
+  if (suffix && /^D\d+$/.test(directCode)) {
+    return `${directCode}${suffix}`;
+  }
 
-  const index = Number(row?.division_index || 0);
-  return index > 0 ? `S${index}` : "CB Child";
+  return directCode;
 }
 
 function normalizeGalleryRow(row) {
@@ -1714,7 +1474,7 @@ function groupGalleryRows() {
 
     const group = groups.get(key);
     const divisionKey = String(row.division_id || row.division_code);
-      if (!group.divisionMap.has(divisionKey)) group.divisionMap.set(divisionKey, row);
+    if (!group.divisionMap.has(divisionKey)) group.divisionMap.set(divisionKey, row);
 
     if ((statusPriority[row.division_status] || 0) > (statusPriority[group.status] || 0)) {
       group.status = row.division_status;
@@ -1748,40 +1508,25 @@ function purchasesFor(cbId) {
 
 function matchingPurchasesFor(cbId) {
   return matchingPurchaseRows
-    .filter(row =>
-      String(row.cb_id) === String(cbId)
-    )
+    .filter(row => String(row.cb_id) === String(cbId))
     .sort((a, b) =>
       String(b.created_at || b.bill_date || "")
-        .localeCompare(
-          String(a.created_at || a.bill_date || "")
-        )
+        .localeCompare(String(a.created_at || a.bill_date || ""))
     );
 }
 
 function matchingStockFor(cbId) {
   return matchingStockRows
-    .filter(row =>
-      String(row.cb_id) === String(cbId)
-    )
+    .filter(row => String(row.cb_id) === String(cbId))
     .sort((a, b) =>
-      String(a.fabric_name || "")
-        .localeCompare(
-          String(b.fabric_name || "")
-        )
+      String(a.fabric_name || "").localeCompare(String(b.fabric_name || ""))
     );
 }
 
 function matchingRollsFor(purchaseEntryId) {
   return matchingRollRows
-    .filter(row =>
-      String(row.purchase_entry_id) ===
-      String(purchaseEntryId)
-    )
-    .sort((a, b) =>
-      Number(a.roll_no || 0) -
-      Number(b.roll_no || 0)
-    );
+    .filter(row => String(row.purchase_entry_id) === String(purchaseEntryId))
+    .sort((a, b) => Number(a.roll_no || 0) - Number(b.roll_no || 0));
 }
 
 function coloursFor(cbId) {
@@ -1812,8 +1557,14 @@ function printById(id) {
 
 function assignmentForDivision(divisionId) {
   return assignmentRows
-    .filter(row => String(row.cb_id) === String(divisionId))
-    .sort((a, b) => String(b.updated_at || b.created_at || "").localeCompare(String(a.updated_at || a.created_at || "")))[0] || null;
+    .filter(row =>
+      String(row.division_id) === String(divisionId) ||
+      String(row.cb_id) === String(divisionId)
+    )
+    .sort((a, b) =>
+      String(b.updated_at || b.created_at || "")
+        .localeCompare(String(a.updated_at || a.created_at || ""))
+    )[0] || null;
 }
 
 function assignedPrintsForDivision(divisionId) {
@@ -1834,8 +1585,12 @@ function selectedPrintRows() {
 function mediaForEntity(entityId, kind) {
   const list = mediaRows.filter(row => String(row.entity_id) === String(entityId));
   return list.sort((a, b) => {
-    const aKind = kind === "print" ? String(a.entity_type || "").toLowerCase() === "printing" : String(a.entity_type || "").toLowerCase() !== "printing";
-    const bKind = kind === "print" ? String(b.entity_type || "").toLowerCase() === "printing" : String(b.entity_type || "").toLowerCase() !== "printing";
+    const aKind = kind === "print"
+      ? String(a.entity_type || "").toLowerCase() === "printing"
+      : String(a.entity_type || "").toLowerCase() !== "printing";
+    const bKind = kind === "print"
+      ? String(b.entity_type || "").toLowerCase() === "printing"
+      : String(b.entity_type || "").toLowerCase() !== "printing";
     if (aKind !== bKind) return aKind ? -1 : 1;
     if (Boolean(a.is_cover) !== Boolean(b.is_cover)) return a.is_cover ? -1 : 1;
     return Number(a.sort_order || 0) - Number(b.sort_order || 0);
@@ -1929,9 +1684,11 @@ function divisionCards() {
     division,
     assignment: assignmentForDivision(division.division_id)
   }))).sort((a, b) => {
-    const dateCompare = String(b.division.created_at || b.group.created_at || "").localeCompare(String(a.division.created_at || a.group.created_at || ""));
+    const dateCompare = String(b.division.created_at || b.group.created_at || "")
+      .localeCompare(String(a.division.created_at || a.group.created_at || ""));
     if (dateCompare) return dateCompare;
-    return String(b.division.division_code || "").localeCompare(String(a.division.division_code || ""), undefined, { numeric: true });
+    return String(b.division.division_code || "")
+      .localeCompare(String(a.division.division_code || ""), undefined, { numeric: true });
   });
 }
 
@@ -1943,7 +1700,7 @@ function applyCardColumns() {
   if ($("pmCardColumns")) $("pmCardColumns").value = String(cardColumnCount);
 }
 
-function renderGallery() {
+ function renderGallery() {
   const query = $("pmSearch").value.trim().toLowerCase();
   const cards = divisionCards().filter(({ group, division, assignment }) => {
     const art = assignment ? artById(assignment.art_id) : null;
@@ -1954,7 +1711,7 @@ function renderGallery() {
     const colours = coloursFor(group.cb_id);
     const searchText = [
       group.cb_no,
-      division.division_code,
+      canonicalCbChildCode(division),
       art?.art_no,
       art?.product_name,
       art?.item_name,
@@ -1969,8 +1726,7 @@ function renderGallery() {
     let filterMatches = currentFilter === "all";
     if (currentFilter === "purchase") {
       filterMatches = purchases.length > 0 || matchingPurchases.length > 0;
-    }
-    else if (currentFilter === "planning") filterMatches = !assignment;
+    } else if (currentFilter === "planning") filterMatches = !assignment;
     else if (currentFilter === "ready_for_cutting") filterMatches = Boolean(assignment);
     else if (currentFilter === "hold") filterMatches = group.status === "hold";
     return filterMatches && searchText.includes(query);
@@ -2004,15 +1760,17 @@ function renderGallery() {
       : assignedPrints.length
         ? assignedPrints.map(row => row.print_no).filter(Boolean).join(" · ")
         : "Print Due";
+    const childCode = canonicalCbChildCode(division);
+
     return `
-      <article class="pm-work-card ${assignment ? "is-art-decided" : "is-art-due"}" data-open-art="${safe(division.division_id)}" tabindex="0" role="button" aria-label="${assignment ? "Change" : "Assign"} Art and Print for ${safe(division.division_code)}">
+      <article class="pm-work-card ${assignment ? "is-art-decided" : "is-art-due"}" data-open-art="${safe(division.division_id)}" tabindex="0" role="button" aria-label="${assignment ? "Change" : "Assign"} Art and Print for ${safe(childCode)}">
         <div class="pm-card-hero">
           ${carouselHtml(items, instanceId, art ? "ART PHOTO" : "ART DUE")}
         </div>
         <div class="pm-work-caption">
           <div class="pm-caption-id-row">
             <span><small>CB NO</small><strong>${safe(group.cb_no)}</strong></span>
-            <span><small>CB CHILD</small><strong>${safe(canonicalCbChildCode(division))}</strong></span>
+            <span><small>CB CHILD</small><strong>${safe(childCode)}</strong></span>
           </div>
           <div class="pm-caption-status-row">
             <span class="pm-progress-chip ${assignment ? "is-complete" : "is-due"}">${assignment ? "✓ Art Decided" : "Art Due"}</span>
@@ -2159,7 +1917,7 @@ function printDecisionForDivision(divisionId) {
   const assignment = assignmentForDivision(divisionId);
   const prints = assignedPrintsForDivision(divisionId);
   if (!assignment) return { key: "due", label: "Print Due", prints: [] };
-  if (assignment.print_not_applicable === true) {
+  if (assignment.print_not_applicable === true || assignment.no_print_required === true) {
     return { key: "na", label: "N/A — No Print Required", prints: [] };
   }
   if (prints.length) return { key: "decided", label: "Print Decided", prints };
@@ -2203,7 +1961,7 @@ function renderPrintPicker() {
     ${printCards}`;
 
   const realPrintCount = selectedPrintIds.filter(id => String(id) !== "__PRINT_NA__").length;
-    $("selectedPrintCount").textContent = printNotApplicable
+  $("selectedPrintCount").textContent = printNotApplicable
     ? "Explicit N/A selected"
     : realPrintCount
       ? `${realPrintCount} selected`
@@ -2323,7 +2081,7 @@ async function saveArtPrintAssignmentRecord(cbUnitId, artId, printIds) {
     /function|rpc|schema cache/i.test(rpc.error?.message || "");
   if (!missingRpc) throw rpc.error;
 
-  console.warn("V716 RPC unavailable or explicit N/A selected; using owner direct-write fallback.", rpc.error);
+  console.warn("V719 assignment RPC unavailable or explicit N/A selected; using owner direct-write fallback.", rpc.error);
   const existing = assignmentForDivision(cbUnitId);
   const payload = {
     art_id: artId,
@@ -2347,8 +2105,9 @@ async function saveArtPrintAssignmentRecord(cbUnitId, artId, printIds) {
       cleanPrintIds.map((printId, index) => ({ assignment_id: assignmentId, print_id: printId, sequence_no: index + 1 }))
     );
     if (insertResult.error) throw insertResult.error;
-  }
+          }
 
+  
   const unitResult = await supabaseClient.from("rr_cb_units").update({ status: "art_assigned" }).eq("id", cbUnitId);
   if (unitResult.error) throw unitResult.error;
   return assignmentResult.data;
@@ -2408,23 +2167,13 @@ function rollSummaryForPurchase(purchaseEntryId) {
 function renderCbDetails(cbId) {
   const group = groupFor(cbId);
 
-  if (!group) {
-    return "<p>CB not found.</p>";
-  }
+  if (!group) return "<p>CB not found.</p>";
 
   const colours = coloursFor(cbId);
-
   const purchases = purchasesFor(cbId)
-    .sort((a, b) =>
-      String(a.created_at || "")
-        .localeCompare(String(b.created_at || ""))
-    );
-
-  const matchingPurchases =
-    matchingPurchasesFor(cbId);
-
-  const matchingStock =
-    matchingStockFor(cbId);
+    .sort((a, b) => String(a.created_at || "").localeCompare(String(b.created_at || "")));
+  const matchingPurchases = matchingPurchasesFor(cbId);
+  const matchingStock = matchingStockFor(cbId);
 
   const colourHtml = colours.map(colour => {
     const image = colour.image_url
@@ -2435,47 +2184,22 @@ function renderCbDetails(cbId) {
   }).join("");
 
   const divisionHtml = group.divisions.map(division => {
-    const allocations =
-      allocationsForDivision(division.division_id);
-
-    const assignment =
-      assignmentForDivision(division.division_id);
-
-    const art = assignment
-      ? artById(assignment.art_id)
-      : null;
-
-    const assignedPrints =
-      assignedPrintsForDivision(
-        division.division_id
-      );
-
-    const printDecision =
-      printDecisionForDivision(
-        division.division_id
-      );
+    const allocations = allocationsForDivision(division.division_id);
+    const assignment = assignmentForDivision(division.division_id);
+    const art = assignment ? artById(assignment.art_id) : null;
+    const assignedPrints = assignedPrintsForDivision(division.division_id);
+    const printDecision = printDecisionForDivision(division.division_id);
 
     const materialChips = allocations.length
       ? allocations.map(allocation => {
-          const purchase =
-            purchaseById(
-              allocation.purchase_entry_id
-            );
-
-          const category =
-            categoryById(
-              purchase?.material_category_id
-            );
-
+          const purchase = purchaseById(allocation.purchase_entry_id);
+          const category = categoryById(purchase?.material_category_id);
           return `<span>${safe(category?.category_name || "Material")} · ${qty(allocation.allocated_qty)}</span>`;
         }).join("")
-      : `<span>Legacy allocation</span>`;
+      : `<span>No allocated material yet</span>`;
 
-    const items =
-      carouselItemsForAssignment(
-        art,
-        assignedPrints
-      );
+    const items = carouselItemsForAssignment(art, assignedPrints);
+    const childCode = canonicalCbChildCode(division);
 
     return `
       <article class="pm-division-card ${assignment ? "is-art-decided" : ""}">
@@ -2483,7 +2207,7 @@ function renderCbDetails(cbId) {
           <div class="pm-card-hero">${carouselHtml(items, `detail-${division.division_id}`, assignment ? "ART PHOTO" : "ART DUE")}</div>
         </div>
         <div class="pm-division-card-copy">
-          <h4>${safe(canonicalCbChildCode(division))}</h4>
+          <h4>${safe(childCode)}</h4>
           <div class="pm-caption-status-row">
             <span class="pm-progress-chip ${assignment ? "is-complete" : "is-due"}">${assignment ? "✓ Art Decided" : "Art Due"}</span>
             <span class="pm-progress-chip ${printDecision.key === "due" ? "is-due" : "is-complete"}">${printDecision.key === "na" ? "✓ Print N/A" : printDecision.key === "decided" ? "✓ Print Decided" : "Print Due"}</span>
@@ -2503,10 +2227,7 @@ function renderCbDetails(cbId) {
 
   const historyHtml = purchases.length
     ? purchases.map(purchase => {
-        const category =
-          categoryById(
-            purchase.material_category_id
-          );
+        const category = categoryById(purchase.material_category_id);
 
         return `
           <article class="pm-history-card">
@@ -2522,24 +2243,16 @@ function renderCbDetails(cbId) {
             <div class="pm-roll-summary">${rollSummaryForPurchase(purchase.id) || "<span>Roll details not recorded</span>"}</div>
           </article>`;
       }).join("")
-    : `<p class="pm-muted-copy">No CB material purchase entry found.</p>`;
+    : `<p class="pm-muted-copy">No CB material purchase entry found. CB can continue without purchase until material is added.</p>`;
 
   const matchingHistoryHtml = matchingPurchases.length
     ? matchingPurchases.map(purchase => {
-        const category =
-          categoryById(
-            purchase.material_category_id
-          );
-
-        const purchaseRolls =
-          matchingRollsFor(purchase.id);
+        const category = categoryById(purchase.material_category_id);
+        const purchaseRolls = matchingRollsFor(purchase.id);
 
         const matchingRollHtml = purchaseRolls.length
           ? purchaseRolls.map(roll => {
-              const colour = colours.find(item =>
-                String(item.id) === String(roll.cb_colour_id)
-              );
-
+              const colour = colours.find(item => String(item.id) === String(roll.cb_colour_id));
               return `<span>${safe(colour?.colour_name || "Colour")} · Roll ${safe(roll.roll_no)} · ${qty(roll.quantity)}</span>`;
             }).join("")
           : `<span>Roll details not recorded</span>`;
@@ -2558,7 +2271,7 @@ function renderCbDetails(cbId) {
             <div class="pm-roll-summary">${matchingRollHtml}</div>
           </article>`;
       }).join("")
-  : `<p class="pm-muted-copy">No matching purchase entry found.</p>`;
+    : `<p class="pm-muted-copy">No matching purchase entry found. Matching Cloth is optional.</p>`;
 
   const matchingStockHtml = matchingStock.length
     ? matchingStock.map(stock => `
@@ -2577,7 +2290,7 @@ function renderCbDetails(cbId) {
           </div>
         </article>
       `).join("")
-    : `<p class="pm-muted-copy">No matching stock balance found.</p>`;
+    : `<p class="pm-muted-copy">No matching stock balance found. Matching Cloth is optional.</p>`;
 
   return `
     <section class="pm-detail-summary">
@@ -2594,8 +2307,7 @@ function renderCbDetails(cbId) {
       <h3>CB Child Art & Print Cards</h3>
       <div class="pm-division-card-grid">${divisionHtml}</div>
     </section>
-
-    <section class="pm-detail-section">
+                     <section class="pm-detail-section">
       <h3>Matching Stock Balance</h3>
       <div class="pm-purchase-history">${matchingStockHtml}</div>
     </section>
@@ -2708,96 +2420,28 @@ async function loadData() {
       assignmentResult,
       loadedPrintAssignments
     ] = await Promise.all([
-      supabaseClient
-        .from("rr_material_categories")
-        .select("*")
-        .eq("is_active", true)
-        .order("sort_order"),
-
+      supabaseClient.from("rr_material_categories").select("*").eq("is_active", true).order("sort_order"),
       loadGallerySource(),
-
-      supabaseClient
-        .from("rr_cb_purchase_entries")
-        .select("*")
-        .order("created_at", { ascending: false }),
-
-      supabaseClient
-        .from("rr_matching_purchase_entries")
-        .select("*")
-        .order("created_at", { ascending: false }),
-
-      supabaseClient
-        .from("rr_matching_purchase_rolls")
-        .select("*")
-        .order("created_at", { ascending: false }),
-
-      supabaseClient
-        .from("rr_matching_stock_balance")
-        .select("*")
-        .order("updated_at", { ascending: false }),
-
-      supabaseClient
-        .from("rr_matching_stock_ledger")
-        .select("*")
-        .order("created_at", { ascending: false }),
-
-      supabaseClient
-        .from("rr_cb_colours")
-        .select("*")
-        .order("colour_order"),
-
-      supabaseClient
-        .from("rr_cb_purchase_rolls")
-        .select("*")
-        .order("roll_no"),
-
-      supabaseClient
-        .from("rr_cb_material_allocations")
-        .select("*"),
-
-      supabaseClient
-        .from("rr_art_master")
-        .select("*")
-        .eq("is_active", true)
-        .order("updated_at", { ascending: false }),
-
+      supabaseClient.from("rr_cb_purchase_entries").select("*").order("created_at", { ascending: false }),
+      supabaseClient.from("rr_matching_purchase_entries").select("*").order("created_at", { ascending: false }),
+      supabaseClient.from("rr_matching_purchase_rolls").select("*").order("created_at", { ascending: false }),
+      supabaseClient.from("rr_matching_stock_balance").select("*").order("updated_at", { ascending: false }),
+      supabaseClient.from("rr_matching_stock_ledger").select("*").order("created_at", { ascending: false }),
+      supabaseClient.from("rr_cb_colours").select("*").order("colour_order"),
+      supabaseClient.from("rr_cb_purchase_rolls").select("*").order("roll_no"),
+      supabaseClient.from("rr_cb_material_allocations").select("*"),
+      supabaseClient.from("rr_art_master").select("*").eq("is_active", true).order("updated_at", { ascending: false }),
       loadPrintSource(),
-
-      supabaseClient
-        .from("rr_cb_art_assignments")
-        .select("*")
-        .order("updated_at", { ascending: false }),
-
+      supabaseClient.from("rr_cb_art_assignments").select("*").order("updated_at", { ascending: false }),
       loadCbPrintAssignments()
     ]);
 
     if (categoryResult.error) throw categoryResult.error;
     if (purchaseResult.error) throw purchaseResult.error;
-
-    if (matchingPurchaseResult.error) {
-      throw new Error(
-        `Matching purchases could not load: ${matchingPurchaseResult.error.message}`
-      );
-    }
-
-    if (matchingRollResult.error) {
-      throw new Error(
-        `Matching rolls could not load: ${matchingRollResult.error.message}`
-      );
-    }
-
-    if (matchingStockResult.error) {
-      throw new Error(
-        `Matching stock could not load: ${matchingStockResult.error.message}`
-      );
-    }
-
-    if (matchingLedgerResult.error) {
-      throw new Error(
-        `Matching ledger could not load: ${matchingLedgerResult.error.message}`
-      );
-    }
-
+    if (matchingPurchaseResult.error) throw new Error(`Matching purchases could not load: ${matchingPurchaseResult.error.message}`);
+    if (matchingRollResult.error) throw new Error(`Matching rolls could not load: ${matchingRollResult.error.message}`);
+    if (matchingStockResult.error) throw new Error(`Matching stock could not load: ${matchingStockResult.error.message}`);
+    if (matchingLedgerResult.error) throw new Error(`Matching ledger could not load: ${matchingLedgerResult.error.message}`);
     if (colourResult.error) throw colourResult.error;
     if (rollResult.error) throw new Error(`Run V713 SQL patch: ${rollResult.error.message}`);
     if (allocationResult.error) throw new Error(`Run V713 SQL patch: ${allocationResult.error.message}`);
@@ -2848,57 +2492,34 @@ $("openNewCb").addEventListener("click", openCreateForm);
 
 const addMaterialButton = $("addMaterialEntry");
 
-const purchaseIntroCopy = [
-  ...document.querySelectorAll("p")
-].find(node =>
-  /first entry is regular cloth/i.test(
-    String(node.textContent || "")
-  )
+const purchaseIntroCopy = [...document.querySelectorAll("p")].find(node =>
+  /first entry is regular cloth/i.test(String(node.textContent || ""))
 );
 
 if (purchaseIntroCopy) {
   purchaseIntroCopy.textContent =
-    "Choose Regular Cloth or Matching Cloth for the first purchase. Add more material purchases whenever required.";
+    "CB purchase is optional. Choose Regular Cloth or Matching Cloth when a purchase is available, or create the CB first and add purchases later.";
 }
 
 if (addMaterialButton) {
-  addMaterialButton.textContent =
-    "+ Add CB Material Purchase";
+  addMaterialButton.textContent = "+ Add CB Material Purchase";
 }
 
 if (addMaterialButton && !$("addMatchingEntry")) {
-  const addMatchingButton =
-    addMaterialButton.cloneNode(true);
-
+  const addMatchingButton = addMaterialButton.cloneNode(true);
   addMatchingButton.id = "addMatchingEntry";
   addMatchingButton.type = "button";
-  addMatchingButton.textContent =
-    "+ Add Matching Purchase";
-
-  addMaterialButton.insertAdjacentElement(
-    "afterend",
-    addMatchingButton
-  );
+  addMatchingButton.textContent = "+ Add Matching Purchase";
+  addMaterialButton.insertAdjacentElement("afterend", addMatchingButton);
 }
 
 $("addMaterialEntry").addEventListener("click", () => {
-  formEntries.push(
-    makeEntry({
-      entryType: "cb-material",
-      categoryCode: "cuff-collar"
-    })
-  );
-
+  formEntries.push(makeEntry({ entryType: "cb-material", categoryCode: "cuff-collar" }));
   renderPurchaseEntries();
 });
 
 $("addMatchingEntry")?.addEventListener("click", () => {
-  formEntries.push(
-    makeEntry({
-      entryType: "matching"
-    })
-  );
-
+  formEntries.push(makeEntry({ entryType: "matching" }));
   renderPurchaseEntries();
 });
 
@@ -3066,23 +2687,23 @@ async function ensureOwnerAccess() {
   }
 }
 
-console.info("REDZED Product Master V718.3 audited single-file boot script loaded.");
+console.info("REDZED Product Master V719 optional-purchase D-child architecture loaded.");
 
 (async () => {
   try {
     gallery.innerHTML = `
       <article class="pm-empty-card">
         <div class="pm-spinner" aria-hidden="true"></div>
-        <h3>Connecting Product Master V718.4</h3>
+        <h3>Connecting Product Master V719</h3>
         <p>Checking login and Universal Purchase database…</p>
       </article>`;
-    say("Starting Product Master V718.4…");
+    say("Starting Product Master V719…");
     await waitForRuntime();
     await ensureOwnerAccess();
     say("");
     await withTimeout(loadData(), 30000, "Product Master database loading");
   } catch (error) {
-    console.error("Product Master V718.4 boot failed:", error);
+    console.error("Product Master V719 boot failed:", error);
     showFrontendError("Product Master Start", error);
     $("openNewCb").disabled = true;
     gallery.setAttribute("aria-busy", "false");
@@ -3091,7 +2712,7 @@ console.info("REDZED Product Master V718.3 audited single-file boot script loade
         <h3>Product Master could not start</h3>
         <p>${safe(error.message || "Unknown startup error")}</p>
       </article>`;
-    say(`V718.4 error: ${error.message || "Product Master could not open."}`, "error");
+    say(`V719 error: ${error.message || "Product Master could not open."}`, "error");
   }
 })();
 })();
