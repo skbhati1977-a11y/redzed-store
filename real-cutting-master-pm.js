@@ -1,14 +1,18 @@
-// ===== REDZED CUTTING MASTER PM CORE PART 1 START =====
+// ===== REDZED CUTTING MASTER PM CORE V719 START =====
 
 (() => {
 "use strict";
 
 /*
-  REDZED REAL — Cutting Master PM Core V39 Matching Stock
-  Source locked to Product Master V717 cards.
-  Active files:
-  1. real-cutting-master-final.html
-  2. real-cutting-master-pm.js
+  REDZED REAL — Cutting Master PM Core V719
+  Product Master child-aware Cutting Lots.
+
+  Locked architecture:
+  - Matching Cloth is optional.
+  - Single release keeps the selected child code: D1, D2, D3...
+  - Multi release splits that child: D1A, D1B... or D2A, D2B...
+  - Child display never includes the CB prefix.
+  - Released Lot No is the permanent downstream identity.
 */
 
 const $ = id => document.getElementById(id);
@@ -113,6 +117,50 @@ function money(value) {
   }).format(Number(value || 0));
 }
 
+function canonicalDevelopmentCode(value, fallbackIndex = 0) {
+  const raw = String(value || "")
+    .trim()
+    .toUpperCase()
+    .replace(/\s+/g, "");
+
+  const direct = raw.match(/D(\d+)([A-Z]*)$/);
+  if (direct) {
+    return `D${Number(direct[1])}${direct[2] || ""}`;
+  }
+
+  const legacy = raw.match(/S(\d+)([A-Z]*)$/);
+  if (legacy) {
+    return `D${Number(legacy[1])}${legacy[2] || ""}`;
+  }
+
+  const index = Number(fallbackIndex || 0);
+  return index > 0 ? `D${index}` : "D1";
+}
+
+function childCodeForRow(row = {}) {
+  return canonicalDevelopmentCode(
+    row.division_code ||
+    row.cb_child ||
+    row.child_code ||
+    row.child_no ||
+    row.cb_code ||
+    row.unit_code ||
+    "",
+    row.division_index || row.batch_index || 0
+  );
+}
+
+function activeChildCode() {
+  return activeCard
+    ? childCodeForRow(activeCard.division)
+    : "D1";
+}
+
+function subDevelopmentCode(baseCode, index) {
+  const suffix = String.fromCharCode(65 + Math.max(0, Number(index || 0)));
+  return `${canonicalDevelopmentCode(baseCode)}${suffix}`;
+}
+
 function matchingStockFor(id) {
   return matchingStockRows.find(row =>
     String(row.matching_item_id || row.id || "") === String(id || "")
@@ -158,21 +206,75 @@ function matchingSnapshot(id) {
   };
 }
 
+function setSingleMatchingState(selectedId = null) {
+  const select = $("cmSingleMatchingItem");
+  const qtyInput = $("cmSingleMatchingQty");
+  const avgInput = $("cmSingleMatchingAvgCost");
+  const info = $("cmSingleMatchingStockInfo");
+  if (!select) return;
+
+  const id = selectedId === null ? select.value : selectedId;
+  const snapshot = matchingSnapshot(id);
+  select.value = snapshot.itemId || "";
+
+  if (snapshot.itemId) {
+    if (qtyInput) qtyInput.disabled = false;
+    if (avgInput) avgInput.value = String(snapshot.avgCost || 0);
+    if (info) {
+      info.textContent = `Available ${snapshot.availableQty.toFixed(3)} kg · Current Avg ${money(snapshot.avgCost)}/kg`;
+    }
+  } else {
+    if (qtyInput) {
+      qtyInput.value = "0";
+      qtyInput.disabled = true;
+    }
+    if (avgInput) avgInput.value = "0";
+    if (info) {
+      info.textContent = "No Matching Cloth selected · Qty 0 · Avg Cost 0 · Release allowed.";
+    }
+  }
+}
+
 function refreshMatchingStockControls() {
   const single = $("cmSingleMatchingItem");
   if (single) {
     const selected = single.value;
     single.innerHTML = matchingStockOptions(selected);
     single.value = matchingStockFor(selected) ? selected : "";
-    const snapshot = matchingSnapshot(single.value);
-    setInputValue("cmSingleMatchingAvgCost", snapshot.avgCost || "");
-    const info = $("cmSingleMatchingStockInfo");
-    if (info) {
-      info.textContent = snapshot.itemId
-        ? `Available ${snapshot.availableQty.toFixed(3)} kg · Current Avg ${money(snapshot.avgCost)}/kg`
-        : "Select matching stock only when this Lot uses matching cloth.";
-    }
+    setSingleMatchingState(single.value);
   }
+}
+
+function normalizeMatchingRow(row = {}, label = "Lot") {
+  const snapshot = matchingSnapshot(row.matching_item_id);
+
+  if (!snapshot.itemId) {
+    return {
+      ...row,
+      matching_item_id: null,
+      matching_consumption: 0,
+      matching_avg_cost: 0
+    };
+  }
+
+  const matchingQty = Number(row.matching_consumption || 0);
+
+  if (matchingQty <= 0) {
+    throw new Error(`${label}: Enter Matching Qty.`);
+  }
+
+  if (matchingQty > snapshot.availableQty + 0.0005) {
+    throw new Error(
+      `${label}: Matching stock ${snapshot.availableQty.toFixed(3)} kg है, Qty ${matchingQty.toFixed(3)} kg है.`
+    );
+  }
+
+  return {
+    ...row,
+    matching_item_id: snapshot.itemId,
+    matching_consumption: matchingQty,
+    matching_avg_cost: snapshot.avgCost
+  };
 }
 
 function today() {
@@ -347,25 +449,28 @@ function normalizeGalleryRow(row) {
     row.cb_unit_id ||
     "";
 
+  const divisionIndex = Number(
+    row.division_index ||
+    row.batch_index ||
+    0
+  );
+
   return {
     ...row,
     cb_id: cbId,
     division_id: divisionId,
+    division_index: divisionIndex,
 
-    division_index: Number(
-      row.division_index ||
-      row.batch_index ||
-      0
-    ),
-
-    division_code:
+    division_code: canonicalDevelopmentCode(
       row.division_code ||
       row.cb_child ||
       row.child_code ||
       row.child_no ||
       row.cb_code ||
       row.unit_code ||
-      `CB-${divisionId}`,
+      "",
+      divisionIndex
+    ),
 
     division_status:
       row.division_status ||
@@ -403,7 +508,6 @@ function normalizeGalleryRow(row) {
 
     cb_no:
       row.cb_no ||
-      row.cb_code ||
       row.purchase_no ||
       row.purchase_code ||
       "CB",
@@ -495,7 +599,7 @@ async function loadPrintSource(client) {
     .from("rr_print_library_view")
     .select("*");
 
-  if (!view.error) {
+    if (!view.error) {
     return view.data || [];
   }
 
@@ -514,9 +618,6 @@ async function loadPrintSource(client) {
 
   return table.data || [];
 }
-
-// ===== REDZED CUTTING MASTER PM CORE PART 1 END =====
-// ===== REDZED CUTTING MASTER PM CORE PART 2 START =====
 
 function groupGalleryRows() {
   const groups = new Map();
@@ -908,6 +1009,7 @@ function cardDecision(card) {
     assignment && (
       assignment.no_print_required === true ||
       assignment.print_required === false ||
+      assignment.print_not_applicable === true ||
       String(assignment.print_status || "")
         .trim()
         .toLowerCase() === "not_required"
@@ -957,7 +1059,7 @@ function cardSearchText(card) {
 
   return [
     card.group.cb_no,
-    card.division.division_code,
+    childCodeForRow(card.division),
     decision.artNo,
     decision.styleName,
     decision.printNo,
@@ -1013,6 +1115,14 @@ function injectStyles() {
     .cm-size-grid label{display:block}
     .cm-size-grid span{font-size:11px;color:#aaa;font-weight:800}
     .cm-size-grid input{width:100%}
+    .cm-newly-released{border:2px solid #f4c542!important;box-shadow:0 0 0 3px rgba(244,197,66,.18),0 16px 42px rgba(244,197,66,.18)!important;animation:cmLotPulse 1.2s ease-in-out 2}
+    .cm-lot-number-highlight{background:#f4c542;color:#18140a!important;border-radius:9px;padding:4px 9px;font-size:1.08em;letter-spacing:.04em;box-shadow:0 0 0 2px rgba(244,197,66,.24)}
+    .cm-lot-identity{margin:12px 0;padding:14px;border-radius:15px;text-align:center;border:2px solid #f4c542;background:linear-gradient(180deg,rgba(244,197,66,.18),rgba(244,197,66,.06))}
+    .cm-lot-identity small{display:block;font-size:10px;font-weight:950;letter-spacing:.16em;color:#f4c542;margin-bottom:5px}
+    .cm-lot-identity strong{display:block;font-size:22px;line-height:1.15;color:#fff;word-break:break-word}
+    .cm-lot-identity span{display:block;margin-top:5px;font-size:11px;font-weight:850;color:#cfcfcf}
+    .cm-lot-title-new{color:#f4c542}
+    @keyframes cmLotPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.012)}}
     @media(max-width:620px){
       .cm-pm-decision{grid-template-columns:1fr}
       .cm-size-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
@@ -1039,7 +1149,7 @@ function renderStats(cards) {
     card => cardState(card) === "completed"
   ).length;
 
-  const artDue = cards.filter(
+    const artDue = cards.filter(
     card => cardState(card) === "art_due"
   ).length;
 
@@ -1070,10 +1180,6 @@ function renderStats(cards) {
     </article>
   `;
 }
-
-// ===== REDZED CUTTING MASTER PM CORE PART 2 END =====
-  
- // ===== REDZED CUTTING MASTER PM CORE PART 3A START =====
 
 let comboDevRows = [];
 let currentLotMode = "single";
@@ -1176,7 +1282,7 @@ function renderGallery() {
         .filter(Boolean);
 
       const totalPcs = lots.reduce(
-        (sum, row) => sum + Number(row.planned_pcs || 0),
+        (sum, row) => sum + Number(row.planned_pcs || row.cutting_pcs || 0),
         0
       );
 
@@ -1189,6 +1295,8 @@ function renderGallery() {
         ? totalCost / totalPcs
         : Number(lot?.final_cost_per_piece || 0);
 
+      const childCode = childCodeForRow(card.division);
+
       return `
         <article
           class="cm-card ${isNewLot ? "cm-newly-released" : ""}"
@@ -1200,11 +1308,15 @@ function renderGallery() {
           </span>
 
           <h3>${safe(card.group.cb_no || "CB")}</h3>
-          <p>${safe(card.division.division_code || "CB Child")}</p>
+          <p>${safe(childCode)}</p>
 
           ${imageStripHtml(items, colours)}
 
           <div class="cm-pm-decision">
+            <span>
+              <small>Child</small>
+              <strong>${safe(childCode)}</strong>
+            </span>
             <span>
               <small>Art No</small>
               <strong>${safe(decision.artNo || "ART DUE")}</strong>
@@ -1247,6 +1359,12 @@ function renderGallery() {
           ${
             lots.length
               ? `
+                <div class="cm-lot-identity ${isNewLot ? "is-new" : ""}">
+                  <small>RELEASED LOT NO · PRIMARY IDENTITY</small>
+                  <strong>${safe(lotNos.join(" · "))}</strong>
+                  <span>${safe(childCode)} · ${totalPcs} pcs · ${safe(lotStatusLabel(lot))}</span>
+                </div>
+
                 <div class="cm-lot-box">
                   <h4 class="${isNewLot ? "cm-lot-title-new" : ""}">
                     ${lots.length > 1 ? "MULTI LOT" : "LOT"}
@@ -1395,7 +1513,7 @@ function openLotByDivision(divisionId, requestedMode = "single") {
     }
 
     if (lotsForDivision(divisionId).length) {
-      throw new Error("इस CB Child का Lot पहले ही release हो चुका है.");
+      throw new Error("इस Child का Lot पहले ही release हो चुका है.");
     }
 
     activeCard = card;
@@ -1424,7 +1542,7 @@ function openLotByDivision(divisionId, requestedMode = "single") {
 
     if ($("lotContext")) {
       $("lotContext").textContent =
-        `${card.group.cb_no} · ${card.division.division_code}`;
+        `${card.group.cb_no} · ${childCodeForRow(card.division)}`;
     }
 
     ["artNo", "printNo"].forEach(id => {
@@ -1455,11 +1573,10 @@ function openLotByDivision(divisionId, requestedMode = "single") {
     }, 50);
   } catch (error) {
     console.error("Opening Cutting Lot sheet failed:", error);
+    activeCard = null;
     say(errorText(error), "error");
   } finally {
-    window.setTimeout(() => {
-      releaseLock = false;
-    }, 200);
+    releaseLock = false;
   }
 }
 
@@ -1519,6 +1636,7 @@ function ensureComboUi() {
 
   if (existingPanel) {
     hideBundleUi();
+    refreshMatchingStockControls();
     return;
   }
 
@@ -1592,7 +1710,7 @@ function ensureComboUi() {
 
       <div class="cm-grid-3">
         <label>
-          <span>Matching Cloth Stock</span>
+          <span>Matching Cloth Stock (Optional)</span>
           <select id="cmSingleMatchingItem">
             ${matchingStockOptions()}
           </select>
@@ -1605,7 +1723,8 @@ function ensureComboUi() {
             type="number"
             min="0"
             step="0.001"
-            placeholder="0"
+            value="0"
+            disabled
           >
         </label>
 
@@ -1617,23 +1736,23 @@ function ensureComboUi() {
             min="0"
             step="0.0001"
             readonly
-            placeholder="Auto from Product Master stock"
+            value="0"
           >
         </label>
       </div>
       <p id="cmSingleMatchingStockInfo" class="cm-rule-note">
-        Select matching stock only when this Lot uses matching cloth.
+        No Matching Cloth selected · Qty 0 · Avg Cost 0 · Release allowed.
       </p>
     </section>
 
     <section id="cmMultiPanel" class="cm-hidden">
       <div class="cm-grid-2 cm-primary-input-row">
         <label>
-          <span>Dev Count</span>
+          <span>Sub-Dev Count</span>
           <select id="cmDevCount">
-            <option value="2">2 Dev</option>
-            <option value="3">3 Dev</option>
-            <option value="4">4 Dev</option>
+            <option value="2">2 Sub-Dev</option>
+            <option value="3">3 Sub-Dev</option>
+            <option value="4">4 Sub-Dev</option>
           </select>
         </label>
 
@@ -1655,7 +1774,7 @@ function ensureComboUi() {
           type="button"
           class="cm-secondary"
         >
-          Build Dev Cards
+          Build Sub-Dev Cards
         </button>
 
         <button
@@ -1663,7 +1782,7 @@ function ensureComboUi() {
           type="button"
           class="cm-secondary"
         >
-          Equal Dev Pcs
+          Equal Sub-Dev Pcs
         </button>
       </div>
 
@@ -1680,7 +1799,7 @@ function ensureComboUi() {
   fillSizeComboOptions("cmSingleSizeCombo");
   refreshMatchingStockControls();
 
-  $("cmManualLotNo")?.addEventListener("input", event => {
+    $("cmManualLotNo")?.addEventListener("input", event => {
     setInputValue(
       "lotNo",
       String(event.target.value || "").trim().toUpperCase()
@@ -1705,15 +1824,12 @@ function ensureComboUi() {
   });
 
   $("cmSingleMatchingItem")?.addEventListener("change", event => {
-    const snapshot = matchingSnapshot(event.target.value);
-    setInputValue("cmSingleMatchingAvgCost", snapshot.avgCost || "");
-    const info = $("cmSingleMatchingStockInfo");
-    if (info) {
-      info.textContent = snapshot.itemId
-        ? `Available ${snapshot.availableQty.toFixed(3)} kg · Current Avg ${money(snapshot.avgCost)}/kg`
-        : "Select matching stock only when this Lot uses matching cloth.";
-    }
-    buildComboDevRows({ keepManual: true, autoDistribute: false, resetMatrix: false });
+    setSingleMatchingState(event.target.value);
+    buildComboDevRows({
+      keepManual: true,
+      autoDistribute: false,
+      resetMatrix: false
+    });
     updateCostPreview();
   });
 
@@ -1799,7 +1915,9 @@ function setLotMode(mode) {
 
   if ($("cmSelectedMode")) {
     $("cmSelectedMode").textContent =
-      currentLotMode === "multi" ? "Multi Lot" : "Single Lot";
+      currentLotMode === "multi"
+        ? `Multi Lot · ${activeChildCode()}A…`
+        : `Single Lot · ${activeChildCode()}`;
   }
 
   $("cmSinglePanel")?.classList.toggle(
@@ -1826,24 +1944,17 @@ function setLotMode(mode) {
   hideBundleUi();
 }
 
-// ===== REDZED CUTTING MASTER PM CORE PART 3A END =====
-  // ===== REDZED CUTTING MASTER PM CORE PART 3B START =====
-
 function fillSizeComboOptions(id) {
   const select = $(id);
 
-  if (!select) {
-    return;
-  }
+  if (!select) return;
 
   select.innerHTML = SIZE_COMBO_OPTIONS
-    .map(
-      option => `
-        <option value="${safe(option)}">
-          ${safe(option)}
-        </option>
-      `
-    )
+    .map(option => `
+      <option value="${safe(option)}">
+        ${safe(option)}
+      </option>
+    `)
     .join("");
 }
 
@@ -1851,46 +1962,33 @@ function fillSizeComboSelect(select, value) {
   if (!select) return;
 
   select.innerHTML = SIZE_COMBO_OPTIONS
-    .map(
-      option => `
-        <option
-          value="${safe(option)}"
-          ${option === value ? "selected" : ""}
-        >
-          ${safe(option)}
-        </option>
-      `
-    )
+    .map(option => `
+      <option
+        value="${safe(option)}"
+        ${option === value ? "selected" : ""}
+      >
+        ${safe(option)}
+      </option>
+    `)
     .join("");
 }
 
 function setComboDefaults() {
   const singleSize = $("cmSingleSizeCombo");
 
-  if (singleSize) {
-    singleSize.value = DEFAULT_SIZE_COMBO;
-  }
-
-  if ($("cmSingleSleeve")) {
-    $("cmSingleSleeve").value = "Half";
-  }
-
-  if ($("cmSingleBorder")) {
-    $("cmSingleBorder").value = "Without Border";
-  }
+  if (singleSize) singleSize.value = DEFAULT_SIZE_COMBO;
+  if ($("cmSingleSleeve")) $("cmSingleSleeve").value = "Half";
+  if ($("cmSingleBorder")) $("cmSingleBorder").value = "Without Border";
 
   setInputValue("cmManualLotNo", "");
   setInputValue("lotNo", "");
   setInputValue("cmSingleMatchingItem", "");
-  setInputValue("cmSingleMatchingQty", "");
-  setInputValue("cmSingleMatchingAvgCost", "");
+  setInputValue("cmSingleMatchingQty", "0");
+  setInputValue("cmSingleMatchingAvgCost", "0");
   refreshMatchingStockControls();
   setInputValue("cmSingleCuttingPcs", "");
 
-  if ($("cmDevCount")) {
-    $("cmDevCount").value = "2";
-  }
-
+  if ($("cmDevCount")) $("cmDevCount").value = "2";
   setInputValue("cmParentCuttingPcs", "");
 
   comboDevRows = [];
@@ -1898,10 +1996,7 @@ function setComboDefaults() {
 }
 
 function readArtAverageCost() {
-  const decision = activeCard
-    ? cardDecision(activeCard)
-    : {};
-
+  const decision = activeCard ? cardDecision(activeCard) : {};
   const art = decision.art || {};
   const assignment = activeCard?.assignment || {};
 
@@ -1948,10 +2043,14 @@ function singleRowFromInputs(old = {}) {
     selectValue("cmSingleSizeCombo") ||
     DEFAULT_SIZE_COMBO;
 
+  const snapshot = matchingSnapshot(
+    selectValue("cmSingleMatchingItem")
+  );
+
   return {
     ...old,
     lot_mode: "single",
-    dev_no: "SINGLE",
+    dev_no: activeChildCode(),
     lot_no: readText("cmManualLotNo"),
     size_combo: sizeCombo,
     sizes: sizesFromText(sizeCombo),
@@ -1961,9 +2060,13 @@ function singleRowFromInputs(old = {}) {
       0,
       Math.floor(numberValue("cmSingleCuttingPcs"))
     ),
-    matching_item_id: selectValue("cmSingleMatchingItem") || null,
-    matching_consumption: numberValue("cmSingleMatchingQty"),
-    matching_avg_cost: numberValue("cmSingleMatchingAvgCost"),
+    matching_item_id: snapshot.itemId || null,
+    matching_consumption: snapshot.itemId
+      ? numberValue("cmSingleMatchingQty")
+      : 0,
+    matching_avg_cost: snapshot.itemId
+      ? snapshot.avgCost
+      : 0,
     custom_adjustment: Number(old.custom_adjustment || 0)
   };
 }
@@ -1977,10 +2080,11 @@ function buildComboDevRows(options = {}) {
   );
 
   if (currentLotMode === "single") {
+    const devNo = activeChildCode();
     comboDevRows = [
       singleRowFromInputs(
         options.keepManual
-          ? existing.get("SINGLE") || {}
+          ? existing.get(devNo) || comboDevRows[0] || {}
           : {}
       )
     ];
@@ -1991,9 +2095,10 @@ function buildComboDevRows(options = {}) {
 
   const count = devCount();
   const rows = [];
+  const parentChild = activeChildCode();
 
   for (let index = 0; index < count; index += 1) {
-    const devNo = `D${index + 1}`;
+    const devNo = subDevelopmentCode(parentChild, index);
 
     const old = options.keepManual
       ? existing.get(devNo) || {}
@@ -2003,9 +2108,12 @@ function buildComboDevRows(options = {}) {
       old.size_combo ||
       defaultDevSizeCombo(index);
 
+    const stock = matchingSnapshot(old.matching_item_id);
+
     rows.push({
       ...old,
       lot_mode: "multi",
+      parent_child_code: parentChild,
       dev_no: devNo,
       lot_no: old.lot_no || "",
       size_combo: sizeCombo,
@@ -2013,18 +2121,20 @@ function buildComboDevRows(options = {}) {
       sleeve: old.sleeve || "Half",
       border: old.border || "Without Border",
       cutting_pcs: Number(old.cutting_pcs || 0),
-      matching_item_id: old.matching_item_id || null,
-      matching_consumption: Number(old.matching_consumption || 0),
-      matching_avg_cost: Number(old.matching_avg_cost || 0),
+      matching_item_id: stock.itemId || null,
+      matching_consumption: stock.itemId
+        ? Number(old.matching_consumption || 0)
+        : 0,
+      matching_avg_cost: stock.itemId
+        ? stock.avgCost
+        : 0,
       custom_adjustment: Number(old.custom_adjustment || 0)
     });
   }
 
   comboDevRows = rows;
 
-  if (options.autoDistribute) {
-    distributeDevPcs();
-  }
+  if (options.autoDistribute) distributeDevPcs();
 
   renderDevRows();
   hideBundleUi();
@@ -2044,7 +2154,7 @@ function renderDevRows() {
   if (!comboDevRows.length) {
     holder.innerHTML = `
       <div class="cm-empty">
-        <p>No Dev cards. Select Dev Count.</p>
+        <p>No Sub-Dev cards. Select Sub-Dev Count.</p>
       </div>
     `;
     hideBundleUi();
@@ -2052,124 +2162,136 @@ function renderDevRows() {
   }
 
   holder.innerHTML = comboDevRows
-    .map((row, index) => `
-      <article class="cm-matrix-card" data-dev-card="${index}">
-        <div class="cm-matrix-head">
-          <strong>${safe(row.dev_no)}</strong>
-          <span>
-            ${safe(row.size_combo)} ·
-            ${safe(row.sleeve)} ·
-            ${safe(row.border)}
-          </span>
-        </div>
+    .map((row, index) => {
+      const hasMatching = Boolean(row.matching_item_id);
+      const stock = matchingSnapshot(row.matching_item_id);
 
-        <div class="cm-grid-2 cm-primary-input-row">
-          <label>
-            <span>${safe(row.dev_no)} Manual Lot No *</span>
-            <input
-              class="cm-dev-lot-no"
-              type="text"
-              autocomplete="off"
-              value="${safe(row.lot_no || "")}"
-              placeholder="${safe(row.dev_no)} Lot No"
-              data-dev-index="${index}"
-            >
-          </label>
+      return `
+        <article class="cm-matrix-card" data-dev-card="${index}">
+          <div class="cm-matrix-head">
+            <strong>${safe(row.dev_no)}</strong>
+            <span>
+              ${safe(row.size_combo)} ·
+              ${safe(row.sleeve)} ·
+              ${safe(row.border)}
+            </span>
+          </div>
 
-          <label>
-            <span>Cutting Pcs *</span>
-            <input
-              class="cm-dev-pcs"
-              type="number"
-              min="0"
-              step="1"
-              value="${Number(row.cutting_pcs || 0)}"
-              data-dev-index="${index}"
-            >
-          </label>
-        </div>
+          <div class="cm-grid-2 cm-primary-input-row">
+            <label>
+              <span>${safe(row.dev_no)} Manual Lot No *</span>
+              <input
+                class="cm-dev-lot-no"
+                type="text"
+                autocomplete="off"
+                value="${safe(row.lot_no || "")}"
+                placeholder="${safe(row.dev_no)} Lot No"
+                data-dev-index="${index}"
+              >
+            </label>
 
-        <div class="cm-grid-3">
-          <label>
-            <span>Size Combo</span>
-            <select class="cm-dev-size" data-dev-index="${index}"></select>
-          </label>
+            <label>
+              <span>Cutting Pcs *</span>
+              <input
+                class="cm-dev-pcs"
+                type="number"
+                min="0"
+                step="1"
+                value="${Number(row.cutting_pcs || 0)}"
+                data-dev-index="${index}"
+              >
+            </label>
+          </div>
 
-          <label>
-            <span>Sleeve</span>
-            <select class="cm-dev-sleeve" data-dev-index="${index}">
-              <option value="Half">Half Sleeve</option>
-              <option value="Full">Full Sleeve</option>
-            </select>
-          </label>
+          <div class="cm-grid-3">
+            <label>
+              <span>Size Combo</span>
+              <select class="cm-dev-size" data-dev-index="${index}"></select>
+            </label>
 
-          <label>
-            <span>Border</span>
-            <select class="cm-dev-border" data-dev-index="${index}">
-              <option value="Without Border">Without Border</option>
-              <option value="With Border">With Border</option>
-            </select>
-          </label>
-        </div>
+            <label>
+              <span>Sleeve</span>
+              <select class="cm-dev-sleeve" data-dev-index="${index}">
+                <option value="Half">Half Sleeve</option>
+                <option value="Full">Full Sleeve</option>
+              </select>
+            </label>
 
-        <div class="cm-grid-3">
-          <label>
-            <span>Matching Cloth Stock</span>
-            <select class="cm-dev-match-item" data-dev-index="${index}">
-              ${matchingStockOptions(row.matching_item_id)}
-            </select>
-          </label>
+            <label>
+              <span>Border</span>
+              <select class="cm-dev-border" data-dev-index="${index}">
+                <option value="Without Border">Without Border</option>
+                <option value="With Border">With Border</option>
+              </select>
+            </label>
+          </div>
 
-          <label>
-            <span>Matching Cloth Qty (kg)</span>
-            <input
-              class="cm-dev-match-cons"
-              type="number"
-              min="0"
-              step="0.001"
-              value="${Number(row.matching_consumption || 0)}"
-              data-dev-index="${index}"
-            >
-          </label>
+          <div class="cm-grid-3">
+            <label>
+              <span>Matching Cloth Stock (Optional)</span>
+              <select class="cm-dev-match-item" data-dev-index="${index}">
+                ${matchingStockOptions(row.matching_item_id)}
+              </select>
+            </label>
 
-          <label>
-            <span>Matching Cloth Avg Cost</span>
-            <input
-              class="cm-dev-match-cost"
-              type="number"
-              min="0"
-              step="0.0001"
-              readonly
-              value="${Number(row.matching_avg_cost || 0)}"
-              data-dev-index="${index}"
-            >
-          </label>
-        </div>
+            <label>
+              <span>Matching Cloth Qty (kg)</span>
+              <input
+                class="cm-dev-match-cons"
+                type="number"
+                min="0"
+                step="0.001"
+                value="${hasMatching ? Number(row.matching_consumption || 0) : 0}"
+                data-dev-index="${index}"
+                ${hasMatching ? "" : "disabled"}
+              >
+            </label>
 
-        <div class="cm-grid-2">
-          <label>
-            <span>Custom Adjustment / Pc</span>
-            <input
-              class="cm-dev-custom"
-              type="number"
-              step="0.01"
-              value="${Number(row.custom_adjustment || 0)}"
-              data-dev-index="${index}"
-            >
-          </label>
+            <label>
+              <span>Matching Cloth Avg Cost</span>
+              <input
+                class="cm-dev-match-cost"
+                type="number"
+                min="0"
+                step="0.0001"
+                readonly
+                value="${hasMatching ? Number(stock.avgCost || 0) : 0}"
+                data-dev-index="${index}"
+              >
+            </label>
+          </div>
 
-          <label>
-            <span>Dev Cost Preview</span>
-            <input
-              class="cm-dev-cost-preview"
-              type="text"
-              readonly
-              value="${safe(devCostText(row))}"
-            >
-          </label>
-        </div>
-      </article>
-    `)
+          <p class="cm-rule-note">
+            ${hasMatching
+              ? `Available ${stock.availableQty.toFixed(3)} kg · Current Avg ${money(stock.avgCost)}/kg`
+              : "No Matching Cloth · Qty 0 · Avg Cost 0 · Release allowed."}
+          </p>
+
+          <div class="cm-grid-2">
+            <label>
+              <span>Custom Adjustment / Pc</span>
+              <input
+                class="cm-dev-custom"
+                type="number"
+                step="0.01"
+                value="${Number(row.custom_adjustment || 0)}"
+                data-dev-index="${index}"
+              >
+            </label>
+
+            <label>
+              <span>Sub-Dev Cost Preview</span>
+              <input
+                class="cm-dev-cost-preview"
+                type="text"
+                readonly
+                value="${safe(devCostText(row))}"
+              >
+            </label>
+          </div>
+        </article>
+      `;
+    })
     .join("");
 
   holder.querySelectorAll(".cm-dev-size").forEach(select => {
@@ -2203,7 +2325,7 @@ function renderDevRows() {
     const index = Number(select.dataset.devIndex);
     select.value = comboDevRows[index]?.matching_item_id || "";
     select.addEventListener("change", () => {
-      updateDevRowFromInput(select);
+      updateDevRowFromInput(select, { rerenderDev: true });
     });
   });
 
@@ -2228,9 +2350,7 @@ function updateDevRowFromInput(input, options = {}) {
   const index = Number(input.dataset.devIndex);
   const row = comboDevRows[index];
 
-  if (!row) {
-    return;
-  }
+  if (!row) return;
 
   let rebuildMatrixOnly = false;
 
@@ -2255,18 +2375,20 @@ function updateDevRowFromInput(input, options = {}) {
   if (input.classList.contains("cm-dev-match-item")) {
     const snapshot = matchingSnapshot(input.value);
     row.matching_item_id = snapshot.itemId || null;
-    row.matching_avg_cost = snapshot.avgCost || 0;
-    const card = input.closest("[data-dev-card]");
-    const avgInput = card?.querySelector(".cm-dev-match-cost");
-    if (avgInput) avgInput.value = String(row.matching_avg_cost || 0);
+    row.matching_avg_cost = snapshot.itemId ? snapshot.avgCost : 0;
+    if (!snapshot.itemId) row.matching_consumption = 0;
   }
 
   if (input.classList.contains("cm-dev-match-cons")) {
-    row.matching_consumption = Number(input.value || 0);
+    row.matching_consumption = row.matching_item_id
+      ? Number(input.value || 0)
+      : 0;
   }
 
   if (input.classList.contains("cm-dev-match-cost")) {
-    row.matching_avg_cost = Number(input.value || 0);
+    row.matching_avg_cost = row.matching_item_id
+      ? Number(input.value || 0)
+      : 0;
   }
 
   if (input.classList.contains("cm-dev-pcs")) {
@@ -2283,7 +2405,9 @@ function updateDevRowFromInput(input, options = {}) {
     row.custom_adjustment = Number(input.value || 0);
   }
 
-  if (options.resetMatrix) {
+  if (options.rerenderDev) {
+    renderDevRows();
+  } else if (options.resetMatrix) {
     clearMatrixMemoryForDev(row.dev_no);
     renderDevRows();
     renderCuttingMatrix();
@@ -2293,9 +2417,7 @@ function updateDevRowFromInput(input, options = {}) {
     const card = input.closest("[data-dev-card]");
     const preview = card?.querySelector(".cm-dev-cost-preview");
 
-    if (preview) {
-      preview.value = devCostText(row);
-    }
+    if (preview) preview.value = devCostText(row);
   }
 
   updatePieceTotals();
@@ -2304,18 +2426,14 @@ function updateDevRowFromInput(input, options = {}) {
 }
 
 function distributeDevPcs() {
-  if (currentLotMode !== "multi") {
-    return;
-  }
+  if (currentLotMode !== "multi") return;
 
   const total = Math.max(
     0,
     Math.floor(numberValue("cmParentCuttingPcs"))
   );
 
-  if (!comboDevRows.length || total <= 0) {
-    return;
-  }
+  if (!comboDevRows.length || total <= 0) return;
 
   const base = Math.floor(total / comboDevRows.length);
   const remainder = total - base * comboDevRows.length;
@@ -2336,20 +2454,12 @@ function clearMatrixMemoryForDev(devNo) {
 }
 
 function sizeFactorForCombo(row) {
-  if (row.lot_mode !== "multi") {
-    return 0;
-  }
+  if (row.lot_mode !== "multi") return 0;
 
   const combo = String(row.size_combo || "").toUpperCase();
 
-  if (SMALL_SIZE_COMBOS.has(combo)) {
-    return -5;
-  }
-
-  if (BIG_SIZE_COMBOS.has(combo)) {
-    return 5;
-  }
-
+  if (SMALL_SIZE_COMBOS.has(combo)) return -5;
+  if (BIG_SIZE_COMBOS.has(combo)) return 5;
   return 0;
 }
 
@@ -2366,6 +2476,8 @@ function borderFactorFor(row) {
 }
 
 function matchingCostFor(row) {
+  if (!row.matching_item_id) return 0;
+
   return Number(row.matching_consumption || 0) *
     Number(row.matching_avg_cost || 0);
 }
@@ -2389,7 +2501,11 @@ function devMatrixQuantity(row, index) {
 }
 
 function devCost(row, pcsOverride = null) {
-  const base = Number(numberValue("baseCost") || costSettings.default_base_cost || 0);
+  const base = Number(
+    numberValue("baseCost") ||
+    costSettings.default_base_cost ||
+    0
+  );
 
   const pcs = pcsOverride === null
     ? Number(row.cutting_pcs || 0)
@@ -2415,15 +2531,12 @@ function devCost(row, pcsOverride = null) {
     matchingTotal,
     matchingPerPiece,
     finalPerPiece: perPiece + matchingPerPiece,
-    total:
-      perPiece * pcs +
-      matchingTotal
+    total: perPiece * pcs + matchingTotal
   };
 }
 
 function devCostText(row) {
   const cost = devCost(row);
-
   return `${money(cost.finalPerPiece)} / pc · ${money(cost.total)}`;
 }
 
@@ -2454,7 +2567,7 @@ function cuttingEntries() {
       ),
       dev_no:
         input.dataset.devNo ||
-        "D1"
+        activeChildCode()
     }))
     .filter(row => row.quantity > 0);
 }
@@ -2529,88 +2642,86 @@ function renderCuttingMatrix() {
   }
 
   holder.innerHTML = comboDevRows
-    .map((dev, devIndex) => {
-      return `
-        <article class="cm-matrix-card">
-          <div class="cm-matrix-head">
-            <strong>${safe(dev.dev_no)}</strong>
-            <span>
-              ${safe(dev.size_combo)} ·
-              ${safe(dev.sleeve)} ·
-              ${safe(dev.border)}
-            </span>
-          </div>
+    .map((dev, devIndex) => `
+      <article class="cm-matrix-card">
+        <div class="cm-matrix-head">
+          <strong>${safe(dev.dev_no)}</strong>
+          <span>
+            ${safe(dev.size_combo)} ·
+            ${safe(dev.sleeve)} ·
+            ${safe(dev.border)}
+          </span>
+        </div>
 
-          ${colours
-            .map((colour, colourIndex) => {
-              const colourName =
-                colour.colour_name ||
-                colour.color_name ||
-                "Colour";
+        ${colours
+          .map((colour, colourIndex) => {
+            const colourName =
+              colour.colour_name ||
+              colour.color_name ||
+              "Colour";
 
-              return `
-                <div class="cm-matrix-card">
-                  <div class="cm-matrix-head">
-                    ${
-                      colour.image_url
-                        ? `
-                          <img
-                            src="${safe(colour.image_url)}"
-                            alt="${safe(colourName)}"
-                          >
-                        `
-                        : `<strong>●</strong>`
-                    }
+            return `
+              <div class="cm-matrix-card">
+                <div class="cm-matrix-head">
+                  ${
+                    colour.image_url
+                      ? `
+                        <img
+                          src="${safe(colour.image_url)}"
+                          alt="${safe(colourName)}"
+                        >
+                      `
+                      : `<strong>●</strong>`
+                  }
 
-                    <strong>${safe(colourName)}</strong>
-                  </div>
-
-                  <div class="cm-size-grid">
-                    ${dev.sizes
-                      .map((size, sizeIndex) => {
-                        const key = matrixKey(dev, colour, size);
-
-                        const qty = matrixQtyMemory.has(key)
-                          ? matrixQtyMemory.get(key)
-                          : autoQtyForCell(
-                              dev,
-                              colourIndex,
-                              sizeIndex,
-                              colours.length
-                            );
-
-                        return `
-                          <label>
-                            <span>${safe(size)}</span>
-
-                            <input
-                              class="cm-size-qty"
-                              type="number"
-                              min="0"
-                              step="1"
-                              value="${qty || ""}"
-                              data-dev-index="${devIndex}"
-                              data-dev-no="${safe(dev.dev_no)}"
-                              data-size-combo="${safe(dev.size_combo)}"
-                              data-sleeve="${safe(dev.sleeve)}"
-                              data-border="${safe(dev.border)}"
-                              data-colour-id="${safe(colour.id || "")}"
-                              data-colour-name="${safe(colourName)}"
-                              data-size="${safe(size)}"
-                              data-matrix-key="${safe(key)}"
-                            >
-                          </label>
-                        `;
-                      })
-                      .join("")}
-                  </div>
+                  <strong>${safe(colourName)}</strong>
                 </div>
-              `;
-            })
-            .join("")}
-        </article>
-      `;
-    })
+
+                <div class="cm-size-grid">
+                  ${dev.sizes
+                    .map((size, sizeIndex) => {
+                      const key = matrixKey(dev, colour, size);
+
+                      const qty = matrixQtyMemory.has(key)
+                        ? matrixQtyMemory.get(key)
+                        : autoQtyForCell(
+                            dev,
+                            colourIndex,
+                            sizeIndex,
+                            colours.length
+                          );
+
+                      return `
+                        <label>
+                          <span>${safe(size)}</span>
+
+                          <input
+                            class="cm-size-qty"
+                            type="number"
+                            min="0"
+                            step="1"
+                            value="${qty || ""}"
+                            data-dev-index="${devIndex}"
+                            data-dev-no="${safe(dev.dev_no)}"
+                            data-size-combo="${safe(dev.size_combo)}"
+                            data-sleeve="${safe(dev.sleeve)}"
+                            data-border="${safe(dev.border)}"
+                            data-colour-id="${safe(colour.id || "")}"
+                            data-colour-name="${safe(colourName)}"
+                            data-size="${safe(size)}"
+                            data-matrix-key="${safe(key)}"
+                          >
+                        </label>
+                      `;
+                    })
+                    .join("")}
+                </div>
+              </div>
+            `;
+          })
+          .join("")}
+      </article>
+    `)
     .join("");
 
   matrixInputs().forEach(input => {
@@ -2653,9 +2764,7 @@ function updatePieceTotals() {
       $("totalPieces").closest("article") ||
       $("totalPieces").parentElement;
 
-    if (holder) {
-      holder.style.display = "none";
-    }
+    if (holder) holder.style.display = "none";
   }
 
   if ($("totalBundles")) {
@@ -2667,14 +2776,13 @@ function updatePieceTotals() {
       $("totalBundles").closest("article") ||
       $("totalBundles").parentElement;
 
-    if (holder) {
-      holder.style.display = "none";
-    }
+    if (holder) holder.style.display = "none";
   }
 
   hideBundleUi();
   updateCostPreview();
 }
+
 function updateWeightSettlement() {
   const unitWeight = Number(
     activeCard?.division?.allocated_qty || 0
@@ -2720,13 +2828,14 @@ function costResult() {
       total += rowCost.total;
     });
 
-    const final =
-      pcs > 0
-            ? total / pcs
-        : 0;
+    const final = pcs > 0 ? total / pcs : 0;
 
     return {
-      base: Number(numberValue("baseCost") || costSettings.default_base_cost || 0),
+      base: Number(
+        numberValue("baseCost") ||
+        costSettings.default_base_cost ||
+        0
+      ),
       adjustments: [],
       adjustmentTotal: 0,
       final,
@@ -2747,10 +2856,7 @@ function costResult() {
 
 function setMoneyText(id, value) {
   const el = $(id);
-
-  if (el) {
-    el.textContent = money(value);
-  }
+  if (el) el.textContent = money(value);
 }
 
 function updateCostPreview() {
@@ -2769,9 +2875,6 @@ function updateCostPreview() {
 
   hideBundleUi();
 }
-
-// ===== REDZED CUTTING MASTER PM CORE PART 4 START =====
-
 
 function normalizedSleeve(value) {
   return String(value || "Half").toLowerCase().startsWith("full")
@@ -2794,13 +2897,13 @@ function sizeTypeForCombo(combo) {
 
 function notesForRelease(valid, extra = []) {
   const cbNo = activeCard?.group?.cb_no || "";
-  const childNo = activeCard?.division?.division_code || "";
+  const childNo = activeCard ? activeChildCode() : "";
 
   return [
     readText("lotNotes"),
     readText("operatorName") ? `Operator: ${readText("operatorName")}` : "",
     cbNo ? `CB: ${cbNo}` : "",
-    childNo ? `CB Child/Sub Div: ${childNo}` : "",
+    childNo ? `Child: ${childNo}` : "",
     `Lot Mode: ${valid.lotMode}`,
     ...extra
   ].filter(Boolean).join("\n");
@@ -2834,14 +2937,23 @@ function validateLot() {
 
     if (!lotNo) throw new Error("Manual Lot No required.");
 
-    const entries = allEntries.map(row => ({
-      ...row,
-      dev_no: "D1",
+    const rawRow = comboDevRows[0] || singleRowFromInputs();
+    const row = normalizeMatchingRow(
+      {
+        ...rawRow,
+        dev_no: activeChildCode()
+      },
+      activeChildCode()
+    );
+
+    const entries = allEntries.map(entry => ({
+      ...entry,
+      dev_no: row.dev_no,
       lot_no: lotNo
     }));
 
     const totalPieces = entries.reduce(
-      (sum, row) => sum + row.quantity,
+      (sum, entry) => sum + entry.quantity,
       0
     );
 
@@ -2857,28 +2969,21 @@ function validateLot() {
       );
     }
 
-    const row = comboDevRows[0] || singleRowFromInputs();
-    if (Number(row.matching_consumption || 0) > 0 && !row.matching_item_id) {
-      throw new Error("Matching Cloth Qty भरी है—Product Master stock select करें.");
-    }
-    const singleStock = matchingSnapshot(row.matching_item_id);
-    if (Number(row.matching_consumption || 0) > singleStock.availableQty + 0.0005) {
-      throw new Error(`Matching Cloth stock ${singleStock.availableQty.toFixed(3)} kg है, Qty ${Number(row.matching_consumption || 0).toFixed(3)} kg है.`);
-    }
-
     return {
       decision,
       styleName,
       lotMode,
       totalPieces,
       lots: [{
-        dev_no: "D1",
+        dev_no: row.dev_no,
+        parent_child_code: activeChildCode(),
         lot_no: lotNo,
         size_combo: row.size_combo,
         sizes: row.sizes,
         sleeve: row.sleeve,
         border: row.border,
         cutting_pcs: totalPieces,
+        matching_item_id: row.matching_item_id,
         matching_consumption: Number(row.matching_consumption || 0),
         matching_avg_cost: Number(row.matching_avg_cost || 0),
         custom_adjustment: Number(row.custom_adjustment || 0),
@@ -2888,7 +2993,7 @@ function validateLot() {
   }
 
   if (comboDevRows.length < 2 || comboDevRows.length > 4) {
-    throw new Error("Multi Lot में 2 से 4 Dev required हैं.");
+    throw new Error("Multi Lot में 2 से 4 Sub-Dev required हैं.");
   }
 
   const lotNos = comboDevRows.map(row =>
@@ -2896,14 +3001,16 @@ function validateLot() {
   );
 
   if (lotNos.some(value => !value)) {
-    throw new Error("हर Dev का Manual Lot No required है.");
+    throw new Error("हर Sub-Dev का Manual Lot No required है.");
   }
 
   if (new Set(lotNos.map(value => value.toLowerCase())).size !== lotNos.length) {
     throw new Error("Multi Lot में duplicate Lot No allowed नहीं है.");
   }
 
-  const lots = comboDevRows.map(row => {
+  const lots = comboDevRows.map(rawRow => {
+    const row = normalizeMatchingRow(rawRow, rawRow.dev_no);
+
     const entries = allEntries
       .filter(entry => String(entry.dev_no) === String(row.dev_no))
       .map(entry => ({
@@ -2930,6 +3037,7 @@ function validateLot() {
 
     return {
       ...row,
+      parent_child_code: activeChildCode(),
       lot_no: String(row.lot_no || "").trim().toUpperCase(),
       cutting_pcs: total,
       entries
@@ -2938,21 +3046,22 @@ function validateLot() {
 
   const matchingUse = new Map();
   lots.forEach(row => {
-    const qty = Number(row.matching_consumption || 0);
-    if (qty > 0 && !row.matching_item_id) {
-      throw new Error(`${row.dev_no}: Matching Cloth stock select करें.`);
-    }
-    if (qty > 0) {
-      matchingUse.set(
-        String(row.matching_item_id),
-        Number(matchingUse.get(String(row.matching_item_id)) || 0) + qty
-      );
-    }
+    if (!row.matching_item_id) return;
+
+    const key = String(row.matching_item_id);
+    matchingUse.set(
+      key,
+      Number(matchingUse.get(key) || 0) +
+      Number(row.matching_consumption || 0)
+    );
   });
-  matchingUse.forEach((qty, itemId) => {
+
+  matchingUse.forEach((requiredQty, itemId) => {
     const stock = matchingSnapshot(itemId);
-    if (qty > stock.availableQty + 0.0005) {
-      throw new Error(`${stock.fabricName || "Matching Cloth"}: available ${stock.availableQty.toFixed(3)} kg, required ${qty.toFixed(3)} kg.`);
+    if (requiredQty > stock.availableQty + 0.0005) {
+      throw new Error(
+        `${stock.fabricName || "Matching Cloth"}: available ${stock.availableQty.toFixed(3)} kg, required ${requiredQty.toFixed(3)} kg.`
+      );
     }
   });
 
@@ -2961,8 +3070,6 @@ function validateLot() {
     0
   );
 
-  // Parent total is derived automatically from all Dev matrices.
-  // It is intentionally hidden so it cannot block the Release action.
   if ($("cmParentCuttingPcs")) {
     $("cmParentCuttingPcs").value = String(totalPieces);
   }
@@ -3000,12 +3107,13 @@ function singleRpcPayload(valid) {
     p_border_type: normalizedBorder(lot.border),
     p_custom_adjustment: Number(lot.custom_adjustment || 0),
     p_notes: notesForRelease(valid, [
-      lot.matching_consumption
+      `Child: ${lot.dev_no}`,
+      lot.matching_item_id
         ? `Matching Qty: ${lot.matching_consumption}`
-        : "",
-      lot.matching_avg_cost
+        : "Matching Cloth: No",
+      lot.matching_item_id
         ? `Matching Avg Cost: ${lot.matching_avg_cost}`
-        : ""
+        : "Matching Avg Cost: 0"
     ]) || null,
     p_breakup: lot.entries.map(row => ({
       cb_colour_id: row.colour_id,
@@ -3014,7 +3122,9 @@ function singleRpcPayload(valid) {
       qty: row.quantity
     })),
     p_matching_item_id: lot.matching_item_id || null,
-    p_matching_qty: Number(lot.matching_consumption || 0)
+    p_matching_qty: lot.matching_item_id
+      ? Number(lot.matching_consumption || 0)
+      : 0
   };
 }
 
@@ -3032,7 +3142,9 @@ function multiRpcPayload(valid) {
     p_wastage_weight: numberValue("wastageWeight"),
     p_remnant_weight: numberValue("remnantWeight"),
     p_base_cost: numberValue("baseCost") || costSettings.default_base_cost || 0,
-    p_notes: notesForRelease(valid) || null,
+    p_notes: notesForRelease(valid, [
+      `Parent Child: ${activeChildCode()}`
+    ]) || null,
     p_lots: valid.lots.map((row, index) => {
       const cost = devCost(row, row.cutting_pcs);
 
@@ -3047,8 +3159,12 @@ function multiRpcPayload(valid) {
         selected_sizes: row.sizes,
         cutting_pcs: row.cutting_pcs,
         matching_item_id: row.matching_item_id || null,
-        matching_qty: Number(row.matching_consumption || 0),
-        matching_avg_cost: Number(row.matching_avg_cost || 0),
+        matching_qty: row.matching_item_id
+          ? Number(row.matching_consumption || 0)
+          : 0,
+        matching_avg_cost: row.matching_item_id
+          ? Number(row.matching_avg_cost || 0)
+          : 0,
         base_cost: cost.base,
         size_adjustment: sizeFactorForCombo(row),
         sleeve_adjustment: sleeveFactorFor(row),
@@ -3131,7 +3247,7 @@ async function createLot(event = {}) {
     }, 80);
 
     say(
-      `Lot ${releasedNos.join(" · ")} Ready for KR / OV.`,
+      `LOT ${releasedNos.join(" · ")} RELEASED · Ready for KR / OV.`,
       "success"
     );
   } catch (error) {
@@ -3261,7 +3377,6 @@ async function loadCostSettings(client) {
   }
 }
 
-
 async function loadMultiLotSource(client) {
   const result = await client.rpc("rr_list_multi_lots_v3");
 
@@ -3384,19 +3499,24 @@ async function loadAllData() {
   );
   mediaRows = loadedMediaRows || [];
   singleLotRows = requiredData(lotResult, "Cutting lots")
-    .map(row => ({ ...row, lot_mode: "single", lot_source: "rr_cutting_lots_v3" }));
+    .map(row => ({
+      ...row,
+      lot_mode: "single",
+      lot_source: "rr_cutting_lots_v3"
+    }));
   multiLotRows = loadedMultiLotRows || [];
   lotRows = [...singleLotRows, ...multiLotRows]
-    .sort((a, b) => String(b.created_at || "").localeCompare(String(a.created_at || "")));
+    .sort((a, b) =>
+      String(b.created_at || "").localeCompare(String(a.created_at || ""))
+    );
   breakupRows = requiredData(breakupResult, "Cutting breakup");
   matchingStockRows = requiredData(matchingStockResult, "Matching Cloth stock");
 
   await loadCostSettings(client);
   refreshMatchingStockControls();
-
   renderGallery();
 
-  console.info("REDZED Cutting Master PM Core loaded", {
+  console.info("REDZED Cutting Master PM Core V719 loaded", {
     galleryRows: galleryRows.length,
     purchaseRows: purchaseRows.length,
     colourRows: colourRows.length,
@@ -3422,6 +3542,9 @@ async function refreshCuttingMaster() {
 }
 
 function bindEvents() {
+  if (bindEvents.bound) return;
+  bindEvents.bound = true;
+
   $("lotForm")?.addEventListener("submit", createLot);
 
   gallery?.addEventListener("click", event => {
@@ -3443,13 +3566,14 @@ function bindEvents() {
     ).trim();
 
     if (!divisionId) {
-      say("CB Child ID missing.", "error");
+      say("Child ID missing.", "error");
       return;
     }
 
     openLotByDivision(
       divisionId,
-      button.dataset.lotMode || (button.dataset.multi ? "multi" : "single")
+      button.dataset.lotMode ||
+      (button.dataset.multi ? "multi" : "single")
     );
   });
 
@@ -3538,7 +3662,6 @@ async function start() {
   try {
     injectStyles();
     bindEvents();
-
     await loadAllData();
   } catch (error) {
     showFatal(error);
@@ -3546,7 +3669,7 @@ async function start() {
 }
 
 window.RRCuttingMasterPM = {
-  version: "pm-core-v38.2-multi-release-fix",
+  version: "pm-core-v719-optional-matching-child-subdev-lot-identity",
 
   state() {
     return {
@@ -3565,7 +3688,9 @@ window.RRCuttingMasterPM = {
       currentFilter,
       activeCard,
       currentLotMode,
-      comboDevRows
+      comboDevRows,
+      lastReleasedLotNo,
+      lastReleasedDivisionId
     };
   },
 
@@ -3587,4 +3712,5 @@ if (document.readyState === "loading") {
 
 })();
 
-// ===== REDZED CUTTING MASTER PM CORE PART 4 END =====
+// ===== REDZED CUTTING MASTER PM CORE V719 END =====
+           
