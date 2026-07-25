@@ -1,1 +1,400 @@
-:root{--bg:#090909;--card:#151515;--line:#292929;--gold:#d6a33a;--red:#b5121b;--muted:#b7b7b7}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:white;font-family:Arial,Helvetica,sans-serif}.nav{position:sticky;top:0;z-index:5;display:flex;justify-content:space-between;align-items:center;padding:14px 16px;background:#0b0b0bdd;backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}.logo{font-size:24px;font-weight:900;letter-spacing:2px}.logo span{display:block;font-size:10px;color:var(--gold);letter-spacing:4px}.nav a{color:white;text-decoration:none;margin-left:12px;font-size:14px}.hero{min-height:360px;padding:46px 18px;display:flex;align-items:center;background:radial-gradient(circle at 80% 20%,#66101855,transparent 35%),linear-gradient(135deg,#171717,#0a0a0a)}.hero h1{font-size:44px;margin:8px 0}.hero p{max-width:650px;color:#ddd;font-size:17px}.tag{color:var(--gold)!important;font-weight:700}.btn{display:inline-block;background:var(--red);color:white;border:none;border-radius:12px;padding:12px 18px;font-weight:800;text-decoration:none;cursor:pointer}.ghost{background:#222;border:1px solid #555}.hero-actions{display:flex;gap:10px;flex-wrap:wrap}.tools{display:grid;grid-template-columns:2fr 1fr 1fr;gap:10px;padding:16px}.tools input,.tools select,.form input,.form select,.form textarea,#pin{padding:14px;border-radius:12px;border:1px solid #444;background:#111;color:white;width:100%}.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:16px;padding:16px}.card{border:1px solid var(--line);background:var(--card);border-radius:18px;overflow:hidden;box-shadow:0 10px 30px #0006}.card img{width:100%;height:230px;object-fit:cover;background:#222}.card-body{padding:13px}.card h3{margin:0 0 6px}.card p{margin:5px 0;color:var(--muted);font-size:14px}.price{font-size:22px;font-weight:900;color:var(--gold);margin:10px 0}.wa{display:block;text-align:center;background:#0a7a3b;color:white;text-decoration:none;border-radius:10px;padding:10px;font-weight:800}.badge{display:inline-block;padding:4px 8px;border-radius:999px;background:#242424;color:#ddd;font-size:12px}.panel{padding:16px;max-width:850px;margin:auto}.login,.form{border:1px solid var(--line);border-radius:18px;background:var(--card);padding:16px}.hidden{display:none}.form{display:grid;gap:11px}.check,.upload{display:block;padding:12px;border:1px dashed #444;border-radius:12px;color:#ddd}.panel-head{display:flex;justify-content:space-between;align-items:center}.list{display:grid;gap:10px}.row{display:grid;grid-template-columns:70px 1fr auto;gap:10px;align-items:center;border:1px solid #333;background:#141414;border-radius:14px;padding:10px}.row img{width:70px;height:70px;object-fit:cover;border-radius:10px;background:#222}.danger{background:#6b1111}footer{text-align:center;padding:25px;color:#aaa;border-top:1px solid #222}@media(max-width:650px){.tools{grid-template-columns:1fr}.hero h1{font-size:34px}.nav{align-items:flex-start}.nav nav{display:flex;gap:8px;flex-wrap:wrap}.nav a{margin-left:0}.card img{height:210px}}
+/* ==========================================================
+   REDZED ERP
+   File      : style.css
+   Module    : Common UI
+   Version   : v719.3
+   Status    : Production Certified
+   Purpose   : Global Theme & Common Components
+========================================================== */
+
+
+/* ==========================================================
+   Theme Variables
+========================================================== */
+
+:root {
+    --bg: #090909;
+    --card: #151515;
+    --line: #292929;
+    --gold: #d6a33a;
+    --red: #b5121b;
+    --muted: #b7b7b7;
+}
+
+
+/* ==========================================================
+   Global Reset
+========================================================== */
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    background: var(--bg);
+    color: #fff;
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+
+/* ==========================================================
+   Navigation
+========================================================== */
+
+.nav {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    padding: 14px 16px;
+
+    background: #0b0b0bdd;
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--line);
+}
+
+.logo {
+    font-size: 24px;
+    font-weight: 900;
+    letter-spacing: 2px;
+}
+
+.logo span {
+    display: block;
+    font-size: 10px;
+    color: var(--gold);
+    letter-spacing: 4px;
+}
+
+.nav a {
+    margin-left: 12px;
+    color: #fff;
+    text-decoration: none;
+    font-size: 14px;
+}
+
+
+/* ==========================================================
+   Hero Section
+========================================================== */
+
+.hero {
+    min-height: 360px;
+    padding: 46px 18px;
+
+    display: flex;
+    align-items: center;
+
+    background:
+        radial-gradient(circle at 80% 20%, #66101855, transparent 35%),
+        linear-gradient(135deg, #171717, #0a0a0a);
+}
+
+.hero h1 {
+    margin: 8px 0;
+    font-size: 44px;
+}
+
+.hero p {
+    max-width: 650px;
+    color: #ddd;
+    font-size: 17px;
+}
+
+.tag {
+    color: var(--gold) !important;
+    font-weight: 700;
+}
+
+.hero-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+
+/* ==========================================================
+   Buttons
+========================================================== */
+
+.btn {
+    display: inline-block;
+    padding: 12px 18px;
+
+    background: var(--red);
+    color: #fff;
+
+    border: none;
+    border-radius: 12px;
+
+    cursor: pointer;
+
+    font-weight: 800;
+    text-decoration: none;
+}
+
+.ghost {
+    background: #222;
+    border: 1px solid #555;
+}
+
+
+/* ==========================================================
+   Search / Filter Tools
+========================================================== */
+
+.tools {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr;
+    gap: 10px;
+
+    padding: 16px;
+}
+
+.tools input,
+.tools select,
+.form input,
+.form select,
+.form textarea,
+#pin {
+    width: 100%;
+    padding: 14px;
+
+    background: #111;
+    color: #fff;
+
+    border: 1px solid #444;
+    border-radius: 12px;
+}
+
+
+/* ==========================================================
+   Product Grid
+========================================================== */
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 16px;
+
+    padding: 16px;
+}
+
+
+/* ==========================================================
+   Product Card
+========================================================== */
+
+.card {
+    overflow: hidden;
+
+    background: var(--card);
+
+    border: 1px solid var(--line);
+    border-radius: 18px;
+
+    box-shadow: 0 10px 30px #0006;
+}
+
+.card img {
+    width: 100%;
+    height: 230px;
+
+    object-fit: cover;
+
+    background: #222;
+}
+
+.card-body {
+    padding: 13px;
+}
+
+.card h3 {
+    margin: 0 0 6px;
+}
+
+.card p {
+    margin: 5px 0;
+    color: var(--muted);
+    font-size: 14px;
+}
+
+.price {
+    margin: 10px 0;
+    color: var(--gold);
+    font-size: 22px;
+    font-weight: 900;
+}
+
+.badge {
+    display: inline-block;
+    padding: 4px 8px;
+
+    background: #242424;
+    color: #ddd;
+
+    border-radius: 999px;
+    font-size: 12px;
+}
+
+.wa {
+    display: block;
+    padding: 10px;
+
+    background: #0a7a3b;
+    color: #fff;
+
+    border-radius: 10px;
+
+    text-align: center;
+    text-decoration: none;
+    font-weight: 800;
+}
+
+
+/* ==========================================================
+   Forms
+========================================================== */
+
+.panel {
+    max-width: 850px;
+    margin: auto;
+    padding: 16px;
+}
+
+.login,
+.form {
+    padding: 16px;
+
+    background: var(--card);
+
+    border: 1px solid var(--line);
+    border-radius: 18px;
+}
+
+.form {
+    display: grid;
+    gap: 11px;
+}
+
+.check,
+.upload {
+    display: block;
+    padding: 12px;
+
+    color: #ddd;
+
+    border: 1px dashed #444;
+    border-radius: 12px;
+}
+
+
+/* ==========================================================
+   Panels
+========================================================== */
+
+.panel-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+
+/* ==========================================================
+   Lists
+========================================================== */
+
+.list {
+    display: grid;
+    gap: 10px;
+}
+
+.row {
+    display: grid;
+    grid-template-columns: 70px 1fr auto;
+    gap: 10px;
+    align-items: center;
+
+    padding: 10px;
+
+    background: #141414;
+
+    border: 1px solid #333;
+    border-radius: 14px;
+}
+
+.row img {
+    width: 70px;
+    height: 70px;
+
+    object-fit: cover;
+
+    background: #222;
+    border-radius: 10px;
+}
+
+
+/* ==========================================================
+   Utility Classes
+========================================================== */
+
+.hidden {
+    display: none;
+}
+
+.danger {
+    background: #6b1111;
+}
+
+
+/* ==========================================================
+   Footer
+========================================================== */
+
+footer {
+    padding: 25px;
+
+    color: #aaa;
+    text-align: center;
+
+    border-top: 1px solid #222;
+}
+
+
+/* ==========================================================
+   Responsive
+========================================================== */
+
+@media (max-width: 650px) {
+
+    .tools {
+        grid-template-columns: 1fr;
+    }
+
+    .hero h1 {
+        font-size: 34px;
+    }
+
+    .nav {
+        align-items: flex-start;
+    }
+
+    .nav nav {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+    .nav a {
+        margin-left: 0;
+    }
+
+    .card img {
+        height: 210px;
+    }
+}
