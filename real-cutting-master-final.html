@@ -456,13 +456,23 @@ window.onunhandledrejection = function(event) {
       '</article>';
   }
 };
+<script>
+window.onunhandledrejection = function(event) {
+  // ...
+};
 </script>
 
-<!-- MAIN PM SCRIPT -->
+<!-- MAIN CUTTING MASTER V719.3 SCRIPT -->
 <script
-  src="real-cutting-master-pm.js?v=39"
-  onerror="document.getElementById('cmMessage').textContent='✗ Failed to load PM script';"
-></script>  
+  src="real-cutting-master-pm.V719.3.js?v=7193"
+  onerror="
+    const box = document.getElementById('cmMessage');
+    if (box) {
+      box.textContent = '✗ Failed to load Cutting Master V719.3 script';
+      box.className = 'rr-message error';
+    }
+  "
+></script>
 
 </body>
 </html>
