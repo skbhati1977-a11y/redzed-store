@@ -217,13 +217,10 @@ Fabric: ${safe(product.fabric)}`
             ₹${safe(product.rate) || "-"}
         </div>
 
-        <a
-            class="wa"
-            href="https://wa.me/91${WHATSAPP_NUMBER}?text=${order}">
-
-            WhatsApp Order
-
-        </a>
+     <a class="wa" href="https://wa.me/91${CFG.DEFAULT_WHATSAPP?.number || ''}?text=${order}">
+    WhatsApp Order
+</a>
+            
 
     </div>
 
@@ -240,6 +237,27 @@ Fabric: ${safe(product.fabric)}`
 }
 
 
+/* ==========================================================
+   Update WhatsApp UI
+========================================================== */
+
+function updateWhatsAppUI() {
+
+    if (!CFG.DEFAULT_WHATSAPP) return;
+
+    const number = CFG.DEFAULT_WHATSAPP.number;
+
+    const footer = document.querySelector(".wa-text");
+    if (footer) {
+        footer.textContent = number;
+    }
+
+    const headerLink = document.querySelector(".wa-link");
+    if (headerLink) {
+        headerLink.href = `https://wa.me/91${number}`;
+    }
+
+}
 /* ==========================================================
    Event Binding
 ========================================================== */
@@ -262,7 +280,14 @@ Fabric: ${safe(product.fabric)}`
    Application Startup
 ========================================================== */
 
+
 async function initializeApp() {
+
+    await loadSettings();
+
+    await loadWhatsAppNumbers();
+
+    updateWhatsAppUI();
 
     await loadCategories();
 
