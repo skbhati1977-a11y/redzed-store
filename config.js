@@ -9,8 +9,13 @@ const SUPABASE_URL = "https://hruartsemierwhtzonei.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_uo3dcrFuRvGsvRzPcdTV0A_5ZVwgzga";
 
 const CFG = {
+
     SETTINGS: {},
-    WHATSAPP: {}
+
+    WHATSAPP: [],
+
+    DEFAULT_WHATSAPP: null
+
 };
 
 const supabaseClient = window.supabase.createClient(
