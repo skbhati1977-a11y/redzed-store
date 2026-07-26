@@ -80,18 +80,26 @@ async function loadProducts() {
             ascending: false
         });
 
-    if (error) {
+   if (error) {
 
-        container.innerHTML =
-            "<p>Supabase config अभी बाकी है. config.js में URL और anon key डालें.</p>";
+    console.error("Products Load Error :", error);
 
-        return;
-    }
+    container.innerHTML = `
+<div style="
+color:#ff4d4f;
+padding:20px;
+border:1px solid #ff4d4f;
+border-radius:8px;
+white-space:pre-wrap;
+font-size:14px;
+">
+Products Load Error
 
-    products = data || [];
+${error.message}
+</div>
+`;
 
-    render();
-
+    return;
 }
 
 
