@@ -172,7 +172,7 @@ function render() {
 Item: ${safe(product.item_name)}
 Art: ${safe(product.art_no)}
 Size: ${safe(product.size)}
-Rate: ${safe(product.rate)}
+Dealer Price : ₹${safe(product.dealer_price)}
 Fabric: ${safe(product.fabric)}`
 
             );
@@ -214,8 +214,8 @@ Fabric: ${safe(product.fabric)}`
         </p>
 
         <div class="price">
-            ₹${safe(product.rate) || "-"}
-        </div>
+    ₹${safe(product.dealer_price) || "-"}
+</div>
 
      <a class="wa" href="https://wa.me/91${CFG.DEFAULT_WHATSAPP?.number || ''}?text=${order}">
     WhatsApp Order
