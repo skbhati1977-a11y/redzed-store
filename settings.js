@@ -2,8 +2,14 @@
  * REDZED Dealer Catalog
  * File        : settings.js
  * Recovery ID : RR-005
- * Status      : RECOVERED
+ * Status      : PRODUCTION
+ * Purpose     : Load Website Settings & WhatsApp Numbers
  ******************************************************************/
+
+
+/* ==========================================================
+   Load Website Settings
+========================================================== */
 
 async function loadSettings() {
 
@@ -13,13 +19,17 @@ async function loadSettings() {
         .eq("is_active", true);
 
     if (error) {
+
         console.error("Settings Load Error :", error);
         return;
+
     }
 
+    // Reset Settings Object
     CFG.SETTINGS = {};
 
-    data.forEach(item => {
+    // Convert rows into key => value object
+    (data || []).forEach(item => {
 
         CFG.SETTINGS[item.setting_key] = item.setting_value;
 
@@ -27,6 +37,10 @@ async function loadSettings() {
 
 }
 
+
+/* ==========================================================
+   Load WhatsApp Numbers
+========================================================== */
 
 async function loadWhatsAppNumbers() {
 
@@ -36,19 +50,27 @@ async function loadWhatsAppNumbers() {
         .eq("is_active", true);
 
     if (error) {
+
         console.error("WhatsApp Load Error :", error);
         return;
-    }
-
-    CFG.WHATSAPP = data;
-
-    const defaultNumber = data.find(item => item.is_default);
-
-    if (defaultNumber) {
-
-        CFG.DEFAULT_WHATSAPP = defaultNumber;
 
     }
+
+    // Store all active WhatsApp numbers
+    CFG.WHATSAPP = data || [];
+
+    // Default Number Priority
+    // 1. is_default = true
+    // 2. First Active Number
+    // 3. null
+
+    CFG.DEFAULT_WHATSAPP =
+        CFG.WHATSAPP.find(item => item.is_default)
+        || CFG.WHATSAPP[0]
+        || null;
+
+    console.log("WhatsApp Numbers :", CFG.WHATSAPP);
+
+    console.log("Default WhatsApp :", CFG.DEFAULT_WHATSAPP);
 
 }
-
