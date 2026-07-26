@@ -8,7 +8,7 @@
 const SUPABASE_URL = "https://hruartsemierwhtzonei.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_uo3dcrFuRvGsvRzPcdTV0A_5ZVwgzga";
 
-const CFG = {
+const CFG = Object.seal({
 
     SETTINGS: {},
 
@@ -16,7 +16,7 @@ const CFG = {
 
     DEFAULT_WHATSAPP: null
 
-};
+});
 
 const supabaseClient = window.supabase.createClient(
     SUPABASE_URL,
