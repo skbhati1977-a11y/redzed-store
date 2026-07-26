@@ -173,13 +173,7 @@ ${error.message}
 
 }
 
-    products = data || [];
-
-    buildCategories();
-
-    render();
-
-}
+   
 
 /* ==========================================================
    Render Products
