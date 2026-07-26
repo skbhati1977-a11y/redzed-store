@@ -1,12 +1,11 @@
-/* ==========================================================
-   REDZED ERP
-   File      : app.js
-   Module    : Dealer Catalog
-   Version   : v719.3
-   Status    : Production Certified
-   Purpose   : Product Loading, Search, Filter & Rendering
-========================================================== */
-
+ /******************************************************************
+ * REDZED Dealer Catalog
+ * File        : app.js
+ * Recovery ID : RR-006-01
+ * Version     : 720.0
+ * Status      : PRODUCTION
+ * Purpose     : Product Loading & Helpers
+ ******************************************************************/
 
 /* ==========================================================
    Global Variables
@@ -25,40 +24,96 @@ const placeholder =
 
 function safe(value) {
 
-    return (value ?? "").toString();
+    return (value ?? "").toString().trim();
 
 }
 
 
 /* ==========================================================
-   Load Categories
+   Parse Image Array
 ========================================================== */
 
-async function loadCategories() {
+function getImages(product) {
 
-    const { data, error } = await supabaseClient
-        .from("categories")
-        .select("*")
-        .order("name");
+    let images = [];
 
-    if (error) {
-        console.warn(error);
-        return;
+    try {
+
+        if (Array.isArray(product.image_urls)) {
+
+            images = product.image_urls;
+
+        }
+
+        else if (typeof product.image_urls === "string") {
+
+            images = JSON.parse(product.image_urls);
+
+        }
+
     }
 
-    categories = data || [];
+    catch (e) {
 
-    const select = document.getElementById("categoryFilter");
+        images = [];
+
+    }
+
+    if (!images.length && product.image_url) {
+
+        images.push(product.image_url);
+
+    }
+
+    if (!images.length) {
+
+        images.push(placeholder);
+
+    }
+
+    return images;
+
+}
+
+
+/* ==========================================================
+   Build Category List
+========================================================== */
+
+function buildCategories() {
+
+    categories = [
+
+        ...new Set(
+
+            products
+
+                .map(product => safe(product.category))
+
+                .filter(Boolean)
+
+        )
+
+    ].sort();
+
+    const select =
+        document.getElementById("categoryFilter");
 
     select.innerHTML =
-        '<option value="all">All Categories</option>' +
-        categories
-            .map(category => `
-                <option value="${category.id}">
-                    ${category.name}
-                </option>
-            `)
-            .join("");
+
+        `<option value="all">
+            All Categories
+        </option>`
+
+        +
+
+        categories.map(category =>
+
+            `<option value="${category}">
+                ${category}
+            </option>`
+
+        ).join("");
 
 }
 
@@ -69,238 +124,438 @@ async function loadCategories() {
 
 async function loadProducts() {
 
-    const container = document.getElementById("products");
+    const container =
+        document.getElementById("products");
 
-    container.innerHTML = "<p>Loading products...</p>";
+    container.innerHTML =
+        "<p>Loading Products...</p>";
 
-    const { data, error } = await supabaseClient
-        .from("products")
-        .select("*, categories(name)")
-        .order("created_at", {
-            ascending: false
-        });
+    const { data, error } =
+        await supabaseClient
 
-   if (error) {
+            .from("products")
 
-    console.error("Products Load Error :", error);
+            .select("*")
 
-    container.innerHTML = `
-<div style="
-color:#ff4d4f;
-padding:20px;
-border:1px solid #ff4d4f;
-border-radius:8px;
-white-space:pre-wrap;
-font-size:14px;
-">
-Products Load Error
+            .order("created_at", {
+
+                ascending: false
+
+            });
+
+    if (error) {
+
+        console.error(error);
+
+        container.innerHTML =
+
+            `<div style="
+                color:#ff4d4f;
+                padding:20px;
+                border:1px solid #ff4d4f;
+                border-radius:8px;
+                white-space:pre-wrap;
+            ">
 
 ${error.message}
-</div>
-`;
 
-    return;
+</div>`;
+
+        return;
+
+    }
+
+    products = data || [];
+
+    buildCategories();
+
+    render();
+
 }
 
-
 /* ==========================================================
-   Render Product List
+   Render Products
 ========================================================== */
 
 function render() {
 
+    const container =
+        document.getElementById("products");
+
     const keyword =
-        document.getElementById("search")
-            .value
-            .toLowerCase();
+        safe(document.getElementById("search").value).toLowerCase();
 
     const category =
-        document.getElementById("categoryFilter").value;
+        safe(document.getElementById("categoryFilter").value);
 
-    const stock =
-        document.getElementById("stockFilter").value;
-
-
-    const rows = products.filter(product => {
+    let filtered = products.filter(product => {
 
         const text = [
 
-            product.item_name,
+            product.product_name,
             product.art_no,
+            product.category,
             product.fabric,
-            product.size,
-            product.colors,
-            product.description,
-            product.categories?.name
+            product.sizes,
+            product.description
 
         ]
-            .join(" ")
-            .toLowerCase();
 
-        return (
+        .join(" ")
 
-            text.includes(keyword)
+        .toLowerCase();
 
-            &&
+        const matchSearch =
+            text.includes(keyword);
 
-            (
-                category === "all"
+        const matchCategory =
+            category === "all"
+            || safe(product.category) === category;
 
-                ||
-
-                String(product.category_id) === category
-            )
-
-            &&
-
-            (
-                stock === "all"
-
-                ||
-
-                (
-                    stock === "yes"
-                        ? product.in_stock
-                        : !product.in_stock
-                )
-            )
-
-        );
+        return matchSearch && matchCategory;
 
     });
 
+    if (!filtered.length) {
 
-    document.getElementById("products").innerHTML =
+        container.innerHTML =
 
-        rows.map(product => {
+        `
+        <div class="empty">
 
-            const order = encodeURIComponent(
+            No Products Found
 
-                `REDZED order enquiry
-Item: ${safe(product.item_name)}
-Art: ${safe(product.art_no)}
-Size: ${safe(product.size)}
-Dealer Price : ₹${safe(product.dealer_price)}
-Fabric: ${safe(product.fabric)}`
+        </div>
+        `;
 
-            );
+        return;
 
-            return `
+    }
 
-<article class="card">
+    container.innerHTML =
 
-    <img
-        src="${product.main_image || placeholder}"
-        alt="${safe(product.item_name)}">
-
-    <div class="card-body">
-
-        <span class="badge">
-            ${product.categories?.name || "Product"}
-        </span>
-
-        <h3>
-            ${safe(product.item_name)}
-        </h3>
-
-        <p>
-            Art : ${safe(product.art_no) || "-"}
-        </p>
-
-        <p>
-            Size : ${safe(product.size) || "-"}
-            •
-            Pcs : ${safe(product.pcs) || "-"}
-        </p>
-
-        <p>
-            Fabric : ${safe(product.fabric) || "-"}
-        </p>
-
-        <p>
-            Colors : ${safe(product.colors) || "-"}
-        </p>
-
-        <div class="price">
-    ₹${safe(product.dealer_price) || "-"}
-</div>
-
-     <a class="wa" href="https://wa.me/91${CFG.DEFAULT_WHATSAPP?.number || ''}?text=${order}">
-    WhatsApp Order
-</a>
-            
-
-    </div>
-
-</article>
-
-`;
-
-        }).join("")
-
-        ||
-
-        "<p>No products found.</p>";
+        filtered.map(product => productCard(product)).join("");
 
 }
 
 
 /* ==========================================================
-   Update WhatsApp UI
+   Product Card
+========================================================== */
+
+function productCard(product) {
+
+    const images =
+        getImages(product);
+
+    const stock =
+        safe(product.stock);
+
+    const dealerPrice =
+        product.dealer_price ?? product.rate;
+
+    return `
+
+<div class="product-card">
+
+<div class="image-section">
+
+<img
+
+id="img-${product.id}"
+
+src="${images[0]}"
+
+alt="${product.product_name}"
+
+class="main-image"
+
+>
+
+</div>
+
+<div class="content">
+
+<h3>
+
+${safe(product.product_name)}
+
+</h3>
+
+<p>
+
+<b>Art :</b>
+
+${safe(product.art_no)}
+
+</p>
+
+<p>
+
+<b>Category :</b>
+
+${safe(product.category)}
+
+</p>
+
+<p>
+
+<b>Fabric :</b>
+
+${safe(product.fabric)}
+
+</p>
+
+<p>
+
+<b>Sizes :</b>
+
+${safe(product.sizes)}
+
+</p>
+
+<p>
+
+<b>Pack Qty :</b>
+
+${safe(product.pack_qty)}
+
+</p>
+
+<p class="price">
+
+₹ ${dealerPrice}
+
+</p>
+
+<p class="stock">
+
+${stock}
+
+</p>
+
+${thumbnailStrip(product)}
+
+${whatsappButton(product)}
+
+</div>
+
+</div>
+
+`;
+
+}
+
+
+/* ==========================================================
+   Thumbnail Strip
+========================================================== */
+
+function thumbnailStrip(product) {
+
+    const images =
+        getImages(product);
+
+    if (images.length <= 1) {
+
+        return "";
+
+    }
+
+    return `
+
+<div class="thumb-strip">
+
+${images.map(img =>
+
+`
+
+<img
+
+src="${img}"
+
+class="thumb"
+
+onclick="changeImage('${product.id}','${img}')"
+
+>
+
+`
+
+).join("")}
+
+</div>
+
+`;
+
+}
+
+
+/* ==========================================================
+   Change Main Image
+========================================================== */
+
+function changeImage(id,image){
+
+    document
+        .getElementById(`img-${id}`)
+        .src = image;
+
+}
+
+/* ==========================================================
+   WhatsApp Button
+========================================================== */
+
+function whatsappButton(product) {
+
+    if (!CFG.DEFAULT_WHATSAPP) {
+
+        return "";
+
+    }
+
+    const dealerPrice =
+        product.dealer_price ?? product.rate;
+
+    const message = encodeURIComponent(
+
+`Hello,
+
+I want to order this product.
+
+Product : ${safe(product.product_name)}
+
+Art No : ${safe(product.art_no)}
+
+Category : ${safe(product.category)}
+
+Fabric : ${safe(product.fabric)}
+
+Sizes : ${safe(product.sizes)}
+
+Dealer Price : ₹ ${dealerPrice}`
+
+    );
+
+    return `
+
+<a
+
+class="wa-btn"
+
+target="_blank"
+
+href="https://wa.me/${CFG.DEFAULT_WHATSAPP.number}?text=${message}"
+
+>
+
+WhatsApp Order
+
+</a>
+
+`;
+
+}
+
+
+/* ==========================================================
+   WhatsApp UI
 ========================================================== */
 
 function updateWhatsAppUI() {
 
-    if (!CFG.DEFAULT_WHATSAPP) return;
+    const container =
+        document.getElementById("whatsappList");
 
-    const number = CFG.DEFAULT_WHATSAPP.number;
+    if (!container) return;
 
-    const footer = document.querySelector(".wa-text");
-    if (footer) {
-        footer.textContent = number;
+    if (!CFG.WHATSAPP.length) {
+
+        container.innerHTML = "";
+
+        return;
+
     }
 
-    const headerLink = document.querySelector(".wa-link");
-    if (headerLink) {
-        headerLink.href = `https://wa.me/91${number}`;
-    }
+    container.innerHTML =
+
+        CFG.WHATSAPP.map(item =>
+
+`
+
+<a
+
+class="wa-contact"
+
+target="_blank"
+
+href="https://wa.me/${item.number}"
+
+>
+
+${item.name}
+
+</a>
+
+`
+
+        ).join("");
 
 }
-/* ==========================================================
-   Event Binding
-========================================================== */
-
-[
-    "search",
-    "categoryFilter",
-    "stockFilter"
-
-].forEach(id => {
-
-    document
-        .getElementById(id)
-        .addEventListener("input", render);
-
-});
 
 
 /* ==========================================================
-   Application Startup
+   Search Events
 ========================================================== */
 
+document
+
+.getElementById("search")
+
+.addEventListener(
+
+"input",
+
+render
+
+);
+
+
+/* ==========================================================
+   Category Events
+========================================================== */
+
+document
+
+.getElementById("categoryFilter")
+
+.addEventListener(
+
+"change",
+
+render
+
+);
+
+
+/* ==========================================================
+   Initialize App
+========================================================== */
 
 async function initializeApp() {
 
     await loadSettings();
 
-    await loadWhatsAppNumbers();
-
     updateWhatsAppUI();
-
-    await loadCategories();
 
     await loadProducts();
 
 }
+
+
+/* ==========================================================
+   Start Application
+========================================================== */
 
 initializeApp();
