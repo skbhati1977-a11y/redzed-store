@@ -1,0 +1,419 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#0b0b0e">
+  <title>REDZED REAL — Cutting Master V720.35</title>
+  <link rel="stylesheet" href="real-style.css?v=716">
+<style>
+:root{
+  color-scheme:dark;
+  --bg:#0b0b0e;
+  --panel:#15151a;
+  --panel-2:#101014;
+  --border:#303039;
+  --muted:#a4a4ae;
+  --red:#ef3340;
+  --green:#36c878;
+}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;background:var(--bg);color:#f8f8fa;font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+body{overflow-x:hidden}
+button,input,select,textarea{font:inherit}
+button{cursor:pointer}
+button:disabled{cursor:not-allowed;opacity:.48}
+.cm-hidden{display:none!important}
+.cm-no-scroll{overflow:hidden}
+.cm-page{width:min(1180px,100%);margin:auto;padding:0 16px 70px}
+.cm-topbar{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:22px 0 18px;border-bottom:1px solid #25252d}
+.cm-kicker{margin:0 0 5px;color:#ff6875;font-size:13px;font-weight:900;letter-spacing:.18em}
+.cm-topbar h1{margin:0;font-size:clamp(36px,7vw,58px);line-height:.95}
+.cm-links{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.cm-links a,.cm-settings-btn{display:grid;place-items:center;min-height:44px;padding:0 14px;border:1px solid #3b3b45;border-radius:14px;background:#292a30;color:#fff;text-decoration:none;font-weight:850}
+.cm-settings-btn{background:#2c1c20;border-color:#60434a;color:#ffd6da}
+.cm-hero{display:flex;justify-content:space-between;align-items:center;gap:18px;margin:20px 0;padding:20px;border:1px solid #3a3035;border-radius:24px;background:linear-gradient(145deg,#21161a,#131318)}
+.cm-hero small,.cm-section-head small,.cm-sheet-head small{color:#ff7b86;font-weight:900;letter-spacing:.08em}
+.cm-hero h2{margin:7px 0 8px;font-size:clamp(24px,5vw,38px)}
+.cm-hero p{max-width:760px;margin:0;color:#c7c7cf;line-height:1.55}
+.cm-primary,.cm-secondary{min-height:48px;border:0;border-radius:14px;padding:0 16px;font-weight:900}
+.cm-primary{background:var(--red);color:#fff}
+.cm-secondary{background:#2a2b31;color:#fff}
+.cm-secondary.is-active{outline:2px solid var(--red);background:#3a2025}
+.cm-stats{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;margin-bottom:16px}
+.cm-stats article,.cm-toolbar,.cm-card,.cm-form-card,.cm-notes{border:1px solid var(--border);background:var(--panel);border-radius:18px}
+.cm-stats article{padding:14px}
+.cm-stats small,.cm-summary small,.cm-weight-summary small{display:block;color:var(--muted);margin-bottom:5px}
+.cm-stats strong{font-size:24px}
+.cm-toolbar{padding:15px;margin-bottom:18px}
+.cm-toolbar label span,.cm-form label span,.cm-notes>span{display:block;margin-bottom:6px;color:#bcbcc5;font-size:12px;font-weight:800}
+.cm-toolbar input,.cm-form input,.cm-form select,.cm-form textarea,.cm-notes textarea{width:100%;padding:13px 14px;border:1px solid #373740;border-radius:13px;background:#0c0c10;color:#fff;outline:none}
+.cm-toolbar input:focus,.cm-form input:focus,.cm-form select:focus,.cm-form textarea:focus{border-color:#e64b59;box-shadow:0 0 0 3px #ef334022}
+.cm-filters{display:flex;gap:8px;overflow-x:auto;margin-top:11px;padding-bottom:2px}
+.cm-filters button{flex:0 0 auto;padding:9px 13px;border:1px solid #393942;border-radius:999px;background:#111115;color:#b9b9c2;font-weight:850}
+.cm-filters button.is-active{border-color:#ef3340;background:#32191e;color:#fff}
+#cmMessage:not(:empty){margin:0 0 14px;padding:12px 14px;border-radius:12px;background:#15151a}
+#cmMessage.success{background:#14331f;color:#b9efc8}
+#cmMessage.error{background:#3c1b20;color:#ffc3c8}
+#cmMessage.info{background:#182a3e;color:#cfe7ff}
+.cm-section-head{margin:20px 0 12px}
+.cm-section-head h2{margin:3px 0;font-size:clamp(28px,5vw,40px)}
+.cm-gallery{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.cm-card{padding:16px;min-width:0}
+.cm-card h3{margin:8px 0 2px;font-size:27px}
+.cm-card p{margin:0;color:var(--muted)}
+.cm-chip{display:inline-flex;padding:5px 9px;border-radius:999px;font-size:11px;font-weight:900;text-transform:uppercase}
+.chip-ready{background:#173620;color:#b9efc8}
+.chip-released{background:#182c43;color:#cfe7ff}
+.chip-completed{background:#273019;color:#dff2ad}
+.chip-art_due{background:#3a1c22;color:#ffc5ca}
+.cm-pm-images{display:flex;gap:8px;overflow-x:auto;margin:10px 0}
+.cm-pm-images figure{margin:0;min-width:88px;max-width:110px;border-radius:14px;overflow:hidden;background:#121218;border:1px solid #30303a}
+.cm-pm-images img{width:100%;height:96px;object-fit:cover;display:block}
+.cm-pm-images figcaption{font-size:10px;font-weight:900;padding:5px 6px;color:#fff;background:#0009}
+.cm-pm-photo-empty{height:100px;border:1px dashed #444;border-radius:14px;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#aaa;margin:10px 0}
+.cm-pm-photo-empty span{font-weight:900}
+.cm-pm-decision{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0}
+.cm-pm-decision span,.cm-metrics span,.cm-lot-box,.cm-summary,.cm-weight-summary span,.cm-total-line{padding:10px;border-radius:12px;background:#101015;border:1px solid #292932}
+.cm-pm-decision small,.cm-metrics small{display:block;color:#999;font-size:10px;font-weight:800;margin-bottom:3px}
+.cm-pm-decision strong{font-size:13px;color:#fff}
+.cm-metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:14px 0}
+.cm-lot-box{margin:12px 0}
+.cm-lot-box h4{margin:0 0 5px}
+.cm-lot-cost{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:8px}
+.cm-lot-cost span{padding:8px;border-radius:9px;background:#19191f;color:#ddd;font-size:12px}
+.cm-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding-top:13px;border-top:1px solid #292930}
+.cm-actions-one{grid-template-columns:1fr}
+.cm-actions button{min-height:45px;border:0;border-radius:12px;font-weight:900}
+.cm-empty{grid-column:1/-1;display:grid;place-items:center;align-content:center;min-height:290px;padding:25px;border:1px solid var(--border);border-radius:21px;background:var(--panel);text-align:center}
+.cm-spinner{width:32px;height:32px;border:3px solid #444;border-top-color:var(--red);border-radius:50%;animation:cm-spin .8s linear infinite}
+@keyframes cm-spin{to{transform:rotate(360deg)}}
+.cm-newly-released{outline:3px solid var(--green);outline-offset:3px;scroll-margin-top:80px}
+.cm-lot-metric-new{border-color:var(--green)!important;box-shadow:0 0 0 2px rgba(39,211,123,.18)}
+.cm-lot-number{display:inline-block;padding:4px 9px;border-radius:999px;background:#2b171c;color:#ff7280!important;border:1px solid #75303a;font-weight:1000;letter-spacing:.5px}
+.cm-lot-number-highlight{background:var(--green);color:#07110b!important;border-color:var(--green);box-shadow:0 0 0 3px rgba(39,211,123,.18)}
+.cm-lot-title-new{color:var(--green)}
+.cm-sheet{position:fixed;inset:0;z-index:10000;display:flex;align-items:flex-end;justify-content:center}
+.cm-backdrop{position:absolute;inset:0;background:#000c}
+.cm-sheet-panel{position:relative;width:min(760px,100%);max-height:94vh;overflow:auto;padding:14px 16px 20px;border:1px solid #34343c;border-radius:24px 24px 0 0;background:#111116;box-shadow:0 -20px 60px #0008}
+.cm-sheet-panel.cm-wide{width:min(980px,100%)}
+.cm-grab{width:54px;height:5px;margin:0 auto 10px;border-radius:999px;background:#4b4b55}
+.cm-sheet-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;margin-bottom:14px}
+.cm-sheet-head h2{margin:3px 0 0}
+.cm-sheet-head p{margin:5px 0 0;color:var(--muted)}
+.cm-sheet-head>button{width:42px;height:42px;border:0;border-radius:12px;background:#292a30;color:#fff;font-size:24px}
+.cm-form{display:grid;gap:12px}
+.cm-form-card,.cm-notes{padding:14px}
+.cm-form-card h3{margin:0 0 13px}
+.cm-grid-2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.cm-grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.cm-form-title{display:flex;justify-content:space-between;gap:10px;margin-top:12px}
+.cm-form-title h3{margin:0}
+.cm-form-title p{margin:4px 0 0;color:var(--muted);font-size:12px}
+.cm-form-title button{min-height:40px;border:0;border-radius:10px;padding:0 12px;font-weight:800}
+.cm-child-rows,.cm-matrix{display:grid;gap:8px;margin-top:12px}
+.cm-child-row{display:grid;grid-template-columns:.7fr 1.3fr;gap:8px;padding:10px;border-radius:12px;background:#0d0d11}
+.cm-total-line{display:flex;justify-content:space-between;margin-top:11px}
+.cm-weight-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:11px}
+.cm-matrix-card{border:1px solid #30303a;background:#111116;border-radius:14px;padding:10px;margin:10px 0}
+.cm-matrix-head{display:flex;gap:8px;align-items:center;margin-bottom:8px}
+.cm-matrix-head img{width:34px;height:34px;object-fit:cover;border-radius:8px}
+.cm-size-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.cm-size-grid label{display:block}
+.cm-size-grid span{font-size:11px;color:#aaa;font-weight:800}
+.cm-sticky{position:sticky;bottom:-20px;display:grid;grid-template-columns:.8fr 1.6fr;gap:10px;padding:14px 0 2px;background:linear-gradient(#11111600,#111116 22%)}
+.cm-sticky button{width:100%}
+.cm-decision-panel{border-color:#66343d;background:linear-gradient(145deg,#21161a,#15151a)}
+.cm-mode-actions{margin-bottom:14px}
+.cm-primary-input-row{margin-bottom:10px}
+.cm-cost-card{border-color:#60434a;background:linear-gradient(145deg,#21161a,#15151a)}
+.cm-owner-chip{flex:0 0 auto;padding:6px 9px;border:1px solid #8d4b57;border-radius:999px;background:#3a1d23;color:#ffc4ca;font-size:11px;font-weight:900}
+.cm-cost-breakup{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin-top:12px}
+.cm-cost-breakup span{padding:11px;border:1px solid #33333c;border-radius:12px;background:#0d0d11}
+.cm-cost-breakup small{display:block;color:var(--muted);margin-bottom:5px}
+.cm-check-row{display:flex!important;align-items:center;gap:10px;margin-top:12px;padding:12px;border:1px solid #35353d;border-radius:12px;background:#0d0d11}
+.cm-check-row input{width:20px!important;height:20px;flex:0 0 auto}
+.cm-rule-note{margin:12px 0 0;padding:11px;border-left:3px solid var(--red);border-radius:8px;background:#211519;color:#d5c4c7;line-height:1.45}
+@media(max-width:900px){.cm-gallery{grid-template-columns:repeat(2,1fr)}.cm-stats{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:650px){
+  .cm-page{padding-inline:12px}
+  .cm-topbar,.cm-hero{align-items:flex-start;flex-direction:column}
+  .cm-links{justify-content:flex-start}
+  .cm-gallery{grid-template-columns:1fr}
+  .cm-stats{grid-template-columns:repeat(2,1fr)}
+  .cm-grid-2,.cm-grid-3,.cm-weight-summary,.cm-pm-decision{grid-template-columns:1fr}
+  .cm-size-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .cm-cost-breakup{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .cm-cost-breakup span:last-child{grid-column:1/-1}
+  .cm-sheet-panel{padding-inline:12px}
+}
+</style>
+</head>
+<body>
+<main class="rr-page cm-page">
+  <header class="cm-topbar">
+    <div><p class="cm-kicker">REDZED REAL</p><h1>Cutting Master</h1></div>
+    <div class="cm-links">
+      <button id="openCostSettings" class="cm-settings-btn" type="button">Cost Settings</button>
+      <a href="real-product-master-v720.html?v=72035">Product Master</a>
+      <a href="real-dashboard.html">Dashboard</a>
+    </div>
+  </header>
+
+  <section class="cm-hero">
+    <div>
+      <small>CUTTING MASTER V720.35 · ACTUAL DAMAGE / GR SOURCE</small>
+      <h2>Art / Print Ready → Damage / GR Decision → Cutting Pieces → Release</h2>
+      <p>Cutting Master actual Damage, Partial GR या Full GR proof के साथ report करेगा। Admin verification और Owner approval के बाद CB quantity/cost Product Master ledger में reflect होगी।</p>
+    </div>
+    <button id="refreshCutting" class="cm-primary" type="button">Refresh</button>
+  </section>
+
+  <section id="cmStats" class="cm-stats"></section>
+
+  <section class="cm-toolbar">
+    <label><span>Search</span><input id="cmSearch" type="search" placeholder="CB, child, lot, art, print, style"></label>
+    <div id="cmFilters" class="cm-filters">
+      <button class="is-active" data-filter="all" type="button">All</button>
+      <button data-filter="ready" type="button">Ready</button>
+      <button data-filter="child" type="button">D Cards</button>
+      <button data-filter="released" type="button">Lot Released</button>
+      <button data-filter="completed" type="button">Completed</button>
+    </div>
+  </section>
+
+  <p id="cmMessage" class="rr-message" role="status" aria-live="polite"></p>
+  <section class="cm-section-head"><small>CUTTING GALLERY</small><h2>CB Divisions & Lots</h2></section>
+  <section id="divisionGallery" class="cm-gallery" aria-busy="true">
+    <article class="cm-empty"><div class="cm-spinner"></div><h3>Loading Cutting Master V720.35</h3><p>Connecting CB Divisions…</p></article>
+  </section>
+</main>
+
+<section id="splitSheet" class="cm-sheet cm-hidden" aria-hidden="true">
+  <div class="cm-backdrop" data-close-split></div>
+  <div class="cm-sheet-panel" role="dialog" aria-modal="true">
+    <div class="cm-grab"></div>
+    <header class="cm-sheet-head">
+      <div><small>MULTI COMBO</small><h2>Create Child CB Batches</h2><p id="splitContext"></p></div>
+      <button type="button" data-close-split>×</button>
+    </header>
+    <form id="splitForm" class="cm-form">
+      <input id="splitParentId" type="hidden">
+      <section class="cm-form-card">
+        <div class="cm-grid-2">
+          <label><span>Child Count *</span>
+            <select id="childCount">
+              <option value="2">2 Children</option><option value="3">3 Children</option>
+              <option value="4">4 Children</option><option value="5">5 Children</option>
+              <option value="6">6 Children</option>
+            </select>
+          </label>
+          <div class="cm-summary"><small>Parent Weight</small><strong id="splitParentWeight">0 kg</strong></div>
+        </div>
+        <div class="cm-form-title">
+          <div><h3>Child Batch Weight</h3><p>Total must equal parent weight.</p></div>
+          <button id="equalChildSplit" type="button">Equal Split</button>
+        </div>
+        <div id="childRows" class="cm-child-rows"></div>
+        <div class="cm-total-line"><span>Children Total</span><strong id="childWeightTotal">0 kg</strong></div>
+      </section>
+      <div class="cm-sticky">
+        <button class="cm-secondary" type="button" data-close-split>Cancel</button>
+        <button id="saveChildrenBtn" class="cm-primary" type="submit">Create Child CBs</button>
+      </div>
+    </form>
+  </div>
+</section>
+
+<section id="lotSheet" class="cm-sheet cm-hidden" aria-hidden="true">
+  <div class="cm-backdrop" data-close-lot></div>
+  <div class="cm-sheet-panel cm-wide" role="dialog" aria-modal="true">
+    <div class="cm-grab"></div>
+    <header class="cm-sheet-head">
+      <div><small>SINGLE LOT RELEASE</small><h2>Release Permanent Lot No</h2><p id="lotContext"></p></div>
+      <button type="button" data-close-lot>×</button>
+    </header>
+    <form id="lotForm" class="cm-form">
+      <input id="lotUnitId" type="hidden">
+      <section class="cm-form-card">
+        <h3>Lot Identity</h3>
+        <div class="cm-grid-2">
+          <label><span>Lot No *</span><input id="lotNo" type="text" placeholder="2N2526"></label>
+          <label><span>Release Date *</span><input id="lotDate" type="date"></label>
+        </div>
+        <div class="cm-grid-2">
+          <label><span>Style *</span><input id="styleName" type="text" placeholder="Round Neck"></label>
+          <label><span>Cutting Master</span><input id="operatorName" type="text" placeholder="Name"></label>
+        </div>
+        <div class="cm-grid-2">
+          <label><span>Art No</span><input id="artNo" type="text" placeholder="RA35"></label>
+          <label><span>Print No</span><input id="printNo" type="text" placeholder="P105"></label>
+        </div>
+      </section>
+
+      <section class="cm-form-card">
+        <h3>Complete Weight Settlement</h3>
+        <div class="cm-grid-3">
+          <label><span>Fabric Used *</span><input id="fabricUsed" type="number" min="0" step="0.001"></label>
+          <label><span>Wastage</span><input id="wastageWeight" type="number" min="0" step="0.001" value="0"></label>
+          <label><span>Remnant</span><input id="remnantWeight" type="number" min="0" step="0.001" value="0"></label>
+        </div>
+        <div class="cm-weight-summary">
+          <span><small>CB Child Weight</small><strong id="lotUnitWeight">0 kg</strong></span>
+          <span><small>Entered Total</small><strong id="settledWeight">0 kg</strong></span>
+          <span><small>Difference</small><strong id="weightDifference">0 kg</strong></span>
+        </div>
+      </section>
+
+      <section class="cm-form-card cm-cost-card">
+        <div class="cm-form-title cm-cost-title">
+          <div>
+            <h3>Owner Costing</h3>
+            <p>Visible during Owner Testing Mode. Final permissions will be controlled later.</p>
+          </div>
+          <span class="cm-owner-chip">OWNER TEST</span>
+        </div>
+
+        <div class="cm-grid-2">
+          <label>
+            <span>Base Cutting Cost / Piece *</span>
+            <input id="baseCost" type="number" min="0" step="0.01" value="0">
+          </label>
+          <label>
+            <span>Custom Adjustment / Piece</span>
+            <input id="customAdjustment" type="number" step="0.01" value="0">
+          </label>
+        </div>
+
+        <div class="cm-grid-3">
+          <label>
+            <span>Size Type</span>
+            <select id="sizeType">
+              <option value="small">Small (₹0)</option>
+              <option value="big">Big (+₹5 default)</option>
+            </select>
+          </label>
+          <label>
+            <span>Sleeve</span>
+            <select id="sleeveType">
+              <option value="half">Half (₹0)</option>
+              <option value="full">Full (+₹5 default)</option>
+            </select>
+          </label>
+          <label>
+            <span>Border</span>
+            <select id="borderType">
+              <option value="without">Without Border (₹0)</option>
+              <option value="with">With Border (+₹5 default)</option>
+            </select>
+          </label>
+        </div>
+
+        <div class="cm-cost-breakup">
+          <span><small>Big Adjustment</small><strong id="sizeCostPreview">₹0</strong></span>
+          <span><small>Full Adjustment</small><strong id="sleeveCostPreview">₹0</strong></span>
+          <span><small>Border Adjustment</small><strong id="borderCostPreview">₹0</strong></span>
+                    <span><small>Final / Piece</small><strong id="finalCostPreview">₹0</strong></span>
+          <span><small>Total Cutting Cost</small><strong id="totalCostPreview">₹0</strong></span>
+        </div>
+      </section>
+
+      <section class="cm-form-card">
+        <div class="cm-grid-2">
+          <label><span>Sizes *</span><input id="sizeSet" type="text" value="L,XL,XXL"></label>
+          <label><span>Bundle Qty *</span><input id="bundleQty" type="number" min="1" value="12"></label>
+        </div>
+        <div class="cm-form-title">
+          <div><h3>Colour × Size Cutting</h3><p>Only cutting sheet for this Lot.</p></div>
+          <button id="equalPieceSplit" type="button">Equal Pieces</button>
+        </div>
+        <div id="cuttingMatrix" class="cm-matrix"></div>
+        <div class="cm-total-line"><span>Total</span><strong><b id="totalPieces">0</b> pcs · <b id="totalBundles">0</b> bundles</strong></div>
+      </section>
+
+      <label class="cm-notes"><span>Notes</span><textarea id="lotNotes" rows="3"></textarea></label>
+      <div class="cm-sticky">
+        <button class="cm-secondary" type="button" data-close-lot>Cancel</button>
+        <button id="releaseLotBtn" data-release-lot-submit class="cm-primary" type="submit">Release Lot No</button>
+      </div>
+    </form>
+  </div>
+</section>
+
+
+<section id="costSheet" class="cm-sheet cm-hidden" aria-hidden="true">
+  <div class="cm-backdrop" data-close-cost></div>
+  <div class="cm-sheet-panel" role="dialog" aria-modal="true">
+    <div class="cm-grab"></div>
+    <header class="cm-sheet-head">
+      <div>
+        <small>OWNER / MANAGER SETTINGS</small>
+        <h2>Custom Cutting Cost Rules</h2>
+        <p>These values become the defaults for future Lots.</p>
+      </div>
+      <button type="button" data-close-cost>×</button>
+    </header>
+
+    <form id="costSettingsForm" class="cm-form">
+      <section class="cm-form-card">
+        <div class="cm-grid-2">
+          <label>
+            <span>Default Base Cost / Piece</span>
+            <input id="settingBaseCost" type="number" min="0" step="0.01" value="0">
+          </label>
+          <label>
+            <span>Big Size Adjustment</span>
+            <input id="settingBigAdjustment" type="number" step="0.01" value="5">
+          </label>
+        </div>
+
+        <div class="cm-grid-2">
+          <label>
+            <span>Full Sleeve Adjustment</span>
+            <input id="settingFullAdjustment" type="number" step="0.01" value="5">
+          </label>
+          <label>
+            <span>With Border Adjustment</span>
+            <input id="settingBorderAdjustment" type="number" step="0.01" value="5">
+          </label>
+        </div>
+
+        <label class="cm-check-row">
+          <input id="settingAllowCustom" type="checkbox" checked>
+          <span>Allow custom per-Lot adjustment</span>
+        </label>
+
+        <p class="cm-rule-note">
+          Locked default: Small ₹0 · Half ₹0 · Without Border ₹0.
+          Big, Full and With Border use the amounts above.
+        </p>
+      </section>
+
+      <div class="cm-sticky">
+        <button class="cm-secondary" type="button" data-close-cost>Cancel</button>
+        <button id="saveCostSettings" class="cm-primary" type="submit">Save Cost Settings</button>
+      </div>
+    </form>
+  </div>
+</section>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js?v=72035"></script>
+<script src="real-common.js?v=72035"></script>
+<script>
+window.onerror = function(message, source, line, column) {
+  const text = "CUTTING JS ERROR: " + message + " | line " + line + ":" + column;
+  const box = document.getElementById("cmMessage");
+  if (box) { box.textContent = text; box.className = "rr-message error"; }
+  return false;
+};
+window.onunhandledrejection = function(event) {
+  const reason = event.reason || {};
+  const text = "CUTTING PROMISE ERROR: " + (reason.message || String(reason));
+  const box = document.getElementById("cmMessage");
+  if (box) { box.textContent = text; box.className = "rr-message error"; }
+};
+</script>
+<script src="real-cutting-master-pm.V719.3.js?v=72035"></script>
+<script src="redzed-cutting-cb-actions-v72035.js?v=72035"></script>
+</body>
+</html>

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>REDZED REAL Â· Product Master V720.33</title>
+<title>REDZED REAL · Product Master V720.35</title>
 <style>
 :root{
   --bg:#09090c;--panel:#141419;--panel2:#1b1b22;--line:#30303a;--text:#f5f5f7;
@@ -27,7 +27,7 @@
   </header>
 
   <section class="hero">
-    <div><p class="kicker">PRODUCT MASTER V720.33 Â· GR / EXCHANGE / DAMAGE</p><h2>CB New à¤…à¤²à¤— Â· MC New à¤…à¤²à¤—</h2><p>CB à¤”à¤° MC1 à¤•à¥‡ à¤¸à¤¾à¤¥ Full/Partial GR, Exchange Roll, Division/Particular Damage proof, Admin verification à¤”à¤° Owner Vendor WhatsApp workflowà¥¤</p></div>
+    <div><p class="kicker">PRODUCT MASTER V720.35 · CUTTING-ORIGIN CB LEDGER</p><h2>CB New अलग · MC New अलग</h2><p>CB purchase ledger पूरा रहेगा। CB Damage / Partial GR / Full GR Cutting Master से report होगा; Owner approval के बाद quantity और costing यहाँ reflect होगी। MC1 का GR अपने MC1 Details में रहेगा।</p></div>
     <div class="hero-actions"><button id="openCbNew" class="primary" type="button">+ CB New</button><button id="openMcNew" class="primary" type="button">+ MC New</button><button id="refresh" class="secondary" type="button">Refresh</button></div>
   </section>
 
@@ -37,15 +37,15 @@
     <div id="filters" class="filters"><button class="active" data-filter="all">All</button><button data-filter="cb">CB</button><button data-filter="planning">Art Due</button><button data-filter="ready">Art Decided</button><button data-filter="mc">MC1</button></div>
   </section>
   <p id="message" class="message" role="status" aria-live="polite"></p>
-  <section class="section-title"><small>PRODUCT CARDS</small><h2>CB No. à¤”à¤° MC1</h2></section>
-  <section id="gallery" class="gallery" aria-busy="true"><article class="empty">Loading Product Masterâ€¦</article></section>
+  <section class="section-title"><small>PRODUCT CARDS</small><h2>CB No. और MC1</h2></section>
+  <section id="gallery" class="gallery" aria-busy="true"><article class="empty">Loading Product Master…</article></section>
 </main>
 
 <!-- CB NEW / ADD MATERIAL -->
 <section id="cbSheet" class="sheet hidden" aria-hidden="true">
   <div class="backdrop" data-close="cbSheet"></div>
   <div class="sheet-panel" role="dialog" aria-modal="true">
-    <header class="sheet-head"><div><p id="cbKicker" class="kicker">CB NEW</p><h2 id="cbTitle">Create CB</h2><p id="cbContext" style="margin:4px 0;color:var(--muted)">Regular Cloth + Material only</p></div><button class="close" data-close="cbSheet">Ã—</button></header>
+    <header class="sheet-head"><div><p id="cbKicker" class="kicker">CB NEW</p><h2 id="cbTitle">Create CB</h2><p id="cbContext" style="margin:4px 0;color:var(--muted)">Regular Cloth + Material only</p></div><button class="close" data-close="cbSheet">×</button></header>
     <form id="cbForm" class="form">
       <section id="cbIdentity" class="form-card">
         <h3>CB Identity</h3>
@@ -58,16 +58,16 @@
       </section>
 
       <section id="colourSection" class="form-card">
-        <div class="material-head"><div><h3>CB Colours</h3><small style="color:var(--muted)">à¤‡à¤¨ colours à¤ªà¤° Regular Cloth à¤”à¤° Materials à¤•à¥‡ rolls feed à¤¹à¥‹à¤‚à¤—à¥‡à¥¤</small></div></div>
+        <div class="material-head"><div><h3>CB Colours</h3><small style="color:var(--muted)">इन colours पर Regular Cloth और Materials के rolls feed होंगे।</small></div></div>
         <div id="colourList" class="colour-list"></div>
       </section>
 
       <section class="form-card">
-        <div class="material-head"><div><h3>CB Purchases</h3><small style="color:var(--muted)">Matching Cloth à¤¯à¤¹à¤¾à¤ à¤¨à¤¹à¥€à¤‚ à¤†à¤à¤—à¤¾à¥¤</small></div><button id="addMaterial" class="secondary" type="button">+ Cuff / Collar / Other Material</button></div>
+        <div class="material-head"><div><h3>CB Purchases</h3><small style="color:var(--muted)">Matching Cloth यहाँ नहीं आएगा।</small></div><button id="addMaterial" class="secondary" type="button">+ Cuff / Collar / Other Material</button></div>
         <div id="materialList" class="material-list"></div>
       </section>
 
-      <section class="form-card"><div class="summary"><div><small>Total Qty</small><strong id="cbTotalQty">0.000 kg</strong></div><div><small>Total Value</small><strong id="cbTotalValue">â‚¹0.00</strong></div><div><small>Divisions</small><strong id="cbDivisionPreview">D1 Â· D2</strong></div><div><small>Purchase Type</small><strong>Regular + Material</strong></div></div></section>
+      <section class="form-card"><div class="summary"><div><small>Total Qty</small><strong id="cbTotalQty">0.000 kg</strong></div><div><small>Total Value</small><strong id="cbTotalValue">₹0.00</strong></div><div><small>Divisions</small><strong id="cbDivisionPreview">D1 · D2</strong></div><div><small>Purchase Type</small><strong>Regular + Material</strong></div></div></section>
       <p id="cbSaveMessage" class="message"></p>
       <div class="sticky"><button class="secondary" type="button" data-close="cbSheet">Cancel</button><button id="saveCb" class="primary" type="submit">Create CB</button></div>
     </form>
@@ -78,7 +78,7 @@
 <section id="mcSheet" class="sheet hidden" aria-hidden="true">
   <div class="backdrop" data-close="mcSheet"></div>
   <div class="sheet-panel" role="dialog" aria-modal="true">
-    <header class="sheet-head"><div><p class="kicker">MC NEW</p><h2>Matching Cloth Purchase</h2><p style="margin:4px 0;color:var(--muted)">à¤¹à¤° entry MC1 consolidated card à¤®à¥‡à¤‚ IN à¤¹à¥‹à¤—à¥€à¥¤</p></div><button class="close" data-close="mcSheet">Ã—</button></header>
+    <header class="sheet-head"><div><p class="kicker">MC NEW</p><h2>Matching Cloth Purchase</h2><p style="margin:4px 0;color:var(--muted)">हर entry MC1 consolidated card में IN होगी।</p></div><button class="close" data-close="mcSheet">×</button></header>
     <form id="mcForm" class="form">
       <section class="form-card">
         <h3>Purchase Entry</h3>
@@ -92,7 +92,7 @@
         </div>
         <label style="margin-top:10px"><span>Remarks</span><textarea id="mcRemarks" rows="2"></textarea></label>
       </section>
-      <section class="form-card"><p class="note">MC1 à¤®à¥‡à¤‚ quantity à¤”à¤° value à¤œà¥à¤¡à¤¼à¥‡à¤‚à¤—à¥‡à¥¤ à¤¨à¤¯à¤¾ weighted Average Rate auto à¤¬à¤¨à¥‡à¤—à¤¾à¥¤ Cutting à¤®à¥‡à¤‚ à¤¬à¤¾à¤¦ à¤®à¥‡à¤‚ à¤•à¥‡à¤µà¤² Matching Qty feed à¤¹à¥‹à¤—à¥€; à¤‰à¤¸ date-time à¤•à¤¾ Average Rate Lot à¤ªà¤° lock à¤¹à¥‹à¤—à¤¾à¥¤</p></section>
+      <section class="form-card"><p class="note">MC1 में quantity और value जुड़ेंगे। नया weighted Average Rate auto बनेगा। Cutting में बाद में केवल Matching Qty feed होगी; उस date-time का Average Rate Lot पर lock होगा।</p></section>
       <p id="mcSaveMessage" class="message"></p>
       <div class="sticky"><button class="secondary" type="button" data-close="mcSheet">Cancel</button><button id="saveMc" class="primary" type="submit">Add to MC1</button></div>
     </form>
@@ -103,7 +103,7 @@
 <section id="detailSheet" class="sheet hidden" aria-hidden="true">
   <div class="backdrop" data-close="detailSheet"></div>
   <div class="sheet-panel" role="dialog" aria-modal="true">
-    <header class="sheet-head"><div><p id="detailKicker" class="kicker">DETAILS</p><h2 id="detailTitle">Card</h2></div><button class="close" data-close="detailSheet">Ã—</button></header>
+    <header class="sheet-head"><div><p id="detailKicker" class="kicker">DETAILS</p><h2 id="detailTitle">Card</h2></div><button class="close" data-close="detailSheet">×</button></header>
     <div id="detailBody"></div>
   </div>
 </section>
@@ -113,7 +113,7 @@
 <section id="opsSheet" class="sheet hidden" aria-hidden="true">
   <div class="backdrop" data-close="opsSheet"></div>
   <div class="sheet-panel operation-panel" role="dialog" aria-modal="true">
-    <header class="sheet-head"><div><p id="opsKicker" class="kicker">OPERATION</p><h2 id="opsTitle">Product Operation</h2><p id="opsContext" style="margin:4px 0;color:var(--muted)"></p></div><button class="close" data-close="opsSheet">Ã—</button></header>
+    <header class="sheet-head"><div><p id="opsKicker" class="kicker">OPERATION</p><h2 id="opsTitle">Product Operation</h2><p id="opsContext" style="margin:4px 0;color:var(--muted)"></p></div><button class="close" data-close="opsSheet">×</button></header>
     <form id="opsForm" class="form">
       <div id="opsBody"></div>
       <p id="opsMessage" class="message" role="status" aria-live="polite"></p>
@@ -126,20 +126,21 @@
 <section id="assignSheet" class="sheet hidden" aria-hidden="true">
   <div class="backdrop" data-close="assignSheet"></div>
   <div class="sheet-panel" role="dialog" aria-modal="true">
-    <header class="sheet-head"><div><p class="kicker">ART / PRINT DECISION</p><h2 id="assignTitle">D1</h2><p id="assignContext" style="margin:4px 0;color:var(--muted)"></p></div><button class="close" data-close="assignSheet">Ã—</button></header>
+    <header class="sheet-head"><div><p class="kicker">ART / PRINT DECISION</p><h2 id="assignTitle">D1</h2><p id="assignContext" style="margin:4px 0;color:var(--muted)"></p></div><button class="close" data-close="assignSheet">×</button></header>
     <div class="tabs"><button id="artTab" class="active">Art</button><button id="printTab">Print</button></div>
     <label><span>Search</span><input id="assignSearch" type="search"></label>
     <section id="artPicker" class="picker-grid" style="margin-top:10px"></section>
     <section id="printPicker" class="picker-grid hidden" style="margin-top:10px"></section>
-    <p class="note" style="margin-top:12px">Art required à¤¹à¥ˆà¥¤ Print à¤šà¥à¤¨à¥‡à¤‚, à¤¯à¤¾ â€œN/A â€” No Print Requiredâ€ à¤šà¥à¤¨à¥‡à¤‚à¥¤</p>
+    <p class="note" style="margin-top:12px">Art required है। Print चुनें, या “N/A — No Print Required” चुनें।</p>
     <p id="assignMessage" class="message"></p>
     <div class="sticky"><button class="secondary" data-close="assignSheet">Cancel</button><button id="saveAssignment" class="primary" type="button">Save Art &amp; Print</button></div>
   </div>
 </section>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="config.js?v=72033"></script>
-<script src="real-common.js?v=72033"></script>
-<script src="real-product-master-v720.js?v=72033"></script>
+<script src="config.js?v=72035"></script>
+<script src="real-common.js?v=72035"></script>
+<script src="real-product-master-v720.js?v=72035"></script>
+<script src="redzed-product-cb-ledger-v72035.js?v=72035"></script>
 </body>
 </html>
