@@ -126,45 +126,6 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="config.js?v=1"></script>
 <script src="real-common.js?v=1"></script>
-<script>
-(() => {
-"use strict";
-
-window.REDZED_PRODUCT_MASTER_VERSION = "720.0-CB-MC1-SEPARATE";
-const $ = id => document.getElementById(id);
-const state = {
-  client:null, filter:"all", mode:"create", activeCbId:null, activeUnitId:null,
-  categories:[], galleryRows:[], purchases:[], rolls:[], colours:[], allocations:[],
-  arts:[], prints:[], assignments:[], printAssignments:[], media:[], lots:[],
-  mc:{card:null,purchases:[],ledger:[]}, colourDrafts:[], materialEntries:[],
-  selectedArtId:null, selectedPrintIds:[]
-};
-
-const TABLES = {
-  categories:"rr_material_categories", fabricPurchases:"rr_fabric_purchases", units:"rr_cb_units",
-  colours:"rr_cb_colours", purchases:"rr_cb_purchase_entries", rolls:"rr_cb_purchase_rolls",
-  allocations:"rr_cb_purchase_allocations", arts:"rr_art_master", prints:"rr_print_master",
-  printView:"rr_print_library_view", assignments:"rr_cb_art_assignments",
-  printAssignments:"rr_cb_print_assignments", media:"rr_media", lots:"rr_cutting_lots_v3"
-};
-
-function esc(value){return String(value??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));}
-function safe(value){try{return window.RR?.safeText?RR.safeText(value??""):esc(value)}catch{return esc(value)}}
-function money(value){return new Intl.NumberFormat("en-IN",{style:"currency",currency:"INR",maximumFractionDigits:2}).format(Number(value||0));}
-function kg(value){return `${Number(value||0).toFixed(3)} kg`;}
-function today(){const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;}
-function dateTime(value){if(!value)return "—";return new Intl.DateTimeFormat("en-IN",{dateStyle:"medium",timeStyle:"short"}).format(new Date(value));}
-function say(text="",type=""){const el=$("message");el.textContent=text;el.className=`message ${type}`.trim();}
-function formSay(id,text="",type=""){const el=$(id);el.textContent=text;el.className=`message ${type}`.trim();}
-function errorText(error){return [...new Set([error?.message,error?.details,error?.hint,error?.code].filter(Boolean))].join(" — ")||"Unknown error";}
-function getClient(){try{if(window.supabaseClient?.from)return window.supabaseClient}catch{}return [window.supabaseDb,window.redzedSupabase,window.sb].find(x=>x?.from)||null;}
-function openSheet(id){const el=$(id);el.classList.remove("hidden");el.setAttribute("aria-hidden","false");document.body.style.overflow="hidden";}
-function closeSheet(id){const el=$(id);el.classList.add("hidden");el.setAttribute("aria-hidden","true");if(!document.querySelector(".sheet:not(.hidden)"))document.body.style.overflow="";}
-function setBusy(button,busy,text){if(!button)return;if(busy){button.dataset.old=button.textContent;button.disabled=true;button.textContent=text}else{button.disabled=false;button.textContent=button.dataset.old||button.textContent}}
-function categoryByCode(code){return state.categories.find(x=>String(x.category_code||"").toLowerCase()===String(code).toLowerCase())||null;}
-function categoryById(id){return state.categories.find(x=>String(x.id)===String(id))||null;}
-function isMatchingCategory(c){const t=`${c?.category_code||""} ${c?.category_name||""}`.toLowerCase();return t.includes("matching");}
-function materialCategories(){return state.categories.filter(c=>!isMatchingCategory(c));}
-function canonicalD(row,index=0){const raw=String(row?.division_code||row?.cb_code||row?.child_code||"").toUpperCase().replace(/\s+/g,"");const m=raw.match(/[DS](\d+)([A-Z]*)$/);return m?`D${Number(m[1])}${m[2]||""}`:`D${Number(row?.division_index||index||1)}`;}
-
-async function optionalTable(table,select="*",order=null){let q=state.client.from(table).select(select);if(order)q=q.order(order,{ascending:false});const r=await q;if(r.error){console.warn(`${table} unavailable`,r.error);return []}return r.data||[]
+<script src="real-product-master-v720.js?v=720"></script>
+</body>
+</html>
