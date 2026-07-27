@@ -1,7 +1,7 @@
 (() => {
 "use strict";
 
-window.REDZED_CUTTING_CB_ACTIONS_VERSION = "720.35-CUTTING-ORIGIN";
+window.REDZED_CUTTING_CB_ACTIONS_VERSION = "720.35.1-POPUP-SOURCE-HOTFIX";
 
 const state = {
   client: null,
@@ -112,16 +112,107 @@ async function loadRole(){
   if(!r.error && r.data) state.role = String(r.data).toLowerCase();
 }
 
+function textKey(value){
+  return String(value ?? "").trim();
+}
+
+function canonicalDivisionCode(value){
+  const raw = textKey(value).toUpperCase().replace(/\s+/g, "");
+  const match = raw.match(/[DS](\d+)([A-Z]*)$/);
+  return match ? `D${Number(match[1])}${match[2] || ""}` : raw;
+}
+
+function normalizeSourceRow(row = {}){
+  return {
+    ...row,
+    cb_id:
+      row.cb_id ||
+      row.parent_cb_id ||
+      row.fabric_purchase_id ||
+      "",
+    division_id:
+      row.division_id ||
+      row.cb_unit_id ||
+      row.unit_id ||
+      row.cb_division_id ||
+      row.allocation_division_id ||
+      "",
+    division_code:
+      row.division_code ||
+      row.cb_code ||
+      row.unit_code ||
+      row.child_code ||
+      "",
+    purchase_entry_id:
+      row.purchase_entry_id ||
+      row.cb_purchase_entry_id ||
+      row.source_purchase_entry_id ||
+      "",
+    roll_id:
+      row.roll_id ||
+      row.purchase_roll_id ||
+      row.source_roll_id ||
+      "",
+    bill_no:
+      row.bill_no ||
+      row.vendor_bill_no ||
+      "",
+    vendor_name:
+      row.vendor_name ||
+      row.supplier_name ||
+      "",
+    fabric_name:
+      row.fabric_name ||
+      row.material_name ||
+      "",
+    colour_name:
+      row.colour_name ||
+      row.color_name ||
+      "",
+    roll_no:
+      row.roll_no ??
+      row.roll_number ??
+      "",
+    division_available_qty: Number(
+      row.division_available_qty ??
+      row.available_qty ??
+      row.division_balance_qty ??
+      row.current_qty ??
+      row.balance_qty ??
+      0
+    ),
+    roll_available_qty: Number(
+      row.roll_available_qty ??
+      row.roll_balance_qty ??
+      row.current_roll_qty ??
+      row.available_roll_qty ??
+      0
+    )
+  };
+}
+
+async function loadSourceData(){
+  const result = await state.client
+    .from("rr_cutting_regular_purchase_sources_v1")
+    .select("*");
+
+  if(result.error){
+    console.warn("Regular purchase source view unavailable",result.error);
+    return false;
+  }
+
+  state.sources = (result.data || []).map(normalizeSourceRow);
+  return true;
+}
+
 async function loadAddonData(){
   if(!state.client) return;
-  const [a,s] = await Promise.all([
+  const [a] = await Promise.all([
     state.client.from("rr_cutting_cb_action_details_v1").select("*").order("created_at",{ascending:false}),
-    state.client.from("rr_cutting_regular_purchase_sources_v1").select("*")
+    loadSourceData()
   ]);
   if(a.error) console.warn("Cutting CB actions view unavailable",a.error);
   else state.actions = a.data || [];
-  if(s.error) console.warn("Regular purchase source view unavailable",s.error);
-  else state.sources = s.data || [];
   scheduleDecorate();
 }
 
@@ -140,7 +231,7 @@ function injectStyles(){
     .rr-cba-proof{display:flex;gap:7px;overflow:auto;margin-top:8px}.rr-cba-proof img,.rr-cba-proof video{width:86px;height:86px;object-fit:cover;border-radius:9px;background:#08080a}
     .rr-cba-actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:9px}.rr-cba-actions button{min-height:34px;padding:0 9px;border-radius:9px;font-size:11px;font-weight:900}
     .rr-cba-blocked{margin-top:10px;padding:10px;border:1px solid #a23e4a;border-radius:11px;background:#401b21;color:#ffd0d5;font-weight:900}
-    .rr-cba-sheet{position:fixed;inset:0;z-index:5000}.rr-cba-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.76)}
+    .rr-cba-sheet{position:fixed;inset:0;z-index:30000;isolation:isolate}.rr-cba-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.76)}
     .rr-cba-dialog{position:absolute;right:0;top:0;bottom:0;width:min(680px,100%);overflow:auto;background:#0d0d11;border-left:1px solid #444;padding:16px}
     .rr-cba-dialog header{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;position:sticky;top:-16px;background:#0d0d11;padding:16px 0 12px;z-index:2;border-bottom:1px solid #292932}
     .rr-cba-dialog h2{margin:0}.rr-cba-close{width:42px;height:42px;border-radius:11px;border:1px solid #65404a;background:#351a20;color:#ffd0d5;font-size:24px}
@@ -154,9 +245,37 @@ function injectStyles(){
 }
 
 function sourceRowsForActive(){
-  const cbId = activeCbId();
-  const divisionId = activeDivisionId();
-  return state.sources.filter(x => String(x.cb_id) === cbId && String(x.division_id) === divisionId);
+  const card = activeCard();
+  const cbId = textKey(state.current?.cbId || activeCbId());
+  const divisionId = textKey(state.current?.divisionId || activeDivisionId());
+  const divisionCode = canonicalDivisionCode(
+    card?.division?.division_code ||
+    card?.division?.cb_code ||
+    card?.division?.child_code ||
+    ""
+  );
+
+  const cbRows = state.sources.filter(row => textKey(row.cb_id) === cbId);
+  const exactRows = cbRows.filter(row => textKey(row.division_id) === divisionId);
+  if(exactRows.length) return exactRows;
+
+  const codeRows = cbRows.filter(row =>
+    divisionCode && canonicalDivisionCode(row.division_code) === divisionCode
+  );
+  if(codeRows.length) return codeRows;
+
+  const unscopedRows = cbRows.filter(row =>
+    !textKey(row.division_id) && !textKey(row.division_code)
+  );
+  if(unscopedRows.length) return unscopedRows;
+
+  console.warn("No source bill rows matched active Cutting card",{
+    cbId,
+    divisionId,
+    divisionCode,
+    cbSourceRows:cbRows.length
+  });
+  return [];
 }
 
 function uniquePurchases(rows){
@@ -171,12 +290,16 @@ function currentActionLabel(type){
   return "Full GR Report";
 }
 
-function openReport(type){
+async function openReport(type){
   const card = activeCard();
   if(!card){say("पहले Cutting D-card खोलें।","error");return}
   const lotNo = lotNoFromForm();
   if(!lotNo){say("पहले Manual Lot No भरें, फिर Damage / GR report करें।","error");return}
   state.current = {type,cbId:activeCbId(),divisionId:activeDivisionId(),lotNo};
+
+  // Source bills can change after Product Master purchase/allocation updates.
+  // Refresh the existing source view before opening the existing report form.
+  await loadSourceData();
   renderReportSheet();
 }
 
@@ -210,7 +333,13 @@ function renderReportSheet(){
   const type = state.current.type;
   $("rrCbaTitle").textContent = currentActionLabel(type);
   $("rrCbaContext").textContent = `${card.group.cb_no} · ${card.division.division_code || card.division.cb_code || "D"} · Lot ${state.current.lotNo}`;
-  const purchaseOptions = purchases.map(p => `<option value="${safe(p.purchase_entry_id)}">${safe(p.bill_no)} · ${safe(p.vendor_name)} · ${safe(p.fabric_name)} · ${kg(p.division_available_qty)}</option>`).join("");
+  const purchaseOptions = purchases
+    .filter(p => textKey(p.purchase_entry_id))
+    .map(p => `<option value="${safe(p.purchase_entry_id)}">${safe(p.bill_no)} · ${safe(p.vendor_name)} · ${safe(p.fabric_name)} · ${kg(p.division_available_qty)}</option>`)
+    .join("");
+  const sourceBillNotice = type !== "FULL_GR" && !purchaseOptions
+    ? `<p class="rr-message error" style="margin:10px 0 0">इस D card के Source Bills नहीं मिले। Cutting Master Refresh करके report दोबारा खोलें।</p>`
+    : "";
   $("rrCbaBody").innerHTML = `
     <section class="cm-form-card">
       <div class="rr-cba-summary">
@@ -229,6 +358,7 @@ function renderReportSheet(){
       ${type !== "DAMAGE" ? `<label style="display:flex;gap:8px;align-items:center;margin-top:10px"><input id="rrCbaExchange" type="checkbox" style="width:auto"><span style="margin:0">Exchange / replacement expected</span></label>` : ""}
       <label style="margin-top:10px"><span>Remarks</span><textarea id="rrCbaRemarks" rows="2"></textarea></label>
       <label style="display:flex;gap:8px;align-items:center;margin-top:10px"><input id="rrCbaSendAdmin" type="checkbox" checked style="width:auto"><span style="margin:0">Save के बाद Admin WhatsApp खोलें</span></label>
+      ${sourceBillNotice}
       <p style="color:#aaa;line-height:1.45">यह report stock या costing को तुरंत नहीं बदलेगी। Admin verification और Owner approval के बाद ही Product Master ledger, CB quantity और cost पर effect आएगा।</p>
     </section>`;
 
@@ -237,7 +367,7 @@ function renderReportSheet(){
       const scope = $("rrCbaScope").value;
       const unique = new Map();
       const allRows = scope === "CB" ? state.sources.filter(x => String(x.cb_id) === state.current.cbId) : rows;
-      allRows.forEach(x => unique.set(`${x.purchase_entry_id}:${x.division_id}`,x));
+      allRows.forEach(x => unique.set(`${x.purchase_entry_id}:${x.division_id || x.division_code}`,x));
       $("rrCbaQty").value = [...unique.values()].reduce((s,x) => s + Number(x.division_available_qty || 0),0).toFixed(3);
     };
     $("rrCbaScope").onchange = updateFull;
