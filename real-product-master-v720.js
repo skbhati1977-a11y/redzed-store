@@ -28,7 +28,24 @@ function dateTime(value){if(!value)return "—";return new Intl.DateTimeFormat("
 function say(text="",type=""){const el=$("message");el.textContent=text;el.className=`message ${type}`.trim();}
 function formSay(id,text="",type=""){const el=$(id);el.textContent=text;el.className=`message ${type}`.trim();}
 function errorText(error){return [...new Set([error?.message,error?.details,error?.hint,error?.code].filter(Boolean))].join(" — ")||"Unknown error";}
-function getClient(){try{if(window.supabaseClient?.from)return window.supabaseClient}catch{}return [window.supabaseDb,window.redzedSupabase,window.sb].find(x=>x?.from)||null;}
+function getClient(){
+  let client=null;
+  try{
+    if(typeof supabaseClient!=="undefined"&&supabaseClient&&typeof supabaseClient.from==="function")client=supabaseClient;
+  }catch(e){console.warn("Direct Supabase client check failed",e)}
+  if(!client)client=[window.supabaseClient,window.supabaseDb,window.redzedSupabase,window.sb].find(x=>x&&typeof x.from==="function")||null;
+  if(client&&!window.supabaseClient)window.supabaseClient=client;
+  return client;
+}
+async function waitForRuntime(){
+  const started=Date.now();
+  while(Date.now()-started<10000){
+    const client=getClient();
+    if(client)return client;
+    await new Promise(resolve=>setTimeout(resolve,100));
+  }
+  return null;
+}
 function openSheet(id){const el=$(id);el.classList.remove("hidden");el.setAttribute("aria-hidden","false");document.body.style.overflow="hidden";}
 function closeSheet(id){const el=$(id);el.classList.add("hidden");el.setAttribute("aria-hidden","true");if(!document.querySelector(".sheet:not(.hidden)"))document.body.style.overflow="";}
 function setBusy(button,busy,text){if(!button)return;if(busy){button.dataset.old=button.textContent;button.disabled=true;button.textContent=text}else{button.disabled=false;button.textContent=button.dataset.old||button.textContent}}
@@ -189,6 +206,6 @@ function bindStatic(){
   document.addEventListener("keydown",e=>{if(e.key==="Escape"){const open=document.querySelector(".sheet:not(.hidden)");if(open)closeSheet(open.id)}});
 }
 
-async function boot(){try{state.client=getClient();if(!state.client)throw new Error("Supabase client unavailable. Check config.js.");if(window.RR?.requireOwner)await RR.requireOwner();bindStatic();$("mcBillDate").value=today();await loadData()}catch(e){console.error(e);$("gallery").innerHTML=`<article class="empty"><h3>Product Master start failed</h3><p>${safe(errorText(e))}</p></article>`;say(errorText(e),"error")}}
+async function boot(){try{state.client=await waitForRuntime();if(!state.client)throw new Error("Supabase client unavailable. Check config.js.");if(window.RR?.requireOwner)await RR.requireOwner();bindStatic();$("mcBillDate").value=today();await loadData()}catch(e){console.error(e);$("gallery").innerHTML=`<article class="empty"><h3>Product Master start failed</h3><p>${safe(errorText(e))}</p></article>`;say(errorText(e),"error")}}
 boot();
 })();
