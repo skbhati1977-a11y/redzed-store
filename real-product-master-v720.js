@@ -1,7 +1,7 @@
-(() => {
+ (() => {
 "use strict";
 
-window.REDZED_PRODUCT_MASTER_VERSION = "720.3-GR-EXCHANGE-DAMAGE-CONCLUDED";
+window.REDZED_PRODUCT_MASTER_VERSION = "720.33-GR-EXCHANGE-DAMAGE-CONCLUDED";
 const $ = id => document.getElementById(id);
 const state = {
   client:null, filter:"all", mode:"create", activeCbId:null, activeUnitId:null,
@@ -99,7 +99,7 @@ async function loadMc(){const r=await state.client.rpc("rr_get_mc1_card_v1");if(
 async function loadData(){
   const btn=$("refresh");setBusy(btn,true,"Loadingâ€¦");$("gallery").setAttribute("aria-busy","true");
   try{
-    const [categories,gallery,purchases,rolls,colours,allocations,arts,prints,assignments,printAssignments,media,lots,grEntries,exchangeEntries,damageClaims,damageMedia,lotCostAdjustments]=await Promise.all([
+    const [categories,gallery,purchases,rolls,colours,allocations,arts,prints,assignments,printAssignments,media,lots,_mcLoaded,grEntries,exchangeEntries,damageClaims,damageMedia,lotCostAdjustments]=await Promise.all([
       requiredTable(TABLES.categories),loadGalleryRows(),requiredTable(TABLES.purchases,"*","created_at"),optionalTable(TABLES.rolls),requiredTable(TABLES.colours,"*","colour_order"),optionalTable(TABLES.allocations),requiredTable(TABLES.arts,"*","updated_at"),loadPrints(),requiredTable(TABLES.assignments,"*","updated_at"),requiredTable(TABLES.printAssignments,"*","sequence_no"),optionalTable(TABLES.media),optionalTable(TABLES.lots,"*","created_at"),loadMc(),optionalTable(TABLES.gr,"*","created_at"),optionalTable(TABLES.exchanges,"*","created_at"),optionalTable(TABLES.damage,"*","created_at"),optionalTable(TABLES.damageMedia,"*","created_at"),optionalTable(TABLES.lotAdjustments,"*","created_at")
     ]);
     Object.assign(state,{categories,galleryRows:gallery,purchases,rolls,colours,allocations,arts,prints,assignments,printAssignments,media,lots,grEntries,exchangeEntries,damageClaims,damageMedia,lotCostAdjustments});
@@ -132,7 +132,7 @@ function renderStats(){const gs=groups();const divisions=gs.reduce((s,g)=>s+g.di
   ["CB Cards",gs.length],["D Cards",divisions],["Art Decided",decided],["MC1 Balance",kg(mc.current_qty)],["MC1 Avg Rate",money(mc.avg_rate)]
 ].map(([a,b])=>`<article class="stat"><small>${safe(a)}</small><strong>${safe(b)}</strong></article>`).join("");}
 
-function mcCardHtml(){const c=state.mc.card;if(!c){return `<article class="card mc-card"><div class="card-body"><div class="card-head"><div><span class="chip mc">MATCHING CLOTH</span><h3>MC1</h3></div></div><p class="note">MC1 backend ready à¤¨à¤¹à¥€à¤‚ à¤¹à¥ˆà¥¤ à¤ªà¤¹à¤²à¥‡ redzed-mc1-v720.sql run à¤•à¤°à¥‡à¤‚à¥¤</p><div class="card-actions"><button class="primary" data-open-mc>+ MC New</button></div></div></article>`}
+function mcCardHtml(){const c=state.mc.card;if(!c){return `<article class="card mc-card"><div class="card-body"><div class="card-head"><div><span class="chip mc">MATCHING CLOTH</span><h3>MC1</h3></div></div><p class="note">MC1 backend ready à¤¨à¤¹à¥€à¤‚ à¤¹à¥ˆà¥¤ à¤ªà¤¹à¤²à¥‡ REDZED_PRODUCT_MASTER_V72033_SQL.sql run à¤•à¤°à¥‡à¤‚à¥¤</p><div class="card-actions"><button class="primary" data-open-mc>+ MC New</button></div></div></article>`}
   return `<article class="card mc-card" data-search="mc1 matching ${safe(state.mc.purchases.map(x=>`${x.vendor_name} ${x.bill_no}`).join(" "))}"><div class="card-body"><div class="card-head"><div><span class="chip mc">CONSOLIDATED MATCHING CLOTH</span><h3>MC1</h3></div><strong>${kg(c.current_qty)}</strong></div><div class="metrics"><div class="metric"><small>Current Qty</small><strong>${kg(c.current_qty)}</strong></div><div class="metric"><small>Average Rate</small><strong>${money(c.avg_rate)}</strong></div><div class="metric"><small>Stock Value</small><strong>${money(c.current_value)}</strong></div><div class="metric"><small>Total IN</small><strong>${kg(c.total_purchase_qty)}</strong></div><div class="metric"><small>Total OUT</small><strong>${kg(c.total_consumption_qty)}</strong></div><div class="metric"><small>Last Updated</small><strong>${dateTime(c.updated_at)}</strong></div></div><p class="note">One card Â· No colour Â· No cloth name Â· Lot cost snapshot remains fixed.</p><div class="card-actions"><button class="primary" data-open-mc>+ MC New</button><button class="secondary" data-mc-detail>MC1 Details</button></div></div></article>`;
 }
 
