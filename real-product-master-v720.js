@@ -1,7 +1,7 @@
-(() => {
+ (() => {
 "use strict";
 
-window.REDZED_PRODUCT_MASTER_VERSION = "720.0-CB-MC1-SEPARATE";
+window.REDZED_PRODUCT_MASTER_VERSION = "720.1-CB-MC1-RUNTIME-FIX";
 const $ = id => document.getElementById(id);
 const state = {
   client:null, filter:"all", mode:"create", activeCbId:null, activeUnitId:null,
@@ -30,16 +30,31 @@ function formSay(id,text="",type=""){const el=$(id);el.textContent=text;el.class
 function errorText(error){return [...new Set([error?.message,error?.details,error?.hint,error?.code].filter(Boolean))].join(" — ")||"Unknown error";}
 function getClient(){
   let client=null;
+
   try{
     if(typeof supabaseClient!=="undefined"&&supabaseClient&&typeof supabaseClient.from==="function")client=supabaseClient;
   }catch(e){console.warn("Direct Supabase client check failed",e)}
-  if(!client)client=[window.supabaseClient,window.supabaseDb,window.redzedSupabase,window.sb].find(x=>x&&typeof x.from==="function")||null;
-  if(client&&!window.supabaseClient)window.supabaseClient=client;
+
+  if(!client){
+    client=[window.supabaseClient,window.supabaseDb,window.redzedSupabase,window.sb]
+      .find(x=>x&&typeof x.from==="function")||null;
+  }
+
+  // Last-resort compatibility with older config.js files that expose only URL/key.
+  if(!client&&window.supabase&&typeof window.supabase.createClient==="function"){
+    try{
+      const url=typeof SUPABASE_URL!=="undefined"?SUPABASE_URL:window.SUPABASE_URL;
+      const key=typeof SUPABASE_ANON_KEY!=="undefined"?SUPABASE_ANON_KEY:window.SUPABASE_ANON_KEY;
+      if(url&&key)client=window.supabase.createClient(url,key);
+    }catch(e){console.warn("Supabase fallback client creation failed",e)}
+  }
+
+  if(client)window.supabaseClient=client;
   return client;
 }
 async function waitForRuntime(){
   const started=Date.now();
-  while(Date.now()-started<10000){
+  while(Date.now()-started<15000){
     const client=getClient();
     if(client)return client;
     await new Promise(resolve=>setTimeout(resolve,100));
@@ -121,7 +136,7 @@ function cbCardHtml(g,d){
   const images=[art?{url:artImage(art),label:`ART ${artNo(art)}`} : null,...ps.map(p=>({url:printImage(p),label:`PRINT ${printNo(p)}`}))].filter(x=>x?.url);
   const hero=images[0]?.url||cols.find(x=>x.image_url)?.image_url||"";
   const search=[g.cbNo,canonicalD(d),artNo(art),ps.map(printNo).join(" "),lots.map(x=>x.lot_no).join(" "),purchasesFor(g.cbId).map(x=>`${x.vendor_name} ${x.vendor_bill_no} ${x.fabric_name}`).join(" "),cols.map(x=>x.colour_name).join(" ")].join(" ").toLowerCase();
-  return `<article class="card" data-kind="cb" data-ready="${a?"1":"0"}" data-search="${safe(search)}"><div class="card-body"><div class="card-head"><div><span class="chip ${a?"ready":""}">${a?"ART DECIDED":"ART DUE"}</span><h3>${safe(g.cbNo)}</h3><strong>${safe(canonicalD(d))}</strong></div>${hero?`<img src="${safe(hero)}" alt="" style="width:78px;height:78px;object-fit:cover;border-radius:14px">`:""}</div><div class="metrics"><div class="metric"><small>CB Child</small><strong>${safe(canonicalD(d))}</strong></div><div class="metric"><small>Art</small><strong>${safe(artNo(art)||"Due")}</strong></div><div class="metric"><small>Print</small><strong>${safe(a?.print_not_applicable?"N/A":ps.map(printNo).join(" · ")||"Due")}</strong></div><div class="metric"><small>Weight</small><strong>${kg(d.allocated_qty??d.divided_weight)}</strong></div><div class="metric"><small>Colours</small><strong>${cols.length}</strong></div><div class="metric"><small>Lot No.</small><strong>${safe(lotText||"Due")}</strong></div></div><div class="colour-strip">${cols.map(c=>`<span class="colour-pill">${c.image_url?`<img src="${safe(c.image_url)}">`:""}<b>${safe(c.colour_name)}</b></span>`).join("")}</div><div class="card-actions"><button class="secondary" data-cb-detail="${safe(g.cbId)}">CB Details</button><button class="primary" data-assign="${safe(unitId)}">${a?"Change Art / Print":"Assign Art / Print"}</button></div></div></article>`;
+  return `<article class="card" data-kind="cb" data-ready="${a?"1":"0"}" data-search="${safe(search)}"><div class="card-body"><div class="card-head"><div><span class="chip ${a?"ready":""}">${a?"ART DECIDED":"ART DUE"}</span><h3>${safe(g.cbNo)}</h3><strong>${safe(canonicalD(d))}</strong></div>${hero?`<img src="${safe(hero)}" alt="" style="width:78px;height:78px;object-fit:cover;border-radius:14px">`:""}</div><div class="metrics"><div class="metric"><small>D No.</small><strong>${safe(canonicalD(d))}</strong></div><div class="metric"><small>Art</small><strong>${safe(artNo(art)||"Due")}</strong></div><div class="metric"><small>Print</small><strong>${safe(a?.print_not_applicable?"N/A":ps.map(printNo).join(" · ")||"Due")}</strong></div><div class="metric"><small>Weight</small><strong>${kg(d.allocated_qty??d.divided_weight)}</strong></div><div class="metric"><small>Colours</small><strong>${cols.length}</strong></div><div class="metric"><small>Lot No.</small><strong>${safe(lotText||"Due")}</strong></div></div><div class="colour-strip">${cols.map(c=>`<span class="colour-pill">${c.image_url?`<img src="${safe(c.image_url)}">`:""}<b>${safe(c.colour_name)}</b></span>`).join("")}</div><div class="card-actions"><button class="secondary" data-cb-detail="${safe(g.cbId)}">CB Details</button><button class="primary" data-assign="${safe(unitId)}">${a?"Change Art / Print":"Assign Art / Print"}</button></div></div></article>`;
 }
 
 function filterPass(card){const f=state.filter;if(f==="all")return true;if(f==="mc")return card.dataset.kind==="mc";if(f==="cb")return card.dataset.kind==="cb";if(f==="planning")return card.dataset.kind==="cb"&&card.dataset.ready==="0";if(f==="ready")return card.dataset.kind==="cb"&&card.dataset.ready==="1";return true;}
@@ -206,6 +221,6 @@ function bindStatic(){
   document.addEventListener("keydown",e=>{if(e.key==="Escape"){const open=document.querySelector(".sheet:not(.hidden)");if(open)closeSheet(open.id)}});
 }
 
-async function boot(){try{state.client=await waitForRuntime();if(!state.client)throw new Error("Supabase client unavailable. Check config.js.");if(window.RR?.requireOwner)await RR.requireOwner();bindStatic();$("mcBillDate").value=today();await loadData()}catch(e){console.error(e);$("gallery").innerHTML=`<article class="empty"><h3>Product Master start failed</h3><p>${safe(errorText(e))}</p></article>`;say(errorText(e),"error")}}
+async function boot(){try{state.client=await waitForRuntime();if(!state.client)throw new Error("Supabase client unavailable. Replace config.js and HTML from the V720.1 ZIP, then refresh.");if(window.RR?.requireOwner)await RR.requireOwner();bindStatic();$("mcBillDate").value=today();await loadData()}catch(e){console.error(e);$("gallery").innerHTML=`<article class="empty"><h3>Product Master start failed</h3><p>${safe(errorText(e))}</p></article>`;say(errorText(e),"error")}}
 boot();
 })();
