@@ -1,4 +1,3 @@
-
 (() => {
   const RR = {};
 
@@ -52,56 +51,25 @@
     return { session: data.session, user, profile };
   };
 
-   RR.getTableColumns = async (table) => {
-  const knownColumns = {
-    rr_art_master: [
-      "id",
-      "art_no",
-      "item_name",
-      "product_name",
-      "description",
-      "default_margin",
-      "is_active",
-      "created_at"
-    ],
-
-    rr_art_costs: [
-      "id",
-      "art_id",
-      "cutting_rate",
-      "printing_rate",
-      "sticker_rate",
-      "kr_rate",
-      "ov_rate",
-      "fld_rate",
-      "thread_cut_rate",
-      "press_rate",
-      "packing_rate",
-      "other_rate",
-      "created_at"
-    ],
-
-    rr_media: [
-      "id",
-      "entity_type",
-      "entity_id",
-      "media_category",
-      "file_url",
-      "storage_path",
-      "file_name",
-      "mime_type",
-      "caption",
-      "source_type",
-      "visibility_scope",
-      "is_cover",
-      "sort_order",
-      "created_at"
-    ]
+  RR.getTableColumns = async (table) => {
+    const knownColumns = {
+      rr_art_master: [
+        "id", "art_no", "item_name", "product_name", "description",
+        "default_margin", "is_active", "created_at"
+      ],
+      rr_art_costs: [
+        "id", "art_id", "cutting_rate", "printing_rate", "sticker_rate",
+        "kr_rate", "ov_rate", "fld_rate", "thread_cut_rate", "press_rate",
+        "packing_rate", "other_rate", "created_at"
+      ],
+      rr_media: [
+        "id", "entity_type", "entity_id", "media_category", "file_url",
+        "storage_path", "file_name", "mime_type", "caption", "source_type",
+        "visibility_scope", "is_cover", "sort_order", "created_at"
+      ]
+    };
+    return new Set(knownColumns[table] || []);
   };
-
-  return new Set(knownColumns[table] || []);
-};
-
 
   RR.pickColumn = (columns, aliases) =>
     aliases.find((name) => columns.has(name)) || null;
@@ -114,9 +82,20 @@
     );
 
   RR.safeFileName = (name) =>
-    String(name || "image")
+    String(name || "file")
       .toLowerCase()
       .replace(/[^a-z0-9._-]/g, "_");
+
+  RR.inferMimeType = (file) => {
+    const declared = String(file?.type || "").trim().toLowerCase();
+    if (declared && declared !== "application/octet-stream") return declared;
+    const extension = String(file?.name || "").split(".").pop().toLowerCase();
+    return ({
+      jpg: "image/jpeg", jpeg: "image/jpeg", png: "image/png", webp: "image/webp",
+      gif: "image/gif", heic: "image/heic", heif: "image/heif",
+      mp4: "video/mp4", mov: "video/quicktime", webm: "video/webm", "3gp": "video/3gpp"
+    })[extension] || "";
+  };
 
   RR.uploadMedia = async ({
     file,
@@ -129,6 +108,7 @@
   }) => {
     if (!file) return null;
 
+    const mimeType = RR.inferMimeType(file);
     const path = [
       entityType,
       String(entityId),
@@ -139,7 +119,7 @@
       .from("redzed-media")
       .upload(path, file, {
         cacheControl: "3600",
-        contentType: file.type || undefined,
+        contentType: mimeType || undefined,
         upsert: false
       });
 
@@ -157,7 +137,7 @@
       file_url: publicData.publicUrl,
       storage_path: path,
       file_name: file.name,
-      mime_type: file.type || null,
+      mime_type: mimeType || null,
       caption,
       source_type: sourceType,
       visibility_scope: visibilityScope,
@@ -195,6 +175,37 @@
       return map;
     }, {});
   };
+
+  RR.enableFastNumberInput = (root = document) => {
+    root.querySelectorAll?.('input[type="number"]').forEach((input) => {
+      if (input.dataset.rrFastNumber === "1") return;
+      input.dataset.rrFastNumber = "1";
+      input.addEventListener("focus", () => {
+        const raw = String(input.value || "").trim();
+        if (raw && Number(raw) === 0) input.value = "";
+        else if (raw) requestAnimationFrame(() => input.select());
+      });
+      input.addEventListener("change", () => {
+        const raw = String(input.value || "").trim();
+        if (!raw) return;
+        const number = Number(raw);
+        if (Number.isFinite(number)) input.value = String(number);
+      });
+    });
+  };
+
+  const bootFastNumbers = () => {
+    RR.enableFastNumberInput(document);
+    const observer = new MutationObserver((records) => {
+      records.forEach((record) => record.addedNodes.forEach((node) => {
+        if (node?.nodeType === 1) RR.enableFastNumberInput(node);
+      }));
+    });
+    observer.observe(document.documentElement, { childList: true, subtree: true });
+  };
+
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", bootFastNumbers, { once: true });
+  else bootFastNumbers();
 
   window.RR = RR;
 })();

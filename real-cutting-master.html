@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#0b0b0e">
-  <title>REDZED REAL — Cutting Master V720.35</title>
+  <title>REDZED REAL — Cutting Master V720.35.4</title>
   <link rel="stylesheet" href="real-style.css?v=716">
 <style>
 :root{
@@ -134,6 +134,8 @@ button:disabled{cursor:not-allowed;opacity:.48}
 .cm-check-row{display:flex!important;align-items:center;gap:10px;margin-top:12px;padding:12px;border:1px solid #35353d;border-radius:12px;background:#0d0d11}
 .cm-check-row input{width:20px!important;height:20px;flex:0 0 auto}
 .cm-rule-note{margin:12px 0 0;padding:11px;border-left:3px solid var(--red);border-radius:8px;background:#211519;color:#d5c4c7;line-height:1.45}
+
+.cm-colour-cut-card{margin-top:10px;padding:11px;border:1px solid #30303a;border-radius:14px;background:#0d0d11}.cm-colour-cut-head{display:flex;justify-content:space-between;align-items:end;gap:10px;flex-wrap:wrap}.cm-colour-name{display:flex;align-items:center;gap:8px}.cm-colour-name img{width:36px;height:36px;object-fit:cover;border-radius:9px}.cm-colour-total-label{min-width:180px}.cm-colour-balance{display:flex;justify-content:space-between;gap:8px;margin-top:8px;padding:7px 9px;border-radius:9px;background:#17171d;color:#aaa;font-size:11px;font-weight:850}.cm-colour-balance.is-ok{border:1px solid #286c48;color:#90e8b1}.cm-colour-balance.is-bad{border:1px solid #873541;color:#ffb1bb}.cm-dev-auto-total{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}.cm-dev-auto-total span,.cm-cutting-grand-summary>span,.cm-cutting-grand-summary>label{padding:11px;border:1px solid #33333d;border-radius:12px;background:#101015}.cm-dev-auto-total small,.cm-cutting-grand-summary small{display:block;color:var(--muted);margin-bottom:5px}.cm-cutting-grand-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:14px;padding-top:14px;border-top:2px solid #3a3a44}.cm-cutting-grand-summary strong{font-size:16px}.cm-actual-rate-field input{margin-top:4px}.cm-piece-balance.is-ok{color:#90e8b1}.cm-piece-balance.is-bad{color:#ffb1bb}
 @media(max-width:900px){.cm-gallery{grid-template-columns:repeat(2,1fr)}.cm-stats{grid-template-columns:repeat(3,1fr)}}
 @media(max-width:650px){
   .cm-page{padding-inline:12px}
@@ -143,7 +145,7 @@ button:disabled{cursor:not-allowed;opacity:.48}
   .cm-stats{grid-template-columns:repeat(2,1fr)}
   .cm-grid-2,.cm-grid-3,.cm-weight-summary,.cm-pm-decision{grid-template-columns:1fr}
   .cm-size-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
-  .cm-cost-breakup{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .cm-cost-breakup,.cm-cutting-grand-summary{grid-template-columns:repeat(2,minmax(0,1fr))}
   .cm-cost-breakup span:last-child{grid-column:1/-1}
   .cm-sheet-panel{padding-inline:12px}
 }
@@ -185,7 +187,7 @@ button:disabled{cursor:not-allowed;opacity:.48}
   <p id="cmMessage" class="rr-message" role="status" aria-live="polite"></p>
   <section class="cm-section-head"><small>CUTTING GALLERY</small><h2>CB Divisions & Lots</h2></section>
   <section id="divisionGallery" class="cm-gallery" aria-busy="true">
-    <article class="cm-empty"><div class="cm-spinner"></div><h3>Loading Cutting Master V720.35</h3><p>Connecting CB Divisions…</p></article>
+    <article class="cm-empty"><div class="cm-spinner"></div><h3>Loading Cutting Master V720.35.4</h3><p>Connecting CB Divisions…</p></article>
   </section>
 </main>
 
@@ -255,8 +257,8 @@ button:disabled{cursor:not-allowed;opacity:.48}
         <h3>Complete Weight Settlement</h3>
         <div class="cm-grid-3">
           <label><span>Fabric Used *</span><input id="fabricUsed" type="number" min="0" step="0.001"></label>
-          <label><span>Wastage</span><input id="wastageWeight" type="number" min="0" step="0.001" value="0"></label>
-          <label><span>Remnant</span><input id="remnantWeight" type="number" min="0" step="0.001" value="0"></label>
+          <label><span>Wastage</span><input id="wastageWeight" type="number" min="0" step="0.001" placeholder="kg"></label>
+          <label><span>Remnant</span><input id="remnantWeight" type="number" min="0" step="0.001" placeholder="kg"></label>
         </div>
         <div class="cm-weight-summary">
           <span><small>CB Child Weight</small><strong id="lotUnitWeight">0 kg</strong></span>
@@ -276,12 +278,8 @@ button:disabled{cursor:not-allowed;opacity:.48}
 
         <div class="cm-grid-2">
           <label>
-            <span>Base Cutting Cost / Piece *</span>
-            <input id="baseCost" type="number" min="0" step="0.01" value="0">
-          </label>
-          <label>
             <span>Custom Adjustment / Piece</span>
-            <input id="customAdjustment" type="number" step="0.01" value="0">
+            <input id="customAdjustment" type="number" step="0.01" placeholder="Optional">
           </label>
         </div>
 
@@ -324,11 +322,17 @@ button:disabled{cursor:not-allowed;opacity:.48}
           <label><span>Bundle Qty *</span><input id="bundleQty" type="number" min="1" value="12"></label>
         </div>
         <div class="cm-form-title">
-          <div><h3>Colour × Size Cutting</h3><p>Only cutting sheet for this Lot.</p></div>
-          <button id="equalPieceSplit" type="button">Equal Pieces</button>
+          <div><h3>Colour × Size Cutting</h3><p>पहले हर Colour की Cutting Qty भरें; Sizes उसी Colour Qty से auto split होंगी और manual correction allowed रहेगा.</p></div>
         </div>
         <div id="cuttingMatrix" class="cm-matrix"></div>
-        <div class="cm-total-line"><span>Total</span><strong><b id="totalPieces">0</b> pcs · <b id="totalBundles">0</b> bundles</strong></div>
+        <div class="cm-cutting-grand-summary">
+          <span><small>Total Colour Plans</small><strong id="cmTotalColours">0</strong></span>
+          <span><small>Grand Total Cutting Pcs</small><strong><b id="totalPieces">0</b> pcs</strong></span>
+          <span><small>Size Matrix Total</small><strong><b id="cmMatrixPieces">0</b> pcs</strong></span>
+          <span><small>Piece Balance</small><strong id="cmPieceBalance">0</strong></span>
+          <label class="cm-actual-rate-field"><small>Actual Cutting Rate / Pc *</small><input id="baseCost" type="number" min="0" step="0.01" placeholder="Rate / Pc"></label>
+          <span><small>Actual Cutting Amount</small><strong id="cmActualCuttingAmount">₹0</strong></span>
+        </div>
       </section>
 
       <label class="cm-notes"><span>Notes</span><textarea id="lotNotes" rows="3"></textarea></label>
@@ -398,7 +402,7 @@ button:disabled{cursor:not-allowed;opacity:.48}
 </section>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="config.js?v=72035"></script>
-<script src="real-common.js?v=72035"></script>
+<script src="real-common.js?v=720355"></script>
 <script>
 window.onerror = function(message, source, line, column) {
   const text = "CUTTING JS ERROR: " + message + " | line " + line + ":" + column;
@@ -413,7 +417,7 @@ window.onunhandledrejection = function(event) {
   if (box) { box.textContent = text; box.className = "rr-message error"; }
 };
 </script>
-<script src="real-cutting-master-pm.V719.3.js?v=72035"></script>
-<script src="redzed-cutting-cb-actions-v72035.js?v=720351"></script>
+<script src="real-cutting-master-pm.V719.3.js?v=720355"></script>
+<script src="redzed-cutting-cb-actions-v72035.js?v=720355"></script>
 </body>
 </html>

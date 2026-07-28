@@ -1,7 +1,7 @@
 (() => {
 "use strict";
 
-window.REDZED_CUTTING_CB_ACTIONS_VERSION = "720.35.1-POPUP-SOURCE-HOTFIX";
+window.REDZED_CUTTING_CB_ACTIONS_VERSION = "720.35.4-SAVE-LOCK-WHATSAPP-FALLBACK";
 
 const state = {
   client: null,
@@ -9,6 +9,9 @@ const state = {
   actions: [],
   sources: [],
   current: null,
+  proofDraft: { images: [], video: null, urls: [] },
+  reportSubmitting: false,
+  reportCommitted: false,
   renderQueued: false
 };
 
@@ -55,11 +58,21 @@ function adminPhoneDefault(){
   return localStorage.getItem("redzed_admin_whatsapp") || phone || "";
 }
 
-function openWhatsapp(phone,message){
+function whatsappUrl(phone,message){
   const number = normalizePhone(phone);
   if(!number) throw new Error("WhatsApp number required.");
-  const win = window.open(`https://wa.me/${number}?text=${encodeURIComponent(message)}`, "_blank", "noopener,noreferrer");
-  if(!win) throw new Error("Browser ने WhatsApp popup block किया। Allow popups करके दोबारा भेजें।");
+  return `https://wa.me/${number}?text=${encodeURIComponent(message)}`;
+}
+
+function openWhatsapp(phone,message,{sameTabFallback=false}={}){
+  const url = whatsappUrl(phone,message);
+  const win = window.open(url, "_blank", "noopener,noreferrer");
+  if(win) return true;
+  if(sameTabFallback){
+    window.location.assign(url);
+    return false;
+  }
+  throw new Error("Browser ने WhatsApp popup block किया। WhatsApp Admin button से दोबारा खोलें।");
 }
 
 function proofLinks(action){
@@ -191,18 +204,152 @@ function normalizeSourceRow(row = {}){
   };
 }
 
-async function loadSourceData(){
+function sourceRowKey(row = {}){
+  return [
+    textKey(row.cb_id),
+    textKey(row.division_id),
+    canonicalDivisionCode(row.division_code),
+    textKey(row.purchase_entry_id),
+    textKey(row.roll_id)
+  ].join("|");
+}
+
+function mergeSourceRows(...groups){
+  const map = new Map();
+  groups.flat().filter(Boolean).map(normalizeSourceRow).forEach(row => {
+    const key = sourceRowKey(row);
+    if(!map.has(key)) map.set(key,row);
+    else map.set(key,{...map.get(key),...row});
+  });
+  return [...map.values()];
+}
+
+function isRegularPurchase(row = {},regularCategoryIds = new Set()){
+  const categoryId = textKey(row.material_category_id);
+  const note = `${row.entry_notes || ""} ${row.entry_kind || ""}`.trim().toLowerCase();
+  if(regularCategoryIds.size) return regularCategoryIds.has(categoryId);
+  if(/matching|cuff|collar|other material|cb material/.test(note)) return false;
+  return /regular cloth|purchase/.test(note) || !note;
+}
+
+async function loadBaseTableSourcesForActive(){
+  const cbId = textKey(state.current?.cbId || activeCbId());
+  const divisionId = textKey(state.current?.divisionId || activeDivisionId());
+  const card = activeCard();
+  const divisionCode = canonicalDivisionCode(
+    card?.division?.division_code ||
+    card?.division?.cb_code ||
+    card?.division?.child_code ||
+    ""
+  );
+
+  if(!cbId || !divisionId) return [];
+
+  const [purchaseResult,allocationResult,colourResult,categoryResult] = await Promise.all([
+    state.client.from("rr_cb_purchase_entries").select("*").eq("cb_id",cbId),
+    state.client.from("rr_cb_material_allocations").select("*").eq("division_id",divisionId),
+    state.client.from("rr_cb_colours").select("*").eq("cb_id",cbId),
+    state.client.from("rr_material_categories").select("id,category_code,category_name")
+  ]);
+
+  const errors = [purchaseResult,allocationResult,colourResult]
+    .map(result => result.error)
+    .filter(Boolean);
+  if(errors.length){
+    console.warn("Base-table Source Bill fallback unavailable",errors);
+    return [];
+  }
+
+  const regularCategoryIds = new Set(
+    (categoryResult.error ? [] : categoryResult.data || [])
+      .filter(row => {
+        const label = `${row.category_code || ""} ${row.category_name || ""}`.toLowerCase();
+        return label.includes("regular-cloth") || label.includes("regular cloth");
+      })
+      .map(row => textKey(row.id))
+  );
+
+  const purchases = (purchaseResult.data || []).filter(row =>
+    Number(row.quantity ?? row.available_quantity ?? 0) > 0.0005 &&
+    isRegularPurchase(row,regularCategoryIds)
+  );
+  const purchaseMap = new Map(purchases.map(row => [textKey(row.id),row]));
+
+  const allocations = (allocationResult.data || []).filter(row =>
+    purchaseMap.has(textKey(row.purchase_entry_id)) &&
+    Number(row.allocated_qty ?? row.available_qty ?? 0) > 0.0005
+  );
+  const purchaseIds = [...new Set(allocations.map(row => textKey(row.purchase_entry_id)).filter(Boolean))];
+  if(!purchaseIds.length) return [];
+
+  const rollResult = await state.client
+    .from("rr_cb_purchase_rolls")
+    .select("*")
+    .in("purchase_entry_id",purchaseIds);
+  if(rollResult.error){
+    console.warn("Source Bill roll fallback unavailable",rollResult.error);
+    return [];
+  }
+
+  const colourMap = new Map((colourResult.data || []).map(row => [textKey(row.id),row]));
+  const rollsByPurchase = new Map();
+  (rollResult.data || []).forEach(row => {
+    const pid = textKey(row.purchase_entry_id);
+    if(!rollsByPurchase.has(pid)) rollsByPurchase.set(pid,[]);
+    rollsByPurchase.get(pid).push(row);
+  });
+
+  const out = [];
+  allocations.forEach(allocation => {
+    const pid = textKey(allocation.purchase_entry_id);
+    const purchase = purchaseMap.get(pid);
+    const allocationQty = Number(allocation.allocated_qty ?? allocation.available_qty ?? 0);
+    (rollsByPurchase.get(pid) || []).forEach(roll => {
+      const rollQty = Number(roll.quantity ?? roll.available_quantity ?? 0);
+      if(rollQty <= 0.0005) return;
+      const colour = colourMap.get(textKey(roll.cb_colour_id)) || {};
+      out.push(normalizeSourceRow({
+        cb_id:cbId,
+        division_id:divisionId,
+        division_code:divisionCode,
+        purchase_entry_id:pid,
+        roll_id:roll.id,
+        bill_no:purchase.vendor_bill_no || purchase.bill_no || "",
+        vendor_name:purchase.vendor_name || "",
+        fabric_name:purchase.fabric_name || "",
+        colour_name:colour.colour_name || colour.color_name || "",
+        roll_no:roll.roll_no,
+        division_available_qty:allocationQty,
+        roll_available_qty:rollQty,
+        rate:purchase.rate,
+        source_origin:"base_tables"
+      }));
+    });
+  });
+
+  return out;
+}
+
+async function loadSourceData(options = {}){
   const result = await state.client
     .from("rr_cutting_regular_purchase_sources_v1")
     .select("*");
 
+  let viewRows = [];
   if(result.error){
     console.warn("Regular purchase source view unavailable",result.error);
-    return false;
+  }else{
+    viewRows = (result.data || []).map(normalizeSourceRow);
   }
 
-  state.sources = (result.data || []).map(normalizeSourceRow);
-  return true;
+  state.sources = mergeSourceRows(viewRows);
+
+  if(options.ensureActive && !sourceRowsForActive().length){
+    const fallbackRows = await loadBaseTableSourcesForActive();
+    state.sources = mergeSourceRows(state.sources,fallbackRows);
+  }
+
+  return !result.error || state.sources.length > 0;
 }
 
 async function loadAddonData(){
@@ -239,7 +386,17 @@ function injectStyles(){
     .rr-cba-form input,.rr-cba-form select,.rr-cba-form textarea{width:100%;padding:11px;border-radius:11px;border:1px solid #3a3a44;background:#101014;color:#fff}
     .rr-cba-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}.rr-cba-summary div{padding:9px;border:1px solid #33333d;border-radius:10px;background:#111116}.rr-cba-summary small,.rr-cba-summary strong{display:block}
     .rr-cba-submit{display:flex;justify-content:flex-end;gap:8px;position:sticky;bottom:-16px;background:#0d0d11;padding:12px 0 0}
-    @media(max-width:620px){.rr-cba-grid,.rr-cba-summary{grid-template-columns:1fr}}
+    .rr-cba-proof-picker{padding:11px;border:1px solid #34343d;border-radius:12px;background:#101015}
+    .rr-cba-proof-picker>span{display:block;font-size:12px;color:#bbb;margin-bottom:7px;font-weight:800}
+    .rr-cba-proof-picker input[type=file]{padding:9px;background:#17171d}
+    .rr-cba-draft-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:9px}
+    .rr-cba-draft-item{position:relative;min-width:0;padding:7px;border:1px solid #3a3a44;border-radius:11px;background:#0b0b0f}
+    .rr-cba-draft-item img,.rr-cba-draft-item video{display:block;width:100%;aspect-ratio:1/1;object-fit:cover;border-radius:8px;background:#050507}
+    .rr-cba-draft-item video{aspect-ratio:16/10}
+    .rr-cba-draft-item small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:5px;color:#bbb}
+    .rr-cba-remove-proof{position:absolute;right:3px;top:3px;width:32px;height:32px;border:1px solid #a84a59;border-radius:999px;background:#481b23;color:#fff;font-size:20px;font-weight:900;line-height:1;z-index:2}
+    .rr-cba-proof-count{margin-top:7px;color:#aaa;font-size:11px}
+    @media(max-width:620px){.rr-cba-grid,.rr-cba-summary{grid-template-columns:1fr}.rr-cba-draft-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
   `;
   document.head.appendChild(style);
 }
@@ -284,6 +441,130 @@ function uniquePurchases(rows){
   return [...map.values()];
 }
 
+
+function proofFileKey(file){
+  return [file?.name || "", file?.size || 0, file?.lastModified || 0].join(":");
+}
+
+function releaseProofDraftUrls(){
+  (state.proofDraft.urls || []).forEach(url => {
+    try{URL.revokeObjectURL(url)}catch{}
+  });
+  state.proofDraft.urls = [];
+}
+
+function resetProofDraft(){
+  releaseProofDraftUrls();
+  state.proofDraft.images = [];
+  state.proofDraft.video = null;
+}
+
+function closeReportSheet({force=false}={}){
+  if(state.reportSubmitting && !state.reportCommitted && !force){
+    const message = $("rrCbaMessage");
+    if(message){
+      message.textContent = "Report save हो रही है। कृपया पूरा होने तक प्रतीक्षा करें।";
+      message.className = "rr-message info";
+    }
+    return;
+  }
+  const sheet = $("rrCbActionSheet");
+  if(sheet) sheet.classList.add("cm-hidden");
+  resetProofDraft();
+  state.reportSubmitting = false;
+  state.reportCommitted = false;
+}
+
+function addDraftImages(files){
+  const incoming = [...(files || [])].filter(file => String(file.type || "").startsWith("image/"));
+  const map = new Map(state.proofDraft.images.map(file => [proofFileKey(file), file]));
+  incoming.forEach(file => map.set(proofFileKey(file), file));
+  const next = [...map.values()];
+  if(next.length > 5){
+    throw new Error("Maximum 5 images allowed.");
+  }
+  state.proofDraft.images = next;
+}
+
+function setDraftVideo(file){
+  if(file && !String(file.type || "").startsWith("video/")){
+    throw new Error("Video file select करें।");
+  }
+  state.proofDraft.video = file || null;
+}
+
+function renderProofDraft(){
+  releaseProofDraftUrls();
+  const imageHolder = $("rrCbaImagePreview");
+  const videoHolder = $("rrCbaVideoPreview");
+  const imageCount = $("rrCbaImageCount");
+  if(imageCount) imageCount.textContent = `${state.proofDraft.images.length}/5 images selected`;
+
+  if(imageHolder){
+    imageHolder.innerHTML = state.proofDraft.images.map((file,index) => {
+      const url = URL.createObjectURL(file);
+      state.proofDraft.urls.push(url);
+      return `<article class="rr-cba-draft-item"><button class="rr-cba-remove-proof" type="button" data-remove-image="${index}" aria-label="Remove image">×</button><img src="${safe(url)}" alt="Selected proof image"><small>${safe(file.name)}</small></article>`;
+    }).join("");
+    imageHolder.querySelectorAll("[data-remove-image]").forEach(button => {
+      button.onclick = () => {
+        state.proofDraft.images.splice(Number(button.dataset.removeImage),1);
+        renderProofDraft();
+      };
+    });
+  }
+
+  if(videoHolder){
+    const file = state.proofDraft.video;
+    if(!file){
+      videoHolder.innerHTML = "";
+    }else{
+      const url = URL.createObjectURL(file);
+      state.proofDraft.urls.push(url);
+      videoHolder.innerHTML = `<article class="rr-cba-draft-item"><button class="rr-cba-remove-proof" type="button" data-remove-video aria-label="Remove video">×</button><video controls preload="metadata" src="${safe(url)}"></video><small>${safe(file.name)}</small></article>`;
+      videoHolder.querySelector("[data-remove-video]").onclick = () => {
+        state.proofDraft.video = null;
+        const input = $("rrCbaVideo");
+        if(input) input.value = "";
+        renderProofDraft();
+      };
+    }
+  }
+}
+
+function bindProofDraftInputs(){
+  const images = $("rrCbaImages");
+  const video = $("rrCbaVideo");
+  if(images){
+    images.onchange = () => {
+      try{
+        addDraftImages(images.files);
+        images.value = "";
+        $("rrCbaMessage").textContent = "";
+        renderProofDraft();
+      }catch(error){
+        images.value = "";
+        $("rrCbaMessage").textContent = errorText(error);
+        $("rrCbaMessage").className = "rr-message error";
+      }
+    };
+  }
+  if(video){
+    video.onchange = () => {
+      try{
+        setDraftVideo(video.files?.[0] || null);
+        $("rrCbaMessage").textContent = "";
+        renderProofDraft();
+      }catch(error){
+        video.value = "";
+        $("rrCbaMessage").textContent = errorText(error);
+        $("rrCbaMessage").className = "rr-message error";
+      }
+    };
+  }
+  renderProofDraft();
+}
+
 function currentActionLabel(type){
   if(type === "DAMAGE") return "Damage Report";
   if(type === "PARTIAL_GR") return "Partial GR Report";
@@ -299,7 +580,7 @@ async function openReport(type){
 
   // Source bills can change after Product Master purchase/allocation updates.
   // Refresh the existing source view before opening the existing report form.
-  await loadSourceData();
+  await loadSourceData({ensureActive:true});
   renderReportSheet();
 }
 
@@ -320,13 +601,16 @@ function ensureReportSheet(){
       </form>
     </div>`;
   document.body.appendChild(sheet);
-  sheet.querySelectorAll("[data-cba-close]").forEach(x => x.onclick = () => sheet.classList.add("cm-hidden"));
+  sheet.querySelectorAll("[data-cba-close]").forEach(x => x.onclick = closeReportSheet);
   $("rrCbaForm").addEventListener("submit",submitReport);
   return sheet;
 }
 
 function renderReportSheet(){
   const sheet = ensureReportSheet();
+  state.reportSubmitting = false;
+  state.reportCommitted = false;
+  resetProofDraft();
   const card = activeCard();
   const rows = sourceRowsForActive();
   const purchases = uniquePurchases(rows);
@@ -338,7 +622,7 @@ function renderReportSheet(){
     .map(p => `<option value="${safe(p.purchase_entry_id)}">${safe(p.bill_no)} · ${safe(p.vendor_name)} · ${safe(p.fabric_name)} · ${kg(p.division_available_qty)}</option>`)
     .join("");
   const sourceBillNotice = type !== "FULL_GR" && !purchaseOptions
-    ? `<p class="rr-message error" style="margin:10px 0 0">इस D card के Source Bills नहीं मिले। Cutting Master Refresh करके report दोबारा खोलें।</p>`
+    ? `<p class="rr-message error" style="margin:10px 0 0">इस D card के लिए Source Bill allocation नहीं मिला। Product Master में इसी CB के Bill और D allocation को check करें।</p>`
     : "";
   $("rrCbaBody").innerHTML = `
     <section class="cm-form-card">
@@ -352,8 +636,8 @@ function renderReportSheet(){
         <label><span>Qty *</span><input id="rrCbaQty" type="number" min="0.001" step="0.001" ${type === "FULL_GR" ? "readonly" : ""}></label>
         <label><span>Reason *</span><input id="rrCbaReason" placeholder="Damage / return reason"></label>
         <label><span>Admin WhatsApp No.</span><input id="rrCbaAdminPhone" inputmode="tel" value="${safe(adminPhoneDefault())}"></label>
-        <label><span>Images — max 5</span><input id="rrCbaImages" type="file" accept="image/*" multiple></label>
-        <label><span>Short Video / Screen Recording — 1</span><input id="rrCbaVideo" type="file" accept="video/*"></label>
+        <div class="rr-cba-proof-picker"><span>Images — max 5</span><input id="rrCbaImages" type="file" accept="image/*" multiple><div id="rrCbaImageCount" class="rr-cba-proof-count">0/5 images selected</div><div id="rrCbaImagePreview" class="rr-cba-draft-grid"></div></div>
+        <div class="rr-cba-proof-picker"><span>Short Video / Screen Recording — 1</span><input id="rrCbaVideo" type="file" accept="video/mp4,video/webm,video/quicktime,video/*"><div id="rrCbaVideoPreview" class="rr-cba-draft-grid"></div></div>
       </div>
       ${type !== "DAMAGE" ? `<label style="display:flex;gap:8px;align-items:center;margin-top:10px"><input id="rrCbaExchange" type="checkbox" style="width:auto"><span style="margin:0">Exchange / replacement expected</span></label>` : ""}
       <label style="margin-top:10px"><span>Remarks</span><textarea id="rrCbaRemarks" rows="2"></textarea></label>
@@ -385,8 +669,35 @@ function renderReportSheet(){
       if(opt?.dataset.max) $("rrCbaQty").max = opt.dataset.max;
     };
   }
+  bindProofDraftInputs();
   $("rrCbaMessage").textContent = "";
   sheet.classList.remove("cm-hidden");
+}
+
+function actionSourcePurchaseId(action={}){
+  return String(action.purchase_entry_id || action.cb_purchase_entry_id || action.source_purchase_entry_id || "");
+}
+
+function actionSourceRollId(action={}){
+  return String(action.roll_id || action.purchase_roll_id || action.source_roll_id || "");
+}
+
+function pendingDuplicateFor(payload){
+  const liveStatuses = new Set(["PENDING_ADMIN","ADMIN_MESSAGE_SENT","ADMIN_VERIFIED","RECHECK_REQUIRED"]);
+  const reason = String(payload.p_reason || "").trim().toLowerCase();
+  const lotNo = String(payload.p_lot_no || "").trim().toUpperCase();
+  const qty = Number(payload.p_qty || 0);
+  return state.actions.find(action =>
+    liveStatuses.has(String(action.status || "").toUpperCase()) &&
+    String(action.division_id || "") === String(payload.p_division_id || "") &&
+    String(action.action_type || "").toUpperCase() === String(payload.p_action_type || "").toUpperCase() &&
+    String(action.source_lot_no || "").trim().toUpperCase() === lotNo &&
+    actionSourcePurchaseId(action) === String(payload.p_purchase_entry_id || "") &&
+    actionSourceRollId(action) === String(payload.p_roll_id || "") &&
+    String(action.full_gr_scope || "") === String(payload.p_full_gr_scope || "") &&
+    Math.abs(Number(action.qty || 0) - qty) < 0.0005 &&
+    String(action.reason || "").trim().toLowerCase() === reason
+  ) || null;
 }
 
 async function uploadProof(action,images,video){
@@ -412,51 +723,129 @@ async function uploadProof(action,images,video){
 
 async function submitReport(event){
   event.preventDefault();
+  if(state.reportSubmitting || state.reportCommitted) return;
+
   const button = $("rrCbaSave");
   const old = button.textContent;
-  button.disabled = true;button.textContent = "Saving…";
+  let committed = false;
+  let action = null;
+
   try{
     const type = state.current.type;
     if(type !== "FULL_GR" && !$("rrCbaPurchase").value) throw new Error("Source Bill select करें।");
     if(type !== "FULL_GR" && !$("rrCbaRoll").value) throw new Error("Roll / Colour particular select करें।");
+
+    const qty = Number($("rrCbaQty").value || 0);
+    const reason = $("rrCbaReason").value.trim();
+    if(qty <= 0) throw new Error("Qty required है।");
+    if(!reason) throw new Error("Reason required है।");
+
     const payload = {
       p_cb_id:state.current.cbId,
       p_division_id:state.current.divisionId,
       p_action_type:type,
       p_purchase_entry_id:type === "FULL_GR" ? null : $("rrCbaPurchase").value || null,
       p_roll_id:type === "FULL_GR" ? null : $("rrCbaRoll").value || null,
-      p_qty:Number($("rrCbaQty").value || 0),
+      p_qty:qty,
       p_full_gr_scope:type === "FULL_GR" ? $("rrCbaScope").value : null,
       p_lot_no:state.current.lotNo,
-      p_reason:$("rrCbaReason").value.trim(),
+      p_reason:reason,
       p_remarks:$("rrCbaRemarks").value.trim() || null,
       p_admin_phone:$("rrCbaAdminPhone").value.trim() || null,
       p_exchange_expected:Boolean($("rrCbaExchange")?.checked)
     };
-    const images = [...($("rrCbaImages").files || [])];
-    const video = $("rrCbaVideo").files?.[0] || null;
+
+    const duplicate = pendingDuplicateFor(payload);
+    if(duplicate){
+      throw new Error(`Same report Action-${duplicate.action_no} पहले से pending है। Duplicate Save नहीं किया गया।`);
+    }
+
+    const images = [...state.proofDraft.images];
+    const video = state.proofDraft.video || null;
+    const sendAdmin = Boolean($("rrCbaSendAdmin")?.checked && payload.p_admin_phone);
+
+    state.reportSubmitting = true;
+    button.disabled = true;
+    button.textContent = "Saving…";
+
     const r = await state.client.rpc("rr_cutting_report_cb_action_v1",payload);
     if(r.error) throw r.error;
-    const action = r.data?.action || r.data;
-    await uploadProof(action,images,video);
-    await loadAddonData();
-    const saved = state.actions.find(x => String(x.id) === String(action.id)) || action;
-    const phone = payload.p_admin_phone;
-    if($("rrCbaSendAdmin").checked && phone){
-      localStorage.setItem("redzed_admin_whatsapp",phone);
-      openWhatsapp(phone,messageWithProof(saved,r.data?.admin_message));
-      const mark = await state.client.rpc("rr_cutting_mark_admin_message_sent_v1",{p_action_id:action.id,p_admin_phone:phone});
-      if(mark.error) console.warn(mark.error);
-      await loadAddonData();
+
+    action = r.data?.action || r.data;
+    if(!action?.id) throw new Error("Report save हुआ लेकिन Action ID नहीं मिला।");
+
+    committed = true;
+    state.reportCommitted = true;
+    button.textContent = "Saved";
+
+    let proofWarning = "";
+    try{
+      await uploadProof(action,images,video);
+    }catch(proofError){
+      proofWarning = ` Proof upload warning: ${errorText(proofError)}.`;
     }
-    $("rrCbActionSheet").classList.add("cm-hidden");
-    say(`${currentActionLabel(type)} saved. Owner approval pending.`,"success");
+
+    await loadAddonData();
+    let saved = state.actions.find(x => String(x.id) === String(action.id)) || action;
+    let whatsappMessage = "";
+    let whatsappWarning = "";
+
+    if(sendAdmin){
+      localStorage.setItem("redzed_admin_whatsapp",payload.p_admin_phone);
+      whatsappMessage = messageWithProof(saved,r.data?.admin_message);
+      const mark = await state.client.rpc("rr_cutting_mark_admin_message_sent_v1",{
+        p_action_id:action.id,
+        p_admin_phone:payload.p_admin_phone
+      });
+      if(mark.error){
+        whatsappWarning = ` WhatsApp status update warning: ${errorText(mark.error)}.`;
+      }else{
+        await loadAddonData();
+        saved = state.actions.find(x => String(x.id) === String(action.id)) || saved;
+        whatsappMessage = messageWithProof(saved,r.data?.admin_message);
+      }
+    }
+
+    closeReportSheet({force:true});
     renderLotActionPanel();
+
+    const warnings = `${proofWarning}${whatsappWarning}`.trim();
+    say(
+      warnings
+        ? `${currentActionLabel(type)} saved as Action-${action.action_no || ""}. दोबारा Save न करें.${warnings}`
+        : `${currentActionLabel(type)} saved as Action-${action.action_no || ""}. Admin/Owner decision pending.`,
+      warnings ? "error" : "success"
+    );
+
+    if(sendAdmin && whatsappMessage){
+      // Async save के बाद mobile browser new-tab popup block कर सकता है.
+      // First try a new tab; if blocked, use the same tab so the saved report is never submitted again.
+      openWhatsapp(payload.p_admin_phone,whatsappMessage,{sameTabFallback:true});
+    }
   }catch(error){
     console.error(error);
-    $("rrCbaMessage").textContent = errorText(error);
-    $("rrCbaMessage").className = "rr-message error";
-  }finally{button.disabled=false;button.textContent=old}
+    if(committed){
+      closeReportSheet({force:true});
+      await loadAddonData();
+      renderLotActionPanel();
+      say(`Report save हो चुकी है। दोबारा Save न करें। ${errorText(error)}`,"error");
+    }else{
+      const message = $("rrCbaMessage");
+      if(message){
+        message.textContent = errorText(error);
+        message.className = "rr-message error";
+      }else{
+        say(errorText(error),"error");
+      }
+    }
+  }finally{
+    state.reportSubmitting = false;
+    if(!committed){
+      state.reportCommitted = false;
+      button.disabled = false;
+      button.textContent = old;
+    }
+  }
 }
 
 function mediaHtml(action){
