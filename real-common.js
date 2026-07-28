@@ -24,6 +24,39 @@
     return Number.isFinite(parsed) ? parsed : fallback;
   };
 
+  RR.roleCanViewFinancials = (role) =>
+    ["owner", "admin", "account", "accounts"].includes(
+      String(role || "").trim().toLowerCase()
+    );
+
+  RR.roleCanOperateMasters = (role) =>
+    ["owner", "admin"].includes(String(role || "").trim().toLowerCase());
+
+  RR.requireRoles = async (allowedRoles = ["owner", "admin"]) => {
+    const allowed = new Set(
+      (allowedRoles || []).map((role) => String(role || "").trim().toLowerCase())
+    );
+    const { data, error } = await supabaseClient.auth.getSession();
+    if (error || !data.session) {
+      window.location.replace("real-login.html");
+      throw new Error("Login required.");
+    }
+
+    const user = data.session.user;
+    const { data: profile, error: profileError } = await supabaseClient
+      .from("rr_user_profiles")
+      .select("id, full_name, role_code, is_active")
+      .eq("auth_user_id", user.id)
+      .single();
+
+    const role = String(profile?.role_code || "").trim().toLowerCase();
+    if (profileError || !profile?.is_active || !allowed.has(role)) {
+      throw new Error(`Required permission: ${[...allowed].join(" / ")}.`);
+    }
+
+    return { session: data.session, user, profile: { ...profile, role_code: role } };
+  };
+
   RR.requireOwner = async () => {
     const { data, error } = await supabaseClient.auth.getSession();
     if (error || !data.session) {
@@ -176,36 +209,42 @@
     }, {});
   };
 
-  RR.enableFastNumberInput = (root = document) => {
-    root.querySelectorAll?.('input[type="number"]').forEach((input) => {
-      if (input.dataset.rrFastNumber === "1") return;
-      input.dataset.rrFastNumber = "1";
-      input.addEventListener("focus", () => {
-        const raw = String(input.value || "").trim();
-        if (raw && Number(raw) === 0) input.value = "";
-        else if (raw) requestAnimationFrame(() => input.select());
-      });
-      input.addEventListener("change", () => {
-        const raw = String(input.value || "").trim();
-        if (!raw) return;
-        const number = Number(raw);
-        if (Number.isFinite(number)) input.value = String(number);
-      });
+
+  RR.installHassleFreeNumberInputs = () => {
+    if (document.documentElement.dataset.rrNumberInputsReady === "1") return;
+    document.documentElement.dataset.rrNumberInputsReady = "1";
+
+    document.addEventListener("focusin", (event) => {
+      const input = event.target;
+      if (!(input instanceof HTMLInputElement) || input.type !== "number" || input.readOnly || input.disabled) return;
+      if (input.dataset.keepNumberFormat === "1") return;
+
+      const raw = String(input.value || "").trim();
+      if (/^[+-]?0+(?:\.0+)?$/.test(raw)) {
+        input.value = "";
+        return;
+      }
+
+      if (raw) {
+        requestAnimationFrame(() => {
+          try { input.select(); } catch (_) {}
+        });
+      }
+    });
+
+    document.addEventListener("focusout", (event) => {
+      const input = event.target;
+      if (!(input instanceof HTMLInputElement) || input.type !== "number" || input.readOnly || input.disabled) return;
+      if (input.dataset.keepNumberFormat === "1") return;
+
+      const raw = String(input.value || "").trim();
+      if (!raw) return;
+      const number = Number(raw);
+      if (Number.isFinite(number)) input.value = String(number);
     });
   };
 
-  const bootFastNumbers = () => {
-    RR.enableFastNumberInput(document);
-    const observer = new MutationObserver((records) => {
-      records.forEach((record) => record.addedNodes.forEach((node) => {
-        if (node?.nodeType === 1) RR.enableFastNumberInput(node);
-      }));
-    });
-    observer.observe(document.documentElement, { childList: true, subtree: true });
-  };
-
-  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", bootFastNumbers, { once: true });
-  else bootFastNumbers();
+  RR.installHassleFreeNumberInputs();
 
   window.RR = RR;
 })();

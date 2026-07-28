@@ -1,7 +1,7 @@
 (() => {
 "use strict";
 
-window.REDZED_CUTTING_CB_ACTIONS_VERSION = "720.35.4-SAVE-LOCK-WHATSAPP-FALLBACK";
+window.REDZED_CUTTING_CB_ACTIONS_VERSION = "720.36.2-SAVE-LOCK-FINAL";
 
 const state = {
   client: null,
@@ -446,6 +446,17 @@ function proofFileKey(file){
   return [file?.name || "", file?.size || 0, file?.lastModified || 0].join(":");
 }
 
+function proofMimeType(file){
+  try{
+    const inferred = window.RR?.inferMimeType?.(file);
+    if(inferred) return String(inferred).toLowerCase();
+  }catch{}
+  const declared = String(file?.type || "").toLowerCase();
+  if(declared) return declared;
+  const ext = String(file?.name || "").split(".").pop().toLowerCase();
+  return ({jpg:"image/jpeg",jpeg:"image/jpeg",png:"image/png",webp:"image/webp",heic:"image/heic",heif:"image/heif",mp4:"video/mp4",mov:"video/quicktime",webm:"video/webm","3gp":"video/3gpp"})[ext] || "";
+}
+
 function releaseProofDraftUrls(){
   (state.proofDraft.urls || []).forEach(url => {
     try{URL.revokeObjectURL(url)}catch{}
@@ -476,7 +487,7 @@ function closeReportSheet({force=false}={}){
 }
 
 function addDraftImages(files){
-  const incoming = [...(files || [])].filter(file => String(file.type || "").startsWith("image/"));
+  const incoming = [...(files || [])].filter(file => proofMimeType(file).startsWith("image/"));
   const map = new Map(state.proofDraft.images.map(file => [proofFileKey(file), file]));
   incoming.forEach(file => map.set(proofFileKey(file), file));
   const next = [...map.values()];
@@ -487,7 +498,7 @@ function addDraftImages(files){
 }
 
 function setDraftVideo(file){
-  if(file && !String(file.type || "").startsWith("video/")){
+  if(file && !proofMimeType(file).startsWith("video/")){
     throw new Error("Video file select करें।");
   }
   state.proofDraft.video = file || null;

@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#0b0b0e">
-  <title>REDZED REAL — Cutting Master V720.35.4</title>
+  <title>REDZED REAL — Cutting Master V720.36.2 FINAL</title>
   <link rel="stylesheet" href="real-style.css?v=716">
 <style>
 :root{
@@ -134,8 +134,6 @@ button:disabled{cursor:not-allowed;opacity:.48}
 .cm-check-row{display:flex!important;align-items:center;gap:10px;margin-top:12px;padding:12px;border:1px solid #35353d;border-radius:12px;background:#0d0d11}
 .cm-check-row input{width:20px!important;height:20px;flex:0 0 auto}
 .cm-rule-note{margin:12px 0 0;padding:11px;border-left:3px solid var(--red);border-radius:8px;background:#211519;color:#d5c4c7;line-height:1.45}
-
-.cm-colour-cut-card{margin-top:10px;padding:11px;border:1px solid #30303a;border-radius:14px;background:#0d0d11}.cm-colour-cut-head{display:flex;justify-content:space-between;align-items:end;gap:10px;flex-wrap:wrap}.cm-colour-name{display:flex;align-items:center;gap:8px}.cm-colour-name img{width:36px;height:36px;object-fit:cover;border-radius:9px}.cm-colour-total-label{min-width:180px}.cm-colour-balance{display:flex;justify-content:space-between;gap:8px;margin-top:8px;padding:7px 9px;border-radius:9px;background:#17171d;color:#aaa;font-size:11px;font-weight:850}.cm-colour-balance.is-ok{border:1px solid #286c48;color:#90e8b1}.cm-colour-balance.is-bad{border:1px solid #873541;color:#ffb1bb}.cm-dev-auto-total{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}.cm-dev-auto-total span,.cm-cutting-grand-summary>span,.cm-cutting-grand-summary>label{padding:11px;border:1px solid #33333d;border-radius:12px;background:#101015}.cm-dev-auto-total small,.cm-cutting-grand-summary small{display:block;color:var(--muted);margin-bottom:5px}.cm-cutting-grand-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:14px;padding-top:14px;border-top:2px solid #3a3a44}.cm-cutting-grand-summary strong{font-size:16px}.cm-actual-rate-field input{margin-top:4px}.cm-piece-balance.is-ok{color:#90e8b1}.cm-piece-balance.is-bad{color:#ffb1bb}
 @media(max-width:900px){.cm-gallery{grid-template-columns:repeat(2,1fr)}.cm-stats{grid-template-columns:repeat(3,1fr)}}
 @media(max-width:650px){
   .cm-page{padding-inline:12px}
@@ -145,7 +143,7 @@ button:disabled{cursor:not-allowed;opacity:.48}
   .cm-stats{grid-template-columns:repeat(2,1fr)}
   .cm-grid-2,.cm-grid-3,.cm-weight-summary,.cm-pm-decision{grid-template-columns:1fr}
   .cm-size-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
-  .cm-cost-breakup,.cm-cutting-grand-summary{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .cm-cost-breakup{grid-template-columns:repeat(2,minmax(0,1fr))}
   .cm-cost-breakup span:last-child{grid-column:1/-1}
   .cm-sheet-panel{padding-inline:12px}
 }
@@ -164,7 +162,7 @@ button:disabled{cursor:not-allowed;opacity:.48}
 
   <section class="cm-hero">
     <div>
-      <small>CUTTING MASTER V720.35 · ACTUAL DAMAGE / GR SOURCE</small>
+      <small>CUTTING MASTER V720.35 V4 · COLOUR-WISE ACTUAL CUTTING</small>
       <h2>Art / Print Ready → Damage / GR Decision → Cutting Pieces → Release</h2>
       <p>Cutting Master actual Damage, Partial GR या Full GR proof के साथ report करेगा। Admin verification और Owner approval के बाद CB quantity/cost Product Master ledger में reflect होगी।</p>
     </div>
@@ -187,7 +185,7 @@ button:disabled{cursor:not-allowed;opacity:.48}
   <p id="cmMessage" class="rr-message" role="status" aria-live="polite"></p>
   <section class="cm-section-head"><small>CUTTING GALLERY</small><h2>CB Divisions & Lots</h2></section>
   <section id="divisionGallery" class="cm-gallery" aria-busy="true">
-    <article class="cm-empty"><div class="cm-spinner"></div><h3>Loading Cutting Master V720.35.4</h3><p>Connecting CB Divisions…</p></article>
+    <article class="cm-empty"><div class="cm-spinner"></div><h3>Loading Cutting Master V720.36.2</h3><p>Connecting CB Divisions…</p></article>
   </section>
 </main>
 
@@ -267,72 +265,31 @@ button:disabled{cursor:not-allowed;opacity:.48}
         </div>
       </section>
 
-      <section class="cm-form-card cm-cost-card">
-        <div class="cm-form-title cm-cost-title">
-          <div>
-            <h3>Owner Costing</h3>
-            <p>Visible during Owner Testing Mode. Final permissions will be controlled later.</p>
-          </div>
-          <span class="cm-owner-chip">OWNER TEST</span>
-        </div>
-
-        <div class="cm-grid-2">
-          <label>
-            <span>Custom Adjustment / Piece</span>
-            <input id="customAdjustment" type="number" step="0.01" placeholder="Optional">
-          </label>
-        </div>
-
-        <div class="cm-grid-3">
-          <label>
-            <span>Size Type</span>
-            <select id="sizeType">
-              <option value="small">Small (₹0)</option>
-              <option value="big">Big (+₹5 default)</option>
-            </select>
-          </label>
-          <label>
-            <span>Sleeve</span>
-            <select id="sleeveType">
-              <option value="half">Half (₹0)</option>
-              <option value="full">Full (+₹5 default)</option>
-            </select>
-          </label>
-          <label>
-            <span>Border</span>
-            <select id="borderType">
-              <option value="without">Without Border (₹0)</option>
-              <option value="with">With Border (+₹5 default)</option>
-            </select>
-          </label>
-        </div>
-
-        <div class="cm-cost-breakup">
-          <span><small>Big Adjustment</small><strong id="sizeCostPreview">₹0</strong></span>
-          <span><small>Full Adjustment</small><strong id="sleeveCostPreview">₹0</strong></span>
-          <span><small>Border Adjustment</small><strong id="borderCostPreview">₹0</strong></span>
-                    <span><small>Final / Piece</small><strong id="finalCostPreview">₹0</strong></span>
-          <span><small>Total Cutting Cost</small><strong id="totalCostPreview">₹0</strong></span>
-        </div>
-      </section>
-
       <section class="cm-form-card">
-        <div class="cm-grid-2">
-          <label><span>Sizes *</span><input id="sizeSet" type="text" value="L,XL,XXL"></label>
-          <label><span>Bundle Qty *</span><input id="bundleQty" type="number" min="1" value="12"></label>
+        <div class="cm-grid-2 cm-hidden" aria-hidden="true">
+          <label><span>Sizes</span><input id="sizeSet" type="text" value="L,XL,XXL"></label>
+          <label><span>Bundle Qty</span><input id="bundleQty" type="number" min="1"></label>
         </div>
         <div class="cm-form-title">
-          <div><h3>Colour × Size Cutting</h3><p>पहले हर Colour की Cutting Qty भरें; Sizes उसी Colour Qty से auto split होंगी और manual correction allowed रहेगा.</p></div>
+          <div>
+            <h3>Colour × Size Cutting</h3>
+            <p>हर Colour की Cutting Qty भरें। Sizes बराबर auto split होंगे और जरूरत पर manually बदल सकेंगे।</p>
+          </div>
         </div>
         <div id="cuttingMatrix" class="cm-matrix"></div>
-        <div class="cm-cutting-grand-summary">
-          <span><small>Total Colour Plans</small><strong id="cmTotalColours">0</strong></span>
-          <span><small>Grand Total Cutting Pcs</small><strong><b id="totalPieces">0</b> pcs</strong></span>
-          <span><small>Size Matrix Total</small><strong><b id="cmMatrixPieces">0</b> pcs</strong></span>
-          <span><small>Piece Balance</small><strong id="cmPieceBalance">0</strong></span>
-          <label class="cm-actual-rate-field"><small>Actual Cutting Rate / Pc *</small><input id="baseCost" type="number" min="0" step="0.01" placeholder="Rate / Pc"></label>
-          <span><small>Actual Cutting Amount</small><strong id="cmActualCuttingAmount">₹0</strong></span>
+
+        <div class="cm-cutting-grand-summary" aria-live="polite">
+          <div><small>Total Colour Rows</small><strong id="cmTotalColours">0</strong></div>
+          <div class="cm-grand-main"><small>Grand Total Cutting Pcs</small><strong id="totalPieces">0</strong></div>
+          <div><small>Size Matrix Pcs</small><strong id="cmMatrixPieces">0</strong></div>
+          <div><small>Colour/Size Balance</small><strong id="cmPieceBalance" class="cm-piece-balance">0</strong></div>
+          <label>
+            <span>Actual Cutting Rate / Pc *</span>
+            <input id="baseCost" type="number" min="0.01" step="0.01" placeholder="Rate">
+          </label>
+          <div><small>Actual Cutting Amount</small><strong id="cmActualCuttingAmount">₹0</strong></div>
         </div>
+        <span id="totalBundles" class="cm-hidden">0</span>
       </section>
 
       <label class="cm-notes"><span>Notes</span><textarea id="lotNotes" rows="3"></textarea></label>
@@ -352,44 +309,24 @@ button:disabled{cursor:not-allowed;opacity:.48}
     <header class="cm-sheet-head">
       <div>
         <small>OWNER / MANAGER SETTINGS</small>
-        <h2>Custom Cutting Cost Rules</h2>
-        <p>These values become the defaults for future Lots.</p>
+        <h2>Actual Cutting Rate Default</h2>
+        <p>Future Lots के लिए default rate; Lot पर actual rate editable रहेगा.</p>
       </div>
       <button type="button" data-close-cost>×</button>
     </header>
 
     <form id="costSettingsForm" class="cm-form">
       <section class="cm-form-card">
-        <div class="cm-grid-2">
-          <label>
-            <span>Default Base Cost / Piece</span>
-            <input id="settingBaseCost" type="number" min="0" step="0.01" value="0">
-          </label>
-          <label>
-            <span>Big Size Adjustment</span>
-            <input id="settingBigAdjustment" type="number" step="0.01" value="5">
-          </label>
-        </div>
-
-        <div class="cm-grid-2">
-          <label>
-            <span>Full Sleeve Adjustment</span>
-            <input id="settingFullAdjustment" type="number" step="0.01" value="5">
-          </label>
-          <label>
-            <span>With Border Adjustment</span>
-            <input id="settingBorderAdjustment" type="number" step="0.01" value="5">
-          </label>
-        </div>
-
-        <label class="cm-check-row">
-          <input id="settingAllowCustom" type="checkbox" checked>
-          <span>Allow custom per-Lot adjustment</span>
+        <label>
+          <span>Default Actual Cutting Rate / Pc</span>
+          <input id="settingBaseCost" type="number" min="0" step="0.01" placeholder="Rate">
         </label>
-
+        <input id="settingBigAdjustment" type="hidden" value="0">
+        <input id="settingFullAdjustment" type="hidden" value="0">
+        <input id="settingBorderAdjustment" type="hidden" value="0">
+        <input id="settingAllowCustom" type="checkbox" class="cm-hidden">
         <p class="cm-rule-note">
-          Locked default: Small ₹0 · Half ₹0 · Without Border ₹0.
-          Big, Full and With Border use the amounts above.
+          यह केवल future Lots का auto-filled default है। हर Lot में Actual Cutting Rate editable रहेगा और release के बाद उसी Lot पर freeze होगा।
         </p>
       </section>
 
@@ -402,7 +339,7 @@ button:disabled{cursor:not-allowed;opacity:.48}
 </section>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="config.js?v=72035"></script>
-<script src="real-common.js?v=720355"></script>
+<script src="real-common.js?v=720362"></script>
 <script>
 window.onerror = function(message, source, line, column) {
   const text = "CUTTING JS ERROR: " + message + " | line " + line + ":" + column;
@@ -417,7 +354,7 @@ window.onunhandledrejection = function(event) {
   if (box) { box.textContent = text; box.className = "rr-message error"; }
 };
 </script>
-<script src="real-cutting-master-pm.V719.3.js?v=720355"></script>
-<script src="redzed-cutting-cb-actions-v72035.js?v=720355"></script>
+<script src="real-cutting-master-pm.V719.3.js?v=720362"></script>
+<script src="redzed-cutting-cb-actions-v72035.js?v=720362"></script>
 </body>
 </html>

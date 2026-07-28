@@ -4,7 +4,7 @@
 "use strict";
 
 /*
-  REDZED REAL — Cutting Master PM Core V719.3 + CB Actions V720.35.5
+  REDZED REAL — Cutting Master PM Core V719.3 + Discussion V4.2
   Product Master child-aware Cutting Lots.
 
   Locked architecture:
@@ -37,6 +37,8 @@ let singleLotRows = [];
 let multiLotRows = [];
 let breakupRows = [];
 let matchingStockRows = [];
+let matchingLotRows = [];
+let currentRole = "";
 
 let currentFilter = "all";
 let activeCard = null;
@@ -78,6 +80,24 @@ function safe(value) {
   } catch (_) {}
 
   return esc(value);
+}
+
+function cuttingCanViewFinancials() {
+  return ["owner","admin","account","accounts"].includes(String(currentRole||"").toLowerCase());
+}
+function cuttingCanConfigure() {
+  return ["owner","admin"].includes(String(currentRole||"").toLowerCase());
+}
+
+async function loadCuttingRole(client) {
+  if (currentRole) return currentRole;
+  try {
+    const result = await client.rpc("rr_current_role");
+    if (!result.error && result.data) currentRole = String(result.data).toLowerCase();
+  } catch (_) {}
+  const settingsButton = $("openCostSettings");
+  if (settingsButton && !cuttingCanConfigure()) settingsButton.style.display = "none";
+  return currentRole;
 }
 
 function getClient() {
@@ -305,7 +325,7 @@ function matchingStockOptions(selectedId = "") {
         ${String(id) === selected ? "selected" : ""}
         ${available <= 0 && String(id) !== selected ? "disabled" : ""}
       >
-        ${safe(row.fabric_name || "Matching Cloth")} · ${available.toFixed(3)} kg · ${money(avg)}/kg
+        ${safe(row.fabric_name || "Matching Cloth")} · ${available.toFixed(3)} kg${cuttingCanViewFinancials() ? ` · ${money(avg)}/kg` : ""}
       </option>
     `;
   });
@@ -329,6 +349,21 @@ function matchingSnapshot(id) {
   };
 }
 
+function matchingPostingForLot(lotNo) {
+  return matchingLotRows.find(row =>
+    String(row.lot_no || "").trim().toUpperCase() === String(lotNo || "").trim().toUpperCase() &&
+    String(row.status || "").toUpperCase() === "POSTED"
+  ) || null;
+}
+
+function effectiveLotTotalCost(lot = {}) {
+  const base = Number(lot.total_cutting_cost || 0);
+  const posted = matchingPostingForLot(lot.lot_no);
+  if (!posted) return base;
+  const alreadyStored = Number(lot.matching_total_cost || 0);
+  return base + Math.max(0, Number(posted.total_cost || 0) - alreadyStored);
+}
+
 function setSingleMatchingState(selectedId = null) {
   const select = $("cmSingleMatchingItem");
   const qtyInput = $("cmSingleMatchingQty");
@@ -344,7 +379,9 @@ function setSingleMatchingState(selectedId = null) {
     if (qtyInput) { qtyInput.disabled = false; if (Number(qtyInput.value || 0) === 0) qtyInput.value = ""; }
     if (avgInput) avgInput.value = String(snapshot.avgCost || 0);
     if (info) {
-      info.textContent = `Available ${snapshot.availableQty.toFixed(3)} kg · Current Avg ${money(snapshot.avgCost)}/kg`;
+      info.textContent = cuttingCanViewFinancials()
+        ? `Available ${snapshot.availableQty.toFixed(3)} kg · Current Avg ${money(snapshot.avgCost)}/kg`
+        : `Available ${snapshot.availableQty.toFixed(3)} kg`;
     }
   } else {
     if (qtyInput) {
@@ -1499,7 +1536,7 @@ function renderGallery() {
       );
 
       const totalCost = lots.reduce(
-        (sum, row) => sum + Number(row.total_cutting_cost || 0),
+        (sum, row) => sum + effectiveLotTotalCost(row),
         0
       );
 
@@ -1589,7 +1626,13 @@ function renderGallery() {
                     ${totalPcs} pcs ·
                     <strong>${safe(lotStatusLabel(lot))}</strong>
                   </p>
+                  ${lots.map(row => { const mc = matchingPostingForLot(row.lot_no); return mc ? `<p><strong>Matching:</strong> ${safe(mc.fabric_name || "Matching Cloth")} · ${Number(mc.qty || 0).toFixed(3)} kg</p>` : ""; }).join("")}
                   <div class="cm-lot-cost">
+                    <span>
+                      Actual Cutting Rate:
+                      <strong>${money(Number(lot?.base_cost || lot?.process_cost_per_piece || 0))} / pc</strong>
+                    </span>
+                    ${cuttingCanViewFinancials() ? `
                     <span>
                       Final / Pc:
                       <strong>${money(finalPerPiece)}</strong>
@@ -1597,7 +1640,7 @@ function renderGallery() {
                     <span>
                       Total:
                       <strong>${money(totalCost)}</strong>
-                    </span>
+                    </span>` : ""}
                   </div>
                 </div>
               `
@@ -1887,7 +1930,7 @@ function ensureComboUi() {
       <div class="cm-grid-3">
         <label><span>Matching Cloth Stock (Optional)</span><select id="cmSingleMatchingItem">${matchingStockOptions()}</select></label>
         <label><span>Matching Cloth Qty (kg)</span><input id="cmSingleMatchingQty" type="number" min="0" step="0.001" disabled></label>
-        <label><span>Matching Cloth Avg Cost</span><input id="cmSingleMatchingAvgCost" type="number" min="0" step="0.0001" readonly></label>
+        ${cuttingCanViewFinancials() ? `<label><span>Matching Cloth Avg Cost</span><input id="cmSingleMatchingAvgCost" type="number" min="0" step="0.0001" readonly></label>` : ""}
       </div>
       <p id="cmSingleMatchingStockInfo" class="cm-rule-note">No Matching Cloth selected · Qty 0 · Avg Cost 0 · Release allowed.</p>
     </section>
@@ -2105,7 +2148,7 @@ function singleRowFromInputs(old = {}) {
     matching_item_id: snapshot.itemId || null,
     matching_consumption: snapshot.itemId ? numberValue("cmSingleMatchingQty") : 0,
     matching_avg_cost: snapshot.itemId ? snapshot.avgCost : 0,
-    custom_adjustment: Number(old.custom_adjustment || 0)
+    custom_adjustment: 0
   };
 }
 
@@ -2166,7 +2209,7 @@ function buildComboDevRows(options = {}) {
       matching_avg_cost: stock.itemId
         ? stock.avgCost
         : 0,
-      custom_adjustment: Number(old.custom_adjustment || 0)
+      custom_adjustment: 0
     });
   }
 
@@ -2217,15 +2260,14 @@ function renderDevRows() {
         <div class="cm-grid-3">
           <label><span>Matching Cloth Stock (Optional)</span><select class="cm-dev-match-item" data-dev-index="${index}">${matchingStockOptions(row.matching_item_id)}</select></label>
           <label><span>Matching Cloth Qty (kg)</span><input class="cm-dev-match-cons" type="number" min="0" step="0.001" value="${hasMatching && Number(row.matching_consumption || 0) ? Number(row.matching_consumption) : ""}" data-dev-index="${index}" ${hasMatching ? "" : "disabled"}></label>
-          <label><span>Matching Cloth Avg Cost</span><input class="cm-dev-match-cost" type="number" min="0" step="0.0001" readonly value="${hasMatching && Number(stock.avgCost || 0) ? Number(stock.avgCost) : ""}" data-dev-index="${index}"></label>
+          ${cuttingCanViewFinancials() ? `<label><span>Matching Cloth Avg Cost</span><input class="cm-dev-match-cost" type="number" min="0" step="0.0001" readonly value="${hasMatching && Number(stock.avgCost || 0) ? Number(stock.avgCost) : ""}" data-dev-index="${index}"></label>` : ""}
         </div>
 
-        <p class="cm-rule-note">${hasMatching ? `Available ${stock.availableQty.toFixed(3)} kg · Current Avg ${money(stock.avgCost)}/kg` : (matchingRowsForActiveCard().length ? "No Matching Cloth · Qty 0 · Avg Cost 0 · Release allowed." : "Stock नहीं मिला · Product Master में + Add Matching Purchase करें.")}</p>
+        <p class="cm-rule-note">${hasMatching ? (cuttingCanViewFinancials() ? `Available ${stock.availableQty.toFixed(3)} kg · Current Avg ${money(stock.avgCost)}/kg` : `Available ${stock.availableQty.toFixed(3)} kg`) : (matchingRowsForActiveCard().length ? "No Matching Cloth · Qty 0 · Release allowed." : "Stock नहीं मिला · Product Master में + MC New से stock डालें.")}</p>
 
-        <div class="cm-grid-2">
-          <label><span>Custom Adjustment / Pc</span><input class="cm-dev-custom" type="number" step="0.01" value="${Number(row.custom_adjustment || 0) ? Number(row.custom_adjustment) : ""}" data-dev-index="${index}"></label>
+        ${cuttingCanViewFinancials() ? `<div class="cm-grid-2">
           <label><span>Sub-Dev Cost Preview</span><input class="cm-dev-cost-preview" type="text" readonly value="${safe(devCostText(row))}"></label>
-        </div>
+        </div>` : ""}
 
         <div class="cm-dev-auto-total">
           <span><small>${safe(row.dev_no)} Auto Cutting Pcs</small><strong data-dev-planned-total="${safe(row.dev_no)}">${autoPcs}</strong></span>
@@ -2418,12 +2460,10 @@ function devCost(row, pcsOverride = null) {
     ? Number(row.cutting_pcs || 0)
     : Number(pcsOverride || 0);
 
-  const processPerPiece =
-    base +
-    sizeFactorForCombo(row) +
-    sleeveFactorFor(row) +
-    borderFactorFor(row) +
-    Number(row.custom_adjustment || 0);
+  // Actual Cutting Rate is the final approved process rate for this Lot.
+  // Size/sleeve/border remain production attributes; they do not silently
+  // change the operator-entered actual rate.
+  const processPerPiece = base;
 
   const regularMaterial = regularMaterialCostSnapshot();
   const regularMaterialPerPiece = regularMaterial.perPiece;
@@ -2589,7 +2629,7 @@ function renderCuttingMatrix() {
               ${dev.sizes.map((size, sizeIndex) => {
                 const key = matrixKey(dev, colour, size);
                 const qty = matrixQtyMemory.has(key) ? matrixQtyMemory.get(key) : autoQtyForCell(dev, colour, sizeIndex);
-                return `<label><span>${safe(size)}</span><input class="cm-size-qty" type="number" min="0" step="1" placeholder="0" value="${qty || ""}" data-dev-index="${devIndex}" data-dev-no="${safe(dev.dev_no)}" data-size-combo="${safe(dev.size_combo)}" data-sleeve="${safe(dev.sleeve)}" data-border="${safe(dev.border)}" data-colour-id="${safe(colour.id || "")}" data-colour-name="${safe(colourName)}" data-size="${safe(size)}" data-matrix-key="${safe(key)}" data-colour-total-key="${safe(totalKey)}"></label>`;
+                return `<label><span>${safe(size)}</span><input class="cm-size-qty" type="number" min="0" step="1" placeholder="Pcs" value="${qty || ""}" data-dev-index="${devIndex}" data-dev-no="${safe(dev.dev_no)}" data-size-combo="${safe(dev.size_combo)}" data-sleeve="${safe(dev.sleeve)}" data-border="${safe(dev.border)}" data-colour-id="${safe(colour.id || "")}" data-colour-name="${safe(colourName)}" data-size="${safe(size)}" data-matrix-key="${safe(key)}" data-colour-total-key="${safe(totalKey)}"></label>`;
               }).join("")}
             </div>
             <div class="cm-colour-balance" data-colour-balance-key="${safe(totalKey)}"><span>Size Total: 0</span><span>Balance: 0</span></div>
@@ -2821,7 +2861,7 @@ function validateLot() {
         matching_item_id: row.matching_item_id,
         matching_consumption: Number(row.matching_consumption || 0),
         matching_avg_cost: Number(row.matching_avg_cost || 0),
-        custom_adjustment: Number(row.custom_adjustment || 0),
+        custom_adjustment: 0,
         entries
       }]
     };
@@ -2878,7 +2918,7 @@ function singleRpcPayload(valid) {
     p_size_type: sizeTypeForCombo(lot.size_combo),
     p_sleeve_type: normalizedSleeve(lot.sleeve),
     p_border_type: normalizedBorder(lot.border),
-    p_custom_adjustment: Number(lot.custom_adjustment || 0),
+    p_custom_adjustment: 0,
     p_notes: notesForRelease(valid, [
       `D No.: ${lot.dev_no}`,
       lot.matching_item_id
@@ -2946,10 +2986,10 @@ function multiRpcPayload(valid) {
           ? Number(row.matching_avg_cost || 0)
           : 0,
         base_cost: cost.base,
-        size_adjustment: sizeFactorForCombo(row),
-        sleeve_adjustment: sleeveFactorFor(row),
-        border_adjustment: borderFactorFor(row),
-        custom_adjustment: Number(row.custom_adjustment || 0),
+        size_adjustment: 0,
+        sleeve_adjustment: 0,
+        border_adjustment: 0,
+        custom_adjustment: 0,
         raw_material_total: cost.regularMaterialTotal,
         raw_material_cost_per_piece: cost.regularMaterialPerPiece,
         matching_total_cost: cost.matchingTotal,
@@ -2967,6 +3007,89 @@ function multiRpcPayload(valid) {
       };
     })
   };
+}
+
+async function reserveMatchingForLots(valid, client) {
+  const reserved = [];
+  for (const lot of valid.lots) {
+    if (!lot.matching_item_id) continue;
+    const result = await client.rpc("rr_reserve_lot_matching_v2", {
+      p_fabric_id: lot.matching_item_id,
+      p_lot_no: lot.lot_no,
+      p_qty: Number(lot.matching_consumption || 0),
+      p_source_kind: "CUTTING_MASTER",
+      p_remarks: `${valid.lotMode || "single"} Lot reservation`
+    });
+    if (result.error) {
+      if (isMissingRpcError(result.error)) {
+        throw new Error("Matching Fabric V720.36 SQL patch required before Lot release.");
+      }
+      throw result.error;
+    }
+    const row = result.data || {};
+    lot.matching_avg_cost = Number(row.avg_rate_snapshot || lot.matching_avg_cost || 0);
+    reserved.push({ lotNo: lot.lot_no, data: row });
+  }
+  return reserved;
+}
+
+async function cancelMatchingReservations(client, reserved, reason) {
+  await Promise.all((reserved || []).map(item =>
+    client.rpc("rr_cancel_lot_matching_v2", {
+      p_lot_no: item.lotNo,
+      p_reason: reason || "Lot release failed"
+    }).catch(() => null)
+  ));
+}
+
+async function confirmMatchingReservations(client, reserved) {
+  const warnings = [];
+  for (const item of reserved || []) {
+    const result = await client.rpc("rr_confirm_lot_matching_v2", {
+      p_lot_no: item.lotNo,
+      p_source_id: null
+    });
+    if (result.error) warnings.push(`${item.lotNo}: ${errorText(result.error)}`);
+  }
+  return warnings;
+}
+
+async function postCuttingActuals(valid, client) {
+  const warnings = [];
+  const actualRate = Number(numberValue("baseCost") || costSettings.default_base_cost || 0);
+
+  for (const lot of valid.lots || []) {
+    for (const entry of lot.entries || []) {
+      const qty = Math.max(0, Math.floor(Number(entry.quantity || 0)));
+      if (!qty) continue;
+
+      const result = await client.rpc("rr_upsert_lot_process_actual_v1", {
+        p_lot_no: lot.lot_no,
+        p_process_code: "CUTTING",
+        p_art_no: valid.decision?.artNo || null,
+        p_print_no: valid.decision?.noPrintRequired ? "N/A" : (valid.decision?.printNo || null),
+        p_colour_id: entry.colour_id || null,
+        p_colour_name: entry.colour_name || null,
+        p_size_code: entry.size_name || null,
+        p_in_pcs: qty,
+        p_out_pcs: qty,
+        p_short_pcs: 0,
+        p_reject_pcs: 0,
+        p_actual_rate: actualRate,
+        p_process_status: "COMPLETED",
+        p_remarks: "Cutting Lot release"
+      });
+
+      if (result.error) {
+        if (isMissingRpcError(result.error)) {
+          return ["Production Actual Rate foundation SQL अभी install नहीं है."];
+        }
+        warnings.push(`${lot.lot_no} · ${entry.colour_name || "Colour"} · ${entry.size_name || "Size"}: ${errorText(result.error)}`);
+      }
+    }
+  }
+
+  return warnings;
 }
 
 async function createLot(event = {}) {
@@ -2987,6 +3110,8 @@ async function createLot(event = {}) {
     $("lotForm")?.querySelector("button");
 
   const originalText = button?.textContent || "Release Lot No";
+  let matchingReservations = [];
+  let releaseCommitted = false;
 
   try {
     if (button) {
@@ -2998,6 +3123,7 @@ async function createLot(event = {}) {
     }
 
     const valid = validateLot();
+    matchingReservations = await reserveMatchingForLots(valid, client);
     const progressText = valid.lotMode === "multi"
       ? "Multi Lots save हो रहे हैं..."
       : "Cutting Lot save हो रहा है...";
@@ -3009,6 +3135,23 @@ async function createLot(event = {}) {
 
     if (valid.lotMode === "multi") {
       const payload = multiRpcPayload(valid);
+      if (matchingReservations.length) {
+        payload.p_lots.forEach(row => {
+          const matchingCost = Number(row.matching_total_cost || 0);
+          const pcs = Number(row.cutting_pcs || 0);
+          row.matching_item_id = null;
+          row.matching_qty = 0;
+          row.matching_avg_cost = 0;
+          row.matching_total_cost = 0;
+          row.final_product_cost = Math.max(0, Number(row.final_product_cost || 0) - matchingCost);
+          row.total_cutting_cost = Math.max(0, Number(row.total_cutting_cost || 0) - matchingCost);
+          if (pcs > 0) {
+            const matchingPerPiece = matchingCost / pcs;
+            row.final_product_cost_per_piece = Math.max(0, Number(row.final_product_cost_per_piece || 0) - matchingPerPiece);
+            row.final_cost_per_piece = Math.max(0, Number(row.final_cost_per_piece || 0) - matchingPerPiece);
+          }
+        });
+      }
       result = await client.rpc("rr_release_multi_lots_v4", payload);
 
       const hasMatching = valid.lots.some(row => Boolean(row.matching_item_id));
@@ -3021,14 +3164,22 @@ async function createLot(event = {}) {
         result = await client.rpc("rr_release_multi_lots_v3", payload);
       }
     } else {
+      const payload = singleRpcPayload(valid);
+      if (matchingReservations.length) {
+        payload.p_matching_item_id = null;
+        payload.p_matching_qty = 0;
+      }
       result = await client.rpc(
         "rr_release_single_lot_v4",
-        singleRpcPayload(valid)
+        payload
       );
     }
 
     if (result.error) throw result.error;
+    releaseCommitted = true;
 
+    const matchingWarnings = await confirmMatchingReservations(client, matchingReservations);
+    const actualRateWarnings = await postCuttingActuals(valid, client);
     const releasedNos = valid.lots.map(row => row.lot_no);
     lastReleasedLotNo = releasedNos[0] || "";
     lastReleasedDivisionId = activeCard.division.division_id;
@@ -3044,10 +3195,16 @@ async function createLot(event = {}) {
         ?.scrollIntoView({ behavior: "smooth", block: "center" });
     }, 80);
 
-    const successText = `LOT ${releasedNos.join(" · ")} RELEASED · Ready for KR / OV.`;
-    say(successText, "success");
-    setLotReleaseFeedback(successText, "success");
+    const releaseWarnings = [...matchingWarnings, ...actualRateWarnings];
+    const successText = releaseWarnings.length
+      ? `LOT ${releasedNos.join(" · ")} RELEASED · Follow-up warning: ${releaseWarnings.join(" | ")}`
+      : `LOT ${releasedNos.join(" · ")} RELEASED · Actual Cutting Rate saved · Ready for KR / OV.`;
+    say(successText, releaseWarnings.length ? "info" : "success");
+    setLotReleaseFeedback(successText, releaseWarnings.length ? "info" : "success");
   } catch (error) {
+    if (!releaseCommitted && matchingReservations.length) {
+      await cancelMatchingReservations(client, matchingReservations, "Lot release failed");
+    }
     console.error("Lot release failed:", error);
     const messageText = releaseErrorText(error);
     say(messageText, "error");
@@ -3173,11 +3330,22 @@ async function loadCostSettings(client) {
     $("customAdjustment").disabled =
       costSettings.allow_custom_adjustment === false;
   }
-      }
-                                
-   async function loadMatchingStockSource(client) {
-  // The existing release RPC is the primary source because it returns the
-  // exact matching_item_id expected by the release transaction.
+}
+
+async function loadMatchingStockSource(client) {
+  // V720.36: stable fabric-name pool IDs are the primary Matching identity.
+  const v2Result = await client.rpc("rr_get_matching_cloth_stock_v2");
+  if (!v2Result.error) {
+    // V2 is authoritative even when it returns zero rows.
+    // Falling back on an empty V2 result would revive old purchase/card IDs
+    // and can cause "Matching Cloth stock item not found" during release.
+    return (v2Result.data || [])
+      .map(normalizeMatchingStockRow)
+      .filter(row => row.matching_item_id);
+  } else {
+    console.warn("Matching Fabric V2 stock RPC unavailable; trying legacy source.",v2Result.error);
+  }
+
   const rpcResult = await client.rpc("rr_get_matching_cloth_stock_v1");
 
   if (!rpcResult.error) {
@@ -3188,7 +3356,7 @@ async function loadCostSettings(client) {
     if (rows.length) return rows;
   } else {
     console.warn(
-      "Matching stock RPC unavailable; trying V719 stock-card view.",
+      "Legacy matching stock RPC unavailable; trying V719 stock-card view.",
       rpcResult.error
     );
   }
@@ -3230,6 +3398,20 @@ async function loadCostSettings(client) {
   return [];
 }
 
+async function loadMatchingLotSource(client) {
+  const rpcResult = await client.rpc("rr_get_mc1_lot_matchings_v2");
+  if (!rpcResult.error) return rpcResult.data || [];
+
+  if (!isMissingRpcError(rpcResult.error)) {
+    console.warn("Matching lot ledger RPC unavailable; trying legacy read view.", rpcResult.error);
+  }
+
+  return optionalRows(client, "rr_mc1_lot_matching_details_v2", {
+    order: "created_at",
+    ascending: false
+  });
+}
+
 async function loadMultiLotSource(client) {
   const result = await client.rpc("rr_list_multi_lots_v3");
 
@@ -3254,6 +3436,8 @@ async function loadAllData() {
     );
   }
 
+  await loadCuttingRole(client);
+
   if (gallery) {
     gallery.setAttribute("aria-busy", "true");
 
@@ -3275,6 +3459,11 @@ async function loadAllData() {
     "info"
   );
 
+  try {
+    const recovery = await client.rpc("rr_recover_lot_matching_v2");
+    if (recovery.error && !isMissingRpcError(recovery.error)) console.warn("Matching recovery warning",recovery.error);
+  } catch (_) {}
+
   const [
     loadedGalleryRows,
     purchaseResult,
@@ -3288,7 +3477,8 @@ async function loadAllData() {
     lotResult,
     loadedMultiLotRows,
     breakupResult,
-    matchingStockResult
+    matchingStockResult,
+    matchingLotResult
   ] = await Promise.all([
     withTimeout(
       loadGallerySource(client),
@@ -3343,7 +3533,9 @@ async function loadAllData() {
       ascending: false
     }),
 
-    loadMatchingStockSource(client)
+    loadMatchingStockSource(client),
+
+loadMatchingLotSource(client)
   ]);
 
   purchaseRows = requiredData(purchaseResult, "Purchase rows");
@@ -3371,12 +3563,13 @@ async function loadAllData() {
     );
   breakupRows = requiredData(breakupResult, "Cutting breakup");
   matchingStockRows = (matchingStockResult || []).map(normalizeMatchingStockRow);
+  matchingLotRows = matchingLotResult || [];
 
   await loadCostSettings(client);
   refreshMatchingStockControls();
   renderGallery();
 
-  console.info("REDZED Cutting Master PM Core V719.1 loaded", {
+  console.info("REDZED Cutting Master PM Core V720.36.2 loaded", {
     galleryRows: galleryRows.length,
     purchaseRows: purchaseRows.length,
     matchingPurchaseRows: matchingPurchaseRows.length,
@@ -3390,7 +3583,8 @@ async function loadAllData() {
     multiLotRows: multiLotRows.length,
     lotRows: lotRows.length,
     breakupRows: breakupRows.length,
-    matchingStockRows: matchingStockRows.length
+    matchingStockRows: matchingStockRows.length,
+    matchingLotRows: matchingLotRows.length
   });
 }
 
@@ -3530,7 +3724,7 @@ async function start() {
 }
 
 window.RRCuttingMasterPM = {
-  version: "pm-core-v719.3-plus-cb-actions-v72035",
+  version: "pm-core-v720.36.2-mc-ledger-rate-foundation",
 
   state() {
     return {

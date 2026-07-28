@@ -1,7 +1,7 @@
 (() => {
 "use strict";
 
-window.REDZED_PRODUCT_CB_LEDGER_VERSION = "720.35-CUTTING-LEDGER";
+window.REDZED_PRODUCT_CB_LEDGER_VERSION = "720.36.2-PERMISSION-LEDGER";
 
 const state = {client:null,role:"",ledger:[],actions:[],effects:[],lastCb:"",busy:false};
 const $ = id => document.getElementById(id);
@@ -18,6 +18,7 @@ function getClient(){
   return client || [window.supabaseClient,window.supabaseDb,window.redzedSupabase,window.sb].find(x=>x?.from) || null;
 }
 function isOwner(){return state.role==="owner"}
+function canViewFinancials(){return ["owner","admin","account","accounts"].includes(String(state.role||"").toLowerCase())}
 function normalizePhone(value){let x=String(value||"").replace(/\D/g,"");if(x.length===10)x=`91${x}`;return x}
 function openWhatsapp(phone,message){const n=normalizePhone(phone);if(!n)throw new Error("Vendor WhatsApp number required.");const w=window.open(`https://wa.me/${n}?text=${encodeURIComponent(message)}`,"_blank","noopener,noreferrer");if(!w)throw new Error("Browser ने WhatsApp popup block किया।")}
 function proofLinks(action){return Array.isArray(action.media)?action.media.map(x=>x.file_url).filter(Boolean):[]}
@@ -26,7 +27,7 @@ function say(text,type="info"){const box=$("message");if(!box)return;box.textCon
 
 async function loadRole(){const r=await state.client.rpc("rr_current_role");if(!r.error&&r.data)state.role=String(r.data).toLowerCase()}
 async function loadData(){
-  if(state.busy||!state.client)return;
+  if(state.busy||!state.client||!canViewFinancials())return;
   state.busy=true;
   try{
     const [l,a,e]=await Promise.all([
@@ -110,7 +111,7 @@ function renderCurrent(){
   const body=$("detailBody");
   const kicker=String($("detailKicker")?.textContent||"").toUpperCase();
   const cbNo=String($("detailTitle")?.textContent||"").trim();
-  if(!body||!cbNo||!kicker.includes("CB"))return;
+  if(!body||!cbNo||kicker!=="CB DETAILS"||!canViewFinancials())return;
   removeDirectCbActions();
   const ledgerRows = state.ledger.filter(x=>String(x.cb_no)===String(cbNo));
   const actionRows = state.actions.filter(x=>String(x.cb_no)===String(cbNo));
@@ -134,7 +135,7 @@ function renderCurrent(){
 }
 
 let timer=null;
-function scheduleRender(){clearTimeout(timer);timer=setTimeout(async()=>{const kicker=String($("detailKicker")?.textContent||"").toUpperCase();const cbNo=String($("detailTitle")?.textContent||"").trim();if(!kicker.includes("CB")||!cbNo)return;if(state.lastCb!==cbNo){state.lastCb=cbNo;await loadData()}renderCurrent()},80)}
+function scheduleRender(){clearTimeout(timer);timer=setTimeout(async()=>{const kicker=String($("detailKicker")?.textContent||"").toUpperCase();const cbNo=String($("detailTitle")?.textContent||"").trim();if(kicker!=="CB DETAILS"||!cbNo)return;if(state.lastCb!==cbNo){state.lastCb=cbNo;await loadData()}renderCurrent()},80)}
 
 async function boot(){
   injectStyles();state.client=getClient();if(!state.client){console.warn("V720.35 Product CB ledger: Supabase client unavailable");return}
