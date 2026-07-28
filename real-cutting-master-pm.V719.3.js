@@ -4,7 +4,7 @@
 "use strict";
 
 /*
-  REDZED REAL — Cutting Master PM Core V719.3 + Discussion V4.2
+  REDZED REAL — Cutting Master PM Core V719.4 + Individual Multi Lot Cards
   Product Master child-aware Cutting Lots.
 
   Locked architecture:
@@ -1365,6 +1365,17 @@ function injectStyles() {
     .cm-lot-identity strong{display:block;font-size:22px;line-height:1.15;color:#fff;word-break:break-word}
     .cm-lot-identity span{display:block;margin-top:5px;font-size:11px;font-weight:850;color:#cfcfcf}
     .cm-lot-title-new{color:#f4c542}
+    .cm-lot-release-summary{margin:12px 0;padding:14px;border-radius:15px;border:2px solid #f4c542;background:linear-gradient(180deg,rgba(244,197,66,.16),rgba(244,197,66,.05))}
+    .cm-lot-release-summary small{display:block;font-size:10px;font-weight:950;letter-spacing:.12em;color:#f4c542;margin-bottom:5px}
+    .cm-lot-release-summary strong{display:block;font-size:20px;color:#fff}
+    .cm-lot-release-summary span{display:block;margin-top:5px;font-size:11px;font-weight:800;color:#cfcfcf}
+    .cm-individual-lot-grid{display:grid;gap:12px;margin:12px 0}
+    .cm-independent-lot-card{border:2px solid rgba(244,197,66,.7)!important;border-radius:15px!important}
+    .cm-independent-lot-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+    .cm-independent-lot-head small{display:block;font-size:10px;font-weight:950;letter-spacing:.1em;color:#f4c542}
+    .cm-dev-code-badge{display:inline-flex;align-items:center;justify-content:center;min-width:50px;padding:7px 10px;border-radius:999px;background:#f4c542;color:#18140a;font-weight:950}
+    .cm-independent-note{margin-top:10px;padding-top:10px;border-top:1px dashed #444;font-size:11px;color:#bdbdbd;line-height:1.45}
+    @media(min-width:900px){.cm-individual-lot-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
     .cm-release-feedback{margin:12px 0;padding:12px 14px;border-radius:12px;border:1px solid #4a4a55;background:#17171d;color:#fff;font-weight:800;line-height:1.45;white-space:pre-wrap}
     .cm-release-feedback.is-info{border-color:#3b82f6;background:rgba(59,130,246,.13);color:#dbeafe}
     .cm-release-feedback.is-success{border-color:#22c55e;background:rgba(34,197,94,.13);color:#dcfce7}
@@ -1600,7 +1611,7 @@ function renderGallery() {
             <span class="${isNewLot ? "cm-lot-metric-new" : ""}">
               <small>Lot</small>
               <strong class="cm-lot-number ${isNewLot ? "cm-lot-number-highlight" : ""}">
-                ${lotNos.length ? safe(lotNos.join(" · ")) : "Due"}
+                ${lotNos.length ? `${lots.length} Individual Lot${lots.length > 1 ? "s" : ""}` : "Due"}
               </strong>
             </span>
           </div>
@@ -1608,40 +1619,98 @@ function renderGallery() {
           ${
             lots.length
               ? `
-                <div class="cm-lot-identity ${isNewLot ? "is-new" : ""}">
-                  <small>RELEASED LOT NO · PRIMARY IDENTITY</small>
-                  <strong>${safe(lotNos.join(" · "))}</strong>
-                  <span>${safe(childCode)} · ${totalPcs} pcs · ${safe(lotStatusLabel(lot))}</span>
+                <div class="cm-lot-release-summary ${isNewLot ? "is-new" : ""}">
+                  <small>${lots.length > 1 ? "MULTI RELEASED · INDIVIDUAL PRODUCTION LOTS" : "RELEASED LOT NO · PRIMARY IDENTITY"}</small>
+                  <strong>${lots.length} Lot${lots.length > 1 ? "s" : ""} · ${totalPcs} pcs</strong>
+                  <span>हर Lot No अलग जगह और अलग समय पर independently process हो सकता है.</span>
                 </div>
 
-                <div class="cm-lot-box">
-                  <h4 class="${isNewLot ? "cm-lot-title-new" : ""}">
-                    ${lots.length > 1 ? "MULTI LOT" : "LOT"}
-                    <span class="cm-lot-number ${isNewLot ? "cm-lot-number-highlight" : ""}">
-                      ${safe(lotNos.join(" · "))}
-                    </span>
-                  </h4>
-                  <p>${safe(lot?.style_name || decision.styleName || "")}</p>
-                  <p>
-                    ${totalPcs} pcs ·
-                    <strong>${safe(lotStatusLabel(lot))}</strong>
-                  </p>
-                  ${lots.map(row => { const mc = matchingPostingForLot(row.lot_no); return mc ? `<p><strong>Matching:</strong> ${safe(mc.fabric_name || "Matching Cloth")} · ${Number(mc.qty || 0).toFixed(3)} kg</p>` : ""; }).join("")}
-                  <div class="cm-lot-cost">
-                    <span>
-                      Actual Cutting Rate:
-                      <strong>${money(Number(lot?.base_cost || lot?.process_cost_per_piece || 0))} / pc</strong>
-                    </span>
-                    ${cuttingCanViewFinancials() ? `
-                    <span>
-                      Final / Pc:
-                      <strong>${money(finalPerPiece)}</strong>
-                    </span>
-                    <span>
-                      Total:
-                      <strong>${money(totalCost)}</strong>
-                    </span>` : ""}
-                  </div>
+                <div class="cm-individual-lot-grid">
+                  ${lots.map((individualLot, lotIndex) => {
+                    const individualLotNo = String(individualLot.lot_no || "")
+                      .trim()
+                      .toUpperCase();
+
+                    const individualPcs = Number(
+                      individualLot.planned_pcs ||
+                      individualLot.cutting_pcs ||
+                      0
+                    );
+
+                    const individualTotalCost = effectiveLotTotalCost(individualLot);
+
+                    const individualFinalPerPiece = individualPcs > 0
+                      ? individualTotalCost / individualPcs
+                      : Number(individualLot.final_cost_per_piece || 0);
+
+                    const individualDevCode = canonicalDevelopmentCode(
+                      individualLot.variant_code ||
+                      individualLot.dev_code ||
+                      individualLot.development_code ||
+                      individualLot.child_code ||
+                      (lots.length > 1
+                        ? subDevelopmentCode(childCode, lotIndex)
+                        : childCode)
+                    );
+
+                    const individualMatching = matchingPostingForLot(
+                      individualLot.lot_no
+                    );
+
+                    return `
+                      <article
+                        class="cm-lot-box cm-independent-lot-card ${isNewLot ? "is-new" : ""}"
+                        data-production-lot-id="${safe(individualLot.id || individualLot.production_lot_id || "")}"
+                        data-lot-no="${safe(individualLotNo)}"
+                        data-dev-code="${safe(individualDevCode)}"
+                      >
+                        <div class="cm-independent-lot-head">
+                          <div>
+                            <small>INDIVIDUAL RELEASED LOT</small>
+                            <h4 class="${isNewLot ? "cm-lot-title-new" : ""}">
+                              <span class="cm-lot-number ${isNewLot ? "cm-lot-number-highlight" : ""}">
+                                ${safe(individualLotNo)}
+                              </span>
+                            </h4>
+                          </div>
+                          <span class="cm-dev-code-badge">${safe(individualDevCode)}</span>
+                        </div>
+
+                        <p>${safe(individualLot.style_name || decision.styleName || "")}</p>
+                        <p>
+                          <strong>${individualPcs} pcs</strong> ·
+                          ${safe(lotStatusLabel(individualLot))}
+                        </p>
+
+                        ${individualMatching
+                          ? `<p><strong>Matching:</strong> ${safe(individualMatching.fabric_name || "Matching Cloth")} · ${Number(individualMatching.qty || 0).toFixed(3)} kg</p>`
+                          : ""
+                        }
+
+                        <div class="cm-lot-cost">
+                          <span>
+                            Actual Cutting Rate:
+                            <strong>${money(Number(individualLot.base_cost || individualLot.process_cost_per_piece || 0))} / pc</strong>
+                          </span>
+
+                          ${cuttingCanViewFinancials() ? `
+                            <span>
+                              Final / Pc:
+                              <strong>${money(individualFinalPerPiece)}</strong>
+                            </span>
+                            <span>
+                              Total:
+                              <strong>${money(individualTotalCost)}</strong>
+                            </span>
+                          ` : ""}
+                        </div>
+
+                        <div class="cm-independent-note">
+                          Printing, KR, Overlock, Folding, QC, Press और Packing में यह Lot अलग चलेगा।
+                        </div>
+                      </article>
+                    `;
+                  }).join("")}
                 </div>
               `
               : `
