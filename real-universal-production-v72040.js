@@ -1,7 +1,7 @@
 (()=>{
 'use strict';
 const $=id=>document.getElementById(id);
-const state={client:null,auth:null,user:null,depts:[],lots:[],alters:[],entrySummary:null,workFiles:[]};
+const state={client:null,auth:null,user:null,depts:[],lots:[],alters:[],entrySummary:null,workFiles:[],visuals:new Map(),viewerItems:[],viewerIndex:0};
 const safe=v=>window.RR?.safeText?RR.safeText(v):String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 const num=v=>Number(v||0);
 function msg(t,type='info'){$('message').innerHTML=t?`<div class="msg ${safe(type)}">${safe(t)}</div>`:''}
@@ -14,6 +14,29 @@ function lotAlterQty(lotNo){return state.alters.filter(a=>a.lot_no===lotNo).redu
 function category(){return String(state.user?.user_category||state.auth?.role||'WORKER').toUpperCase().replace(/ /g,'_')}
 function isHeadFor(dept){return ['OWNER','ADMIN'].includes(category())||(category()==='DEPARTMENT_HEAD'&&String(state.user?.department_code||'').toUpperCase()===String(dept||'').toUpperCase())}
 function money(v){return v==null?'—':Number(v).toFixed(2)}
+
+function uniqUrls(values){return [...new Set((values||[]).flat(Infinity).filter(v=>typeof v==='string'&&/^https?:\/\//i.test(v.trim())).map(v=>v.trim()))]}
+function normalizeVisuals(raw,l){
+  const r=raw||{}, meta=l?.metadata||{};
+  const garment=uniqUrls([r.garment_url,r.garment_image_url,l?.garment_image_url,l?.art_image_url,l?.product_image_url,l?.image_url,meta.garment_image_url,meta.art_image_url,meta.product_image_url,meta.image_url]);
+  const prints=uniqUrls([r.print_urls,r.print_image_urls,l?.print_image_urls,l?.print_images,l?.artwork_images,meta.print_image_urls,meta.print_images,meta.artwork_images]);
+  return {garment:garment.slice(0,4),prints:prints.slice(0,12)};
+}
+async function loadLotVisual(l){
+  try{const x=await rpc('rr_upm_get_lot_visuals_v6',{p_canonical_lot_id:l.canonical_lot_id,p_art_no:l.art_no||null});state.visuals.set(l.canonical_lot_id,normalizeVisuals(Array.isArray(x)?x[0]:x,l));}
+  catch(_){state.visuals.set(l.canonical_lot_id,normalizeVisuals(null,l));}
+}
+function visualItems(l){const v=state.visuals.get(l.canonical_lot_id)||normalizeVisuals(null,l);return [...v.garment.map((url,i)=>({url,label:`Garment${v.garment.length>1?' '+(i+1):''}`})),...v.prints.map((url,i)=>({url,label:`Print${v.prints.length>1?' '+(i+1):''}`}))]}
+function visualPanel(l,compact=false){
+  const v=state.visuals.get(l.canonical_lot_id)||normalizeVisuals(null,l), all=visualItems(l);
+  const panel=(label,items,offset)=>`<div class="visual-panel"><span class="visual-label">${label}</span>${items.length?`<div class="visual-thumb-row">${items.map((x,i)=>`<button type="button" class="visual-thumb" data-view-lot="${safe(l.canonical_lot_id)}" data-view-index="${offset+i}"><img src="${safe(x.url)}" loading="lazy" alt="${safe(x.label)}"><span>${safe(x.label)}</span></button>`).join('')}</div>`:`<div class="visual-empty">${label} image not mapped</div>`}</div>`;
+  return `<div class="visual-strip ${compact?'compact':''}">${panel('Garment / Art',v.garment.map((url,i)=>({url,label:`Garment${v.garment.length>1?' '+(i+1):''}`})),0)}${panel('Print Reference',v.prints.map((url,i)=>({url,label:`Print${v.prints.length>1?' '+(i+1):''}`})),v.garment.length)}</div>`;
+}
+function bindVisualButtons(scope=document){scope.querySelectorAll('[data-view-lot]').forEach(b=>b.onclick=()=>{const l=currentLot(b.dataset.viewLot);if(l)openViewer(visualItems(l),Number(b.dataset.viewIndex||0),l.lot_no)});}
+function openViewer(items,index=0,title='Reference Images'){if(!items.length)return;state.viewerItems=items;state.viewerIndex=Math.max(0,Math.min(index,items.length-1));$('viewerTitle').textContent=title;renderViewer();$('imageViewer').classList.remove('hidden');document.body.style.overflow='hidden'}
+function closeViewer(){$('imageViewer').classList.add('hidden');document.body.style.overflow='';}
+function moveViewer(delta){if(!state.viewerItems.length)return;state.viewerIndex=(state.viewerIndex+delta+state.viewerItems.length)%state.viewerItems.length;renderViewer()}
+function renderViewer(){const x=state.viewerItems[state.viewerIndex];if(!x)return;$('viewerImage').src=x.url;$('viewerCaption').textContent=`${x.label} · ${state.viewerIndex+1}/${state.viewerItems.length}`;$('viewerDots').innerHTML=state.viewerItems.map((it,i)=>`<button type="button" class="viewer-dot ${i===state.viewerIndex?'active':''}" data-viewer-dot="${i}"><img src="${safe(it.url)}" alt="${safe(it.label)}"></button>`).join('');$('viewerDots').querySelectorAll('[data-viewer-dot]').forEach(b=>b.onclick=()=>{state.viewerIndex=Number(b.dataset.viewerDot);renderViewer()});$('viewerPrev').disabled=state.viewerItems.length<2;$('viewerNext').disabled=state.viewerItems.length<2;}
 
 async function loadUser(){
   try{state.user=await rpc('rr_up_user_context_v2',{});}catch(_){
@@ -31,6 +54,7 @@ async function load(){
   ]);
   for(const r of[d,l,a,e])if(r.error)throw r.error;
   state.depts=d.data||[];state.lots=l.data||[];state.alters=a.data||[];
+  await Promise.all(state.lots.map(loadLotVisual));
   fillSelects();render();
   $('sLots').textContent=state.lots.filter(x=>!['CLOSED','CANCELLED'].includes(String(x.status).toUpperCase())).length;
   $('sColours').textContent=state.lots.reduce((n,x)=>n+colours(x).length,0);
@@ -51,8 +75,8 @@ function render(){
   $('board').innerHTML=rows.length?rows.map(l=>{
     const pending=lotAlterQty(l.lot_no);
     return `<article class="card">
-      <div class="muted">${safe(l.art_no||'')} · ${safe(l.item_name||'')}</div>
-      <h3>${safe(l.lot_no)}</h3>
+      <div class="lot-card-head"><div><div class="lot-number">${safe(l.lot_no)}</div><div class="lot-caption">${safe(l.art_no||'No Art')} · ${safe(l.item_name||'Item not named')}</div></div><span class="chip">${num(l.total_qty)} PCS</span></div>
+      ${visualPanel(l,true)}
       <div class="muted">Cut Qty ${num(l.total_qty)} · ${safe(l.status)}</div>
       ${pending>0?`<div class="alter-alert">ALTER : ${pending} PCS</div>`:''}
       <div>${colours(l).map(c=>`<span class="chip ${c.status==='COMPLETED'?'done':c.status==='PARTIAL'?'partial':''}">${safe(c.colour_name||c.colour_code)} → ${safe(c.current_department_code)} · ${safe(c.status)}</span>`).join('')||'<span class="muted">No colour state</span>'}</div>
@@ -61,6 +85,7 @@ function render(){
   }).join(''):'<div class="empty">No production lots found.</div>';
   document.querySelectorAll('[data-entry]').forEach(b=>b.onclick=()=>openEntry(b.dataset.entry));
   document.querySelectorAll('[data-alter]').forEach(b=>b.onclick=()=>openAlterModule(b.dataset.alter));
+  bindVisualButtons($('board'));
 }
 
 function setColourSelect(id,l){
@@ -73,6 +98,7 @@ async function openEntry(id){
   $('eLotNo').textContent=l.lot_no||'—';
   $('eArtItem').textContent=[l.art_no,l.item_name].filter(Boolean).join(' · ')||'—';
   $('eCutQty').textContent=`${num(l.total_qty)} PCS`;
+  $('entryReferenceVisuals').innerHTML=visualPanel(l);bindVisualButtons($('entryReferenceVisuals'));
   setColourSelect('eColour',l);
   const first=colours(l)[0];
   const lockedDept=state.user?.department_code;
@@ -201,7 +227,7 @@ function prepareAlterUser(l){
 function openAlterModule(id){
   const l=currentLot(id);if(!l)return;prepareAlterUser(l);
   $('alterModuleTitle').textContent=`Alter / Remake / Damage — ${l.lot_no}`;open('alterModuleModal');
-  try{window.RedzedAlter.mount('#alterRoot',{lotNo:l.lot_no,departmentName:window.REDZED_USER.department_name,colours:colours(l)})}catch(e){console.error(e);alert(e.message)}
+  try{window.RedzedAlter.mount('#alterRoot',{lotNo:l.lot_no,departmentName:window.REDZED_USER.department_name,colours:colours(l),referenceVisualHtml:visualPanel(l),onReferenceBind:()=>bindVisualButtons($('alterRoot'))})}catch(e){console.error(e);alert(e.message)}
 }
 
 async function register(ev){ev.preventDefault();try{let cs=[],cutRows=[];if($('rColours').value.trim())cs=JSON.parse($('rColours').value);if($('rCutSizes').value.trim())cutRows=JSON.parse($('rCutSizes').value);await rpc('rr_upm_register_lot_v1',{p_canonical_lot_id:$('rId').value.trim(),p_lot_no:$('rLotNo').value.trim(),p_source_table:'MANUAL',p_source_id:null,p_art_no:$('rArt').value||null,p_item_name:$('rItem').value||null,p_total_qty:Number($('rQty').value||0),p_colours:cs,p_metadata:{registered_from:'UPM_UI'}});if(cutRows.length)await rpc('rr_upm_save_cut_size_map_v5',{p_canonical_lot_id:$('rId').value.trim(),p_lot_no:$('rLotNo').value.trim(),p_rows:cutRows});close('registerModal');ev.target.reset();await load()}catch(e){alert(e.message)}}
@@ -215,6 +241,9 @@ async function boot(){
     $('entryForm').onsubmit=saveEntry;$('registerForm').onsubmit=register;$('saveRateBtn').onclick=saveRate;
     $('eDept').onchange=refreshEntrySummary;$('eColour').onchange=refreshEntrySummary;$('eSize').onchange=refreshEntrySummary;
     $('eWorkImages').onchange=onWorkImages;
+    $('viewerClose').onclick=closeViewer;$('viewerPrev').onclick=()=>moveViewer(-1);$('viewerNext').onclick=()=>moveViewer(1);
+    let touchX=null;$('viewerStage').addEventListener('touchstart',e=>{touchX=e.changedTouches[0].clientX},{passive:true});$('viewerStage').addEventListener('touchend',e=>{if(touchX==null)return;const dx=e.changedTouches[0].clientX-touchX;if(Math.abs(dx)>45)moveViewer(dx<0?1:-1);touchX=null},{passive:true});
+    document.addEventListener('keydown',e=>{if($('imageViewer').classList.contains('hidden'))return;if(e.key==='Escape')closeViewer();if(e.key==='ArrowLeft')moveViewer(-1);if(e.key==='ArrowRight')moveViewer(1)});
     document.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>close(b.dataset.close));
     await load();
   }catch(e){console.error(e);msg(e.message,'error')}
