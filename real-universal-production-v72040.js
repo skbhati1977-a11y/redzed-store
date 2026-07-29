@@ -11,7 +11,7 @@ async function rpc(name,args){const{data,error}=await state.client.rpc(name,args
 function colours(l){return Array.isArray(l?.colours)?l.colours:[]}
 function currentLot(id){return state.lots.find(x=>x.canonical_lot_id===id)}
 function lotAlterQty(lotNo){return state.alters.filter(a=>a.lot_no===lotNo).reduce((n,a)=>n+num(a.pending_qty),0)}
-function category(){return String(state.user?.user_category||state.auth?.role||'WORKER').toUpperCase()}
+function category(){return String(state.user?.user_category||state.auth?.role||'WORKER').toUpperCase().replace(/ /g,'_')}
 function isHeadFor(dept){return ['OWNER','ADMIN'].includes(category())||(category()==='DEPARTMENT_HEAD'&&String(state.user?.department_code||'').toUpperCase()===String(dept||'').toUpperCase())}
 function money(v){return v==null?'—':Number(v).toFixed(2)}
 
@@ -95,7 +95,12 @@ async function refreshEntrySummary(){
     if(!s)throw new Error('Submit summary unavailable.');
     $('eCutQty').textContent=`${num(s.cutting_qty)} PCS`;
     $('eAlterQty').textContent=`${num(s.alter_qty)} PCS`;
+    $('eRepairAssignedQty').textContent=`${num(s.repair_assigned_qty)} PCS`;
+    $('eRepairSubmittedQty').textContent=`${num(s.repair_submitted_qty)} PCS`;
+    $('eRepairAcceptedQty').textContent=`${num(s.repair_accepted_qty)} PCS`;
+    $('eReRepairQty').textContent=`${num(s.re_repair_pending_qty)} PCS`;
     $('eRemakeQty').textContent=`${num(s.remake_qty)} PCS`;
+    $('eRemakeCompletedQty').textContent=`${num(s.remake_completed_qty)} PCS`;
     $('eDamageQty').textContent=`${num(s.damage_qty)} PCS`;
     $('ePendingQty').textContent=`${num(s.pending_alter_qty)} PCS`;
     $('eAlreadyQty').textContent=`${num(s.already_submitted_qty)} PCS`;
@@ -109,6 +114,7 @@ async function refreshEntrySummary(){
     $('saveRateBtn').classList.toggle('hidden',!canRate);
     $('entryStatus').textContent=num(s.submit_ready_qty)>0?'Ready for production submit':'No quantity ready to submit';
     $('submitBtn').disabled=num(s.submit_ready_qty)<=0||s.actual_rate==null;
+    await loadRecentSubmits();
   }catch(e){console.error(e);$('entryStatus').textContent=e.message;$('submitBtn').disabled=true}
 }
 
@@ -142,12 +148,28 @@ async function uploadWorkImages(){
   return paths;
 }
 
+
+async function loadRecentSubmits(){
+  const box=$('recentSubmits'); if(!box)return;
+  const {data,error}=await state.client.from('rr_upm_submit_ledger_v2').select('id,submitted_qty,department_code,colour_code,size_code,submitted_by_name,created_at,submit_status,reverse_reason').eq('canonical_lot_id',$('eLot').value).eq('department_code',$('eDept').value).eq('colour_code',$('eColour').value).order('created_at',{ascending:false}).limit(8);
+  if(error){box.textContent=error.message;return}
+  box.innerHTML=(data||[]).length?(data||[]).map(x=>`<div style="padding:7px 0;border-bottom:1px solid #383842"><b>${num(x.submitted_qty)} PCS</b> · ${safe(x.submit_status)} · ${safe(x.submitted_by_name||'')} · ${new Date(x.created_at).toLocaleString()} ${x.submit_status==='ACTIVE'&&isHeadFor(x.department_code)?`<button type="button" data-reverse="${x.id}" style="margin-left:8px">Reverse</button>`:''}${x.reverse_reason?`<div class="muted">Reason: ${safe(x.reverse_reason)}</div>`:''}</div>`).join(''):'No submissions yet.';
+  box.querySelectorAll('[data-reverse]').forEach(b=>b.onclick=()=>reverseSubmit(b.dataset.reverse));
+}
+async function reverseSubmit(id){
+  const reason=prompt('Reverse reason mandatory:'); if(!reason?.trim())return;
+  if(!confirm('This will reverse the submission and restore the previous balance. Continue?'))return;
+  try{await rpc('rr_upm_reverse_submit_v3',{p_submit_id:id,p_reason:reason.trim()});await refreshEntrySummary();await load();alert('Submission reversed with audit history.')}catch(e){alert(e.message)}
+}
+
 async function saveEntry(ev){
   ev.preventDefault();let paths=[];
   try{
     const s=state.entrySummary;if(!s)throw new Error('Submit summary unavailable.');
     if(s.image_required&&state.workFiles.length<1)throw new Error('Live work image is mandatory for Printing/Stitching.');
     if(s.actual_rate==null)throw new Error('Actual Rate pending from Department Head.');
+    const ok=confirm(`Confirm Submit\n\nLot: ${$('eLotNo').textContent}\nDepartment: ${$('eDept').value}\nColour: ${$('eColour').value}\nSubmit Ready Qty: ${num(s.submit_ready_qty)} PCS\n\nThis quantity will open for the next department.`);
+    if(!ok)return;
     $('submitBtn').disabled=true;$('submitBtn').textContent='Submitting…';
     paths=await uploadWorkImages();
     await rpc('rr_upm_submit_ready_v2',{
@@ -179,10 +201,10 @@ function prepareAlterUser(l){
 function openAlterModule(id){
   const l=currentLot(id);if(!l)return;prepareAlterUser(l);
   $('alterModuleTitle').textContent=`Alter / Remake / Damage — ${l.lot_no}`;open('alterModuleModal');
-  try{window.RedzedAlter.mount('#alterRoot',{lotNo:l.lot_no,departmentName:window.REDZED_USER.department_name})}catch(e){console.error(e);alert(e.message)}
+  try{window.RedzedAlter.mount('#alterRoot',{lotNo:l.lot_no,departmentName:window.REDZED_USER.department_name,colours:colours(l)})}catch(e){console.error(e);alert(e.message)}
 }
 
-async function register(ev){ev.preventDefault();try{let cs=[];if($('rColours').value.trim())cs=JSON.parse($('rColours').value);await rpc('rr_upm_register_lot_v1',{p_canonical_lot_id:$('rId').value.trim(),p_lot_no:$('rLotNo').value.trim(),p_source_table:'MANUAL',p_source_id:null,p_art_no:$('rArt').value||null,p_item_name:$('rItem').value||null,p_total_qty:Number($('rQty').value||0),p_colours:cs,p_metadata:{registered_from:'UPM_UI'}});close('registerModal');ev.target.reset();await load()}catch(e){alert(e.message)}}
+async function register(ev){ev.preventDefault();try{let cs=[],cutRows=[];if($('rColours').value.trim())cs=JSON.parse($('rColours').value);if($('rCutSizes').value.trim())cutRows=JSON.parse($('rCutSizes').value);await rpc('rr_upm_register_lot_v1',{p_canonical_lot_id:$('rId').value.trim(),p_lot_no:$('rLotNo').value.trim(),p_source_table:'MANUAL',p_source_id:null,p_art_no:$('rArt').value||null,p_item_name:$('rItem').value||null,p_total_qty:Number($('rQty').value||0),p_colours:cs,p_metadata:{registered_from:'UPM_UI'}});if(cutRows.length)await rpc('rr_upm_save_cut_size_map_v5',{p_canonical_lot_id:$('rId').value.trim(),p_lot_no:$('rLotNo').value.trim(),p_rows:cutRows});close('registerModal');ev.target.reset();await load()}catch(e){alert(e.message)}}
 
 async function boot(){
   try{
