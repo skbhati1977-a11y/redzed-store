@@ -1,49 +1,34 @@
-REDZED ERP — ALTER / REMAKE / DAMAGE V1
+REDZED UNIVERSAL PRODUCTION V2 — INSTALL ORDER
 
-WHAT IS INCLUDED
-1. REDZED_ALTER_REMAKE_DAMAGE_V1.sql
-2. redzed-alter-v1.js
-3. redzed-alter-v1.css
-4. INTEGRATION_SNIPPET.html
+1. Take a Supabase backup / use a test project.
+2. Confirm REDZED_ALTER_REMAKE_DAMAGE_V1.sql has already run successfully.
+3. Run REDZED_UPM_SUBMIT_V2.sql in Supabase SQL Editor.
+4. Populate public.rr_user_assignments_v2 for every production user.
+   User category and department are locked from this table.
+5. Upload/replace these four web files in the same GitHub folder:
+   - real-universal-production-v72040.html
+   - real-universal-production-v72040.js
+   - redzed-alter-v1.js
+   - redzed-alter-v1.css
+6. Commit and hard refresh the page.
 
-FINAL FLOW IMPLEMENTED
-- Worker or Department Head registers Alter.
-- Worker self-registration binds himself and assigned Line Man/Cutting Master.
-- Alter requires Colour, Size, Qty and live-camera image.
-- Original Alter and evidence are locked after submit.
-- Every Alter gets a unique ALT code.
-- Cutting Master issues Remake only against that Alter, colour-size wise.
-- Department Head registers/edits Damage only against that Alter, colour-size wise.
-- Remake + Damage cannot exceed Alter quantity per colour-size.
-- Pending balance is auto-calculated.
-- Department Head controls status; CLOSED is blocked while pending > 0.
-- All images show as thumbnails and open full-screen with arrows/swipe-compatible browser viewer.
-- Evidence bucket is private; UI uses signed URLs.
+FINAL BUSINESS RULES INCLUDED
+- Worker / Department Head can register Alter.
+- Remake and Damage are always against the same Alter ID, colour-size wise.
+- Damage is controlled only by Department Head.
+- Cutting Master issues remake only.
+- Production Submit has no Reject option and no manual quantity field.
+- Cutting Qty, Alter, Remake, Damage, Pending and Submit Ready Qty are fetched/calculated.
+- Actual Rate is filled only by the assigned Department Head (Owner/Admin override).
+- Worker cannot submit until rate exists.
+- Printer/Stitching require at least one camera work image.
+- Work image is bound to submit ID, Lot, Department, Colour, Size, user and timestamp.
+- Submit posts approved quantity as GOOD through existing rr_upm_post_entry_v1.
+- User ID, category and department are taken from locked rr_user_assignments_v2.
 
-INSTALL ORDER
-1. Back up Supabase.
-2. Run REDZED_ALTER_REMAKE_DAMAGE_V1.sql in Supabase SQL Editor.
-3. Upload JS and CSS beside your Universal Production page.
-4. Add INTEGRATION_SNIPPET.html content to the Lot detail view.
-5. Map CURRENT_* placeholders to your actual logged-in user and lot variables.
-6. Ensure the role is present in JWT app_metadata.role or user_metadata.role.
+IMPORTANT DATA SETUP
+The application cannot guess user UUIDs. Add each user to rr_user_assignments_v2.
+Example SQL is included at the end of REDZED_UPM_SUBMIT_V2.sql.
 
-ROLE VALUES
-WORKER
-DEPARTMENT_HEAD
-CUTTING_MASTER
-ADMIN
-OWNER
-
-IMPORTANT INTEGRATION NOTE
-This package is a clean add-on because the complete current Universal Production HTML/JS source was not present in the supplied files. The only manual work is mapping your existing variable names in INTEGRATION_SNIPPET.html. Database and workflow logic are complete.
-
-TEST ORDER
-1. Login as Worker and register 3 PCS in multiple colour-size rows with camera image.
-2. Confirm card shows ALTER total, names, status, Remake, Damage and Balance.
-3. Login as Cutting Master and issue a partial colour-size remake.
-4. Login as Department Head and add colour-size Damage with fault worker/reason/evidence.
-5. Verify Remake + Damage cannot exceed the original Alter line.
-6. Click every thumbnail; confirm full-screen image opens.
-7. Try closing while Balance > 0; it must fail.
-8. Settle remaining quantity and close.
+NOTE ABOUT CAMERA
+HTML uses capture="environment" and disables ordinary quantity editing. Browser/phone behaviour can vary; on supported mobile browsers it opens the rear camera. Server records the uploaded evidence as live-capture evidence.

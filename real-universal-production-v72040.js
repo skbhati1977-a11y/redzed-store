@@ -1,94 +1,198 @@
 (()=>{
 'use strict';
 const $=id=>document.getElementById(id);
-const state={client:null,auth:null,depts:[],lots:[],alters:[]};
-const safe=v=>window.RR?.safeText?RR.safeText(v):String(v??'').replace(/[&<>"']/g,'');
+const state={client:null,auth:null,user:null,depts:[],lots:[],alters:[],entrySummary:null,workFiles:[]};
+const safe=v=>window.RR?.safeText?RR.safeText(v):String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+const num=v=>Number(v||0);
 function msg(t,type='info'){$('message').innerHTML=t?`<div class="msg ${safe(type)}">${safe(t)}</div>`:''}
 function open(id){$(id)?.classList.remove('hidden')}
 function close(id){$(id)?.classList.add('hidden')}
 async function rpc(name,args){const{data,error}=await state.client.rpc(name,args);if(error)throw error;return data}
 function colours(l){return Array.isArray(l?.colours)?l.colours:[]}
 function currentLot(id){return state.lots.find(x=>x.canonical_lot_id===id)}
-function lotAlterQty(lotNo){return state.alters.filter(a=>a.lot_no===lotNo).reduce((n,a)=>n+Number(a.pending_qty||0),0)}
-function roleOf(auth){return String(auth?.role||auth?.user_role||auth?.profile?.role||auth?.profile?.user_role||'WORKER').toUpperCase()}
-function authValue(...keys){for(const key of keys){const parts=key.split('.');let v=state.auth;for(const p of parts)v=v?.[p];if(v!==undefined&&v!==null&&v!=='')return v}return null}
-function prepareAlterUser(lot){
-  const firstColour=colours(lot)[0]||{};
-  window.supabaseClient=state.client;
-  window.REDZED_USER={
-    id:authValue('user.id','id','profile.id','profile.user_id')||state.auth?.user?.id,
-    name:authValue('name','full_name','user_name','profile.name','profile.full_name','user.email')||'Worker',
-    role:roleOf(state.auth),
-    department_id:authValue('department_id','profile.department_id'),
-    department_name:authValue('department_name','profile.department_name')||firstColour.current_department_code||'Production',
-    line_man_id:authValue('line_man_id','profile.line_man_id'),
-    line_man_name:authValue('line_man_name','profile.line_man_name'),
-    cutting_master_id:authValue('cutting_master_id','profile.cutting_master_id'),
-    cutting_master_name:authValue('cutting_master_name','profile.cutting_master_name')
-  };
+function lotAlterQty(lotNo){return state.alters.filter(a=>a.lot_no===lotNo).reduce((n,a)=>n+num(a.pending_qty),0)}
+function category(){return String(state.user?.user_category||state.auth?.role||'WORKER').toUpperCase()}
+function isHeadFor(dept){return ['OWNER','ADMIN'].includes(category())||(category()==='DEPARTMENT_HEAD'&&String(state.user?.department_code||'').toUpperCase()===String(dept||'').toUpperCase())}
+function money(v){return v==null?'—':Number(v).toFixed(2)}
+
+async function loadUser(){
+  try{state.user=await rpc('rr_up_user_context_v2',{});}catch(_){
+    state.user={user_category:String(state.auth?.role||'WORKER').toUpperCase(),department_code:state.auth?.department_code||state.auth?.profile?.department_code||'',display_name:state.auth?.name||state.auth?.email||''};
+  }
 }
+
 async function load(){
-  try{
-    msg('Loading…');
-    const [d,l,a,e]=await Promise.all([
-      state.client.from('rr_upm_departments').select('*').eq('is_active',true).order('sequence_no'),
-      state.client.from('rr_upm_lot_board_v1').select('*').order('board_updated_at',{ascending:false}),
-      state.client.from('rr_up_alter_card_v1').select('*').not('status','in','(CLOSED,CANCELLED)').order('created_at',{ascending:false}),
-      state.client.from('rr_upm_entries').select('id,created_at').gte('created_at',new Date(new Date().setHours(0,0,0,0)).toISOString())
-    ]);
-    for(const r of[d,l,a,e])if(r.error)throw r.error;
-    state.depts=d.data||[];state.lots=l.data||[];state.alters=a.data||[];
-    fillSelects();render();
-    $('sLots').textContent=state.lots.filter(x=>!['CLOSED','CANCELLED'].includes(String(x.status).toUpperCase())).length;
-    $('sColours').textContent=state.lots.reduce((n,x)=>n+colours(x).length,0);
-    $('sAlters').textContent=state.alters.length;
-    $('sToday').textContent=(e.data||[]).length;
-    msg('');
-  }catch(e){console.error(e);msg(e.message,'error')}
+  msg('Loading…');
+  const [d,l,a,e]=await Promise.all([
+    state.client.from('rr_upm_departments').select('*').eq('is_active',true).order('sequence_no'),
+    state.client.from('rr_upm_lot_board_v1').select('*').order('board_updated_at',{ascending:false}),
+    state.client.from('rr_up_alter_card_v1').select('*').not('status','in','("CLOSED","CANCELLED")').order('created_at',{ascending:false}),
+    state.client.from('rr_upm_entries').select('id,created_at').gte('created_at',new Date(new Date().setHours(0,0,0,0)).toISOString())
+  ]);
+  for(const r of[d,l,a,e])if(r.error)throw r.error;
+  state.depts=d.data||[];state.lots=l.data||[];state.alters=a.data||[];
+  fillSelects();render();
+  $('sLots').textContent=state.lots.filter(x=>!['CLOSED','CANCELLED'].includes(String(x.status).toUpperCase())).length;
+  $('sColours').textContent=state.lots.reduce((n,x)=>n+colours(x).length,0);
+  $('sAlters').textContent=state.alters.length;
+  $('sToday').textContent=(e.data||[]).length;
+  msg('');
 }
+
 function fillSelects(){
   const opts=state.depts.map(d=>`<option value="${safe(d.department_code)}">${safe(d.department_name)}</option>`).join('');
   $('eDept').innerHTML=opts;
   $('deptFilter').innerHTML='<option value="">All departments</option>'+opts;
 }
+
 function render(){
   const q=$('search').value.trim().toLowerCase(),df=$('deptFilter').value;
-  const rows=state.lots.filter(l=>{
-    const text=[l.lot_no,l.art_no,l.item_name].join(' ').toLowerCase();
-    return(!q||text.includes(q))&&(!df||colours(l).some(c=>c.current_department_code===df));
-  });
+  const rows=state.lots.filter(l=>{const text=[l.lot_no,l.art_no,l.item_name].join(' ').toLowerCase();return(!q||text.includes(q))&&(!df||colours(l).some(c=>c.current_department_code===df))});
   $('board').innerHTML=rows.length?rows.map(l=>{
     const pending=lotAlterQty(l.lot_no);
     return `<article class="card">
       <div class="muted">${safe(l.art_no||'')} · ${safe(l.item_name||'')}</div>
       <h3>${safe(l.lot_no)}</h3>
-      <div class="muted">Qty ${Number(l.total_qty||0)} · ${safe(l.status)}</div>
+      <div class="muted">Cut Qty ${num(l.total_qty)} · ${safe(l.status)}</div>
       ${pending>0?`<div class="alter-alert">ALTER : ${pending} PCS</div>`:''}
       <div>${colours(l).map(c=>`<span class="chip ${c.status==='COMPLETED'?'done':c.status==='PARTIAL'?'partial':''}">${safe(c.colour_name||c.colour_code)} → ${safe(c.current_department_code)} · ${safe(c.status)}</span>`).join('')||'<span class="muted">No colour state</span>'}</div>
-      <div class="actions"><button data-entry="${safe(l.canonical_lot_id)}">Add entry</button><button class="primary" data-alter="${safe(l.canonical_lot_id)}">Alter / Remake / Damage</button></div>
+      <div class="actions"><button data-entry="${safe(l.canonical_lot_id)}">Production Submit</button><button class="primary" data-alter="${safe(l.canonical_lot_id)}">Alter / Remake / Damage</button></div>
     </article>`;
   }).join(''):'<div class="empty">No production lots found.</div>';
   document.querySelectorAll('[data-entry]').forEach(b=>b.onclick=()=>openEntry(b.dataset.entry));
   document.querySelectorAll('[data-alter]').forEach(b=>b.onclick=()=>openAlterModule(b.dataset.alter));
 }
-function setColourSelect(id,l){$(id).innerHTML=colours(l).map(c=>`<option value="${safe(c.colour_code)}">${safe(c.colour_name||c.colour_code)}</option>`).join('')||'<option value="GENERAL">General</option>'}
-function openEntry(id){const l=currentLot(id);$('eLot').value=id;setColourSelect('eColour',l);const c=colours(l)[0];if(c?.current_department_code)$('eDept').value=c.current_department_code;open('entryModal')}
-function openAlterModule(id){
-  const l=currentLot(id);if(!l)return;
-  prepareAlterUser(l);
-  $('alterModuleTitle').textContent=`Alter / Remake / Damage — ${l.lot_no}`;
-  open('alterModuleModal');
-  try{window.RedzedAlter.mount('#alterRoot',{lotNo:l.lot_no,departmentName:window.REDZED_USER.department_name})}
-  catch(e){console.error(e);alert(e.message)}
+
+function setColourSelect(id,l){
+  $(id).innerHTML=colours(l).map(c=>`<option value="${safe(c.colour_code)}">${safe(c.colour_name||c.colour_code)}</option>`).join('')||'<option value="GENERAL">General</option>';
 }
-async function saveEntry(ev){ev.preventDefault();try{await rpc('rr_upm_post_entry_v1',{p_canonical_lot_id:$('eLot').value,p_department_code:$('eDept').value,p_colour_code:$('eColour').value,p_size_code:$('eSize').value,p_entry_type:$('eType').value,p_qty:Number($('eQty').value),p_rate:Number($('eRate').value||0),p_remarks:$('eRemarks').value||null});close('entryModal');ev.target.reset();await load()}catch(e){alert(e.message)}}
+
+async function openEntry(id){
+  const l=currentLot(id);if(!l)return;
+  $('eLot').value=id;
+  $('eLotNo').textContent=l.lot_no||'—';
+  $('eArtItem').textContent=[l.art_no,l.item_name].filter(Boolean).join(' · ')||'—';
+  $('eCutQty').textContent=`${num(l.total_qty)} PCS`;
+  setColourSelect('eColour',l);
+  const first=colours(l)[0];
+  const lockedDept=state.user?.department_code;
+  if(lockedDept&&state.depts.some(d=>d.department_code===lockedDept))$('eDept').value=lockedDept;
+  else if(first?.current_department_code)$('eDept').value=first.current_department_code;
+  $('eSize').value='ALL';$('eRemarks').value='';$('eRate').value='';
+  state.workFiles=[];renderWorkPreview();open('entryModal');await refreshEntrySummary();
+}
+
+async function refreshEntrySummary(){
+  try{
+    $('entryStatus').textContent='Calculating…';
+    const rows=await rpc('rr_upm_submit_summary_v2',{
+      p_canonical_lot_id:$('eLot').value,
+      p_department_code:$('eDept').value,
+      p_colour_code:$('eColour').value,
+      p_size_code:$('eSize').value||'ALL'
+    });
+    const s=Array.isArray(rows)?rows[0]:rows;state.entrySummary=s||null;
+    if(!s)throw new Error('Submit summary unavailable.');
+    $('eCutQty').textContent=`${num(s.cutting_qty)} PCS`;
+    $('eAlterQty').textContent=`${num(s.alter_qty)} PCS`;
+    $('eRemakeQty').textContent=`${num(s.remake_qty)} PCS`;
+    $('eDamageQty').textContent=`${num(s.damage_qty)} PCS`;
+    $('ePendingQty').textContent=`${num(s.pending_alter_qty)} PCS`;
+    $('eAlreadyQty').textContent=`${num(s.already_submitted_qty)} PCS`;
+    $('eReadyQty').textContent=`${num(s.submit_ready_qty)} PCS`;
+    $('eImageWrap').classList.toggle('hidden',!s.image_required);
+    $('eImageRequiredText').textContent=s.image_required?'Live work image mandatory for this department.':'Work image optional.';
+    const canRate=isHeadFor($('eDept').value);
+    $('eRate').readOnly=!canRate;
+    $('eRate').value=s.actual_rate==null?'':s.actual_rate;
+    $('eRateHelp').textContent=s.actual_rate==null?(canRate?'Enter and save Actual Rate before submit.':'Actual Rate pending from Department Head.'):`Rate locked: ₹${money(s.actual_rate)}${s.rate_filled_by?' · '+s.rate_filled_by:''}`;
+    $('saveRateBtn').classList.toggle('hidden',!canRate);
+    $('entryStatus').textContent=num(s.submit_ready_qty)>0?'Ready for production submit':'No quantity ready to submit';
+    $('submitBtn').disabled=num(s.submit_ready_qty)<=0||s.actual_rate==null;
+  }catch(e){console.error(e);$('entryStatus').textContent=e.message;$('submitBtn').disabled=true}
+}
+
+async function saveRate(){
+  try{
+    const rate=Number($('eRate').value);
+    if(!Number.isFinite(rate)||rate<0)throw new Error('Enter a valid Actual Rate.');
+    await rpc('rr_upm_set_department_rate_v2',{p_canonical_lot_id:$('eLot').value,p_department_code:$('eDept').value,p_actual_rate:rate});
+    await refreshEntrySummary();alert('Actual Rate saved.');
+  }catch(e){alert(e.message)}
+}
+
+function renderWorkPreview(){
+  $('workPreview').innerHTML=state.workFiles.map((f,i)=>`<div class="work-thumb"><img src="${URL.createObjectURL(f)}" alt="Work evidence"><button type="button" data-remove-work="${i}">×</button></div>`).join('');
+  document.querySelectorAll('[data-remove-work]').forEach(b=>b.onclick=()=>{state.workFiles.splice(Number(b.dataset.removeWork),1);renderWorkPreview()});
+}
+
+function onWorkImages(ev){
+  const files=[...(ev.target.files||[])].filter(f=>f.type.startsWith('image/'));
+  state.workFiles=[...state.workFiles,...files].slice(0,5);renderWorkPreview();ev.target.value='';
+}
+
+async function uploadWorkImages(){
+  const paths=[];
+  for(const f of state.workFiles){
+    const ext=(f.name.split('.').pop()||'jpg').replace(/[^a-z0-9]/gi,'').toLowerCase();
+    const path=`${$('eLot').value}/${$('eDept').value}/${Date.now()}-${crypto.randomUUID()}.${ext}`;
+    const {error}=await state.client.storage.from('redzed-production-work').upload(path,f,{contentType:f.type||'image/jpeg',upsert:false});
+    if(error)throw error;paths.push(path);
+  }
+  return paths;
+}
+
+async function saveEntry(ev){
+  ev.preventDefault();let paths=[];
+  try{
+    const s=state.entrySummary;if(!s)throw new Error('Submit summary unavailable.');
+    if(s.image_required&&state.workFiles.length<1)throw new Error('Live work image is mandatory for Printing/Stitching.');
+    if(s.actual_rate==null)throw new Error('Actual Rate pending from Department Head.');
+    $('submitBtn').disabled=true;$('submitBtn').textContent='Submitting…';
+    paths=await uploadWorkImages();
+    await rpc('rr_upm_submit_ready_v2',{
+      p_canonical_lot_id:$('eLot').value,
+      p_department_code:$('eDept').value,
+      p_colour_code:$('eColour').value,
+      p_size_code:$('eSize').value||'ALL',
+      p_remarks:$('eRemarks').value||null,
+      p_evidence_paths:paths
+    });
+    close('entryModal');state.workFiles=[];await load();alert('Production submitted and next department opened.');
+  }catch(e){
+    if(paths.length)await Promise.all(paths.map(p=>state.client.storage.from('redzed-production-work').remove([p]).catch(()=>null)));
+    alert(e.message);
+  }finally{$('submitBtn').textContent='SUBMIT';$('submitBtn').disabled=false}
+}
+
+function prepareAlterUser(l){
+  window.REDZED_USER={
+    id:state.user?.user_id||state.auth?.id||state.auth?.user?.id,
+    name:state.user?.display_name||state.auth?.name||state.auth?.email||'User',
+    role:category(),
+    department_id:null,
+    department_name:state.user?.department_name||state.user?.department_code||colours(l)[0]?.current_department_code||'',
+    line_man_id:state.user?.line_man_id||null,line_man_name:state.user?.line_man_name||'',
+    cutting_master_id:state.user?.cutting_master_id||null,cutting_master_name:state.user?.cutting_master_name||''
+  };
+}
+function openAlterModule(id){
+  const l=currentLot(id);if(!l)return;prepareAlterUser(l);
+  $('alterModuleTitle').textContent=`Alter / Remake / Damage — ${l.lot_no}`;open('alterModuleModal');
+  try{window.RedzedAlter.mount('#alterRoot',{lotNo:l.lot_no,departmentName:window.REDZED_USER.department_name})}catch(e){console.error(e);alert(e.message)}
+}
+
 async function register(ev){ev.preventDefault();try{let cs=[];if($('rColours').value.trim())cs=JSON.parse($('rColours').value);await rpc('rr_upm_register_lot_v1',{p_canonical_lot_id:$('rId').value.trim(),p_lot_no:$('rLotNo').value.trim(),p_source_table:'MANUAL',p_source_id:null,p_art_no:$('rArt').value||null,p_item_name:$('rItem').value||null,p_total_qty:Number($('rQty').value||0),p_colours:cs,p_metadata:{registered_from:'UPM_UI'}});close('registerModal');ev.target.reset();await load()}catch(e){alert(e.message)}}
+
 async function boot(){
   try{
     state.client=window.supabaseClient||window.sb;if(!state.client)throw new Error('Supabase client unavailable');
     state.auth=await RR.requireRoles(['owner','admin','production','manager','line_manager','worker','department_head','cutting_master']);
+    await loadUser();
     $('refresh').onclick=load;$('registerBtn').onclick=()=>open('registerModal');$('search').oninput=render;$('deptFilter').onchange=render;
-    $('entryForm').onsubmit=saveEntry;$('registerForm').onsubmit=register;
+    $('entryForm').onsubmit=saveEntry;$('registerForm').onsubmit=register;$('saveRateBtn').onclick=saveRate;
+    $('eDept').onchange=refreshEntrySummary;$('eColour').onchange=refreshEntrySummary;$('eSize').onchange=refreshEntrySummary;
+    $('eWorkImages').onchange=onWorkImages;
     document.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>close(b.dataset.close));
     await load();
   }catch(e){console.error(e);msg(e.message,'error')}
