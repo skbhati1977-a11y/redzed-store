@@ -1,0 +1,24 @@
+V72055 HTML PATCH
+
+1. GitHub me real-universal-production-v72051.html ki copy banao:
+   real-universal-production-v72055.html
+
+2. Is line ko replace karo:
+
+<script src="redzed-upm-work-assignment-v8.js?v=720500"></script>
+
+3. Is line se:
+
+<script src="redzed-upm-work-assignment-v8-5.js?v=720550"></script>
+
+4. Optional visible label:
+   REDZED REAL · V720.51
+   ko:
+   REDZED REAL · V720.55
+   se replace karo.
+
+Do not change:
+- real-universal-production-v72040.js
+- redzed-alter-v4.js
+- redzed-upm-smart-packing-v1.js
+- Cutting module files
