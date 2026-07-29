@@ -1,29 +1,25 @@
-REDZED UPM V7 FINAL MOUNT
+REDZED UPM SMART PACKING V1
 
-FINAL RULE:
-- Existing working flow is not rewritten.
-- Cloth Manager enters CB.
-- Owner assigns Art and Print.
-- Existing Cutting Module receives mapping.
-- Cutting Master generates/releases Lot No.
-- From Cutting onward, Lot No is permanent identity.
-- Existing Submit, Alter, Repair, Damage, Remake, Rate, Reversal and Audit remain unchanged.
+1. Take Supabase backup.
+2. Run REDZED_UPM_SMART_PACKING_V1.sql.
+3. Upload redzed-upm-smart-packing-v1.js.
+4. Replace/open real-universal-production-v72041.html.
+5. Keep existing real-universal-production-v72040.js unchanged.
 
-INSTALL:
-1. Backup Supabase.
-2. Run REDZED_UPM_V7_FINAL_MOUNT.sql.
-3. Upload:
-   - real-universal-production-v72040-mounted.html
-   - redzed-upm-v7-final-mount.js
-   - real-dashboard-v720372-upm.html
-4. Keep existing real-cutting-master.html and real-universal-production-v72040.html unchanged.
-5. Open the new dashboard and test Universal Production.
-6. Hard refresh.
+Locked rule:
+- Carton capacity 18 PCS.
+- Fresh boxes first: all colours × all sizes.
+- Remaining standard boxes: SIZE-FIRST, 18 PCS exact, maximum colours first, then duplicates from highest balance.
+- Remainder 1–9 merges with the final 18-PCS base box and becomes MIX (e.g. 26 PCS).
+- Worker sees only the generated table and submits that exact plan.
+- Submit is blocked unless packed cell total equals source total.
 
-IMAGE NOTE:
-PTST9 currently has artwork_url and garment_preview_url as NULL.
-Therefore no image will display until Print Master contains those URLs.
-
-VENDOR BILL NOTE:
-External vendor Alter/Damage/Repair requires mandatory Vendor Bill No.
-Not added in this patch to avoid disturbing current focus and flow.
+Test matrix for the 620 PCS example:
+[
+ {"colour_code":"C1","size_code":"Size 1","qty":34},{"colour_code":"C1","size_code":"Size 2","qty":28},{"colour_code":"C1","size_code":"Size 3","qty":39},
+ {"colour_code":"C2","size_code":"Size 1","qty":36},{"colour_code":"C2","size_code":"Size 2","qty":26},{"colour_code":"C2","size_code":"Size 3","qty":28},
+ {"colour_code":"C3","size_code":"Size 1","qty":33},{"colour_code":"C3","size_code":"Size 2","qty":42},{"colour_code":"C3","size_code":"Size 3","qty":39},
+ {"colour_code":"C4","size_code":"Size 1","qty":24},{"colour_code":"C4","size_code":"Size 2","qty":36},{"colour_code":"C4","size_code":"Size 3","qty":33},
+ {"colour_code":"C5","size_code":"Size 1","qty":36},{"colour_code":"C5","size_code":"Size 2","qty":36},{"colour_code":"C5","size_code":"Size 3","qty":36},
+ {"colour_code":"C6","size_code":"Size 1","qty":38},{"colour_code":"C6","size_code":"Size 2","qty":38},{"colour_code":"C6","size_code":"Size 3","qty":38}
+]
