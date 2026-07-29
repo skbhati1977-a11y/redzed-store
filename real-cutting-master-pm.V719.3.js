@@ -3264,10 +3264,19 @@ async function createLot(event = {}) {
         ?.scrollIntoView({ behavior: "smooth", block: "center" });
     }, 80);
 
-    const releaseWarnings = [...matchingWarnings, ...actualRateWarnings];
+    let upmWarning = "";
+    try {
+      const upmSync = await client.rpc("rr_upm_sync_cutting_lots_v2");
+      if (upmSync.error) throw upmSync.error;
+    } catch (syncError) {
+      console.warn("UPM V722 sync warning:", syncError);
+      upmWarning = `UPM sync: ${errorText(syncError)}`;
+    }
+    const releaseWarnings = [...matchingWarnings, ...actualRateWarnings, ...(upmWarning ? [upmWarning] : [])];
+    const nextStage = valid.decision?.noPrintRequired ? "OPEN FOR STICKER / KR / OV ASSIGNMENT" : "RELEASED TO PRINTER";
     const successText = releaseWarnings.length
-      ? `LOT ${releasedNos.join(" · ")} RELEASED · Follow-up warning: ${releaseWarnings.join(" | ")}`
-      : `LOT ${releasedNos.join(" · ")} RELEASED · Actual Cutting Rate saved · Ready for KR / OV.`;
+      ? `LOT ${releasedNos.join(" · ")} RELEASED · ${nextStage} · Follow-up warning: ${releaseWarnings.join(" | ")}`
+      : `LOT ${releasedNos.join(" · ")} RELEASED · Cutting completed · ${nextStage}.`;
     say(successText, releaseWarnings.length ? "info" : "success");
     setLotReleaseFeedback(successText, releaseWarnings.length ? "info" : "success");
   } catch (error) {
