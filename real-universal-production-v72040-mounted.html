@@ -1,31 +1,223 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <title>REDZED Universal Production</title>
+<link rel="stylesheet" href="redzed-alter-v1.css?v=720810">
 <style>
-:root{color-scheme:dark;--bg:#0b0b0e;--p:#17171d;--line:#383842;--txt:#f7f7f8}
-*{box-sizing:border-box}html,body{height:100%;margin:0;background:var(--bg);color:var(--txt);font-family:Inter,system-ui,sans-serif}
-body{display:grid;grid-template-rows:auto 1fr;overflow:hidden}.top{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 16px;background:var(--p);border-bottom:1px solid var(--line)}
-.tabs{display:flex;gap:8px;flex-wrap:wrap}button,a{border:1px solid var(--line);background:#202027;color:#fff;border-radius:10px;padding:9px 12px;text-decoration:none;font-weight:800;cursor:pointer}
-button.is-active{background:linear-gradient(#d24a59,#9b2d39)}main{position:relative;min-height:0}iframe{position:absolute;inset:0;width:100%;height:100%;border:0}iframe[hidden]{display:none}
-@media(max-width:720px){.top{align-items:flex-start;flex-direction:column}}
+:root{color-scheme:dark;--bg:#0b0b0e;--p:#17171d;--p2:#202027;--line:#383842;--txt:#f7f7f8;--mut:#aaaab4;--red:#c94150;--green:#35b56c;--amber:#d9a93d}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--txt);font-family:Inter,system-ui,sans-serif}
+.page{max-width:1700px;margin:auto;padding:16px}
+.top{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.top a,button{border:1px solid var(--line);background:var(--p2);color:#fff;border-radius:10px;padding:9px 12px;text-decoration:none;font-weight:800;cursor:pointer}
+.primary{background:linear-gradient(#d24a59,#9b2d39);border-color:#e25a68}
+.hero{margin:14px 0;padding:16px;background:linear-gradient(135deg,#2a171b,#15151a);border:1px solid var(--line);border-radius:18px}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.stat{background:#101014;border:1px solid var(--line);padding:12px;border-radius:12px}
+.stat small{color:var(--mut)}.stat b{display:block;font-size:22px;margin-top:4px}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
+.toolbar input,.toolbar select,input,select,textarea{background:#111116;color:#fff;border:1px solid var(--line);border-radius:9px;padding:9px}
+.board{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:12px}
+.card{background:var(--p);border:1px solid var(--line);border-radius:16px;padding:14px}
+.card h3{margin:0}.muted{color:var(--mut)}
+.chip{display:inline-flex;border:1px solid var(--line);border-radius:999px;padding:5px 8px;margin:4px 4px 0 0;font-size:12px}
+.chip.done{border-color:#2f8654;color:#8eebb4}.chip.partial{border-color:#997629;color:#ffe08f}
+.alter-alert{margin:10px 0;padding:9px 11px;border:1px solid #c94150;background:#32151a;color:#ff7c88;border-radius:10px;font-size:18px;font-weight:900}
+.actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:12px}
+.modal{position:fixed;inset:0;background:#000a;display:grid;place-items:center;padding:16px;z-index:9000}
+.modal.hidden,.hidden{display:none!important}
+.sheet{width:min(720px,100%);max-height:92vh;overflow:auto;background:#16161c;border:1px solid var(--line);border-radius:18px;padding:16px}
+.sheet.wide{width:min(980px,100%)}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.field{display:flex;flex-direction:column;gap:5px}.field.full{grid-column:1/-1}
+.msg{margin:10px 0;padding:10px;border-radius:10px;background:#111116}
+.empty{padding:50px;text-align:center;color:var(--mut)}
+.lot-strip,.qty-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:10px 0}
+.lot-box,.qty-box{border:1px solid var(--line);background:#101014;border-radius:11px;padding:10px}
+.lot-box small,.qty-box small{display:block;color:var(--mut);margin-bottom:4px}.qty-box b{font-size:18px}
+.qty-box.ready{border-color:#2f8654;background:#102319}.qty-box.alert{border-color:#9b2d39;background:#251215}
+.rate-row{display:flex;gap:8px;align-items:end}.rate-row .field{flex:1}
+.work-thumb{display:inline-block;position:relative;margin:6px}
+.work-thumb img{width:92px;height:92px;object-fit:cover;border-radius:10px;border:1px solid var(--line)}
+.work-thumb button{position:absolute;right:-5px;top:-5px;width:24px;height:24px;padding:0;border-radius:50%;background:#8e2632}
+.status-line{margin:10px 0;padding:9px;border-radius:9px;background:#111116;color:#d8d8df}
+.camera-label{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line);background:#202027;border-radius:10px;padding:10px 12px;font-weight:800;cursor:pointer}
+.camera-label input{display:none}button:disabled{opacity:.45;cursor:not-allowed}
+.lot-card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:8px}
+.lot-number{font-size:24px;line-height:1;font-weight:950;letter-spacing:.4px;color:#fff}
+.lot-caption{color:var(--mut);font-size:13px;margin-top:5px}
+.visual-strip{display:grid;grid-template-columns:minmax(120px,1.2fr) minmax(150px,1.8fr);gap:10px;margin:10px 0}
+.visual-panel{min-width:0}.visual-label{display:block;color:var(--mut);font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:.7px;margin-bottom:5px}
+.visual-thumb-row{display:flex;gap:7px;overflow-x:auto;scroll-snap-type:x mandatory;padding-bottom:4px}
+.visual-thumb{position:relative;flex:0 0 112px;height:112px;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#0e0e12;padding:0}
+.visual-thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.visual-thumb span{position:absolute;left:0;right:0;bottom:0;padding:18px 6px 5px;background:linear-gradient(transparent,#000d);font-size:11px;text-align:left}
+.visual-empty{height:112px;display:grid;place-items:center;text-align:center;border:1px dashed var(--line);border-radius:12px;color:var(--mut);font-size:12px;padding:8px}
+.entry-visuals{margin:10px 0 14px}
+.viewer{position:fixed;inset:0;z-index:12000;background:#000;display:flex;flex-direction:column}
+.viewer.hidden{display:none}.viewer-top{height:56px;display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:#090909;color:#fff}
+.viewer-stage{position:relative;flex:1;min-height:0;display:grid;place-items:center;overflow:hidden;touch-action:pan-y}
+.viewer-stage img{max-width:100%;max-height:100%;object-fit:contain;user-select:none}
+.viewer-nav{position:absolute;top:50%;transform:translateY(-50%);width:44px;height:56px;border-radius:12px;background:#0009;font-size:28px}
+.viewer-prev{left:10px}.viewer-next{right:10px}.viewer-caption{padding:8px 12px;text-align:center;background:#090909}
+.viewer-dots{display:flex;gap:6px;justify-content:center;overflow-x:auto;padding:8px;background:#090909}
+.viewer-dot{width:54px;height:54px;padding:0;border-radius:8px;overflow:hidden;opacity:.55}
+.viewer-dot.active{opacity:1;border-color:#fff}.viewer-dot img{width:100%;height:100%;object-fit:cover}
+.rr-alt-reference-visuals{margin:8px 0 14px}
+
+/* Corrected Work Assignment modal */
+#rrAssignModalV8{display:none;position:fixed;inset:0;z-index:15000;background:rgba(0,0,0,.78);padding:16px;align-items:center;justify-content:center}
+#rrAssignModalV8.is-open{display:flex!important}
+.rr-assign-sheet{width:min(980px,100%);max-height:92vh;overflow:auto;background:#16161c;border:1px solid #454550;border-radius:18px;padding:16px;box-shadow:0 24px 80px #000}
+.rr-assign-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;position:sticky;top:-16px;background:#16161c;padding:12px 0;z-index:2}
+.rr-assign-meta{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:10px 0}
+.rr-assign-meta>div{border:1px solid var(--line);background:#101014;border-radius:11px;padding:10px}
+.rr-assign-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.rr-colour-toolbar,.rr-colour-picks{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
+.rr-colour-chip{border:1px solid #4a4a55;background:#202027}
+.rr-colour-chip.is-selected{background:#8e2632;border-color:#e05a68}
+.rr-colour-chip.is-locked{opacity:.55;text-decoration:line-through;cursor:not-allowed}
+.rr-assign-row{border:1px solid #3b3b45;background:#101014;border-radius:13px;padding:12px;margin:10px 0}
+.rr-assign-row-head{display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap}
+.rr-size-line{display:flex;gap:8px;flex-wrap:wrap;margin:9px 0}
+.rr-size-pill{border:1px solid #3b3b45;border-radius:999px;padding:6px 9px;white-space:nowrap}
+.rr-worker-line{display:grid;grid-template-columns:minmax(260px,1fr) 180px;gap:10px}
+.rr-lock-text{color:#ffbd77;font-size:12px}
+.rr-assign-open{background:#274b79!important;border-color:#4a83c2!important}
+
+@media(max-width:700px){
+ .stats,.grid,.lot-strip,.qty-grid,.rr-assign-grid,.rr-assign-meta,.rr-worker-line{grid-template-columns:1fr}
+ .rate-row{align-items:stretch;flex-direction:column}.board{grid-template-columns:1fr}
+ .visual-strip{grid-template-columns:1fr}.visual-thumb{flex-basis:42vw;height:42vw;max-width:160px;max-height:160px}
+ .sheet,.rr-assign-sheet{max-height:100vh;height:100vh;border-radius:0}.viewer-nav{display:none}
+ #rrAssignModalV8{padding:0}
+}
 </style>
 </head>
 <body>
-<header class="top">
-  <div><small>REDZED REAL · UPM V7 FINAL</small><h2 style="margin:3px 0">Cutting → Same Lot No → All Departments</h2></div>
-  <nav class="tabs">
-    <button id="cuttingTab" class="is-active" type="button">Cutting Module</button>
-    <button id="productionTab" type="button">Department Production</button>
-    <button id="refreshActive" type="button">Refresh Active</button>
-    <a href="real-dashboard-v720372-upm.html">Dashboard</a>
-  </nav>
-</header>
-<main>
-  <iframe id="cuttingFrame" src="real-cutting-master.html?v=720800" title="Existing Cutting Module"></iframe>
-  <iframe id="productionFrame" src="real-universal-production-v72040.html?v=720800" title="Existing Department Production" hidden></iframe>
-</main>
-<script src="redzed-upm-v7-final-mount.js?v=720800"></script>
+
+<div class="page">
+  <div class="top">
+    <div><small style="color:var(--amber);font-weight:900">REDZED REAL · V720.81</small><h1>Universal Production</h1></div>
+    <div><a href="real-dashboard-v720372.html">Dashboard</a> <button id="refresh">Refresh</button></div>
+  </div>
+
+  <section class="hero">
+    <h2>Lot dashboard</h2>
+    <p class="muted">Cutting Release se aaye Lot permanent production identity hain. Manual Lot registration is screen par disabled hai.</p>
+    <div class="stats">
+      <div class="stat"><small>Open lots</small><b id="sLots">0</b></div>
+      <div class="stat"><small>Colours in flow</small><b id="sColours">0</b></div>
+      <div class="stat"><small>Open alters</small><b id="sAlters">0</b></div>
+      <div class="stat"><small>Today entries</small><b id="sToday">0</b></div>
+    </div>
+  </section>
+
+  <div class="toolbar">
+    <input id="search" placeholder="Lot, art, item…">
+    <select id="deptFilter"><option value="">All departments</option></select>
+  </div>
+  <div id="message"></div>
+  <main id="board" class="board"></main>
+</div>
+
+<div id="entryModal" class="modal hidden">
+<form id="entryForm" class="sheet">
+  <div class="top"><h2>Production Submit</h2><button type="button" data-close="entryModal">Close</button></div>
+  <input type="hidden" id="eLot">
+  <div class="lot-strip">
+    <div class="lot-box"><small>Lot No</small><b id="eLotNo">—</b></div>
+    <div class="lot-box"><small>Art / Item</small><b id="eArtItem">—</b></div>
+    <div class="lot-box"><small>Cutting Qty</small><b id="eCutQty">0 PCS</b></div>
+  </div>
+  <div id="entryReferenceVisuals" class="entry-visuals"></div>
+  <div class="grid">
+    <label class="field"><span>Department</span><select id="eDept" required></select></label>
+    <label class="field"><span>Colour</span><select id="eColour" required></select></label>
+    <label class="field"><span>Size</span><input id="eSize" value="ALL" required></label>
+  </div>
+  <div id="rrEntryAssignmentV8" class="status-line">Assigned worker will appear here.</div>
+  <div class="qty-grid">
+    <div class="qty-box alert"><small>Alter Registered</small><b id="eAlterQty">0 PCS</b></div>
+    <div class="qty-box"><small>Repair Assigned</small><b id="eRepairAssignedQty">0 PCS</b></div>
+    <div class="qty-box"><small>Repair Submitted</small><b id="eRepairSubmittedQty">0 PCS</b></div>
+    <div class="qty-box ready"><small>Repair Accepted</small><b id="eRepairAcceptedQty">0 PCS</b></div>
+    <div class="qty-box alert"><small>Re-Repair Pending</small><b id="eReRepairQty">0 PCS</b></div>
+    <div class="qty-box"><small>Remake Issued</small><b id="eRemakeQty">0 PCS</b></div>
+    <div class="qty-box ready"><small>Remake Completed</small><b id="eRemakeCompletedQty">0 PCS</b></div>
+    <div class="qty-box alert"><small>Damage</small><b id="eDamageQty">0 PCS</b></div>
+    <div class="qty-box alert"><small>Unresolved Alter</small><b id="ePendingQty">0 PCS</b></div>
+    <div class="qty-box"><small>Already Submitted</small><b id="eAlreadyQty">0 PCS</b></div>
+    <div class="qty-box ready"><small>Submit Ready Qty</small><b id="eReadyQty">0 PCS</b></div>
+  </div>
+  <div class="rate-row">
+    <label class="field"><span>Actual Rate</span><input id="eRate" type="number" step="0.01" min="0" placeholder="Actual rate"></label>
+    <button id="saveRateBtn" type="button">Save Rate</button>
+  </div>
+  <div id="eRateHelp" class="muted"></div>
+  <div id="eImageWrap" class="field full">
+    <span>Real Work Images</span>
+    <label class="camera-label">Open Camera<input id="eWorkImages" type="file" accept="image/*" capture="environment" multiple></label>
+    <small id="eImageRequiredText" class="muted"></small><div id="workPreview"></div>
+  </div>
+  <label class="field full"><span>Remarks</span><textarea id="eRemarks" placeholder="Optional remarks"></textarea></label>
+  <div id="entryStatus" class="status-line">Ready</div>
+  <div class="status-line">Submit Ready Qty next department ke liye open hogi. Wrong submit authorised user reason ke saath reverse kar sakta hai.</div>
+  <div class="actions"><button type="button" data-close="entryModal">Cancel</button><button class="primary" id="submitBtn">SUBMIT</button></div>
+  <div class="field full"><span>Recent Submissions</span><div id="recentSubmits" class="status-line">No submissions yet.</div></div>
+</form>
+</div>
+
+<div id="alterModuleModal" class="modal hidden">
+  <section class="sheet wide">
+    <div class="top"><h2 id="alterModuleTitle">Alter / Remake / Damage</h2><button type="button" data-close="alterModuleModal">Close</button></div>
+    <section id="alterRoot"></section>
+  </section>
+</div>
+
+<!-- Corrected Assignment Modal: closed by default and never rendered in page flow -->
+<div id="rrAssignModalV8" aria-hidden="true">
+  <form id="rrAssignFormV8" class="rr-assign-sheet">
+    <div class="rr-assign-head">
+      <div><small style="color:var(--amber);font-weight:900">WORK ASSIGN V8</small><h2 style="margin:4px 0">Assign Work — <span id="rrAssignLotNoV8">—</span></h2></div>
+      <button type="button" id="rrAssignCloseV8">Close</button>
+    </div>
+    <div class="rr-assign-meta">
+      <div><small class="muted">Lot No</small><b id="rrAssignMetaLotV8">—</b></div>
+      <div><small class="muted">Art / Item</small><b id="rrAssignMetaArtV8">—</b></div>
+      <div><small class="muted">Cutting Qty</small><b id="rrAssignMetaQtyV8">0 PCS</b></div>
+    </div>
+    <div class="rr-assign-grid">
+      <label class="field"><span>Department</span><select id="rrAssignDeptV8" required></select></label>
+      <label class="field"><span>Common Worker — one time select</span><select id="rrAssignCommonWorkerV8"><option value="">Select worker</option></select></label>
+    </div>
+    <div class="rr-colour-toolbar">
+      <button type="button" id="rrAssignAllV8">ALL UNASSIGNED COLOURS</button>
+      <button type="button" id="rrAssignClearV8">CLEAR</button>
+      <button type="button" class="primary" id="rrAssignOkV8">OK</button>
+    </div>
+    <div id="rrAssignColourPicksV8" class="rr-colour-picks"></div>
+    <div id="rrAssignRowsV8"></div>
+    <label class="field full"><span>Remarks</span><textarea id="rrAssignRemarksV8" placeholder="Optional assignment remarks"></textarea></label>
+    <div id="rrAssignStatusV8" class="status-line">Select Department, then single / multiple / all colours.</div>
+    <div class="actions"><button type="button" id="rrAssignCancelV8">Cancel</button><button type="submit" class="primary" id="rrAssignSaveV8">ASSIGN WORK</button></div>
+  </form>
+</div>
+
+<div id="imageViewer" class="viewer hidden" role="dialog" aria-modal="true">
+  <div class="viewer-top"><b id="viewerTitle">Reference Images</b><button type="button" id="viewerClose">Close</button></div>
+  <div class="viewer-stage" id="viewerStage"><button type="button" class="viewer-nav viewer-prev" id="viewerPrev">‹</button><img id="viewerImage" alt="Reference image"><button type="button" class="viewer-nav viewer-next" id="viewerNext">›</button></div>
+  <div id="viewerCaption" class="viewer-caption"></div><div id="viewerDots" class="viewer-dots"></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js?v=720810"></script>
+<script src="real-common.js?v=720810"></script>
+<script src="redzed-alter-v5.js?v=720810"></script>
+<script src="real-universal-production-v72040.js?v=720810"></script>
+<script src="redzed-upm-v7-final-mount.js?v=720810"></script>
+<script src="redzed-upm-work-assignment-v8-fixed.js?v=720810"></script>
 </body>
 </html>
