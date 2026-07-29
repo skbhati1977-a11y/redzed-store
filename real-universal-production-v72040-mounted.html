@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>REDZED Universal Production</title>
+<style>
+:root{color-scheme:dark;--bg:#0b0b0e;--p:#17171d;--line:#383842;--txt:#f7f7f8}
+*{box-sizing:border-box}html,body{height:100%;margin:0;background:var(--bg);color:var(--txt);font-family:Inter,system-ui,sans-serif}
+body{display:grid;grid-template-rows:auto 1fr;overflow:hidden}.top{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 16px;background:var(--p);border-bottom:1px solid var(--line)}
+.tabs{display:flex;gap:8px;flex-wrap:wrap}button,a{border:1px solid var(--line);background:#202027;color:#fff;border-radius:10px;padding:9px 12px;text-decoration:none;font-weight:800;cursor:pointer}
+button.is-active{background:linear-gradient(#d24a59,#9b2d39)}main{position:relative;min-height:0}iframe{position:absolute;inset:0;width:100%;height:100%;border:0}iframe[hidden]{display:none}
+@media(max-width:720px){.top{align-items:flex-start;flex-direction:column}}
+</style>
+</head>
+<body>
+<header class="top">
+  <div><small>REDZED REAL · UPM V7 FINAL</small><h2 style="margin:3px 0">Cutting → Same Lot No → All Departments</h2></div>
+  <nav class="tabs">
+    <button id="cuttingTab" class="is-active" type="button">Cutting Module</button>
+    <button id="productionTab" type="button">Department Production</button>
+    <button id="refreshActive" type="button">Refresh Active</button>
+    <a href="real-dashboard-v720372-upm.html">Dashboard</a>
+  </nav>
+</header>
+<main>
+  <iframe id="cuttingFrame" src="real-cutting-master.html?v=720800" title="Existing Cutting Module"></iframe>
+  <iframe id="productionFrame" src="real-universal-production-v72040.html?v=720800" title="Existing Department Production" hidden></iframe>
+</main>
+<script src="redzed-upm-v7-final-mount.js?v=720800"></script>
+</body>
+</html>
