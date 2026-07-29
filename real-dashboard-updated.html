@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>REDZED REAL Dashboard</title>
+<link rel="stylesheet" href="real-style.css?v=720800">
+</head>
+<body class="rr-body">
+<header class="rr-topbar">
+  <div><p class="rr-kicker">REDZED REAL</p><h1>Owner Dashboard</h1></div>
+  <div class="rr-top-actions"><span id="ownerName" class="rr-owner-name">Loading...</span><button id="logoutBtn" class="rr-btn rr-btn-secondary">Logout</button></div>
+</header>
+<main class="rr-page">
+<section class="rr-hero"><div><p class="rr-muted">Real Factory. Real Control.</p><h2 id="welcomeText">Welcome</h2></div><div id="securityStatus" class="rr-status-pill">Secure session</div></section>
+<section class="rr-stat-grid">
+<article class="rr-stat-card"><span>Active Arts</span><strong id="artCount">—</strong></article>
+<article class="rr-stat-card"><span>Live Lots</span><strong id="lotCount">—</strong></article>
+<article class="rr-stat-card"><span>Open Remakes</span><strong id="remakeCount">—</strong></article>
+<article class="rr-stat-card"><span>Available Stock PCS</span><strong id="stockCount">—</strong></article>
+</section>
+<section class="rr-module-grid">
+<a class="rr-module-card" href="/redzed-store/real-art-master.html?v=720800"><span class="rr-module-number">01</span><h3>Design Master</h3><p>Art and design references.</p></a>
+<a class="rr-module-card" href="/redzed-store/real-print-master.html?v=720800"><span class="rr-module-number">02</span><h3>Print Master</h3><p>Print artwork and garment preview.</p></a>
+<a class="rr-module-card" href="/redzed-store/real-product-master-v720.html?v=720800"><span class="rr-module-number">03</span><h3>Product Master</h3><p>CB entry and Owner Art/Print assignment.</p></a>
+<a class="rr-module-card" href="/redzed-store/real-cutting-master.html?v=720800"><span class="rr-module-number">04</span><h3>Cutting & Lots</h3><p>Existing Cutting flow and Lot release.</p></a>
+<a class="rr-module-card" href="/redzed-store/real-universal-production-v72040-mounted.html?v=720800"><span class="rr-module-number">05</span><h3>Universal Production</h3><p>Mounted Cutting plus existing Department Production on the same Lot No.</p></a>
+<a class="rr-module-card" href="/redzed-store/real-role-permission-v72037.html?v=720800"><span class="rr-module-number">06</span><h3>Roles & Permissions</h3><p>Existing permission controls.</p></a>
+</section>
+<section class="rr-panel"><div class="rr-panel-head"><h2>Live Lot Status</h2><button id="refreshBtn" class="rr-btn rr-btn-secondary">Refresh</button></div><div id="lotList" class="rr-list"><p class="rr-muted">Loading...</p></div></section>
+<p id="dashboardMessage" class="rr-message"></p>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js?v=720800"></script>
+<script src="real-dashboard.js?v=720800"></script>
+</body></html>
