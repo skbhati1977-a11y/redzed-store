@@ -1,0 +1,29 @@
+<!-- Add inside your Universal Production Lot detail page -->
+<link rel="stylesheet" href="./redzed-alter-v1.css">
+
+<section id="alterRoot"></section>
+
+<script>
+// Use your existing logged-in profile / assignment data here.
+window.REDZED_USER = {
+  id: CURRENT_USER_ID,
+  name: CURRENT_USER_NAME,
+  role: CURRENT_USER_ROLE, // WORKER | DEPARTMENT_HEAD | CUTTING_MASTER | ADMIN | OWNER
+  department_id: CURRENT_DEPARTMENT_ID,
+  department_name: CURRENT_DEPARTMENT_NAME,
+  line_man_id: CURRENT_LINE_MAN_ID,
+  line_man_name: CURRENT_LINE_MAN_NAME,
+  cutting_master_id: CURRENT_CUTTING_MASTER_ID,
+  cutting_master_name: CURRENT_CUTTING_MASTER_NAME
+};
+
+// Point this to your already-created Supabase JS client.
+window.supabaseClient = YOUR_EXISTING_SUPABASE_CLIENT;
+</script>
+<script src="./redzed-alter-v1.js"></script>
+<script>
+RedzedAlter.mount('#alterRoot', {
+  lotNo: CURRENT_LOT_NO,
+  departmentName: CURRENT_DEPARTMENT_NAME
+});
+</script>
