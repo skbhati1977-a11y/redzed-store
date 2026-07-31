@@ -191,7 +191,7 @@ async function loadContext() {
   if (!state.lot || !$("dept").value) return;
   try {
     setFormMessage("Verified Single/Multi Cutting mapping and workflow balances loading…");
-    state.context = await rpc("rr_upm_universal_form_v740", {
+    state.context = await rpc("rr_upm_universal_form_v741", {
       p_canonical_lot_id: state.lot.canonical_lot_id,
       p_department_code: $("dept").value
     });
@@ -211,8 +211,11 @@ async function loadContext() {
     fillBulkWorker();
     state.mapping = state.context.mapping_context || {};
     filterDepartmentDropdown();
-    const lockedRoute = state.context.route_locked_to;
-    $("routeNote").textContent = lockedRoute ? `Current Owner: ${state.context.department_code} · Submit Route Locked: ${lockedRoute}` : `Current Owner: ${state.context.department_code} · First Submit पर Next Department चुनें.`;
+    const openCount=arr(state.context.rows).filter(r=>r.can_assign).reduce((m,r)=>m.add(upper(r.colour_code)),new Set()).size;
+    const runningCount=arr(state.context.rows).filter(r=>r.is_locked).reduce((m,r)=>m.add(upper(r.colour_code)),new Set()).size;
+    $("routeNote").textContent = runningCount
+      ? `Current Owner: ${upper($("dept").value)} · ${runningCount} Colour running · Submit के बाद फिर Random Open Queue.`
+      : `OPEN RANDOM QUEUE · First Assignment Wins · ${openCount} Colour इस Department में claim किए जा सकते हैं.`;
     renderColours();
     const source = arr(state.context.rows)[0]?.source_type || "NO SOURCE";
     setFormMessage(`${state.context.department_code} · ${source} Cutting source · Full-colour assignment · Transaction-safe work actions.`, "success");
@@ -231,14 +234,18 @@ function currentDepartmentWorkers() {
 
 
 function filterDepartmentDropdown(){
-  const running=arr(state.context?.running_departments);
-  if(!running.length)return;
-  const current=upper(state.context?.department_code||$("dept").value);
-  const allowed=new Set(running.map(x=>upper(x.department_code)));
-  if(current)allowed.add(current);
-  [...$("dept").options].forEach(o=>o.hidden=!allowed.has(upper(o.value)));
-  const visible=[...$("dept").options].filter(o=>!o.hidden);
-  if(visible.length&&![...visible].some(o=>o.value===$("dept").value))$("dept").value=visible[0].value;
+  const select=$("dept");
+  const current=upper(select.value||state.context?.department_code);
+  const statuses=arr(state.context?.department_statuses);
+  if(!statuses.length)return;
+  const icon={BASE:"",ORANGE:"🟧 ",GREEN:"🟩 ",RED:"🟥 "};
+  select.innerHTML=statuses.map(d=>{
+    const code=upper(d.department_code);
+    const cls=`dept-${String(d.status_colour||"BASE").toLowerCase()}`;
+    return `<option value="${esc(code)}" class="${cls}">${icon[d.status_colour]||""}${esc(d.display_label||d.department_name||code)}</option>`;
+  }).join("");
+  if([...select.options].some(o=>upper(o.value)===current))select.value=current;
+  else if(select.options.length)select.value=select.options[0].value;
 }
 function lmCandidates(){return arr(state.mapping?.line_man_candidates);}
 function openWhatsApp(result){if(result?.whatsapp_url)window.open(result.whatsapp_url,"_blank","noopener");}
@@ -302,7 +309,7 @@ function groups() {
 }
 
 function statusBadge(group) {
-  if (!group.is_locked && !group.canAssign) return '<span class="badge warn">WAITING PREVIOUS SUBMIT</span>';
+  if (!group.is_locked && !group.canAssign) return '<span class="badge warn">RUNNING IN OTHER DEPARTMENT</span>';
   if (!group.is_locked) return '<span class="badge ok">OPEN FOR ASSIGNMENT</span>';
   if (group.unresolvedTotal <= 0) return '<span class="badge ok">SUBMITTED / CAUGHT UP</span>';
   return '<span class="badge lock">ASSIGNED / IN PROGRESS</span>';
@@ -331,7 +338,7 @@ function renderColours() {
           <label>${assigned ? "Reassign all direct Pending to" : "Route gate"}
             ${assigned
               ? `<select class="reassign-worker" ${done ? "disabled" : ""}>${workerOptions("", "Select new worker")}</select>`
-              : `<input value="${canAssign ? "OPEN AFTER UPSTREAM SUBMIT" : "LOCKED · WAITING PREVIOUS SUBMIT"}" disabled>`}
+              : `<input value="${canAssign ? "OPEN · FIRST ASSIGNMENT WINS" : "RUNNING IN OTHER DEPARTMENT"}" disabled>`}
           </label>
         </div>
       </div>
@@ -438,7 +445,7 @@ async function assignWork() {
         actual_rate: num($("actualRate").value)
       };
     });
-    await rpc("rr_upm_assign_colours_v8_3", {
+    await rpc("rr_upm_claim_colours_v741", {
       p_canonical_lot_id: state.lot.canonical_lot_id,
       p_lot_no: state.lot.lot_no,
       p_department_code: $("dept").value,
@@ -548,21 +555,17 @@ function applyBulkWorker() {
   setFormMessage(`Worker applied to ${selectedCards.length} selected Colour(s). All Cutting sizes remain bound.`, "success");
 }
 
-async function doSubmitWithRoute(nextDepartment=null){
-  const selected=state.pendingSubmitRows||selectedAssignedGroups();
-  if(!selected.length)throw new Error("Select at least one assigned Colour using its Work checkbox.");
-  const rows=selected.map(({group})=>({colour_id:group.colour_id,colour_code:group.colour_code}));
-  return rpc("rr_upm_submit_colours_v740",{p_canonical_lot_id:state.lot.canonical_lot_id,p_department_code:$("dept").value,p_rows:rows,p_next_department_code:nextDepartment,p_rate:num($("actualRate").value),p_remarks:"Universal Lot Form Colour Submit"});
-}
 async function submitSelectedColours(){
-  const selected=selectedAssignedGroups(); if(!selected.length){setFormMessage("Select at least one assigned Colour.","error");return;}
-  state.pendingSubmitRows=selected;
-  if(!state.context?.route_locked_to){
-    const opts=state.departments.filter(d=>d.is_active!==false&&upper(d.department_code)!==upper($("dept").value));
-    $("nextDepartmentSelect").innerHTML='<option value="">Select Next Department</option>'+opts.map(d=>`<option value="${esc(d.department_code)}">${esc(d.department_name)}</option>`).join("");
-    $("routeModal").classList.remove("hidden");return;
-  }
-  const result=await runBusy(()=>doSubmitWithRoute(state.context.route_locked_to)); if(result)setFormMessage(`${result.colours_submitted||0} Colour(s) submitted to ${result.next_department_code}. Route locked.`,"success");
+  const selected=selectedAssignedGroups();
+  if(!selected.length){setFormMessage("Select at least one assigned Colour.","error");return;}
+  const rows=selected.map(({group})=>({colour_id:group.colour_id,colour_code:group.colour_code}));
+  const result=await runBusy(()=>rpc("rr_upm_submit_colours_v741",{
+    p_canonical_lot_id:state.lot.canonical_lot_id,
+    p_department_code:$("dept").value,
+    p_rows:rows,
+    p_remarks:"Universal Lot Form Dynamic Colour Submit"
+  }));
+  if(result)setFormMessage(`${result.colours_submitted||0} Colour(s) submitted · ${num(result.qty_submitted)} PCS · अब Random Open Queue में उपलब्ध.`,"success");
 }
 async function saveRates() {
   await runBusy(async () => {
@@ -762,9 +765,6 @@ async function boot() {
     $("closeAlterEvidence").onclick = () => $("alterEvidenceModal").classList.add("hidden");
     $("saveAlterEvidence").onclick = async () => { try { await saveAlterEvidence(); } catch (error) { $("alterEvidenceMsg").textContent = errorText(error); } };
     $("alterEvidenceFiles").onchange = () => { const files=[...($("alterEvidenceFiles").files||[])].slice(0,3); $("alterEvidencePreview").innerHTML=files.map(file=>`<span class="badge">${esc(file.name)}</span>`).join(""); };
-
-    $("closeRouteModal").onclick=()=>$("routeModal").classList.add("hidden");
-    $("confirmRouteSubmit").onclick=async()=>{try{const dep=$("nextDepartmentSelect").value;if(!dep)throw new Error("Select Next Department.");const result=await runBusy(()=>doSubmitWithRoute(dep));if(result){$("routeModal").classList.add("hidden");setFormMessage(`${result.colours_submitted||0} Colour(s) submitted to ${result.next_department_code}. Remaining Colours locked to same route.`,"success");}}catch(e){$("routeModalMsg").textContent=errorText(e)}};
     $("changeLmBtn").onclick=()=>{const c=lmCandidates(),cur=state.mapping?.line_man_enrolment;$("newLmSelect").innerHTML=c.filter(x=>String(x.worker_id)!==String(cur?.person_id||"")).map(x=>`<option value="${esc(x.worker_id)}">${esc(x.worker_name)} · ${esc(x.worker_code||"")}</option>`).join("");$("lmModal").classList.remove("hidden")};
     $("closeLmModal").onclick=()=>$("lmModal").classList.add("hidden");
     $("saveLmTransfer").onclick=async()=>{try{await rpc("rr_upm_transfer_lm_v740",{p_canonical_lot_id:state.lot.canonical_lot_id,p_department_code:$("dept").value,p_new_line_man_id:$("newLmSelect").value,p_mode:$("lmTransferMode").value,p_reason:$("lmTransferReason").value,p_physical_handover:$("lmPhysicalHandover").checked});$("lmModal").classList.add("hidden");await loadContext();}catch(e){$("lmModalMsg").textContent=errorText(e)}};
@@ -781,6 +781,8 @@ async function boot() {
     setMessage(errorText(error), "error");
   }
 }
+
+console.info("REDZED UPM V741_DYNAMIC_RANDOM_ASSIGN");
 
 document.readyState === "loading" ? document.addEventListener("DOMContentLoaded", boot) : boot();
 })();
