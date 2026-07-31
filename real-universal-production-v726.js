@@ -20,7 +20,10 @@ const state = {
   imageIndex: 0,
   scale: 1,
   startX: 0,
-  busy: false
+  busy: false,
+  access: null,
+  selectedWorkColours: new Set(),
+  damagePublishers: new Map()
 };
 
 function errorText(error) {
@@ -297,9 +300,35 @@ function statusBadge(group) {
   return '<span class="badge lock">ASSIGNED / IN PROGRESS</span>';
 }
 
+
+function actorName() {
+  const a = state.access || {};
+  return a.display_name || a.user_name || a.full_name || a.name || a.email || "LINE MAN / MANAGER";
+}
+
+function renderStatusTicker() {
+  const box = $("qualityStatusTicker");
+  if (!box) return;
+  const items = [];
+  arr(state.context?.rows).forEach(row => {
+    const q = qualityNumbers(row);
+    const label = `${row.colour_name || row.colour_code} / ${row.size_code}`;
+    if (q.alterPending > 0) items.push(`<span class="ticker-alert alter">ALTER PENDING · ${esc(label)} · ${q.alterPending} PCS · KARIGAR</span>`);
+    if (q.remakePending > 0) items.push(`<span class="ticker-alert remake">REMAKE PENDING · ${esc(label)} · ${q.remakePending} PCS · CUTTING MASTER</span>`);
+    if (q.damage > 0) {
+      const k = `${state.lot?.canonical_lot_id}|${state.context?.department_code}|${row.colour_code}|${row.size_code}`;
+      items.push(`<span class="ticker-alert damage">DAMAGE · ${esc(label)} · ${q.damage} PCS · PUBLISHED BY ${esc(state.damagePublishers.get(k) || actorName())}</span>`);
+    }
+  });
+  box.innerHTML = items.length ? `<div class="ticker-label">LIVE ALTER REPORT</div><div class="ticker-track"><div class="ticker-run">${items.join("")}</div></div>` : `<div class="ticker-clear">LIVE STATUS · NO ALTER / REMAKE / DAMAGE PENDING</div>`;
+}
+
 function renderColours() {
   renderSummary();
+  renderStatusTicker();
   const colourGroups = groups();
+  const activeAssigned = colourGroups.filter(g => Boolean(g.is_locked) && g.unresolvedTotal > 0);
+  if (!state.selectedWorkColours.size && activeAssigned.length === 1) state.selectedWorkColours.add(rowKey(activeAssigned[0]));
   $("colours").innerHTML = colourGroups.map(group => {
     const assigned = Boolean(group.is_locked);
     const canAssign = !assigned && Boolean(group.canAssign);
@@ -308,7 +337,7 @@ function renderColours() {
       <div class="colour-head">
         <div class="colour-title">
           ${assigned
-            ? `<input class="work-pick" type="checkbox" ${done ? "disabled" : ""} title="Select this assigned colour for entries or Submit">`
+            ? `<input class="work-pick" type="checkbox" ${state.selectedWorkColours.has(rowKey(group)) ? "checked" : ""} ${done ? "disabled" : ""} title="Selected रहेगा जब तक Colour Submit नहीं होता">`
             : `<input class="assign-pick" type="checkbox" ${canAssign ? "" : "disabled"} title="${canAssign ? "Select complete colour" : "Waiting for previous department Submit"}">`}
           <div><h3>${esc(group.colour_name || group.colour_code)} <span class="badge">${esc(group.colour_code)}</span></h3>
           <div class="muted">${esc(group.source_type)} · Main ${group.total} PCS · ${group.rows.length} Sizes permanently bound</div></div>
@@ -330,8 +359,7 @@ function renderColours() {
       </div>
       <div class="size-wrap"><table>
         <thead><tr>
-          <th>Size</th><th>Main Qty</th><th>Good Qty</th><th>Alter Pending</th><th>Remake Pending</th><th>Damage</th>
-          <th>Alter Fill</th><th>Remake Assign</th><th>Remake Submit</th><th>Damage Qty</th><th>Damage From</th><th>Status</th>
+          <th>Size</th><th>Main Qty</th><th>Good Qty</th><th>Alter Fill</th><th>Alter Pending</th><th>Remake Assign</th><th>Remake Pending</th><th>Remake Submit</th><th>Damage Qty</th><th>Damage From</th><th>Status</th>
         </tr></thead>
         <tbody>${group.rows.map((row, rowIndex) => {
           const enabled = assigned && !done;
@@ -340,11 +368,10 @@ function renderColours() {
             <td><b>${esc(row.size_code)}</b></td>
             <td><b>${q.mainQty}</b></td>
             <td><b>${q.goodQty}</b></td>
-            <td>${q.alterPending}</td>
-            <td>${q.remakePending}</td>
-            <td>${q.damage}</td>
             <td><input class="alterEntry" type="number" min="0" max="${num(row.pending_qty)}" value="0" ${enabled ? "" : "disabled"}></td>
+            <td>${q.alterPending}</td>
             <td><input class="remakeIssueEntry" type="number" min="0" max="${q.alterPending}" value="0" ${enabled && q.alterPending > 0 ? "" : "disabled"}></td>
+            <td>${q.remakePending}</td>
             <td><input class="remakeCompleteEntry" type="number" min="0" max="${q.remakePending}" value="0" ${enabled && q.remakePending > 0 ? "" : "disabled"}></td>
             <td><input class="damageEntry" type="number" min="0" value="0" ${enabled ? "" : "disabled"}></td>
             <td><select class="damageSource source-select" ${enabled ? "" : "disabled"}><option value="PENDING">Direct / Good</option><option value="ALTER">Alter Pending</option><option value="REMAKE">Remake Pending</option></select></td>
@@ -354,6 +381,11 @@ function renderColours() {
       </table></div>
     </article>`;
   }).join("") || '<div class="empty"><h3>No Colour × Size mapping found</h3><p>Run Flow Debug. Server checks Single and Multi Lot Cutting sources.</p></div>';
+  document.querySelectorAll('.work-pick').forEach(input => input.onchange = () => {
+    const key = input.closest('.colour-card')?.dataset.colourKey;
+    if (!key) return;
+    input.checked ? state.selectedWorkColours.add(key) : state.selectedWorkColours.delete(key);
+  });
 }
 
 function selectedOpenGroups() {
@@ -428,6 +460,7 @@ async function assignWork() {
         actual_rate: num($("actualRate").value)
       };
     });
+    const selectedKeys = selected.map(item => rowKey(item.group));
     await rpc("rr_upm_assign_colours_v8_3", {
       p_canonical_lot_id: state.lot.canonical_lot_id,
       p_lot_no: state.lot.lot_no,
@@ -435,6 +468,7 @@ async function assignWork() {
       p_rows: rows,
       p_remarks: "Universal Lot Form complete-colour assignment"
     });
+    selectedKeys.forEach(key => state.selectedWorkColours.add(key));
   }, "Selected colours assigned with all sizes.");
 }
 
@@ -482,6 +516,10 @@ async function applyAction(actionType, inputClass, successText) {
       p_actions: actions,
       p_rate: num($("actualRate").value),
       p_remarks: "Universal Lot Form"
+    });
+    if (actionType === "DAMAGE") actions.forEach(a => {
+      const k = `${state.lot?.canonical_lot_id}|${state.context?.department_code}|${a.colour_code}|${a.size_code}`;
+      state.damagePublishers.set(k, actorName());
     });
   }, successText);
 }
@@ -542,6 +580,7 @@ async function submitSelectedColours() {
     });
   });
   if (!result) return;
+  selectedAssignedGroups().forEach(({group}) => state.selectedWorkColours.delete(rowKey(group)));
   const next = result.next_department_code || "FINAL / COMPLETE";
   setFormMessage(`${result.colours_submitted || 0} Colour(s) submitted · ${num(result.qty_forwarded)} PCS opened in ${next}. Open Alter/Remake stayed in current department.`, "success");
 }
@@ -638,6 +677,7 @@ async function boot() {
       throw new Error("Login required.");
     }
     const access = await rpc("rr_upm_access_context_v727");
+    state.access = access;
     if (!access?.allowed) throw new Error(access?.reason || "Production access denied by Role & Permission.");
     $("refresh").onclick = load;
     $("search").oninput = renderBoard;
