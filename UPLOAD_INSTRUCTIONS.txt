@@ -1,0 +1,29 @@
+REDZED JUPM FINAL V728 — ROOT UPLOAD
+====================================
+
+FILES TO UPLOAD TO GITHUB ROOT
+1. real-universal-production-v728.js
+2. real-universal-production-v728.html
+
+No manual HTML/JS patch is required. The HTML already loads:
+<script src="real-universal-production-v728.js"></script>
+
+IMPORTANT
+- Keep config.js and real-common.js unchanged.
+- Existing Supabase V726/V727 production RPCs are used; do not run the earlier separate Quality V1 SQL package for this build.
+- Upload both files to the same root folder.
+- Open real-universal-production-v728.html for testing.
+- After testing, either update the Dashboard production link to real-universal-production-v728.html, or upload the included real-universal-production.html alias under the filename your dashboard already opens.
+
+FINAL TABLE
+Size | Main Qty | Good Qty | Alter Pending | Remake Pending | Damage | Alter Fill | Remake Assign | Remake Submit | Damage Qty | Damage From | Status
+
+FORMULAS
+Alter Pending = Alter Fill - Remake Assign - Damage From Alter
+Remake Pending = Remake Assign - Remake Submit - Damage From Remake
+Damage = Direct Damage + Damage From Alter + Damage From Remake
+Good Qty = Main Qty - Alter Pending - Remake Pending - Damage
+
+LOCKED EXAMPLE
+Main 42, Alter Fill 5, Remake Assign 3, Damage 0
+=> Good 37, Alter Pending 2, Remake Pending 3, Damage 0
