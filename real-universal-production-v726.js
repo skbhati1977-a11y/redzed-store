@@ -232,18 +232,39 @@ function fillBulkWorker() {
   if (![...select.options].some(option => option.value === selected)) select.value = "";
 }
 
+function qualityNumbers(row) {
+  const mainQty = num(row.cutting_qty);
+  const alterPending = num(row.alter_open_qty ?? row.alter_qty);
+  const remakePending = num(row.remake_open_qty ?? row.remake_qty);
+  const damage = num(row.damage_qty);
+  const goodQty = Math.max(mainQty - alterPending - remakePending - damage, 0);
+  return {mainQty, goodQty, alterPending, remakePending, damage};
+}
+
+function qualityStatus(row) {
+  const q = qualityNumbers(row);
+  if (q.remakePending > 0) return "REMAKE PENDING";
+  if (q.alterPending > 0) return "ALTER PENDING";
+  if (q.damage >= q.mainQty && q.mainQty > 0) return "FULL DAMAGE";
+  return "READY";
+}
+
 function renderSummary() {
-  const total = state.context?.summary || {};
+  const totals = arr(state.context?.rows).reduce((sum, row) => {
+    const q = qualityNumbers(row);
+    sum.main += q.mainQty;
+    sum.good += q.goodQty;
+    sum.alter += q.alterPending;
+    sum.remake += q.remakePending;
+    sum.damage += q.damage;
+    return sum;
+  }, {main:0, good:0, alter:0, remake:0, damage:0});
   $("summary").innerHTML = [
-    ["Inbound", total.inbound],
-    ["Assigned", total.assigned],
-    ["Good", total.good],
-    ["Ready Submit", total.ready_to_submit],
-    ["Outbound", total.outbound],
-    ["Alter Open", total.alter],
-    ["Remake Open", total.remake],
-    ["Damage", total.damage],
-    ["Pending", total.pending]
+    ["Main Qty", totals.main],
+    ["Good Qty", totals.good],
+    ["Alter Pending", totals.alter],
+    ["Remake Pending", totals.remake],
+    ["Damage", totals.damage]
   ].map(([label, value]) => `<div class="box"><small>${label}</small><b>${num(value)} PCS</b></div>`).join("");
 }
 
@@ -287,16 +308,16 @@ function renderColours() {
       <div class="colour-head">
         <div class="colour-title">
           ${assigned
-            ? `<input class="work-pick" type="checkbox" ${done ? "disabled" : ""} title="Select this assigned colour for work actions or Submit">`
+            ? `<input class="work-pick" type="checkbox" ${done ? "disabled" : ""} title="Select this assigned colour for entries or Submit">`
             : `<input class="assign-pick" type="checkbox" ${canAssign ? "" : "disabled"} title="${canAssign ? "Select complete colour" : "Waiting for previous department Submit"}">`}
           <div><h3>${esc(group.colour_name || group.colour_code)} <span class="badge">${esc(group.colour_code)}</span></h3>
-          <div class="muted">${esc(group.source_type)} · Cutting ${group.total} PCS · ${group.rows.length} Sizes permanently bound</div></div>
+          <div class="muted">${esc(group.source_type)} · Main ${group.total} PCS · ${group.rows.length} Sizes permanently bound</div></div>
         </div>
         <div class="worker-block">
           <label>${assigned ? "Current Worker" : "Worker — complete Colour + all Sizes"}
             <select class="colour-worker" ${assigned || !canAssign ? "disabled" : ""}>${workerOptions(group.worker_id)}</select>
           </label>
-          <label>${assigned ? "Reassign all direct Pending to" : "Route gate"}
+          <label>${assigned ? "Reassign direct production Pending to" : "Route gate"}
             ${assigned
               ? `<select class="reassign-worker" ${done ? "disabled" : ""}>${workerOptions("", "Select new worker")}</select>`
               : `<input value="${canAssign ? "OPEN AFTER UPSTREAM SUBMIT" : "LOCKED · WAITING PREVIOUS SUBMIT"}" disabled>`}
@@ -304,23 +325,30 @@ function renderColours() {
         </div>
       </div>
       <div class="colour-meta">${statusBadge(group)}
-        <span class="muted">Inbound ${group.inboundTotal} · Pending ${group.pendingTotal} · Ready Submit ${group.submitReadyTotal} · Outbound ${group.outboundTotal}</span>
+        <span class="muted">Quantity identity: Main = Good + Alter Pending + Remake Pending + Damage</span>
         <span class="muted">Worker ownership never splits by size.</span>
       </div>
       <div class="size-wrap"><table>
-        <thead><tr><th>Size</th><th>Cut</th><th>Inbound</th><th>Pending</th><th>Alter Entry</th><th>Remake Issue</th><th>Remake Complete</th><th>Damage Qty</th><th>Damage From</th><th>Good Total</th><th>Ready Submit</th><th>Outbound</th><th>Alter Open</th><th>Remake Open</th><th>Damage Total</th><th>Status</th></tr></thead>
+        <thead><tr>
+          <th>Size</th><th>Main Qty</th><th>Good Qty</th><th>Alter Pending</th><th>Remake Pending</th><th>Damage</th>
+          <th>Alter Fill</th><th>Remake Assign</th><th>Remake Submit</th><th>Damage Qty</th><th>Damage From</th><th>Status</th>
+        </tr></thead>
         <tbody>${group.rows.map((row, rowIndex) => {
           const enabled = assigned && !done;
-          const alterOpen = num(row.alter_open_qty ?? row.alter_qty);
-          const remakeOpen = num(row.remake_open_qty ?? row.remake_qty);
+          const q = qualityNumbers(row);
           return `<tr data-row-index="${group.indexes[rowIndex]}">
-            <td><b>${esc(row.size_code)}</b></td><td>${num(row.cutting_qty)}</td><td>${num(row.inbound_qty)}</td><td>${num(row.pending_qty)}</td>
+            <td><b>${esc(row.size_code)}</b></td>
+            <td><b>${q.mainQty}</b></td>
+            <td><b>${q.goodQty}</b></td>
+            <td>${q.alterPending}</td>
+            <td>${q.remakePending}</td>
+            <td>${q.damage}</td>
             <td><input class="alterEntry" type="number" min="0" max="${num(row.pending_qty)}" value="0" ${enabled ? "" : "disabled"}></td>
-            <td><input class="remakeIssueEntry" type="number" min="0" max="${alterOpen}" value="0" ${enabled && alterOpen > 0 ? "" : "disabled"}></td>
-            <td><input class="remakeCompleteEntry" type="number" min="0" max="${remakeOpen}" value="0" ${enabled && remakeOpen > 0 ? "" : "disabled"}></td>
+            <td><input class="remakeIssueEntry" type="number" min="0" max="${q.alterPending}" value="0" ${enabled && q.alterPending > 0 ? "" : "disabled"}></td>
+            <td><input class="remakeCompleteEntry" type="number" min="0" max="${q.remakePending}" value="0" ${enabled && q.remakePending > 0 ? "" : "disabled"}></td>
             <td><input class="damageEntry" type="number" min="0" value="0" ${enabled ? "" : "disabled"}></td>
-            <td><select class="damageSource source-select" ${enabled ? "" : "disabled"}><option value="PENDING">Pending</option><option value="ALTER">Alter</option><option value="REMAKE">Remake</option></select></td>
-            <td>${num(row.good_qty)}</td><td>${num(row.submit_ready_qty)}</td><td>${num(row.outbound_qty)}</td><td>${alterOpen}</td><td>${remakeOpen}</td><td>${num(row.damage_qty)}</td><td>${esc(row.status)}</td>
+            <td><select class="damageSource source-select" ${enabled ? "" : "disabled"}><option value="PENDING">Direct / Good</option><option value="ALTER">Alter Pending</option><option value="REMAKE">Remake Pending</option></select></td>
+            <td>${esc(qualityStatus(row))}</td>
           </tr>`;
         }).join("")}</tbody>
       </table></div>
@@ -624,10 +652,10 @@ async function boot() {
     $("applyBulkWorkerBtn").onclick = applyBulkWorker;
     $("assignBtn").onclick = assignWork;
     $("submitBtn").onclick = submitSelectedColours;
-    $("alterBtn").onclick = () => applyAction("ALTER", "alterEntry", "Alter registered and removed from direct pending.");
-    $("remakeIssueBtn").onclick = () => applyAction("REMAKE_ISSUE", "remakeIssueEntry", "Remake issued from open Alter.");
-    $("remakeCompleteBtn").onclick = () => applyAction("REMAKE_COMPLETE", "remakeCompleteEntry", "Remake completed and added to Good total.");
-    $("damageBtn").onclick = () => applyAction("DAMAGE", "damageEntry", "Damage saved from the selected source bucket.");
+    $("alterBtn").onclick = () => applyAction("ALTER", "alterEntry", "Alter Fill saved. Alter Pending updated.");
+    $("remakeIssueBtn").onclick = () => applyAction("REMAKE_ISSUE", "remakeIssueEntry", "Remake assigned from Alter Pending.");
+    $("remakeCompleteBtn").onclick = () => applyAction("REMAKE_COMPLETE", "remakeCompleteEntry", "Remake submitted. Remake Pending reduced and Good Qty restored.");
+    $("damageBtn").onclick = () => applyAction("DAMAGE", "damageEntry", "Damage saved from selected source.");
     $("reassignBtn").onclick = reassignPending;
     $("saveRates").onclick = saveRates;
     $("debugBtn").onclick = runDebug;

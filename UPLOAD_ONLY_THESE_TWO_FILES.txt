@@ -1,0 +1,10 @@
+REDZED JUPM V726 FINAL REPLACEMENT
+
+1. GitHub main root खोलें.
+2. Existing real-universal-production-v726.html replace करें.
+3. Existing real-universal-production-v726.js replace करें.
+4. Commit changes.
+5. Page खोलें और Ctrl+Shift+R दबाएँ.
+
+No extra HTML, JS mount or SQL is required for this frontend replacement.
+The existing V726/V727 production RPCs remain in use.
