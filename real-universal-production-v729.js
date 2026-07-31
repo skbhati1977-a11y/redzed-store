@@ -20,7 +20,7 @@ const state = {
   imageIndex: 0,
   scale: 1,
   startX: 0,
-  busy: false, pendingSubmitRows: null, cameraStream: null, cameraBlobs: [], mapping: null, boardMeta: new Map()
+  busy: false, pendingSubmitRows: null, cameraStream: null, cameraBlobs: [], mapping: null, boardMeta: new Map(), confirmResolve: null
 };
 
 function errorText(error) {
@@ -364,7 +364,6 @@ function groups() {
 function statusBadge(group) {
   if (!group.is_locked && !group.canAssign) return '<span class="badge warn">RUNNING IN OTHER DEPARTMENT</span>';
   if (!group.is_locked) return '<span class="badge ok">OPEN FOR ASSIGNMENT</span>';
-  if (group.unresolvedTotal <= 0) return '<span class="badge ok">SUBMITTED / CAUGHT UP</span>';
   return '<span class="badge lock">ASSIGNED / IN PROGRESS</span>';
 }
 
@@ -374,13 +373,13 @@ function renderColours() {
   $("colours").innerHTML = colourGroups.map(group => {
     const assigned = Boolean(group.is_locked);
     const canAssign = !assigned && Boolean(group.canAssign);
-    const done = Boolean(group.completedHere) || (assigned && group.unresolvedTotal <= 0);
+    const done = Boolean(group.completedHere);
     return `<article class="colour-card ${assigned ? "assigned" : ""} ${done ? "done" : ""} ${!assigned && !canAssign ? "waiting" : ""}" data-colour-key="${esc(rowKey(group))}">
       <div class="colour-head">
         <div class="colour-title">
           ${assigned
-            ? `<input class="work-pick" type="checkbox" ${done ? "disabled" : ""} title="Select this assigned colour for work actions or Submit">`
-            : `<input class="assign-pick" type="checkbox" ${canAssign ? "" : "disabled"} title="${canAssign ? "Select complete colour" : "Waiting for previous department Submit"}">`}
+            ? `<input class="work-pick" type="checkbox" ${done ? "disabled" : ""} title="Assigned Colour: select for Alter, Damage or Submit">`
+            : `<input class="assign-pick" type="checkbox" ${canAssign ? "" : "disabled"} title="${canAssign ? "Open Colour: select for Assignment" : "Running in another Department"}">`}
           <div><h3>${esc(group.colour_name || group.colour_code)} <span class="badge">${esc(group.colour_code)}</span></h3>
           <div class="muted">${esc(group.source_type)} · Cutting ${group.total} PCS · ${group.rows.length} Sizes permanently bound</div></div>
         </div>
@@ -484,10 +483,55 @@ async function runBusy(work, successText) {
   }
 }
 
+
+function eligibleNextDepartments() {
+  const current = upper($("dept").value);
+  return state.departments.filter(d => {
+    const code = upper(d.department_code);
+    const type = upper(d.department_type || "PRODUCTION");
+    return d.is_active !== false && code && code !== current && code !== "CUTTING" && type === "PRODUCTION" && d.colour_assignment_enabled !== false && d.worker_assignment_enabled !== false;
+  });
+}
+
+function colourBadges(codes) {
+  return codes.map(code => `<span class="badge">${esc(code)}</span>`).join("");
+}
+
+function askActionConfirmation({mode, codes, full, department}) {
+  return new Promise(resolve => {
+    state.confirmResolve = resolve;
+    const isSubmit = mode === "SUBMIT";
+    $("actionConfirmTitle").textContent = isSubmit ? "CONFIRM SUBMIT JOB" : "CONFIRM ASSIGN JOB";
+    $("actionConfirmCopy").innerHTML = isSubmit
+      ? `<b>क्या आप अभी Submit करना चाहते हैं?</b><br>${esc(department)} से ${full ? "पूरा Lot" : "selected Colour"} Submit होगा।`
+      : `<b>क्या आप यह ${full ? "पूरा available Lot" : "selected Colour"} Assign करना चाहते हैं?</b><br>Department: ${esc(department)}`;
+    $("actionConfirmColours").innerHTML = colourBadges(codes);
+    $("actionConfirmNextWrap").classList.toggle("hidden", !isSubmit);
+    if (isSubmit) {
+      const deps = eligibleNextDepartments();
+      $("actionConfirmNextDept").innerHTML = '<option value="">Select Next Department</option>' + deps.map(d => `<option value="${esc(d.department_code)}">${esc(d.department_name || d.department_code)}</option>`).join("");
+    }
+    $("actionConfirmYes").textContent = isSubmit ? "YES · SUBMIT NOW" : "YES · ASSIGN NOW";
+    $("actionConfirmModal").classList.remove("hidden");
+  });
+}
+
+function closeActionConfirmation(result) {
+  $("actionConfirmModal").classList.add("hidden");
+  const resolve = state.confirmResolve;
+  state.confirmResolve = null;
+  if (resolve) resolve(result);
+}
+
 async function assignWork() {
+  const selected = selectedOpenGroups();
+  if (!selected.length) { setFormMessage("Assign करने के लिए कम से कम एक OPEN Colour select करें.", "error"); return; }
+  const available = groups().filter(g => !g.is_locked && g.canAssign && !g.completedHere);
+  const codes = selected.map(x => x.group.colour_code);
+  const full = available.length > 0 && selected.length === available.length;
+  const confirmed = await askActionConfirmation({mode:"ASSIGN", codes, full, department: $("dept").options[$("dept").selectedIndex]?.textContent || $("dept").value});
+  if (!confirmed) return;
   await runBusy(async () => {
-    const selected = selectedOpenGroups();
-    if (!selected.length) throw new Error("Select at least one open colour.");
     const rows = selected.map(item => {
       if (!item.worker_id) throw new Error(`${item.group.colour_name}: worker required.`);
       return {
@@ -503,9 +547,9 @@ async function assignWork() {
       p_lot_no: state.lot.lot_no,
       p_department_code: $("dept").value,
       p_rows: rows,
-      p_remarks: "Universal Lot Form complete-colour assignment"
+      p_remarks: full ? "Universal Lot Form FULL available colour assignment" : "Universal Lot Form selected colour assignment"
     });
-  }, "Selected colours assigned with all sizes.");
+  }, `${full ? "पूरा available Lot" : codes.join(" ")} successfully assigned.`);
 }
 
 function buildActionRows(actionType, inputClass) {
@@ -587,7 +631,15 @@ async function reassignPending() {
 }
 
 function selectAllOpenColours() {
-  document.querySelectorAll(".assign-pick:not(:disabled)").forEach(input => input.checked = true);
+  const work = [...document.querySelectorAll(".work-pick:not(:disabled)")];
+  const open = [...document.querySelectorAll(".assign-pick:not(:disabled)")];
+  if (work.length) {
+    work.forEach(input => input.checked = true);
+    setFormMessage(`${work.length} assigned Colour(s) selected for Alter, Damage or Submit.`, "success");
+    return;
+  }
+  open.forEach(input => input.checked = true);
+  setFormMessage(`${open.length} open Colour(s) selected for Assignment.`, open.length ? "success" : "error");
 }
 
 function applyBulkWorker() {
@@ -610,16 +662,30 @@ function applyBulkWorker() {
 
 async function submitSelectedColours(){
   const selected=selectedAssignedGroups();
-  if(!selected.length){setFormMessage("Select at least one assigned Colour.","error");return;}
-  const rows=selected.map(({group})=>({colour_id:group.colour_id,colour_code:group.colour_code}));
+  if(!selected.length){setFormMessage("Submit करने के लिए running Colour का Work checkbox select करें.","error");return;}
+  const valid=selected.filter(({group})=>!group.completedHere && group.is_locked);
+  if(!valid.length){setFormMessage("Selected Colour पहले ही submitted हैं. Submitted Colour दोबारा select नहीं हो सकता.","error");return;}
+  const allRunning=groups().filter(g=>g.is_locked && !g.completedHere);
+  const codes=valid.map(({group})=>group.colour_code);
+  const full=allRunning.length>0 && valid.length===allRunning.length;
+  const answer=await askActionConfirmation({mode:"SUBMIT",codes,full,department:$("dept").options[$("dept").selectedIndex]?.textContent||$("dept").value});
+  if(!answer)return;
+  const nextDepartment=$("actionConfirmNextDept").value;
+  if(!nextDepartment){setFormMessage("Next Department select करें या Cancel दबाएँ.","error");return;}
+  const rows=valid.map(({group})=>({colour_id:group.colour_id,colour_code:group.colour_code}));
   const result=await runBusy(()=>rpc("rr_upm_submit_colours_v741",{
     p_canonical_lot_id:state.lot.canonical_lot_id,
     p_department_code:$("dept").value,
     p_rows:rows,
-    p_remarks:"Universal Lot Form Dynamic Colour Submit"
+    p_remarks:`Universal Lot Form Dynamic Colour Submit · Next view ${nextDepartment}`
   }));
-  if(result)setFormMessage(`${result.colours_submitted||0} Colour(s) submitted · ${num(result.qty_submitted)} PCS · अब Random Open Queue में उपलब्ध.`,"success");
+  if(result){
+    setFormMessage(`${result.colours_submitted||0} Colour(s) submitted · ${num(result.qty_submitted)} PCS · ${nextDepartment} view खोला गया.`,"success");
+    $("dept").value=nextDepartment;
+    await loadContext();
+  }
 }
+
 async function saveRates() {
   await runBusy(async () => {
     await rpc("rr_upm_set_department_rate_v2", {
@@ -827,6 +893,14 @@ async function boot() {
     $("startCamera").onclick=async()=>{try{state.cameraStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:"environment"}},audio:false});$("liveCamera").srcObject=state.cameraStream;$("liveCamera").classList.remove("hidden");$("captureCamera").disabled=false;$("stopCamera").disabled=false;}catch(e){$("alterEvidenceMsg").textContent="Live camera unavailable: "+errorText(e)}};
     $("captureCamera").onclick=()=>{if(state.cameraBlobs.length>=3){$("alterEvidenceMsg").textContent="Maximum 3 photos.";return;}const v=$("liveCamera"),c=$("cameraCanvas");c.width=v.videoWidth;c.height=v.videoHeight;c.getContext("2d").drawImage(v,0,0);c.toBlob(blob=>{blob.name=`alter-${Date.now()}.jpg`;state.cameraBlobs.push(blob);const url=URL.createObjectURL(blob);$("alterEvidencePreview").insertAdjacentHTML("beforeend",`<img src="${url}" class="thumb" alt="Evidence">`);},"image/jpeg",.85)};
     $("stopCamera").onclick=()=>{state.cameraStream?.getTracks().forEach(t=>t.stop());state.cameraStream=null;$("liveCamera").classList.add("hidden");$("captureCamera").disabled=true;$("stopCamera").disabled=true;};
+    $("actionConfirmCancel").onclick = () => closeActionConfirmation(false);
+    $("actionConfirmYes").onclick = () => {
+      if (!$("actionConfirmNextWrap").classList.contains("hidden") && !$("actionConfirmNextDept").value) {
+        setFormMessage("Next Department select करें.", "error");
+        return;
+      }
+      closeActionConfirmation(true);
+    };
     bindGallery();
     await load();
   } catch (error) {
@@ -835,7 +909,7 @@ async function boot() {
   }
 }
 
-console.info("REDZED UPM V741_DYNAMIC_RANDOM_ASSIGN");
+console.info("REDZED UPM V744_ACTION_CONFIRM_EASY");
 
 document.readyState === "loading" ? document.addEventListener("DOMContentLoaded", boot) : boot();
 })();
