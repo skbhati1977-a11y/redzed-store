@@ -9,6 +9,77 @@ const upper = value => String(value || "").trim().toUpperCase();
 const rowKey = row => String(row.colour_id || row.colour_code || "");
 const requestId = () => globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 
+
+function currentDepartmentWorkers() {
+  const dept = upper($("dept")?.value);
+  return arr(state.context?.workers).filter(worker => upper(worker.department_code) === dept);
+}
+
+function journeyRowsFor(colourId, colourCode, sizeCode) {
+  return arr(state.alterJourney).filter(j =>
+    (colourId ? String(j.colour_id || "") === String(colourId) : upper(j.colour_code) === upper(colourCode)) &&
+    upper(j.size_code) === upper(sizeCode) && j.stage !== "CLOSED"
+  );
+}
+
+function journeyQty(row, stages) {
+  return journeyRowsFor(row.colour_id, row.colour_code, row.size_code)
+    .filter(j => stages.includes(j.stage))
+    .reduce((sum,j) => sum + num(j.open_qty), 0);
+}
+
+function mappedShortName(j) {
+  return [j.responsible_name, j.responsible_role_short, `${num(j.open_qty)} PCS`].filter(Boolean).join(" · ");
+}
+
+function stageLabel(stage) {
+  return ({
+    CUTTING_MASTER_PENDING:"ALTER",
+    LINE_MAN_COLLECT_PENDING:"MASTER SE LENA",
+    LINE_MAN_DELIVERY_PENDING:"KARIGAR KO DENA",
+    KARIGAR_REMAKE_PENDING:"REMAKE",
+    CLOSED:"NONE"
+  })[stage] || stage;
+}
+
+function stageClass(stage) {
+  return ({
+    CUTTING_MASTER_PENDING:"journey-yellow",
+    LINE_MAN_COLLECT_PENDING:"journey-blue",
+    LINE_MAN_DELIVERY_PENDING:"journey-purple",
+    KARIGAR_REMAKE_PENDING:"journey-orange"
+  })[stage] || "";
+}
+
+function renderAlterJourneySummary() {
+  const box = $("alterJourneySummary");
+  if (!box) return;
+  const open = arr(state.alterJourney).filter(j => j.stage !== "CLOSED" && num(j.open_qty) > 0);
+  const damage = arr(state.context?.rows).filter(r => num(r.damage_qty)>0);
+  const cards = open.map(j => `<div class="journey-card ${stageClass(j.stage)}">
+      <div>${esc(mappedShortName(j))}</div>
+      <small>${esc(stageLabel(j.stage))} · ${esc(j.colour_name || j.colour_code)} / ${esc(j.size_code)}</small>
+      <small>${esc(j.responsible_department_name || j.responsible_department_code || "")}</small>
+    </div>`);
+  damage.forEach(r => cards.push(`<div class="journey-card journey-red"><div>${esc(r.worker_name || "Mapped Responsible")} · ${num(r.damage_qty)} PCS</div><small>DAMAGE · ${esc(r.colour_name || r.colour_code)} / ${esc(r.size_code)}</small><small>${esc(state.context?.department_code || "")}</small></div>`));
+  box.innerHTML = cards.join("");
+}
+
+async function loadAlterJourney() {
+  if (!state.lot) return;
+  try {
+    state.alterJourney = await rpc("rr_upm_alter_active_summary_v737", {p_canonical_lot_id: state.lot.canonical_lot_id}) || [];
+  } catch (error) {
+    console.warn("Alter journey summary unavailable", error);
+    state.alterJourney = [];
+  }
+}
+
+function openWhatsApp(result) {
+  const url = result?.whatsapp_url || result?.notification?.whatsapp_url;
+  if (url) window.open(url, "_blank", "noopener");
+}
+
 const state = {
   sb: null,
   lots: [],
@@ -20,7 +91,9 @@ const state = {
   imageIndex: 0,
   scale: 1,
   startX: 0,
-  busy: false
+  busy: false,
+  alterJourney: [],
+  pendingJourneyRows: []
 };
 
 function errorText(error) {
@@ -191,7 +264,7 @@ async function loadContext() {
   if (!state.lot || !$("dept").value) return;
   try {
     setFormMessage("Verified Single/Multi Cutting mapping and workflow balances loading…");
-    state.context = await rpc("rr_upm_universal_form_v734", {
+    state.context = await rpc("rr_upm_universal_form_v726", {
       p_canonical_lot_id: state.lot.canonical_lot_id,
       p_department_code: $("dept").value
     });
@@ -210,9 +283,11 @@ async function loadContext() {
     $("stdWrap").classList.toggle("hidden", !showOwner);
     $("marginWrap").classList.toggle("hidden", !showOwner);
     fillBulkWorker();
+    await loadAlterJourney();
     const nextDepartment = state.context.next_department_code || "FINAL / COMPLETE";
     $("routeNote").textContent = `Current: ${state.context.department_code} · Next after Submit: ${nextDepartment} · Downstream assignment remains locked until this Colour is submitted.`;
     renderColours();
+    renderAlterJourneySummary();
     const source = arr(state.context.rows)[0]?.source_type || "NO SOURCE";
     setFormMessage(`${state.context.department_code} · ${source} Cutting source · Full-colour assignment · Transaction-safe work actions.`, "success");
   } catch (error) {
@@ -221,11 +296,6 @@ async function loadContext() {
     $("colours").innerHTML = "";
     setFormMessage(errorText(error), "error");
   }
-}
-
-function currentDepartmentWorkers() {
-  const department = upper($("dept")?.value || state.context?.department_code);
-  return arr(state.context?.workers).filter(worker => upper(worker.department_code) === department);
 }
 
 function workerOptions(selectedWorkerId = "", placeholder = "Select worker") {
@@ -243,41 +313,21 @@ function fillBulkWorker() {
   if (![...select.options].some(option => option.value === selected)) select.value = "";
 }
 
-function responsibilityLabel(type) {
-  return ({ALTER_PENDING:"ALTER PENDING",LINE_MAN_PENDING:"LINE MAN PENDING",WORKER_REMAKE_PENDING:"WORKER REMAKE PENDING",DAMAGE:"DAMAGE"})[type] || type;
-}
-
-function responsibilityKind(type) {
-  return type === "ALTER_PENDING" ? "alter" : type === "DAMAGE" ? "damage" : "remake";
-}
-
 function renderSummary() {
-  const total = state.context?.summary || {};
+  const rows = arr(state.context?.rows);
+  const main = rows.reduce((s,r)=>s+num(r.cutting_qty),0);
+  const alter = rows.reduce((s,r)=>s+journeyQty(r,["CUTTING_MASTER_PENDING"]),0);
+  const lineMan = rows.reduce((s,r)=>s+journeyQty(r,["LINE_MAN_COLLECT_PENDING","LINE_MAN_DELIVERY_PENDING"]),0);
+  const karigar = rows.reduce((s,r)=>s+journeyQty(r,["KARIGAR_REMAKE_PENDING"]),0);
+  const damage = rows.reduce((s,r)=>s+num(r.damage_qty),0);
+  const good = Math.max(0, main-alter-lineMan-karigar-damage);
   $("summary").innerHTML = [
-    ["Main Qty", total.main, ""], ["Good Qty", total.good, "good"],
-    ["Alter Pending", total.alter, "alter"], ["Line Man Pending", total.line_man_pending, "remake"],
-    ["Worker Remake Pending", total.remake, "remake"], ["Damage", total.damage, "damage"]
-  ].map(([label, value, kind]) => {
-    const qty = num(value); const live = qty > 0 && kind ? " blink-live" : "";
-    return `<div class="box summary-box ${kind}${live}"><small>${label}</small><b>${qty} PCS</b></div>`;
-  }).join("");
-
-  const details = arr(state.context?.responsibility_summary);
-  const freeze = $("freezeSummary");
-  if (!freeze) return;
-  const order = ["ALTER_PENDING","LINE_MAN_PENDING","WORKER_REMAKE_PENDING","DAMAGE"];
-  freeze.innerHTML = order.map(type => {
-    const rows = details.filter(row => row.pending_type === type);
-    const totalQty = rows.reduce((sum,row) => sum + num(row.qty), 0);
-    const kind = responsibilityKind(type);
-    if (!rows.length) return `<section class="freeze-group ${kind}"><div class="freeze-title"><span>${responsibilityLabel(type)}</span><strong>0 PCS</strong></div><div class="freeze-empty">NONE</div></section>`;
-    return `<section class="freeze-group ${kind} blink-live"><div class="freeze-title"><span>${responsibilityLabel(type)}</span><strong>${totalQty} PCS</strong></div>${rows.map(row => `
-      <div class="responsibility-row">
-        <b>${esc(row.colour_name || row.colour_code)} / ${esc(row.size_code)} · ${num(row.qty)} PCS</b>
-        <span>Responsible: ${esc(row.responsible_name || "MAPPING REQUIRED")}${row.responsible_worker_code ? ` · ${esc(row.responsible_worker_code)}` : ""}</span>
-        <span>Role: ${esc(row.responsible_role || "—")} · Department: ${esc(row.department_name || row.department_code || "—")}</span>
-      </div>`).join("")}</section>`;
-  }).join("");
+    ["Main Qty",main,""], ["Good Qty",good,""],
+    ["Alter Pending",alter,alter>0?"journey-yellow":""],
+    ["Line Man Pending",lineMan,lineMan>0?"journey-blue":""],
+    ["Karigar Remake",karigar,karigar>0?"journey-orange":""],
+    ["Damage",damage,damage>0?"journey-red":""]
+  ].map(([label,value,cls])=>`<div class="box ${cls}"><small>${label}</small><b>${num(value)} PCS</b></div>`).join("");
 }
 
 function groups() {
@@ -285,18 +335,18 @@ function groups() {
   arr(state.context?.rows).forEach((row, index) => {
     const key = rowKey(row);
     if (!map.has(key)) map.set(key, {
-      ...row, rows: [], indexes: [], total: 0, goodTotal: 0, alterTotal: 0, lineManTotal: 0, workerRemakeTotal: 0, damageTotal: 0, unresolvedTotal: 0, canAssign: false
+      ...row, rows: [], indexes: [], total: 0, inboundTotal: 0, pendingTotal: 0,
+      submitReadyTotal: 0, outboundTotal: 0, unresolvedTotal: 0, canAssign: false
     });
     const group = map.get(key);
     group.rows.push(row);
     group.indexes.push(index);
     group.total += num(row.cutting_qty);
-    group.goodTotal += num(row.good_qty);
-    group.alterTotal += num(row.alter_open_qty ?? row.alter_qty);
-    group.lineManTotal += num(row.line_man_pending_qty);
-    group.workerRemakeTotal += num(row.worker_remake_pending_qty ?? row.remake_qty);
-    group.damageTotal += num(row.damage_qty);
-    group.unresolvedTotal += num(row.alter_open_qty ?? row.alter_qty) + num(row.line_man_pending_qty) + num(row.worker_remake_pending_qty ?? row.remake_qty);
+    group.inboundTotal += num(row.inbound_qty);
+    group.pendingTotal += num(row.pending_qty);
+    group.submitReadyTotal += num(row.submit_ready_qty);
+    group.outboundTotal += num(row.outbound_qty);
+    group.unresolvedTotal += num(row.pending_qty) + num(row.alter_open_qty ?? row.alter_qty) + num(row.remake_open_qty ?? row.remake_qty) + num(row.submit_ready_qty);
     group.canAssign = group.canAssign || Boolean(row.can_assign);
   });
   return [...map.values()];
@@ -337,27 +387,33 @@ function renderColours() {
         </div>
       </div>
       <div class="colour-meta">${statusBadge(group)}
-        <span class="muted">Main ${group.total} · Good ${group.goodTotal} · Alter ${group.alterTotal} · Line Man ${group.lineManTotal} · Worker Remake ${group.workerRemakeTotal} · Damage ${group.damageTotal}</span>
+        <span class="muted">Inbound ${group.inboundTotal} · Pending ${group.pendingTotal} · Ready Submit ${group.submitReadyTotal} · Outbound ${group.outboundTotal}</span>
         <span class="muted">Worker ownership never splits by size.</span>
       </div>
       <div class="size-wrap"><table>
-        <thead><tr><th>Size</th><th>Main Qty</th><th>Good Qty</th><th>Alter Fill</th><th>Alter Pending</th><th>Remake Issue</th><th>Line Man Pending</th><th>Remake Delivered</th><th>Worker Remake Pending</th><th>Remake Submit</th><th>Saved Damage</th><th>Add Damage</th><th>Damage From</th><th>Status</th></tr></thead>
+        <thead><tr><th>Size</th><th>Main Qty</th><th>Good Qty</th><th>Alter Fill</th><th>Alter Pending</th><th>Remake Issue</th><th>LM Collect</th><th>LM Deliver</th><th>Karigar Pending</th><th>LM Final Receive</th><th>Saved Damage</th><th>Add Damage</th><th>Damage From</th><th>Status</th></tr></thead>
         <tbody>${group.rows.map((row, rowIndex) => {
           const enabled = assigned && !done;
           const alterOpen = num(row.alter_open_qty ?? row.alter_qty);
           const remakeOpen = num(row.remake_open_qty ?? row.remake_qty);
+          const cmPending = journeyQty(row,["CUTTING_MASTER_PENDING"]);
+          const lmCollect = journeyQty(row,["LINE_MAN_COLLECT_PENDING"]);
+          const lmDeliver = journeyQty(row,["LINE_MAN_DELIVERY_PENDING"]);
+          const karigarPending = journeyQty(row,["KARIGAR_REMAKE_PENDING"]);
+          const mainQty = num(row.cutting_qty);
+          const goodQty = Math.max(0,mainQty-cmPending-lmCollect-lmDeliver-karigarPending-num(row.damage_qty));
           return `<tr data-row-index="${group.indexes[rowIndex]}">
-            <td><b>${esc(row.size_code)}</b></td><td>${num(row.main_qty ?? row.cutting_qty)}</td><td><b>${num(row.good_qty)}</b></td>
-            <td><input class="alterEntry" type="number" min="0" max="${Math.min(num(row.good_qty),num(row.pending_qty))}" value="0" ${enabled ? "" : "disabled"}></td>
-            <td>${alterOpen}</td>
-            <td><input class="remakeIssueEntry" type="number" min="0" max="${alterOpen}" value="0" ${enabled && alterOpen > 0 ? "" : "disabled"}></td>
-            <td>${num(row.line_man_pending_qty)}</td>
-            <td><input class="remakeDeliveredEntry" type="number" min="0" max="${num(row.line_man_pending_qty)}" value="0" ${enabled && num(row.line_man_pending_qty) > 0 ? "" : "disabled"}></td>
-            <td>${num(row.worker_remake_pending_qty ?? remakeOpen)}</td>
-            <td><input class="remakeCompleteEntry" type="number" min="0" max="${num(row.worker_remake_pending_qty ?? remakeOpen)}" value="0" ${enabled && num(row.worker_remake_pending_qty ?? remakeOpen) > 0 ? "" : "disabled"}></td>
+            <td><b>${esc(row.size_code)}</b></td><td>${mainQty}</td><td><b>${goodQty}</b></td>
+            <td><input class="alterEntry" type="number" min="0" value="0" ${enabled ? "" : "disabled"}></td>
+            <td>${cmPending}</td>
+            <td><input class="remakeIssueEntry" type="number" min="0" max="${cmPending}" value="0" ${cmPending>0 ? "" : "disabled"}></td>
+            <td><input class="receiveMasterEntry" type="number" min="0" max="${lmCollect}" value="0" ${lmCollect>0 ? "" : "disabled"}></td>
+            <td><input class="deliverWorkerEntry" type="number" min="0" max="${lmDeliver}" value="0" ${lmDeliver>0 ? "" : "disabled"}></td>
+            <td>${karigarPending}</td>
+            <td><input class="receiveWorkerEntry" type="number" min="0" max="${karigarPending}" value="0" ${karigarPending>0 ? "" : "disabled"}></td>
             <td>${num(row.damage_qty)}</td>
             <td><input class="damageEntry" type="number" min="0" value="0" ${enabled ? "" : "disabled"}></td>
-            <td><select class="damageSource source-select" ${enabled ? "" : "disabled"}><option value="PENDING">Good Qty</option><option value="ALTER">Alter Pending</option><option value="REMAKE">Remake Pending</option></select></td>
+            <td><select class="damageSource source-select" ${enabled ? "" : "disabled"}><option value="GOOD">Good</option><option value="ALTER">Alter</option><option value="LINE_MAN">Line Man</option><option value="KARIGAR">Karigar</option></select></td>
             <td>${esc(row.status)}</td>
           </tr>`;
         }).join("")}</tbody>
@@ -486,16 +542,6 @@ function buildActionRows(actionType, inputClass) {
 async function applyAction(actionType, inputClass, successText) {
   await runBusy(async () => {
     const actions = buildActionRows(actionType, inputClass);
-    if (actionType === "DAMAGE") {
-      await rpc("rr_upm_save_damage_v731", {
-        p_canonical_lot_id: state.lot.canonical_lot_id,
-        p_department_code: $("dept").value,
-        p_rows: actions,
-        p_rate: num($("actualRate").value),
-        p_remarks: "Universal Lot Form bucket-wise Damage"
-      });
-      return;
-    }
     await rpc("rr_upm_apply_actions_batch_v726", {
       p_canonical_lot_id: state.lot.canonical_lot_id,
       p_department_code: $("dept").value,
@@ -594,7 +640,7 @@ async function runDebug() {
   if (!state.lot) return;
   try {
     $("debugOutput").textContent = "Running server checks…";
-    const output = await rpc("rr_upm_debug_lot_flow_v734", {
+    const output = await rpc("rr_upm_debug_lot_flow_v726", {
       p_canonical_lot_id: state.lot.canonical_lot_id,
       p_department_code: $("dept").value
     });
@@ -691,7 +737,8 @@ async function saveAlterEvidence() {
   const physical = $("physicalEvidenceSubmitted").checked;
   if (!physical) throw new Error("Confirm physical evidence submission.");
   const paths = await uploadAlterEvidence(files);
-  const result = await rpc("rr_upm_alter_fill_v731", {
+  const result = await rpc("rr_upm_alter_stage_v737", {
+    p_stage: "ALTER_FILL",
     p_canonical_lot_id: state.lot.canonical_lot_id,
     p_department_code: $("dept").value,
     p_rows: state.pendingAlterRows || [],
@@ -701,14 +748,15 @@ async function saveAlterEvidence() {
   });
   $("alterEvidenceModal").classList.add("hidden");
   await loadContext();
-  setFormMessage(`${result.rows_saved || 0} Alter row(s) saved. Debit responsibility: mapped Cutting Master.`, "success");
+  openWhatsApp(result);
+  setFormMessage(`${result.rows_saved || 0} Alter row(s) saved. Current responsibility moved to mapped Cutting Master.`, "success");
 }
 
 async function runRemakeStage(stage, inputClass, successText) {
   await runBusy(async () => {
     const rows = selectedStageRows(inputClass);
     if (!rows.length) throw new Error(`Enter Qty for ${successText}.`);
-    return rpc("rr_upm_remake_stage_v731", {
+    return rpc("rr_upm_remake_stage_v729", {
       p_stage: stage,
       p_canonical_lot_id: state.lot.canonical_lot_id,
       p_department_code: $("dept").value,
@@ -716,6 +764,24 @@ async function runRemakeStage(stage, inputClass, successText) {
       p_remarks: `Universal Lot Form ${successText}`
     });
   }, successText);
+}
+
+
+async function runAlterJourneyStage(stage, inputClass, successText) {
+  const result = await runBusy(async () => {
+    const rows = selectedStageRows(inputClass);
+    if (!rows.length) throw new Error(`Enter Qty for ${successText}.`);
+    return rpc("rr_upm_alter_stage_v737", {
+      p_stage: stage,
+      p_canonical_lot_id: state.lot.canonical_lot_id,
+      p_department_code: $("dept").value,
+      p_rows: rows,
+      p_evidence_urls: [],
+      p_physical_submitted: true,
+      p_remarks: `Universal Lot Form ${successText}`
+    });
+  }, successText);
+  if (result) openWhatsApp(result);
 }
 
 async function boot() {
@@ -743,9 +809,10 @@ async function boot() {
     $("assignBtn").onclick = assignWork;
     $("submitBtn").onclick = submitSelectedColours;
     $("alterBtn").onclick = () => { try { openAlterEvidenceModal(); } catch (error) { setFormMessage(errorText(error), "error"); } };
-    $("remakeIssueBtn").onclick = () => runRemakeStage("REMAKE_ISSUE", "remakeIssueEntry", "Remake Issue saved; responsibility moved to Line Man.");
-    $("remakeDeliveredBtn").onclick = () => runRemakeStage("REMAKE_DELIVERED", "remakeDeliveredEntry", "Remake Delivered saved; responsibility moved to Worker/Karigar.");
-    $("remakeCompleteBtn").onclick = () => runRemakeStage("REMAKE_SUBMIT", "remakeCompleteEntry", "Remake Submit saved; Qty returned to Good and responsibility cleared.");
+    $("remakeIssueBtn").onclick = () => runAlterJourneyStage("REMAKE_ISSUE", "remakeIssueEntry", "Remake Issue");
+    $("receiveMasterBtn").onclick = () => runAlterJourneyStage("RECEIVE_FROM_MASTER", "receiveMasterEntry", "Receive from Master");
+    $("deliverWorkerBtn").onclick = () => runAlterJourneyStage("DELIVER_TO_KARIGAR", "deliverWorkerEntry", "Deliver to Karigar");
+    $("receiveWorkerBtn").onclick = () => runAlterJourneyStage("RECEIVE_FROM_KARIGAR", "receiveWorkerEntry", "Receive from Karigar");
     $("damageBtn").onclick = () => applyAction("DAMAGE", "damageEntry", "Damage saved from the selected source bucket.");
     $("reassignBtn").onclick = reassignPending;
     $("saveRates").onclick = saveRates;
