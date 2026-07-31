@@ -293,10 +293,33 @@ function groups() {
   return [...map.values()];
 }
 
+function groupQuality(group) {
+  return group.rows.reduce((sum,row)=>{
+    const q=qualityNumbers(row);
+    sum.alter+=q.alterPending; sum.remake+=q.remakePending; sum.damage+=q.damage;
+    return sum;
+  },{alter:0,remake:0,damage:0});
+}
+
+function isSubmittedGroup(group) {
+  return num(group.outboundTotal) > 0;
+}
+
+function visibleGroups() {
+  // Current department: open/assigned colours remain visible.
+  // Downstream: rows that are only waiting for upstream submit stay temporarily hidden.
+  return groups().filter(group => Boolean(group.is_locked) || Boolean(group.canAssign) || num(group.inboundTotal) > 0 || isSubmittedGroup(group));
+}
+
 function statusBadge(group) {
+  const q=groupQuality(group);
+  if (isSubmittedGroup(group)) {
+    if (q.alter>0 || q.remake>0) return '<span class="badge submitted-pending">SUBMITTED · EXCEPTION PENDING</span>';
+    return '<span class="badge submitted-ok">SUBMITTED TO NEXT DEPARTMENT</span>';
+  }
   if (!group.is_locked && !group.canAssign) return '<span class="badge warn">WAITING PREVIOUS SUBMIT</span>';
   if (!group.is_locked) return '<span class="badge ok">OPEN FOR ASSIGNMENT</span>';
-  if (group.unresolvedTotal <= 0) return '<span class="badge ok">SUBMITTED / CAUGHT UP</span>';
+  if (group.unresolvedTotal <= 0) return '<span class="badge ok">CAUGHT UP</span>';
   return '<span class="badge lock">ASSIGNED / IN PROGRESS</span>';
 }
 
@@ -309,35 +332,47 @@ function actorName() {
 function renderStatusTicker() {
   const box = $("qualityStatusTicker");
   if (!box) return;
-  const items = [];
+  const alterItems = [];
+  const remakeItems = [];
+  const damageItems = [];
   arr(state.context?.rows).forEach(row => {
     const q = qualityNumbers(row);
     const label = `${row.colour_name || row.colour_code} / ${row.size_code}`;
-    if (q.alterPending > 0) items.push(`<span class="ticker-alert alter">ALTER PENDING · ${esc(label)} · ${q.alterPending} PCS · KARIGAR</span>`);
-    if (q.remakePending > 0) items.push(`<span class="ticker-alert remake">REMAKE PENDING · ${esc(label)} · ${q.remakePending} PCS · CUTTING MASTER</span>`);
+    if (q.alterPending > 0) alterItems.push(`<span class="ticker-alert alter">${esc(label)} · ${q.alterPending} PCS · KARIGAR</span>`);
+    if (q.remakePending > 0) remakeItems.push(`<span class="ticker-alert remake">${esc(label)} · ${q.remakePending} PCS · CUTTING MASTER</span>`);
     if (q.damage > 0) {
       const k = `${state.lot?.canonical_lot_id}|${state.context?.department_code}|${row.colour_code}|${row.size_code}`;
-      items.push(`<span class="ticker-alert damage">DAMAGE · ${esc(label)} · ${q.damage} PCS · PUBLISHED BY ${esc(state.damagePublishers.get(k) || actorName())}</span>`);
+      damageItems.push(`<span class="ticker-alert damage">${esc(label)} · ${q.damage} PCS · PUBLISHED BY ${esc(state.damagePublishers.get(k) || actorName())}</span>`);
     }
   });
-  box.innerHTML = items.length ? `<div class="ticker-label">LIVE ALTER REPORT</div><div class="ticker-track"><div class="ticker-run">${items.join("")}</div></div>` : `<div class="ticker-clear">LIVE STATUS · NO ALTER / REMAKE / DAMAGE PENDING</div>`;
+  if (!alterItems.length && !remakeItems.length && !damageItems.length) {
+    box.innerHTML = `<div class="ticker-clear">FREEZE STATUS · NO ALTER / REMAKE / DAMAGE PENDING</div>`;
+    return;
+  }
+  const group = (title, cls, items) => `<section class="freeze-status-group ${cls}"><div class="freeze-status-head">${title}</div><div class="freeze-status-items">${items.length ? items.join("") : '<div class="freeze-empty">NONE</div>'}</div></section>`;
+  box.innerHTML = `<div class="ticker-label">FREEZE ALTER / REMAKE / DAMAGE REPORT</div><div class="freeze-status-grid">${group("ALTER PENDING", "alter-group", alterItems)}${group("REMAKE PENDING", "remake-group", remakeItems)}${group("DAMAGE", "damage-group", damageItems)}</div>`;
 }
 
 function renderColours() {
   renderSummary();
   renderStatusTicker();
-  const colourGroups = groups();
+  const colourGroups = visibleGroups();
   const activeAssigned = colourGroups.filter(g => Boolean(g.is_locked) && g.unresolvedTotal > 0);
   if (!state.selectedWorkColours.size && activeAssigned.length === 1) state.selectedWorkColours.add(rowKey(activeAssigned[0]));
+  const hiddenWaiting = Math.max(groups().length - colourGroups.length, 0);
+  if (hiddenWaiting > 0) $("routeNote").textContent += ` · ${hiddenWaiting} unsubmitted Colour(s) temporarily hidden in this department.`;
   $("colours").innerHTML = colourGroups.map(group => {
     const assigned = Boolean(group.is_locked);
     const canAssign = !assigned && Boolean(group.canAssign);
+    const submitted = isSubmittedGroup(group);
+    const qGroup = groupQuality(group);
+    const hasException = qGroup.alter > 0 || qGroup.remake > 0;
     const done = assigned && group.unresolvedTotal <= 0;
-    return `<article class="colour-card ${assigned ? "assigned" : ""} ${done ? "done" : ""} ${!assigned && !canAssign ? "waiting" : ""}" data-colour-key="${esc(rowKey(group))}">
+    return `<article class="colour-card ${assigned ? "assigned" : ""} ${done ? "done" : ""} ${submitted ? "submitted-colour" : ""} ${submitted && hasException ? "submitted-exception" : ""} ${!assigned && !canAssign ? "waiting" : ""}" data-colour-key="${esc(rowKey(group))}">
       <div class="colour-head">
         <div class="colour-title">
           ${assigned
-            ? `<input class="work-pick" type="checkbox" ${state.selectedWorkColours.has(rowKey(group)) ? "checked" : ""} ${done ? "disabled" : ""} title="Selected रहेगा जब तक Colour Submit नहीं होता">`
+            ? `<input class="work-pick" type="checkbox" ${state.selectedWorkColours.has(rowKey(group)) ? "checked" : ""} ${done || submitted ? "disabled" : ""} title="Assigned Colour selected रहेगा; Submit के बाद status card रहेगा">`
             : `<input class="assign-pick" type="checkbox" ${canAssign ? "" : "disabled"} title="${canAssign ? "Select complete colour" : "Waiting for previous department Submit"}">`}
           <div><h3>${esc(group.colour_name || group.colour_code)} <span class="badge">${esc(group.colour_code)}</span></h3>
           <div class="muted">${esc(group.source_type)} · Main ${group.total} PCS · ${group.rows.length} Sizes permanently bound</div></div>
@@ -348,13 +383,13 @@ function renderColours() {
           </label>
           <label>${assigned ? "Reassign direct production Pending to" : "Route gate"}
             ${assigned
-              ? `<select class="reassign-worker" ${done ? "disabled" : ""}>${workerOptions("", "Select new worker")}</select>`
+              ? `<select class="reassign-worker" ${done || submitted ? "disabled" : ""}>${workerOptions("", "Select new worker")}</select>`
               : `<input value="${canAssign ? "OPEN AFTER UPSTREAM SUBMIT" : "LOCKED · WAITING PREVIOUS SUBMIT"}" disabled>`}
           </label>
         </div>
       </div>
       <div class="colour-meta">${statusBadge(group)}
-        <span class="muted">Quantity identity: Main = Good + Alter Pending + Remake Pending + Damage</span>
+        <span class="muted">${submitted ? `Forwarded ${group.outboundTotal} PCS · Only submitted Colour opens downstream` : `Quantity identity: Main = Good + Alter Pending + Remake Pending + Damage`}</span>
         <span class="muted">Worker ownership never splits by size.</span>
       </div>
       <div class="size-wrap"><table>
@@ -362,18 +397,18 @@ function renderColours() {
           <th>Size</th><th>Main Qty</th><th>Good Qty</th><th>Alter Fill</th><th>Alter Pending</th><th>Remake Assign</th><th>Remake Pending</th><th>Remake Submit</th><th>Damage Qty</th><th>Damage From</th><th>Status</th>
         </tr></thead>
         <tbody>${group.rows.map((row, rowIndex) => {
-          const enabled = assigned && !done;
+          const enabled = assigned && !done && !submitted;
           const q = qualityNumbers(row);
-          return `<tr data-row-index="${group.indexes[rowIndex]}">
+          return `<tr class="${q.alterPending>0 ? "row-alter-pending" : ""} ${q.remakePending>0 ? "row-remake-pending" : ""} ${q.damage>0 ? "row-damage" : ""}" data-row-index="${group.indexes[rowIndex]}">
             <td><b>${esc(row.size_code)}</b></td>
             <td><b>${q.mainQty}</b></td>
             <td><b>${q.goodQty}</b></td>
             <td><input class="alterEntry" type="number" min="0" max="${num(row.pending_qty)}" value="0" ${enabled ? "" : "disabled"}></td>
-            <td>${q.alterPending}</td>
+            <td class="${q.alterPending>0 ? "pending-cell alter-blink" : ""}">${q.alterPending}</td>
             <td><input class="remakeIssueEntry" type="number" min="0" max="${q.alterPending}" value="0" ${enabled && q.alterPending > 0 ? "" : "disabled"}></td>
-            <td>${q.remakePending}</td>
+            <td class="${q.remakePending>0 ? "pending-cell remake-blink" : ""}">${q.remakePending}</td>
             <td><input class="remakeCompleteEntry" type="number" min="0" max="${q.remakePending}" value="0" ${enabled && q.remakePending > 0 ? "" : "disabled"}></td>
-            <td><input class="damageEntry" type="number" min="0" value="0" ${enabled ? "" : "disabled"}></td>
+            <td class="${q.damage>0 ? "damage-visible" : ""}"><input class="damageEntry" type="number" min="0" value="0" ${enabled ? "" : "disabled"}></td>
             <td><select class="damageSource source-select" ${enabled ? "" : "disabled"}><option value="PENDING">Direct / Good</option><option value="ALTER">Alter Pending</option><option value="REMAKE">Remake Pending</option></select></td>
             <td>${esc(qualityStatus(row))}</td>
           </tr>`;
@@ -389,7 +424,7 @@ function renderColours() {
 }
 
 function selectedOpenGroups() {
-  const groupList = groups();
+  const groupList = visibleGroups();
   return [...document.querySelectorAll(".colour-card")].filter(card => card.querySelector(".assign-pick")?.checked).map(card => {
     const group = groupList.find(item => String(rowKey(item)) === String(card.dataset.colourKey));
     const select = card.querySelector(".colour-worker");
@@ -404,7 +439,7 @@ function selectedOpenGroups() {
 }
 
 function selectedAssignedGroups() {
-  const groupList = groups();
+  const groupList = visibleGroups();
   return [...document.querySelectorAll(".colour-card")].filter(card => card.querySelector(".work-pick")?.checked).map(card => ({
     card,
     group: groupList.find(item => String(rowKey(item)) === String(card.dataset.colourKey))

@@ -1,4 +1,16 @@
-Upload and replace only these two files in GitHub root:
-real-universal-production-v726.html
-real-universal-production-v726.js
-Then press Ctrl+Shift+R.
+REDZED JUPM V726 FREEZE CLEAR FINAL
+
+Upload and replace these exact root files:
+1. real-universal-production-v726.html
+2. real-universal-production-v726.js
+
+Then open the page and press Ctrl + Shift + R.
+
+Display changes:
+- Moving ticker removed.
+- Three fixed panels: Alter Pending, Remake Pending, Damage.
+- Alter background blinks Yellow / Black.
+- Remake background blinks Blue / Black.
+- Damage background blinks Red / Black.
+- Text remains full-opacity, sharp and stationary.
+- No blur, glow, filter, fading or moving data.
