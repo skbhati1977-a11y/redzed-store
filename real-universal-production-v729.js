@@ -20,7 +20,7 @@ const state = {
   imageIndex: 0,
   scale: 1,
   startX: 0,
-  busy: false, pendingSubmitRows: null, cameraStream: null, cameraBlobs: [], mapping: null
+  busy: false, pendingSubmitRows: null, cameraStream: null, cameraBlobs: [], mapping: null, boardMeta: new Map()
 };
 
 function errorText(error) {
@@ -83,8 +83,31 @@ function thumbnails(lot, limit = 8) {
     </button>`).join("");
 }
 
+function validMappedValue(value) {
+  return value != null && String(value).trim() && !/MAPPING REQUIRED|^—$|^â€”$/i.test(String(value).trim());
+}
+
+function boardMeta(lot) {
+  return state.boardMeta.get(lot?.canonical_lot_id) || null;
+}
+
 function cbNo(lot) {
-  return lot?.cb_no || lot?.cb_number || lot?.cb_base_no || "—";
+  const locked = boardMeta(lot)?.identity?.cb_no;
+  return validMappedValue(locked) ? locked : (lot?.cb_no || lot?.cb_number || lot?.cb_base_no || "—");
+}
+
+async function loadBoardMeta(lot) {
+  try {
+    const meta = await rpc("rr_upm_board_lot_status_v743", {p_canonical_lot_id: lot.canonical_lot_id});
+    state.boardMeta.set(lot.canonical_lot_id, meta || {});
+    const identity = meta?.identity || {};
+    ["cb_no","art_no","print_no","frame_no","item_name"].forEach(key => {
+      if (validMappedValue(identity[key])) lot[key] = identity[key];
+    });
+  } catch (error) {
+    console.warn("Board live status unavailable", lot.lot_no, error);
+    state.boardMeta.set(lot.canonical_lot_id, {});
+  }
 }
 
 async function load() {
@@ -100,7 +123,7 @@ async function load() {
     if (lotResult.error) throw lotResult.error;
     state.departments = departmentResult.data || [];
     state.lots = lotResult.data || [];
-    await Promise.all(state.lots.map(loadVisual));
+    await Promise.all(state.lots.flatMap(lot => [loadVisual(lot), loadBoardMeta(lot)]));
     fillDepartments();
     renderBoard();
     setMessage();
@@ -120,15 +143,30 @@ function fillDepartments() {
 
 function lotMatchesDepartment(lot, departmentCode) {
   if (!departmentCode) return true;
+  const statuses = arr(boardMeta(lot)?.department_statuses);
+  if (statuses.length) return statuses.some(row => upper(row.department_code) === upper(departmentCode));
   return arr(lot.colours).some(colour => upper(colour.current_department_code) === upper(departmentCode));
 }
 
+function boardStatusRows(lot) {
+  const rows = arr(boardMeta(lot)?.department_statuses);
+  if (!rows.length) return '<div class="lot-live-status base"><b>OPEN QUEUE</b><span>Colour assignment available</span></div>';
+  return rows.slice(0,4).map(row => {
+    const colour = upper(row.status_colour || "BASE").toLowerCase();
+    return `<div class="lot-live-status ${esc(colour)}"><b>${esc(row.department_name || row.department_code)}</b><span>${esc(row.board_detail || row.display_label || "")}</span></div>`;
+  }).join("") + (rows.length > 4 ? `<div class="lot-live-more">+${rows.length - 4} MORE</div>` : "");
+}
+
 function lotCard(lot) {
+  const meta = boardMeta(lot);
+  const identity = meta?.identity || {};
+  const artNo = validMappedValue(identity.art_no) ? identity.art_no : (lot.art_no || "—");
   return `<article class="lot-card" data-lot="${esc(lot.canonical_lot_id)}">
     <div class="lot-head">
-      <div><div class="lot-no">${esc(lot.lot_no)}</div><div class="cb-no">CB NO · ${esc(cbNo(lot))}</div><div class="art-no">ART ${esc(lot.art_no || "—")}</div></div>
+      <div><div class="lot-no">${esc(lot.lot_no)}</div><div class="cb-no">CB NO · ${esc(cbNo(lot))}</div><div class="art-no">ART ${esc(artNo)}</div></div>
       <div style="text-align:right"><small class="muted">TOTAL CUT</small><div class="cut">${num(lot.total_qty)} PCS</div></div>
     </div>
+    <div class="lot-live-list">${boardStatusRows(lot)}</div>
     <div class="thumbs">${thumbnails(lot, 5)}</div>
     <button class="primary checkin" data-open-lot="${esc(lot.canonical_lot_id)}" type="button">CHECK IN</button>
   </article>`;
@@ -201,6 +239,8 @@ async function loadContext() {
         const value = identity[key];
         if (value && !/MAPPING REQUIRED|^—$|^â€”$/i.test(String(value))) { if ($(id)) $(id).textContent = value; state.lot[key] = value; }
       });
+      const existingMeta = boardMeta(state.lot) || {};
+      state.boardMeta.set(state.lot.canonical_lot_id, {...existingMeta, identity: {...(existingMeta.identity||{}), ...identity}});
     }
     $("actualRate").value = state.context.actual_rate ?? 0;
     $("standardRate").value = state.context.standard_rate ?? "";
@@ -210,7 +250,7 @@ async function loadContext() {
     $("marginWrap").classList.toggle("hidden", !showOwner);
     fillBulkWorker();
     state.mapping = state.context.mapping_context || {};
-    filterDepartmentDropdown();
+    if(filterDepartmentDropdown()) { queueMicrotask(loadContext); return; }
     const openCount=arr(state.context.rows).filter(r=>r.can_assign).reduce((m,r)=>m.add(upper(r.colour_code)),new Set()).size;
     const runningCount=arr(state.context.rows).filter(r=>r.is_locked).reduce((m,r)=>m.add(upper(r.colour_code)),new Set()).size;
     $("routeNote").textContent = runningCount
@@ -233,19 +273,31 @@ function currentDepartmentWorkers() {
 }
 
 
+function applyDepartmentSelectColour(){
+  const select=$("dept");
+  if(!select)return;
+  const option=select.options[select.selectedIndex];
+  const colour=String(option?.dataset.statusColour||"BASE").toLowerCase();
+  select.classList.remove("dept-base","dept-orange","dept-green","dept-red");
+  select.classList.add(`dept-${colour}`);
+}
+
 function filterDepartmentDropdown(){
   const select=$("dept");
   const current=upper(select.value||state.context?.department_code);
   const statuses=arr(state.context?.department_statuses);
-  if(!statuses.length)return;
+  if(!statuses.length)return false;
   const icon={BASE:"",ORANGE:"🟧 ",GREEN:"🟩 ",RED:"🟥 "};
   select.innerHTML=statuses.map(d=>{
     const code=upper(d.department_code);
-    const cls=`dept-${String(d.status_colour||"BASE").toLowerCase()}`;
-    return `<option value="${esc(code)}" class="${cls}">${icon[d.status_colour]||""}${esc(d.display_label||d.department_name||code)}</option>`;
+    const status=upper(d.status_colour||"BASE");
+    const cls=`dept-${status.toLowerCase()}`;
+    return `<option value="${esc(code)}" class="${cls}" data-status-colour="${esc(status)}">${icon[status]||""}${esc(d.display_label||d.department_name||code)}</option>`;
   }).join("");
   if([...select.options].some(o=>upper(o.value)===current))select.value=current;
   else if(select.options.length)select.value=select.options[0].value;
+  applyDepartmentSelectColour();
+  return upper(select.value)!==current;
 }
 function lmCandidates(){return arr(state.mapping?.line_man_candidates);}
 function openWhatsApp(result){if(result?.whatsapp_url)window.open(result.whatsapp_url,"_blank","noopener");}
@@ -304,6 +356,7 @@ function groups() {
     group.damageTotal += num(row.damage_qty);
     group.unresolvedTotal += num(row.alter_open_qty ?? row.alter_qty) + num(row.line_man_pending_qty) + num(row.worker_remake_pending_qty ?? row.remake_qty);
     group.canAssign = group.canAssign || Boolean(row.can_assign);
+    group.completedHere = group.completedHere || Boolean(row.is_completed_here) || upper(row.status)==="SUBMITTED HERE";
   });
   return [...map.values()];
 }
@@ -321,7 +374,7 @@ function renderColours() {
   $("colours").innerHTML = colourGroups.map(group => {
     const assigned = Boolean(group.is_locked);
     const canAssign = !assigned && Boolean(group.canAssign);
-    const done = assigned && group.unresolvedTotal <= 0;
+    const done = Boolean(group.completedHere) || (assigned && group.unresolvedTotal <= 0);
     return `<article class="colour-card ${assigned ? "assigned" : ""} ${done ? "done" : ""} ${!assigned && !canAssign ? "waiting" : ""}" data-colour-key="${esc(rowKey(group))}">
       <div class="colour-head">
         <div class="colour-title">
@@ -743,7 +796,7 @@ async function boot() {
     $("refresh").onclick = load;
     $("search").oninput = renderBoard;
     $("homeDept").onchange = renderBoard;
-    $("dept").onchange = loadContext;
+    $("dept").onchange = () => { applyDepartmentSelectColour(); loadContext(); };
     document.querySelector("[data-close]").onclick = () => $("traveller").classList.add("hidden");
     document.querySelectorAll("[data-link]").forEach(button => button.onclick = () => location.href = button.dataset.link);
     $("packingTab").onclick = () => setMessage("Existing Smart Packing remains unchanged.");
