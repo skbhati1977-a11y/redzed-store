@@ -443,9 +443,6 @@ async function assignWork() {
       p_lot_no: state.lot.lot_no,
       p_department_code: $("dept").value,
       p_rows: rows,
-      p_evidence_urls: [],
-      p_physical_confirmed: false,
-      p_line_man_id: null,
       p_remarks: "Universal Lot Form complete-colour assignment"
     });
   }, "Selected colours assigned with all sizes.");
@@ -524,9 +521,6 @@ async function reassignPending() {
       p_canonical_lot_id: state.lot.canonical_lot_id,
       p_department_code: $("dept").value,
       p_rows: rows,
-      p_evidence_urls: [],
-      p_physical_confirmed: false,
-      p_line_man_id: null,
       p_remarks: "Pending work reassignment from Universal Lot Form"
     });
   }, "Remaining pending work reassigned. Previous worker history is preserved.");
