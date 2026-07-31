@@ -1,0 +1,16 @@
+REDZED STATIC VALIDATION REPORT
+
+PASS — real-role-permission-v72054.js: JavaScript syntax
+PASS — real-universal-production-v726.js: JavaScript syntax
+PASS — real-role-permission-v72054.html: no duplicate IDs
+PASS — real-universal-production-v726.html: no duplicate IDs
+PASS — Web filenames unchanged
+PASS — Dynamic Department Master IDs/forms present
+PASS — Multi-skill Worker forms/RPC calls present
+PASS — Colour all-size assignment RPC present
+PASS — Submit-colour handoff RPC present
+PASS — Single/Multi Cutting mapping function present
+PASS — Flow debug RPC present
+PASS — SQL contains one final COMMIT
+
+Runtime execution against the live Supabase database was not possible in this environment.
