@@ -1,7 +1,7 @@
 (() => {
 "use strict";
 
-const VERSION = "V756_INDEPENDENT_COLOUR_ACTIONS";
+const VERSION = "V756_1_SCOPE_AND_DUPLICATE_FIX";
 const $ = id => document.getElementById(id);
 const upper = value => String(value || "").trim().toUpperCase();
 const esc = value => String(value ?? "").replace(/[&<>"']/g, char => ({
@@ -165,9 +165,36 @@ function getLotNoFromCard(card) {
   return card.querySelector(".lot-no")?.textContent?.trim() || "";
 }
 
+function isFirstWindowLotCard(card) {
+  if (!card) return false;
+  if (card.closest("#traveller")) return false;
+  if (card.classList.contains("colour-card")) return false;
+
+  return [...card.querySelectorAll("button")].some(button =>
+    upper(button.textContent).includes("CHECK IN")
+  );
+}
+
+function extractLotNoFromFirstWindowCard(card) {
+  const explicit = getLotNoFromCard(card);
+  if (explicit) return explicit;
+
+  const lines = String(card.innerText || "")
+    .split(/\n+/)
+    .map(line => line.trim())
+    .filter(Boolean);
+
+  return lines.find(line =>
+    /^[A-Z0-9][A-Z0-9_-]{2,20}$/i.test(line) &&
+    !["OPEN QUEUE","CHECK IN","TOTAL CUT"].includes(upper(line))
+  ) || "";
+}
+
 async function renderFirstWindowCard(card) {
+  if (!isFirstWindowLotCard(card)) return;
+
   const canonical = card.dataset.lot || card.dataset.canonicalLotId || "";
-  const lotNo = getLotNoFromCard(card);
+  const lotNo = extractLotNoFromFirstWindowCard(card);
   if (!canonical && !lotNo) return;
 
   const data = await fetchMatrix(canonical, lotNo);
@@ -189,9 +216,15 @@ async function renderFirstWindowCard(card) {
     </div>
   `).join("");
 
-  const thumbs = card.querySelector(".thumbs");
-  if (thumbs) thumbs.insertAdjacentElement("beforebegin", summary);
-  else card.querySelector(".card-top")?.insertAdjacentElement("afterend", summary);
+  const checkInButton = [...card.querySelectorAll("button")].find(button =>
+    upper(button.textContent).includes("CHECK IN")
+  );
+
+  if (checkInButton) {
+    checkInButton.insertAdjacentElement("beforebegin", summary);
+  } else {
+    card.appendChild(summary);
+  }
 }
 
 function locateActiveCanonical() {
@@ -258,9 +291,23 @@ function detailedRows(data) {
   `).join("");
 }
 
+function removeLegacyCheckinUi() {
+  const traveller = $("traveller");
+  if (!traveller) return;
+
+  traveller.querySelectorAll(
+    ".v7552-detail-panel,.v755-checkin-matrix,.v7552-short-matrix," +
+    ".v755-board-matrix,.v756-short-summary"
+  ).forEach(node => node.remove());
+
+  // V755.2 may recreate these through its observer; CSS also hard-hides them.
+}
+
 async function renderCheckinTable() {
   const traveller = $("traveller");
   if (!traveller || traveller.classList.contains("hidden")) return;
+
+  removeLegacyCheckinUi();
 
   const canonical = locateActiveCanonical();
   if (!canonical) return;
@@ -542,7 +589,9 @@ async function syncAll() {
 
   try {
     await Promise.all(
-      [...document.querySelectorAll(".lot-card")].map(renderFirstWindowCard)
+      [...document.querySelectorAll(".lot-card")]
+        .filter(isFirstWindowLotCard)
+        .map(renderFirstWindowCard)
     );
 
     await renderCheckinTable();
@@ -652,6 +701,14 @@ function addStyles() {
     }
     .v756-detail-hidden{display:none!important}
 
+    #traveller .v7552-detail-panel,
+    #traveller .v755-checkin-matrix,
+    #traveller .v7552-short-matrix,
+    #traveller .v755-board-matrix,
+    #traveller .v756-short-summary{
+      display:none!important;
+    }
+
     @media(max-width:900px){
       .v756-bulk{grid-template-columns:1fr}
       .v756-actions{min-width:320px}
@@ -661,7 +718,26 @@ function addStyles() {
   document.head.appendChild(style);
 }
 
+
+function showV756Badge() {
+  let badge = document.getElementById("v756ActiveBadge");
+  if (!badge) {
+    badge = document.createElement("div");
+    badge.id = "v756ActiveBadge";
+    badge.textContent = "V756.1 ACTIVE";
+    badge.style.cssText = `
+      position:fixed;right:12px;bottom:12px;z-index:99999;
+      background:#075f85;color:#fff;padding:9px 12px;
+      border-radius:9px;font-weight:950;box-shadow:0 4px 18px #0008;
+    `;
+    document.body.appendChild(badge);
+    setTimeout(() => badge.remove(), 4000);
+  }
+}
+
 function install() {
+  document.getElementById("v755HardBootBadge")?.remove();
+  showV756Badge();
   addStyles();
   bindGlobalClicks();
   syncAll();
