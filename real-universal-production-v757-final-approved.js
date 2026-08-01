@@ -1,7 +1,7 @@
 (() => {
 "use strict";
 
-const VERSION = "V757_5_SINGLE_CONFIRMATION_CONTEXT_FIX";
+const VERSION = "V757_6_SINGLE_ASSIGN_DEPARTMENT_BIND_FIX";
 const $ = id => document.getElementById(id);
 const upper = value => String(value || "").trim().toUpperCase();
 const esc = value => String(value ?? "").replace(/[&<>"']/g, char => ({
@@ -902,6 +902,107 @@ function decorateSingleColourAssignConfirmation({
   setTimeout(apply, 150);
 }
 
+function departmentOptionMatches(option, departmentCode, departmentName) {
+  const wantedCode = upper(departmentCode);
+  const wantedName = upper(departmentName);
+  const optionValue = upper(option?.value);
+  const optionText = upper(option?.textContent);
+
+  const aliases = new Set([
+    wantedCode,
+    wantedName,
+    wantedCode === "PRINTING" ? "PRINT" : "",
+    wantedCode === "STITCHING" ? "KR" : "",
+    wantedCode === "OVERLOCK" ? "OV" : "",
+    wantedCode === "FOLDING" ? "FLD" : ""
+  ].filter(Boolean));
+
+  return [...aliases].some(alias =>
+    optionValue === alias ||
+    optionText === alias ||
+    optionText.includes(alias)
+  );
+}
+
+async function forceSingleAssignmentDepartment(rowData) {
+  const select = $("dept");
+  if (!select) {
+    throw new Error("Hidden department engine नहीं मिला.");
+  }
+
+  let option = [...select.options].find(item =>
+    departmentOptionMatches(
+      item,
+      rowData.department_code,
+      rowData.department_name
+    )
+  );
+
+  if (!option) {
+    option = document.createElement("option");
+    option.value = upper(rowData.department_code);
+    option.textContent = rowData.department_name || rowData.department_code;
+    option.dataset.v757DepartmentBridge = "1";
+    select.appendChild(option);
+  }
+
+  select.value = option.value;
+  select.dispatchEvent(new Event("input", { bubbles: true }));
+  select.dispatchEvent(new Event("change", { bubbles: true }));
+
+  await new Promise(resolve => setTimeout(resolve, 350));
+
+  if (
+    upper(select.value) !== upper(option.value) &&
+    !departmentOptionMatches(
+      select.selectedOptions?.[0],
+      rowData.department_code,
+      rowData.department_name
+    )
+  ) {
+    throw new Error(
+      `${rowData.department_name} department assignment context lock नहीं हुआ.`
+    );
+  }
+}
+
+function bindSingleColourWorkerEngine(rowData, workerId, workerLabel) {
+  clearProgrammaticSelection();
+
+  const currentCard = findColourCard(rowData.colour_code);
+  if (!currentCard) {
+    throw new Error(`${rowData.colour_code} का hidden Colour engine नहीं मिला.`);
+  }
+
+  const pick = currentCard.querySelector(".work-pick,.assign-pick");
+  if (!pick || pick.disabled) {
+    throw new Error(`${rowData.colour_code} assignment के लिए selectable नहीं है.`);
+  }
+
+  pick.checked = true;
+  pick.dispatchEvent(new Event("change", { bubbles: true }));
+
+  const engineWorker = currentCard.querySelector(".colour-worker");
+  if (!engineWorker) {
+    throw new Error("Hidden Colour worker dropdown नहीं मिला.");
+  }
+
+  ensureWorkerOption(engineWorker, workerId, workerLabel);
+  engineWorker.value = workerId;
+  engineWorker.dispatchEvent(new Event("input", { bubbles: true }));
+  engineWorker.dispatchEvent(new Event("change", { bubbles: true }));
+
+  const bulkWorker = $("bulkWorker");
+  if (bulkWorker) {
+    ensureWorkerOption(bulkWorker, workerId, workerLabel);
+    bulkWorker.value = workerId;
+    bulkWorker.dispatchEvent(new Event("input", { bubbles: true }));
+    bulkWorker.dispatchEvent(new Event("change", { bubbles: true }));
+  }
+
+  return currentCard;
+}
+
 function ensureWorkerOption(select, workerId, workerLabel) {
   if (!select || !workerId) return null;
 
@@ -977,60 +1078,31 @@ async function openAssignPanel(rowData, rowElement, card) {
     try {
       const workerId = workerSearch?.getValue?.();
       const workerLabel = workerSearch?.getLabel?.() || workerId;
-      if (!workerId) throw new Error("Mapped worker search करके select करें.");
 
-      // Hard reset: only this Colour may enter the assignment payload.
-      clearProgrammaticSelection();
-
-      const pick = card.querySelector(".work-pick,.assign-pick");
-      if (!pick || pick.disabled) {
-        throw new Error(`${rowData.colour_code} assignment के लिए selectable नहीं है.`);
+      if (!workerId) {
+        throw new Error("Mapped worker search करके select करें.");
       }
 
-      pick.checked = true;
-      pick.dispatchEvent(new Event("change", { bubbles: true }));
+      // 1. Lock the real hidden assignment department to this Colour's
+      //    canonical active department, not OPEN_NEXT.
+      await forceSingleAssignmentDepartment(rowData);
 
-      const engineWorker = card.querySelector(".colour-worker");
-      if (!engineWorker) throw new Error("Hidden Colour worker dropdown नहीं मिला.");
+      // 2. Bind only this Colour and selected mapped worker.
+      bindSingleColourWorkerEngine(rowData, workerId, workerLabel);
 
-      const workerOption = ensureWorkerOption(
-        engineWorker,
-        workerId,
-        workerLabel
-      );
-
-      if (!workerOption) {
-        throw new Error("Selected mapped worker को Colour engine में bind नहीं किया जा सका.");
-      }
-
-      engineWorker.value = workerId;
-      engineWorker.dispatchEvent(new Event("change", { bubbles: true }));
-
-      const bulkWorker = $("bulkWorker");
-      if (bulkWorker) {
-        const bulkOption = ensureWorkerOption(
-          bulkWorker,
-          workerId,
-          workerLabel
-        );
-
-        if (!bulkOption) {
-          throw new Error("Selected mapped worker को original assignment engine में bind नहीं किया जा सका.");
-        }
-
-        bulkWorker.value = workerId;
-        bulkWorker.dispatchEvent(new Event("change", { bubbles: true }));
-      }
-
+      // 3. The old APPLY WORKER helper may rebuild cards/context.
       if ($("applyBulkWorkerBtn")) {
         clickExistingButton("applyBulkWorkerBtn");
-        await new Promise(resolve => setTimeout(resolve, 120));
+        await new Promise(resolve => setTimeout(resolve, 180));
       }
 
+      // 4. Re-lock department and re-bind C3 after any legacy re-render.
+      await forceSingleAssignmentDepartment(rowData);
+      bindSingleColourWorkerEngine(rowData, workerId, workerLabel);
+
+      // 5. Open the original confirmation/RPC flow.
       clickExistingButton("assignBtn");
 
-      // This is a single-row action. V729 can mislabel it as full Lot when
-      // this Colour is the only currently available Colour.
       decorateSingleColourAssignConfirmation({
         colourCode: rowData.colour_code,
         departmentName: rowData.department_name,
@@ -1038,15 +1110,20 @@ async function openAssignPanel(rowData, rowElement, card) {
         sizeSummary: colourSizeInfo(rowData.colour_code)?.summary || ""
       });
 
-      const refreshAfterAssignment = async () => {
-        workerCache.clear();
-        lotSizeCache.clear();
-        checkinSignature = "";
-        await new Promise(resolve => setTimeout(resolve, 900));
-        await syncAll();
-      };
+      // Refresh only after the user confirms, not while popup is open.
+      const yesButton = $("actionConfirmYes");
+      if (yesButton && yesButton.dataset.v757RefreshHook !== "1") {
+        yesButton.dataset.v757RefreshHook = "1";
+        yesButton.addEventListener("click", () => {
+          setTimeout(async () => {
+            workerCache.clear();
+            lotSizeCache.clear();
+            checkinSignature = "";
+            await syncAll();
+          }, 1100);
+        }, { once: true });
+      }
 
-      setTimeout(refreshAfterAssignment, 500);
       closeInlineAction(rowElement);
     } catch (error) {
       alert(error.message || String(error));
@@ -1527,7 +1604,7 @@ function showV756Badge() {
   if (!badge) {
     badge = document.createElement("div");
     badge.id = "v756ActiveBadge";
-    badge.textContent = "V757.5 ACTIVE";
+    badge.textContent = "V757.6 ACTIVE";
     badge.style.cssText = `
       position:fixed;right:12px;bottom:12px;z-index:99999;
       background:#075f85;color:#fff;padding:9px 12px;
@@ -1604,7 +1681,7 @@ document.readyState === "loading"
   ? document.addEventListener("DOMContentLoaded", install)
   : install();
 
-window.REDZED_UPM_V757_5 = {
+window.REDZED_UPM_V757_6 = {
   version: VERSION,
   sync: syncAll
 };
