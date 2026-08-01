@@ -1,18 +1,31 @@
 (() => {
 "use strict";
 
-const VERSION = "V756_1_SCOPE_AND_DUPLICATE_FIX";
+const VERSION = "V756_3_CHECKIN_CLEAN_FINAL";
 const $ = id => document.getElementById(id);
 const upper = value => String(value || "").trim().toUpperCase();
 const esc = value => String(value ?? "").replace(/[&<>"']/g, char => ({
   "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
 }[char]));
 
+function matrixSignature(data) {
+  return JSON.stringify((data?.colours || []).map(row => ({
+    c: row.colour_code,
+    d: row.department_code,
+    s: row.ownership_status,
+    w: row.worker_id,
+    a: row.alter_journey
+  })));
+}
+
 let activeCanonical = "";
 let currentMatrix = null;
 let syncing = false;
 let observerTimer = null;
 const workerCache = new Map();
+const boardSignatures = new WeakMap();
+let checkinSignature = "";
+let observer = null;
 
 function getClient() {
   const direct = [
@@ -198,6 +211,14 @@ async function renderFirstWindowCard(card) {
   if (!canonical && !lotNo) return;
 
   const data = await fetchMatrix(canonical, lotNo);
+  const signature = matrixSignature(data);
+
+  if (
+    boardSignatures.get(card) === signature &&
+    card.querySelector(".v756-short-summary")
+  ) return;
+
+  boardSignatures.set(card, signature);
 
   card.querySelectorAll(
     ".lot-live-list,.lot-live-status,.v753-route-bar,.v754-board-status," +
@@ -300,6 +321,11 @@ function removeLegacyCheckinUi() {
     ".v755-board-matrix,.v756-short-summary"
   ).forEach(node => node.remove());
 
+  // Old global-department messages are no longer valid in Colour-wise mode.
+  $("debugBtn")?.setAttribute("hidden", "hidden");
+  document.querySelector("details.debug")?.setAttribute("hidden", "hidden");
+  $("formMsg")?.setAttribute("hidden", "hidden");
+
   // V755.2 may recreate these through its observer; CSS also hard-hides them.
 }
 
@@ -315,7 +341,14 @@ async function renderCheckinTable() {
   currentMatrix = await fetchMatrix(canonical, "");
   activeCanonical = canonical;
 
+  const nextSignature = matrixSignature(currentMatrix);
   let panel = $("v756ColourActionPanel");
+
+  if (panel && checkinSignature === nextSignature) {
+    return;
+  }
+
+  checkinSignature = nextSignature;
   if (!panel) {
     panel = document.createElement("section");
     panel.id = "v756ColourActionPanel";
@@ -587,6 +620,8 @@ async function syncAll() {
   if (syncing) return;
   syncing = true;
 
+  if (observer) observer.disconnect();
+
   try {
     await Promise.all(
       [...document.querySelectorAll(".lot-card")]
@@ -599,6 +634,15 @@ async function syncAll() {
     console.error(VERSION, error);
   } finally {
     syncing = false;
+
+    if (observer) {
+      observer.observe(document.body, {
+        childList: true,
+        subtree: true,
+        attributes: true,
+        attributeFilter: ["class"]
+      });
+    }
   }
 }
 
@@ -701,6 +745,12 @@ function addStyles() {
     }
     .v756-detail-hidden{display:none!important}
 
+    #debugBtn,
+    details.debug,
+    #traveller #formMsg{
+      display:none!important;
+    }
+
     #traveller .v7552-detail-panel,
     #traveller .v755-checkin-matrix,
     #traveller .v7552-short-matrix,
@@ -724,7 +774,7 @@ function showV756Badge() {
   if (!badge) {
     badge = document.createElement("div");
     badge.id = "v756ActiveBadge";
-    badge.textContent = "V756.1 ACTIVE";
+    badge.textContent = "V756.3 ACTIVE";
     badge.style.cssText = `
       position:fixed;right:12px;bottom:12px;z-index:99999;
       background:#075f85;color:#fff;padding:9px 12px;
@@ -742,12 +792,28 @@ function install() {
   bindGlobalClicks();
   syncAll();
 
-  const observer = new MutationObserver(() => {
+  observer = new MutationObserver(mutations => {
+    const meaningful = mutations.some(mutation => {
+      const target = mutation.target;
+      if (!(target instanceof Element)) return true;
+
+      return !target.closest(
+        ".v756-short-summary,#v756ColourActionPanel,#v756ActiveBadge"
+      );
+    });
+
+    if (!meaningful) return;
+
     clearTimeout(observerTimer);
-    observerTimer = setTimeout(syncAll, 140);
+    observerTimer = setTimeout(syncAll, 220);
   });
 
-  observer.observe(document.body, { childList: true, subtree: true });
+  observer.observe(document.body, {
+    childList: true,
+    subtree: true,
+    attributes: true,
+    attributeFilter: ["class"]
+  });
 }
 
 document.readyState === "loading"
