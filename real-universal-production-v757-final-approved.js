@@ -1,7 +1,7 @@
 (() => {
 "use strict";
 
-const VERSION = "V757_4_REFRESH_AND_ENGINE_WORKER_BRIDGE";
+const VERSION = "V757_5_SINGLE_CONFIRMATION_CONTEXT_FIX";
 const $ = id => document.getElementById(id);
 const upper = value => String(value || "").trim().toUpperCase();
 const esc = value => String(value ?? "").replace(/[&<>"']/g, char => ({
@@ -867,6 +867,41 @@ function appendInlinePanel(rowElement, html) {
   return panel;
 }
 
+function decorateSingleColourAssignConfirmation({
+  colourCode,
+  departmentName,
+  workerLabel,
+  sizeSummary
+}) {
+  const apply = () => {
+    const modal = $("actionConfirmModal");
+    if (!modal || modal.classList.contains("hidden")) return false;
+
+    $("actionConfirmTitle").textContent = "CONFIRM COLOUR ASSIGNMENT";
+
+    $("actionConfirmCopy").innerHTML = `
+      <b>क्या आप पूरा Colour ${esc(colourCode)} assign करना चाहते हैं?</b><br>
+      Department: ${esc(departmentName)}<br>
+      Worker: ${esc(workerLabel || "Selected worker")}<br>
+      Colour: ${esc(colourCode)}
+      ${sizeSummary ? `<br>Sizes: ${esc(sizeSummary)}` : ""}
+    `;
+
+    $("actionConfirmColours").innerHTML =
+      `<span class="badge">${esc(colourCode)}</span>`;
+
+    $("actionConfirmNextWrap")?.classList.add("hidden");
+    $("actionConfirmYes").textContent = `YES · ASSIGN ${upper(colourCode)}`;
+    modal.dataset.v757SingleColour = upper(colourCode);
+    return true;
+  };
+
+  if (apply()) return;
+  setTimeout(apply, 0);
+  setTimeout(apply, 50);
+  setTimeout(apply, 150);
+}
+
 function ensureWorkerOption(select, workerId, workerLabel) {
   if (!select || !workerId) return null;
 
@@ -993,6 +1028,15 @@ async function openAssignPanel(rowData, rowElement, card) {
       }
 
       clickExistingButton("assignBtn");
+
+      // This is a single-row action. V729 can mislabel it as full Lot when
+      // this Colour is the only currently available Colour.
+      decorateSingleColourAssignConfirmation({
+        colourCode: rowData.colour_code,
+        departmentName: rowData.department_name,
+        workerLabel,
+        sizeSummary: colourSizeInfo(rowData.colour_code)?.summary || ""
+      });
 
       const refreshAfterAssignment = async () => {
         workerCache.clear();
@@ -1483,7 +1527,7 @@ function showV756Badge() {
   if (!badge) {
     badge = document.createElement("div");
     badge.id = "v756ActiveBadge";
-    badge.textContent = "V757.4 ACTIVE";
+    badge.textContent = "V757.5 ACTIVE";
     badge.style.cssText = `
       position:fixed;right:12px;bottom:12px;z-index:99999;
       background:#075f85;color:#fff;padding:9px 12px;
@@ -1560,7 +1604,7 @@ document.readyState === "loading"
   ? document.addEventListener("DOMContentLoaded", install)
   : install();
 
-window.REDZED_UPM_V757_4 = {
+window.REDZED_UPM_V757_5 = {
   version: VERSION,
   sync: syncAll
 };
