@@ -1,48 +1,79 @@
 (() => {
 "use strict";
 
-/*
- REDZED UPM V752 — ALTER TRANSPORT STAGE AUTO OPEN
- Additive frontend patch. Load AFTER V750.
- No SQL / mapping / quantity changes.
-*/
+const VERSION = "V752_2_FINAL_RECEIVE_PROGRESS";
 
-const VERSION = "V752_STAGE_AUTO_OPEN";
 const STAGES = {
   CM_REMAKE_READY: {
     label: "Receive Master · LM",
     buttonId: "remakeDeliveredBtn",
     rpcStage: "RECEIVE_FROM_MASTER",
-    cellIndex: 7
+    inputClass: "remakeDeliveredEntry",
+    fallbackCellIndex: 7
   },
   LM_DELIVERY_PENDING: {
     label: "Deliver Karigar · LM",
     buttonId: "remakeCompleteBtn",
     rpcStage: "DELIVER_TO_KARIGAR",
-    cellIndex: 8
+    inputClass: "remakeCompleteEntry",
+    fallbackCellIndex: 8
   },
   KARIGAR_REMAKE_PENDING: {
     label: "Receive Karigar · LM",
     buttonId: "receiveKarigarBtn",
     rpcStage: "RECEIVE_FROM_KARIGAR",
-    cellIndex: 10
+    inputClass: "receiveKarigarEntry",
+    fallbackCellIndex: 10
   }
 };
 
 let busy = false;
-let lastContext = null;
 
 const $ = id => document.getElementById(id);
 const upper = v => String(v || "").trim().toUpperCase();
-const num = v => Number(v || 0);
+const qty = v => Number(v || 0);
 
-function client() {
+
+function progressKey(canonical, colour, size) {
+  return `rr_upm_final_receive:${canonical}:${upper(colour)}:${upper(size)}`;
+}
+
+function readProgressTotal(key, fallback) {
+  const saved = Number(sessionStorage.getItem(key) || 0);
+  const current = qty(fallback);
+  const total = Math.max(saved, current);
+  sessionStorage.setItem(key, String(total));
+  return total;
+}
+
+function flashProgress(text, type = "success") {
+  let box = document.getElementById("v752ProgressFlash");
+  if (!box) {
+    box = document.createElement("div");
+    box.id = "v752ProgressFlash";
+    box.className = "v752-progress-flash";
+    document.querySelector(".actions")?.insertAdjacentElement("afterend", box);
+  }
+
+  box.textContent = text;
+  box.className = `v752-progress-flash ${type}`;
+  box.hidden = false;
+
+  clearTimeout(flashProgress.timer);
+  flashProgress.timer = setTimeout(() => {
+    box.hidden = true;
+    box.textContent = "";
+  }, 3200);
+}
+
+function getClient() {
   const direct = [
     window.supabaseClient,
     window.supabaseDb,
     window.redzedSupabase,
     window.sb
   ].find(x => x && typeof x.rpc === "function");
+
   if (direct) return direct;
 
   for (const key of Object.getOwnPropertyNames(window)) {
@@ -55,42 +86,47 @@ function client() {
   return null;
 }
 
-function parseDebug() {
+function getContext() {
   const raw = $("debugOutput")?.textContent?.trim();
   if (!raw || !raw.startsWith("{")) return null;
   try {
-    const parsed = JSON.parse(raw);
-    lastContext = parsed?.context || null;
-    return lastContext;
+    return JSON.parse(raw)?.context || null;
   } catch (_) {
-    return lastContext;
+    return null;
   }
 }
 
-function cardColour(card) {
-  const badge = card?.querySelector(".colour-title .badge, h3 .badge");
-  return upper(badge?.textContent);
+function cardCode(card) {
+  const title = card.querySelector(".colour-title");
+  if (!title) return "";
+  const match = upper(title.textContent).match(/\bC\d+\b/);
+  return match ? match[0] : "";
 }
 
 function rowSize(row) {
-  return upper(row?.querySelector("td:first-child")?.textContent);
+  const first = row.querySelector("td");
+  return upper(first?.textContent);
 }
 
-function findJourneyRow(journey) {
-  const colour = upper(journey.colour_code);
-  const size = upper(journey.size_code);
+function findCardAndRow(journey) {
+  const wantedColour = upper(journey.colour_code);
+  const wantedSize = upper(journey.size_code);
 
   for (const card of document.querySelectorAll(".colour-card")) {
-    if (cardColour(card) !== colour) continue;
-    for (const row of card.querySelectorAll("tr[data-row-index]")) {
-      if (rowSize(row) === size) return { card, row };
+    if (cardCode(card) !== wantedColour) continue;
+
+    // Do not depend on data-row-index; live rows may not have it.
+    const rows = card.querySelectorAll("tbody tr, .size-wrap tr");
+    for (const row of rows) {
+      if (row.querySelector("th")) continue;
+      if (rowSize(row) === wantedSize) return { card, row };
     }
   }
   return null;
 }
 
-function ensureCardSelected(card) {
-  let pick = card.querySelector(".work-pick, .assign-pick");
+function selectJourneyCard(card) {
+  const pick = card.querySelector(".work-pick, .assign-pick");
   if (!pick) return;
 
   pick.disabled = false;
@@ -99,131 +135,150 @@ function ensureCardSelected(card) {
   if (pick.classList.contains("assign-pick")) {
     pick.classList.remove("assign-pick");
     pick.classList.add("work-pick");
-    pick.dataset.v752JourneyPick = "1";
-    pick.title = "Active Alter journey stage";
   }
+
+  pick.dataset.v752Journey = "1";
 }
 
-function makeStageInput(row, journey, meta) {
-  const cells = row.querySelectorAll("td");
-  const cell = cells[meta.cellIndex];
-  if (!cell) return;
+function activateInput(row, journey, meta) {
+  const cells = [...row.querySelectorAll("td")];
+  const targetCell = cells[meta.fallbackCellIndex];
+  if (!targetCell) return null;
 
-  let input = cell.querySelector(".v752-stage-input");
+  // Prefer the existing production input in that stage column.
+  let input =
+    targetCell.querySelector(`.${meta.inputClass}`) ||
+    targetCell.querySelector('input[type="number"]');
+
+  // Only create if the existing renderer produced no input at all.
   if (!input) {
-    // Keep any backend quantity display, add an action input underneath.
     input = document.createElement("input");
     input.type = "number";
-    input.min = "0";
     input.step = "1";
-    input.className = "v752-stage-input";
-    input.style.width = "82px";
-    input.style.marginTop = "5px";
-    cell.appendChild(input);
+    targetCell.appendChild(input);
   }
 
+  input.classList.add("v752-stage-input", meta.inputClass);
   input.disabled = false;
-  input.max = String(num(journey.qty));
-  input.placeholder = `Max ${num(journey.qty)}`;
+  input.readOnly = false;
+  input.min = "0";
+  input.max = String(qty(journey.qty));
+  input.placeholder = "PCS";
   input.dataset.journeyId = journey.journey_id || "";
   input.dataset.colourCode = journey.colour_code || "";
   input.dataset.colourName = journey.colour_name || journey.colour_code || "";
   input.dataset.sizeCode = journey.size_code || "";
   input.dataset.rpcStage = meta.rpcStage;
-  input.dataset.buttonId = meta.buttonId;
+  input.dataset.availableQty = String(qty(journey.qty));
+  input.dataset.progressColour = journey.colour_code || "";
+  input.dataset.progressSize = journey.size_code || "";
 
-  // Do not silently submit; user sees and enters Qty.
-  if (num(input.value) > num(journey.qty)) input.value = "";
-  input.title = `${meta.label} · Available ${num(journey.qty)} PCS`;
-
-  cell.classList.add("v752-active-stage-cell");
+  targetCell.classList.add("v752-active-stage-cell");
   row.classList.add("v752-active-stage-row");
+
+  return input;
 }
 
-function clearOldStageUi() {
-  document.querySelectorAll(".v752-active-stage-cell").forEach(el =>
-    el.classList.remove("v752-active-stage-cell")
-  );
-  document.querySelectorAll(".v752-active-stage-row").forEach(el =>
-    el.classList.remove("v752-active-stage-row")
-  );
+function resetStageUi() {
+  document.querySelectorAll(".v752-active-stage-row")
+    .forEach(el => el.classList.remove("v752-active-stage-row"));
+
+  document.querySelectorAll(".v752-active-stage-cell")
+    .forEach(el => el.classList.remove("v752-active-stage-cell"));
+
   document.querySelectorAll(".v752-stage-input").forEach(input => {
     input.disabled = true;
-    input.closest("td")?.classList.remove("v752-active-stage-cell");
   });
 }
 
-function syncStages() {
-  const ctx = parseDebug();
+function sync() {
+  const ctx = getContext();
   const journeys = Array.isArray(ctx?.active_alter_summary)
     ? ctx.active_alter_summary
     : [];
 
-  clearOldStageUi();
+  resetStageUi();
 
   for (const journey of journeys) {
     const meta = STAGES[upper(journey.stage)];
     if (!meta) continue;
 
-    const found = findJourneyRow(journey);
-    if (!found) continue;
+    const found = findCardAndRow(journey);
+    if (!found) {
+      console.warn(VERSION, "Journey row not found", journey);
+      continue;
+    }
 
-    ensureCardSelected(found.card);
-    makeStageInput(found.row, journey, meta);
+    selectJourneyCard(found.card);
+    const input = activateInput(found.row, journey, meta);
 
     const button = $(meta.buttonId);
-    if (button) {
+    if (button && input) {
       button.disabled = false;
       button.dataset.v752Active = "1";
-      button.title = `${meta.label} · ${journey.colour_code}/${journey.size_code} · ${journey.qty} PCS`;
+      button.title =
+        `${meta.label} · ${journey.colour_code}/${journey.size_code} · ${journey.qty} PCS`;
     }
   }
 }
 
-function setMessage(text, type = "") {
+function showMessage(text, type = "") {
   const box = $("formMsg");
   if (!box) return;
   box.textContent = text;
   box.className = `msg ${type}`.trim();
 }
 
-async function runStage(meta) {
+async function submitStage(meta) {
   if (busy) return;
 
   const inputs = [...document.querySelectorAll(
-    `.v752-stage-input[data-rpc-stage="${meta.rpcStage}"]`
-  )].filter(input => num(input.value) > 0);
+    `.v752-stage-input[data-rpc-stage="${meta.rpcStage}"]:not(:disabled)`
+  )].filter(input => qty(input.value) > 0);
 
   if (!inputs.length) {
-    setMessage(`Enter PCS in ${meta.label}.`, "error");
+    showMessage(`Enter Qty for ${meta.label}.`, "error");
     return;
   }
 
-  const ctx = parseDebug();
+  const ctx = getContext();
   const canonical = ctx?.lot?.canonical_lot_id;
   const department = $("dept")?.value;
 
   if (!canonical) {
-    setMessage("Run Flow Debug once, then retry.", "error");
+    showMessage("Run Flow Debug once and retry.", "error");
     return;
   }
+
+  const finalReceiveSnapshot = meta.rpcStage === "RECEIVE_FROM_KARIGAR"
+    ? inputs.map(input => {
+        const available = qty(input.dataset.availableQty || input.max);
+        const submitted = qty(input.value);
+        const key = progressKey(
+          canonical,
+          input.dataset.progressColour,
+          input.dataset.progressSize
+        );
+        const total = readProgressTotal(key, available);
+        return { key, total, available, submitted };
+      })
+    : [];
 
   const rows = inputs.map(input => ({
     journey_id: input.dataset.journeyId || null,
     colour_code: input.dataset.colourCode,
     colour_name: input.dataset.colourName,
     size_code: input.dataset.sizeCode,
-    qty: num(input.value)
+    qty: qty(input.value)
   }));
 
-  const sb = client();
+  const sb = getClient();
   if (!sb) {
-    setMessage("Connected Supabase client not found.", "error");
+    showMessage("Connected Supabase client not found.", "error");
     return;
   }
 
   busy = true;
-  document.querySelectorAll(".actions button").forEach(b => b.disabled = true);
 
   try {
     const { data, error } = await sb.rpc("rr_upm_alter_stage_v740", {
@@ -239,88 +294,125 @@ async function runStage(meta) {
 
     if (error) throw error;
 
-    setMessage(
-      `${meta.label} saved. अगली Alter journey stage अब खुल रही है।`,
+    if (meta.rpcStage === "RECEIVE_FROM_KARIGAR" && finalReceiveSnapshot.length) {
+      const snap = finalReceiveSnapshot[0];
+      const remaining = Math.max(snap.available - snap.submitted, 0);
+      const deposited = Math.min(snap.total - remaining, snap.total);
+
+      if (remaining > 0) {
+        sessionStorage.setItem(snap.key, String(snap.total));
+        flashProgress(
+          `Karigar se jama ${deposited}/${snap.total} PCS · Pending ${remaining} PCS`,
+          "pending"
+        );
+      } else {
+        flashProgress(`Complete · ${snap.total}/${snap.total} PCS`, "complete");
+        setTimeout(() => sessionStorage.removeItem(snap.key), 3400);
+      }
+    } else {
+      flashProgress(`${meta.label} saved`, "complete");
+    }
+
+    showMessage(
+      `${meta.label} saved. Next journey stage is opening.`,
       "success"
     );
 
-    // Existing page loader remains the source of truth.
     $("dept")?.dispatchEvent(new Event("change", { bubbles: true }));
 
-    // Refresh debug/context after page's normal loader finishes.
-    setTimeout(() => $("debugBtn")?.click(), 900);
-    setTimeout(syncStages, 1500);
+    setTimeout(() => $("debugBtn")?.click(), 800);
+    setTimeout(sync, 1400);
 
     return data;
   } catch (error) {
-    console.error(error);
-    setMessage(error?.message || String(error), "error");
+    console.error(VERSION, error);
+    showMessage(error?.message || String(error), "error");
   } finally {
     busy = false;
-    document.querySelectorAll(".actions button").forEach(b => b.disabled = false);
-    setTimeout(syncStages, 50);
+    setTimeout(sync, 50);
   }
 }
 
 function bindButtons() {
   for (const meta of Object.values(STAGES)) {
     const button = $(meta.buttonId);
-    if (!button || button.dataset.v752Bound === "1") continue;
+    if (!button || button.dataset.v7521Bound === "1") continue;
 
-    button.dataset.v752Bound = "1";
+    button.dataset.v7521Bound = "1";
+
     button.addEventListener("click", event => {
       const active = document.querySelector(
         `.v752-stage-input[data-rpc-stage="${meta.rpcStage}"]:not(:disabled)`
       );
-      if (!active) return; // Let old handler run when no V752 journey stage is active.
+
+      if (!active) return;
 
       event.preventDefault();
       event.stopImmediatePropagation();
-      runStage(meta);
+      submitStage(meta);
     }, true);
   }
 }
 
-function addStyles() {
-  if ($("v752Style")) return;
+function addStyle() {
+  if ($("v7521Style")) return;
+
   const style = document.createElement("style");
-  style.id = "v752Style";
+  style.id = "v7521Style";
   style.textContent = `
     .v752-active-stage-row{
-      outline:2px solid #35a7ff;
+      outline:2px solid #39aaff;
       outline-offset:-2px;
       background:#102b45!important;
     }
     .v752-active-stage-cell{
       background:#174f7d!important;
-      box-shadow:inset 0 0 0 2px #50b8ff;
+      box-shadow:inset 0 0 0 2px #58beff;
     }
-    .v752-stage-input{
+    .v752-stage-input:not(:disabled){
       background:#fff!important;
       color:#111!important;
-      border:2px solid #35a7ff!important;
+      border:2px solid #39aaff!important;
       font-weight:900!important;
       opacity:1!important;
+      cursor:text!important;
     }
-    @media(prefers-color-scheme:light){
-      .v752-active-stage-row{background:#dff2ff!important}
-      .v752-active-stage-cell{background:#bfe5ff!important}
+    .v752-progress-flash{
+      margin:8px 0;
+      padding:10px 12px;
+      border-radius:9px;
+      font-weight:900;
+      animation:v752Flash .55s ease-in-out 2;
+    }
+    .v752-progress-flash.pending{
+      background:#4b3b11;
+      border:1px solid #c79524;
+      color:#ffe49a;
+    }
+    .v752-progress-flash.complete{
+      background:#123c2b;
+      border:1px solid #2ea66d;
+      color:#c9ffe4;
+    }
+    @keyframes v752Flash{
+      0%,100%{opacity:1}
+      50%{opacity:.35}
     }
   `;
   document.head.appendChild(style);
 }
 
 function install() {
-  addStyles();
+  addStyle();
   bindButtons();
-  syncStages();
+  sync();
 
   const observer = new MutationObserver(() => {
     clearTimeout(install.timer);
     install.timer = setTimeout(() => {
       bindButtons();
-      syncStages();
-    }, 60);
+      sync();
+    }, 80);
   });
 
   observer.observe(document.body, { childList: true, subtree: true });
@@ -330,9 +422,9 @@ document.readyState === "loading"
   ? document.addEventListener("DOMContentLoaded", install)
   : install();
 
-window.REDZED_UPM_V752 = {
+window.REDZED_UPM_V752_1 = {
   version: VERSION,
-  sync: syncStages
+  sync
 };
 
 console.info("REDZED UPM", VERSION);
