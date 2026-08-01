@@ -1,7 +1,7 @@
 (() => {
 "use strict";
 
-const VERSION = "V757_6_SINGLE_ASSIGN_DEPARTMENT_BIND_FIX";
+const VERSION = "V757_7_DIRECT_SINGLE_COLOUR_ASSIGN_RPC";
 const $ = id => document.getElementById(id);
 const upper = value => String(value || "").trim().toUpperCase();
 const esc = value => String(value ?? "").replace(/[&<>"']/g, char => ({
@@ -902,107 +902,6 @@ function decorateSingleColourAssignConfirmation({
   setTimeout(apply, 150);
 }
 
-function departmentOptionMatches(option, departmentCode, departmentName) {
-  const wantedCode = upper(departmentCode);
-  const wantedName = upper(departmentName);
-  const optionValue = upper(option?.value);
-  const optionText = upper(option?.textContent);
-
-  const aliases = new Set([
-    wantedCode,
-    wantedName,
-    wantedCode === "PRINTING" ? "PRINT" : "",
-    wantedCode === "STITCHING" ? "KR" : "",
-    wantedCode === "OVERLOCK" ? "OV" : "",
-    wantedCode === "FOLDING" ? "FLD" : ""
-  ].filter(Boolean));
-
-  return [...aliases].some(alias =>
-    optionValue === alias ||
-    optionText === alias ||
-    optionText.includes(alias)
-  );
-}
-
-async function forceSingleAssignmentDepartment(rowData) {
-  const select = $("dept");
-  if (!select) {
-    throw new Error("Hidden department engine नहीं मिला.");
-  }
-
-  let option = [...select.options].find(item =>
-    departmentOptionMatches(
-      item,
-      rowData.department_code,
-      rowData.department_name
-    )
-  );
-
-  if (!option) {
-    option = document.createElement("option");
-    option.value = upper(rowData.department_code);
-    option.textContent = rowData.department_name || rowData.department_code;
-    option.dataset.v757DepartmentBridge = "1";
-    select.appendChild(option);
-  }
-
-  select.value = option.value;
-  select.dispatchEvent(new Event("input", { bubbles: true }));
-  select.dispatchEvent(new Event("change", { bubbles: true }));
-
-  await new Promise(resolve => setTimeout(resolve, 350));
-
-  if (
-    upper(select.value) !== upper(option.value) &&
-    !departmentOptionMatches(
-      select.selectedOptions?.[0],
-      rowData.department_code,
-      rowData.department_name
-    )
-  ) {
-    throw new Error(
-      `${rowData.department_name} department assignment context lock नहीं हुआ.`
-    );
-  }
-}
-
-function bindSingleColourWorkerEngine(rowData, workerId, workerLabel) {
-  clearProgrammaticSelection();
-
-  const currentCard = findColourCard(rowData.colour_code);
-  if (!currentCard) {
-    throw new Error(`${rowData.colour_code} का hidden Colour engine नहीं मिला.`);
-  }
-
-  const pick = currentCard.querySelector(".work-pick,.assign-pick");
-  if (!pick || pick.disabled) {
-    throw new Error(`${rowData.colour_code} assignment के लिए selectable नहीं है.`);
-  }
-
-  pick.checked = true;
-  pick.dispatchEvent(new Event("change", { bubbles: true }));
-
-  const engineWorker = currentCard.querySelector(".colour-worker");
-  if (!engineWorker) {
-    throw new Error("Hidden Colour worker dropdown नहीं मिला.");
-  }
-
-  ensureWorkerOption(engineWorker, workerId, workerLabel);
-  engineWorker.value = workerId;
-  engineWorker.dispatchEvent(new Event("input", { bubbles: true }));
-  engineWorker.dispatchEvent(new Event("change", { bubbles: true }));
-
-  const bulkWorker = $("bulkWorker");
-  if (bulkWorker) {
-    ensureWorkerOption(bulkWorker, workerId, workerLabel);
-    bulkWorker.value = workerId;
-    bulkWorker.dispatchEvent(new Event("input", { bubbles: true }));
-    bulkWorker.dispatchEvent(new Event("change", { bubbles: true }));
-  }
-
-  return currentCard;
-}
-
 function ensureWorkerOption(select, workerId, workerLabel) {
   if (!select || !workerId) return null;
 
@@ -1017,6 +916,142 @@ function ensureWorkerOption(select, workerId, workerLabel) {
   }
 
   return option;
+}
+
+function currentLotIdentity() {
+  const boxes = [...document.querySelectorAll("#identity .box")];
+  const read = label => boxes.find(box =>
+    upper(box.querySelector("small")?.textContent) === upper(label)
+  )?.querySelector("b")?.textContent?.trim() || "";
+
+  return {
+    lot_no: read("LOT NO"),
+    canonical_lot_id:
+      currentMatrix?.canonical_lot_id ||
+      activeCanonical ||
+      locateActiveCanonical()
+  };
+}
+
+function colourAssignedQty(colourCode) {
+  const backendRows = currentSizeMap?.get(upper(colourCode)) || [];
+  const backendTotal = backendRows.reduce(
+    (sum, row) => sum + Number(row.qty || 0),
+    0
+  );
+  if (backendTotal > 0) return backendTotal;
+
+  const card = findColourCard(colourCode);
+  if (!card) return 0;
+
+  return [...card.querySelectorAll("[data-row-index]")].reduce((sum, row) => {
+    const qty = Number(row.querySelectorAll("td")[1]?.textContent?.trim() || 0);
+    return sum + qty;
+  }, 0);
+}
+
+function askDirectSingleColourConfirmation({
+  colourCode,
+  departmentName,
+  workerLabel,
+  sizeSummary
+}) {
+  return new Promise(resolve => {
+    const modal = $("actionConfirmModal");
+    const yes = $("actionConfirmYes");
+    const cancel = $("actionConfirmCancel");
+
+    if (!modal || !yes || !cancel) {
+      resolve(window.confirm(
+        `Assign ${colourCode}\nDepartment: ${departmentName}\n` +
+        `Worker: ${workerLabel}\nSizes: ${sizeSummary || "All Sizes"}`
+      ));
+      return;
+    }
+
+    $("actionConfirmTitle").textContent = "CONFIRM COLOUR ASSIGNMENT";
+    $("actionConfirmCopy").innerHTML = `
+      <b>क्या आप पूरा Colour ${esc(colourCode)} assign करना चाहते हैं?</b><br>
+      Department: ${esc(departmentName)}<br>
+      Worker: ${esc(workerLabel)}<br>
+      Colour: ${esc(colourCode)}
+      ${sizeSummary ? `<br>Sizes: ${esc(sizeSummary)}` : ""}
+    `;
+    $("actionConfirmColours").innerHTML =
+      `<span class="badge">${esc(colourCode)}</span>`;
+    $("actionConfirmNextWrap")?.classList.add("hidden");
+    yes.textContent = `YES · ASSIGN ${upper(colourCode)}`;
+
+    const cleanup = result => {
+      modal.classList.add("hidden");
+      yes.removeEventListener("click", onYes, true);
+      cancel.removeEventListener("click", onCancel, true);
+      resolve(result);
+    };
+
+    const onYes = event => {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      cleanup(true);
+    };
+
+    const onCancel = event => {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      cleanup(false);
+    };
+
+    yes.addEventListener("click", onYes, true);
+    cancel.addEventListener("click", onCancel, true);
+    modal.classList.remove("hidden");
+  });
+}
+
+async function directAssignSingleColour({
+  rowData,
+  workerId,
+  workerLabel
+}) {
+  const client = getClient();
+  if (!client) throw new Error("Connected Supabase client नहीं मिला.");
+
+  const identity = currentLotIdentity();
+  if (!identity.canonical_lot_id) {
+    throw new Error("Canonical Lot ID नहीं मिला.");
+  }
+  if (!identity.lot_no) {
+    throw new Error("Lot No नहीं मिला.");
+  }
+
+  const assignedQty = colourAssignedQty(rowData.colour_code);
+  if (assignedQty <= 0) {
+    throw new Error(`${rowData.colour_code} की assigned Qty resolve नहीं हुई.`);
+  }
+
+  const payload = {
+    p_canonical_lot_id: identity.canonical_lot_id,
+    p_lot_no: identity.lot_no,
+    p_department_code: upper(rowData.department_code),
+    p_rows: [{
+      colour_id: rowData.colour_id,
+      colour_code: upper(rowData.colour_code),
+      worker_id: workerId,
+      assigned_qty: assignedQty,
+      actual_rate: Number($("actualRate")?.value || 0)
+    }],
+    p_remarks:
+      `V757 direct single Colour assignment · ` +
+      `${upper(rowData.colour_code)} · ${upper(rowData.department_code)} · ` +
+      `${workerLabel}`
+  };
+
+  const { data, error } = await client.rpc(
+    "rr_upm_claim_colours_v741",
+    payload
+  );
+
+  if (error) throw error;
+  return data;
 }
 
 async function openAssignPanel(rowData, rowElement, card) {
@@ -1075,6 +1110,8 @@ async function openAssignPanel(rowData, rowElement, card) {
   panel.querySelector(".v756-inline-cancel").onclick = () => closeInlineAction(rowElement);
 
   panel.querySelector(".v756-inline-save").onclick = async () => {
+    const saveButton = panel.querySelector(".v756-inline-save");
+
     try {
       const workerId = workerSearch?.getValue?.();
       const workerLabel = workerSearch?.getLabel?.() || workerId;
@@ -1083,50 +1120,48 @@ async function openAssignPanel(rowData, rowElement, card) {
         throw new Error("Mapped worker search करके select करें.");
       }
 
-      // 1. Lock the real hidden assignment department to this Colour's
-      //    canonical active department, not OPEN_NEXT.
-      await forceSingleAssignmentDepartment(rowData);
-
-      // 2. Bind only this Colour and selected mapped worker.
-      bindSingleColourWorkerEngine(rowData, workerId, workerLabel);
-
-      // 3. The old APPLY WORKER helper may rebuild cards/context.
-      if ($("applyBulkWorkerBtn")) {
-        clickExistingButton("applyBulkWorkerBtn");
-        await new Promise(resolve => setTimeout(resolve, 180));
-      }
-
-      // 4. Re-lock department and re-bind C3 after any legacy re-render.
-      await forceSingleAssignmentDepartment(rowData);
-      bindSingleColourWorkerEngine(rowData, workerId, workerLabel);
-
-      // 5. Open the original confirmation/RPC flow.
-      clickExistingButton("assignBtn");
-
-      decorateSingleColourAssignConfirmation({
+      const confirmed = await askDirectSingleColourConfirmation({
         colourCode: rowData.colour_code,
         departmentName: rowData.department_name,
         workerLabel,
         sizeSummary: colourSizeInfo(rowData.colour_code)?.summary || ""
       });
 
-      // Refresh only after the user confirms, not while popup is open.
-      const yesButton = $("actionConfirmYes");
-      if (yesButton && yesButton.dataset.v757RefreshHook !== "1") {
-        yesButton.dataset.v757RefreshHook = "1";
-        yesButton.addEventListener("click", () => {
-          setTimeout(async () => {
-            workerCache.clear();
-            lotSizeCache.clear();
-            checkinSignature = "";
-            await syncAll();
-          }, 1100);
-        }, { once: true });
-      }
+      if (!confirmed) return;
+
+      saveButton.disabled = true;
+      saveButton.textContent = `ASSIGNING ${upper(rowData.colour_code)}...`;
+
+      await directAssignSingleColour({
+        rowData,
+        workerId,
+        workerLabel
+      });
 
       closeInlineAction(rowElement);
+
+      workerCache.clear();
+      lotSizeCache.clear();
+      checkinSignature = "";
+
+      await new Promise(resolve => setTimeout(resolve, 450));
+      await syncAll();
+
+      alert(
+        `${upper(rowData.colour_code)} successfully assigned to ${workerLabel} ` +
+        `in ${rowData.department_name}.`
+      );
     } catch (error) {
-      alert(error.message || String(error));
+      console.error("V757 direct single assignment failed", error);
+      alert([
+        error?.message,
+        error?.details,
+        error?.hint,
+        error?.code
+      ].filter(Boolean).join(" — ") || String(error));
+    } finally {
+      saveButton.disabled = false;
+      saveButton.textContent = "CONFIRM ASSIGN";
     }
   };
 }
@@ -1604,7 +1639,7 @@ function showV756Badge() {
   if (!badge) {
     badge = document.createElement("div");
     badge.id = "v756ActiveBadge";
-    badge.textContent = "V757.6 ACTIVE";
+    badge.textContent = "V757.7 ACTIVE";
     badge.style.cssText = `
       position:fixed;right:12px;bottom:12px;z-index:99999;
       background:#075f85;color:#fff;padding:9px 12px;
@@ -1681,7 +1716,7 @@ document.readyState === "loading"
   ? document.addEventListener("DOMContentLoaded", install)
   : install();
 
-window.REDZED_UPM_V757_6 = {
+window.REDZED_UPM_V757_7 = {
   version: VERSION,
   sync: syncAll
 };
