@@ -17,6 +17,13 @@ as $$
     when 'QUALITY CHECK' then 'QC'
     when 'QUALITY_CHECK' then 'QC'
     when 'QA' then 'QC'
+    when 'KR' then 'STITCHING'
+    when 'KAJ' then 'STITCHING'
+    when 'KARIGAR' then 'STITCHING'
+    when 'KARIGAR / STITCHING' then 'STITCHING'
+    when 'KARIGAR/STITCHING' then 'STITCHING'
+    when 'STITCH' then 'STITCHING'
+    when 'STITCHING' then 'STITCHING'
     else upper(trim(coalesce(p_code,'')))
   end
 $$;
@@ -54,6 +61,136 @@ begin
   end if;
 end
 $$;
+
+-- STITCHING is the canonical department for KR/KAJ/KARIGAR aliases.
+do $$
+declare
+  v_stitching_active boolean := false;
+begin
+  if to_regclass('public.rr_departments_v1') is not null then
+    select exists(
+      select 1
+      from public.rr_departments_v1 d
+      where upper(trim(coalesce(d.department_code,'')))='STITCHING'
+        and coalesce(d.is_active,false)
+    )
+    into v_stitching_active;
+  end if;
+
+  if not v_stitching_active
+     and to_regclass('public.rr_upm_departments') is not null then
+    select exists(
+      select 1
+      from public.rr_upm_departments d
+      where upper(trim(coalesce(d.department_code,'')))='STITCHING'
+        and coalesce(d.is_active,false)
+    )
+    into v_stitching_active;
+  end if;
+
+  if not v_stitching_active then
+    raise exception
+      'Canonical STITCHING department is not active in rr_departments_v1 or rr_upm_departments.';
+  end if;
+end
+$$;
+
+-- If an alias and STITCHING active assignment somehow exist for the same Colour,
+-- keep the canonical STITCHING assignment and close only the duplicate alias row.
+update public.rr_upm_work_assignments_v8 a
+set status='COMPLETED',
+    completed_at=coalesce(a.completed_at,now()),
+    updated_at=now(),
+    remarks=concat_ws(' · ',nullif(a.remarks,''),'Alias department merged into STITCHING')
+where upper(a.department_code) in(
+    'KR','KAJ','KARIGAR','KARIGAR / STITCHING','KARIGAR/STITCHING','STITCH'
+  )
+  and upper(a.status) in('ASSIGNED','IN_PROGRESS')
+  and exists(
+    select 1
+    from public.rr_upm_work_assignments_v8 s
+    where s.canonical_lot_id=a.canonical_lot_id
+      and upper(s.colour_code)=upper(a.colour_code)
+      and upper(s.department_code)='STITCHING'
+      and upper(s.status) in('ASSIGNED','IN_PROGRESS')
+  );
+
+update public.rr_upm_work_assignments_v8
+set department_code='STITCHING',updated_at=now()
+where upper(department_code) in(
+  'KR','KAJ','KARIGAR','KARIGAR / STITCHING','KARIGAR/STITCHING','STITCH'
+);
+
+update public.rr_upm_colour_state
+set current_department_code='STITCHING',updated_at=now()
+where upper(current_department_code) in(
+  'KR','KAJ','KARIGAR','KARIGAR / STITCHING','KARIGAR/STITCHING','STITCH'
+);
+
+update public.rr_upm_department_handoffs_v727
+set from_department_code='STITCHING'
+where upper(from_department_code) in(
+  'KR','KAJ','KARIGAR','KARIGAR / STITCHING','KARIGAR/STITCHING','STITCH'
+);
+
+update public.rr_upm_department_handoffs_v727
+set to_department_code='STITCHING'
+where upper(to_department_code) in(
+  'KR','KAJ','KARIGAR','KARIGAR / STITCHING','KARIGAR/STITCHING','STITCH'
+);
+
+update public.rr_upm_dynamic_submit_history_v741
+set department_code='STITCHING'
+where upper(department_code) in(
+  'KR','KAJ','KARIGAR','KARIGAR / STITCHING','KARIGAR/STITCHING','STITCH'
+);
+
+update public.rr_upm_route_lock_v740
+set from_department_code='STITCHING'
+where upper(from_department_code) in(
+  'KR','KAJ','KARIGAR','KARIGAR / STITCHING','KARIGAR/STITCHING','STITCH'
+);
+
+update public.rr_upm_route_lock_v740
+set to_department_code='STITCHING'
+where upper(to_department_code) in(
+  'KR','KAJ','KARIGAR','KARIGAR / STITCHING','KARIGAR/STITCHING','STITCH'
+);
+
+update public.rr_upm_alter_journey_v740
+set origin_department_code='STITCHING'
+where upper(origin_department_code) in(
+  'KR','KAJ','KARIGAR','KARIGAR / STITCHING','KARIGAR/STITCHING','STITCH'
+);
+
+update public.rr_upm_alter_journey_v740
+set responsible_department_code='STITCHING'
+where upper(responsible_department_code) in(
+  'KR','KAJ','KARIGAR','KARIGAR / STITCHING','KARIGAR/STITCHING','STITCH'
+);
+
+-- Colour-level mandatory department locks also use STITCHING.
+update public.rr_upm_colour_department_lock_v754
+set locked_department_code='STITCHING'
+where upper(locked_department_code) in(
+  'KR','KAJ','KARIGAR','KARIGAR / STITCHING','KARIGAR/STITCHING','STITCH'
+)
+  and upper(status)='ACTIVE';
+
+update public.rr_upm_colour_department_lock_v754
+set from_department_code='STITCHING'
+where upper(from_department_code) in(
+  'KR','KAJ','KARIGAR','KARIGAR / STITCHING','KARIGAR/STITCHING','STITCH'
+);
+
+-- Retire aliases from selection lists; permanent canonical STITCHING remains active.
+update public.rr_upm_departments
+set is_active=false,
+    department_name=coalesce(nullif(department_name,''),department_code)
+      || ' · RETIRED → Karigar / Stitching'
+where upper(department_code) in(
+  'KR','KAJ','KARIGAR','KARIGAR / STITCHING','KARIGAR/STITCHING','STITCH'
+);
 
 -- Move stale CHECKING references to canonical QC.
 update public.rr_upm_work_assignments_v8
@@ -431,6 +568,18 @@ as $$
   select jsonb_build_object(
     'ok',true,
     'version','V754_QC_COLOUR_OPEN_STATUS_LOCK',
+    'active_stitching_alias_departments',coalesce((
+      select jsonb_agg(jsonb_build_object(
+        'department_code',d.department_code,
+        'department_name',d.department_name,
+        'is_active',d.is_active
+      ))
+      from public.rr_upm_departments d
+      where upper(d.department_code) in(
+        'KR','KAJ','KARIGAR','KARIGAR / STITCHING','KARIGAR/STITCHING','STITCH'
+      )
+        and d.is_active
+    ),'[]'::jsonb),
     'stale_checking_departments',coalesce((
       select jsonb_agg(to_jsonb(d))
       from public.rr_upm_departments d

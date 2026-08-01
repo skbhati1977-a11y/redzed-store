@@ -1,7 +1,7 @@
 (() => {
 "use strict";
 
-const VERSION = "V754_3_CANONICAL_QC_SOURCE_FIX";
+const VERSION = "V754_4_STITCHING_ALIAS_MERGE";
 const $ = id => document.getElementById(id);
 const upper = v => String(v || "").trim().toUpperCase();
 const esc = v => String(v ?? "").replace(/[&<>"']/g, c => ({
@@ -10,9 +10,23 @@ const esc = v => String(v ?? "").replace(/[&<>"']/g, c => ({
 
 function normDepartment(code) {
   const key = upper(code);
-  return ["CHECKING","CHECK","QUALITY CHECK","QUALITY_CHECK","QA"].includes(key)
-    ? "QC"
-    : key;
+  if (["CHECKING","CHECK","QUALITY CHECK","QUALITY_CHECK","QA"].includes(key)) {
+    return "QC";
+  }
+  if ([
+    "KR","KAJ","KARIGAR","KARIGAR / STITCHING",
+    "KARIGAR/STITCHING","STITCH","STITCHING"
+  ].includes(key)) {
+    return "STITCHING";
+  }
+  return key;
+}
+
+function displayDepartment(code) {
+  const canonical = normDepartment(code);
+  if (canonical === "STITCHING") return "Karigar / Stitching";
+  if (canonical === "QC") return "QC";
+  return canonical;
 }
 
 function getClient() {
@@ -188,14 +202,14 @@ async function refillVisibleWorkers() {
       locked.classList.remove("v754-open-queue");
       locked.innerHTML = `
         Active Department · Locked
-        <input value="${esc(dep)} · ${esc(route.status)} · ${esc(code)}" disabled>
+        <input value="${esc(displayDepartment(dep))} · ${esc(route.status)} · ${esc(code)}" disabled>
       `;
     }
 
     const rows = await loadWorkers(dep);
     const previous = worker.value;
 
-    worker.innerHTML = `<option value="">Select ${esc(dep)} worker</option>` +
+    worker.innerHTML = `<option value="">Select ${esc(displayDepartment(dep))} worker</option>` +
       rows.map(w => `<option value="${esc(w.worker_id)}"
         data-name="${esc(w.worker_name)}"
         data-code="${esc(w.worker_code)}">
@@ -206,7 +220,7 @@ async function refillVisibleWorkers() {
 
     worker.disabled = rows.length === 0;
     if (!rows.length) {
-      worker.innerHTML = `<option value="">No active worker mapped in ${esc(dep)}</option>`;
+      worker.innerHTML = `<option value="">No active worker mapped in ${esc(displayDepartment(dep))}</option>`;
     }
   });
 }
@@ -247,7 +261,7 @@ function renderBoardStatuses(card, statuses) {
       : "base";
 
     return `<div class="lot-live-status ${css}">
-      <b>${esc(normDepartment(s.department_code))}</b>
+      <b>${esc(displayDepartment(s.department_code))}</b>
       <span>${esc(s.board_detail || "")}</span>
     </div>`;
   }).join("");
