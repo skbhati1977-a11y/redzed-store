@@ -1,7 +1,7 @@
 (() => {
 "use strict";
 
-const VERSION = "V757_3_FINAL_CONCLUDED_SEARCHABLE_WORKER";
+const VERSION = "V757_4_REFRESH_AND_ENGINE_WORKER_BRIDGE";
 const $ = id => document.getElementById(id);
 const upper = value => String(value || "").trim().toUpperCase();
 const esc = value => String(value ?? "").replace(/[&<>"']/g, char => ({
@@ -867,6 +867,22 @@ function appendInlinePanel(rowElement, html) {
   return panel;
 }
 
+function ensureWorkerOption(select, workerId, workerLabel) {
+  if (!select || !workerId) return null;
+
+  let option = [...select.options].find(item => item.value === workerId);
+
+  if (!option) {
+    option = document.createElement("option");
+    option.value = workerId;
+    option.textContent = workerLabel || workerId;
+    option.dataset.v757Bridge = "1";
+    select.appendChild(option);
+  }
+
+  return option;
+}
+
 async function openAssignPanel(rowData, rowElement, card) {
   let workers = await fetchWorkers(rowData.department_code);
 
@@ -925,6 +941,7 @@ async function openAssignPanel(rowData, rowElement, card) {
   panel.querySelector(".v756-inline-save").onclick = async () => {
     try {
       const workerId = workerSearch?.getValue?.();
+      const workerLabel = workerSearch?.getLabel?.() || workerId;
       if (!workerId) throw new Error("Mapped worker search करके select करें.");
 
       // Hard reset: only this Colour may enter the assignment payload.
@@ -941,13 +958,14 @@ async function openAssignPanel(rowData, rowElement, card) {
       const engineWorker = card.querySelector(".colour-worker");
       if (!engineWorker) throw new Error("Hidden Colour worker dropdown नहीं मिला.");
 
-      const workerOption = [...engineWorker.options]
-        .find(option => option.value === workerId);
+      const workerOption = ensureWorkerOption(
+        engineWorker,
+        workerId,
+        workerLabel
+      );
 
       if (!workerOption) {
-        throw new Error(
-          "Selected worker department mapping में है, लेकिन original Colour engine list में load नहीं हुआ."
-        );
+        throw new Error("Selected mapped worker को Colour engine में bind नहीं किया जा सका.");
       }
 
       engineWorker.value = workerId;
@@ -955,11 +973,14 @@ async function openAssignPanel(rowData, rowElement, card) {
 
       const bulkWorker = $("bulkWorker");
       if (bulkWorker) {
-        const bulkOption = [...bulkWorker.options]
-          .find(option => option.value === workerId);
+        const bulkOption = ensureWorkerOption(
+          bulkWorker,
+          workerId,
+          workerLabel
+        );
 
         if (!bulkOption) {
-          throw new Error("Selected worker original assignment engine में उपलब्ध नहीं है.");
+          throw new Error("Selected mapped worker को original assignment engine में bind नहीं किया जा सका.");
         }
 
         bulkWorker.value = workerId;
@@ -1179,6 +1200,8 @@ function bindGlobalClicks() {
 async function syncAll() {
   if (syncing) return;
   syncing = true;
+
+  installRefreshBridge();
 
   if (observer) observer.disconnect();
 
@@ -1460,7 +1483,7 @@ function showV756Badge() {
   if (!badge) {
     badge = document.createElement("div");
     badge.id = "v756ActiveBadge";
-    badge.textContent = "V757.3 FINAL ACTIVE";
+    badge.textContent = "V757.4 ACTIVE";
     badge.style.cssText = `
       position:fixed;right:12px;bottom:12px;z-index:99999;
       background:#075f85;color:#fff;padding:9px 12px;
@@ -1471,11 +1494,42 @@ function showV756Badge() {
   }
 }
 
+function installRefreshBridge() {
+  const refreshButton = $("refresh");
+  if (!refreshButton || refreshButton.dataset.v757RefreshBridge === "1") return;
+
+  refreshButton.dataset.v757RefreshBridge = "1";
+
+  refreshButton.addEventListener("click", () => {
+    // Let the original V729 refresh/load execute first.
+    workerCache.clear();
+    lotSizeCache.clear();
+    checkinSignature = "";
+    activeCanonical = "";
+
+    // New board cards are created asynchronously; invalidate and resync in stages.
+    const resync = async () => {
+      document.querySelectorAll(".v756-short-summary").forEach(node => node.remove());
+
+      document.querySelectorAll(".lot-card").forEach(card => {
+        boardSignatures.delete(card);
+      });
+
+      await syncAll();
+    };
+
+    setTimeout(resync, 250);
+    setTimeout(resync, 800);
+    setTimeout(resync, 1600);
+  }, true);
+}
+
 function install() {
   document.getElementById("v755HardBootBadge")?.remove();
   showV756Badge();
   addStyles();
   bindGlobalClicks();
+  installRefreshBridge();
   syncAll();
 
   observer = new MutationObserver(mutations => {
@@ -1506,7 +1560,7 @@ document.readyState === "loading"
   ? document.addEventListener("DOMContentLoaded", install)
   : install();
 
-window.REDZED_UPM_V757_2 = {
+window.REDZED_UPM_V757_4 = {
   version: VERSION,
   sync: syncAll
 };
