@@ -1,7 +1,7 @@
 (() => {
 "use strict";
 
-const VERSION = "V757_FINAL_APPROVED_SPECIMEN";
+const VERSION = "V757_3_FINAL_CONCLUDED_SEARCHABLE_WORKER";
 const $ = id => document.getElementById(id);
 const upper = value => String(value || "").trim().toUpperCase();
 const esc = value => String(value ?? "").replace(/[&<>"']/g, char => ({
@@ -427,23 +427,141 @@ function departmentOptions(rows) {
   ).join("");
 }
 
+function createSearchableDropdown({
+  container,
+  items,
+  placeholder = "Search...",
+  emptyText = "No matching option",
+  valueKey = "value",
+  labelKey = "label",
+  onSelect = null
+}) {
+  if (!container) return null;
+
+  const normalizedItems = (items || []).map(item => ({
+    ...item,
+    value: String(item[valueKey] ?? item.value ?? ""),
+    label: String(item[labelKey] ?? item.label ?? "")
+  }));
+
+  container.innerHTML = `
+    <div class="v757-search-select">
+      <input type="search"
+        class="v757-search-input"
+        placeholder="${esc(placeholder)}"
+        autocomplete="off"
+        spellcheck="false">
+      <input type="hidden" class="v757-search-value">
+      <button type="button" class="v757-search-toggle" aria-label="Open list">▼</button>
+      <div class="v757-search-list" hidden></div>
+    </div>
+  `;
+
+  const root = container.querySelector(".v757-search-select");
+  const search = root.querySelector(".v757-search-input");
+  const hidden = root.querySelector(".v757-search-value");
+  const toggle = root.querySelector(".v757-search-toggle");
+  const list = root.querySelector(".v757-search-list");
+
+  const render = query => {
+    const q = upper(query);
+    const filtered = normalizedItems.filter(item =>
+      !q || upper(item.label).includes(q) || upper(item.searchText || "").includes(q)
+    );
+
+    list.innerHTML = filtered.length
+      ? filtered.map(item => `
+          <button type="button"
+            class="v757-search-option"
+            data-value="${esc(item.value)}">
+            ${esc(item.label)}
+          </button>
+        `).join("")
+      : `<div class="v757-search-empty">${esc(emptyText)}</div>`;
+
+    list.hidden = false;
+  };
+
+  const choose = item => {
+    hidden.value = item.value;
+    search.value = item.label;
+    list.hidden = true;
+    root.classList.add("has-value");
+    onSelect?.(item);
+  };
+
+  search.addEventListener("focus", () => render(search.value));
+  search.addEventListener("input", () => {
+    hidden.value = "";
+    root.classList.remove("has-value");
+    render(search.value);
+  });
+
+  toggle.addEventListener("click", () => {
+    if (list.hidden) render(search.value);
+    else list.hidden = true;
+    search.focus();
+  });
+
+  list.addEventListener("click", event => {
+    const option = event.target.closest(".v757-search-option");
+    if (!option) return;
+
+    const item = normalizedItems.find(entry => entry.value === option.dataset.value);
+    if (item) choose(item);
+  });
+
+  document.addEventListener("click", event => {
+    if (!root.contains(event.target)) list.hidden = true;
+  });
+
+  return {
+    root,
+    input: search,
+    hidden,
+    getValue: () => hidden.value,
+    getLabel: () => search.value,
+    setValue: value => {
+      const item = normalizedItems.find(entry => entry.value === String(value || ""));
+      if (item) choose(item);
+    },
+    clear: () => {
+      hidden.value = "";
+      search.value = "";
+      root.classList.remove("has-value");
+      list.hidden = true;
+    }
+  };
+}
+
+let bulkWorkerSearch = null;
+
 async function renderBulkWorkers(departmentCode) {
-  const select = $("v756BulkWorker");
-  if (!select) return;
+  const host = $("v756BulkWorkerHost");
+  if (!host) return;
 
   const workers = await fetchWorkers(departmentCode);
 
-  select.innerHTML = `<option value="">Select worker</option>` +
-    workers.map(worker => `
-      <option value="${esc(worker.worker_id)}"
-        data-name="${esc(worker.worker_name || "")}"
-        data-code="${esc(worker.worker_code || "")}">
-        ${esc(worker.worker_name || "Unnamed")}
-        ${worker.worker_code ? ` · ${esc(worker.worker_code)}` : ""}
-      </option>
-    `).join("");
+  const items = workers.map(worker => ({
+    value: worker.worker_id,
+    label: [
+      worker.worker_name || "Unnamed",
+      worker.worker_code
+    ].filter(Boolean).join(" · "),
+    searchText: [
+      worker.worker_name,
+      worker.worker_code,
+      worker.department_code,
+      worker.role_code
+    ].filter(Boolean).join(" ")
+  }));
 
-  select.disabled = workers.length === 0;
+  bulkWorkerSearch = createSearchableDropdown({
+    container: host,
+    items,
+    placeholder: "Search mapped worker by name/code",
+    emptyText: "No mapped worker found"
+  });
 }
 
 function detailedRows(data) {
@@ -520,13 +638,8 @@ async function renderCheckinTable() {
 
     <div class="v756-bulk">
       <strong>BULK ASSIGN</strong>
-      <select id="v756BulkDepartment">
-        <option value="">Select department group</option>
-        ${departmentOptions(currentMatrix?.colours || [])}
-      </select>
-      <select id="v756BulkWorker" disabled>
-        <option value="">Select worker</option>
-      </select>
+      <div id="v756BulkDepartmentHost"></div>
+      <div id="v756BulkWorkerHost"></div>
       <button type="button" id="v756BulkAssign">ASSIGN ALL ELIGIBLE</button>
       <small id="v756BulkNote">Only OPEN Colours locked to the selected department will be assigned.</small>
     </div>
@@ -563,11 +676,30 @@ async function renderCheckinTable() {
     card.classList.add("v756-detail-hidden");
   });
 
-  const departmentSelect = $("v756BulkDepartment");
-  departmentSelect?.addEventListener("change", () => {
-    renderBulkWorkers(departmentSelect.value);
+  const departmentItems = [];
+  const seenDepartments = new Set();
+
+  for (const row of currentMatrix?.colours || []) {
+    if (upper(row.ownership_status) !== "OPEN") continue;
+    if (!row.department_code || seenDepartments.has(row.department_code)) continue;
+
+    seenDepartments.add(row.department_code);
+    departmentItems.push({
+      value: row.department_code,
+      label: row.department_name,
+      searchText: `${row.department_name} ${row.department_code}`
+    });
+  }
+
+  window.v757BulkDepartmentSearch = createSearchableDropdown({
+    container: $("v756BulkDepartmentHost"),
+    items: departmentItems,
+    placeholder: "Search department",
+    emptyText: "No OPEN department group",
+    onSelect: item => renderBulkWorkers(item.value)
   });
 
+  renderBulkWorkers("");
   $("v756BulkAssign")?.addEventListener("click", runBulkAssign);
 }
 
@@ -736,7 +868,33 @@ function appendInlinePanel(rowElement, html) {
 }
 
 async function openAssignPanel(rowData, rowElement, card) {
-  const options = workerOptionsFromCard(card);
+  let workers = await fetchWorkers(rowData.department_code);
+
+  // Fallback to the original hidden card options if RPC list is unavailable.
+  if (!workers.length) {
+    const engineSelect = card?.querySelector(".colour-worker");
+    workers = [...(engineSelect?.options || [])]
+      .filter(option => option.value)
+      .map(option => ({
+        worker_id: option.value,
+        worker_name: option.textContent.trim(),
+        worker_code: ""
+      }));
+  }
+
+  const workerItems = workers.map(worker => ({
+    value: worker.worker_id,
+    label: [
+      worker.worker_name || "Unnamed",
+      worker.worker_code
+    ].filter(Boolean).join(" · "),
+    searchText: [
+      worker.worker_name,
+      worker.worker_code,
+      worker.role_code,
+      worker.department_code
+    ].filter(Boolean).join(" ")
+  }));
 
   const panel = appendInlinePanel(rowElement, `
     <div class="v756-inline-head">
@@ -747,28 +905,83 @@ async function openAssignPanel(rowData, rowElement, card) {
       <label>Department
         <input value="${esc(rowData.department_name)}" disabled>
       </label>
-      <label>Worker
-        <select class="v756-inline-worker">
-          <option value="">Select worker</option>
-          ${options}
-        </select>
+      <label>Mapped Worker
+        <div class="v757-inline-worker-host"></div>
       </label>
       <button type="button" class="v756-inline-save primary">CONFIRM ASSIGN</button>
+      <span class="v7571-assign-note"></span>
     </div>
   `);
+
+  const workerSearch = createSearchableDropdown({
+    container: panel.querySelector(".v757-inline-worker-host"),
+    items: workerItems,
+    placeholder: "Search worker by name or code",
+    emptyText: "No active mapped worker in this department"
+  });
 
   panel.querySelector(".v756-inline-cancel").onclick = () => closeInlineAction(rowElement);
 
   panel.querySelector(".v756-inline-save").onclick = async () => {
     try {
-      const workerId = panel.querySelector(".v756-inline-worker")?.value;
-      if (!workerId) throw new Error("Worker select करें.");
+      const workerId = workerSearch?.getValue?.();
+      if (!workerId) throw new Error("Mapped worker search करके select करें.");
+
+      // Hard reset: only this Colour may enter the assignment payload.
+      clearProgrammaticSelection();
+
+      const pick = card.querySelector(".work-pick,.assign-pick");
+      if (!pick || pick.disabled) {
+        throw new Error(`${rowData.colour_code} assignment के लिए selectable नहीं है.`);
+      }
+
+      pick.checked = true;
+      pick.dispatchEvent(new Event("change", { bubbles: true }));
 
       const engineWorker = card.querySelector(".colour-worker");
-      if (!engineWorker) throw new Error("Hidden worker engine नहीं मिला.");
+      if (!engineWorker) throw new Error("Hidden Colour worker dropdown नहीं मिला.");
+
+      const workerOption = [...engineWorker.options]
+        .find(option => option.value === workerId);
+
+      if (!workerOption) {
+        throw new Error(
+          "Selected worker department mapping में है, लेकिन original Colour engine list में load नहीं हुआ."
+        );
+      }
+
       engineWorker.value = workerId;
+      engineWorker.dispatchEvent(new Event("change", { bubbles: true }));
+
+      const bulkWorker = $("bulkWorker");
+      if (bulkWorker) {
+        const bulkOption = [...bulkWorker.options]
+          .find(option => option.value === workerId);
+
+        if (!bulkOption) {
+          throw new Error("Selected worker original assignment engine में उपलब्ध नहीं है.");
+        }
+
+        bulkWorker.value = workerId;
+        bulkWorker.dispatchEvent(new Event("change", { bubbles: true }));
+      }
+
+      if ($("applyBulkWorkerBtn")) {
+        clickExistingButton("applyBulkWorkerBtn");
+        await new Promise(resolve => setTimeout(resolve, 120));
+      }
 
       clickExistingButton("assignBtn");
+
+      const refreshAfterAssignment = async () => {
+        workerCache.clear();
+        lotSizeCache.clear();
+        checkinSignature = "";
+        await new Promise(resolve => setTimeout(resolve, 900));
+        await syncAll();
+      };
+
+      setTimeout(refreshAfterAssignment, 500);
       closeInlineAction(rowElement);
     } catch (error) {
       alert(error.message || String(error));
@@ -856,8 +1069,8 @@ function openQuantityPanel(rowData, rowElement, card, action) {
 
 async function runBulkAssign() {
   try {
-    const department = $("v756BulkDepartment")?.value;
-    const workerId = $("v756BulkWorker")?.value;
+    const department = window.v757BulkDepartmentSearch?.getValue?.() || "";
+    const workerId = bulkWorkerSearch?.getValue?.() || "";
 
     if (!department) throw new Error("Select department group.");
     if (!workerId) throw new Error("Select worker.");
@@ -874,7 +1087,7 @@ async function runBulkAssign() {
     const names = eligible.map(row => row.colour_code).join(", ");
     if (!confirm(
       `Assign ${names}\nDepartment: ${eligible[0].department_name}\n` +
-      `Worker: ${$("v756BulkWorker").selectedOptions[0]?.textContent.trim()}\n\nConfirm?`
+      `Worker: ${bulkWorkerSearch?.getLabel?.() || workerId}\n\nConfirm?`
     )) return;
 
     await ensureDepartmentContext(department);
@@ -1048,7 +1261,7 @@ function addStyles() {
     .v756-title{font-weight:950;color:#d5e8ff;margin-bottom:9px}
     .v756-bulk{
       display:grid;
-      grid-template-columns:auto minmax(170px,1fr) minmax(190px,1fr) auto;
+      grid-template-columns:auto minmax(200px,1fr) minmax(240px,1fr) auto;
       gap:8px;
       align-items:center;
       margin-bottom:10px;
@@ -1158,6 +1371,62 @@ function addStyles() {
     .v756-inline-foot{display:flex;justify-content:flex-end;margin-top:10px}
     .v756-inline-cancel{background:#3d2027;border-color:#81404c}
 
+    .v757-search-select{
+      position:relative;
+      display:grid;
+      grid-template-columns:minmax(0,1fr) 38px;
+      min-width:180px
+    }
+    .v757-search-input{
+      width:100%;
+      min-height:38px;
+      padding:8px 10px;
+      border-radius:8px 0 0 8px!important;
+      border-right:0!important
+    }
+    .v757-search-toggle{
+      min-height:38px;
+      border-radius:0 8px 8px 0!important;
+      padding:0!important;
+      background:#28364a;
+      border-color:#536984
+    }
+    .v757-search-list{
+      position:absolute;
+      top:calc(100% + 4px);
+      left:0;
+      right:0;
+      z-index:10020;
+      max-height:240px;
+      overflow:auto;
+      padding:5px;
+      background:#0c131e;
+      border:1px solid #536984;
+      border-radius:8px;
+      box-shadow:0 10px 24px #000b
+    }
+    .v757-search-option{
+      display:block;
+      width:100%;
+      margin:0 0 4px;
+      padding:9px 10px;
+      text-align:left;
+      background:#172337;
+      border:1px solid #324866;
+      border-radius:6px;
+      color:#fff
+    }
+    .v757-search-option:hover,
+    .v757-search-option:focus{
+      background:#20558a;
+      border-color:#5aa8ee
+    }
+    .v757-search-empty{
+      padding:10px;
+      color:#9eabbc;
+      text-align:center
+    }
+
     #debugBtn,
     details.debug,
     #traveller #formMsg,
@@ -1191,7 +1460,7 @@ function showV756Badge() {
   if (!badge) {
     badge = document.createElement("div");
     badge.id = "v756ActiveBadge";
-    badge.textContent = "V757 FINAL ACTIVE";
+    badge.textContent = "V757.3 FINAL ACTIVE";
     badge.style.cssText = `
       position:fixed;right:12px;bottom:12px;z-index:99999;
       background:#075f85;color:#fff;padding:9px 12px;
@@ -1237,7 +1506,7 @@ document.readyState === "loading"
   ? document.addEventListener("DOMContentLoaded", install)
   : install();
 
-window.REDZED_UPM_V757 = {
+window.REDZED_UPM_V757_2 = {
   version: VERSION,
   sync: syncAll
 };
