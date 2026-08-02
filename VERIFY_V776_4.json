@@ -1,0 +1,15 @@
+{
+  "ok": true,
+  "version": "776.4.0",
+  "node_syntax": "PASS",
+  "duplicate_html_ids": [],
+  "status_values": [
+    "ACTIVE",
+    "DEACTIVATED"
+  ],
+  "department_head_rule": "EXACTLY_ONE_DEPARTMENT",
+  "production_manager_rule": "ONE_OR_MORE_DEPARTMENTS",
+  "leadership_ui": "OWNER_ONLY",
+  "admin_save": "JOB_SKILLS_ONLY",
+  "backend_setter": "rr_set_worker_leadership_v776"
+}
