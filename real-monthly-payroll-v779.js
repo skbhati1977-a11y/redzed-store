@@ -1,6 +1,9 @@
 (() => {
 "use strict";
-window.REDZED_MONTHLY_PAYROLL_VERSION="779.5.0";
+window.REDZED_MONTHLY_PAYROLL_VERSION="779.6.0";
+const REDZED_PAYROLL_DATA_MODE="TEST";
+window.REDZED_PAYROLL_DATA_MODE=REDZED_PAYROLL_DATA_MODE;
+
 function previousMonthStart(){
   const d=new Date();
   d.setDate(1);
@@ -18,12 +21,22 @@ const canManage=()=>["owner","admin","manager","production"].includes(state.role
 function say(text,type=""){const el=$("message");el.textContent=text||"";el.className=`message ${type}`.trim()}
 function openSheet(id){$(id).classList.remove("hidden");document.body.style.overflow="hidden"}
 function closeSheet(id){$(id).classList.add("hidden");if(!document.querySelector(".sheet:not(.hidden)"))document.body.style.overflow=""}
-async function rpc(name,payload={}){const r=await state.client.rpc(name,payload);if(r.error)throw r.error;return r.data}
+async function rpc(name,payload={}){
+  const r=await state.client.rpc(name,payload);
+  if(r.error){
+    const wrapped=new Error(`${name}: ${r.error.message||"RPC failed"}`);
+    wrapped.details=r.error.details;
+    wrapped.hint=r.error.hint;
+    wrapped.code=r.error.code;
+    throw wrapped;
+  }
+  return r.data;
+}
 function badge(status){const s=upper(status||"—"),cls=["PAID","FINAL","APPROVED","CLOSED"].some(x=>s.includes(x))?"good":["UNDER_REVIEW","CALCULATED","POSTED"].some(x=>s.includes(x))?"warn":s.includes("REVERSED")||s.includes("CANCELLED")?"bad":"";return `<span class="badge ${cls}">${safe(s.replaceAll("_"," "))}</span>`}
 function showTab(tab){state.tab=tab;$("tab-my").classList.toggle("hidden",tab!=="my");$("tab-management").classList.toggle("hidden",tab!=="management");document.querySelectorAll("#tabs button").forEach(b=>b.classList.toggle("active",b.dataset.tab===tab));if(tab==="management")loadManagement()}
 function payrollCard(p){return `<article class="item"><div class="item-head"><div><h4>${safe(p.salary_month)}</h4><p class="muted">${badge(p.payroll_status)} ${p.settlement_status?badge(p.settlement_status):""}</p></div><strong>${money(p.net_payable_salary)}</strong></div><div class="detail-grid"><div class="detail-box"><small>Monthly Salary</small><strong>${money(p.monthly_salary)}</strong></div><div class="detail-box"><small>Net Extra Work</small><strong>${money(p.net_extra_work?.amount)}</strong><span class="muted">${safe(p.net_extra_work?.time||"0 M")}</span></div><div class="detail-box"><small>Monthly Incentive</small><strong>${money(p.monthly_incentive)}</strong></div><div class="detail-box"><small>Claims / Recovery</small><strong>${money(p.claims_recovery)}</strong></div></div><div class="actions"><button class="btn" data-summary="${safe(p.payroll_id)}">Open Payroll</button>${p.pdf_available?`<button class="btn" data-pdf="${safe(p.payroll_id)}">PDF</button>`:""}${p.whatsapp_available?`<button class="btn" data-wa="${safe(p.payroll_id)}">WhatsApp</button>`:""}</div></article>`}
-async function loadMy(){try{say("Loading payroll…");const data=await rpc("rr_get_my_payroll_history_v779_3",{p_limit:24,p_data_mode:"REAL"});state.history=data?.payroll_history||[];$("tab-my").innerHTML=`<div class="toolbar"><button id="refreshMy" class="btn">Refresh</button></div><div class="list">${state.history.map(payrollCard).join("")||'<div class="panel empty">Abhi koi Monthly Payroll record nahi hai.</div>'}</div>`;$("refreshMy").onclick=loadMy;bindPayrollButtons();say("")}catch(e){console.error(e);$("tab-my").innerHTML=`<div class="panel empty">${safe(err(e))}</div>`;say(err(e),"error")}}
-async function openSummary(id){try{const d=await rpc("rr_get_payroll_summary_v779_3",{p_payroll_id:id});const heads=d.heads||[];$("tab-my").innerHTML=`<div class="toolbar"><button id="backHistory" class="btn">← Payroll History</button></div><article class="payroll-slip"><div class="slip-head"><div><p class="kicker">${safe(d.header?.title)}</p><h2>${safe(d.header?.salary_month)}</h2><p class="muted">${safe(d.header?.worker_name)} · ${safe(d.header?.worker_code)} · ${safe(d.header?.department_code)}</p></div><div>${badge(d.status?.payroll_status)} ${d.status?.settlement_status?badge(d.status.settlement_status):""}</div></div>${heads.map(h=>`<div class="slip-row"><div><b>${safe(h.label)}</b>${h.time?`<span class="sub">${safe(h.time)}</span>`:""}</div><span class="amount">${money(h.amount)}</span><button class="btn" data-detail-section="${safe(h.code)}" data-payroll="${safe(id)}">Details</button></div>`).join("")}<div class="slip-total"><span>${safe(d.net_payable?.label)}</span><strong>${money(d.net_payable?.amount)}</strong></div><div class="status-row"><span class="badge">Paid ${money(d.payment?.paid_amount)}</span><span class="badge">Balance ${money(d.payment?.closing_balance)}</span></div><div class="actions"><button class="btn" data-detail-section="PAYMENT" data-payroll="${safe(id)}">Payment Details</button>${d.actions?.raise_dispute?`<button class="btn warn" data-dispute="${safe(id)}">Raise Dispute</button>`:""}${d.actions?.download_pdf?`<button class="btn" data-pdf="${safe(id)}">PDF</button>`:""}${d.actions?.share_whatsapp?`<button class="btn" data-wa="${safe(id)}">WhatsApp</button>`:""}</div></article>`;$("backHistory").onclick=loadMy;bindPayrollButtons();say("")}catch(e){say(err(e),"error")}}
+async function loadMy(){try{say("Loading payroll…");const data=await rpc("rr_get_my_payroll_history_v779_3",{p_limit:24,p_data_mode:REDZED_PAYROLL_DATA_MODE});state.history=data?.payroll_history||[];$("tab-my").innerHTML=`<div class="toolbar"><button id="refreshMy" class="btn">Refresh</button></div><div class="list">${state.history.map(payrollCard).join("")||'<div class="panel empty">Abhi koi Monthly Payroll record nahi hai.</div>'}</div>`;$("refreshMy").onclick=loadMy;bindPayrollButtons();say("")}catch(e){console.error(e);$("tab-my").innerHTML=`<div class="panel empty">${safe(err(e))}</div>`;say(err(e),"error")}}
+async function openSummary(id){try{if(state.tab==="management")showTab("my");const d=await rpc("rr_get_payroll_summary_v779_3",{p_payroll_id:id});const heads=d.heads||[];$("tab-my").innerHTML=`<div class="toolbar"><button id="backHistory" class="btn">← Payroll History</button></div><article class="payroll-slip"><div class="slip-head"><div><p class="kicker">${safe(d.header?.title)}</p><h2>${safe(d.header?.salary_month)}</h2><p class="muted">${safe(d.header?.worker_name)} · ${safe(d.header?.worker_code)} · ${safe(d.header?.department_code)}</p></div><div>${badge(d.status?.payroll_status)} ${d.status?.settlement_status?badge(d.status.settlement_status):""}</div></div>${heads.map(h=>`<div class="slip-row"><div><b>${safe(h.label)}</b>${h.time?`<span class="sub">${safe(h.time)}</span>`:""}</div><span class="amount">${money(h.amount)}</span><button class="btn" data-detail-section="${safe(h.code)}" data-payroll="${safe(id)}">Details</button></div>`).join("")}<div class="slip-total"><span>${safe(d.net_payable?.label)}</span><strong>${money(d.net_payable?.amount)}</strong></div><div class="status-row"><span class="badge">Paid ${money(d.payment?.paid_amount)}</span><span class="badge">Balance ${money(d.payment?.closing_balance)}</span></div><div class="actions"><button class="btn" data-detail-section="PAYMENT" data-payroll="${safe(id)}">Payment Details</button>${d.actions?.raise_dispute?`<button class="btn warn" data-dispute="${safe(id)}">Raise Dispute</button>`:""}${d.actions?.download_pdf?`<button class="btn" data-pdf="${safe(id)}">PDF</button>`:""}${d.actions?.share_whatsapp?`<button class="btn" data-wa="${safe(id)}">WhatsApp</button>`:""}</div></article>`;$("backHistory").onclick=loadMy;bindPayrollButtons();say("")}catch(e){say(err(e),"error")}}
 function renderDetails(title,obj){$("detailsTitle").textContent=title;const entries=Object.entries(obj||{});$("detailsBody").innerHTML=`<div class="detail-grid">${entries.map(([k,v])=>`<div class="detail-box"><small>${safe(k.replaceAll("_"," ").toUpperCase())}</small><strong class="details">${safe(typeof v==="object"?JSON.stringify(v,null,2):v)}</strong></div>`).join("")}</div>`;openSheet("detailsSheet")}
 async function openSection(id,section){try{const d=await rpc("rr_get_payroll_section_details_v779_3",{p_payroll_id:id,p_section:section});renderDetails(d.title||section,d)}catch(e){say(err(e),"error")}}
 async function getPdf(id){try{const d=await rpc("rr_get_payslip_payload_v779_3",{p_payroll_id:id});renderDetails("PDF Ready Payload",d);say("PDF payload ready. Frontend/server renderer isse PDF banayega.","success")}catch(e){say(err(e),"error")}}
@@ -40,7 +53,7 @@ async function generateAllPayroll(){
   try{
     const d=await rpc("rr_generate_monthly_payroll_batch_v779_5",{
       p_payroll_month:state.month,
-      p_data_mode:"REAL",
+      p_data_mode:REDZED_PAYROLL_DATA_MODE,
       p_reason:"Owner generated completed monthly payroll"
     });
     say(`Generated ${d.generated||0}; existing ${d.already_existing||0}; attendance pending ${d.skipped_no_attendance||0}; failed ${d.failed||0}.`,d.failed?"error":"success");
@@ -53,7 +66,7 @@ async function generateOnePayroll(workerId){
     await rpc("rr_generate_worker_monthly_payroll_safe_v779_5",{
       p_worker_id:workerId,
       p_payroll_month:state.month,
-      p_data_mode:"REAL",
+      p_data_mode:REDZED_PAYROLL_DATA_MODE,
       p_reason:"Owner generated worker monthly payroll"
     });
     say("Worker payroll generated.","success");
@@ -66,7 +79,7 @@ async function generateLegacyPayroll(workerId){
   try{
     await rpc("rr_generate_worker_monthly_payroll_legacy_v779_5",{
       p_worker_id:workerId,p_payroll_month:state.month,
-      p_reason:reason.trim(),p_data_mode:"REAL"
+      p_reason:reason.trim(),p_data_mode:REDZED_PAYROLL_DATA_MODE
     });
     say("Legacy monthly payroll generated.","success");
     await loadManagement();
@@ -79,21 +92,57 @@ async function generateAllLegacyPayroll(){
   if(btn){btn.disabled=true;btn.textContent="Generating Legacy…"}
   try{
     const d=await rpc("rr_generate_monthly_payroll_legacy_batch_v779_5",{
-      p_payroll_month:state.month,p_reason:reason.trim(),p_data_mode:"REAL"
+      p_payroll_month:state.month,p_reason:reason.trim(),p_data_mode:REDZED_PAYROLL_DATA_MODE
     });
     say(`Legacy generated ${d.legacy_generated||0}; existing ${d.already_existing||0}; attendance available ${d.skipped_attendance_available||0}; failed ${d.failed||0}.`,d.failed?"error":"success");
     await loadManagement();
   }catch(e){say(err(e),"error")}
   finally{if(btn){btn.disabled=false;btn.textContent=old}}
 }
+
+function normalizeManagementBoard(data){
+  const d=data&&typeof data==="object"?data:{};
+  const summary=d.summary&&typeof d.summary==="object"?d.summary:{};
+  const workers=Array.isArray(d.workers)?d.workers:[];
+  return {
+    ...d,
+    summary:{
+      eligible_workers:Number(summary.eligible_workers||0),
+      generated_workers:Number(summary.generated_workers||0),
+      legacy_generated_workers:Number(summary.legacy_generated_workers||0),
+      attendance_generated_workers:Number(summary.attendance_generated_workers||0),
+      not_generated_workers:Number(summary.not_generated_workers||0),
+      monthly_salary_total:Number(summary.monthly_salary_total||0),
+      net_extra_work_total:Number(summary.net_extra_work_total||0),
+      incentive_total:Number(summary.incentive_total||0),
+      claims_recovery_total:Number(summary.claims_recovery_total||0),
+      net_payable_total:Number(summary.net_payable_total||0),
+      paid_total:Number(summary.paid_total||0),
+      closing_balance_total:Number(summary.closing_balance_total||0)
+    },
+    workers
+  };
+}
+
 async function loadManagement(){
   if(!canManage())return;
   try{
     say("Loading management payroll…");
-    const d=await rpc("rr_get_payroll_management_board_v779_5",{p_payroll_month:state.month,p_data_mode:"REAL"});
+    const d=normalizeManagementBoard(await rpc("rr_get_payroll_management_board_v779_5",{p_payroll_month:state.month,p_data_mode:REDZED_PAYROLL_DATA_MODE}));
     state.management=d;
     const s=d.summary||{},completed=d.month_completed!==false,ownerAdmin=["owner","admin"].includes(state.role);
-    $("tab-management").innerHTML=`<div class="toolbar"><label><span>Payroll Month</span><input id="managementMonth" type="month" value="${safe(state.month.slice(0,7))}"></label><button id="refreshManagement" class="btn">Refresh</button><button id="generateAllPayroll" class="btn primary" ${completed?"":"disabled"}>Generate Attendance Payroll</button>${ownerAdmin?`<button id="generateAllLegacyPayroll" class="btn warn" ${completed?"":"disabled"}>Generate All Legacy</button>`:""}${completed?"":'<span class="muted">Current/future month generate nahi hoga.</span>'}</div><div class="summary-grid"><div class="summary-card"><small>Eligible Workers</small><strong>${Number(s.eligible_workers||0)}</strong></div><div class="summary-card"><small>Generated</small><strong>${Number(s.generated_workers||0)}</strong></div><div class="summary-card"><small>Legacy Generated</small><strong>${Number(s.legacy_generated_workers||0)}</strong></div><div class="summary-card"><small>Net Payable</small><strong>${money(s.net_payable_total)}</strong></div></div><div class="list">${(d.workers||[]).map(w=>`<article class="item"><div class="item-head"><div><h4>${safe(w.worker_name)} · ${safe(w.worker_code||"")}</h4><p class="muted">${safe(w.department_code||"")} · SALARIED · Attendance ${Number(w.approved_attendance_days||0)} day(s)</p><p>${badge(w.payroll_status)} ${w.settlement_status?badge(w.settlement_status):""} <span class="badge">${safe(w.generation_status||"")}</span></p>${w.generation_mode==="LEGACY"&&w.legacy_reason?`<p class="muted">Legacy: ${safe(w.legacy_reason)}</p>`:""}</div><strong>${money(w.net_payable_salary)}</strong></div><div class="detail-grid"><div class="detail-box"><small>Contract Salary</small><strong>${money(w.contract_monthly_salary)}</strong></div><div class="detail-box"><small>Monthly Salary</small><strong>${money(w.monthly_salary)}</strong></div><div class="detail-box"><small>Net Extra Work</small><strong>${money(w.net_extra_work_amount)}</strong><span class="muted">${safe(w.net_extra_work_time||"0 M")}</span></div><div class="detail-box"><small>Incentive</small><strong>${money(w.monthly_incentive)}</strong></div><div class="detail-box"><small>Claims / Recovery</small><strong>${money(w.claims_recovery)}</strong></div><div class="detail-box"><small>Paid / Balance</small><strong>${money(w.payment_amount)} / ${money(w.closing_balance)}</strong></div></div><div class="actions">${w.payroll_id?`<button class="btn" data-summary="${safe(w.payroll_id)}">Details</button>`:""}${!w.payroll_id&&w.generation_status==="READY_TO_GENERATE"?`<button class="btn primary" data-generate-worker="${safe(w.worker_id)}">Generate</button>`:""}${!w.payroll_id&&w.generation_status==="READY_FOR_LEGACY_GENERATION"&&ownerAdmin?`<button class="btn warn" data-generate-legacy="${safe(w.worker_id)}">Generate Legacy</button>`:""}${w.payroll_status==="DRAFT"?`<button class="btn primary" data-action="POST" data-payroll="${safe(w.payroll_id)}">Post</button>`:""}${w.payroll_status==="POSTED"?`<button class="btn warn" data-action="REVIEW" data-payroll="${safe(w.payroll_id)}">Review</button>`:""}${["POSTED","UNDER_REVIEW"].includes(w.payroll_status)?`<button class="btn success" data-action="FINALIZE" data-payroll="${safe(w.payroll_id)}">Finalize</button>`:""}${["FINAL","PAID"].includes(w.payroll_status)?`<button class="btn primary" data-action="PAYMENT" data-payroll="${safe(w.payroll_id)}">Payment</button>`:""}</div></article>`).join("")||'<div class="panel empty">Active salaried worker profile nahi mila.</div>'}</div>`;
+    $("tab-management").innerHTML=`<div class="toolbar"><label><span>Payroll Month</span><input id="managementMonth" type="month" value="${safe(state.month.slice(0,7))}"></label><button id="refreshManagement" class="btn">Refresh</button><button id="generateAllPayroll" class="btn primary" ${completed?"":"disabled"}>Generate Attendance Payroll</button>${ownerAdmin?`<button id="generateAllLegacyPayroll" class="btn warn" ${completed?"":"disabled"}>Generate All Legacy</button>`:""}${completed?"":'<span class="muted">Current/future month generate nahi hoga.</span>'}</div><div class="summary-grid">
+<div class="summary-card"><small>Eligible Workers</small><strong>${s.eligible_workers}</strong></div>
+<div class="summary-card"><small>Generated</small><strong>${s.generated_workers}</strong></div>
+<div class="summary-card"><small>Legacy Generated</small><strong>${s.legacy_generated_workers}</strong></div>
+<div class="summary-card"><small>Monthly Salary</small><strong>${money(s.monthly_salary_total)}</strong></div>
+<div class="summary-card"><small>Extra + Incentive</small><strong>${money(s.net_extra_work_total+s.incentive_total)}</strong></div>
+<div class="summary-card"><small>Claims / Recovery</small><strong>${money(s.claims_recovery_total)}</strong></div>
+<div class="summary-card"><small>Net Payable</small><strong>${money(s.net_payable_total)}</strong></div>
+</div><div class="list">${(d.workers||[]).map(w=>`<article class="item"><div class="item-head"><div><h4>${safe(w.worker_name)} · ${safe(w.worker_code||"")}</h4><p class="muted">${safe(w.department_code||"")} · SALARIED · Attendance ${Number(w.approved_attendance_days||0)} day(s)</p><p>${badge(w.payroll_status)} ${w.settlement_status?badge(w.settlement_status):""} <span class="badge">${safe(w.generation_status||"")}</span></p>${w.generation_mode==="LEGACY"&&w.legacy_reason?`<p class="muted">Legacy: ${safe(w.legacy_reason)}</p>`:""}</div><strong>${money(w.net_payable_salary)}</strong></div><div class="detail-grid"><div class="detail-box"><small>Contract Salary</small><strong>${money(w.contract_monthly_salary)}</strong></div><div class="detail-box"><small>Monthly Salary</small><strong>${money(w.monthly_salary)}</strong></div><div class="detail-box"><small>Net Extra Work</small><strong>${money(w.net_extra_work_amount)}</strong><span class="muted">${safe(w.net_extra_work_time||"0 M")}</span></div><div class="detail-box"><small>Incentive</small><strong>${money(w.monthly_incentive)}</strong></div><div class="detail-box"><small>Claims / Recovery</small><strong>${money(w.claims_recovery)}</strong></div><div class="detail-box"><small>Paid / Balance</small><strong>${money(w.payment_amount)} / ${money(w.closing_balance)}</strong></div></div><div class="actions">${w.payroll_id?`<button class="btn" data-summary="${safe(w.payroll_id)}">Details</button>`:""}${!w.payroll_id&&w.generation_status==="READY_TO_GENERATE"?`<button class="btn primary" data-generate-worker="${safe(w.worker_id)}">Generate</button>`:""}${!w.payroll_id&&w.generation_status==="READY_FOR_LEGACY_GENERATION"&&ownerAdmin?`<button class="btn warn" data-generate-legacy="${safe(w.worker_id)}">Generate Legacy</button>`:""}${w.payroll_status==="DRAFT"?`<button class="btn primary" data-action="POST" data-payroll="${safe(w.payroll_id)}">Post</button>`:""}${w.payroll_status==="POSTED"?`<button class="btn warn" data-action="REVIEW" data-payroll="${safe(w.payroll_id)}">Review</button>`:""}${["POSTED","UNDER_REVIEW"].includes(w.payroll_status)?`<button class="btn success" data-action="FINALIZE" data-payroll="${safe(w.payroll_id)}">Finalize</button>`:""}${["FINAL","PAID"].includes(w.payroll_status)?`<button class="btn primary" data-action="PAYMENT" data-payroll="${safe(w.payroll_id)}">Payment</button>`:""}</div></article>`).join("")||`<div class="panel empty">
+      TEST mode me active salaried worker profile nahi mila.
+      <br><small>RPC: rr_get_payroll_management_board_v779_5 · Month: ${safe(state.month)}</small>
+    </div>`}</div>`;
     $("managementMonth").onchange=e=>{state.month=e.target.value+"-01";loadManagement()};
     $("refreshManagement").onclick=loadManagement;
     $("generateAllPayroll").onclick=generateAllPayroll;
@@ -103,6 +152,12 @@ async function loadManagement(){
     bindPayrollButtons();say("");
   }catch(e){console.error(e);$("tab-management").innerHTML=`<div class="panel empty">${safe(err(e))}</div>`;say(err(e),"error")}
 }
-async function boot(){try{state.client=window.supabaseClient||window.supabaseDb||window.redzedSupabase||window.sb;if(!state.client)throw new Error("Supabase client unavailable.");const u=await state.client.auth.getUser();if(u.error||!u.data?.user)throw new Error("Login required.");state.user=u.data.user;const p=await state.client.from("rr_user_profiles").select("*").eq("auth_user_id",state.user.id).eq("is_active",true).limit(1).maybeSingle();if(p.error)throw p.error;state.profile=p.data||{};state.role=lower(state.profile.role_code);if(canManage())$("managementTabButton").classList.remove("hidden");document.querySelectorAll("#tabs button").forEach(b=>b.onclick=()=>showTab(b.dataset.tab));document.querySelectorAll("[data-close]").forEach(b=>b.onclick=()=>closeSheet(b.dataset.close));$("actionForm").onsubmit=submitAction;document.addEventListener("keydown",e=>{if(e.key==="Escape"){const s=document.querySelector(".sheet:not(.hidden)");if(s)closeSheet(s.id)}});await loadMy();RR?.startAccessGuard?.()}catch(e){console.error(e);say(err(e),"error");$("tab-my").innerHTML=`<div class="panel empty">${safe(err(e))}</div>`}}
+async function boot(){try{state.client=window.supabaseClient||window.supabaseDb||window.redzedSupabase||window.sb;if(!state.client)throw new Error("Supabase client unavailable.");const u=await state.client.auth.getUser();if(u.error||!u.data?.user)throw new Error("Login required.");state.user=u.data.user;const p=await state.client.from("rr_user_profiles").select("*").eq("auth_user_id",state.user.id).eq("is_active",true).limit(1).maybeSingle();if(p.error)throw p.error;state.profile=p.data||{};state.role=lower(state.profile.role_code);if(canManage())$("managementTabButton").classList.remove("hidden");document.querySelectorAll("#tabs button").forEach(b=>b.onclick=()=>showTab(b.dataset.tab));document.querySelectorAll("[data-close]").forEach(b=>b.onclick=()=>closeSheet(b.dataset.close));$("actionForm").onsubmit=submitAction;document.addEventListener("keydown",e=>{if(e.key==="Escape"){const s=document.querySelector(".sheet:not(.hidden)");if(s)closeSheet(s.id)}});await loadMy();
+if(canManage()){
+  showTab("management");
+}else{
+  showTab("my");
+}
+window.window.RR?.startAccessGuard?.()}catch(e){console.error(e);say(err(e),"error");$("tab-my").innerHTML=`<div class="panel empty">${safe(err(e))}</div>`}}
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",boot);else boot();
 })();
