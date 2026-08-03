@@ -1,41 +1,39 @@
-REDZED V779.6 — MONTHLY PAYROLL FINAL TEST UI
+REDZED V779.7 — MONTHLY PAYROLL FINAL LOCK
 
-UPLOAD BOTH FILES TO GITHUB
-===========================
+UPLOAD BOTH FILES
+=================
 1. real-monthly-payroll-v779.html
 2. real-monthly-payroll-v779.js
 
 NO SQL RUN REQUIRED
 ===================
-The backend board already returns:
-- Eligible workers: 3
-- Generated workers: 3
-- Legacy generated: 3
-- Net payable: ₹46,000
+V779.1–V779.5 backend remains unchanged.
 
-THIS UI FIX
-===========
+FINAL UI INCLUDED
+=================
 - TEST mode locked
-- Owner/management login opens Management Board by default
-- Uses rr_get_payroll_management_board_v779_5
-- Normalizes summary/workers JSON
-- Shows all salaried payroll rows returned by backend
-- Shows complete summary totals
-- Details button switches to visible payroll detail screen
-- Stronger RPC error messages
-- HTML and JS versions synchronized
+- Owner Management Board
+- Worker My Payroll
+- Clean Monthly Salary details
+- Net Deduction amount + D/H/M
+- Date-wise Net Extra Work
+- Incentive item list
+- Claims/Advance recovery table
+- Payment history table
+- DRAFT → POSTED → FINAL → PAID workflow display
+- Post, Review, Finalize and Payment actions
+- PDF/WhatsApp clean previews
+- Raw JSON/debug keys removed
+- HTML/JS synchronized at 779.7.0
 
 AFTER UPLOAD
 ============
 1. Commit both files
 2. Wait for GitHub Pages deployment
-3. Press Ctrl + Shift + R
-4. Open real-monthly-payroll-v779.html
+3. Ctrl + Shift + R
+4. Open Monthly Payroll
+5. Test one worker: Post → Finalize → Payment
 
 EXPECTED
 ========
-Eligible Workers: 3
-Generated: 3
-Legacy Generated: 3
-Monthly Salary: ₹46,000
-Ali, Baldev and CHOTU rows visible
+Ali, Baldev and CHOTU remain visible in TEST mode.

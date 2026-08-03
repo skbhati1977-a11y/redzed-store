@@ -1,6 +1,6 @@
 (() => {
 "use strict";
-window.REDZED_MONTHLY_PAYROLL_VERSION="779.6.0";
+window.REDZED_MONTHLY_PAYROLL_VERSION="779.7.0";
 const REDZED_PAYROLL_DATA_MODE="TEST";
 window.REDZED_PAYROLL_DATA_MODE=REDZED_PAYROLL_DATA_MODE;
 
@@ -33,14 +33,124 @@ async function rpc(name,payload={}){
   return r.data;
 }
 function badge(status){const s=upper(status||"—"),cls=["PAID","FINAL","APPROVED","CLOSED"].some(x=>s.includes(x))?"good":["UNDER_REVIEW","CALCULATED","POSTED"].some(x=>s.includes(x))?"warn":s.includes("REVERSED")||s.includes("CANCELLED")?"bad":"";return `<span class="badge ${cls}">${safe(s.replaceAll("_"," "))}</span>`}
+
+function formatDhm(value){
+  const text=String(value||"").trim();
+  return text||"0 M";
+}
+function textOrDash(value){
+  const text=String(value??"").trim();
+  return text||"—";
+}
+function dateText(value){
+  if(!value)return "—";
+  const d=new Date(value);
+  return Number.isNaN(d.getTime())?String(value):d.toLocaleDateString("en-IN",{day:"2-digit",month:"short",year:"numeric"});
+}
+function dateTimeText(value){
+  if(!value)return "—";
+  const d=new Date(value);
+  return Number.isNaN(d.getTime())?String(value):d.toLocaleString("en-IN",{dateStyle:"medium",timeStyle:"short"});
+}
+function detailHero(label,amount,sub=""){
+  return `<div class="detail-hero"><small>${safe(label)}</small><strong>${money(amount)}</strong>${sub?`<div class="muted" style="margin-top:5px">${safe(sub)}</div>`:""}</div>`;
+}
+function emptyDetails(message){
+  return `<div class="detail-empty">${safe(message)}</div>`;
+}
+function workflowHtml(status){
+  const s=upper(status);
+  const steps=["DRAFT","POSTED","FINAL","PAID"];
+  const current=steps.indexOf(s);
+  return `<div class="workflow">${steps.map((step,i)=>`<span class="workflow-step ${i<current?"active":i===current?"current":""}">${step}</span>${i<steps.length-1?`<span class="muted">→</span>`:""}`).join("")}</div>`;
+}
+
 function showTab(tab){state.tab=tab;$("tab-my").classList.toggle("hidden",tab!=="my");$("tab-management").classList.toggle("hidden",tab!=="management");document.querySelectorAll("#tabs button").forEach(b=>b.classList.toggle("active",b.dataset.tab===tab));if(tab==="management")loadManagement()}
 function payrollCard(p){return `<article class="item"><div class="item-head"><div><h4>${safe(p.salary_month)}</h4><p class="muted">${badge(p.payroll_status)} ${p.settlement_status?badge(p.settlement_status):""}</p></div><strong>${money(p.net_payable_salary)}</strong></div><div class="detail-grid"><div class="detail-box"><small>Monthly Salary</small><strong>${money(p.monthly_salary)}</strong></div><div class="detail-box"><small>Net Extra Work</small><strong>${money(p.net_extra_work?.amount)}</strong><span class="muted">${safe(p.net_extra_work?.time||"0 M")}</span></div><div class="detail-box"><small>Monthly Incentive</small><strong>${money(p.monthly_incentive)}</strong></div><div class="detail-box"><small>Claims / Recovery</small><strong>${money(p.claims_recovery)}</strong></div></div><div class="actions"><button class="btn" data-summary="${safe(p.payroll_id)}">Open Payroll</button>${p.pdf_available?`<button class="btn" data-pdf="${safe(p.payroll_id)}">PDF</button>`:""}${p.whatsapp_available?`<button class="btn" data-wa="${safe(p.payroll_id)}">WhatsApp</button>`:""}</div></article>`}
 async function loadMy(){try{say("Loading payroll…");const data=await rpc("rr_get_my_payroll_history_v779_3",{p_limit:24,p_data_mode:REDZED_PAYROLL_DATA_MODE});state.history=data?.payroll_history||[];$("tab-my").innerHTML=`<div class="toolbar"><button id="refreshMy" class="btn">Refresh</button></div><div class="list">${state.history.map(payrollCard).join("")||'<div class="panel empty">Abhi koi Monthly Payroll record nahi hai.</div>'}</div>`;$("refreshMy").onclick=loadMy;bindPayrollButtons();say("")}catch(e){console.error(e);$("tab-my").innerHTML=`<div class="panel empty">${safe(err(e))}</div>`;say(err(e),"error")}}
-async function openSummary(id){try{if(state.tab==="management")showTab("my");const d=await rpc("rr_get_payroll_summary_v779_3",{p_payroll_id:id});const heads=d.heads||[];$("tab-my").innerHTML=`<div class="toolbar"><button id="backHistory" class="btn">← Payroll History</button></div><article class="payroll-slip"><div class="slip-head"><div><p class="kicker">${safe(d.header?.title)}</p><h2>${safe(d.header?.salary_month)}</h2><p class="muted">${safe(d.header?.worker_name)} · ${safe(d.header?.worker_code)} · ${safe(d.header?.department_code)}</p></div><div>${badge(d.status?.payroll_status)} ${d.status?.settlement_status?badge(d.status.settlement_status):""}</div></div>${heads.map(h=>`<div class="slip-row"><div><b>${safe(h.label)}</b>${h.time?`<span class="sub">${safe(h.time)}</span>`:""}</div><span class="amount">${money(h.amount)}</span><button class="btn" data-detail-section="${safe(h.code)}" data-payroll="${safe(id)}">Details</button></div>`).join("")}<div class="slip-total"><span>${safe(d.net_payable?.label)}</span><strong>${money(d.net_payable?.amount)}</strong></div><div class="status-row"><span class="badge">Paid ${money(d.payment?.paid_amount)}</span><span class="badge">Balance ${money(d.payment?.closing_balance)}</span></div><div class="actions"><button class="btn" data-detail-section="PAYMENT" data-payroll="${safe(id)}">Payment Details</button>${d.actions?.raise_dispute?`<button class="btn warn" data-dispute="${safe(id)}">Raise Dispute</button>`:""}${d.actions?.download_pdf?`<button class="btn" data-pdf="${safe(id)}">PDF</button>`:""}${d.actions?.share_whatsapp?`<button class="btn" data-wa="${safe(id)}">WhatsApp</button>`:""}</div></article>`;$("backHistory").onclick=loadMy;bindPayrollButtons();say("")}catch(e){say(err(e),"error")}}
-function renderDetails(title,obj){$("detailsTitle").textContent=title;const entries=Object.entries(obj||{});$("detailsBody").innerHTML=`<div class="detail-grid">${entries.map(([k,v])=>`<div class="detail-box"><small>${safe(k.replaceAll("_"," ").toUpperCase())}</small><strong class="details">${safe(typeof v==="object"?JSON.stringify(v,null,2):v)}</strong></div>`).join("")}</div>`;openSheet("detailsSheet")}
-async function openSection(id,section){try{const d=await rpc("rr_get_payroll_section_details_v779_3",{p_payroll_id:id,p_section:section});renderDetails(d.title||section,d)}catch(e){say(err(e),"error")}}
-async function getPdf(id){try{const d=await rpc("rr_get_payslip_payload_v779_3",{p_payroll_id:id});renderDetails("PDF Ready Payload",d);say("PDF payload ready. Frontend/server renderer isse PDF banayega.","success")}catch(e){say(err(e),"error")}}
-async function getWhatsapp(id){try{const d=await rpc("rr_get_whatsapp_payslip_payload_v779_3",{p_payroll_id:id});renderDetails("WhatsApp Ready",{message_text:d.message_text,send_status:d.send_status});say("WhatsApp payload ready. Raw URL visible nahi hai.","success")}catch(e){say(err(e),"error")}}
+async function openSummary(id){try{if(state.tab==="management")showTab("my");const d=await rpc("rr_get_payroll_summary_v779_3",{p_payroll_id:id});const heads=d.heads||[];$("tab-my").innerHTML=`<div class="toolbar"><button id="backHistory" class="btn">← Payroll History</button></div><article class="payroll-slip"><div class="slip-head"><div><p class="kicker">${safe(d.header?.title)}</p><h2>${safe(d.header?.salary_month)}</h2><p class="muted">${safe(d.header?.worker_name)} · ${safe(d.header?.worker_code)} · ${safe(d.header?.department_code)}</p></div><div>${badge(d.status?.payroll_status)} ${d.status?.settlement_status?badge(d.status.settlement_status):""}</div></div>${heads.map(h=>`<div class="slip-row"><div><b>${safe(h.label)}</b>${h.time?`<span class="sub">${safe(h.time)}</span>`:""}</div><span class="amount">${money(h.amount)}</span><button class="btn" data-detail-section="${safe(h.code)}" data-payroll="${safe(id)}">Details</button></div>`).join("")}<div class="slip-total"><span>${safe(d.net_payable?.label)}</span><strong>${money(d.net_payable?.amount)}</strong></div><div class="status-row"><span class="badge">Paid ${money(d.payment?.paid_amount)}</span><span class="badge">Balance ${money(d.payment?.closing_balance)}</span></div>${workflowHtml(d.status?.payroll_status)}<div class="actions"><button class="btn" data-detail-section="PAYMENT" data-payroll="${safe(id)}">Payment Details</button>${d.actions?.raise_dispute?`<button class="btn warn" data-dispute="${safe(id)}">Raise Dispute</button>`:""}${d.actions?.download_pdf?`<button class="btn" data-pdf="${safe(id)}">PDF</button>`:""}${d.actions?.share_whatsapp?`<button class="btn" data-wa="${safe(id)}">WhatsApp</button>`:""}</div></article>`;$("backHistory").onclick=loadMy;bindPayrollButtons();say("")}catch(e){say(err(e),"error")}}
+
+function renderDetails(title,html){
+  $("detailsTitle").textContent=title;
+  $("detailsBody").innerHTML=html;
+  openSheet("detailsSheet");
+}
+function renderMonthlySalaryDetails(d){
+  const deduction=d.net_deduction||{};
+  return `
+    ${detailHero("Monthly Salary",d.monthly_salary_amount)}
+    <div class="sheet-summary">
+      <div class="detail-box"><small>Contract Monthly Salary</small><strong>${money(d.contract_monthly_salary)}</strong></div>
+      <div class="detail-box"><small>Per Minute Rate</small><strong>₹ ${Number(d.per_minute_rate||0).toLocaleString("en-IN",{minimumFractionDigits:6,maximumFractionDigits:8})}</strong></div>
+      <div class="detail-box"><small>Salary Basis</small><strong>${Number(d.basis_days||30)} Days</strong></div>
+      <div class="detail-box"><small>Monthly Base</small><strong>${Number(d.monthly_base_minutes||18000).toLocaleString("en-IN")} Minutes</strong></div>
+    </div>
+    <div class="detail-section">
+      <h3>Net Deduction</h3>
+      <div class="detail-line">
+        <div><b>${formatDhm(deduction.time)}</b><div class="meta">${Number(deduction.minutes||0)} minutes</div></div>
+        <div class="value">${money(deduction.amount)}</div>
+      </div>
+    </div>`;
+}
+function renderExtraWorkDetails(d){
+  const rows=Array.isArray(d.date_wise)?d.date_wise:[];
+  return `
+    ${detailHero("Net Extra Work",d.amount,formatDhm(d.total_time))}
+    <div class="sheet-summary">
+      <div class="detail-box"><small>Total Time</small><strong>${safe(formatDhm(d.total_time))}</strong></div>
+      <div class="detail-box"><small>Total Minutes</small><strong>${Number(d.total_minutes||0).toLocaleString("en-IN")}</strong></div>
+    </div>
+    <div class="detail-section">
+      <h3>Date-wise Record</h3>
+      ${rows.length?`<div class="detail-table-wrap"><table class="detail-table"><thead><tr><th>Date</th><th>Time</th><th>Minutes</th></tr></thead><tbody>${rows.map(r=>`<tr><td>${safe(dateText(r.date))}</td><td>${safe(formatDhm(r.time))}</td><td>${Number(r.minutes||0)}</td></tr>`).join("")}</tbody></table></div>`:emptyDetails("Is payroll month me Net Extra Work record nahi hai.")}
+    </div>`;
+}
+function renderIncentiveDetails(d){
+  const rows=Array.isArray(d.items)?d.items:[];
+  return `
+    ${detailHero("Monthly Incentive",d.total_amount)}
+    <div class="detail-section">
+      <h3>Approved Incentive Items</h3>
+      ${rows.length?`<div class="detail-list">${rows.map(r=>`<div class="detail-line"><div><b>${safe(String(r.type||"Incentive").replaceAll("_"," "))}</b><div class="meta">${safe(r.description||"No description")} · ${safe(r.status||"")}</div></div><div class="value">${money(r.amount)}</div></div>`).join("")}</div>`:emptyDetails("Is payroll month me approved incentive nahi hai.")}
+    </div>`;
+}
+function renderClaimsDetails(d){
+  const rows=Array.isArray(d.items)?d.items:[];
+  return `
+    ${detailHero("Claims / Recovery",d.total_amount)}
+    <div class="sheet-summary">
+      <div class="detail-box"><small>Approved Claims</small><strong>${money(d.approved_claims)}</strong></div>
+      <div class="detail-box"><small>Advance Recovery</small><strong>${money(d.advance_recovery)}</strong></div>
+    </div>
+    <div class="detail-section">
+      <h3>Applied Recovery Items</h3>
+      ${rows.length?`<div class="detail-table-wrap"><table class="detail-table"><thead><tr><th>Type</th><th>Applied Date</th><th>Amount</th></tr></thead><tbody>${rows.map(r=>`<tr><td>${safe(String(r.source_type||"").replaceAll("_"," "))}</td><td>${safe(dateTimeText(r.applied_at))}</td><td>${money(r.amount)}</td></tr>`).join("")}</tbody></table></div>`:emptyDetails("Is payroll me Claim ya Advance Recovery apply nahi hui.")}
+    </div>`;
+}
+function renderPaymentDetails(d){
+  const rows=Array.isArray(d.items)?d.items:[];
+  return `
+    <div class="detail-section">
+      <h3>Payment History</h3>
+      ${rows.length?`<div class="detail-table-wrap"><table class="detail-table"><thead><tr><th>Date</th><th>Payment Added</th><th>Total Paid</th><th>Closing Balance</th></tr></thead><tbody>${rows.map(r=>{const x=r.details||{};return `<tr><td>${safe(dateTimeText(r.date))}</td><td>${money(x.payment_added)}</td><td>${money(x.total_payment)}</td><td>${money(x.closing_balance)}</td></tr>`}).join("")}</tbody></table></div>`:emptyDetails("Abhi koi salary payment record nahi hai.")}
+    </div>`;
+}
+async function openSection(id,section){
+  try{
+    const d=await rpc("rr_get_payroll_section_details_v779_3",{p_payroll_id:id,p_section:section});
+    const key=upper(section);
+    if(key==="MONTHLY_SALARY")renderDetails("Monthly Salary Details",renderMonthlySalaryDetails(d));
+    else if(key==="NET_EXTRA_WORK")renderDetails("Net Extra Work Details",renderExtraWorkDetails(d));
+    else if(key==="MONTHLY_INCENTIVE")renderDetails("Monthly Incentive Details",renderIncentiveDetails(d));
+    else if(key==="CLAIMS_RECOVERY")renderDetails("Claims / Recovery Details",renderClaimsDetails(d));
+    else if(key==="PAYMENT")renderDetails("Payment History",renderPaymentDetails(d));
+    else renderDetails(d.title||section,emptyDetails("Details available nahi hain."));
+  }catch(e){say(err(e),"error")}
+}
+
+async function getPdf(id){try{const d=await rpc("rr_get_payslip_payload_v779_3",{p_payroll_id:id});renderDetails("PDF Payslip",`${detailHero("PDF Payslip",d.payload?.net_payable?.amount||0)}<div class="detail-empty">PDF payload ready hai. Final renderer se payslip PDF generate hogi.</div>`);say("PDF payload ready. Frontend/server renderer isse PDF banayega.","success")}catch(e){say(err(e),"error")}}
+async function getWhatsapp(id){try{const d=await rpc("rr_get_whatsapp_payslip_payload_v779_3",{p_payroll_id:id});renderDetails("WhatsApp Payslip",`<div class="detail-section"><div class="detail-box"><small>Status</small><strong>${safe(d.send_status||"READY")}</strong></div><div class="detail-box" style="margin-top:9px"><small>Message Preview</small><strong class="details">${safe(d.message_text||"")}</strong></div></div>`);say("WhatsApp payload ready. Raw URL visible nahi hai.","success")}catch(e){say(err(e),"error")}}
 function openAction(type,id){$("actionType").value=type;$("actionPayrollId").value=id;const title={DISPUTE:"Raise Payroll Dispute",REVIEW:"Open Review",FINALIZE:"Finalize Payroll",PAYMENT:"Record Salary Payment",POST:"Post Payroll"}[type]||type;$("actionTitle").textContent=title;let fields=`<label><span>Reason / Note *</span><textarea id="actionReason" rows="4" required></textarea></label>`;if(type==="DISPUTE")fields=`<label><span>Section</span><select id="actionSection"><option>MONTHLY_SALARY</option><option>NET_EXTRA_WORK</option><option>MONTHLY_INCENTIVE</option><option>CLAIMS_RECOVERY</option><option>PAYMENT</option><option>OTHER</option></select></label>`+fields;if(type==="PAYMENT")fields=`<label><span>Payment Amount *</span><input id="actionAmount" type="number" min="0.01" step="0.01" required></label>`+fields;$("actionFields").innerHTML=fields;$("actionMessage").textContent="";openSheet("actionSheet")}
 async function submitAction(e){e.preventDefault();const type=$("actionType").value,id=$("actionPayrollId").value,reason=$("actionReason")?.value.trim()||"";try{let d;if(type==="DISPUTE")d=await rpc("rr_raise_payroll_dispute_v779_3",{p_payroll_id:id,p_section:$("actionSection").value,p_dispute_text:reason,p_evidence:{}});if(type==="POST")d=await rpc("rr_post_monthly_payroll_v779_2",{p_payroll_id:id,p_reason:reason});if(type==="REVIEW")d=await rpc("rr_open_payroll_review_v779_2",{p_payroll_id:id,p_reason:reason});if(type==="FINALIZE")d=await rpc("rr_finalize_monthly_payroll_v779_2",{p_payroll_id:id,p_reason:reason});if(type==="PAYMENT")d=await rpc("rr_record_monthly_salary_payment_v779_2",{p_payroll_id:id,p_payment_amount:Number($("actionAmount").value),p_reason:reason});closeSheet("actionSheet");say(`${type} completed.`,"success");if(state.tab==="management")loadManagement();else openSummary(id)}catch(ex){$("actionMessage").textContent=err(ex);$("actionMessage").className="message error"}}
 function bindPayrollButtons(){document.querySelectorAll("[data-summary]").forEach(b=>b.onclick=()=>openSummary(b.dataset.summary));document.querySelectorAll("[data-detail-section]").forEach(b=>b.onclick=()=>openSection(b.dataset.payroll,b.dataset.detailSection));document.querySelectorAll("[data-pdf]").forEach(b=>b.onclick=()=>getPdf(b.dataset.pdf));document.querySelectorAll("[data-wa]").forEach(b=>b.onclick=()=>getWhatsapp(b.dataset.wa));document.querySelectorAll("[data-dispute]").forEach(b=>b.onclick=()=>openAction("DISPUTE",b.dataset.dispute));document.querySelectorAll("[data-action]").forEach(b=>b.onclick=()=>openAction(b.dataset.action,b.dataset.payroll))}
@@ -139,7 +249,7 @@ async function loadManagement(){
 <div class="summary-card"><small>Extra + Incentive</small><strong>${money(s.net_extra_work_total+s.incentive_total)}</strong></div>
 <div class="summary-card"><small>Claims / Recovery</small><strong>${money(s.claims_recovery_total)}</strong></div>
 <div class="summary-card"><small>Net Payable</small><strong>${money(s.net_payable_total)}</strong></div>
-</div><div class="list">${(d.workers||[]).map(w=>`<article class="item"><div class="item-head"><div><h4>${safe(w.worker_name)} · ${safe(w.worker_code||"")}</h4><p class="muted">${safe(w.department_code||"")} · SALARIED · Attendance ${Number(w.approved_attendance_days||0)} day(s)</p><p>${badge(w.payroll_status)} ${w.settlement_status?badge(w.settlement_status):""} <span class="badge">${safe(w.generation_status||"")}</span></p>${w.generation_mode==="LEGACY"&&w.legacy_reason?`<p class="muted">Legacy: ${safe(w.legacy_reason)}</p>`:""}</div><strong>${money(w.net_payable_salary)}</strong></div><div class="detail-grid"><div class="detail-box"><small>Contract Salary</small><strong>${money(w.contract_monthly_salary)}</strong></div><div class="detail-box"><small>Monthly Salary</small><strong>${money(w.monthly_salary)}</strong></div><div class="detail-box"><small>Net Extra Work</small><strong>${money(w.net_extra_work_amount)}</strong><span class="muted">${safe(w.net_extra_work_time||"0 M")}</span></div><div class="detail-box"><small>Incentive</small><strong>${money(w.monthly_incentive)}</strong></div><div class="detail-box"><small>Claims / Recovery</small><strong>${money(w.claims_recovery)}</strong></div><div class="detail-box"><small>Paid / Balance</small><strong>${money(w.payment_amount)} / ${money(w.closing_balance)}</strong></div></div><div class="actions">${w.payroll_id?`<button class="btn" data-summary="${safe(w.payroll_id)}">Details</button>`:""}${!w.payroll_id&&w.generation_status==="READY_TO_GENERATE"?`<button class="btn primary" data-generate-worker="${safe(w.worker_id)}">Generate</button>`:""}${!w.payroll_id&&w.generation_status==="READY_FOR_LEGACY_GENERATION"&&ownerAdmin?`<button class="btn warn" data-generate-legacy="${safe(w.worker_id)}">Generate Legacy</button>`:""}${w.payroll_status==="DRAFT"?`<button class="btn primary" data-action="POST" data-payroll="${safe(w.payroll_id)}">Post</button>`:""}${w.payroll_status==="POSTED"?`<button class="btn warn" data-action="REVIEW" data-payroll="${safe(w.payroll_id)}">Review</button>`:""}${["POSTED","UNDER_REVIEW"].includes(w.payroll_status)?`<button class="btn success" data-action="FINALIZE" data-payroll="${safe(w.payroll_id)}">Finalize</button>`:""}${["FINAL","PAID"].includes(w.payroll_status)?`<button class="btn primary" data-action="PAYMENT" data-payroll="${safe(w.payroll_id)}">Payment</button>`:""}</div></article>`).join("")||`<div class="panel empty">
+</div><div class="list">${(d.workers||[]).map(w=>`<article class="item"><div class="item-head"><div><h4>${safe(w.worker_name)} · ${safe(w.worker_code||"")}</h4><p class="muted">${safe(w.department_code||"")} · SALARIED · Attendance ${Number(w.approved_attendance_days||0)} day(s)</p><p>${badge(w.payroll_status)} ${w.settlement_status?badge(w.settlement_status):""} <span class="badge">${safe(w.generation_status||"")}</span></p>${w.generation_mode==="LEGACY"&&w.legacy_reason?`<p class="muted">Legacy: ${safe(w.legacy_reason)}</p>`:""}</div><strong>${money(w.net_payable_salary)}</strong></div><div class="detail-grid"><div class="detail-box"><small>Contract Salary</small><strong>${money(w.contract_monthly_salary)}</strong></div><div class="detail-box"><small>Monthly Salary</small><strong>${money(w.monthly_salary)}</strong></div><div class="detail-box"><small>Net Extra Work</small><strong>${money(w.net_extra_work_amount)}</strong><span class="muted">${safe(w.net_extra_work_time||"0 M")}</span></div><div class="detail-box"><small>Incentive</small><strong>${money(w.monthly_incentive)}</strong></div><div class="detail-box"><small>Claims / Recovery</small><strong>${money(w.claims_recovery)}</strong></div><div class="detail-box"><small>Paid / Remaining</small><strong>${money(w.payment_amount)} / ${money(w.closing_balance)}</strong></div></div><div class="actions">${w.payroll_id?`<button class="btn" data-summary="${safe(w.payroll_id)}">Details</button>`:""}${!w.payroll_id&&w.generation_status==="READY_TO_GENERATE"?`<button class="btn primary" data-generate-worker="${safe(w.worker_id)}">Generate</button>`:""}${!w.payroll_id&&w.generation_status==="READY_FOR_LEGACY_GENERATION"&&ownerAdmin?`<button class="btn warn" data-generate-legacy="${safe(w.worker_id)}">Generate Legacy</button>`:""}${w.payroll_status==="DRAFT"?`<button class="btn primary" data-action="POST" data-payroll="${safe(w.payroll_id)}">Post</button>`:""}${w.payroll_status==="POSTED"?`<button class="btn warn" data-action="REVIEW" data-payroll="${safe(w.payroll_id)}">Review</button>`:""}${["POSTED","UNDER_REVIEW"].includes(w.payroll_status)?`<button class="btn success" data-action="FINALIZE" data-payroll="${safe(w.payroll_id)}">Finalize</button>`:""}${["FINAL","PAID"].includes(w.payroll_status)?`<button class="btn primary" data-action="PAYMENT" data-payroll="${safe(w.payroll_id)}">Payment</button>`:""}</div></article>`).join("")||`<div class="panel empty">
       TEST mode me active salaried worker profile nahi mila.
       <br><small>RPC: rr_get_payroll_management_board_v779_5 · Month: ${safe(state.month)}</small>
     </div>`}</div>`;
@@ -158,6 +268,6 @@ if(canManage()){
 }else{
   showTab("my");
 }
-window.window.RR?.startAccessGuard?.()}catch(e){console.error(e);say(err(e),"error");$("tab-my").innerHTML=`<div class="panel empty">${safe(err(e))}</div>`}}
+window.RR?.startAccessGuard?.()}catch(e){console.error(e);say(err(e),"error");$("tab-my").innerHTML=`<div class="panel empty">${safe(err(e))}</div>`}}
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",boot);else boot();
 })();
