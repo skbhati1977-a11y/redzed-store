@@ -1,6 +1,6 @@
 (() => {
 "use strict";
-window.REDZED_MONTHLY_PAYROLL_VERSION="779.7.0";
+window.REDZED_MONTHLY_PAYROLL_VERSION="779.7.1";
 const REDZED_PAYROLL_DATA_MODE="TEST";
 window.REDZED_PAYROLL_DATA_MODE=REDZED_PAYROLL_DATA_MODE;
 
@@ -93,19 +93,116 @@ function renderMonthlySalaryDetails(d){
       </div>
     </div>`;
 }
-function renderExtraWorkDetails(d){
+
+function renderExtraWorkDetails(d,full={}){
   const rows=Array.isArray(d.date_wise)?d.date_wise:[];
+  const salary=full.monthly_salary_details||{};
+  const extra=full.net_extra_work_details||{};
+  const snapshot=full.calculation_snapshot||{};
+  const attendance=snapshot.attendance||{};
+
+  const deductionMinutes=Number(
+    salary.net_deduction_minutes
+    ?? attendance.net_deduction_minutes
+    ?? 0
+  );
+
+  const extraMinutes=Number(
+    extra.minutes
+    ?? d.total_minutes
+    ?? attendance.net_extra_work_minutes
+    ?? 0
+  );
+
+  const netWorkingMinutes=Number(
+    attendance.net_working_minutes
+    ?? snapshot.net_working_minutes
+    ?? 0
+  );
+
+  const deductionTime=
+    salary.net_deduction_dhm
+    || attendance.net_deduction_dhm
+    || formatDhm(
+      deductionMinutes
+        ? `${Math.floor(deductionMinutes/60)} H ${deductionMinutes%60} M`
+        : "0 M"
+    );
+
+  const extraTime=
+    extra.time
+    || d.total_time
+    || attendance.net_extra_work_dhm
+    || formatDhm(
+      extraMinutes
+        ? `${Math.floor(extraMinutes/60)} H ${extraMinutes%60} M`
+        : "0 M"
+    );
+
+  const netWorkingTime=
+    attendance.net_working_dhm
+    || formatDhm(
+      netWorkingMinutes
+        ? `${Math.floor(netWorkingMinutes/600)} D ${Math.floor((netWorkingMinutes%600)/60)} H ${netWorkingMinutes%60} M`
+        : "0 M"
+    );
+
   return `
-    ${detailHero("Net Extra Work",d.amount,formatDhm(d.total_time))}
+    ${detailHero("Net Extra Work",d.amount,extraTime)}
+
     <div class="sheet-summary">
-      <div class="detail-box"><small>Total Time</small><strong>${safe(formatDhm(d.total_time))}</strong></div>
-      <div class="detail-box"><small>Total Minutes</small><strong>${Number(d.total_minutes||0).toLocaleString("en-IN")}</strong></div>
+      <div class="detail-box">
+        <small>Total Deduction Time</small>
+        <strong>${safe(deductionTime)}</strong>
+        <span class="muted">${deductionMinutes.toLocaleString("en-IN")} minutes</span>
+      </div>
+
+      <div class="detail-box">
+        <small>Total Extra Work Time</small>
+        <strong>${safe(extraTime)}</strong>
+        <span class="muted">${extraMinutes.toLocaleString("en-IN")} minutes</span>
+      </div>
+
+      <div class="detail-box">
+        <small>Net Working Time</small>
+        <strong>${safe(netWorkingTime)}</strong>
+        <span class="muted">${netWorkingMinutes.toLocaleString("en-IN")} minutes</span>
+      </div>
+
+      <div class="detail-box">
+        <small>Net Extra Work Amount</small>
+        <strong>${money(d.amount)}</strong>
+      </div>
     </div>
+
     <div class="detail-section">
-      <h3>Date-wise Record</h3>
-      ${rows.length?`<div class="detail-table-wrap"><table class="detail-table"><thead><tr><th>Date</th><th>Time</th><th>Minutes</th></tr></thead><tbody>${rows.map(r=>`<tr><td>${safe(dateText(r.date))}</td><td>${safe(formatDhm(r.time))}</td><td>${Number(r.minutes||0)}</td></tr>`).join("")}</tbody></table></div>`:emptyDetails("Is payroll month me Net Extra Work record nahi hai.")}
+      <h3>Date-wise Extra Work Record</h3>
+      ${rows.length
+        ?`<div class="detail-table-wrap">
+            <table class="detail-table">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Time</th>
+                  <th>Minutes</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${rows.map(r=>`
+                  <tr>
+                    <td>${safe(dateText(r.date))}</td>
+                    <td>${safe(formatDhm(r.time))}</td>
+                    <td>${Number(r.minutes||0)}</td>
+                  </tr>
+                `).join("")}
+              </tbody>
+            </table>
+          </div>`
+        :emptyDetails("Is payroll month me Net Extra Work record nahi hai.")
+      }
     </div>`;
 }
+
 function renderIncentiveDetails(d){
   const rows=Array.isArray(d.items)?d.items:[];
   return `
@@ -138,14 +235,40 @@ function renderPaymentDetails(d){
 }
 async function openSection(id,section){
   try{
-    const d=await rpc("rr_get_payroll_section_details_v779_3",{p_payroll_id:id,p_section:section});
     const key=upper(section);
-    if(key==="MONTHLY_SALARY")renderDetails("Monthly Salary Details",renderMonthlySalaryDetails(d));
-    else if(key==="NET_EXTRA_WORK")renderDetails("Net Extra Work Details",renderExtraWorkDetails(d));
-    else if(key==="MONTHLY_INCENTIVE")renderDetails("Monthly Incentive Details",renderIncentiveDetails(d));
-    else if(key==="CLAIMS_RECOVERY")renderDetails("Claims / Recovery Details",renderClaimsDetails(d));
-    else if(key==="PAYMENT")renderDetails("Payment History",renderPaymentDetails(d));
-    else renderDetails(d.title||section,emptyDetails("Details available nahi hain."));
+
+    if(key==="NET_EXTRA_WORK"){
+      const [d,full]=await Promise.all([
+        rpc("rr_get_payroll_section_details_v779_3",{
+          p_payroll_id:id,
+          p_section:section
+        }),
+        rpc("rr_get_payroll_details_v779_1",{
+          p_payroll_id:id
+        })
+      ]);
+      renderDetails(
+        "Work Time Summary",
+        renderExtraWorkDetails(d,full)
+      );
+      return;
+    }
+
+    const d=await rpc("rr_get_payroll_section_details_v779_3",{
+      p_payroll_id:id,
+      p_section:section
+    });
+
+    if(key==="MONTHLY_SALARY")
+      renderDetails("Monthly Salary Details",renderMonthlySalaryDetails(d));
+    else if(key==="MONTHLY_INCENTIVE")
+      renderDetails("Monthly Incentive Details",renderIncentiveDetails(d));
+    else if(key==="CLAIMS_RECOVERY")
+      renderDetails("Claims / Recovery Details",renderClaimsDetails(d));
+    else if(key==="PAYMENT")
+      renderDetails("Payment History",renderPaymentDetails(d));
+    else
+      renderDetails(d.title||section,emptyDetails("Details available nahi hain."));
   }catch(e){say(err(e),"error")}
 }
 

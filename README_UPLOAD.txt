@@ -1,39 +1,19 @@
-REDZED V779.7 — MONTHLY PAYROLL FINAL LOCK
+REDZED V779.7.1 — WORK TIME SUMMARY
 
-UPLOAD BOTH FILES
-=================
+Upload both files:
 1. real-monthly-payroll-v779.html
 2. real-monthly-payroll-v779.js
 
-NO SQL RUN REQUIRED
-===================
-V779.1–V779.5 backend remains unchanged.
+No SQL run required.
 
-FINAL UI INCLUDED
-=================
-- TEST mode locked
-- Owner Management Board
-- Worker My Payroll
-- Clean Monthly Salary details
-- Net Deduction amount + D/H/M
-- Date-wise Net Extra Work
-- Incentive item list
-- Claims/Advance recovery table
-- Payment history table
-- DRAFT → POSTED → FINAL → PAID workflow display
-- Post, Review, Finalize and Payment actions
-- PDF/WhatsApp clean previews
-- Raw JSON/debug keys removed
-- HTML/JS synchronized at 779.7.0
+Net Extra Work Details drawer now shows:
+- Total Deduction Time
+- Total Extra Work Time
+- Net Working Time
+- Net Extra Work Amount
+- Date-wise Extra Work Record
 
-AFTER UPLOAD
-============
-1. Commit both files
-2. Wait for GitHub Pages deployment
-3. Ctrl + Shift + R
-4. Open Monthly Payroll
-5. Test one worker: Post → Finalize → Payment
-
-EXPECTED
-========
-Ali, Baldev and CHOTU remain visible in TEST mode.
+Data is read from the existing:
+rr_get_payroll_details_v779_1
+and
+rr_get_payroll_section_details_v779_3
