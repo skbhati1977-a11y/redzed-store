@@ -1,6 +1,6 @@
 (()=>{
 'use strict';
-window.REDZED_PCS_RATE_PAYROLL_VERSION='779.1.0';
+window.REDZED_PCS_RATE_PAYROLL_VERSION='779.2.2';
 
 const state={client:null,auth:null,workers:[],run:null,lines:[],details:[],attendance:[],holidays:[],adjustments:[],mapping:[],attendanceWorkerId:'',adjustmentWorkerId:''};
 const $=id=>document.getElementById(id);
@@ -22,12 +22,78 @@ function say(id,text,type=''){const el=$(id);if(!el)return;el.textContent=text||
 async function rpc(name,payload={}){const r=await state.client.rpc(name,payload);if(r.error)throw r.error;return r.data}
 
 class SearchSelect{
-  constructor(select){this.select=select;this.wrap=document.createElement('div');this.wrap.className='combo';this.input=document.createElement('input');this.input.className='combo-input';this.input.autocomplete='off';this.list=document.createElement('div');this.list.className='combo-list hidden';select.parentNode.insertBefore(this.wrap,select);this.wrap.append(this.input,this.list,select);select.classList.add('hidden');select._searchCombo=this;this.input.addEventListener('focus',()=>this.render());this.input.addEventListener('input',()=>this.render());this.input.addEventListener('keydown',e=>this.key(e));document.addEventListener('click',e=>{if(!this.wrap.contains(e.target))this.list.classList.add('hidden')});this.sync()}
+  constructor(select){
+    this.select=select;
+    this.wrap=document.createElement('div');
+    this.wrap.className='combo';
+    this.input=document.createElement('input');
+    this.input.className='combo-input';
+    this.input.autocomplete='off';
+    this.list=document.createElement('div');
+    this.list.className='combo-list hidden';
+    select.parentNode.insertBefore(this.wrap,select);
+    this.wrap.append(this.input,this.list,select);
+    select.classList.add('hidden');
+    select._searchCombo=this;
+    this.input.addEventListener('focus',()=>{this.input.select();this.render(true)});
+    this.input.addEventListener('input',()=>this.render(false));
+    this.input.addEventListener('keydown',e=>this.key(e));
+    this.input.addEventListener('blur',()=>setTimeout(()=>{
+      if(!this.wrap.contains(document.activeElement)){
+        this.list.classList.add('hidden');
+        this.sync();
+      }
+    },0));
+    document.addEventListener('click',e=>{
+      if(!this.wrap.contains(e.target)){
+        this.list.classList.add('hidden');
+        this.sync();
+      }
+    });
+    this.sync();
+  }
   options(){return [...this.select.options].map((o,i)=>({i,value:o.value,label:o.textContent.trim(),disabled:o.disabled}))}
-  sync(){const o=this.select.selectedOptions[0];this.input.value=o?.textContent.trim()||''}
-  render(){const q=this.input.value.trim().toLowerCase();this.filtered=this.options().filter(o=>!o.disabled&&(!q||o.label.toLowerCase().includes(q)));this.index=-1;this.list.innerHTML=this.filtered.length?this.filtered.map((o,i)=>`<div class="combo-option" data-si="${i}">${safe(o.label)}</div>`).join(''):'<div class="combo-option muted">No option</div>';this.list.classList.remove('hidden');this.list.querySelectorAll('[data-si]').forEach(el=>el.onclick=()=>this.pick(Number(el.dataset.si)))}
-  pick(i){const o=this.filtered[i];if(!o)return;this.select.value=o.value;this.sync();this.list.classList.add('hidden');this.select.dispatchEvent(new Event('change',{bubbles:true}))}
-  key(e){if(this.list.classList.contains('hidden'))return;if(e.key==='ArrowDown'){e.preventDefault();this.index=Math.min(this.filtered.length-1,this.index+1)}else if(e.key==='ArrowUp'){e.preventDefault();this.index=Math.max(0,this.index-1)}else if(e.key==='Enter'&&this.index>=0){e.preventDefault();this.pick(this.index);return}else if(e.key==='Escape'){this.list.classList.add('hidden');return}else return;[...this.list.querySelectorAll('[data-si]')].forEach((x,i)=>x.classList.toggle('active',i===this.index))}
+  selectedLabel(){return this.select.selectedOptions[0]?.textContent.trim()||''}
+  sync(){this.input.value=this.selectedLabel()}
+  render(showAll=false){
+    const raw=this.input.value.trim().toLowerCase();
+    const selected=this.selectedLabel().toLowerCase();
+    const q=showAll||raw===selected?'':raw;
+    this.filtered=this.options().filter(o=>!o.disabled&&(!q||o.label.toLowerCase().includes(q)));
+    this.index=-1;
+    this.list.innerHTML=this.filtered.length
+      ?this.filtered.map((o,i)=>`<div class="combo-option" data-si="${i}">${safe(o.label)}</div>`).join('')
+      :'<div class="combo-option muted">No option</div>';
+    this.list.classList.remove('hidden');
+    this.list.querySelectorAll('[data-si]').forEach(el=>el.onclick=()=>this.pick(Number(el.dataset.si)));
+  }
+  pick(i){
+    const o=this.filtered[i];
+    if(!o)return;
+    this.select.value=o.value;
+    this.sync();
+    this.list.classList.add('hidden');
+    this.select.dispatchEvent(new Event('change',{bubbles:true}));
+  }
+  key(e){
+    if(this.list.classList.contains('hidden'))return;
+    if(e.key==='ArrowDown'){
+      e.preventDefault();
+      this.index=Math.min(this.filtered.length-1,this.index+1);
+    }else if(e.key==='ArrowUp'){
+      e.preventDefault();
+      this.index=Math.max(0,this.index-1);
+    }else if(e.key==='Enter'&&this.index>=0){
+      e.preventDefault();
+      this.pick(this.index);
+      return;
+    }else if(e.key==='Escape'){
+      this.list.classList.add('hidden');
+      this.sync();
+      return;
+    }else return;
+    [...this.list.querySelectorAll('[data-si]')].forEach((x,i)=>x.classList.toggle('active',i===this.index));
+  }
 }
 function upgradeSelects(){document.querySelectorAll('select').forEach(s=>{if(!s._searchCombo)new SearchSelect(s)})}
 function syncSelects(){document.querySelectorAll('select').forEach(s=>s._searchCombo?.sync())}
