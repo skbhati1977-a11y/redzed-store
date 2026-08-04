@@ -1,16 +1,10 @@
-REDZED Data Mode Combobox Fix V779.2.2
+REDZED REAL/TEST Selection Fix V779.2.4
 
-ISSUE FIXED
-- Clicking Data Mode while REAL was selected filtered the dropdown to REAL only.
-- The searchable combobox now shows every option on focus, while typing still filters.
-- Applies to both Monthly V778 and PCS V779 pages.
-
-UPLOAD
-Replace these 4 files in the same GitHub root folder:
+GitHub root me in 4 files ko upload karke existing files replace karein:
 1. real-attendance-salary-v778.html
 2. real-attendance-salary-v778.js
 3. real-pcs-rate-payroll-v779.html
 4. real-pcs-rate-payroll-v779.js
 
-Do not replace config.js, real-common.js or payroll-calc-v778.js.
-No SQL is required. Commit, wait for Cloudflare deployment, then press Ctrl+Shift+R.
+config.js, real-common.js aur payroll-calc-v778.js ko replace na karein.
+Commit ke baad deployment complete hone dein aur Ctrl+Shift+R karein.

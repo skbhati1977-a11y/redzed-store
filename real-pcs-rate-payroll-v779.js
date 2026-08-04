@@ -1,6 +1,6 @@
 (()=>{
 'use strict';
-window.REDZED_PCS_RATE_PAYROLL_VERSION='779.2.2';
+window.REDZED_PCS_RATE_PAYROLL_VERSION='779.2.4';
 
 const state={client:null,auth:null,workers:[],run:null,lines:[],details:[],attendance:[],holidays:[],adjustments:[],mapping:[],attendanceWorkerId:'',adjustmentWorkerId:''};
 const $=id=>document.getElementById(id);
@@ -36,8 +36,18 @@ class SearchSelect{
     select.classList.add('hidden');
     select._searchCombo=this;
     this.input.addEventListener('focus',()=>{this.input.select();this.render(true)});
+    this.input.addEventListener('click',()=>this.render(true));
     this.input.addEventListener('input',()=>this.render(false));
     this.input.addEventListener('keydown',e=>this.key(e));
+    // Commit an option on pointer-down, before the input blur handler can restore the old value.
+    // This fixes REAL/TEST being visible but not selectable on mouse and touch devices.
+    this.list.addEventListener('pointerdown',e=>{
+      const option=e.target.closest('[data-si]');
+      if(!option||!this.list.contains(option))return;
+      e.preventDefault();
+      e.stopPropagation();
+      this.pick(Number(option.dataset.si));
+    });
     this.input.addEventListener('blur',()=>setTimeout(()=>{
       if(!this.wrap.contains(document.activeElement)){
         this.list.classList.add('hidden');
@@ -65,14 +75,15 @@ class SearchSelect{
       ?this.filtered.map((o,i)=>`<div class="combo-option" data-si="${i}">${safe(o.label)}</div>`).join('')
       :'<div class="combo-option muted">No option</div>';
     this.list.classList.remove('hidden');
-    this.list.querySelectorAll('[data-si]').forEach(el=>el.onclick=()=>this.pick(Number(el.dataset.si)));
   }
   pick(i){
     const o=this.filtered[i];
     if(!o)return;
     this.select.value=o.value;
+    this.select.selectedIndex=o.i;
     this.sync();
     this.list.classList.add('hidden');
+    this.select.dispatchEvent(new Event('input',{bubbles:true}));
     this.select.dispatchEvent(new Event('change',{bubbles:true}));
   }
   key(e){
