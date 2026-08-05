@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=yes">
+<meta name="theme-color" content="#090b10">
+<title>REAL FACTORY — Worker Salary Setup V786.2</title>
+<style>
+:root{
+  color-scheme:dark;--bg:#090b10;--panel:#141820;--panel2:#0f131a;
+  --line:#313a48;--muted:#aeb8c8;--red:#ef3340;--green:#34c47c;
+  --amber:#ffbd52;--blue:#62a8ff
+}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;background:var(--bg);color:#fff;
+  font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}.hidden{display:none!important}
+.app{max-width:1250px;margin:auto;padding:14px}
+.head{display:flex;justify-content:space-between;align-items:center;gap:10px;
+  flex-wrap:wrap;margin-bottom:12px}.head h1{margin:0;font-size:23px}
+.head p{margin:4px 0 0;color:var(--muted)}
+.nav{display:flex;gap:8px;flex-wrap:wrap}
+.btn{display:inline-flex;align-items:center;justify-content:center;min-height:44px;
+  padding:9px 13px;border:1px solid var(--line);border-radius:10px;
+  background:#222a36;color:#fff;text-decoration:none;font-weight:850}
+.btn.primary{background:var(--red);border-color:var(--red)}
+.btn.success{background:#176b47;border-color:#2d9468}
+.btn:disabled{opacity:.45}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;
+  padding:14px;margin-bottom:12px}
+.layout{display:grid;grid-template-columns:minmax(300px,.9fr) minmax(420px,1.4fr);gap:12px}
+label span{display:block;font-size:12px;color:var(--muted);margin-bottom:5px}
+input,select,textarea{width:100%;min-height:44px;padding:9px 10px;
+  border:1px solid var(--line);border-radius:9px;background:var(--panel2);font-size:16px}
+textarea{min-height:80px;resize:vertical}
+.search-results{max-height:550px;overflow:auto;margin-top:9px;border:1px solid var(--line);
+  border-radius:11px;background:var(--panel2)}
+.worker{width:100%;display:block;text-align:left;padding:11px;border:0;
+  border-bottom:1px solid var(--line);background:transparent;color:#fff}
+.worker:hover,.worker.active{background:#242c38}
+.worker b,.worker small{display:block}.worker small{margin-top:3px;color:var(--muted)}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.full{grid-column:1/-1}.note{padding:11px;border-left:3px solid var(--blue);
+  border-radius:8px;background:#101825;color:#d9e6f6;line-height:1.55}
+.note.warn{border-left-color:var(--amber);background:#211b10;color:#ffe29a}
+.summary{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:11px}
+.card{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:10px}
+.card small{display:block;color:var(--muted)}.card strong{display:block;margin-top:4px}
+.checks{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.check{display:flex;align-items:center;gap:8px;min-height:46px;padding:9px;
+  border:1px solid var(--line);border-radius:9px;background:var(--panel2)}
+.check input{width:auto;min-height:auto}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.message{min-height:24px;color:var(--muted)}.message.error{color:#ff8e98}
+.message.success{color:#79e5ae}.message.info{color:#a8ccff}
+@media(max-width:850px){.layout{grid-template-columns:1fr}.grid{grid-template-columns:1fr}
+  .full{grid-column:auto}.summary{grid-template-columns:1fr}.app{padding:9px}}
+</style>
+</head>
+<body>
+<main class="app">
+<header class="head">
+  <div>
+    <h1>REAL FACTORY · Worker Salary Setup</h1>
+    <p>Simple page — केवल worker की PCS / Monthly salary profile set करें</p>
+  </div>
+  <div class="nav">
+    <a class="btn" href="real-salary-home-v786.html">← Salary Home</a>
+    <a class="btn" href="real-salary-payment-v785.html">Salary Payment</a>
+    <span id="accessBadge" class="btn">Checking…</span>
+  </div>
+</header>
+
+<section class="panel note">
+  <b>Use this page instead of the full Role & Permission page for normal salary setup.</b>
+  Full Role & Permission केवल advanced permissions और departments के लिए रखें.
+</section>
+
+<section class="layout">
+  <aside class="panel">
+    <label>
+      <span>Search Worker</span>
+      <input id="workerSearch" placeholder="Name / code / department" autocomplete="off">
+    </label>
+    <div id="workerResults" class="search-results"></div>
+  </aside>
+
+  <section class="panel">
+    <div class="summary">
+      <div class="card"><small>SELECTED WORKER</small><strong id="selectedWorker">None</strong></div>
+      <div class="card"><small>DATA MODE</small><strong id="selectedMode">—</strong></div>
+      <div class="card"><small>CURRENT PROFILE</small><strong id="profileStatus">Not loaded</strong></div>
+    </div>
+
+    <form id="profileForm">
+      <input id="workerId" type="hidden">
+
+      <div class="grid">
+        <label>
+          <span>Data Mode</span>
+          <select id="dataMode" data-rr-data-mode="true" autocomplete="off">
+            <option value="TEST">TEST</option>
+            <option value="REAL">REAL</option>
+          </select>
+        </label>
+
+        <label>
+          <span>Worker Category</span>
+          <select id="workerCategory">
+            <option value="PIECE_RATE">PCS RATE</option>
+            <option value="SALARIED">MONTHLY SALARY</option>
+          </select>
+        </label>
+
+        <label>
+          <span>Effective From</span>
+          <input id="effectiveFrom" type="date" required>
+        </label>
+
+        <label>
+          <span>Effective To</span>
+          <input id="effectiveTo" type="date">
+        </label>
+
+        <div id="pieceFields" class="full note">
+          <b>PCS RATE:</b> Monthly salary नहीं लगेगी। Payment केवल production assignment के
+          exact frozen Actual Rate और payable PCS से बनेगा।
+        </div>
+
+        <div id="salaryFields" class="full hidden">
+          <div class="grid">
+            <label>
+              <span>Monthly Salary ₹</span>
+              <input id="monthlySalary" type="number" min="0.01" step="0.01">
+            </label>
+
+            <label>
+              <span>Shift</span>
+              <select id="shiftId"></select>
+            </label>
+
+            <label>
+              <span>Advance Limit Type</span>
+              <select id="advanceLimitType">
+                <option value="">No Limit Set</option>
+                <option value="PERCENT">PERCENT</option>
+                <option value="FIXED">FIXED AMOUNT</option>
+              </select>
+            </label>
+
+            <label>
+              <span>Advance Limit Value</span>
+              <input id="advanceLimitValue" type="number" min="0" step="0.01">
+            </label>
+          </div>
+
+          <div class="checks" style="margin-top:10px">
+            <label class="check"><input id="lateApplicable" type="checkbox" checked> Late deduction</label>
+            <label class="check"><input id="otApplicable" type="checkbox" checked> Overtime payable</label>
+            <label class="check"><input id="holidayApplicable" type="checkbox" checked> Holiday 1.5×</label>
+            <label class="check"><input id="graceOffset" type="checkbox" checked> Grace OT से minus</label>
+          </div>
+        </div>
+
+        <label class="full">
+          <span>Reason / Note</span>
+          <textarea id="reason" placeholder="Example: Worker payroll category confirmed"></textarea>
+        </label>
+      </div>
+
+      <p id="dateWarning" class="note warn">
+        Existing active profile की start date से पहले normal save नहीं होगा।
+        Historical correction advanced owner repair से ही करें.
+      </p>
+
+      <div class="actions">
+        <button id="saveProfile" class="btn success" type="submit" disabled>
+          Save Worker Salary Profile
+        </button>
+        <a class="btn" href="real-role-permission-v777-4-final.html?v=7774">
+          Advanced Role & Permission
+        </a>
+      </div>
+      <p id="message" class="message"></p>
+    </form>
+  </section>
+</section>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js?v=7862"></script>
+<script src="real-data-mode-controller-v786-1-1.js?v=7862"></script>
+<script src="real-common.js?v=7862"></script>
+<script src="real-worker-payroll-setup-v786.js?v=7862"></script>
+</body>
+</html>

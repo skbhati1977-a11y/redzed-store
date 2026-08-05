@@ -74,6 +74,23 @@ async function cancelAdjustment(id){try{const reason=prompt('Cancellation reason
 
 function showTab(tab){['attendance','payroll','adjustments'].forEach(t=>{$(`tab-${t}`).classList.toggle('hidden',t!==tab);document.querySelector(`[data-tab="${t}"]`).classList.toggle('active',t===tab)});if(tab==='payroll')loadPayroll().catch(e=>say('payrollMessage',err(e),'error'));if(tab==='adjustments')loadAdjustments()}
 function bind(){attendanceCombo=new SearchCombo($('attendanceWorkerCombo'),row=>{state.attendanceWorkerId=row.worker_id;loadAttendance()});adjustmentCombo=new SearchCombo($('adjustmentWorkerCombo'),row=>{state.adjustmentWorkerId=row.worker_id});$('tabs').querySelectorAll('button').forEach(b=>b.onclick=()=>showTab(b.dataset.tab));$('loadAttendance').onclick=loadAttendance;$('attendanceForm').onsubmit=saveAttendance;$('clearAttendanceForm').onclick=clearAttendanceForm;$('attendanceMode').onchange=()=>{state.attendanceWorkerId='';attendanceCombo.setValue('');loadWorkers($('attendanceMode').value)};$('attendanceMonth').onchange=()=>state.attendanceWorkerId&&loadAttendance();$('calculatePayroll').onclick=calculatePayroll;$('approvePayroll').onclick=approvePayroll;$('reopenPayroll').onclick=reopenPayroll;$('markPaid').onclick=markPaid;$('payrollMonth').onchange=()=>loadPayroll();$('payrollMode').onchange=()=>loadPayroll();$('holidayForm').onsubmit=saveHoliday;$('adjustmentForm').onsubmit=saveAdjustment;$('refreshAdjustments').onclick=loadAdjustments;$('adjustmentMode').onchange=()=>{state.adjustmentWorkerId='';adjustmentCombo.setValue('');loadAdjustments()};$('adjustmentMonth').onchange=loadAdjustments;upgradeSelects()}
-async function boot(){try{state.client=window.supabaseClient||window.supabaseDb||window.redzedSupabase||window.sb;if(!state.client)throw new Error('Supabase client unavailable. Check config.js.');if(window.RR?.requireRoles)state.auth=await RR.requireRoles(['owner','admin','account','manager','payroll','hr']);else{const s=await state.client.auth.getSession();if(!s.data?.session)throw new Error('Login required.')}bind();const m=todayMonth();$('attendanceMonth').value=m;$('payrollMonth').value=m;$('adjustmentMonth').value=m;$('attendanceDate').value=todayDate();await loadWorkers('REAL');await loadPayroll();$('accessBadge').textContent=`ACCESS OK · ${upper(state.auth?.role_code||state.auth?.profile?.role_code||'AUTH')}`;$('accessBadge').className='badge good';window.RR?.startAccessGuard?.()}catch(e){console.error(e);$('accessBadge').textContent='ACCESS ERROR';$('accessBadge').className='badge bad';say('attendanceMessage',err(e),'error')}}
+async function boot(){try{state.client=window.supabaseClient||window.supabaseDb||window.redzedSupabase||window.sb;if(!state.client)throw new Error('Supabase client unavailable. Check config.js.');if(window.RR?.requireRoles)state.auth=await RR.requireRoles(['owner','admin','account','manager','payroll','hr']);else{const s=await state.client.auth.getSession();if(!s.data?.session)throw new Error('Login required.')}bind();
+const requestedMode=String(
+  new URLSearchParams(location.search).get('mode')||''
+).toUpperCase();
+if(window.RRDataModeReadyPromise){
+  await window.RRDataModeReadyPromise;
+}
+const initialMode=window.RRDataMode
+  ?await RRDataMode.applyInitialModes(
+    ['attendanceMode','payrollMode','adjustmentMode'],
+    requestedMode
+  )
+  :(['REAL','TEST'].includes(requestedMode)?requestedMode:'TEST');
+if(!window.RRDataMode){
+  ['attendanceMode','payrollMode','adjustmentMode']
+    .forEach(id=>{if($(id))$(id).value=initialMode});
+}
+const m=todayMonth();$('attendanceMonth').value=m;$('payrollMonth').value=m;$('adjustmentMonth').value=m;$('attendanceDate').value=todayDate();await loadWorkers(initialMode);await loadPayroll();$('accessBadge').textContent=`ACCESS OK · ${upper(state.auth?.role_code||state.auth?.profile?.role_code||'AUTH')}`;$('accessBadge').className='badge good';window.RR?.startAccessGuard?.()}catch(e){console.error(e);$('accessBadge').textContent='ACCESS ERROR';$('accessBadge').className='badge bad';say('attendanceMessage',err(e),'error')}}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
 })();

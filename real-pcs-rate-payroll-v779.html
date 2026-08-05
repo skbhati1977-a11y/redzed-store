@@ -60,8 +60,16 @@ label{display:block}label>span{display:block;font-size:12px;color:var(--muted);m
 <body>
 <main class="app">
 <header class="head">
-  <div class="brand"><h1>REAL FACTORY · Piece Rate Salary</h1><p>V779.4.3 · PCS Flexible Payment V784.1 · Actual Rate Only</p></div>
-  <span id="accessBadge" class="badge">Checking access…</span>
+  <div class="brand">
+    <h1>REAL FACTORY · PCS Salary</h1>
+    <p>Calculate PCS salary with exact Assignment Actual Rate</p>
+  </div>
+  <div class="actions" style="margin:0">
+    <a class="btn" href="real-salary-home-v786.html">← Salary Home</a>
+    <a class="btn success" href="real-salary-payment-v785.html?category=PIECE_RATE">PCS Payment</a>
+    <a class="btn" href="real-worker-payroll-setup-v786.html">Worker Setup</a>
+    <span id="accessBadge" class="badge">Checking access…</span>
+  </div>
 </header>
 <nav class="tabs" id="tabs">
   <button data-tab="payroll" class="active">PCS Payroll</button>
@@ -75,7 +83,7 @@ label{display:block}label>span{display:block;font-size:12px;color:var(--muted);m
 <section id="tab-payroll">
   <div class="panel">
     <div class="toolbar">
-      <label><span>Data Mode</span><select id="payrollMode"><option>REAL</option><option>TEST</option></select></label>
+      <label><span>Data Mode</span><select autocomplete="off" id="payrollMode" data-rr-data-mode="true"><option selected>TEST</option><option>REAL</option></select></label>
       <label><span>Payroll Month</span><input id="payrollMonth" type="month"></label>
       <button id="calculatePayroll" class="btn primary">Calculate / Recalculate</button>
       <button id="approvePayroll" class="btn success">Approve & Lock</button>
@@ -99,7 +107,7 @@ label{display:block}label>span{display:block;font-size:12px;color:var(--muted);m
 <section id="tab-details" class="hidden">
   <div class="panel">
     <div class="toolbar">
-      <label><span>Data Mode</span><select id="detailMode"><option>REAL</option><option>TEST</option></select></label>
+      <label><span>Data Mode</span><select autocomplete="off" id="detailMode" data-rr-data-mode="true"><option selected>TEST</option><option>REAL</option></select></label>
       <label><span>Month</span><input id="detailMonth" type="month"></label>
       <div class="grow"><label><span>Search Worker / Lot / Department</span><input id="detailSearch" placeholder="Worker, Lot No, Department, Colour, Size"></label></div>
       <label class="checks" style="min-width:170px"><span>&nbsp;</span><label><input id="detailMissingOnly" type="checkbox"> Missing Rate only</label></label>
@@ -117,7 +125,7 @@ label{display:block}label>span{display:block;font-size:12px;color:var(--muted);m
 <section id="tab-attendance" class="hidden">
   <div class="panel">
     <div class="toolbar">
-      <label><span>Data Mode</span><select id="attendanceMode"><option>REAL</option><option>TEST</option></select></label>
+      <label><span>Data Mode</span><select autocomplete="off" id="attendanceMode" data-rr-data-mode="true"><option selected>TEST</option><option>REAL</option></select></label>
       <label><span>Month</span><input id="attendanceMonth" type="month"></label>
       <div class="grow"><label><span>Search Piece-Rate Worker</span></label><div id="attendanceWorkerCombo"></div></div>
       <button id="loadAttendance" class="btn">Load Month</button>
@@ -149,7 +157,7 @@ label{display:block}label>span{display:block;font-size:12px;color:var(--muted);m
   <div class="panel">
     <form id="adjustmentForm">
       <div class="grid">
-        <label><span>Data Mode</span><select id="adjustmentMode"><option>REAL</option><option>TEST</option></select></label>
+        <label><span>Data Mode</span><select autocomplete="off" id="adjustmentMode" data-rr-data-mode="true"><option selected>TEST</option><option>REAL</option></select></label>
         <label><span>Month</span><input id="adjustmentMonth" type="month" required></label>
         <div class="full"><label><span>Search Piece-Rate Worker</span></label><div id="adjustmentWorkerCombo"></div></div>
         <label><span>Type</span><select id="adjustmentType"><option>EARNING</option><option>DEDUCTION</option><option>ADVANCE</option><option>BONUS</option><option>INCENTIVE</option><option>FINE</option><option>DAMAGE_DEBIT</option><option>OTHER</option></select></label>
@@ -170,9 +178,9 @@ label{display:block}label>span{display:block;font-size:12px;color:var(--muted);m
     <div class="toolbar">
       <label>
         <span>Data Mode</span>
-        <select id="ledgerMode">
+        <select autocomplete="off" id="ledgerMode" data-rr-data-mode="true">
+          <option selected>TEST</option>
           <option>REAL</option>
-          <option>TEST</option>
         </select>
       </label>
 
@@ -324,10 +332,10 @@ label{display:block}label>span{display:block;font-size:12px;color:var(--muted);m
 </section>
 </main>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="config.js?v=77931"></script>
-<script src="real-common.js?v=7751"></script>
-<script src="real-mobile-compat-v774.js?v=7742"></script>
-<script src="real-table-freeze-v773.js?v=7734"></script>
-<script src="real-pcs-rate-payroll-v779.js?v=77941"></script>
+<script src="config.js?v=77931"></script><script src="real-data-mode-controller-v786-1-1.js?v=7862"></script>
+<script src="real-common.js?v=7862"></script>
+<script src="real-mobile-compat-v774.js?v=774211"></script>
+<script src="real-table-freeze-v773.js?v=773411"></script>
+<script src="real-pcs-rate-payroll-v779.js?v=7862"></script>
 </body>
 </html>

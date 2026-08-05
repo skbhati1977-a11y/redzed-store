@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=yes">
+<meta name="theme-color" content="#090b10">
+<title>REAL FACTORY — Salary Home V786.2</title>
+<style>
+:root{
+  color-scheme:dark;
+  --bg:#090b10;--panel:#141820;--panel2:#0f131a;--line:#313a48;
+  --muted:#aeb8c8;--red:#ef3340;--green:#34c47c;--amber:#ffbd52;--blue:#62a8ff
+}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;background:var(--bg);color:#fff;
+  font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+a,button{font:inherit}
+.app{max-width:1250px;margin:auto;padding:14px}
+.head{display:flex;justify-content:space-between;align-items:center;gap:12px;
+  flex-wrap:wrap;margin-bottom:13px}
+.head h1{margin:0;font-size:25px}.head p{margin:5px 0 0;color:var(--muted)}
+.btn{display:inline-flex;align-items:center;justify-content:center;min-height:44px;
+  padding:9px 13px;border:1px solid var(--line);border-radius:10px;
+  background:#222a36;color:#fff;text-decoration:none;font-weight:850}
+.panel{background:var(--panel);border:1px solid var(--line);
+  border-radius:15px;padding:14px;margin-bottom:13px}
+.mode{display:flex;justify-content:space-between;align-items:center;gap:10px;
+  flex-wrap:wrap;border-left:4px solid var(--amber)}
+.mode strong{font-size:20px}.mode small{display:block;color:var(--muted);margin-top:4px}
+.steps{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.step{background:linear-gradient(180deg,#171d27,#10141b);
+  border:1px solid var(--line);border-radius:15px;padding:14px}
+.step h2{margin:0 0 5px;font-size:19px}.step p{margin:0 0 12px;color:var(--muted);
+  line-height:1.5}.number{display:inline-grid;place-items:center;width:30px;height:30px;
+  border-radius:50%;background:var(--red);font-weight:950;margin-right:7px}
+.actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.action{display:flex;flex-direction:column;justify-content:center;min-height:74px;
+  padding:11px;border:1px solid var(--line);border-radius:11px;background:var(--panel2);
+  color:#fff;text-decoration:none}
+.action b{font-size:15px}.action span{margin-top:4px;color:var(--muted);font-size:12px}
+.action.primary{border-color:#9e3b48;background:#341820}
+.action.success{border-color:#2d7953;background:#123120}
+.action.amber{border-color:#80642d;background:#271f11}
+.simple{border-left:4px solid var(--green);line-height:1.65}
+.advanced{opacity:.86}.advanced summary{cursor:pointer;font-weight:900}
+@media(max-width:760px){.steps,.actions{grid-template-columns:1fr}.app{padding:9px}}
+</style>
+</head>
+<body>
+<main class="app">
+<header class="head">
+  <div>
+    <h1>REAL FACTORY · Salary Home</h1>
+    <p>Simple रास्ता: Setup → Calculate → Pay → Check</p>
+  </div>
+  <span id="accessBadge" class="btn">Checking…</span>
+</header>
+
+<section class="panel mode">
+  <div>
+    <strong id="modeTitle">Loading Data Mode…</strong>
+    <small id="modeHelp">Please wait.</small>
+  </div>
+  <a class="btn" href="real-data-mode-control-v786.html">Data Mode Settings</a>
+</section>
+
+<section class="panel simple">
+  <b>सबसे आसान नियम:</b>
+  पहले Worker Salary Setup में worker को <b>PCS RATE</b> या <b>MONTHLY SALARY</b> set करें।
+  फिर संबंधित salary calculate करें। आखिर में एक ही Salary Payment page से payment करें।
+</section>
+
+<section class="steps">
+  <article class="step">
+    <h2><span class="number">1</span>Worker Setup</h2>
+    <p>Worker की salary category, effective date और monthly salary/shift set करें.</p>
+    <div class="actions">
+      <a class="action primary" href="real-worker-payroll-setup-v786.html">
+        <b>Worker Salary Setup</b>
+        <span>यहीं से PCS या Monthly category set करें</span>
+      </a>
+    </div>
+  </article>
+
+  <article class="step">
+    <h2><span class="number">2</span>Salary Calculate</h2>
+    <p>PCS worker और monthly worker की calculation अलग और साफ रहेगी.</p>
+    <div class="actions">
+      <a class="action" href="real-pcs-rate-payroll-v779.html">
+        <b>PCS Salary</b>
+        <span>Actual Rate × payable PCS</span>
+      </a>
+      <a class="action" href="real-attendance-salary-v778.html">
+        <b>Monthly Salary</b>
+        <span>Attendance, OT, leave और monthly pay</span>
+      </a>
+    </div>
+  </article>
+
+  <article class="step">
+    <h2><span class="number">3</span>Payment</h2>
+    <p>Partial, worker-wise या full payment. Advance अलग रखा गया है.</p>
+    <div class="actions">
+      <a class="action success" href="real-salary-payment-v785.html">
+        <b>Salary Payment</b>
+        <span>PCS और Monthly दोनों का payment</span>
+      </a>
+      <a class="action amber" href="real-advance-worker-payment-v785.html">
+        <b>Advance Payment</b>
+        <span>Salary से अलग worker advance</span>
+      </a>
+    </div>
+  </article>
+
+  <article class="step">
+    <h2><span class="number">4</span>Check & Audit</h2>
+    <p>किस worker का कितना production work है और PCS salary eligible है या नहीं देखें.</p>
+    <div class="actions">
+      <a class="action" href="real-pcs-work-audit-v783.html">
+        <b>PCS Work Audit</b>
+        <span>Worker, lot, department, colour और size detail</span>
+      </a>
+    </div>
+  </article>
+</section>
+
+<section class="panel advanced">
+  <details>
+    <summary>Advanced Settings — रोज़ के salary काम के लिए जरूरी नहीं</summary>
+    <div class="actions" style="margin-top:12px">
+      <a class="action" href="real-data-mode-control-v786.html">
+        <b>Global TEST / REAL Control</b>
+        <span>अभी TEST default, REAL protected</span>
+      </a>
+      <a class="action" href="real-role-permission-v777-4-final.html?v=7774">
+        <b>Full Role & Permission</b>
+        <span>Permissions, departments और advanced worker controls</span>
+      </a>
+    </div>
+  </details>
+</section>
+
+<p id="message" style="color:var(--muted);min-height:24px"></p>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js?v=7862"></script>
+<script src="real-data-mode-controller-v786-1-1.js?v=7862"></script>
+<script src="real-common.js?v=7862"></script>
+<script src="real-salary-home-v786.js?v=7862"></script>
+</body>
+</html>

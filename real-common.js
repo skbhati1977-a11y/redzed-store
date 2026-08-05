@@ -265,10 +265,18 @@
     document.head.appendChild(script);
   });
 
-  load(
+  const dataModeLoader=load(
+    'real-data-mode-controller-v786-1-1.js?v=78611',
+    'rr-data-mode-controller-v786-1-1'
+  );
+
+  window.RRDataModeLoaderPromise=dataModeLoader;
+
+  dataModeLoader
+  .then(()=>load(
     'real-mobile-compat-v775.js?v=7751',
     'rr-mobile-compat-v775'
-  )
+  ))
   .then(()=>load(
     'real-google-sheet-table-v775.js?v=7751',
     'rr-google-sheet-table-v775'

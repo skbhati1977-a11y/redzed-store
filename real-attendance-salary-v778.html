@@ -25,9 +25,17 @@
 <body>
 <main class="app">
   <header class="head">
-    <div class="brand"><h1>REAL FACTORY · Attendance & Salary</h1><p>V778.2 · V782.2 Bulk Ratio Payment · Asia/Kolkata</p></div>
+  <div class="brand">
+    <h1>REAL FACTORY · Monthly Salary</h1>
+    <p>Attendance, OT, leave and monthly salary calculation</p>
+  </div>
+  <div class="actions" style="margin:0">
+    <a class="btn" href="real-salary-home-v786.html">← Salary Home</a>
+    <a class="btn success" href="real-salary-payment-v785.html?category=SALARIED">Monthly Payment</a>
+    <a class="btn" href="real-worker-payroll-setup-v786.html">Worker Setup</a>
     <span id="accessBadge" class="badge">Checking access…</span>
-  <a class="btn success" href="real-salary-payment-v785.html?category=SALARIED">Monthly Payment</a></header>
+  </div>
+</header>
   <nav class="tabs" id="tabs">
     <button data-tab="attendance" class="active">Attendance</button>
     <button data-tab="payroll">Salary Payroll</button>
@@ -37,7 +45,7 @@
   <section id="tab-attendance">
     <div class="panel">
       <div class="toolbar">
-        <label><span>Data Mode</span><select id="attendanceMode"><option>REAL</option><option>TEST</option></select></label>
+        <label><span>Data Mode</span><select autocomplete="off" id="attendanceMode" data-rr-data-mode="true"><option selected>TEST</option><option>REAL</option></select></label>
         <label><span>Month</span><input id="attendanceMonth" type="month"></label>
         <div class="grow"><label><span>Search Salaried Worker</span></label><div id="attendanceWorkerCombo"></div></div>
         <button id="loadAttendance" class="btn">Load Month</button>
@@ -81,7 +89,7 @@
   <section id="tab-payroll" class="hidden">
     <div class="panel">
       <div class="toolbar">
-        <label><span>Data Mode</span><select id="payrollMode"><option>REAL</option><option>TEST</option></select></label>
+        <label><span>Data Mode</span><select autocomplete="off" id="payrollMode" data-rr-data-mode="true"><option selected>TEST</option><option>REAL</option></select></label>
         <label><span>Payroll Month</span><input id="payrollMonth" type="month"></label>
         <button id="calculatePayroll" class="btn primary">Calculate / Recalculate</button>
         <button id="approvePayroll" class="btn success">Approve & Lock</button>
@@ -100,7 +108,7 @@
     <div class="panel">
       <form id="adjustmentForm">
         <div class="grid">
-          <label><span>Data Mode</span><select id="adjustmentMode"><option>REAL</option><option>TEST</option></select></label>
+          <label><span>Data Mode</span><select autocomplete="off" id="adjustmentMode" data-rr-data-mode="true"><option selected>TEST</option><option>REAL</option></select></label>
           <label><span>Month</span><input id="adjustmentMonth" type="month" required></label>
           <div class="full"><label><span>Search Salaried Worker</span></label><div id="adjustmentWorkerCombo"></div></div>
           <label><span>Type</span><select id="adjustmentType"><option>EARNING</option><option>DEDUCTION</option><option>ADVANCE</option><option>BONUS</option><option>INCENTIVE</option><option>FINE</option><option>OTHER</option></select></label>
@@ -115,9 +123,9 @@
   </section>
 </main>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="config.js?v=7781"></script>
-<script src="real-common.js?v=7751"></script>
+<script src="config.js?v=7781"></script><script src="real-data-mode-controller-v786-1-1.js?v=7862"></script>
+<script src="real-common.js?v=7862"></script>
 <script src="payroll-calc-v778.js?v=7781"></script>
-<script src="real-attendance-salary-v778.js?v=77820"></script>
+<script src="real-attendance-salary-v778.js?v=7862"></script>
 </body>
 </html>

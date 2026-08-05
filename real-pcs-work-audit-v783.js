@@ -77,6 +77,15 @@ function unique(values){
   return [...new Set(values.filter(Boolean))];
 }
 
+function isPcsEligible(row){
+  return String(row.profile_status||'').toUpperCase()==='PIECE_RATE'
+    && ![
+      'NO_ACTIVE_PAYROLL_PROFILE','NOT_PIECE_RATE',
+      'ASSIGNMENT_NOT_FOUND','MISSING_SIZE_CAP',
+      'CAP_ALREADY_USED','MISSING_ACTUAL_RATE'
+    ].includes(String(row.audit_status||'').toUpperCase());
+}
+
 function workerSummary(){
   const map=new Map();
 
@@ -93,7 +102,9 @@ function workerSummary(){
         lots:new Set(),
         submitted:0,
         payable:0,
-        salary:0,
+        eligiblePcs:0,
+        eligibleSalary:0,
+        productionCost:0,
         notAdded:0,
         outstanding:Number(row.worker_outstanding||0),
         attention:0
@@ -105,13 +116,17 @@ function workerSummary(){
     item.lots.add(row.lot_no||row.canonical_lot_id||'—');
     item.submitted+=Number(row.submitted_qty||0);
     item.payable+=Number(row.payable_qty||0);
-    item.salary+=Number(row.work_salary||0);
+    item.productionCost+=Number(row.work_salary||0);
+    if(isPcsEligible(row)){
+      item.eligiblePcs+=Number(row.payable_qty||0);
+      item.eligibleSalary+=Number(row.work_salary||0);
+    }
     item.outstanding=Math.max(
       item.outstanding,
       Number(row.worker_outstanding||0)
     );
 
-    if(row.audit_status==='NOT_ADDED_TO_SALARY'){
+    if(row.audit_status==='NOT_ADDED_TO_SALARY'&&isPcsEligible(row)){
       item.notAdded+=Number(row.work_salary||0);
     }
 
@@ -134,12 +149,18 @@ function renderStats(){
   const payable=rows.reduce(
     (sum,row)=>sum+Number(row.payable_qty||0),0
   );
-  const salary=rows.reduce(
+  const productionCost=rows.reduce(
     (sum,row)=>sum+Number(row.work_salary||0),0
+  );
+  const eligiblePcs=rows.reduce(
+    (sum,row)=>sum+(isPcsEligible(row)?Number(row.payable_qty||0):0),0
+  );
+  const eligibleSalary=rows.reduce(
+    (sum,row)=>sum+(isPcsEligible(row)?Number(row.work_salary||0):0),0
   );
   const notAdded=rows.reduce(
     (sum,row)=>sum+
-      (row.audit_status==='NOT_ADDED_TO_SALARY'
+      (row.audit_status==='NOT_ADDED_TO_SALARY'&&isPcsEligible(row)
         ?Number(row.work_salary||0):0),
     0
   );
@@ -156,8 +177,10 @@ function renderStats(){
     ['Workers',workers.length],
     ['Work Rows',rows.length],
     ['Submitted PCS',qty(submitted)],
-    ['Payable PCS',qty(payable)],
-    ['Work Salary ₹',money(salary)],
+    ['Cap-Adjusted PCS',qty(payable)],
+    ['PCS Eligible PCS',qty(eligiblePcs)],
+    ['PCS Salary Eligible ₹',money(eligibleSalary)],
+    ['Production Cost ₹',money(productionCost)],
     ['Not Added ₹',money(notAdded)],
     ['Worker Outstanding ₹',money(outstanding)],
     ['Excluded / Review',excluded]
@@ -185,13 +208,15 @@ function renderWorkers(){
         <td>${safe(row.lots.size)}</td>
         <td>${qty(row.submitted)}</td>
         <td>${qty(row.payable)}</td>
-        <td class="money">₹${money(row.salary)}</td>
+        <td>${qty(row.eligiblePcs)}</td>
+        <td class="money">₹${money(row.eligibleSalary)}</td>
+        <td class="money">₹${money(row.productionCost)}</td>
         <td class="money">₹${money(row.notAdded)}</td>
         <td class="money"><b>₹${money(row.outstanding)}</b></td>
         <td>${safe(row.attention)}</td>
       </tr>
     `).join('')
-    :'<tr><td colspan="10">No workers found.</td></tr>';
+    :'<tr><td colspan="12">No workers found.</td></tr>';
 }
 
 function salaryAdded(row){
@@ -224,15 +249,17 @@ function renderDetails(){
         <td>${safe(row.size_code||'—')}</td>
         <td>${qty(row.submitted_qty)}</td>
         <td>${qty(row.payable_qty)}</td>
+        <td>${isPcsEligible(row)?qty(row.payable_qty):'0'}</td>
         <td>${Number(row.actual_rate||0)>0?`₹${money(row.actual_rate)}`:'—'}</td>
         <td class="money">₹${money(row.work_salary)}</td>
-        <td>${safe(salaryAdded(row))}</td>
+        <td class="money">₹${money(isPcsEligible(row)?row.work_salary:0)}</td>
+        <td>${safe(isPcsEligible(row)?salaryAdded(row):'EXCLUDED')}</td>
         <td class="money">₹${money(row.worker_outstanding)}</td>
         <td><span class="status ${statusClass(row.audit_status)}">${safe(statusLabel(row.audit_status))}</span></td>
         <td title="${safe(row.audit_reason)}">${safe(row.audit_reason)}</td>
       </tr>
     `).join('')
-    :'<tr><td colspan="15">No work found for this filter.</td></tr>';
+    :'<tr><td colspan="17">No work found for this filter.</td></tr>';
 }
 
 function render(){
@@ -301,6 +328,23 @@ async function boot(){
     }else{
       const session=await state.client.auth.getSession();
       if(!session.data?.session)throw new Error('Login required.');
+    }
+
+    const params=new URLSearchParams(location.search);
+    const requestedMode=String(params.get('mode')||'').toUpperCase();
+    if(window.RRDataModeReadyPromise){
+      await window.RRDataModeReadyPromise;
+    }
+
+    if(window.RRDataMode){
+      await RRDataMode.applyInitialMode(
+        'dataMode',
+        requestedMode
+      );
+    }else{
+      $('dataMode').value=['REAL','TEST'].includes(requestedMode)
+        ?requestedMode
+        :'TEST';
     }
 
     const today=indiaToday();

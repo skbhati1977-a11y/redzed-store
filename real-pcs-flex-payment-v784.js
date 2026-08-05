@@ -1,4 +1,4 @@
-(()=>{const p=new URLSearchParams(location.search);location.replace('real-salary-payment-v785.html?category=PIECE_RATE&mode='+encodeURIComponent(String(p.get('mode')||'REAL')));})();
+(()=>{const p=new URLSearchParams(location.search),m=String(p.get('mode')||'');location.replace('real-salary-payment-v785.html?category=PIECE_RATE'+(m?'&mode='+encodeURIComponent(m):''));})();
 (()=>{
 'use strict';
 
@@ -817,8 +817,19 @@ async function boot(){
     const params=new URLSearchParams(location.search);
     const mode=String(params.get('mode')||'').toUpperCase();
 
-    if(['REAL','TEST'].includes(mode)){
-      $('dataMode').value=mode;
+    if(window.RRDataModeLoaderPromise){
+      await window.RRDataModeLoaderPromise;
+    }
+
+    if(window.RRDataMode){
+      await RRDataMode.applyInitialMode(
+        'dataMode',
+        mode
+      );
+    }else{
+      $('dataMode').value=['REAL','TEST'].includes(mode)
+        ?mode
+        :'TEST';
     }
 
     updateRule();

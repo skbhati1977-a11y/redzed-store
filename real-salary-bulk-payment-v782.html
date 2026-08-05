@@ -52,6 +52,7 @@ th{background:#202733;font-size:12px}td.money{text-align:right;font-variant-nume
     <a class="btn" href="real-pcs-rate-payroll-v779.html">PCS Salary</a>
     <a class="btn" href="real-pcs-flex-payment-v784.html">PCS Flexible Payment</a>
     <a class="btn" href="real-pcs-work-audit-v783.html">All PCS Work / Unpaid Audit</a>
+    <a class="btn" href="real-data-mode-control-v786.html">Data Mode</a>
     <span id="accessBadge" class="btn">Checking…</span>
   </div>
 </header>
@@ -60,7 +61,7 @@ th{background:#202733;font-size:12px}td.money{text-align:right;font-variant-nume
   <div class="grid">
     <label>
       <span>Data Mode</span>
-      <select id="dataMode" data-searchable="true"><option>REAL</option><option>TEST</option></select>
+      <select id="dataMode" data-rr-data-mode="true" data-searchable="true"><option selected>TEST</option><option>REAL</option></select>
     </label>
 
     <label>
@@ -149,7 +150,7 @@ th{background:#202733;font-size:12px}td.money{text-align:right;font-variant-nume
   <div class="actions">
     <label style="min-width:220px">
       <span>History Data Mode</span>
-      <select id="historyMode" data-searchable="true"><option>REAL</option><option>TEST</option></select>
+      <select id="historyMode" data-rr-data-mode="true" data-searchable="true"><option selected>TEST</option><option>REAL</option></select>
     </label>
     <button id="loadHistory" class="btn" type="button">Load Batch History</button>
   </div>
@@ -171,7 +172,7 @@ th{background:#202733;font-size:12px}td.money{text-align:right;font-variant-nume
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="config.js?v=7822"></script>
-<script src="real-common.js?v=7751"></script>
-<script src="real-salary-bulk-payment-v782.js?v=7822"></script>
+<script src="real-common.js?v=7861"></script>
+<script src="real-salary-bulk-payment-v782.js?v=78225"></script>
 </body>
 </html>

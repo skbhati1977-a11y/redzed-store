@@ -3,9 +3,14 @@
   const category=String(p.get('category')||'').toUpperCase();
   const cycle=String(p.get('cycle')||'').toUpperCase();
   if(category==='PIECE_RATE'||cycle.startsWith('PCS_')){
+    const requestedMode=String(p.get('mode')||'');
     location.replace(
-      'real-pcs-flex-payment-v784.html?mode='+
-      encodeURIComponent(String(p.get('mode')||'REAL'))
+      'real-pcs-flex-payment-v784.html'+
+      (
+        requestedMode
+          ?'?mode='+encodeURIComponent(requestedMode)
+          :''
+      )
     );
     return;
   }
@@ -107,10 +112,10 @@ function queryDefaults(){
   }
 
   const mode=String(params.get('mode')||'').toUpperCase();
-  if(['REAL','TEST'].includes(mode))$('dataMode').value=mode;
 
   const month=params.get('month');
   if(month&&/^\d{4}-\d{2}$/.test(month))$('periodMonth').value=month;
+  return mode;
 }
 
 function setWindowDayOptions(){
@@ -590,7 +595,7 @@ function bind(){
   $('cycleType').onchange=updateCycleUI;
 
   $('dataMode').onchange=async()=>{
-    $('historyMode').value=$('dataMode').value;
+    $('historyMode').value=$('dataMode').value||'TEST';
     state.preview=null;
     state.selected.clear();
     state.selectionDirty=false;
@@ -652,8 +657,24 @@ async function boot(){
     $('periodMonth').value=monthNow();
     $('paymentDate').value=today();
 
-    queryDefaults();
-    $('historyMode').value=$('dataMode').value;
+    const requestedMode=queryDefaults();
+
+    if(window.RRDataModeLoaderPromise){
+      await window.RRDataModeLoaderPromise;
+    }
+
+    if(window.RRDataMode){
+      await RRDataMode.applyInitialModes(
+        ['dataMode','historyMode'],
+        requestedMode
+      );
+    }else{
+      const fallback=['REAL','TEST'].includes(requestedMode)
+        ?requestedMode
+        :'TEST';
+      $('dataMode').value=fallback;
+      $('historyMode').value=fallback;
+    }
 
     bind();
     await updateCycleUI();

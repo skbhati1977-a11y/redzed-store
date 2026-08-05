@@ -2035,6 +2035,23 @@ function bind(){
   upgradeSelects();
 }
 
-async function boot(){try{state.client=window.supabaseClient||window.supabaseDb||window.redzedSupabase||window.sb;if(!state.client)throw new Error('Supabase client unavailable. Check config.js.');if(window.RR?.requireRoles)state.auth=await RR.requireRoles(['owner','admin','account','manager','payroll','hr']);else{const s=await state.client.auth.getSession();if(!s.data?.session)throw new Error('Login required.')}bind();const m=todayMonth();$('payrollMonth').value=m;$('detailMonth').value=m;$('attendanceMonth').value=m;$('adjustmentMonth').value=m;$('ledgerMonth').value=m;$('ledgerPaymentDate').value=todayDate();$('attendanceDate').value=todayDate();await loadWorkers('REAL');await Promise.all([loadPayroll(),runCompatibility()]);$('accessBadge').textContent=`ACCESS OK · ${upper(state.auth?.role_code||state.auth?.profile?.role_code||'AUTH')}`;$('accessBadge').className='badge good';window.RR?.startAccessGuard?.()}catch(e){console.error(e);$('accessBadge').textContent='ACCESS ERROR';$('accessBadge').className='badge bad';say('payrollMessage',err(e),'error')}}
+async function boot(){try{state.client=window.supabaseClient||window.supabaseDb||window.redzedSupabase||window.sb;if(!state.client)throw new Error('Supabase client unavailable. Check config.js.');if(window.RR?.requireRoles)state.auth=await RR.requireRoles(['owner','admin','account','manager','payroll','hr']);else{const s=await state.client.auth.getSession();if(!s.data?.session)throw new Error('Login required.')}bind();
+const requestedMode=String(
+  new URLSearchParams(location.search).get('mode')||''
+).toUpperCase();
+if(window.RRDataModeReadyPromise){
+  await window.RRDataModeReadyPromise;
+}
+const initialMode=window.RRDataMode
+  ?await RRDataMode.applyInitialModes(
+    ['payrollMode','detailMode','attendanceMode','adjustmentMode','ledgerMode'],
+    requestedMode
+  )
+  :(['REAL','TEST'].includes(requestedMode)?requestedMode:'TEST');
+if(!window.RRDataMode){
+  ['payrollMode','detailMode','attendanceMode','adjustmentMode','ledgerMode']
+    .forEach(id=>{if($(id))$(id).value=initialMode});
+}
+const m=todayMonth();$('payrollMonth').value=m;$('detailMonth').value=m;$('attendanceMonth').value=m;$('adjustmentMonth').value=m;$('ledgerMonth').value=m;$('ledgerPaymentDate').value=todayDate();$('attendanceDate').value=todayDate();await loadWorkers(initialMode);await Promise.all([loadPayroll(),runCompatibility()]);$('accessBadge').textContent=`ACCESS OK · ${upper(state.auth?.role_code||state.auth?.profile?.role_code||'AUTH')}`;$('accessBadge').className='badge good';window.RR?.startAccessGuard?.()}catch(e){console.error(e);$('accessBadge').textContent='ACCESS ERROR';$('accessBadge').className='badge bad';say('payrollMessage',err(e),'error')}}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
 })();

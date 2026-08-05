@@ -69,6 +69,7 @@ td.money{text-align:right;font-variant-numeric:tabular-nums}
   <div class="nav">
     <a class="btn" href="real-pcs-rate-payroll-v779.html">PCS Salary</a>
     <a class="btn" href="real-pcs-work-audit-v783.html">All Work Audit</a>
+    <a class="btn" href="real-data-mode-control-v786.html">Data Mode</a>
     <span id="accessBadge" class="btn">Checking…</span>
   </div>
 </header>
@@ -77,8 +78,8 @@ td.money{text-align:right;font-variant-numeric:tabular-nums}
   <div class="grid">
     <label>
       <span>Data Mode</span>
-      <select id="dataMode" data-searchable="true">
-        <option>REAL</option><option>TEST</option>
+      <select id="dataMode" data-rr-data-mode="true" data-searchable="true">
+        <option selected>TEST</option><option>REAL</option>
       </select>
     </label>
 
@@ -247,7 +248,7 @@ td.money{text-align:right;font-variant-numeric:tabular-nums}
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="config.js?v=7841"></script>
-<script src="real-common.js?v=7751"></script>
-<script src="real-pcs-flex-payment-v784.js?v=7841"></script>
+<script src="real-common.js?v=7861"></script>
+<script src="real-pcs-flex-payment-v784.js?v=78415"></script>
 </body>
 </html>
