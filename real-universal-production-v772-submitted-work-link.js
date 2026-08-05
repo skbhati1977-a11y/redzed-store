@@ -1,7 +1,7 @@
 (()=>{
 'use strict';
 
-const VERSION='772.4';
+const VERSION='772.6';
 const $=id=>document.getElementById(id);
 const safe=v=>String(v??'').replace(/[&<>"']/g,c=>({
   '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'
@@ -21,7 +21,9 @@ const state={
   client:null,
   rows:[],
   filtered:[],
-  loading:false
+  loading:false,
+  lotMetaByCanonical:new Map(),
+  lotMetaByLotNo:new Map()
 };
 
 function getClient(){
@@ -61,6 +63,137 @@ function currentLotNo(){
   return search?upper(search):'';
 }
 
+function firstValue(obj,keys){
+  for(const key of keys){
+    const value=obj?.[key];
+    if(value!==null&&value!==undefined&&String(value).trim()!=='')return value;
+  }
+  return '';
+}
+
+function normalizeImageUrl(value){
+  const url=String(value||'').trim();
+  if(!url)return '';
+  if(/^(https?:|data:|blob:)/i.test(url))return url;
+  if(url.startsWith('//'))return `https:${url}`;
+  return '';
+}
+
+function findImageDeep(value,depth=0){
+  if(depth>4||value===null||value===undefined)return '';
+  if(typeof value==='string')return normalizeImageUrl(value);
+  if(Array.isArray(value)){
+    for(const item of value){
+      const found=findImageDeep(item,depth+1);
+      if(found)return found;
+    }
+    return '';
+  }
+  if(typeof value==='object'){
+    const preferred=[];
+    const rest=[];
+    for(const [key,item] of Object.entries(value)){
+      if(/(art.*image|image.*art|thumbnail|thumb|photo|image|media.*url|url.*media)/i.test(key)){
+        preferred.push(item);
+      }else if(/(metadata|payload|details|media|images|art)/i.test(key)){
+        rest.push(item);
+      }
+    }
+    for(const item of [...preferred,...rest]){
+      const found=findImageDeep(item,depth+1);
+      if(found)return found;
+    }
+  }
+  return '';
+}
+
+function domImageForLot(lotNo){
+  const wanted=upper(lotNo);
+  for(const card of document.querySelectorAll('.lot-card')){
+    const cardLot=upper(card.querySelector('.lot-no')?.textContent);
+    if(cardLot===wanted){
+      return card.querySelector('img')?.src||'';
+    }
+  }
+  return '';
+}
+
+function normalizeLotMeta(row){
+  return {
+    artNo:String(firstValue(row,[
+      'art_no','article_no','article_code','art_code','style_no','style_code'
+    ])||'').trim(),
+    itemName:String(firstValue(row,[
+      'item_name','product_name','item','product','style_name','article_name',
+      'garment_name','description'
+    ])||'').trim(),
+    imageUrl:normalizeImageUrl(firstValue(row,[
+      'art_image_url','art_media_url','art_photo_url','thumbnail_url',
+      'image_url','photo_url','art_image','thumbnail'
+    ]))||findImageDeep(row)
+  };
+}
+
+function metaFor(row){
+  const byCanonical=state.lotMetaByCanonical.get(String(row.canonical_lot_id||''));
+  const byLot=state.lotMetaByLotNo.get(upper(row.lot_no));
+  const meta=byCanonical||byLot||{};
+  return {
+    artNo:meta.artNo||'—',
+    itemName:meta.itemName||'Item name unavailable',
+    imageUrl:meta.imageUrl||domImageForLot(row.lot_no)||''
+  };
+}
+
+async function loadLotMetadata(){
+  state.lotMetaByCanonical.clear();
+  state.lotMetaByLotNo.clear();
+
+  const canonicalIds=[...new Set(
+    state.rows.map(x=>String(x.canonical_lot_id||'').trim()).filter(Boolean)
+  )];
+  const lotNos=[...new Set(
+    state.rows.map(x=>String(x.lot_no||'').trim()).filter(Boolean)
+  )];
+
+  const client=state.client||getClient();
+  if(!client)return;
+
+  let metadataRows=[];
+
+  // Primary lookup by canonical lot identity.
+  for(let i=0;i<canonicalIds.length;i+=100){
+    const chunk=canonicalIds.slice(i,i+100);
+    const result=await client
+      .from('rr_upm_lot_registry')
+      .select('*')
+      .in('canonical_lot_id',chunk);
+    if(!result.error)metadataRows.push(...(result.data||[]));
+  }
+
+  // Fallback by visible Lot No where canonical identity is absent.
+  if(!metadataRows.length&&lotNos.length){
+    for(let i=0;i<lotNos.length;i+=100){
+      const chunk=lotNos.slice(i,i+100);
+      const result=await client
+        .from('rr_upm_lot_registry')
+        .select('*')
+        .in('lot_no',chunk);
+      if(!result.error)metadataRows.push(...(result.data||[]));
+    }
+  }
+
+  for(const row of metadataRows){
+    const meta=normalizeLotMeta(row);
+    if(row.canonical_lot_id){
+      state.lotMetaByCanonical.set(String(row.canonical_lot_id),meta);
+    }
+    if(row.lot_no){
+      state.lotMetaByLotNo.set(upper(row.lot_no),meta);
+    }
+  }
+}
+
 function installStyles(){
   if($('rrV7722Styles'))return;
   const style=document.createElement('style');
@@ -72,7 +205,7 @@ function installStyles(){
   }
   #rrActiveRateModalV7722.rr-hidden{display:none!important}
   #rrActiveRateModalV7722 .rr-sheet{
-    width:min(1500px,100%);height:min(96vh,1100px);
+    width:min(1600px,100%);height:min(97vh,1150px);
     background:#10131a;border:1px solid #39414d;
     border-radius:18px 18px 0 0;padding:12px;overflow:auto;color:#fff;
   }
@@ -84,6 +217,7 @@ function installStyles(){
     position:sticky;top:-12px;z-index:3;background:#10131af5;padding:10px 0;
   }
   #rrActiveRateModalV7722 input,
+  #rrActiveRateModalV7722 select,
   #rrActiveRateModalV7722 button{
     background:#242934;color:#fff;border:1px solid #39414d;
     border-radius:9px;padding:10px;font:inherit;
@@ -97,20 +231,56 @@ function installStyles(){
     padding:9px 10px;border-left:3px solid #ffc857;
     background:#281f0d;border-radius:8px;color:#ffe3a0;margin:8px 0;
   }
+  #rrActiveRateModalV7722 .rr-enter-note{
+    padding:8px 10px;border-left:3px solid #56efb2;
+    background:#10261c;border-radius:8px;color:#baf7da;margin:8px 0;
+  }
   #rrActiveRateModalV7722 .rr-msg{min-height:24px;padding:8px 0;color:#56efb2}
   #rrActiveRateModalV7722 .rr-msg.rr-error{color:#ff8d95}
-  #rrActiveRateModalV7722 .rr-wrap{overflow:auto;border:1px solid #303641;border-radius:12px;max-height:58vh}
-  #rrActiveRateModalV7722 table{width:100%;border-collapse:collapse;min-width:1180px}
+  #rrActiveRateModalV7722 .rr-wrap{
+    overflow:auto;border:1px solid #303641;border-radius:12px;max-height:59vh
+  }
+  #rrActiveRateModalV7722 table{width:100%;border-collapse:separate;border-spacing:0;min-width:1450px}
   #rrActiveRateModalV7722 th,
   #rrActiveRateModalV7722 td{
-    padding:10px 8px;border-bottom:1px solid #2a303a;text-align:left;white-space:nowrap;vertical-align:middle
+    padding:10px 8px;border-bottom:1px solid #2a303a;text-align:left;
+    white-space:nowrap;vertical-align:middle;background:#10131a
   }
-  #rrActiveRateModalV7722 th{position:static;background:#20252e;z-index:auto}
+  #rrActiveRateModalV7722 th{
+    position:sticky;top:0;background:#20252e;z-index:4
+  }
+  #rrActiveRateModalV7722 th:first-child,
+  #rrActiveRateModalV7722 td:first-child{
+    position:sticky;left:0;z-index:3;background:#151a23
+  }
+  #rrActiveRateModalV7722 th:first-child{z-index:6;background:#20252e}
   #rrActiveRateModalV7722 .rr-bad{color:#ff8d95;font-weight:900}
   #rrActiveRateModalV7722 .rr-ok{color:#56efb2;font-weight:900}
   #rrActiveRateModalV7722 .rr-rate-editor{display:flex;gap:6px;align-items:center}
   #rrActiveRateModalV7722 .rr-rate-editor input{width:115px}
-  #rrActiveRateModalV7722 .rr-rate-editor button{background:#174936;border-color:#318b65}
+  #rrActiveRateModalV7722 .rr-rate-editor button{
+    background:#174936;border-color:#318b65;min-width:118px
+  }
+  #rrActiveRateModalV7722 .rr-rate-editor input:focus{
+    outline:2px solid #56efb2;box-shadow:0 0 0 4px #56efb233
+  }
+  #rrActiveRateModalV7722 .rr-art-cell{
+    display:flex;gap:9px;align-items:center;min-width:220px
+  }
+  #rrActiveRateModalV7722 .rr-art-img,
+  #rrActiveRateModalV7722 .rr-art-placeholder{
+    width:52px;height:52px;flex:0 0 52px;border-radius:8px;
+    border:1px solid #39414d;background:#080a0f;object-fit:cover
+  }
+  #rrActiveRateModalV7722 .rr-art-placeholder{
+    display:flex;align-items:center;justify-content:center;
+    color:#98a2b3;font-size:9px;text-align:center
+  }
+  #rrActiveRateModalV7722 .rr-art-info{
+    display:grid;gap:3px;white-space:normal;max-width:210px
+  }
+  #rrActiveRateModalV7722 .rr-art-info b{color:#ffc857}
+  #rrActiveRateModalV7722 .rr-art-info span{color:#d9e1ec}
   #rrActiveRateModalV7722 .rr-stats{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}
   #rrActiveRateModalV7722 .rr-stat{
     background:#171b23;border:1px solid #303641;border-radius:10px;padding:8px 10px
@@ -148,9 +318,16 @@ function installModal(){
         Assignment Actual Rate save होगी। Standard Rate या Department Rate fallback नहीं लगेगा।
       </div>
 
+      <div class="rr-enter-note">
+        <b>ONE LOT + ONE DEPARTMENT = ONE RATE:</b>
+        किसी एक Colour/Worker की पहली rate save करते ही उसी Lot और Department की
+        सभी Colours, सभी bound Sizes और सभी Workers की assignments में वही rate auto-fill होगी।
+        फिर cursor अगली Lot–Department missing-rate group पर जाएगा।
+      </div>
+
       <div class="rr-tools">
         <input id="rrActiveRateSearchV7722" class="rr-search"
-          placeholder="Search Lot / Department / Worker / Colour">
+          placeholder="Search Lot / Art / Item / Department / Worker / Colour">
         <select id="rrAssignmentScopeV7724" title="Assignment status filter">
           <option value="ALL">ALL RELEVANT STATUS</option>
           <option value="ACTIVE">ACTIVE ONLY</option>
@@ -170,8 +347,8 @@ function installModal(){
         <table>
           <thead>
             <tr>
-              <th>Lot</th><th>Department</th><th>Worker</th><th>Worker Code</th>
-              <th>Colour</th><th>Status</th><th>Assigned PCS</th>
+              <th>Lot</th><th>Art Image / Item</th><th>Department</th><th>Worker</th>
+              <th>Worker Code</th><th>Colour</th><th>Status</th><th>Assigned PCS</th>
               <th>Current Actual Rate</th><th>Rate Filled By</th><th>Fill / Edit</th>
             </tr>
           </thead>
@@ -185,10 +362,10 @@ function installModal(){
   modal.addEventListener('click',e=>{
     if(e.target===modal)modal.classList.add('rr-hidden');
   });
-  $('rrLoadActiveRateV7722').onclick=loadActiveAssignments;
-  $('rrActiveRateSearchV7722').addEventListener('input',renderActiveAssignments);
-  $('rrMissingOnlyV7722').addEventListener('change',renderActiveAssignments);
-  $('rrAssignmentScopeV7724').addEventListener('change',renderActiveAssignments);
+  $('rrLoadActiveRateV7722').onclick=()=>loadAssignments();
+  $('rrActiveRateSearchV7722').addEventListener('input',()=>renderAssignments());
+  $('rrMissingOnlyV7722').addEventListener('change',()=>renderAssignments());
+  $('rrAssignmentScopeV7724').addEventListener('change',()=>renderAssignments());
 }
 
 function installButtons(){
@@ -199,7 +376,7 @@ function installButtons(){
     submitted.textContent='SUBMITTED WORK';
     submitted.title='Department / Worker wise submitted PCS and Assignment Actual Rate';
     submitted.dataset.version=VERSION;
-    submitted.onclick=()=>{location.href='real-upm-submitted-work-v772.html?v=7724'};
+    submitted.onclick=()=>{location.href='real-upm-submitted-work-v772.html?v=7726'};
     const bar=document.querySelector('.modulebar')||document.querySelector('.toolbar')||document.querySelector('.top');
     if(bar)bar.appendChild(submitted);
     else{
@@ -215,7 +392,7 @@ function installButtons(){
     active.textContent='ASSIGNMENT RATE';
     active.title='Active, submitted और completed assignments का exact Actual Rate fill/edit करें';
     active.dataset.version=VERSION;
-    active.onclick=openActiveRate;
+    active.onclick=openAssignmentRate;
     const bar=document.querySelector('.modulebar')||document.querySelector('.toolbar')||document.querySelector('.top');
     if(bar)bar.appendChild(active);
     else{
@@ -232,34 +409,42 @@ function say(text,type=''){
   el.className=`rr-msg ${type==='error'?'rr-error':''}`.trim();
 }
 
-function openActiveRate(){
+function openAssignmentRate(){
   const modal=$('rrActiveRateModalV7722');
   modal.classList.remove('rr-hidden');
   const lot=currentLotNo();
   if(lot)$('rrActiveRateSearchV7722').value=lot;
-  loadActiveAssignments();
+  loadAssignments({focusFirst:true});
 }
 
-async function loadActiveAssignments(){
+async function loadAssignments(options={}){
   if(state.loading)return;
   state.loading=true;
   const button=$('rrLoadActiveRateV7722');
+
   try{
     button.disabled=true;
-    say('All relevant assignments load ho rahe hain…');
+    say('Assignments aur Art/Item details load ho rahe hain…');
     state.client=getClient();
     if(!state.client)throw new Error('Supabase client unavailable. Check config.js.');
 
-    const r=await state.client
+    const result=await state.client
       .from('rr_upm_work_assignments_v8')
-      .select('id,lot_no,department_code,worker_id,worker_code,worker_name_snapshot,colour_code,colour_name,assigned_qty,status,actual_rate,rate_filled_by_name,rate_filled_at,assigned_at')
+      .select('id,canonical_lot_id,lot_no,department_code,worker_id,worker_code,worker_name_snapshot,colour_code,colour_name,assigned_qty,status,actual_rate,rate_filled_by_name,rate_filled_at,assigned_at')
       .order('assigned_at',{ascending:false})
       .limit(5000);
 
-    if(r.error)throw r.error;
-    state.rows=r.data||[];
-    renderActiveAssignments();
-    say(`${state.rows.length} assignment rows loaded. Missing-rate completed/submitted work bhi included hai.`);
+    if(result.error)throw result.error;
+    state.rows=result.data||[];
+
+    try{
+      await loadLotMetadata();
+    }catch(metaError){
+      console.warn('Lot metadata load skipped:',metaError);
+    }
+
+    renderAssignments(options);
+    say(`${state.rows.length} assignment rows loaded. Art/Item details available hone par saath dikhengi.`);
   }catch(e){
     say(errorText(e),'error');
   }finally{
@@ -275,21 +460,44 @@ function filteredRows(){
   const activeStatuses=new Set(['ASSIGNED','IN_PROGRESS']);
   const completedStatuses=new Set(['COMPLETED','SUBMITTED','DONE','CLOSED']);
   const excludedStatuses=new Set(['CANCELLED','CANCELED','VOID','REJECTED']);
-  return state.rows.filter(x=>{
-    const status=upper(x.status);
+
+  return state.rows.filter(row=>{
+    const status=upper(row.status);
     if(excludedStatuses.has(status))return false;
     if(scope==='ACTIVE'&&!activeStatuses.has(status))return false;
     if(scope==='COMPLETED'&&!completedStatuses.has(status))return false;
-    if(missingOnly&&Number(x.actual_rate||0)>0)return false;
+    if(missingOnly&&Number(row.actual_rate||0)>0)return false;
+
     if(!q)return true;
+    const meta=metaFor(row);
     return JSON.stringify([
-      x.lot_no,x.department_code,x.worker_name_snapshot,x.worker_code,
-      x.colour_code,x.colour_name,x.status
+      row.lot_no,meta.artNo,meta.itemName,row.department_code,
+      row.worker_name_snapshot,row.worker_code,row.colour_code,
+      row.colour_name,row.status
     ]).toLowerCase().includes(q);
   });
 }
 
-function renderActiveAssignments(){
+function artCell(row){
+  const meta=metaFor(row);
+  const image=meta.imageUrl
+    ?`<a href="${safe(meta.imageUrl)}" target="_blank" rel="noopener">
+        <img class="rr-art-img" src="${safe(meta.imageUrl)}"
+          alt="${safe(meta.artNo)}"
+          onerror="this.closest('a').outerHTML='<div class=&quot;rr-art-placeholder&quot;>NO IMAGE</div>'">
+      </a>`
+    :'<div class="rr-art-placeholder">NO IMAGE</div>';
+
+  return `<div class="rr-art-cell">
+    ${image}
+    <div class="rr-art-info">
+      <b>ART ${safe(meta.artNo)}</b>
+      <span>${safe(meta.itemName)}</span>
+    </div>
+  </div>`;
+}
+
+function renderAssignments(options={}){
   const rows=filteredRows();
   state.filtered=rows;
   const missing=rows.filter(x=>Number(x.actual_rate||0)<=0).length;
@@ -301,75 +509,131 @@ function renderActiveAssignments(){
     ['Assigned PCS',qty(totalQty)],
     ['Departments',new Set(rows.map(x=>upper(x.department_code))).size],
     ['Workers',new Set(rows.map(x=>String(x.worker_id))).size],
+    ['Items',new Set(rows.map(x=>metaFor(x).itemName).filter(x=>x&&x!=='Item name unavailable')).size],
     ['Completed',rows.filter(x=>['COMPLETED','SUBMITTED','DONE','CLOSED'].includes(upper(x.status))).length]
-  ].map(([a,b])=>`<div class="rr-stat"><small>${safe(a)}</small><b>${safe(b)}</b></div>`).join('');
+  ].map(([label,value])=>
+    `<div class="rr-stat"><small>${safe(label)}</small><b>${safe(value)}</b></div>`
+  ).join('');
 
-  $('rrActiveRateBodyV7722').innerHTML=rows.length?rows.map(x=>{
-    const current=Number(x.actual_rate||0);
-    return `<tr>
-      <td><b>${safe(x.lot_no||'—')}</b></td>
-      <td>${safe(x.department_code||'—')}</td>
-      <td><b>${safe(x.worker_name_snapshot||'—')}</b></td>
-      <td>${safe(x.worker_code||'—')}</td>
-      <td>${safe(x.colour_name||x.colour_code||'—')} · ${safe(x.colour_code||'—')}</td>
-      <td>${safe(x.status||'—')}</td>
-      <td>${qty(x.assigned_qty)}</td>
+  $('rrActiveRateBodyV7722').innerHTML=rows.length?rows.map(row=>{
+    const current=Number(row.actual_rate||0);
+    return `<tr data-rr-row="${safe(row.id)}">
+      <td><b>${safe(row.lot_no||'—')}</b></td>
+      <td>${artCell(row)}</td>
+      <td>${safe(row.department_code||'—')}</td>
+      <td><b>${safe(row.worker_name_snapshot||'—')}</b></td>
+      <td>${safe(row.worker_code||'—')}</td>
+      <td>${safe(row.colour_name||row.colour_code||'—')} · ${safe(row.colour_code||'—')}</td>
+      <td>${safe(row.status||'—')}</td>
+      <td>${qty(row.assigned_qty)}</td>
       <td class="${current>0?'rr-ok':'rr-bad'}">${current>0?'₹'+money(current):'MISSING'}</td>
-      <td>${safe(x.rate_filled_by_name||'—')}</td>
+      <td>${safe(row.rate_filled_by_name||'—')}</td>
       <td>
         <div class="rr-rate-editor">
-          <input data-rr-rate="${safe(x.id)}" type="number"
+          <input data-rr-rate="${safe(row.id)}" type="number"
             min="0.0001" step="0.0001"
             value="${current>0?safe(current):''}"
-            placeholder="Actual Rate">
-          <button data-rr-save="${safe(x.id)}" type="button">${current>0?'UPDATE':'FILL RATE'}</button>
+            placeholder="Actual Rate"
+            inputmode="decimal">
+          <button data-rr-save="${safe(row.id)}" type="button">SAVE + NEXT</button>
         </div>
       </td>
     </tr>`;
-  }).join(''):'<tr><td colspan="10" style="padding:24px;text-align:center;color:#98a2b3">No matching active assignments.</td></tr>';
+  }).join(''):'<tr><td colspan="11" style="padding:24px;text-align:center;color:#98a2b3">No matching assignments.</td></tr>';
 
-  $('rrActiveRateBodyV7722').querySelectorAll('[data-rr-save]').forEach(button=>{
-    button.onclick=()=>saveActiveRate(button);
+  const body=$('rrActiveRateBodyV7722');
+  body.querySelectorAll('[data-rr-save]').forEach(button=>{
+    button.onclick=()=>saveRateAndNext(button);
   });
+  body.querySelectorAll('[data-rr-rate]').forEach(input=>{
+    input.addEventListener('keydown',event=>{
+      if(event.key!=='Enter')return;
+      event.preventDefault();
+      const saveButton=body.querySelector(`[data-rr-save="${CSS.escape(input.dataset.rrRate)}"]`);
+      if(saveButton&&!saveButton.disabled)saveRateAndNext(saveButton);
+    });
+  });
+
+  let focusIndex=null;
+  if(Number.isInteger(options.focusIndex))focusIndex=options.focusIndex;
+  else if(options.focusFirst)focusIndex=0;
+
+  if(focusIndex!==null){
+    requestAnimationFrame(()=>focusRateAt(focusIndex));
+  }
 }
 
-async function saveActiveRate(button){
+function focusRateAt(index){
+  const inputs=[...$('rrActiveRateBodyV7722').querySelectorAll('[data-rr-rate]')];
+  if(!inputs.length)return;
+
+  const safeIndex=Math.max(0,Math.min(index,inputs.length-1));
+  const input=inputs[safeIndex];
+  input.scrollIntoView({block:'center',inline:'nearest',behavior:'smooth'});
+  input.focus();
+  input.select();
+}
+
+async function saveRateAndNext(button){
   const id=button.dataset.rrSave;
-  const input=$('rrActiveRateBodyV7722').querySelector(`[data-rr-rate="${CSS.escape(id)}"]`);
+  const body=$('rrActiveRateBodyV7722');
+  const inputs=[...body.querySelectorAll('[data-rr-rate]')];
+  const input=body.querySelector(`[data-rr-rate="${CSS.escape(id)}"]`);
+  const currentIndex=Math.max(0,inputs.indexOf(input));
   const row=state.rows.find(x=>String(x.id)===String(id));
+  const oldRate=Number(row?.actual_rate||0);
   const rate=Number(input?.value);
 
   if(!Number.isFinite(rate)||rate<=0){
     say('Actual Rate 0 se zyada hona chahiye.','error');
     input?.focus();
+    input?.select();
     return;
   }
 
-  const defaultReason=Number(row?.actual_rate||0)>0
-    ?'Authorized active assignment Actual Rate correction'
-    :'Missing active assignment Actual Rate filled before Submit';
+  let reason='Missing Assignment Actual Rate filled from UPM Assignment Rate list';
+  if(oldRate>0&&Math.abs(oldRate-rate)>0.0000001){
+    reason=prompt(
+      `Rate correction reason · ${row?.lot_no||''} · ${row?.department_code||''} · ${row?.worker_name_snapshot||''} · ${row?.colour_code||''}`,
+      'Authorized Assignment Actual Rate correction'
+    )||'';
+    if(!reason.trim())return;
+  }
 
-  const reason=prompt(
-    `Reason · ${row?.lot_no||''} · ${row?.department_code||''} · ${row?.worker_name_snapshot||''} · ${row?.colour_code||''}`,
-    defaultReason
-  )||'';
-
-  if(!reason.trim())return;
+  // Missing-only list removes the saved row. The same visual index becomes the next row.
+  const nextFocusIndex=$('rrMissingOnlyV7722').checked&&oldRate<=0
+    ?currentIndex
+    :currentIndex+1;
 
   try{
     button.disabled=true;
+    if(input)input.disabled=true;
     say('Assignment Actual Rate save ho rahi hai…');
-    await rpc('rr_upm_set_assignment_actual_rate_v772',{
+
+    const saved=await rpc('rr_upm_set_assignment_actual_rate_v772',{
       p_assignment_id:id,
       p_actual_rate:rate,
       p_reason:reason.trim()
     });
-    await loadActiveAssignments();
+
+    await loadAssignments({focusIndex:nextFocusIndex});
+
+    const groupAssignments=Number(saved?.group_assignments||1);
+    const updatedAssignments=Number(saved?.updated_assignments||1);
+    const autoFilled=Number(saved?.auto_filled_assignments||0);
+
     say(
-      `Saved: ${row?.lot_no||''} · ${row?.department_code||''} · ${row?.worker_name_snapshot||''} · ${row?.colour_code||''} · ₹${money(rate)}`
+      `Lot ${saved?.lot_no||row?.lot_no||''} · Department ${saved?.department_code||row?.department_code||''} · Group Rate ₹${money(saved?.group_rate||rate)} saved. `+
+      `${updatedAssignments} assignment(s) updated; ${autoFilled} missing rate(s) auto-filled across all Colours, bound Sizes and Workers. `+
+      `Group assignments: ${groupAssignments}. Next Lot–Department rate ready.`
     );
   }catch(e){
     say(errorText(e),'error');
+    if(input){
+      input.disabled=false;
+      input.focus();
+      input.select();
+    }
   }finally{
     button.disabled=false;
   }

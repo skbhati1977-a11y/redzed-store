@@ -1,6 +1,6 @@
 (()=>{
 'use strict';
-window.REDZED_PCS_RATE_PAYROLL_VERSION='779.2.9';
+window.REDZED_PCS_RATE_PAYROLL_VERSION='779.3.0';
 
 const state={client:null,auth:null,workers:[],run:null,lines:[],details:[],attendance:[],holidays:[],adjustments:[],mapping:[],attendanceWorkerId:'',adjustmentWorkerId:''};
 const $=id=>document.getElementById(id);
@@ -182,10 +182,23 @@ async function saveAssignmentRate(button){
   if(!reason.trim())return;
   try{
     button.disabled=true;say('detailMessage','Assignment Actual Rate save ho rahi hai…','info');
-    await rpc('rr_upm_set_assignment_actual_rate_v772',{p_assignment_id:assignmentId,p_actual_rate:rate,p_reason:reason.trim()});
-    const runId=await rpc('rr_piece_payroll_calculate_v779',{p_period_month:monthStart($('detailMonth').value),p_data_mode:$('detailMode').value});
+    const saved=await rpc('rr_upm_set_assignment_actual_rate_v772',{
+      p_assignment_id:assignmentId,
+      p_actual_rate:rate,
+      p_reason:reason.trim()
+    });
+    const runId=await rpc('rr_piece_payroll_calculate_v779',{
+      p_period_month:monthStart($('detailMonth').value),
+      p_data_mode:$('detailMode').value
+    });
     await Promise.all([loadDetails(),loadPayroll()]);
-    say('detailMessage',`Actual Rate ₹${money(rate)} saved. Payroll automatically recalculated · Run ${runId}`,'success');
+    say(
+      'detailMessage',
+      `Lot ${saved?.lot_no||row?.lot_no||''} · Department ${saved?.department_code||row?.department_code||''} group rate ₹${money(saved?.group_rate||rate)} saved. `+
+      `${Number(saved?.updated_assignments||1)} assignment(s) updated; ${Number(saved?.auto_filled_assignments||0)} missing rate(s) auto-filled across all Colours, bound Sizes and Workers. `+
+      `Payroll automatically recalculated · Run ${runId}`,
+      'success'
+    );
   }catch(e){say('detailMessage',err(e),'error')}finally{button.disabled=false}
 }
 function renderDetails(){
