@@ -2,7 +2,11 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="REDZED">
+<meta name="format-detection" content="telephone=no">
 <meta name="theme-color" content="#0b0b0e">
 <title>REDZED REAL — Piece Rate Payroll V779</title>
 <style>
@@ -18,14 +22,38 @@ label{display:block}label>span{display:block;font-size:12px;color:var(--muted);m
 .table-wrap{overflow:auto;border:1px solid var(--line);border-radius:12px}table{width:100%;border-collapse:collapse;min-width:1250px}th,td{padding:9px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}th{position:sticky;top:0;background:#19191f;z-index:1;font-size:12px;color:#d6d6dc}tr:hover td{background:#121217}.money{text-align:right;font-variant-numeric:tabular-nums}.muted{color:var(--muted)}
 .combo{position:relative}.combo-list{position:absolute;z-index:20;left:0;right:0;top:100%;max-height:270px;overflow:auto;background:#17171d;border:1px solid var(--line);border-radius:10px;box-shadow:0 16px 40px #0009;margin-top:4px}.combo-option{padding:10px;border-bottom:1px solid #27272e;cursor:pointer}.combo-option:hover,.combo-option.active{background:#25252d}.combo-option small{display:block;color:var(--muted);margin-top:2px}
 .checks{display:flex;gap:16px;flex-wrap:wrap}.checks label{display:flex;align-items:center;gap:7px}.checks input{width:auto}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.note{padding:10px;border-left:3px solid var(--blue);background:#10151e;color:#c8d8ee;border-radius:7px}.note.violet{border-left-color:var(--violet);background:#181223}.note.warn{border-left-color:var(--amber);background:#221b0e;color:#f0d69a}.logic-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.logic-card{padding:12px;border:1px solid var(--line);border-radius:12px;background:var(--panel2)}.logic-card b{display:block;margin-bottom:5px}.logic-card small{color:var(--muted);line-height:1.4}.status-OK{color:#7fe0aa}.status-MISSING_RATE,.status-MISSING_ACTUAL_RATE,.status-MISSING_SIZE_CAP{color:#ff8d95}.status-PRESENT{color:#7fe0aa}.status-ABSENT,.status-INCOMPLETE{color:#ff8d95}.status-HALF_DAY{color:#ffd27c}.status-WEEKLY_OFF,.status-HOLIDAY,.status-LEAVE_PAID{color:#8bbcff}
-.rate-editor{display:flex;gap:6px;align-items:center;min-width:210px}.rate-editor input{width:105px;padding:7px}.rate-editor .rate-save{padding:7px 9px;font-size:11px;white-space:nowrap}.rate-editor input:focus{border-color:var(--green);outline:none}
+.rate-editor{display:flex;gap:6px;align-items:center;min-width:240px}.rate-editor input{width:110px;padding:7px}.rate-editor .rate-save{padding:7px 9px;font-size:11px;white-space:nowrap}.rate-editor input:focus{border-color:var(--green);outline:none}
+.collab-summary-row td{vertical-align:middle}
+.collab-lot{font-size:15px;color:#fff}
+.collab-worker small{display:block;color:var(--muted);margin-top:3px}
+.collab-colour-size{display:grid;gap:4px;min-width:255px;max-width:410px;white-space:normal}
+.collab-colour-size .colour-line{display:flex;gap:8px;align-items:flex-start;line-height:1.35}
+.collab-colour-size .colour-code{color:var(--amber);font-weight:850;min-width:44px}
+.collab-colour-size .sizes{color:#d7d7df}
+.collab-more{color:var(--muted);font-size:11px}
+.group-rate-ok{color:#7fe0aa;font-weight:850}
+.group-rate-bad{color:#ff8d95;font-weight:850}
+.group-rate-conflict{color:#ffd27c;font-weight:850}
+.group-subnote{display:block;margin-top:3px;font-size:11px;color:var(--muted);white-space:normal}
+.mapping-stack{display:grid;gap:3px;white-space:normal;min-width:160px}
+.mapping-stack .ok{color:#7fe0aa}
+.mapping-stack .bad{color:#ff8d95}
+.mapping-stack .warn{color:#ffd27c}
+.detail-toggle{padding:7px 10px;font-size:11px;white-space:nowrap}
+.collab-eval-row>td{padding:0!important;background:#0c0c10!important}
+.collab-eval-box{padding:12px;overflow:auto;border-top:1px solid var(--line)}
+.collab-eval-title{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:9px}
+.collab-eval-title b{color:var(--amber)}
+.collab-eval-box table{min-width:1450px;background:#0f0f14}
+.collab-eval-box th{position:sticky;top:0;background:#202027}
+.collab-eval-box td,.collab-eval-box th{padding:7px;font-size:12px}
 @media(max-width:1050px){.grid,.grid.two{grid-template-columns:1fr 1fr}.stats{grid-template-columns:repeat(3,1fr)}.logic-grid{grid-template-columns:1fr 1fr}}@media(max-width:600px){.grid,.grid.two,.logic-grid{grid-template-columns:1fr}.stats{grid-template-columns:repeat(2,1fr)}.head{align-items:flex-start;flex-direction:column}.app{padding:10px}}
 </style>
 </head>
 <body>
 <main class="app">
 <header class="head">
-  <div class="brand"><h1>REDZED REAL · Piece Rate Salary</h1><p>V779.2.9 · Submitted/Completed Rate Fix · Freeze Tables · Actual Rate Only</p></div>
+  <div class="brand"><h1>REDZED REAL · Piece Rate Salary</h1><p>V779.3.1 · Collaborative Lot View · Group Rate · Actual Rate Only</p></div>
   <span id="accessBadge" class="badge">Checking access…</span>
 </header>
 <nav class="tabs" id="tabs">
@@ -66,12 +94,12 @@ label{display:block}label>span{display:block;font-size:12px;color:var(--muted);m
       <label class="checks" style="min-width:170px"><span>&nbsp;</span><label><input id="detailMissingOnly" type="checkbox"> Missing Rate only</label></label>
       <button id="loadDetails" class="btn">Load Details</button>
     </div>
-    <p class="note warn">Missing Rate Rows size-wise repeat ho sakti hain. Missing Assignments exact assignment count hai; ek assignment rate save karne par uski sab size rows update hongi.</p>
+    <p class="note warn"><b>Collaborative View:</b> एक Worker + Lot + Department की सभी Colours और सभी bound Sizes एक ही summary row में जुड़ेंगे। Salary calculation raw Colour/Size rows से ही होगी। अलग evaluation table देखने के लिए <b>VIEW EVALUATION</b> दबाएँ। Group rate save करने पर उसी Lot+Department की सभी Colours, Sizes और Workers update होंगे।</p>
     <p id="detailMessage" class="message"></p>
   </div>
   <div id="detailStats" class="stats"></div>
   <div class="panel"><div class="table-wrap"><table><thead><tr>
-    <th>Worker</th><th>Lot</th><th>Dept</th><th>Next</th><th>Colour</th><th>Size</th><th>Assigned Cap</th><th>Before PCS</th><th>To End PCS</th><th>Payable PCS</th><th>Actual Rate</th><th>Actual Rate Source</th><th>Fill / Edit Assignment Rate</th><th>Payable Rate</th><th>Base ₹</th><th>Enhancement ₹</th><th>Mapping</th><th>Last Submit</th>
+    <th>Lot</th><th>Worker</th><th>Dept</th><th>Next</th><th>All Colours / All Sizes</th><th>Assignments</th><th>Assigned Cap</th><th>Before PCS</th><th>To End PCS</th><th>Payable PCS</th><th>Group Actual Rate</th><th>Rate Source</th><th>Fill / Edit Group Rate</th><th>Payable Rate</th><th>Base ₹</th><th>Enhancement ₹</th><th>Mapping</th><th>Last Submit</th><th>Evaluation</th>
   </tr></thead><tbody id="detailBody"></tbody></table></div></div>
 </section>
 
@@ -136,9 +164,10 @@ label{display:block}label>span{display:block;font-size:12px;color:var(--muted);m
 </section>
 </main>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="config.js?v=77929"></script>
-<script src="real-common.js?v=77929"></script>
-<script src="real-table-freeze-v773.js?v=7731"></script>
-<script src="real-pcs-rate-payroll-v779.js?v=77929"></script>
+<script src="config.js?v=77931"></script>
+<script src="real-common.js?v=77931"></script>
+<script src="real-mobile-compat-v774.js?v=7741"></script>
+<script src="real-table-freeze-v773.js?v=7733"></script>
+<script src="real-pcs-rate-payroll-v779.js?v=77931"></script>
 </body>
 </html>

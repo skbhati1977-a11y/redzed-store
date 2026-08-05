@@ -1,6 +1,6 @@
 (()=>{
 'use strict';
-window.REDZED_PCS_RATE_PAYROLL_VERSION='779.2.9';
+window.REDZED_PCS_RATE_PAYROLL_VERSION='779.3.1';
 
 const state={client:null,auth:null,workers:[],run:null,lines:[],details:[],attendance:[],holidays:[],adjustments:[],mapping:[],attendanceWorkerId:'',adjustmentWorkerId:''};
 const $=id=>document.getElementById(id);
@@ -164,54 +164,1024 @@ async function approvePayroll(){try{if(!state.run)throw new Error('Calculate pay
 async function reopenPayroll(){try{if(!state.run)throw new Error('Run missing.');const reason=prompt('OWNER reopen reason','Rate / UPM / adjustment correction required')||'';if(!reason)return;await rpc('rr_piece_payroll_reopen_v779',{p_piece_run_id:state.run.id,p_reason:reason});await loadPayroll();say('payrollMessage','Piece payroll reopened. Correct data and recalculate.','success')}catch(e){say('payrollMessage',err(e),'error')}}
 async function markPaid(){try{if(!state.run)throw new Error('Run missing.');const ref=prompt('Payment reference','Bank transfer / Cash voucher')||'';if(!ref)return;await rpc('rr_piece_payroll_mark_paid_v779',{p_piece_run_id:state.run.id,p_payment_reference:ref});await loadPayroll();say('payrollMessage','Piece payroll marked PAID.','success')}catch(e){say('payrollMessage',err(e),'error')}}
 
-function currentAccess(){return {role:upper(state.auth?.role_code||state.auth?.profile?.role_code||''),department:upper(state.auth?.department_code||state.auth?.profile?.department_code||'')}}
-function canShowRateEditor(row){const a=currentAccess();return ['OWNER','ADMIN','MANAGER'].includes(a.role)||(a.role==='DEPARTMENT_HEAD'&&a.department===upper(row.department_code))}
-function rateEditor(row){
-  if(!row.assignment_id)return '<span class="muted">Assignment missing</span>';
-  if(!canShowRateEditor(row))return '<span class="muted">View only</span>';
-  const value=Number(row.base_rate||0)>0?Number(row.base_rate).toFixed(4):'';
-  const label=Number(row.base_rate||0)>0?'UPDATE':'FILL RATE';
-  return `<div class="rate-editor"><input data-rate-input type="number" min="0.0001" step="0.0001" value="${safe(value)}" placeholder="Actual Rate"><button class="btn rate-save" data-save-assignment-rate="${safe(row.assignment_id)}" type="button">${label}</button></div>`;
+function currentAccess(){
+  return {
+    role:upper(
+      state.auth?.role_code||
+      state.auth?.profile?.role_code||
+      ''
+    ),
+    department:upper(
+      state.auth?.department_code||
+      state.auth?.profile?.department_code||
+      ''
+    )
+  };
 }
-async function saveAssignmentRate(button){
-  const tr=button.closest('tr');const input=tr?.querySelector('[data-rate-input]');const assignmentId=button.dataset.saveAssignmentRate;const rate=Number(input?.value);
-  if(!assignmentId)throw new Error('Assignment ID missing.');
-  if(!Number.isFinite(rate)||rate<=0)throw new Error('Actual Rate 0 se zyada hona chahiye.');
-  const row=state.details.find(x=>String(x.assignment_id)===String(assignmentId));
-  const reason=prompt(`Actual Rate save reason · ${row?.lot_no||''} · ${row?.department_code||''} · ${row?.worker_name||''}`,Number(row?.base_rate||0)>0?'Authorized Assignment Actual Rate correction':'Missing Assignment Actual Rate filled from Lot / PCS Details')||'';
-  if(!reason.trim())return;
-  try{
-    button.disabled=true;say('detailMessage','Assignment Actual Rate save ho rahi hai…','info');
-    await rpc('rr_upm_set_assignment_actual_rate_v772',{p_assignment_id:assignmentId,p_actual_rate:rate,p_reason:reason.trim()});
-    const runId=await rpc('rr_piece_payroll_calculate_v779',{p_period_month:monthStart($('detailMonth').value),p_data_mode:$('detailMode').value});
-    await Promise.all([loadDetails(),loadPayroll()]);
-    say('detailMessage',`Actual Rate ₹${money(rate)} saved. Payroll automatically recalculated · Run ${runId}`,'success');
-  }catch(e){say('detailMessage',err(e),'error')}finally{button.disabled=false}
+
+function canShowRateEditor(row){
+  const access=currentAccess();
+  return ['OWNER','ADMIN','MANAGER'].includes(access.role)||
+    (
+      access.role==='DEPARTMENT_HEAD'&&
+      access.department===upper(row.department_code)
+    );
 }
-function renderDetails(){
-  const qv=$('detailSearch').value.trim().toLowerCase();
-  const missingOnly=Boolean($('detailMissingOnly')?.checked);
-  const isMissing=x=>x.mapping_status==='MISSING_ACTUAL_RATE'||x.mapping_status==='MISSING_RATE';
-  const rows=state.details.filter(x=>{
-    if(missingOnly&&!isMissing(x))return false;
-    return !qv||JSON.stringify([x.worker_name,x.worker_code,x.lot_no,x.department_code,x.to_department_code,x.colour_code,x.colour_name,x.size_code]).toLowerCase().includes(qv);
+
+function isMissingDetail(row){
+  return row.mapping_status==='MISSING_ACTUAL_RATE'||
+    row.mapping_status==='MISSING_RATE';
+}
+
+function detailGroupKey(row){
+  return [
+    String(
+      row.worker_id||
+      row.worker_code||
+      row.worker_name||
+      ''
+    ),
+    upper(row.lot_no),
+    upper(row.department_code)
+  ].join('||');
+}
+
+function buildDetailGroups(){
+  const groups=new Map();
+
+  for(const row of state.details){
+    const key=detailGroupKey(row);
+
+    if(!groups.has(key)){
+      groups.set(key,{
+        key,
+        worker_id:row.worker_id,
+        worker_name:row.worker_name,
+        worker_code:row.worker_code,
+        lot_no:row.lot_no,
+        department_code:row.department_code,
+        rows:[],
+        assignments:new Map(),
+        colours:new Map(),
+        nextDepartments:new Set(),
+        positiveRates:new Set(),
+        payableRates:new Set(),
+        rateSources:new Set(),
+        mappingStatuses:new Map(),
+        assignedCap:0,
+        beforeQty:0,
+        toEndQty:0,
+        payableQty:0,
+        baseAmount:0,
+        enhancementAmount:0,
+        lastSourceAt:null
+      });
+    }
+
+    const group=groups.get(key);
+    group.rows.push(row);
+
+    if(row.assignment_id){
+      group.assignments.set(
+        String(row.assignment_id),
+        row
+      );
+    }
+
+    const colour=String(
+      row.colour_code||
+      row.colour_name||
+      '—'
+    );
+    if(!group.colours.has(colour)){
+      group.colours.set(colour,new Set());
+    }
+    group.colours.get(colour).add(
+      String(row.size_code||'—')
+    );
+
+    if(row.to_department_code){
+      group.nextDepartments.add(
+        String(row.to_department_code)
+      );
+    }
+
+    const rate=Number(row.base_rate||0);
+    if(rate>0){
+      group.positiveRates.add(
+        rate.toFixed(4)
+      );
+    }
+
+    const payableRate=Number(
+      row.enhanced_rate||0
+    );
+    if(payableRate>0){
+      group.payableRates.add(
+        payableRate.toFixed(4)
+      );
+    }
+
+    if(row.rate_source){
+      group.rateSources.add(
+        String(row.rate_source)
+      );
+    }
+
+    const mapping=String(
+      row.mapping_status||
+      '—'
+    );
+    group.mappingStatuses.set(
+      mapping,
+      Number(group.mappingStatuses.get(mapping)||0)+1
+    );
+
+    group.assignedCap+=Number(
+      row.assigned_cap_qty||0
+    );
+    group.beforeQty+=Number(
+      row.submitted_before_qty||0
+    );
+    group.toEndQty+=Number(
+      row.submitted_to_end_qty||0
+    );
+    group.payableQty+=Number(
+      row.payable_qty||0
+    );
+    group.baseAmount+=Number(
+      row.base_amount||0
+    );
+    group.enhancementAmount+=Number(
+      row.enhancement_amount||0
+    );
+
+    if(
+      row.last_source_at&&
+      (
+        !group.lastSourceAt||
+        new Date(row.last_source_at)>
+          new Date(group.lastSourceAt)
+      )
+    ){
+      group.lastSourceAt=row.last_source_at;
+    }
+  }
+
+  return [...groups.values()].map(group=>{
+    group.rateValues=[
+      ...group.positiveRates
+    ].map(Number).sort((a,b)=>a-b);
+
+    group.payableRateValues=[
+      ...group.payableRates
+    ].map(Number).sort((a,b)=>a-b);
+
+    group.hasRateConflict=
+      group.rateValues.length>1;
+
+    group.groupRate=
+      group.rateValues.length===1
+        ?group.rateValues[0]
+        :0;
+
+    group.groupPayableRate=
+      group.payableQty>0
+        ?(
+          (
+            group.baseAmount+
+            group.enhancementAmount
+          )/group.payableQty
+        )
+        :(
+          group.payableRateValues.length===1
+            ?group.payableRateValues[0]
+            :0
+        );
+
+    group.missingRows=
+      group.rows.filter(
+        isMissingDetail
+      ).length;
+
+    group.missingAssignments=
+      new Set(
+        group.rows
+          .filter(isMissingDetail)
+          .map(row=>String(
+            row.assignment_id||''
+          ))
+          .filter(Boolean)
+      ).size;
+
+    group.missingCapRows=
+      group.rows.filter(
+        row=>
+          row.mapping_status===
+          'MISSING_SIZE_CAP'
+      ).length;
+
+    group.representativeRow=
+      group.rows.find(
+        isMissingDetail
+      )||
+      group.rows[0];
+
+    return group;
   });
-  const missingRows=rows.filter(isMissing);
-  const missingAssignments=new Set(missingRows.map(x=>String(x.assignment_id||'')).filter(Boolean)).size;
-  $('detailStats').innerHTML=[
-    ['Rows',rows.length],
-    ['Workers',new Set(rows.map(x=>x.worker_id)).size],
-    ['Payable PCS',qty(rows.reduce((a,x)=>a+Number(x.payable_qty||0),0))],
-    ['Base ₹',money(rows.reduce((a,x)=>a+Number(x.base_amount||0),0))],
-    ['Enhancement ₹',money(rows.reduce((a,x)=>a+Number(x.enhancement_amount||0),0))],
-    ['Missing Rate Rows',missingRows.length],
-    ['Missing Assignments',missingAssignments],
-    ['Missing Cap',rows.filter(x=>x.mapping_status==='MISSING_SIZE_CAP').length]
-  ].map(([a,b],i)=>`<div class="stat ${i>=5&&Number(b)>0?'alert':''}"><small>${a}</small><strong>${safe(b)}</strong></div>`).join('');
-  $('detailBody').innerHTML=rows.length?rows.map(x=>`<tr><td>${safe(x.worker_name||x.worker_id)}</td><td><b>${safe(x.lot_no||'—')}</b></td><td>${safe(x.department_code||'—')}</td><td>${safe(x.to_department_code||'—')}</td><td>${safe(x.colour_name||x.colour_code||'—')}</td><td>${safe(x.size_code||'—')}</td><td>${qty(x.assigned_cap_qty)}</td><td>${qty(x.submitted_before_qty)}</td><td>${qty(x.submitted_to_end_qty)}</td><td><b>${qty(x.payable_qty)}</b></td><td class="money">${money(x.base_rate)}</td><td>${safe(x.rate_source)}</td><td>${rateEditor(x)}</td><td class="money">${money(x.enhanced_rate)}</td><td class="money">${money(x.base_amount)}</td><td class="money">${money(x.enhancement_amount)}</td><td class="status-${safe(x.mapping_status)}">${safe(x.mapping_status)}</td><td>${safe(localDateTime(x.last_source_at))}</td></tr>`).join(''):'<tr><td colspan="18" class="muted">No detail rows.</td></tr>';
-  $('detailBody').querySelectorAll('[data-save-assignment-rate]').forEach(button=>button.onclick=()=>saveAssignmentRate(button));
 }
-async function loadDetails(){try{const month=monthStart($('detailMonth').value),mode=$('detailMode').value;const rr=await state.client.from('rr_piece_payroll_run_board_v779').select('id').eq('period_month',month).eq('data_mode',mode).maybeSingle();if(rr.error)throw rr.error;if(!rr.data){state.details=[];renderDetails();say('detailMessage','Calculate payroll first.','info');return}const d=await state.client.from('rr_piece_payroll_detail_board_v779').select('*').eq('piece_run_id',rr.data.id).order('worker_name').order('lot_no').order('department_code').order('size_code');if(d.error)throw d.error;state.details=d.data||[];renderDetails();say('detailMessage',`${state.details.length} UPM mapping rows loaded.`,'success')}catch(e){say('detailMessage',err(e),'error')}}
+
+function filteredDetailGroups(){
+  const query=$('detailSearch')
+    .value
+    .trim()
+    .toLowerCase();
+
+  const missingOnly=Boolean(
+    $('detailMissingOnly')?.checked
+  );
+
+  return buildDetailGroups()
+    .filter(group=>{
+      if(
+        missingOnly&&
+        group.missingRows===0&&
+        !group.hasRateConflict
+      ){
+        return false;
+      }
+
+      if(!query)return true;
+
+      const colourSizeText=[
+        ...group.colours.entries()
+      ].map(([colour,sizes])=>
+        `${colour} ${[
+          ...sizes
+        ].join(' ')}`
+      );
+
+      return JSON.stringify([
+        group.worker_name,
+        group.worker_code,
+        group.lot_no,
+        group.department_code,
+        [...group.nextDepartments],
+        colourSizeText,
+        [...group.rateSources],
+        [...group.mappingStatuses.keys()]
+      ]).toLowerCase().includes(query);
+    })
+    .sort((a,b)=>{
+      const workerCompare=String(
+        a.worker_name||''
+      ).localeCompare(
+        String(b.worker_name||''),
+        undefined,
+        {sensitivity:'base'}
+      );
+      if(workerCompare)return workerCompare;
+
+      const lotCompare=String(
+        a.lot_no||''
+      ).localeCompare(
+        String(b.lot_no||''),
+        undefined,
+        {
+          numeric:true,
+          sensitivity:'base'
+        }
+      );
+      if(lotCompare)return lotCompare;
+
+      return String(
+        a.department_code||''
+      ).localeCompare(
+        String(b.department_code||''),
+        undefined,
+        {sensitivity:'base'}
+      );
+    });
+}
+
+function colourSizeSummary(group){
+  const entries=[
+    ...group.colours.entries()
+  ].sort(([a],[b])=>
+    String(a).localeCompare(
+      String(b),
+      undefined,
+      {
+        numeric:true,
+        sensitivity:'base'
+      }
+    )
+  );
+
+  const visible=entries.slice(0,10);
+  const hidden=entries.length-visible.length;
+
+  return `<div class="collab-colour-size">${
+    visible.map(([colour,sizes])=>{
+      const ordered=[
+        ...sizes
+      ].sort((a,b)=>
+        String(a).localeCompare(
+          String(b),
+          undefined,
+          {
+            numeric:true,
+            sensitivity:'base'
+          }
+        )
+      );
+
+      return `<div class="colour-line">
+        <span class="colour-code">${safe(colour)}</span>
+        <span class="sizes">${safe(
+          ordered.join(' · ')
+        )}</span>
+      </div>`;
+    }).join('')
+  }${
+    hidden>0
+      ?`<div class="collab-more">+${hidden} more colour(s)</div>`
+      :''
+  }</div>`;
+}
+
+function groupRateDisplay(group){
+  if(group.hasRateConflict){
+    return `<span class="group-rate-conflict">CONFLICT · ${
+      group.rateValues
+        .map(rate=>`₹${money(rate)}`)
+        .join(' / ')
+    }</span>`;
+  }
+
+  if(group.groupRate>0){
+    return `<span class="group-rate-ok">₹${money(
+      group.groupRate
+    )}</span>${
+      group.missingAssignments>0
+        ?`<span class="group-subnote group-rate-bad">${
+          group.missingAssignments
+        } assignment missing</span>`
+        :''
+    }`;
+  }
+
+  return '<span class="group-rate-bad">MISSING</span>';
+}
+
+function rateSourceDisplay(group){
+  const sources=[
+    ...group.rateSources
+  ];
+
+  if(!sources.length)return '—';
+  if(sources.length===1){
+    return safe(sources[0]);
+  }
+
+  return `<span class="group-rate-conflict">${
+    safe(sources.join(' / '))
+  }</span>`;
+}
+
+function mappingDisplay(group){
+  return `<div class="mapping-stack">${
+    [...group.mappingStatuses.entries()]
+      .map(([status,count])=>{
+        const cls=status==='OK'
+          ?'ok'
+          :(
+            status.includes('MISSING')
+              ?'bad'
+              :'warn'
+          );
+
+        return `<span class="${cls}">
+          ${safe(status)} · ${count}
+        </span>`;
+      }).join('')
+  }</div>`;
+}
+
+function groupRateEditor(group){
+  const row=group.representativeRow;
+
+  if(!row?.assignment_id){
+    return '<span class="muted">Assignment missing</span>';
+  }
+
+  if(!canShowRateEditor(row)){
+    return '<span class="muted">View only</span>';
+  }
+
+  const value=
+    group.groupRate>0&&
+    !group.hasRateConflict
+      ?group.groupRate.toFixed(4)
+      :'';
+
+  const label=
+    group.groupRate>0||
+    group.hasRateConflict
+      ?'UPDATE GROUP + NEXT'
+      :'SAVE GROUP + NEXT';
+
+  return `<div class="rate-editor">
+    <input
+      data-detail-group-rate="${safe(group.key)}"
+      type="number"
+      min="0.0001"
+      step="0.0001"
+      value="${safe(value)}"
+      placeholder="Group Rate"
+      inputmode="decimal">
+    <button
+      class="btn rate-save"
+      data-save-detail-group="${safe(group.key)}"
+      data-assignment-id="${safe(
+        row.assignment_id
+      )}"
+      type="button">${safe(label)}</button>
+  </div>`;
+}
+
+function rawEvaluationTable(group){
+  return `<div class="collab-eval-box">
+    <div class="collab-eval-title">
+      <div>
+        <b>Evaluation Table</b>
+        <span class="muted">
+          · ${safe(group.lot_no)}
+          · ${safe(group.department_code)}
+          · ${safe(group.worker_name)}
+        </span>
+      </div>
+      <span class="muted">
+        ${group.rows.length} raw Colour/Size row(s)
+      </span>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Colour</th>
+          <th>Size</th>
+          <th>Assignment ID</th>
+          <th>Assigned Cap</th>
+          <th>Before PCS</th>
+          <th>To End PCS</th>
+          <th>Payable PCS</th>
+          <th>Actual Rate</th>
+          <th>Rate Source</th>
+          <th>Payable Rate</th>
+          <th>Base ₹</th>
+          <th>Enhancement ₹</th>
+          <th>Mapping</th>
+          <th>Last Submit</th>
+        </tr>
+      </thead>
+      <tbody>${
+        group.rows.map(row=>`<tr>
+          <td>${safe(
+            row.colour_name||
+            row.colour_code||
+            '—'
+          )}</td>
+          <td>${safe(row.size_code||'—')}</td>
+          <td>${safe(
+            row.assignment_id||
+            '—'
+          )}</td>
+          <td>${qty(row.assigned_cap_qty)}</td>
+          <td>${qty(
+            row.submitted_before_qty
+          )}</td>
+          <td>${qty(
+            row.submitted_to_end_qty
+          )}</td>
+          <td><b>${qty(
+            row.payable_qty
+          )}</b></td>
+          <td class="money">${money(
+            row.base_rate
+          )}</td>
+          <td>${safe(
+            row.rate_source||
+            '—'
+          )}</td>
+          <td class="money">${money(
+            row.enhanced_rate
+          )}</td>
+          <td class="money">${money(
+            row.base_amount
+          )}</td>
+          <td class="money">${money(
+            row.enhancement_amount
+          )}</td>
+          <td class="status-${safe(
+            row.mapping_status
+          )}">${safe(
+            row.mapping_status
+          )}</td>
+          <td>${safe(localDateTime(
+            row.last_source_at
+          ))}</td>
+        </tr>`).join('')
+      }</tbody>
+    </table>
+  </div>`;
+}
+
+function renderDetails(options={}){
+  const groups=filteredDetailGroups();
+  state.detailGroups=groups;
+
+  const rawRows=groups.reduce(
+    (sum,group)=>
+      sum+group.rows.length,
+    0
+  );
+
+  const missingAssignments=groups.reduce(
+    (sum,group)=>
+      sum+group.missingAssignments,
+    0
+  );
+
+  const missingGroups=groups.filter(
+    group=>
+      group.missingAssignments>0||
+      group.hasRateConflict
+  ).length;
+
+  const missingCaps=groups.reduce(
+    (sum,group)=>
+      sum+group.missingCapRows,
+    0
+  );
+
+  $('detailStats').innerHTML=[
+    ['Collaborative Groups',groups.length],
+    ['Raw Evaluation Rows',rawRows],
+    ['Workers',new Set(
+      groups.map(group=>group.worker_id)
+    ).size],
+    ['Payable PCS',qty(
+      groups.reduce(
+        (sum,group)=>
+          sum+group.payableQty,
+        0
+      )
+    )],
+    ['Base ₹',money(
+      groups.reduce(
+        (sum,group)=>
+          sum+group.baseAmount,
+        0
+      )
+    )],
+    ['Missing / Conflict Groups',missingGroups],
+    ['Missing Assignments',missingAssignments],
+    ['Missing Cap Rows',missingCaps]
+  ].map(([label,value],index)=>
+    `<div class="stat ${
+      index>=5&&Number(value)>0
+        ?'alert'
+        :''
+    }">
+      <small>${safe(label)}</small>
+      <strong>${safe(value)}</strong>
+    </div>`
+  ).join('');
+
+  $('detailBody').innerHTML=groups.length
+    ?groups.map(group=>{
+      const nextDepartments=[
+        ...group.nextDepartments
+      ];
+
+      return `
+        <tr
+          class="collab-summary-row"
+          data-detail-group-row="${safe(group.key)}">
+          <td>
+            <b class="collab-lot">${safe(
+              group.lot_no||
+              '—'
+            )}</b>
+          </td>
+          <td class="collab-worker">
+            <b>${safe(
+              group.worker_name||
+              group.worker_id||
+              '—'
+            )}</b>
+            <small>${safe(
+              group.worker_code||
+              '—'
+            )}</small>
+          </td>
+          <td>${safe(
+            group.department_code||
+            '—'
+          )}</td>
+          <td>${safe(
+            nextDepartments.join(', ')||
+            '—'
+          )}</td>
+          <td>${colourSizeSummary(group)}</td>
+          <td>
+            <b>${group.assignments.size}</b>
+            <span class="group-subnote">
+              ${group.rows.length} evaluation row(s)
+            </span>
+          </td>
+          <td>${qty(group.assignedCap)}</td>
+          <td>${qty(group.beforeQty)}</td>
+          <td>${qty(group.toEndQty)}</td>
+          <td><b>${qty(
+            group.payableQty
+          )}</b></td>
+          <td>${groupRateDisplay(group)}</td>
+          <td>${rateSourceDisplay(group)}</td>
+          <td>${groupRateEditor(group)}</td>
+          <td class="money">${money(
+            group.groupPayableRate
+          )}</td>
+          <td class="money"><b>${money(
+            group.baseAmount
+          )}</b></td>
+          <td class="money">${money(
+            group.enhancementAmount
+          )}</td>
+          <td>${mappingDisplay(group)}</td>
+          <td>${safe(localDateTime(
+            group.lastSourceAt
+          ))}</td>
+          <td>
+            <button
+              class="btn detail-toggle"
+              data-toggle-evaluation="${safe(group.key)}"
+              type="button">VIEW EVALUATION</button>
+          </td>
+        </tr>
+
+        <tr
+          id="detail-eval-${safe(group.key)}"
+          class="collab-eval-row hidden">
+          <td colspan="19">
+            ${rawEvaluationTable(group)}
+          </td>
+        </tr>`;
+    }).join('')
+    :'<tr><td colspan="19" class="muted">No collaborative Lot rows.</td></tr>';
+
+  const body=$('detailBody');
+
+  body.querySelectorAll(
+    '[data-toggle-evaluation]'
+  ).forEach(button=>{
+    button.onclick=()=>{
+      const key=button.dataset.toggleEvaluation;
+      const row=$(`detail-eval-${key}`);
+
+      if(!row)return;
+
+      const opening=row.classList.contains(
+        'hidden'
+      );
+      row.classList.toggle(
+        'hidden',
+        !opening
+      );
+      button.textContent=opening
+        ?'HIDE EVALUATION'
+        :'VIEW EVALUATION';
+    };
+  });
+
+  body.querySelectorAll(
+    '[data-save-detail-group]'
+  ).forEach(button=>{
+    button.onclick=()=>saveDetailGroupRate(
+      button
+    );
+  });
+
+  body.querySelectorAll(
+    '[data-detail-group-rate]'
+  ).forEach(input=>{
+    input.addEventListener(
+      'keydown',
+      event=>{
+        if(event.key!=='Enter')return;
+
+        event.preventDefault();
+
+        const key=
+          input.dataset.detailGroupRate;
+
+        const button=body.querySelector(
+          `[data-save-detail-group="${
+            CSS.escape(key)
+          }"]`
+        );
+
+        if(
+          button&&
+          !button.disabled
+        ){
+          saveDetailGroupRate(button);
+        }
+      }
+    );
+  });
+
+  let focusIndex=null;
+
+  if(Number.isInteger(options.focusIndex)){
+    focusIndex=options.focusIndex;
+  }else if(options.focusFirst){
+    focusIndex=0;
+  }
+
+  if(focusIndex!==null){
+    requestAnimationFrame(
+      ()=>focusDetailGroupRate(focusIndex)
+    );
+  }
+}
+
+function focusDetailGroupRate(index){
+  const inputs=[
+    ...$('detailBody').querySelectorAll(
+      '[data-detail-group-rate]'
+    )
+  ];
+
+  if(!inputs.length)return;
+
+  const safeIndex=Math.max(
+    0,
+    Math.min(
+      index,
+      inputs.length-1
+    )
+  );
+
+  const input=inputs[safeIndex];
+
+  input.scrollIntoView({
+    block:'center',
+    inline:'nearest',
+    behavior:'smooth'
+  });
+  input.focus();
+  input.select();
+}
+
+async function saveDetailGroupRate(button){
+  const key=button.dataset.saveDetailGroup;
+  const assignmentId=
+    button.dataset.assignmentId;
+
+  const group=state.detailGroups?.find(
+    item=>item.key===key
+  );
+
+  const input=$('detailBody').querySelector(
+    `[data-detail-group-rate="${
+      CSS.escape(key)
+    }"]`
+  );
+
+  const allInputs=[
+    ...$('detailBody').querySelectorAll(
+      '[data-detail-group-rate]'
+    )
+  ];
+
+  const currentIndex=Math.max(
+    0,
+    allInputs.indexOf(input)
+  );
+
+  const rate=Number(input?.value);
+
+  if(!group){
+    say(
+      'detailMessage',
+      'Collaborative group reload required.',
+      'error'
+    );
+    return;
+  }
+
+  if(!assignmentId){
+    say(
+      'detailMessage',
+      'Assignment ID missing.',
+      'error'
+    );
+    return;
+  }
+
+  if(
+    !Number.isFinite(rate)||
+    rate<=0
+  ){
+    say(
+      'detailMessage',
+      'Group Actual Rate 0 se zyada honi chahiye.',
+      'error'
+    );
+    input?.focus();
+    input?.select();
+    return;
+  }
+
+  const rateChanged=
+    group.hasRateConflict||
+    (
+      group.groupRate>0&&
+      Math.abs(
+        group.groupRate-rate
+      )>0.0000001
+    );
+
+  let reason=
+    'Missing Lot+Department group Actual Rate filled from Collaborative Lot / PCS Details';
+
+  if(rateChanged){
+    reason=prompt(
+      `Complete group rate correction reason · ${
+        group.lot_no
+      } · ${group.department_code}`,
+      'Authorized complete Lot+Department Actual Rate correction'
+    )||'';
+
+    if(!reason.trim())return;
+  }else if(group.groupRate>0){
+    reason=
+      'Existing Lot+Department rate applied to remaining missing assignments';
+  }
+
+  const nextFocusIndex=
+    $('detailMissingOnly')?.checked
+      ?currentIndex
+      :currentIndex+1;
+
+  try{
+    button.disabled=true;
+    if(input)input.disabled=true;
+
+    say(
+      'detailMessage',
+      `Lot ${group.lot_no} · Department ${
+        group.department_code
+      } की group rate save हो रही है…`,
+      'info'
+    );
+
+    const saved=await rpc(
+      'rr_upm_set_assignment_actual_rate_v772',
+      {
+        p_assignment_id:assignmentId,
+        p_actual_rate:rate,
+        p_reason:reason.trim()
+      }
+    );
+
+    const runId=await rpc(
+      'rr_piece_payroll_calculate_v779',
+      {
+        p_period_month:monthStart(
+          $('detailMonth').value
+        ),
+        p_data_mode:
+          $('detailMode').value
+      }
+    );
+
+    await loadDetails({
+      focusIndex:nextFocusIndex
+    });
+    await loadPayroll();
+
+    say(
+      'detailMessage',
+      `DONE · Lot ${
+        saved?.lot_no||
+        group.lot_no
+      } · Department ${
+        saved?.department_code||
+        group.department_code
+      } · Group Rate ₹${money(
+        saved?.group_rate||
+        rate
+      )}. ${
+        Number(
+          saved?.updated_assignments||
+          group.assignments.size
+        )
+      } assignment(s) updated; ${
+        Number(
+          saved?.auto_filled_assignments||
+          group.missingAssignments
+        )
+      } missing rate(s) auto-filled. Payroll recalculated · Run ${runId}. Cursor next unresolved collaborative group पर पहुँच गया है.`,
+      'success'
+    );
+  }catch(error){
+    say(
+      'detailMessage',
+      err(error),
+      'error'
+    );
+
+    if(input){
+      input.disabled=false;
+      input.focus();
+      input.select();
+    }
+  }finally{
+    button.disabled=false;
+  }
+}
+
+async function loadDetails(options={}){
+  try{
+    const month=monthStart(
+      $('detailMonth').value
+    );
+    const mode=$('detailMode').value;
+
+    const runResult=await state.client
+      .from(
+        'rr_piece_payroll_run_board_v779'
+      )
+      .select('id')
+      .eq('period_month',month)
+      .eq('data_mode',mode)
+      .maybeSingle();
+
+    if(runResult.error){
+      throw runResult.error;
+    }
+
+    if(!runResult.data){
+      state.details=[];
+      renderDetails(options);
+      say(
+        'detailMessage',
+        'Calculate payroll first.',
+        'info'
+      );
+      return;
+    }
+
+    const detailResult=await state.client
+      .from(
+        'rr_piece_payroll_detail_board_v779'
+      )
+      .select('*')
+      .eq(
+        'piece_run_id',
+        runResult.data.id
+      )
+      .order('worker_name')
+      .order('lot_no')
+      .order('department_code')
+      .order('colour_code')
+      .order('size_code');
+
+    if(detailResult.error){
+      throw detailResult.error;
+    }
+
+    state.details=
+      detailResult.data||[];
+
+    renderDetails(options);
+
+    say(
+      'detailMessage',
+      `${state.details.length} raw UPM Colour/Size rows loaded and collaborative Lot groups में evaluated.`,
+      'success'
+    );
+  }catch(error){
+    say(
+      'detailMessage',
+      err(error),
+      'error'
+    );
+  }
+}
 
 function calendarDates(from,to){const out=[];for(let d=new Date(`${from}T00:00:00Z`),e=new Date(`${to}T00:00:00Z`);d<=e;d.setUTCDate(d.getUTCDate()+1))out.push(d.toISOString().slice(0,10));return out}
 function attendanceCalendarRows(){if(!state.attendanceWorkerId||!$('attendanceMonth').value)return state.attendance;const [mf,mt]=monthRange($('attendanceMonth').value);const worker=state.workers.find(w=>String(w.worker_id)===String(state.attendanceWorkerId));const from=worker?.effective_from&&worker.effective_from>mf?worker.effective_from:mf;const to=worker?.effective_to&&worker.effective_to<mt?worker.effective_to:mt;const byDate=new Map(state.attendance.map(x=>[x.attendance_date,x]));const holidays=new Map(state.holidays.filter(h=>h.is_active!==false).map(h=>[h.holiday_date,h]));return calendarDates(from,to).map(date=>{if(byDate.has(date))return byDate.get(date);const monday=dayName(date)==='Mon';const holiday=holidays.get(date);return {id:null,attendance_date:date,status:holiday?'HOLIDAY':monday?'WEEKLY_OFF':'ABSENT',check_in_at:null,check_out_at:null,is_weekly_off:monday,is_holiday:Boolean(holiday),revision_no:0,locked_piece_run_id:null,is_virtual:true}})}

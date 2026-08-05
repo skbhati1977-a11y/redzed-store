@@ -1,20 +1,38 @@
-REDZED PCS Payroll V779.3.1 — Collaborative Lot View
+REDZED iOS + Android Mobile Compatibility V774.1
+Mandatory Table Controls V773.3
 
-Upload/replace these matching files in GitHub root:
-1. real-pcs-rate-payroll-v779.html
-2. real-pcs-rate-payroll-v779.js
-3. real-table-freeze-v773.js
+UPLOAD/REPLACE ALL FILES IN GITHUB ROOT
 
-Main view:
-- One summary row = Worker + Lot + Department
-- All Colours and all bound Sizes are combined
-- Assigned Cap, submitted quantities, payable PCS and amounts are totals
-- One Group Actual Rate editor controls the complete Lot+Department rate
-- Enter or SAVE/UPDATE GROUP + NEXT saves and moves to the next unresolved group
+FILES
+- real-mobile-compat-v774.js
+- real-table-freeze-v773.js
+- real-pcs-rate-payroll-v779.html
+- real-pcs-rate-payroll-v779.js
+- real-universal-production-v769.html
+- real-universal-production-v772-submitted-work-link.js
+- real-upm-submitted-work-v772.html
+- real-upm-submitted-work-v772.js
 
-Separate evaluation:
-- VIEW EVALUATION opens a separate raw Colour/Size table under the group
-- Raw assignment IDs, quantities, rates, mapping and timestamps remain visible
-- Payroll calculation still uses the raw underlying detail records
+TABLE RULES
+- Independent HEADER FREEZE ON/OFF button
+- Independent FIRST COLUMN FREEZE ON/OFF button
+- FILTER button
+- CLEAR FILTER button
+- Row count
+- Persistent bottom horizontal RANGE slider whenever horizontal movement is needed
+- Slider stays visible on iOS where native Safari scrollbars can auto-hide
 
-This is a web-view change only. No new SQL is required because V772.6 group-rate SQL is already installed.
+IOS/IPADOS + ANDROID RULES
+- viewport-fit=cover
+- notch / Dynamic Island / home-indicator safe-area padding
+- 16px mobile form controls to avoid unwanted Safari input zoom
+- 44px minimum touch controls
+- visualViewport keyboard and orientation handling
+- touch momentum scrolling
+- responsive wrapping for narrow screens
+- user zoom remains allowed for accessibility
+
+AFTER UPLOAD
+- Ctrl + Shift + R on desktop
+- On iPhone/iPad: close the tab and reopen, or clear the page cache if an older script remains.
+- Verify once in Safari portrait and landscape.
