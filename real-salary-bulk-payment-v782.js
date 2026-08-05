@@ -1,4 +1,17 @@
 (()=>{
+  const p=new URLSearchParams(location.search);
+  const category=String(p.get('category')||'').toUpperCase();
+  const cycle=String(p.get('cycle')||'').toUpperCase();
+  if(category==='PIECE_RATE'||cycle.startsWith('PCS_')){
+    location.replace(
+      'real-pcs-flex-payment-v784.html?mode='+
+      encodeURIComponent(String(p.get('mode')||'REAL'))
+    );
+    return;
+  }
+})();
+
+(()=>{
 'use strict';
 
 window.REDZED_BULK_RATIO_PAYMENT_VERSION='782.2.0';

@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=yes">
+<meta name="theme-color" content="#090b10">
+<title>REAL FACTORY — PCS Work & Outstanding Audit V783</title>
+<style>
+:root{
+  color-scheme:dark;
+  --bg:#090b10;--panel:#141820;--panel2:#0f131a;--line:#313a48;
+  --muted:#aeb8c8;--red:#ef3340;--green:#34c47c;--amber:#ffbd52;
+  --blue:#62a8ff;--violet:#ab8cff
+}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;background:var(--bg);color:#fff;font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+button,input,select{font:inherit;color:inherit}
+.app{max-width:1850px;margin:auto;padding:14px}
+.head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+.head h1{margin:0;font-size:22px}.head p{margin:4px 0 0;color:var(--muted)}
+.nav{display:flex;gap:8px;flex-wrap:wrap}.nav a{text-decoration:none;color:#fff}
+.btn{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:9px 13px;border:1px solid var(--line);border-radius:10px;background:#222a36;color:#fff;font-weight:800;cursor:pointer}
+.btn.primary{background:var(--red);border-color:var(--red)}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:13px;margin-bottom:12px}
+.grid{display:grid;grid-template-columns:repeat(6,minmax(145px,1fr));gap:10px}
+label span{display:block;font-size:12px;color:var(--muted);margin-bottom:5px}
+input,select{width:100%;min-height:44px;padding:9px 10px;border:1px solid var(--line);border-radius:9px;background:var(--panel2);font-size:16px}
+.note{padding:11px;border-left:3px solid var(--blue);border-radius:8px;background:#101825;line-height:1.55;color:#d9e6f6}
+.message{min-height:24px;color:var(--muted)}.message.error{color:#ff8e98}.message.success{color:#79e5ae}.message.info{color:#a8ccff}
+.stats{display:grid;grid-template-columns:repeat(8,minmax(125px,1fr));gap:8px;margin-bottom:12px}
+.stat{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:9px}.stat small{display:block;color:var(--muted)}.stat strong{font-size:18px}
+.table-wrap{overflow:auto;border:1px solid var(--line);border-radius:12px}
+table{border-collapse:collapse;width:100%;min-width:1750px}
+th,td{padding:8px;border-bottom:1px solid var(--line);white-space:nowrap;text-align:left}
+th{background:#202733;font-size:12px}
+td.money{text-align:right;font-variant-numeric:tabular-nums}
+.status{display:inline-block;padding:4px 7px;border-radius:999px;font-size:11px;font-weight:900}
+.status.bad{background:#5c222c;color:#ffafb7}.status.warn{background:#5b451b;color:#ffd98c}.status.ok{background:#174c35;color:#8fe3b5}.status.info{background:#183b61;color:#a9d2ff}
+.section-title{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:9px}.section-title h2{font-size:17px;margin:0}
+@media(max-width:1100px){.grid{grid-template-columns:repeat(3,1fr)}.stats{grid-template-columns:repeat(4,1fr)}}
+@media(max-width:700px){.grid{grid-template-columns:1fr 1fr}.stats{grid-template-columns:1fr 1fr}.app{padding:8px}}
+@media(max-width:480px){.grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<main class="app">
+<header class="head">
+  <div>
+    <h1>REAL FACTORY · PCS Work & Outstanding Audit</h1>
+    <p>V783.1 · All Workers · All Lots · Selected Date Range · Easy Reason View</p>
+  </div>
+  <div class="nav">
+    <a class="btn" href="real-pcs-flex-payment-v784.html">Flexible Payment</a>
+    <a class="btn" href="real-pcs-rate-payroll-v779.html">PCS Salary</a>
+    <span id="accessBadge" class="btn">Checking…</span>
+  </div>
+</header>
+
+<section class="panel">
+  <div class="grid">
+    <label>
+      <span>Data Mode</span>
+      <select id="dataMode" data-searchable="true">
+        <option>REAL</option><option>TEST</option>
+      </select>
+    </label>
+
+    <label>
+      <span>From Date</span>
+      <input id="fromDate" type="date">
+    </label>
+
+    <label>
+      <span>To Date</span>
+      <input id="toDate" type="date">
+    </label>
+
+    <label>
+      <span>Show</span>
+      <select id="statusFilter" data-searchable="true">
+        <option value="NEEDS_ATTENTION">NEEDS ATTENTION / UNPAID</option>
+        <option value="ALL">ALL SUBMITTED WORK</option>
+        <option value="NOT_ADDED">NOT ADDED TO SALARY</option>
+        <option value="WORKER_OUTSTANDING">ADDED, WORKER OUTSTANDING</option>
+        <option value="CLEAR">ADDED, WORKER CLEAR</option>
+        <option value="EXCLUDED">EXCLUDED / MISSING DATA</option>
+      </select>
+    </label>
+
+    <label>
+      <span>Search Worker / Lot / Dept / Colour / Size</span>
+      <input id="searchText" placeholder="Example: Ahmed 2671 PRESS XL">
+    </label>
+
+    <label>
+      <span>&nbsp;</span>
+      <button id="loadAudit" class="btn primary" type="button">Load Work Audit</button>
+    </label>
+  </div>
+
+  <p class="note">
+    <b>Simple meaning:</b> Flexible Payment page selected date range का नया unpaid work और सभी पुराने unpaid PCS worker ledgers एक साथ दिखाती है।
+    यह Audit page selected dates का हर worker, lot, department, colour और size दिखाता है।
+    Payment worker-wise है, इसलिए system exact lot को “paid” घोषित नहीं करता; वह बताता है कि work salary में add हुई या नहीं और worker का current outstanding कितना है।
+  </p>
+
+  <p id="message" class="message"></p>
+</section>
+
+<div id="stats" class="stats"></div>
+
+<section class="panel">
+  <div class="section-title">
+    <h2>Worker Summary</h2>
+    <span id="workerCount"></span>
+  </div>
+  <div class="table-wrap">
+    <table style="min-width:1350px">
+      <thead>
+        <tr>
+          <th>Worker</th><th>Category</th><th>Departments</th><th>Lots</th>
+          <th>Submitted PCS</th><th>Payable PCS</th><th>Work Salary ₹</th>
+          <th>Not Added ₹</th><th>Worker Outstanding ₹</th><th>Attention Rows</th>
+        </tr>
+      </thead>
+      <tbody id="workerBody"></tbody>
+    </table>
+  </div>
+</section>
+
+<section class="panel">
+  <div class="section-title">
+    <h2>All Work Detail</h2>
+    <span id="rowCount"></span>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Work Date</th><th>Worker</th><th>Category</th><th>Lot</th><th>Department</th>
+          <th>Colour</th><th>Size</th><th>Submitted PCS</th><th>Payable PCS</th>
+          <th>Actual Rate</th><th>Work Salary ₹</th><th>Salary Added</th>
+          <th>Worker Outstanding ₹</th><th>Status</th><th>Reason</th>
+        </tr>
+      </thead>
+      <tbody id="detailBody"></tbody>
+    </table>
+  </div>
+</section>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js?v=7831"></script>
+<script src="real-common.js?v=7751"></script>
+<script src="real-pcs-work-audit-v783.js?v=7831"></script>
+</body>
+</html>

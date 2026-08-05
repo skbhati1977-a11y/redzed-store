@@ -1,0 +1,253 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=yes">
+<meta name="theme-color" content="#090b10">
+<title>REAL FACTORY — PCS Flexible Payment V784</title>
+<style>
+:root{
+  color-scheme:dark;
+  --bg:#090b10;--panel:#141820;--panel2:#0f131a;--line:#313a48;
+  --muted:#aeb8c8;--red:#ef3340;--green:#34c47c;--amber:#ffbd52;
+  --blue:#62a8ff;--violet:#ab8cff
+}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;background:var(--bg);color:#fff;font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+.hidden{display:none!important}
+.app{max-width:1800px;margin:auto;padding:14px}
+.head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+.head h1{margin:0;font-size:23px}.head p{margin:4px 0 0;color:var(--muted)}
+.nav{display:flex;gap:8px;flex-wrap:wrap}.nav a{color:#fff;text-decoration:none}
+.btn{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:9px 13px;border:1px solid var(--line);border-radius:10px;background:#222a36;color:#fff;font-weight:800}
+.btn.primary{background:var(--red);border-color:var(--red)}
+.btn.success{background:#176b47;border-color:#2d9468}
+.btn.danger{background:#762934;border-color:#a84552}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:13px;margin-bottom:12px}
+.grid{display:grid;grid-template-columns:repeat(6,minmax(145px,1fr));gap:10px}
+.grid .wide{grid-column:span 2}
+label span{display:block;font-size:12px;color:var(--muted);margin-bottom:5px}
+input,select,textarea{width:100%;min-height:44px;padding:9px 10px;border:1px solid var(--line);border-radius:9px;background:var(--panel2);font-size:16px}
+.actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:10px}
+.note{padding:11px;border-left:3px solid var(--blue);border-radius:8px;background:#101825;color:#d9e6f6;line-height:1.55}
+.message{min-height:24px;color:var(--muted)}.message.error{color:#ff8e98}.message.success{color:#79e5ae}.message.info{color:#a8ccff}
+.hero{display:grid;grid-template-columns:repeat(6,minmax(145px,1fr));gap:9px;margin-bottom:12px}
+.hero-card{background:linear-gradient(180deg,#171d27,#10141b);border:1px solid var(--line);border-radius:13px;padding:12px;min-height:88px}
+.hero-card small{display:block;color:var(--muted);font-weight:700;margin-bottom:5px}
+.hero-card strong{display:block;font-size:24px;line-height:1.1}
+.hero-card.payable{border-color:#745924}.hero-card.paid{border-color:#236948}.hero-card.outstanding{border-color:#7a313d}
+.hero-card input{font-size:22px;font-weight:900;background:#090d13}
+.table-wrap{overflow:auto;border:1px solid var(--line);border-radius:12px}
+table{border-collapse:collapse;width:100%;min-width:1450px}
+th,td{padding:8px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}
+th{background:#202733;font-size:12px}
+td.money{text-align:right;font-variant-numeric:tabular-nums}
+.worker-check{width:20px;height:20px;min-height:20px}
+.amount-input{min-width:145px;text-align:right;font-weight:900}
+.status{display:inline-block;padding:4px 7px;border-radius:999px;font-size:11px;font-weight:900}
+.status.active{background:#174c35;color:#8fe3b5}.status.inactive{background:#5b451b;color:#ffd98c}.status.ledger{background:#183b61;color:#a9d2ff}
+.new-balance{font-weight:950;color:#ffd27c}
+.zero{color:#7fe0aa}
+.table-total td{background:#1b222d;font-weight:900}
+.section-title{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:9px}.section-title h2{font-size:17px;margin:0}
+.detail-box{max-height:380px;overflow:auto}
+@media(max-width:1150px){.grid{grid-template-columns:repeat(3,1fr)}.hero{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:700px){.grid{grid-template-columns:1fr 1fr}.grid .wide{grid-column:1/-1}.hero{grid-template-columns:1fr 1fr}.app{padding:8px}}
+@media(max-width:480px){.grid{grid-template-columns:1fr}.hero{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+<main class="app">
+<header class="head">
+  <div>
+    <h1>REAL FACTORY · PCS Flexible Payment</h1>
+    <p>V784.1 · All Unpaid PCS Ledgers · Any Work Date Range · Easy Owner View</p>
+  </div>
+  <div class="nav">
+    <a class="btn" href="real-pcs-rate-payroll-v779.html">PCS Salary</a>
+    <a class="btn" href="real-pcs-work-audit-v783.html">All Work Audit</a>
+    <span id="accessBadge" class="btn">Checking…</span>
+  </div>
+</header>
+
+<section class="panel">
+  <div class="grid">
+    <label>
+      <span>Data Mode</span>
+      <select id="dataMode" data-searchable="true">
+        <option>REAL</option><option>TEST</option>
+      </select>
+    </label>
+
+    <label>
+      <span>Payment Type</span>
+      <select id="paymentType" data-searchable="true">
+        <option value="PARTIAL_RATIO">PARTIAL PAYMENT — AUTO RATIO</option>
+        <option value="FULL_PAYMENT">FULL PAYMENT — EXACT CLEAR</option>
+        <option value="WORKER_WISE_BULK">WORKER-WISE BULK — MANUAL</option>
+      </select>
+    </label>
+
+    <label>
+      <span>Work From Date</span>
+      <input id="workFrom" type="date">
+    </label>
+
+    <label>
+      <span>Work To Date</span>
+      <input id="workTo" type="date">
+    </label>
+
+    <label>
+      <span>Payment Date</span>
+      <input id="paymentDate" type="date">
+    </label>
+
+    <label>
+      <span>Payment Mode</span>
+      <select id="paymentMode" data-searchable="true">
+        <option>CASH</option><option>BANK</option><option>UPI</option>
+        <option>CHEQUE</option><option>OTHER</option>
+      </select>
+    </label>
+
+    <label>
+      <span>Voucher / Reference</span>
+      <input id="voucherNo" placeholder="Example: PCS-202608-01">
+    </label>
+
+    <label class="wide">
+      <span>Search Worker</span>
+      <input id="workerSearch" placeholder="Worker name / code / department">
+    </label>
+
+    <label class="wide">
+      <span>Remarks</span>
+      <input id="remarks" placeholder="Partial / Full / Worker-wise payment remarks">
+    </label>
+  </div>
+
+  <div class="actions">
+    <button id="loadPreview" class="btn primary" type="button">Load All Unpaid Ledgers</button>
+    <button id="selectAll" class="btn" type="button">Select All</button>
+    <button id="clearAll" class="btn" type="button">Clear Selection</button>
+    <button id="postPayment" class="btn success" type="button" disabled>Post Payment + Messages</button>
+  </div>
+
+  <p id="ruleNote" class="note"></p>
+  <p id="message" class="message"></p>
+</section>
+
+<section class="hero">
+  <div class="hero-card payable">
+    <small>TOTAL AMOUNT PAYABLE — ALL UNPAID PCS LEDGERS</small>
+    <strong id="totalPayable">₹0.00</strong>
+  </div>
+
+  <div class="hero-card">
+    <small>SELECTED WORKERS PAYABLE</small>
+    <strong id="selectedPayable">₹0.00</strong>
+  </div>
+
+  <div class="hero-card paid">
+    <small>BULK AMOUNT PAYMENT</small>
+    <input id="bulkAmount" type="number" min="0" step="100" value="0" placeholder="Owner payment amount">
+  </div>
+
+  <div class="hero-card">
+    <small>PREVIOUS OUTSTANDING</small>
+    <strong id="previousOutstanding">₹0.00</strong>
+  </div>
+
+  <div class="hero-card">
+    <small>SELECTED PERIOD NEW WORK</small>
+    <strong id="periodWork">₹0.00</strong>
+  </div>
+
+  <div class="hero-card outstanding">
+    <small>NEW OUTSTANDING AFTER PAYMENT</small>
+    <strong id="newOutstanding">₹0.00</strong>
+  </div>
+</section>
+
+<section class="panel">
+  <div class="section-title">
+    <h2>All Unpaid PCS Worker Ledgers</h2>
+    <span id="workerCount">0 workers</span>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Select</th>
+          <th>Worker</th>
+          <th>Status</th>
+          <th>Department</th>
+          <th>Previous Outstanding</th>
+          <th>Selected Period PCS</th>
+          <th>Selected Period Work ₹</th>
+          <th>Total Payable</th>
+          <th>Amount Paid</th>
+          <th>New Outstanding</th>
+          <th>Work Detail</th>
+        </tr>
+      </thead>
+      <tbody id="ledgerBody"></tbody>
+      <tfoot id="ledgerFoot"></tfoot>
+    </table>
+  </div>
+</section>
+
+<section id="detailPanel" class="panel hidden">
+  <div class="section-title">
+    <h2 id="detailTitle">Worker Work Detail</h2>
+    <button id="closeDetail" class="btn" type="button">Close</button>
+  </div>
+
+  <p id="detailMessage" class="message"></p>
+
+  <div class="table-wrap detail-box">
+    <table style="min-width:1150px">
+      <thead>
+        <tr>
+          <th>Work Date</th><th>Lot</th><th>Department</th>
+          <th>Colour</th><th>Size</th><th>Submitted PCS</th>
+          <th>Payable PCS</th><th>Actual Rate</th><th>Work Salary ₹</th>
+        </tr>
+      </thead>
+      <tbody id="detailBody"></tbody>
+    </table>
+  </div>
+</section>
+
+<section class="panel">
+  <div class="section-title">
+    <h2>PCS Payment History</h2>
+    <button id="loadHistory" class="btn" type="button">Refresh History</button>
+  </div>
+
+  <div class="table-wrap">
+    <table style="min-width:1500px">
+      <thead>
+        <tr>
+          <th>Payment Date</th><th>Work Period</th><th>Type</th><th>Voucher</th>
+          <th>Workers</th><th>Total Payable ₹</th><th>Amount Paid ₹</th>
+          <th>New Outstanding ₹</th><th>Messages</th><th>Status</th><th>Action</th>
+        </tr>
+      </thead>
+      <tbody id="historyBody"></tbody>
+    </table>
+  </div>
+</section>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js?v=7841"></script>
+<script src="real-common.js?v=7751"></script>
+<script src="real-pcs-flex-payment-v784.js?v=7841"></script>
+</body>
+</html>
