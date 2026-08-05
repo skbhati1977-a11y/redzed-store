@@ -39,6 +39,13 @@ label{display:block}label>span{display:block;font-size:12px;color:var(--muted);m
 .mapping-stack .ok{color:#7fe0aa}
 .mapping-stack .bad{color:#ff8d95}
 .mapping-stack .warn{color:#ffd27c}
+.ledger-unpaid{color:#ff8d95;font-weight:850}
+.ledger-partial{color:#ffd27c;font-weight:850}
+.ledger-paid{color:#7fe0aa;font-weight:850}
+.ledger-balance{font-weight:900;color:#fff}
+.ledger-payment-button{white-space:nowrap}
+#ledgerSelectedDue{line-height:1.5}
+
 .detail-toggle{padding:7px 10px;font-size:11px;white-space:nowrap}
 .collab-eval-row>td{padding:0!important;background:#0c0c10!important}
 .collab-eval-box{padding:12px;overflow:auto;border-top:1px solid var(--line)}
@@ -53,7 +60,7 @@ label{display:block}label>span{display:block;font-size:12px;color:var(--muted);m
 <body>
 <main class="app">
 <header class="head">
-  <div class="brand"><h1>REDZED REAL · Piece Rate Salary</h1><p>V779.3.1 · Collaborative Lot View · Group Rate · Actual Rate Only</p></div>
+  <div class="brand"><h1>REDZED REAL · Piece Rate Salary</h1><p>V779.4.0 · Worker Ledger V781.1 · Payment + Balance · Actual Rate Only</p></div>
   <span id="accessBadge" class="badge">Checking access…</span>
 </header>
 <nav class="tabs" id="tabs">
@@ -61,6 +68,7 @@ label{display:block}label>span{display:block;font-size:12px;color:var(--muted);m
   <button data-tab="details">Lot / PCS Details</button>
   <button data-tab="attendance">Piece Attendance</button>
   <button data-tab="adjustments">Advance / Adjustment</button>
+  <button data-tab="ledger">Worker Ledger</button>
   <button data-tab="mapping">Mapping Audit</button>
 </nav>
 
@@ -72,16 +80,17 @@ label{display:block}label>span{display:block;font-size:12px;color:var(--muted);m
       <button id="calculatePayroll" class="btn primary">Calculate / Recalculate</button>
       <button id="approvePayroll" class="btn success">Approve & Lock</button>
       <button id="reopenPayroll" class="btn warning">Owner Reopen</button>
-      <button id="markPaid" class="btn">Mark Paid</button>
+      <button id="markPaid" class="btn violet">Worker Ledger / Payment</button>
       <button id="refreshPayroll" class="btn">Refresh</button>
     </div>
     <p class="note violet">PCS earning = submitted UPM Dynamic Submit quantity × frozen Assignment Actual Rate only. No Standard Rate or other rate fallback is permitted. Cumulative quantity is capped to assignment-size quantity and prior-period payable quantity is subtracted, preventing remake/reopen double payment.</p>
-    <p class="note warn">Piece attendance is informational only. Damage rows are shown as review reference and affect salary only after an audited DAMAGE_DEBIT adjustment.</p>
+    <p class="note warn">Piece attendance is informational only. Damage rows affect salary only after an audited DAMAGE_DEBIT adjustment.</p>
+    <p class="note"><b>Payment Control:</b> Whole-run Mark Paid is disabled. Approval creates worker-wise Salary Due. Partial/full payment, voucher/reference, balance and reversals are maintained in Worker Ledger.</p>
     <p id="payrollMessage" class="message"></p>
   </div>
   <div id="payrollStats" class="stats"></div>
   <div class="panel"><div class="table-wrap"><table><thead><tr>
-    <th>Worker</th><th>Dept</th><th>Mode</th><th>Payable PCS</th><th>Avg Actual Rate</th><th>Base ₹</th><th>Rate +₹</th><th>Monthly +₹</th><th>Adjust +₹</th><th>Deduction ₹</th><th>Advance ₹</th><th>Damage Ref ₹</th><th>Present</th><th>Absent</th><th>Missing Rate</th><th>Missing Cap</th><th>Net ₹</th><th>Details</th>
+    <th>Worker</th><th>Dept</th><th>Mode</th><th>Payable PCS</th><th>Avg Actual Rate</th><th>Base ₹</th><th>Rate +₹</th><th>Monthly +₹</th><th>Adjust +₹</th><th>Deduction ₹</th><th>Advance ₹</th><th>Damage Ref ₹</th><th>Present</th><th>Absent</th><th>Missing Rate</th><th>Missing Cap</th><th>Salary Due ₹</th><th>Paid ₹</th><th>Balance ₹</th><th>Payment Status</th><th>Pay / Ledger</th><th>Details</th>
   </tr></thead><tbody id="payrollBody"></tbody></table></div></div>
 </section>
 
@@ -153,6 +162,155 @@ label{display:block}label>span{display:block;font-size:12px;color:var(--muted);m
   <div class="panel"><div class="table-wrap"><table><thead><tr><th>Worker</th><th>Month</th><th>Type</th><th>Amount ₹</th><th>Source Key</th><th>Reason</th><th>Status</th><th>Included Run</th><th>Action</th></tr></thead><tbody id="adjustmentBody"></tbody></table></div></div>
 </section>
 
+
+<section id="tab-ledger" class="hidden">
+  <div class="panel">
+    <div class="toolbar">
+      <label>
+        <span>Data Mode</span>
+        <select id="ledgerMode">
+          <option>REAL</option>
+          <option>TEST</option>
+        </select>
+      </label>
+
+      <label>
+        <span>Month (blank = all)</span>
+        <input id="ledgerMonth" type="month">
+      </label>
+
+      <div class="grow">
+        <label>
+          <span>Search Worker / Code / Department / Reference</span>
+          <input id="ledgerSearch" placeholder="Worker, code, department, voucher or reference">
+        </label>
+      </div>
+
+      <label>
+        <span>Payment Status</span>
+        <select id="ledgerStatus">
+          <option value="ALL">ALL</option>
+          <option value="UNPAID">UNPAID</option>
+          <option value="PARTIAL">PARTIAL</option>
+          <option value="PAID">PAID</option>
+        </select>
+      </label>
+
+      <button id="loadLedger" class="btn primary" type="button">Load Worker Ledger</button>
+    </div>
+
+    <p class="note violet">
+      Salary approval creates one exact worker Salary Due. Payments may be partial or full.
+      Every payment requires Date, Mode and Voucher/Reference. Balance carries forward until fully paid.
+    </p>
+
+    <p class="note warn">
+      Old run-level PAID records are migrated as <b>LEGACY</b> worker payments.
+      If an old Mark Paid click was wrong, open its payment entry and use <b>REVERSE PAYMENT</b>.
+    </p>
+
+    <p id="ledgerMessage" class="message"></p>
+  </div>
+
+  <div id="ledgerStats" class="stats"></div>
+
+  <div class="panel">
+    <h3>Worker Salary Due / Payment Balance</h3>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Month</th>
+            <th>Worker</th>
+            <th>Dept</th>
+            <th>Category</th>
+            <th>Source</th>
+            <th>Salary Due ₹</th>
+            <th>Paid ₹</th>
+            <th>Balance ₹</th>
+            <th>Status</th>
+            <th>Last Payment</th>
+            <th>Payment</th>
+            <th>Ledger</th>
+          </tr>
+        </thead>
+        <tbody id="ledgerDueBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div id="ledgerPaymentPanel" class="panel hidden">
+    <h3>Post Worker Payment</h3>
+
+    <div id="ledgerSelectedDue" class="note"></div>
+
+    <form id="ledgerPaymentForm">
+      <div class="grid">
+        <label>
+          <span>Payment Amount ₹ *</span>
+          <input id="ledgerPaymentAmount" type="number" min="0.01" step="0.01" required>
+        </label>
+
+        <label>
+          <span>Payment Date *</span>
+          <input id="ledgerPaymentDate" type="date" required>
+        </label>
+
+        <label>
+          <span>Payment Mode *</span>
+          <select id="ledgerPaymentMode" required>
+            <option>CASH</option>
+            <option>BANK</option>
+            <option>UPI</option>
+            <option>CHEQUE</option>
+            <option>OTHER</option>
+          </select>
+        </label>
+
+        <label>
+          <span>Voucher / Reference *</span>
+          <input id="ledgerPaymentReference" required minlength="2" placeholder="Cash voucher / UTR / cheque no.">
+        </label>
+
+        <label class="full">
+          <span>Remarks</span>
+          <input id="ledgerPaymentRemarks" placeholder="Partial payment / full settlement / payment note">
+        </label>
+      </div>
+
+      <div class="actions">
+        <button class="btn success" type="submit">Post Payment</button>
+        <button id="cancelLedgerPayment" class="btn" type="button">Cancel</button>
+      </div>
+    </form>
+  </div>
+
+  <div class="panel">
+    <h3>Worker Ledger Entries</h3>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Worker</th>
+            <th>Month</th>
+            <th>Entry Type</th>
+            <th>Due / Credit ₹</th>
+            <th>Payment / Debit ₹</th>
+            <th>Running Balance ₹</th>
+            <th>Mode</th>
+            <th>Reference</th>
+            <th>Remarks</th>
+            <th>Status</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody id="ledgerEntryBody"></tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
 <section id="tab-mapping" class="hidden">
   <div class="panel">
     <div class="toolbar"><button id="runCompatibility" class="btn violet">Run Mapping Audit</button></div>
@@ -168,6 +326,6 @@ label{display:block}label>span{display:block;font-size:12px;color:var(--muted);m
 <script src="real-common.js?v=7751"></script>
 <script src="real-mobile-compat-v774.js?v=7742"></script>
 <script src="real-table-freeze-v773.js?v=7734"></script>
-<script src="real-pcs-rate-payroll-v779.js?v=77931"></script>
+<script src="real-pcs-rate-payroll-v779.js?v=77940"></script>
 </body>
 </html>

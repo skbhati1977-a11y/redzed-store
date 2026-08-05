@@ -1,8 +1,8 @@
 (()=>{
 'use strict';
-window.REDZED_PCS_RATE_PAYROLL_VERSION='779.3.1';
+window.REDZED_PCS_RATE_PAYROLL_VERSION='779.4.0';
 
-const state={client:null,auth:null,workers:[],run:null,lines:[],details:[],attendance:[],holidays:[],adjustments:[],mapping:[],attendanceWorkerId:'',adjustmentWorkerId:''};
+const state={client:null,auth:null,workers:[],run:null,lines:[],details:[],attendance:[],holidays:[],adjustments:[],mapping:[],ledgerDues:[],ledgerEntries:[],ledgerSelectedDueId:'',ledgerFocusWorkerId:'',attendanceWorkerId:'',adjustmentWorkerId:''};
 const $=id=>document.getElementById(id);
 const safe=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
 const err=e=>[e?.message,e?.details,e?.hint,e?.code].filter(Boolean).join(' — ')||'Unknown error';
@@ -130,39 +130,338 @@ async function loadWorkers(mode){
   if(state.adjustmentWorkerId&&state.workers.some(w=>String(w.worker_id)===String(state.adjustmentWorkerId)))adjustmentCombo.setValue(state.adjustmentWorkerId);
 }
 
+function paymentStatusClass(value){
+  const status=upper(value);
+  if(status==='PAID')return 'ledger-paid';
+  if(status==='PARTIAL')return 'ledger-partial';
+  return 'ledger-unpaid';
+}
+
 function renderPayroll(){
-  const r=state.run,lines=state.lines;
+  const r=state.run;
+  const lines=state.lines;
+
   $('payrollStats').innerHTML=[
-    ['Status',r?.status||'NOT CALCULATED'],['Workers',r?.worker_count||0],['Payable PCS',qty(r?.total_payable_qty)],['Exceptions',r?.incomplete_worker_count||0],['Gross ₹',money(r?.gross_total)],['Deduction ₹',money(r?.deduction_total)],['Net ₹',money(r?.net_total)]
-  ].map(([a,b],i)=>`<div class="stat ${i===3&&Number(b)>0?'alert':''}"><small>${a}</small><strong>${safe(b)}</strong></div>`).join('');
-  $('payrollBody').innerHTML=lines.length?lines.map(x=>`<tr>
-    <td><b>${safe(x.worker_name||x.worker_id)}</b><br><small class="muted">${safe(x.worker_code||'—')}</small></td>
-    <td>${safe(x.department_code||'—')}</td><td>${safe(x.compensation_mode||'PCS_ONLY')}</td>
-    <td>${qty(x.payable_qty)}</td><td class="money">${money(x.average_base_rate)}</td><td class="money">${money(x.base_piece_earning)}</td>
-    <td class="money">${money(x.rate_enhancement_earning)}</td><td class="money">${money(x.monthly_flat_incentive)}</td><td class="money">${money(x.adjustment_earning)}</td>
-    <td class="money">${money(x.adjustment_deduction)}</td><td class="money">${money(x.advance_deduction)}</td><td class="money">${money(x.damage_reference_amount)}</td>
-    <td>${qty(x.attendance_present_days)}</td><td>${qty(x.attendance_absent_days)}</td><td class="${Number(x.missing_rate_rows)>0?'status-MISSING_RATE':''}">${x.missing_rate_rows}</td>
-    <td class="${Number(x.missing_cap_rows)>0?'status-MISSING_SIZE_CAP':''}">${x.missing_cap_rows}</td><td class="money"><b>${money(x.net_pay)}</b></td>
-    <td><button class="btn" data-worker-detail="${safe(x.worker_name||'')}" type="button">Open</button></td>
-  </tr>`).join(''):'<tr><td colspan="18" class="muted">Calculate Piece payroll to create immutable snapshot lines.</td></tr>';
-  $('payrollBody').querySelectorAll('[data-worker-detail]').forEach(b=>b.onclick=()=>{showTab('details');$('detailSearch').value=b.dataset.workerDetail;loadDetails()});
-  const locked=['APPROVED','PAID'].includes(r?.status);
-  $('calculatePayroll').disabled=locked;$('approvePayroll').disabled=!r||r.status!=='CALCULATED'||Number(r.incomplete_worker_count)>0;$('reopenPayroll').disabled=!locked;$('markPaid').disabled=!r||r.status!=='APPROVED';
+    ['Status',r?.status||'NOT CALCULATED'],
+    ['Workers',r?.worker_count||0],
+    ['Payable PCS',qty(r?.total_payable_qty)],
+    ['Exceptions',r?.incomplete_worker_count||0],
+    ['Salary Due ₹',money(r?.ledger_due_total||r?.net_total)],
+    ['Paid ₹',money(r?.ledger_paid_total)],
+    ['Balance ₹',money(r?.ledger_balance_total||r?.net_total)],
+    ['Ledger Status',r?.ledger_payment_status||'NOT_POSTED']
+  ].map(([label,value],index)=>
+    `<div class="stat ${
+      (
+        index===3&&Number(value)>0
+      )||
+      (
+        index===6&&Number(r?.ledger_balance_total||0)>0
+      )
+        ?'alert'
+        :''
+    }">
+      <small>${safe(label)}</small>
+      <strong>${safe(value)}</strong>
+    </div>`
+  ).join('');
+
+  $('payrollBody').innerHTML=lines.length
+    ?lines.map(line=>{
+      const balance=Number(
+        line.ledger_balance_amount||
+        (
+          line.run_status==='CALCULATED'
+            ?line.net_pay
+            :0
+        )||
+        0
+      );
+
+      const due=Number(
+        line.ledger_due_amount||
+        (
+          ['APPROVED','PARTIALLY_PAID','PAID'].includes(
+            line.run_status
+          )
+            ?line.net_pay
+            :0
+        )||
+        0
+      );
+
+      const paid=Number(line.ledger_paid_amount||0);
+      const paymentStatus=line.ledger_payment_status||(
+        line.run_status==='CALCULATED'
+          ?'APPROVE_FIRST'
+          :'NOT_POSTED'
+      );
+
+      const paymentAction=line.due_entry_id
+        ?(
+          balance>0.005
+            ?`<button
+                class="btn success ledger-payment-button"
+                data-pay-due="${safe(line.due_entry_id)}"
+                type="button">PAY ₹${money(balance)}</button>`
+            :`<button
+                class="btn ledger-payment-button"
+                data-open-ledger-worker="${safe(line.worker_id)}"
+                type="button">OPEN LEDGER</button>`
+        )
+        :(
+          line.run_status==='CALCULATED'
+            ?'<span class="muted">Approve first</span>'
+            :'<span class="muted">Due not posted</span>'
+        );
+
+      return `<tr>
+        <td>
+          <b>${safe(line.worker_name||line.worker_id)}</b>
+          <br>
+          <small class="muted">${safe(line.worker_code||'—')}</small>
+        </td>
+
+        <td>${safe(line.department_code||'—')}</td>
+        <td>${safe(line.compensation_mode||'PCS_ONLY')}</td>
+        <td>${qty(line.payable_qty)}</td>
+        <td class="money">${money(line.average_base_rate)}</td>
+        <td class="money">${money(line.base_piece_earning)}</td>
+        <td class="money">${money(line.rate_enhancement_earning)}</td>
+        <td class="money">${money(line.monthly_flat_incentive)}</td>
+        <td class="money">${money(line.adjustment_earning)}</td>
+        <td class="money">${money(line.adjustment_deduction)}</td>
+        <td class="money">${money(line.advance_deduction)}</td>
+        <td class="money">${money(line.damage_reference_amount)}</td>
+        <td>${qty(line.attendance_present_days)}</td>
+        <td>${qty(line.attendance_absent_days)}</td>
+        <td class="${Number(line.missing_rate_rows)>0?'status-MISSING_RATE':''}">
+          ${line.missing_rate_rows}
+        </td>
+        <td class="${Number(line.missing_cap_rows)>0?'status-MISSING_SIZE_CAP':''}">
+          ${line.missing_cap_rows}
+        </td>
+        <td class="money"><b>${money(due)}</b></td>
+        <td class="money">${money(paid)}</td>
+        <td class="money ledger-balance">${money(balance)}</td>
+        <td class="${paymentStatusClass(paymentStatus)}">${safe(paymentStatus)}</td>
+        <td>${paymentAction}</td>
+        <td>
+          <button
+            class="btn"
+            data-worker-detail="${safe(line.worker_name||'')}"
+            type="button">Open PCS</button>
+        </td>
+      </tr>`;
+    }).join('')
+    :'<tr><td colspan="22" class="muted">Calculate Piece payroll to create snapshot lines.</td></tr>';
+
+  $('payrollBody').querySelectorAll('[data-worker-detail]').forEach(
+    button=>button.onclick=()=>{
+      showTab('details');
+      $('detailSearch').value=button.dataset.workerDetail;
+      loadDetails();
+    }
+  );
+
+  $('payrollBody').querySelectorAll('[data-pay-due]').forEach(
+    button=>button.onclick=async()=>{
+      await openPayment(
+        button.dataset.payDue,
+        {
+          mode:$('payrollMode').value,
+          month:$('payrollMonth').value
+        }
+      );
+    }
+  );
+
+  $('payrollBody').querySelectorAll('[data-open-ledger-worker]').forEach(
+    button=>button.onclick=async()=>{
+      showTab('ledger');
+      $('ledgerMode').value=$('payrollMode').value;
+      $('ledgerMonth').value=$('payrollMonth').value;
+      $('ledgerSearch').value='';
+      state.ledgerFocusWorkerId=button.dataset.openLedgerWorker;
+      syncSelects();
+      await loadLedger();
+    }
+  );
+
+  const locked=[
+    'APPROVED',
+    'PARTIALLY_PAID',
+    'PAID'
+  ].includes(r?.status);
+
+  $('calculatePayroll').disabled=locked;
+  $('approvePayroll').disabled=
+    !r||
+    r.status!=='CALCULATED'||
+    Number(r.incomplete_worker_count)>0;
+  $('reopenPayroll').disabled=!locked;
+  $('markPaid').disabled=!r||![
+    'APPROVED',
+    'PARTIALLY_PAID',
+    'PAID'
+  ].includes(r.status);
 }
 
 async function loadPayroll(){
   try{
-    const month=monthStart($('payrollMonth').value),mode=$('payrollMode').value;
-    const rr=await state.client.from('rr_piece_payroll_run_board_v779').select('*').eq('period_month',month).eq('data_mode',mode).maybeSingle();if(rr.error)throw rr.error;
-    state.run=rr.data||null;
-    if(state.run){const lr=await state.client.from('rr_piece_payroll_line_board_v779').select('*').eq('piece_run_id',state.run.id).order('worker_name');if(lr.error)throw lr.error;state.lines=lr.data||[]}else state.lines=[];
-    renderPayroll();say('payrollMessage',state.run?`Run loaded: ${state.run.status}`:'No calculated run for this month.','success');
-  }catch(e){say('payrollMessage',err(e),'error')}
+    const month=monthStart($('payrollMonth').value);
+    const mode=$('payrollMode').value;
+
+    const runResult=await state.client
+      .from('rr_piece_payroll_run_board_v779')
+      .select('*')
+      .eq('period_month',month)
+      .eq('data_mode',mode)
+      .maybeSingle();
+
+    if(runResult.error)throw runResult.error;
+
+    state.run=runResult.data||null;
+
+    if(state.run){
+      const lineResult=await state.client
+        .from('rr_piece_payroll_line_board_v779')
+        .select('*')
+        .eq('piece_run_id',state.run.id)
+        .order('worker_name');
+
+      if(lineResult.error)throw lineResult.error;
+      state.lines=lineResult.data||[];
+    }else{
+      state.lines=[];
+    }
+
+    renderPayroll();
+
+    say(
+      'payrollMessage',
+      state.run
+        ?`Run loaded: ${state.run.status} · Ledger Due ₹${money(state.run.ledger_due_total)} · Paid ₹${money(state.run.ledger_paid_total)} · Balance ₹${money(state.run.ledger_balance_total)}`
+        :'No calculated run for this month.',
+      'success'
+    );
+  }catch(error){
+    say('payrollMessage',err(error),'error');
+  }
 }
-async function calculatePayroll(){try{say('payrollMessage','Reading UPM Dynamic Submit, assignment-size cap and frozen Assignment Actual Rate…','info');const id=await rpc('rr_piece_payroll_calculate_v779',{p_period_month:monthStart($('payrollMonth').value),p_data_mode:$('payrollMode').value});await loadPayroll();say('payrollMessage',`Piece payroll calculated. Run ${id}`,'success')}catch(e){say('payrollMessage',err(e),'error')}}
-async function approvePayroll(){try{if(!state.run)throw new Error('Calculate payroll first.');const reason=prompt('Approval reason','UPM PCS, rates and adjustments verified')||'';if(!reason)return;await rpc('rr_piece_payroll_approve_v779',{p_piece_run_id:state.run.id,p_reason:reason});await loadPayroll();say('payrollMessage','Piece payroll approved and locked.','success')}catch(e){say('payrollMessage',err(e),'error')}}
-async function reopenPayroll(){try{if(!state.run)throw new Error('Run missing.');const reason=prompt('OWNER reopen reason','Rate / UPM / adjustment correction required')||'';if(!reason)return;await rpc('rr_piece_payroll_reopen_v779',{p_piece_run_id:state.run.id,p_reason:reason});await loadPayroll();say('payrollMessage','Piece payroll reopened. Correct data and recalculate.','success')}catch(e){say('payrollMessage',err(e),'error')}}
-async function markPaid(){try{if(!state.run)throw new Error('Run missing.');const ref=prompt('Payment reference','Bank transfer / Cash voucher')||'';if(!ref)return;await rpc('rr_piece_payroll_mark_paid_v779',{p_piece_run_id:state.run.id,p_payment_reference:ref});await loadPayroll();say('payrollMessage','Piece payroll marked PAID.','success')}catch(e){say('payrollMessage',err(e),'error')}}
+
+async function calculatePayroll(){
+  try{
+    say(
+      'payrollMessage',
+      'Reading UPM Dynamic Submit, assignment-size cap and frozen Assignment Actual Rate…',
+      'info'
+    );
+
+    const id=await rpc(
+      'rr_piece_payroll_calculate_v779',
+      {
+        p_period_month:monthStart($('payrollMonth').value),
+        p_data_mode:$('payrollMode').value
+      }
+    );
+
+    await loadPayroll();
+
+    say(
+      'payrollMessage',
+      `Piece payroll calculated. Run ${id}`,
+      'success'
+    );
+  }catch(error){
+    say('payrollMessage',err(error),'error');
+  }
+}
+
+async function approvePayroll(){
+  try{
+    if(!state.run){
+      throw new Error('Calculate payroll first.');
+    }
+
+    const reason=prompt(
+      'Approval reason',
+      'UPM PCS, rates and adjustments verified'
+    )||'';
+
+    if(!reason)return;
+
+    await rpc(
+      'rr_piece_payroll_approve_v779',
+      {
+        p_piece_run_id:state.run.id,
+        p_reason:reason
+      }
+    );
+
+    await loadPayroll();
+    await loadLedger();
+
+    say(
+      'payrollMessage',
+      'Piece payroll approved and locked. Worker-wise Salary Due posted in Worker Ledger.',
+      'success'
+    );
+  }catch(error){
+    say('payrollMessage',err(error),'error');
+  }
+}
+
+async function reopenPayroll(){
+  try{
+    if(!state.run){
+      throw new Error('Run missing.');
+    }
+
+    const reason=prompt(
+      'OWNER reopen reason',
+      'Rate / UPM / adjustment correction required'
+    )||'';
+
+    if(!reason)return;
+
+    await rpc(
+      'rr_piece_payroll_reopen_v779',
+      {
+        p_piece_run_id:state.run.id,
+        p_reason:reason
+      }
+    );
+
+    await loadPayroll();
+    await loadLedger();
+
+    say(
+      'payrollMessage',
+      'Piece payroll reopened. If payment existed, it must have been reversed first.',
+      'success'
+    );
+  }catch(error){
+    say('payrollMessage',err(error),'error');
+  }
+}
+
+async function markPaid(){
+  if(!state.run)return;
+
+  showTab('ledger');
+  $('ledgerMode').value=$('payrollMode').value;
+  $('ledgerMonth').value=$('payrollMonth').value;
+  $('ledgerStatus').value='ALL';
+  syncSelects();
+  await loadLedger();
+
+  say(
+    'ledgerMessage',
+    'Select a worker Salary Due and post partial/full payment with voucher/reference.',
+    'info'
+  );
+}
 
 function currentAccess(){
   return {
@@ -1196,12 +1495,546 @@ async function loadAdjustments(){try{await loadWorkers($('adjustmentMode').value
 async function saveAdjustment(e){e.preventDefault();try{if(!state.adjustmentWorkerId)throw new Error('Search and select a Piece-Rate worker.');await rpc('rr_piece_add_adjustment_v779',{p_worker_id:state.adjustmentWorkerId,p_period_month:monthStart($('adjustmentMonth').value),p_adjustment_type:$('adjustmentType').value,p_amount:Number($('adjustmentAmount').value),p_reason:$('adjustmentReason').value,p_data_mode:$('adjustmentMode').value,p_source_key:$('adjustmentSourceKey').value||null});$('adjustmentAmount').value='';$('adjustmentReason').value='';$('adjustmentSourceKey').value='';await loadAdjustments();say('adjustmentMessage','Adjustment posted. Recalculate Piece payroll to include it.','success')}catch(e2){say('adjustmentMessage',err(e2),'error')}}
 async function cancelAdjustment(id){try{const reason=prompt('Cancellation reason','Wrong Piece adjustment entry')||'';if(!reason)return;await rpc('rr_piece_cancel_adjustment_v779',{p_adjustment_id:id,p_reason:reason});await loadAdjustments();say('adjustmentMessage','Adjustment cancelled.','success')}catch(e){say('adjustmentMessage',err(e),'error')}}
 
+function ledgerMonthText(value){
+  if(!value)return '—';
+  return new Date(`${value}T00:00:00+05:30`).toLocaleDateString(
+    'en-IN',
+    {
+      timeZone:'Asia/Kolkata',
+      month:'short',
+      year:'numeric'
+    }
+  );
+}
+
+function filteredLedgerDues(){
+  const query=$('ledgerSearch').value.trim().toLowerCase();
+  const status=$('ledgerStatus').value;
+  const month=$('ledgerMonth').value;
+
+  return state.ledgerDues.filter(row=>{
+    if(month&&String(row.period_month||'').slice(0,7)!==month){
+      return false;
+    }
+
+    if(
+      status!=='ALL'&&
+      upper(row.payment_status)!==status
+    ){
+      return false;
+    }
+
+    if(
+      state.ledgerFocusWorkerId&&
+      String(row.worker_id)!==String(state.ledgerFocusWorkerId)
+    ){
+      return false;
+    }
+
+    if(!query)return true;
+
+    return JSON.stringify([
+      row.worker_name,
+      row.worker_code,
+      row.department_code,
+      row.source_module,
+      row.due_reference,
+      row.due_remarks,
+      row.period_month,
+      row.payment_status
+    ]).toLowerCase().includes(query);
+  });
+}
+
+function filteredLedgerEntries(){
+  const query=$('ledgerSearch').value.trim().toLowerCase();
+  const month=$('ledgerMonth').value;
+  const dueWorkerIds=new Set(
+    filteredLedgerDues().map(row=>String(row.worker_id))
+  );
+
+  return state.ledgerEntries.filter(row=>{
+    if(month&&String(row.period_month||'').slice(0,7)!==month){
+      return false;
+    }
+
+    if(
+      state.ledgerFocusWorkerId&&
+      String(row.worker_id)!==String(state.ledgerFocusWorkerId)
+    ){
+      return false;
+    }
+
+    if(
+      !state.ledgerFocusWorkerId&&
+      $('ledgerStatus').value!=='ALL'&&
+      !dueWorkerIds.has(String(row.worker_id))
+    ){
+      return false;
+    }
+
+    if(!query)return true;
+
+    return JSON.stringify([
+      row.worker_name,
+      row.worker_code,
+      row.department_code,
+      row.entry_type,
+      row.payment_mode,
+      row.reference_no,
+      row.remarks,
+      row.period_month,
+      row.status
+    ]).toLowerCase().includes(query);
+  });
+}
+
+function renderLedger(){
+  const dues=filteredLedgerDues();
+  const entries=filteredLedgerEntries();
+
+  const totalDue=dues.reduce(
+    (sum,row)=>sum+Number(row.due_amount||0),
+    0
+  );
+  const totalPaid=dues.reduce(
+    (sum,row)=>sum+Number(row.paid_amount||0),
+    0
+  );
+  const totalBalance=dues.reduce(
+    (sum,row)=>sum+Number(row.balance_amount||0),
+    0
+  );
+
+  $('ledgerStats').innerHTML=[
+    ['Salary Due Rows',dues.length],
+    ['Workers',new Set(dues.map(row=>String(row.worker_id))).size],
+    ['Total Due ₹',money(totalDue)],
+    ['Total Paid ₹',money(totalPaid)],
+    ['Outstanding ₹',money(totalBalance)],
+    ['Unpaid',dues.filter(row=>row.payment_status==='UNPAID').length],
+    ['Partial',dues.filter(row=>row.payment_status==='PARTIAL').length],
+    ['Paid',dues.filter(row=>row.payment_status==='PAID').length]
+  ].map(([label,value],index)=>
+    `<div class="stat ${
+      (
+        index===4&&totalBalance>0
+      )||
+      (
+        index===5&&Number(value)>0
+      )||
+      (
+        index===6&&Number(value)>0
+      )
+        ?'alert'
+        :''
+    }">
+      <small>${safe(label)}</small>
+      <strong>${safe(value)}</strong>
+    </div>`
+  ).join('');
+
+  $('ledgerDueBody').innerHTML=dues.length
+    ?dues.map(row=>{
+      const balance=Number(row.balance_amount||0);
+      const statusClass=paymentStatusClass(row.payment_status);
+
+      return `<tr>
+        <td>${safe(ledgerMonthText(row.period_month))}</td>
+        <td>
+          <b>${safe(row.worker_name||row.worker_id)}</b>
+          <br>
+          <small class="muted">${safe(row.worker_code||'—')}</small>
+        </td>
+        <td>${safe(row.department_code||'—')}</td>
+        <td>${safe(row.payroll_category||'—')}</td>
+        <td>${safe(row.source_module||'—')}</td>
+        <td class="money"><b>${money(row.due_amount)}</b></td>
+        <td class="money">${money(row.paid_amount)}</td>
+        <td class="money ledger-balance">${money(balance)}</td>
+        <td class="${statusClass}">${safe(row.payment_status)}</td>
+        <td>${safe(localDateTime(row.last_payment_at))}</td>
+        <td>
+          ${
+            balance>0.005
+              ?`<button
+                  class="btn success ledger-payment-button"
+                  data-ledger-pay="${safe(row.due_entry_id)}"
+                  type="button">PAY / PART PAY</button>`
+              :'<span class="ledger-paid">SETTLED</span>'
+          }
+        </td>
+        <td>
+          <button
+            class="btn"
+            data-ledger-worker="${safe(row.worker_id)}"
+            type="button">OPEN LEDGER</button>
+        </td>
+      </tr>`;
+    }).join('')
+    :'<tr><td colspan="12" class="muted">No matching worker salary due rows.</td></tr>';
+
+  $('ledgerEntryBody').innerHTML=entries.length
+    ?entries.map(row=>{
+      const canReverse=
+        row.entry_type==='PAYMENT'&&
+        row.status==='POSTED'&&
+        !state.ledgerEntries.some(item=>
+          item.entry_type==='PAYMENT_REVERSAL'&&
+          item.status==='POSTED'&&
+          String(item.related_entry_id)===String(row.id)
+        );
+
+      return `<tr>
+        <td>${safe(row.entry_date||'—')}</td>
+        <td>
+          <b>${safe(row.worker_name||row.worker_id)}</b>
+          <br>
+          <small class="muted">${safe(row.worker_code||'—')}</small>
+        </td>
+        <td>${safe(ledgerMonthText(row.period_month))}</td>
+        <td>${safe(row.entry_type)}</td>
+        <td class="money">${money(row.due_or_credit_amount)}</td>
+        <td class="money">${money(row.payment_or_debit_amount)}</td>
+        <td class="money ledger-balance">${money(row.running_balance)}</td>
+        <td>${safe(row.payment_mode||'—')}</td>
+        <td>${safe(row.reference_no||'—')}</td>
+        <td>${safe(row.remarks||'—')}</td>
+        <td>${safe(row.status)}</td>
+        <td>
+          ${
+            canReverse
+              ?`<button
+                  class="btn danger"
+                  data-reverse-payment="${safe(row.id)}"
+                  type="button">REVERSE PAYMENT</button>`
+              :'—'
+          }
+        </td>
+      </tr>`;
+    }).join('')
+    :'<tr><td colspan="12" class="muted">No matching ledger entries.</td></tr>';
+
+  $('ledgerDueBody').querySelectorAll('[data-ledger-pay]').forEach(
+    button=>button.onclick=()=>openPayment(button.dataset.ledgerPay)
+  );
+
+  $('ledgerDueBody').querySelectorAll('[data-ledger-worker]').forEach(
+    button=>button.onclick=()=>{
+      state.ledgerFocusWorkerId=button.dataset.ledgerWorker;
+      $('ledgerSearch').value='';
+      renderLedger();
+      say(
+        'ledgerMessage',
+        'Worker-specific ledger opened. Clear Worker Focus to show all workers.',
+        'info'
+      );
+    }
+  );
+
+  $('ledgerEntryBody').querySelectorAll('[data-reverse-payment]').forEach(
+    button=>button.onclick=()=>reversePayment(
+      button.dataset.reversePayment
+    )
+  );
+}
+
+async function loadLedger(){
+  try{
+    const mode=$('ledgerMode').value;
+
+    const [dueResult,entryResult]=await Promise.all([
+      state.client
+        .from('rr_worker_salary_due_board_v781')
+        .select('*')
+        .eq('data_mode',mode)
+        .order('period_month',{ascending:false})
+        .order('worker_name',{ascending:true}),
+
+      state.client
+        .from('rr_worker_salary_ledger_board_v781')
+        .select('*')
+        .eq('data_mode',mode)
+        .order('entry_date',{ascending:false})
+        .order('created_at',{ascending:false})
+        .limit(5000)
+    ]);
+
+    if(dueResult.error)throw dueResult.error;
+    if(entryResult.error)throw entryResult.error;
+
+    state.ledgerDues=dueResult.data||[];
+    state.ledgerEntries=entryResult.data||[];
+
+    renderLedger();
+
+    say(
+      'ledgerMessage',
+      `${state.ledgerDues.length} worker Salary Due rows and ${state.ledgerEntries.length} ledger entries loaded.`,
+      'success'
+    );
+  }catch(error){
+    say('ledgerMessage',err(error),'error');
+  }
+}
+
+async function openPayment(dueEntryId,defaults={}){
+  showTab('ledger');
+
+  if(defaults.mode){
+    $('ledgerMode').value=defaults.mode;
+  }
+  if(defaults.month){
+    $('ledgerMonth').value=defaults.month;
+  }
+
+  syncSelects();
+
+  if(
+    !state.ledgerDues.some(
+      row=>String(row.due_entry_id)===String(dueEntryId)
+    )
+  ){
+    await loadLedger();
+  }
+
+  const due=state.ledgerDues.find(
+    row=>String(row.due_entry_id)===String(dueEntryId)
+  );
+
+  if(!due){
+    say(
+      'ledgerMessage',
+      'Salary due row not found. Refresh Worker Ledger.',
+      'error'
+    );
+    return;
+  }
+
+  state.ledgerSelectedDueId=due.due_entry_id;
+  state.ledgerFocusWorkerId=due.worker_id;
+
+  $('ledgerSelectedDue').innerHTML=`
+    <b>${safe(due.worker_name||due.worker_id)}</b>
+    · ${safe(due.worker_code||'—')}
+    · ${safe(due.department_code||'—')}
+    · ${safe(ledgerMonthText(due.period_month))}
+    <br>
+    Salary Due ₹${money(due.due_amount)}
+    · Paid ₹${money(due.paid_amount)}
+    · <b>Balance ₹${money(due.balance_amount)}</b>
+  `;
+
+  $('ledgerPaymentAmount').value=Number(
+    due.balance_amount||0
+  ).toFixed(2);
+
+  $('ledgerPaymentDate').value=todayDate();
+  $('ledgerPaymentMode').value='CASH';
+  $('ledgerPaymentReference').value='';
+  $('ledgerPaymentRemarks').value='';
+  syncSelects();
+
+  $('ledgerPaymentPanel').classList.remove('hidden');
+
+  renderLedger();
+
+  $('ledgerPaymentPanel').scrollIntoView({
+    behavior:'smooth',
+    block:'start'
+  });
+
+  setTimeout(()=>{
+    $('ledgerPaymentAmount').focus();
+    $('ledgerPaymentAmount').select();
+  },250);
+}
+
+function closePaymentForm(){
+  state.ledgerSelectedDueId='';
+  $('ledgerPaymentPanel').classList.add('hidden');
+  $('ledgerPaymentForm').reset();
+  $('ledgerPaymentDate').value=todayDate();
+  syncSelects();
+}
+
+async function postLedgerPayment(event){
+  event.preventDefault();
+
+  try{
+    if(!state.ledgerSelectedDueId){
+      throw new Error('Select a worker Salary Due.');
+    }
+
+    const result=await rpc(
+      'rr_worker_salary_payment_post_v781',
+      {
+        p_due_entry_id:state.ledgerSelectedDueId,
+        p_amount:Number($('ledgerPaymentAmount').value),
+        p_payment_date:$('ledgerPaymentDate').value,
+        p_payment_mode:$('ledgerPaymentMode').value,
+        p_reference_no:$('ledgerPaymentReference').value,
+        p_remarks:$('ledgerPaymentRemarks').value||null
+      }
+    );
+
+    closePaymentForm();
+    await Promise.all([
+      loadLedger(),
+      loadPayroll()
+    ]);
+
+    say(
+      'ledgerMessage',
+      `Payment posted: ${result.worker_name||'Worker'} · ₹${money(result.payment_amount)} · Remaining ₹${money(result.new_balance)}.`,
+      'success'
+    );
+  }catch(error){
+    say('ledgerMessage',err(error),'error');
+  }
+}
+
+async function reversePayment(paymentId){
+  try{
+    const reason=prompt(
+      'Payment reversal reason',
+      'Wrong payment / duplicate payment / payment entry correction'
+    )||'';
+
+    if(!reason)return;
+
+    const result=await rpc(
+      'rr_worker_salary_payment_reverse_v781',
+      {
+        p_payment_entry_id:paymentId,
+        p_reason:reason
+      }
+    );
+
+    await Promise.all([
+      loadLedger(),
+      loadPayroll()
+    ]);
+
+    say(
+      'ledgerMessage',
+      `Payment reversed: ${result.worker_name||'Worker'} · ₹${money(result.reversed_amount)}. Balance restored.`,
+      'success'
+    );
+  }catch(error){
+    say('ledgerMessage',err(error),'error');
+  }
+}
+
+function clearLedgerWorkerFocus(){
+  state.ledgerFocusWorkerId='';
+  renderLedger();
+}
+
 function renderMapping(){const rows=state.mapping;$('mappingBody').innerHTML=rows.length?rows.map(x=>`<tr><td><b>${safe(x.check_code)}</b></td><td><span class="badge ${x.result==='PASS'?'good':x.result==='FAIL'?'bad':'warn'}">${safe(x.result)}</span></td><td>${safe(x.details)}</td></tr>`).join(''):'<tr><td colspan="3" class="muted">Run Mapping Audit.</td></tr>';$('logicCards').innerHTML=[['Monthly Salary','V778 remains Monthly-only. No V778 table/function is altered.'],['Piece Salary','V779 reads submitted UPM handoffs and frozen assignment rates.'],['Double-Pay Guard','Cumulative handoff quantity is capped by assignment-size and prior period usage is subtracted.'],['Attendance','Piece attendance is reporting-only and does not alter PCS wage.'],['Damage','UPM damage is reference-only until audited DAMAGE_DEBIT is posted.'],['Salary Head','rr_salary_head_bind_v779 is ready for the future unified dashboard.']].map(([a,b])=>`<div class="logic-card"><b>${safe(a)}</b><small>${safe(b)}</small></div>`).join('')}
 async function runCompatibility(){try{const rows=await rpc('rr_piece_compatibility_report_v779',{});state.mapping=rows||[];renderMapping();const fail=state.mapping.filter(x=>x.result==='FAIL').length;say('mappingMessage',fail?`${fail} required mapping checks failed.`:'All V779 compatibility checks passed. Static PASS still requires TEST-mode data verification.',fail?'error':'success')}catch(e){say('mappingMessage',err(e),'error')}}
 
-function showTab(tab){['payroll','details','attendance','adjustments','mapping'].forEach(t=>{$(`tab-${t}`).classList.toggle('hidden',t!==tab);document.querySelector(`[data-tab="${t}"]`)?.classList.toggle('active',t===tab)});if(tab==='payroll')loadPayroll();if(tab==='details')loadDetails();if(tab==='adjustments')loadAdjustments();if(tab==='mapping'&&!state.mapping.length)runCompatibility()}
-function bind(){attendanceCombo=new SearchCombo($('attendanceWorkerCombo'),row=>{state.attendanceWorkerId=row.worker_id;loadAttendance()});adjustmentCombo=new SearchCombo($('adjustmentWorkerCombo'),row=>{state.adjustmentWorkerId=row.worker_id});$('tabs').querySelectorAll('button').forEach(b=>b.onclick=()=>showTab(b.dataset.tab));$('calculatePayroll').onclick=calculatePayroll;$('approvePayroll').onclick=approvePayroll;$('reopenPayroll').onclick=reopenPayroll;$('markPaid').onclick=markPaid;$('refreshPayroll').onclick=loadPayroll;$('payrollMonth').onchange=loadPayroll;$('payrollMode').onchange=loadPayroll;$('detailMonth').onchange=loadDetails;$('detailMode').onchange=loadDetails;$('detailSearch').oninput=renderDetails;$('detailMissingOnly').onchange=renderDetails;$('loadDetails').onclick=loadDetails;$('loadAttendance').onclick=loadAttendance;$('attendanceForm').onsubmit=saveAttendance;$('clearAttendanceForm').onclick=clearAttendanceForm;$('attendanceMode').onchange=()=>{state.attendanceWorkerId='';attendanceCombo.setValue('');loadAttendance()};$('attendanceMonth').onchange=()=>state.attendanceWorkerId&&loadAttendance();$('adjustmentForm').onsubmit=saveAdjustment;$('refreshAdjustments').onclick=loadAdjustments;$('adjustmentMode').onchange=()=>{state.adjustmentWorkerId='';adjustmentCombo.setValue('');loadAdjustments()};$('adjustmentMonth').onchange=loadAdjustments;$('runCompatibility').onclick=runCompatibility;upgradeSelects()}
+function showTab(tab){
+  ['payroll','details','attendance','adjustments','ledger','mapping'].forEach(t=>{
+    $(`tab-${t}`).classList.toggle('hidden',t!==tab);
+    document.querySelector(`[data-tab="${t}"]`)?.classList.toggle('active',t===tab);
+  });
 
-async function boot(){try{state.client=window.supabaseClient||window.supabaseDb||window.redzedSupabase||window.sb;if(!state.client)throw new Error('Supabase client unavailable. Check config.js.');if(window.RR?.requireRoles)state.auth=await RR.requireRoles(['owner','admin','account','manager','payroll','hr']);else{const s=await state.client.auth.getSession();if(!s.data?.session)throw new Error('Login required.')}bind();const m=todayMonth();$('payrollMonth').value=m;$('detailMonth').value=m;$('attendanceMonth').value=m;$('adjustmentMonth').value=m;$('attendanceDate').value=todayDate();await loadWorkers('REAL');await Promise.all([loadPayroll(),runCompatibility()]);$('accessBadge').textContent=`ACCESS OK · ${upper(state.auth?.role_code||state.auth?.profile?.role_code||'AUTH')}`;$('accessBadge').className='badge good';window.RR?.startAccessGuard?.()}catch(e){console.error(e);$('accessBadge').textContent='ACCESS ERROR';$('accessBadge').className='badge bad';say('payrollMessage',err(e),'error')}}
+  if(tab==='payroll')loadPayroll();
+  if(tab==='details')loadDetails();
+  if(tab==='adjustments')loadAdjustments();
+  if(tab==='ledger')loadLedger();
+  if(tab==='mapping'&&!state.mapping.length)runCompatibility();
+}
+function bind(){
+  attendanceCombo=new SearchCombo(
+    $('attendanceWorkerCombo'),
+    row=>{
+      state.attendanceWorkerId=row.worker_id;
+      loadAttendance();
+    }
+  );
+
+  adjustmentCombo=new SearchCombo(
+    $('adjustmentWorkerCombo'),
+    row=>{
+      state.adjustmentWorkerId=row.worker_id;
+    }
+  );
+
+  $('tabs').querySelectorAll('button').forEach(
+    button=>button.onclick=()=>showTab(button.dataset.tab)
+  );
+
+  $('calculatePayroll').onclick=calculatePayroll;
+  $('approvePayroll').onclick=approvePayroll;
+  $('reopenPayroll').onclick=reopenPayroll;
+  $('markPaid').onclick=markPaid;
+  $('refreshPayroll').onclick=loadPayroll;
+  $('payrollMonth').onchange=loadPayroll;
+  $('payrollMode').onchange=loadPayroll;
+
+  $('detailMonth').onchange=loadDetails;
+  $('detailMode').onchange=loadDetails;
+  $('detailSearch').oninput=renderDetails;
+  $('detailMissingOnly').onchange=renderDetails;
+  $('loadDetails').onclick=loadDetails;
+
+  $('loadAttendance').onclick=loadAttendance;
+  $('attendanceForm').onsubmit=saveAttendance;
+  $('clearAttendanceForm').onclick=clearAttendanceForm;
+
+  $('attendanceMode').onchange=()=>{
+    state.attendanceWorkerId='';
+    attendanceCombo.setValue('');
+    loadAttendance();
+  };
+
+  $('attendanceMonth').onchange=()=>{
+    if(state.attendanceWorkerId)loadAttendance();
+  };
+
+  $('adjustmentForm').onsubmit=saveAdjustment;
+  $('refreshAdjustments').onclick=loadAdjustments;
+
+  $('adjustmentMode').onchange=()=>{
+    state.adjustmentWorkerId='';
+    adjustmentCombo.setValue('');
+    loadAdjustments();
+  };
+
+  $('adjustmentMonth').onchange=loadAdjustments;
+
+  $('loadLedger').onclick=()=>{
+    state.ledgerFocusWorkerId='';
+    loadLedger();
+  };
+
+  $('ledgerMode').onchange=()=>{
+    state.ledgerFocusWorkerId='';
+    loadLedger();
+  };
+
+  $('ledgerMonth').onchange=()=>{
+    state.ledgerFocusWorkerId='';
+    renderLedger();
+  };
+
+  $('ledgerStatus').onchange=renderLedger;
+
+  $('ledgerSearch').oninput=()=>{
+    state.ledgerFocusWorkerId='';
+    renderLedger();
+  };
+
+  $('ledgerPaymentForm').onsubmit=postLedgerPayment;
+  $('cancelLedgerPayment').onclick=closePaymentForm;
+
+  $('runCompatibility').onclick=runCompatibility;
+
+  upgradeSelects();
+}
+
+async function boot(){try{state.client=window.supabaseClient||window.supabaseDb||window.redzedSupabase||window.sb;if(!state.client)throw new Error('Supabase client unavailable. Check config.js.');if(window.RR?.requireRoles)state.auth=await RR.requireRoles(['owner','admin','account','manager','payroll','hr']);else{const s=await state.client.auth.getSession();if(!s.data?.session)throw new Error('Login required.')}bind();const m=todayMonth();$('payrollMonth').value=m;$('detailMonth').value=m;$('attendanceMonth').value=m;$('adjustmentMonth').value=m;$('ledgerMonth').value=m;$('ledgerPaymentDate').value=todayDate();$('attendanceDate').value=todayDate();await loadWorkers('REAL');await Promise.all([loadPayroll(),runCompatibility()]);$('accessBadge').textContent=`ACCESS OK · ${upper(state.auth?.role_code||state.auth?.profile?.role_code||'AUTH')}`;$('accessBadge').className='badge good';window.RR?.startAccessGuard?.()}catch(e){console.error(e);$('accessBadge').textContent='ACCESS ERROR';$('accessBadge').className='badge bad';say('payrollMessage',err(e),'error')}}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
 })();
