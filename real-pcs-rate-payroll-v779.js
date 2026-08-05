@@ -1,6 +1,6 @@
 (()=>{
 'use strict';
-window.REDZED_PCS_RATE_PAYROLL_VERSION='779.4.0';
+window.REDZED_PCS_RATE_PAYROLL_VERSION='779.4.2';
 
 const state={client:null,auth:null,workers:[],run:null,lines:[],details:[],attendance:[],holidays:[],adjustments:[],mapping:[],ledgerDues:[],ledgerEntries:[],ledgerSelectedDueId:'',ledgerFocusWorkerId:'',attendanceWorkerId:'',adjustmentWorkerId:''};
 const $=id=>document.getElementById(id);

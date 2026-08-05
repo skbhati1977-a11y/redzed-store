@@ -25,7 +25,7 @@
 <body>
 <main class="app">
   <header class="head">
-    <div class="brand"><h1>REDZED REAL · Attendance & Salary</h1><p>V778.1 · Asia/Kolkata · V777.3 Payroll Profile linked</p></div>
+    <div class="brand"><h1>REDZED REAL · Attendance & Salary</h1><p>V778.2 · V782.2 Bulk Ratio Payment · Asia/Kolkata</p></div>
     <span id="accessBadge" class="badge">Checking access…</span>
   </header>
   <nav class="tabs" id="tabs">
@@ -86,9 +86,10 @@
         <button id="calculatePayroll" class="btn primary">Calculate / Recalculate</button>
         <button id="approvePayroll" class="btn success">Approve & Lock</button>
         <button id="reopenPayroll" class="btn warning">Owner Reopen</button>
-        <button id="markPaid" class="btn">Mark Paid</button>
+        <button id="markPaid" class="btn">Bulk Ratio Payment / Ledger</button>
       </div>
       <p class="note">Base Salary − Absence/Half Day/Unpaid Leave − Late + Early/After-shift OT + Monday/Holiday extra half-day + Earnings − Deductions/Advance.</p>
+<p class="note"><b>Payment:</b> 20th Part Payment and Month Final Payment are posted through V782 Bulk Ratio Payment. Previous Outstanding and New Outstanding carry worker-wise in the ledger.</p>
       <p id="payrollMessage" class="message"></p>
     </div>
     <div id="payrollStats" class="stats"></div>
@@ -115,8 +116,8 @@
 </main>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="config.js?v=7781"></script>
-<script src="real-common.js?v=7781"></script>
+<script src="real-common.js?v=7751"></script>
 <script src="payroll-calc-v778.js?v=7781"></script>
-<script src="real-attendance-salary-v778.js?v=7781"></script>
+<script src="real-attendance-salary-v778.js?v=77820"></script>
 </body>
 </html>

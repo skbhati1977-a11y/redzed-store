@@ -60,7 +60,7 @@ label{display:block}label>span{display:block;font-size:12px;color:var(--muted);m
 <body>
 <main class="app">
 <header class="head">
-  <div class="brand"><h1>REDZED REAL · Piece Rate Salary</h1><p>V779.4.0 · Worker Ledger V781.1 · Payment + Balance · Actual Rate Only</p></div>
+  <div class="brand"><h1>REDZED REAL · Piece Rate Salary</h1><p>V779.4.2 · V782.2 Dynamic 7/15/30-Day Bulk Payment · Actual Rate Only</p></div>
   <span id="accessBadge" class="badge">Checking access…</span>
 </header>
 <nav class="tabs" id="tabs">
@@ -80,12 +80,13 @@ label{display:block}label>span{display:block;font-size:12px;color:var(--muted);m
       <button id="calculatePayroll" class="btn primary">Calculate / Recalculate</button>
       <button id="approvePayroll" class="btn success">Approve & Lock</button>
       <button id="reopenPayroll" class="btn warning">Owner Reopen</button>
-      <button id="markPaid" class="btn violet">Worker Ledger / Payment</button>
+      <button id="markPaid" class="btn violet">Worker Ledger / Individual Payment</button>
+      <a class="btn success" href="real-salary-bulk-payment-v782.html?category=PIECE_RATE&cycle=PCS_PART_BULK">PCS Bulk Ratio Payment</a>
       <button id="refreshPayroll" class="btn">Refresh</button>
     </div>
     <p class="note violet">PCS earning = submitted UPM Dynamic Submit quantity × frozen Assignment Actual Rate only. No Standard Rate or other rate fallback is permitted. Cumulative quantity is capped to assignment-size quantity and prior-period payable quantity is subtracted, preventing remake/reopen double payment.</p>
     <p class="note warn">Piece attendance is informational only. Damage rows affect salary only after an audited DAMAGE_DEBIT adjustment.</p>
-    <p class="note"><b>Payment Control:</b> Whole-run Mark Paid is disabled. Approval creates worker-wise Salary Due. Partial/full payment, voucher/reference, balance and reversals are maintained in Worker Ledger.</p>
+    <p class="note"><b>Payment Control:</b> PCS bulk salary supports completed 7/15-day Part Bulk and completed 15/30-day Full Bulk. First posted batch locks TEST/REAL anchor independently; later windows remain consecutive. Every worker's completed work salary accrues even when not selected for payment.</p>
     <p id="payrollMessage" class="message"></p>
   </div>
   <div id="payrollStats" class="stats"></div>
@@ -326,6 +327,6 @@ label{display:block}label>span{display:block;font-size:12px;color:var(--muted);m
 <script src="real-common.js?v=7751"></script>
 <script src="real-mobile-compat-v774.js?v=7742"></script>
 <script src="real-table-freeze-v773.js?v=7734"></script>
-<script src="real-pcs-rate-payroll-v779.js?v=77940"></script>
+<script src="real-pcs-rate-payroll-v779.js?v=77941"></script>
 </body>
 </html>

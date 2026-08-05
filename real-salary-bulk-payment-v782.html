@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=yes">
+<meta name="theme-color" content="#090b10">
+<title>REDZED REAL — Bulk Ratio Salary Payment V782.2</title>
+<style>
+:root{color-scheme:dark;--bg:#090b10;--panel:#141820;--panel2:#0f131a;--line:#313a48;--muted:#aeb8c8;--red:#ef3340;--green:#34c47c;--amber:#ffbd52;--blue:#62a8ff}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;background:var(--bg);color:#fff;font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}.hidden{display:none!important}
+.app{max-width:1750px;margin:auto;padding:14px}
+.head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+.head h1{margin:0;font-size:22px}.head p{margin:4px 0 0;color:var(--muted)}
+.nav{display:flex;gap:8px;flex-wrap:wrap}.nav a{color:#fff;text-decoration:none}
+.btn{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:9px 13px;border:1px solid var(--line);border-radius:10px;background:#222a36;color:#fff;font-weight:750}
+.btn.primary{background:var(--red);border-color:var(--red)}.btn.success{background:#176b47;border-color:#2d9468}.btn.danger{background:#762934;border-color:#a84552}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:13px;margin-bottom:12px}
+.grid{display:grid;grid-template-columns:repeat(5,minmax(155px,1fr));gap:10px}.grid .wide{grid-column:span 2}
+label span{display:block;font-size:12px;color:var(--muted);margin-bottom:5px}
+input,select,textarea{width:100%;min-height:44px;padding:9px 10px;border:1px solid var(--line);border-radius:9px;background:var(--panel2);font-size:16px}
+.actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:11px}
+.message{min-height:22px;color:var(--muted);padding-top:5px}.message.error{color:#ff8e98}.message.success{color:#79e5ae}.message.info{color:#a8ccff}
+.note{padding:10px;border-left:3px solid var(--blue);background:#101825;border-radius:8px;color:#d9e6f6;line-height:1.5}
+.note.warn{border-color:var(--amber);background:#211a0c;color:#ffe0a1}
+.stats{display:grid;grid-template-columns:repeat(7,minmax(130px,1fr));gap:8px;margin-bottom:12px}
+.stat{background:var(--panel2);border:1px solid var(--line);border-radius:11px;padding:10px}.stat small{display:block;color:var(--muted)}.stat strong{font-size:19px}
+.cycle-status{display:grid;grid-template-columns:repeat(5,minmax(140px,1fr));gap:8px;margin-top:10px}
+.cycle-status div{background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:9px}.cycle-status small{display:block;color:var(--muted)}
+.table-wrap{overflow:auto;border:1px solid var(--line);border-radius:12px}
+table{border-collapse:collapse;width:100%;min-width:1850px}
+th,td{padding:8px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}
+th{background:#202733;font-size:12px}td.money{text-align:right;font-variant-numeric:tabular-nums}td.strong{font-weight:900}
+.status-ok{color:#7fe0aa;font-weight:850}.status-bal{color:#ffd27c;font-weight:850}.worker-check{width:20px;height:20px;min-height:20px}
+@media(max-width:1100px){.grid{grid-template-columns:repeat(3,1fr)}.stats,.cycle-status{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:700px){.grid{grid-template-columns:1fr 1fr}.grid .wide{grid-column:1/-1}.stats,.cycle-status{grid-template-columns:1fr 1fr}.app{padding:8px}}
+@media(max-width:480px){.grid{grid-template-columns:1fr}.stats,.cycle-status{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+<main class="app">
+<header class="head">
+  <div>
+    <h1>REDZED REAL · Bulk Ratio Salary Payment</h1>
+    <p>V782.2 · Monthly Locked · PCS Dynamic 7/15/30-Day · TEST/REAL Independent</p>
+  </div>
+  <div class="nav">
+    <a class="btn" href="real-attendance-salary-v778.html">Monthly Salary</a>
+    <a class="btn" href="real-pcs-rate-payroll-v779.html">PCS Salary</a>
+    <span id="accessBadge" class="btn">Checking…</span>
+  </div>
+</header>
+
+<section class="panel">
+  <div class="grid">
+    <label>
+      <span>Data Mode</span>
+      <select id="dataMode" data-searchable="true"><option>REAL</option><option>TEST</option></select>
+    </label>
+
+    <label>
+      <span>Payment Type</span>
+      <select id="cycleType" data-searchable="true">
+        <option value="MONTHLY_PART">MONTHLY — PART PAYMENT</option>
+        <option value="MONTHLY_FINAL">MONTHLY — FINAL PAYMENT</option>
+        <option value="PCS_PART_BULK">PCS — PART BULK 50%</option>
+        <option value="PCS_FULL_BULK">PCS — FULL BULK 100%</option>
+      </select>
+    </label>
+
+    <label id="windowDaysWrap" class="hidden">
+      <span>Completed Work Period</span>
+      <select id="windowDays" data-searchable="true"></select>
+    </label>
+
+    <label>
+      <span>Payroll Month</span>
+      <input id="periodMonth" type="month">
+    </label>
+
+    <label>
+      <span id="windowStartLabel">Window Start</span>
+      <input id="windowStart" type="date">
+    </label>
+
+    <label>
+      <span id="windowEndLabel">Cut-off / Window End</span>
+      <input id="windowEnd" type="date">
+    </label>
+
+    <label>
+      <span>Owner Bulk Payment ₹</span>
+      <input id="ownerAmount" type="number" min="0" step="100" value="0">
+    </label>
+
+    <label>
+      <span>Payment Date</span>
+      <input id="paymentDate" type="date">
+    </label>
+
+    <label>
+      <span>Payment Mode</span>
+      <select id="paymentMode" data-searchable="true">
+        <option>CASH</option><option>BANK</option><option>UPI</option><option>CHEQUE</option><option>OTHER</option>
+      </select>
+    </label>
+
+    <label>
+      <span>One Bulk Voucher / Reference</span>
+      <input id="voucherNo" placeholder="Example: PCS-REAL-001">
+    </label>
+
+    <label class="wide">
+      <span>Remarks</span>
+      <input id="remarks" placeholder="7-day part / 15-day part / 15-day full / 30-day full">
+    </label>
+  </div>
+
+  <div id="cycleStatus" class="cycle-status hidden"></div>
+
+  <div class="actions">
+    <button id="loadPreview" class="btn primary" type="button">Load / Recalculate Preview</button>
+    <button id="selectAll" class="btn" type="button">Select All</button>
+    <button id="clearAll" class="btn" type="button">Clear All</button>
+    <button id="postBatch" class="btn success" type="button" disabled>Post One Bulk Voucher</button>
+  </div>
+
+  <p id="ruleNote" class="note"></p>
+  <p id="message" class="message"></p>
+</section>
+
+<div id="stats" class="stats"></div>
+
+<section class="panel">
+  <div class="table-wrap">
+    <table>
+      <thead><tr id="flowHeader"></tr></thead>
+      <tbody id="flowBody"></tbody>
+    </table>
+  </div>
+</section>
+
+<section class="panel">
+  <div class="actions">
+    <label style="min-width:220px">
+      <span>History Data Mode</span>
+      <select id="historyMode" data-searchable="true"><option>REAL</option><option>TEST</option></select>
+    </label>
+    <button id="loadHistory" class="btn" type="button">Load Batch History</button>
+  </div>
+  <p id="historyMessage" class="message"></p>
+  <div class="table-wrap">
+    <table style="min-width:1450px">
+      <thead>
+        <tr>
+          <th>Date</th><th>Cycle</th><th>Work Window</th><th>Voucher</th><th>Mode</th>
+          <th>Owner Amount ₹</th><th>Eligible ₹</th><th>Workers</th><th>Status</th>
+          <th>Created By</th><th>Remarks</th><th>Action</th>
+        </tr>
+      </thead>
+      <tbody id="historyBody"></tbody>
+    </table>
+  </div>
+</section>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js?v=7822"></script>
+<script src="real-common.js?v=7751"></script>
+<script src="real-salary-bulk-payment-v782.js?v=7822"></script>
+</body>
+</html>

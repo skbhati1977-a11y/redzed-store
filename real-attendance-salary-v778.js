@@ -1,6 +1,6 @@
 (()=>{
 'use strict';
-window.REDZED_ATTENDANCE_SALARY_VERSION='778.1.3';
+window.REDZED_ATTENDANCE_SALARY_VERSION='778.2.0';
 const state={client:null,auth:null,workers:[],attendanceWorkerId:'',adjustmentWorkerId:'',attendance:[],holidays:[],run:null,lines:[],adjustments:[]};
 const $=id=>document.getElementById(id);
 const safe=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
@@ -18,89 +18,12 @@ function todayMonth(){return new Date().toLocaleDateString('en-CA',{timeZone:'As
 function todayDate(){return new Date().toLocaleDateString('en-CA',{timeZone:'Asia/Kolkata'})}
 
 class SearchSelect{
-  constructor(select){
-    this.select=select;
-    this.wrap=document.createElement('div');
-    this.wrap.className='combo';
-    this.input=document.createElement('input');
-    this.input.className='combo-input';
-    this.input.autocomplete='off';
-    this.list=document.createElement('div');
-    this.list.className='combo-list hidden';
-    select.parentNode.insertBefore(this.wrap,select);
-    this.wrap.append(this.input,this.list,select);
-    select.classList.add('hidden');
-    select._searchCombo=this;
-    this.input.addEventListener('focus',()=>{this.input.select();this.render(true)});
-    this.input.addEventListener('click',()=>this.render(true));
-    this.input.addEventListener('input',()=>this.render(false));
-    this.input.addEventListener('keydown',e=>this.key(e));
-    // Commit an option on pointer-down, before the input blur handler can restore the old value.
-    // This fixes REAL/TEST being visible but not selectable on mouse and touch devices.
-    this.list.addEventListener('pointerdown',e=>{
-      const option=e.target.closest('[data-si]');
-      if(!option||!this.list.contains(option))return;
-      e.preventDefault();
-      e.stopPropagation();
-      this.pick(Number(option.dataset.si));
-    });
-    this.input.addEventListener('blur',()=>setTimeout(()=>{
-      if(!this.wrap.contains(document.activeElement)){
-        this.list.classList.add('hidden');
-        this.sync();
-      }
-    },0));
-    document.addEventListener('click',e=>{
-      if(!this.wrap.contains(e.target)){
-        this.list.classList.add('hidden');
-        this.sync();
-      }
-    });
-    this.sync();
-  }
+  constructor(select){this.select=select;this.wrap=document.createElement('div');this.wrap.className='combo';this.input=document.createElement('input');this.input.className='combo-input';this.input.autocomplete='off';this.list=document.createElement('div');this.list.className='combo-list hidden';select.parentNode.insertBefore(this.wrap,select);this.wrap.append(this.input,this.list);this.wrap.append(select);select.classList.add('hidden');select._searchCombo=this;this.input.addEventListener('focus',()=>this.render());this.input.addEventListener('input',()=>this.render());this.input.addEventListener('keydown',e=>this.key(e));document.addEventListener('click',e=>{if(!this.wrap.contains(e.target))this.list.classList.add('hidden')});this.sync()}
   options(){return [...this.select.options].map((o,i)=>({i,value:o.value,label:o.textContent.trim(),disabled:o.disabled}))}
-  selectedLabel(){return this.select.selectedOptions[0]?.textContent.trim()||''}
-  sync(){this.input.value=this.selectedLabel()}
-  render(showAll=false){
-    const raw=this.input.value.trim().toLowerCase();
-    const selected=this.selectedLabel().toLowerCase();
-    const q=showAll||raw===selected?'':raw;
-    this.filtered=this.options().filter(o=>!o.disabled&&(!q||o.label.toLowerCase().includes(q)));
-    this.index=-1;
-    this.list.innerHTML=this.filtered.length
-      ?this.filtered.map((o,i)=>`<div class="combo-option" data-si="${i}">${safe(o.label)}</div>`).join('')
-      :'<div class="combo-option muted">No option</div>';
-    this.list.classList.remove('hidden');
-  }
-  pick(i){
-    const o=this.filtered[i];
-    if(!o)return;
-    this.select.value=o.value;
-    this.select.selectedIndex=o.i;
-    this.sync();
-    this.list.classList.add('hidden');
-    this.select.dispatchEvent(new Event('input',{bubbles:true}));
-    this.select.dispatchEvent(new Event('change',{bubbles:true}));
-  }
-  key(e){
-    if(this.list.classList.contains('hidden'))return;
-    if(e.key==='ArrowDown'){
-      e.preventDefault();
-      this.index=Math.min(this.filtered.length-1,this.index+1);
-    }else if(e.key==='ArrowUp'){
-      e.preventDefault();
-      this.index=Math.max(0,this.index-1);
-    }else if(e.key==='Enter'&&this.index>=0){
-      e.preventDefault();
-      this.pick(this.index);
-      return;
-    }else if(e.key==='Escape'){
-      this.list.classList.add('hidden');
-      this.sync();
-      return;
-    }else return;
-    [...this.list.querySelectorAll('[data-si]')].forEach((x,i)=>x.classList.toggle('active',i===this.index));
-  }
+  sync(){const o=this.select.selectedOptions[0];this.input.value=o?.textContent.trim()||''}
+  render(){const q=this.input.value.trim().toLowerCase();this.filtered=this.options().filter(o=>!o.disabled&&(!q||o.label.toLowerCase().includes(q)));this.index=-1;this.list.innerHTML=this.filtered.length?this.filtered.map((o,i)=>`<div class="combo-option" data-si="${i}">${safe(o.label)}</div>`).join(''):'<div class="combo-option muted">No option</div>';this.list.classList.remove('hidden');this.list.querySelectorAll('[data-si]').forEach(el=>el.onclick=()=>this.pick(Number(el.dataset.si)))}
+  pick(i){const o=this.filtered[i];if(!o)return;this.select.value=o.value;this.sync();this.list.classList.add('hidden');this.select.dispatchEvent(new Event('change',{bubbles:true}))}
+  key(e){if(this.list.classList.contains('hidden'))return;if(e.key==='ArrowDown'){e.preventDefault();this.index=Math.min(this.filtered.length-1,this.index+1)}else if(e.key==='ArrowUp'){e.preventDefault();this.index=Math.max(0,this.index-1)}else if(e.key==='Enter'&&this.index>=0){e.preventDefault();this.pick(this.index);return}else if(e.key==='Escape'){this.list.classList.add('hidden');return}else return;[...this.list.querySelectorAll('[data-si]')].forEach((x,i)=>x.classList.toggle('active',i===this.index))}
 }
 function upgradeSelects(){document.querySelectorAll('select').forEach(s=>{if(!s._searchCombo)new SearchSelect(s)})}
 function syncSelects(){document.querySelectorAll('select').forEach(s=>s._searchCombo?.sync())}
@@ -137,7 +60,12 @@ async function loadPayroll(){const month=monthStart($('payrollMonth').value),mod
 async function calculatePayroll(){try{say('payrollMessage','Calculating authoritative monthly snapshot…');const id=await rpc('rr_payroll_calculate_v778',{p_period_month:monthStart($('payrollMonth').value),p_data_mode:$('payrollMode').value});await loadPayroll();say('payrollMessage',`Payroll calculated. Run ${id}`,'success')}catch(e){say('payrollMessage',err(e),'error')}}
 async function approvePayroll(){try{if(!state.run)throw new Error('Calculate payroll first.');const reason=prompt('Approval reason','Attendance checked and payroll approved')||'';if(!reason)return;await rpc('rr_payroll_approve_v778',{p_payroll_run_id:state.run.id,p_reason:reason});await loadPayroll();say('payrollMessage','Payroll approved; attendance and adjustments locked.','success')}catch(e){say('payrollMessage',err(e),'error')}}
 async function reopenPayroll(){try{if(!state.run)throw new Error('Payroll run missing.');const reason=prompt('OWNER reopen reason','Correction required')||'';if(!reason)return;await rpc('rr_payroll_reopen_v778',{p_payroll_run_id:state.run.id,p_reason:reason});await loadPayroll();say('payrollMessage','Payroll reopened. Recalculate after corrections.','success')}catch(e){say('payrollMessage',err(e),'error')}}
-async function markPaid(){try{if(!state.run)throw new Error('Payroll run missing.');const ref=prompt('Payment reference','Bank transfer / Cash voucher')||'';if(!ref)return;await rpc('rr_payroll_mark_paid_v778',{p_payroll_run_id:state.run.id,p_payment_reference:ref});await loadPayroll();say('payrollMessage','Payroll marked PAID.','success')}catch(e){say('payrollMessage',err(e),'error')}}
+async function markPaid(){
+  const month=$('payrollMonth').value||todayMonth();
+  const mode=$('payrollMode').value||'REAL';
+  location.href=
+    `real-salary-bulk-payment-v782.html?category=SALARIED&cycle=MONTHLY_PART&month=${encodeURIComponent(month)}&mode=${encodeURIComponent(mode)}`;
+}
 
 function renderAdjustments(){$('adjustmentBody').innerHTML=state.adjustments.length?state.adjustments.map(x=>`<tr><td>${safe(x.worker_name||x.worker_id)}</td><td>${safe(x.period_month)}</td><td>${safe(x.adjustment_type)}</td><td class="money">${money(x.amount)}</td><td>${safe(x.reason)}</td><td>${safe(x.status)}</td><td>${x.included_payroll_run_id?'YES':'—'}</td><td>${x.status==='POSTED'?`<button class="btn danger" data-cancel-adj="${x.id}">Cancel</button>`:'—'}</td></tr>`).join(''):'<tr><td colspan="8" class="muted">No adjustments.</td></tr>';$('adjustmentBody').querySelectorAll('[data-cancel-adj]').forEach(b=>b.onclick=()=>cancelAdjustment(b.dataset.cancelAdj))}
 async function loadAdjustments(){try{await loadWorkers($('adjustmentMode').value);const r=await state.client.from('rr_payroll_adjustment_board_v778').select('*').eq('period_month',monthStart($('adjustmentMonth').value)).eq('data_mode',$('adjustmentMode').value).order('created_at',{ascending:false});if(r.error)throw r.error;state.adjustments=r.data||[];renderAdjustments();say('adjustmentMessage',`${state.adjustments.length} adjustments loaded.`,'success')}catch(e){say('adjustmentMessage',err(e),'error')}}
