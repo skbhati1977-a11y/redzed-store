@@ -34,11 +34,12 @@ function render(){
   }).join('');
   $('ledgerBody').querySelectorAll('[data-select]').forEach(i=>i.onchange=()=>{i.checked?state.selected.add(i.dataset.select):state.selected.delete(i.dataset.select);method()==='WORKER_LEDGER_WISE'?render():schedule()});
   const inputs=[...$('ledgerBody').querySelectorAll('[data-amount]')];
-  inputs.forEach((i,index)=>{i.oninput=()=>{const id=i.dataset.amount,r=state.rows.find(x=>String(x.worker_id)===id),max=Number(r?.final_total_payable||0);let raw=String(i.value||'').replace(/,/g,'').replace(/[^0-9.]/g,''),a=raw.split('.');raw=a.length>1?`${a.shift()}.${a.join('').slice(0,2)}`:a[0];if(i.value!==raw)i.value=raw;state.manual.set(id,Math.min(Math.max(Number(raw||0),0),max));i.closest('tr').children[7].textContent=`₹${money(balance(r))}`;updateTotals()};i.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();const n=inputs[index+1];n?(n.focus(),n.select()):$('submitPayment').focus()}}});
+  inputs.forEach((i,index)=>{i.oninput=()=>{const id=i.dataset.amount,r=state.rows.find(x=>String(x.worker_id)===id),max=Number(r?.final_total_payable||0);let raw=String(i.value||'').replace(/,/g,'').replace(/[^0-9.]/g,''),a=raw.split('.');raw=a.length>1?`${a.shift()}.${a.join('').slice(0,2)}`:a[0];if(i.value!==raw)i.value=raw;let value=Math.min(Math.max(Number(raw||0),0),max);if(value>0&&value%100!==0){state.manual.set(id,0);say('Selected Workers Partial Payment में हर worker amount ₹100 के multiple में होना चाहिए.','error');}else{state.manual.set(id,value);}i.closest('tr').children[7].textContent=`₹${money(balance(r))}`;updateTotals()};i.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();const n=inputs[index+1];n?(n.focus(),n.select()):$('submitPayment').focus()}}});
   updateTotals()
 }
 function updateTotals(){
   const t=totals();
+  if($('totalPayableTop'))$('totalPayableTop').value=`₹${money(t.total)}`;
   if(method()==='WORKER_LEDGER_WISE')$('bulkAmount').value=t.pay?t.pay.toFixed(2):'';
   if(method()==='FULL_PAYMENT')$('bulkAmount').value=t.total.toFixed(2);
   $('ledgerFoot').innerHTML=`<tr class="total-row"><td colspan="3">TOTAL</td><td class="money">₹${money(t.old)}</td><td class="money">₹${money(t.work)}</td><td class="money">₹${money(t.total)}</td><td class="money">₹${money(t.pay)}</td><td class="money">₹${money(t.balance)}</td></tr>`;
@@ -72,9 +73,9 @@ async function submit(){
     if(!state.selected.size)throw Error('कम से कम एक worker select करें.');
     validatePaymentWindow();
     applyChoice();
-    if(method()==='PARTIAL_RATIO'){if(!(Number($('bulkAmount').value||0)>0))throw Error('Bulk Payment Amount required.');await preview(true)}
+    if(method()==='PARTIAL_RATIO'){const bulk=Number($('bulkAmount').value||0);if(!(bulk>0))throw Error('Bulk Payment Amount required.');if(bulk%100!==0)throw Error('Ratio Division Payment amount ₹100 के multiple में होना चाहिए.');await preview(true)}
     if(method()==='FULL_PAYMENT'){state.selected=new Set(state.rows.map(x=>String(x.worker_id)));await preview(false)}
-    if(!(totals().pay>0))throw Error('Current Payment amount required.');
+    if(!(totals().pay>0))throw Error('Current Payment amount required.');if(method()==='WORKER_LEDGER_WISE'){const invalid=state.rows.some(r=>{const p=pay(r);return p>0&&p%100!==0});if(invalid)throw Error('Selected Workers Partial Payment में सभी payment ₹100 के multiple में होने चाहिए.');}
     $('submitPayment').disabled=true;say('Payment save और post हो रहा है…','info');
     const r=await rpc('rr_salary_payment_post_v785',{
       p_payroll_category:CATEGORY,p_period_start:getStart(),p_period_end:getEnd(),p_data_mode:$('dataMode').value,
@@ -90,7 +91,7 @@ async function submit(){
 function bind(){
   $('loadPreview').onclick=load;$('submitPayment').onclick=submit;
   $('paymentChoice').onchange=async()=>{applyChoice();if(state.preview)await preview(method()==='PARTIAL_RATIO'&&Number($('bulkAmount').value||0)>0)};
-  $('bulkAmount').oninput=()=>{let raw=String($('bulkAmount').value||'').replace(/,/g,'').replace(/[^0-9.]/g,''),a=raw.split('.');raw=a.length>1?`${a.shift()}.${a.join('').slice(0,2)}`:a[0];if($('bulkAmount').value!==raw)$('bulkAmount').value=raw;if(method()==='PARTIAL_RATIO')schedule()};
+  $('bulkAmount').oninput=()=>{let raw=String($('bulkAmount').value||'').replace(/,/g,'').replace(/[^0-9.]/g,''),a=raw.split('.');raw=a.length>1?`${a.shift()}.${a.join('').slice(0,2)}`:a[0];if($('bulkAmount').value!==raw)$('bulkAmount').value=raw;if(method()==='PARTIAL_RATIO'){const v=Number($('bulkAmount').value||0);if(v>0&&v%100!==0){say('Ratio Payment amount ₹100 के multiple में भरें.','error');}else{schedule();}}};
 }
 async function boot(){
   try{
