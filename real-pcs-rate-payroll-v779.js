@@ -1,6 +1,6 @@
 (()=>{
 'use strict';
-window.REDZED_PCS_RATE_PAYROLL_VERSION='779.2.8';
+window.REDZED_PCS_RATE_PAYROLL_VERSION='779.2.9';
 
 const state={client:null,auth:null,workers:[],run:null,lines:[],details:[],attendance:[],holidays:[],adjustments:[],mapping:[],attendanceWorkerId:'',adjustmentWorkerId:''};
 const $=id=>document.getElementById(id);
@@ -184,13 +184,30 @@ async function saveAssignmentRate(button){
     button.disabled=true;say('detailMessage','Assignment Actual Rate save ho rahi hai…','info');
     await rpc('rr_upm_set_assignment_actual_rate_v772',{p_assignment_id:assignmentId,p_actual_rate:rate,p_reason:reason.trim()});
     const runId=await rpc('rr_piece_payroll_calculate_v779',{p_period_month:monthStart($('detailMonth').value),p_data_mode:$('detailMode').value});
-    await loadDetails();
+    await Promise.all([loadDetails(),loadPayroll()]);
     say('detailMessage',`Actual Rate ₹${money(rate)} saved. Payroll automatically recalculated · Run ${runId}`,'success');
   }catch(e){say('detailMessage',err(e),'error')}finally{button.disabled=false}
 }
 function renderDetails(){
-  const qv=$('detailSearch').value.trim().toLowerCase();const rows=state.details.filter(x=>!qv||JSON.stringify([x.worker_name,x.worker_code,x.lot_no,x.department_code,x.to_department_code,x.colour_code,x.colour_name,x.size_code]).toLowerCase().includes(qv));
-  $('detailStats').innerHTML=[['Rows',rows.length],['Workers',new Set(rows.map(x=>x.worker_id)).size],['Payable PCS',qty(rows.reduce((a,x)=>a+Number(x.payable_qty||0),0))],['Base ₹',money(rows.reduce((a,x)=>a+Number(x.base_amount||0),0))],['Enhancement ₹',money(rows.reduce((a,x)=>a+Number(x.enhancement_amount||0),0))],['Missing Actual Rate',rows.filter(x=>x.mapping_status==='MISSING_ACTUAL_RATE'||x.mapping_status==='MISSING_RATE').length],['Missing Cap',rows.filter(x=>x.mapping_status==='MISSING_SIZE_CAP').length]].map(([a,b],i)=>`<div class="stat ${i>4&&Number(b)>0?'alert':''}"><small>${a}</small><strong>${safe(b)}</strong></div>`).join('');
+  const qv=$('detailSearch').value.trim().toLowerCase();
+  const missingOnly=Boolean($('detailMissingOnly')?.checked);
+  const isMissing=x=>x.mapping_status==='MISSING_ACTUAL_RATE'||x.mapping_status==='MISSING_RATE';
+  const rows=state.details.filter(x=>{
+    if(missingOnly&&!isMissing(x))return false;
+    return !qv||JSON.stringify([x.worker_name,x.worker_code,x.lot_no,x.department_code,x.to_department_code,x.colour_code,x.colour_name,x.size_code]).toLowerCase().includes(qv);
+  });
+  const missingRows=rows.filter(isMissing);
+  const missingAssignments=new Set(missingRows.map(x=>String(x.assignment_id||'')).filter(Boolean)).size;
+  $('detailStats').innerHTML=[
+    ['Rows',rows.length],
+    ['Workers',new Set(rows.map(x=>x.worker_id)).size],
+    ['Payable PCS',qty(rows.reduce((a,x)=>a+Number(x.payable_qty||0),0))],
+    ['Base ₹',money(rows.reduce((a,x)=>a+Number(x.base_amount||0),0))],
+    ['Enhancement ₹',money(rows.reduce((a,x)=>a+Number(x.enhancement_amount||0),0))],
+    ['Missing Rate Rows',missingRows.length],
+    ['Missing Assignments',missingAssignments],
+    ['Missing Cap',rows.filter(x=>x.mapping_status==='MISSING_SIZE_CAP').length]
+  ].map(([a,b],i)=>`<div class="stat ${i>=5&&Number(b)>0?'alert':''}"><small>${a}</small><strong>${safe(b)}</strong></div>`).join('');
   $('detailBody').innerHTML=rows.length?rows.map(x=>`<tr><td>${safe(x.worker_name||x.worker_id)}</td><td><b>${safe(x.lot_no||'—')}</b></td><td>${safe(x.department_code||'—')}</td><td>${safe(x.to_department_code||'—')}</td><td>${safe(x.colour_name||x.colour_code||'—')}</td><td>${safe(x.size_code||'—')}</td><td>${qty(x.assigned_cap_qty)}</td><td>${qty(x.submitted_before_qty)}</td><td>${qty(x.submitted_to_end_qty)}</td><td><b>${qty(x.payable_qty)}</b></td><td class="money">${money(x.base_rate)}</td><td>${safe(x.rate_source)}</td><td>${rateEditor(x)}</td><td class="money">${money(x.enhanced_rate)}</td><td class="money">${money(x.base_amount)}</td><td class="money">${money(x.enhancement_amount)}</td><td class="status-${safe(x.mapping_status)}">${safe(x.mapping_status)}</td><td>${safe(localDateTime(x.last_source_at))}</td></tr>`).join(''):'<tr><td colspan="18" class="muted">No detail rows.</td></tr>';
   $('detailBody').querySelectorAll('[data-save-assignment-rate]').forEach(button=>button.onclick=()=>saveAssignmentRate(button));
 }
@@ -213,7 +230,7 @@ function renderMapping(){const rows=state.mapping;$('mappingBody').innerHTML=row
 async function runCompatibility(){try{const rows=await rpc('rr_piece_compatibility_report_v779',{});state.mapping=rows||[];renderMapping();const fail=state.mapping.filter(x=>x.result==='FAIL').length;say('mappingMessage',fail?`${fail} required mapping checks failed.`:'All V779 compatibility checks passed. Static PASS still requires TEST-mode data verification.',fail?'error':'success')}catch(e){say('mappingMessage',err(e),'error')}}
 
 function showTab(tab){['payroll','details','attendance','adjustments','mapping'].forEach(t=>{$(`tab-${t}`).classList.toggle('hidden',t!==tab);document.querySelector(`[data-tab="${t}"]`)?.classList.toggle('active',t===tab)});if(tab==='payroll')loadPayroll();if(tab==='details')loadDetails();if(tab==='adjustments')loadAdjustments();if(tab==='mapping'&&!state.mapping.length)runCompatibility()}
-function bind(){attendanceCombo=new SearchCombo($('attendanceWorkerCombo'),row=>{state.attendanceWorkerId=row.worker_id;loadAttendance()});adjustmentCombo=new SearchCombo($('adjustmentWorkerCombo'),row=>{state.adjustmentWorkerId=row.worker_id});$('tabs').querySelectorAll('button').forEach(b=>b.onclick=()=>showTab(b.dataset.tab));$('calculatePayroll').onclick=calculatePayroll;$('approvePayroll').onclick=approvePayroll;$('reopenPayroll').onclick=reopenPayroll;$('markPaid').onclick=markPaid;$('refreshPayroll').onclick=loadPayroll;$('payrollMonth').onchange=loadPayroll;$('payrollMode').onchange=loadPayroll;$('detailMonth').onchange=loadDetails;$('detailMode').onchange=loadDetails;$('detailSearch').oninput=renderDetails;$('loadDetails').onclick=loadDetails;$('loadAttendance').onclick=loadAttendance;$('attendanceForm').onsubmit=saveAttendance;$('clearAttendanceForm').onclick=clearAttendanceForm;$('attendanceMode').onchange=()=>{state.attendanceWorkerId='';attendanceCombo.setValue('');loadAttendance()};$('attendanceMonth').onchange=()=>state.attendanceWorkerId&&loadAttendance();$('adjustmentForm').onsubmit=saveAdjustment;$('refreshAdjustments').onclick=loadAdjustments;$('adjustmentMode').onchange=()=>{state.adjustmentWorkerId='';adjustmentCombo.setValue('');loadAdjustments()};$('adjustmentMonth').onchange=loadAdjustments;$('runCompatibility').onclick=runCompatibility;upgradeSelects()}
+function bind(){attendanceCombo=new SearchCombo($('attendanceWorkerCombo'),row=>{state.attendanceWorkerId=row.worker_id;loadAttendance()});adjustmentCombo=new SearchCombo($('adjustmentWorkerCombo'),row=>{state.adjustmentWorkerId=row.worker_id});$('tabs').querySelectorAll('button').forEach(b=>b.onclick=()=>showTab(b.dataset.tab));$('calculatePayroll').onclick=calculatePayroll;$('approvePayroll').onclick=approvePayroll;$('reopenPayroll').onclick=reopenPayroll;$('markPaid').onclick=markPaid;$('refreshPayroll').onclick=loadPayroll;$('payrollMonth').onchange=loadPayroll;$('payrollMode').onchange=loadPayroll;$('detailMonth').onchange=loadDetails;$('detailMode').onchange=loadDetails;$('detailSearch').oninput=renderDetails;$('detailMissingOnly').onchange=renderDetails;$('loadDetails').onclick=loadDetails;$('loadAttendance').onclick=loadAttendance;$('attendanceForm').onsubmit=saveAttendance;$('clearAttendanceForm').onclick=clearAttendanceForm;$('attendanceMode').onchange=()=>{state.attendanceWorkerId='';attendanceCombo.setValue('');loadAttendance()};$('attendanceMonth').onchange=()=>state.attendanceWorkerId&&loadAttendance();$('adjustmentForm').onsubmit=saveAdjustment;$('refreshAdjustments').onclick=loadAdjustments;$('adjustmentMode').onchange=()=>{state.adjustmentWorkerId='';adjustmentCombo.setValue('');loadAdjustments()};$('adjustmentMonth').onchange=loadAdjustments;$('runCompatibility').onclick=runCompatibility;upgradeSelects()}
 
 async function boot(){try{state.client=window.supabaseClient||window.supabaseDb||window.redzedSupabase||window.sb;if(!state.client)throw new Error('Supabase client unavailable. Check config.js.');if(window.RR?.requireRoles)state.auth=await RR.requireRoles(['owner','admin','account','manager','payroll','hr']);else{const s=await state.client.auth.getSession();if(!s.data?.session)throw new Error('Login required.')}bind();const m=todayMonth();$('payrollMonth').value=m;$('detailMonth').value=m;$('attendanceMonth').value=m;$('adjustmentMonth').value=m;$('attendanceDate').value=todayDate();await loadWorkers('REAL');await Promise.all([loadPayroll(),runCompatibility()]);$('accessBadge').textContent=`ACCESS OK · ${upper(state.auth?.role_code||state.auth?.profile?.role_code||'AUTH')}`;$('accessBadge').className='badge good';window.RR?.startAccessGuard?.()}catch(e){console.error(e);$('accessBadge').textContent='ACCESS ERROR';$('accessBadge').className='badge bad';say('payrollMessage',err(e),'error')}}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();

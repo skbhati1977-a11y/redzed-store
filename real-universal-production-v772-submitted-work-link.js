@@ -1,7 +1,7 @@
 (()=>{
 'use strict';
 
-const VERSION='772.3';
+const VERSION='772.4';
 const $=id=>document.getElementById(id);
 const safe=v=>String(v??'').replace(/[&<>"']/g,c=>({
   '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'
@@ -135,9 +135,9 @@ function installModal(){
     <section class="rr-sheet">
       <div class="rr-head">
         <div>
-          <h2 style="margin:0">ACTIVE ASSIGNMENT ACTUAL RATE · V${VERSION}</h2>
+          <h2 style="margin:0">ASSIGNMENT ACTUAL RATE · V${VERSION}</h2>
           <div style="color:#98a2b3;margin-top:3px">
-            Exact Lot + Department + Worker + Colour assignment rate
+            Active + submitted + completed · Exact Lot + Department + Worker + Colour assignment rate
           </div>
         </div>
         <button id="rrCloseActiveRateV7722" class="rr-close" type="button">CLOSE</button>
@@ -151,11 +151,16 @@ function installModal(){
       <div class="rr-tools">
         <input id="rrActiveRateSearchV7722" class="rr-search"
           placeholder="Search Lot / Department / Worker / Colour">
+        <select id="rrAssignmentScopeV7724" title="Assignment status filter">
+          <option value="ALL">ALL RELEVANT STATUS</option>
+          <option value="ACTIVE">ACTIVE ONLY</option>
+          <option value="COMPLETED">SUBMITTED / COMPLETED</option>
+        </select>
         <label style="display:flex;gap:7px;align-items:center">
           <input id="rrMissingOnlyV7722" type="checkbox" checked style="width:20px;height:20px">
           Missing Rate only
         </label>
-        <button id="rrLoadActiveRateV7722" class="rr-load" type="button">LOAD ACTIVE ASSIGNMENTS</button>
+        <button id="rrLoadActiveRateV7722" class="rr-load" type="button">LOAD ASSIGNMENTS</button>
       </div>
 
       <div id="rrActiveRateStatsV7722" class="rr-stats"></div>
@@ -183,6 +188,7 @@ function installModal(){
   $('rrLoadActiveRateV7722').onclick=loadActiveAssignments;
   $('rrActiveRateSearchV7722').addEventListener('input',renderActiveAssignments);
   $('rrMissingOnlyV7722').addEventListener('change',renderActiveAssignments);
+  $('rrAssignmentScopeV7724').addEventListener('change',renderActiveAssignments);
 }
 
 function installButtons(){
@@ -193,7 +199,7 @@ function installButtons(){
     submitted.textContent='SUBMITTED WORK';
     submitted.title='Department / Worker wise submitted PCS and Assignment Actual Rate';
     submitted.dataset.version=VERSION;
-    submitted.onclick=()=>{location.href='real-upm-submitted-work-v772.html?v=7723'};
+    submitted.onclick=()=>{location.href='real-upm-submitted-work-v772.html?v=7724'};
     const bar=document.querySelector('.modulebar')||document.querySelector('.toolbar')||document.querySelector('.top');
     if(bar)bar.appendChild(submitted);
     else{
@@ -206,8 +212,8 @@ function installButtons(){
     const active=document.createElement('button');
     active.id='rrActiveRateV7722';
     active.type='button';
-    active.textContent='ACTIVE RATE';
-    active.title='Current active assignments का exact Actual Rate fill/edit करें';
+    active.textContent='ASSIGNMENT RATE';
+    active.title='Active, submitted और completed assignments का exact Actual Rate fill/edit करें';
     active.dataset.version=VERSION;
     active.onclick=openActiveRate;
     const bar=document.querySelector('.modulebar')||document.querySelector('.toolbar')||document.querySelector('.top');
@@ -240,21 +246,20 @@ async function loadActiveAssignments(){
   const button=$('rrLoadActiveRateV7722');
   try{
     button.disabled=true;
-    say('Active assignments load ho rahe hain…');
+    say('All relevant assignments load ho rahe hain…');
     state.client=getClient();
     if(!state.client)throw new Error('Supabase client unavailable. Check config.js.');
 
     const r=await state.client
       .from('rr_upm_work_assignments_v8')
       .select('id,lot_no,department_code,worker_id,worker_code,worker_name_snapshot,colour_code,colour_name,assigned_qty,status,actual_rate,rate_filled_by_name,rate_filled_at,assigned_at')
-      .in('status',['ASSIGNED','IN_PROGRESS'])
       .order('assigned_at',{ascending:false})
       .limit(5000);
 
     if(r.error)throw r.error;
     state.rows=r.data||[];
     renderActiveAssignments();
-    say(`${state.rows.length} active assignments loaded.`);
+    say(`${state.rows.length} assignment rows loaded. Missing-rate completed/submitted work bhi included hai.`);
   }catch(e){
     say(errorText(e),'error');
   }finally{
@@ -266,7 +271,15 @@ async function loadActiveAssignments(){
 function filteredRows(){
   const q=$('rrActiveRateSearchV7722').value.trim().toLowerCase();
   const missingOnly=$('rrMissingOnlyV7722').checked;
+  const scope=$('rrAssignmentScopeV7724')?.value||'ALL';
+  const activeStatuses=new Set(['ASSIGNED','IN_PROGRESS']);
+  const completedStatuses=new Set(['COMPLETED','SUBMITTED','DONE','CLOSED']);
+  const excludedStatuses=new Set(['CANCELLED','CANCELED','VOID','REJECTED']);
   return state.rows.filter(x=>{
+    const status=upper(x.status);
+    if(excludedStatuses.has(status))return false;
+    if(scope==='ACTIVE'&&!activeStatuses.has(status))return false;
+    if(scope==='COMPLETED'&&!completedStatuses.has(status))return false;
     if(missingOnly&&Number(x.actual_rate||0)>0)return false;
     if(!q)return true;
     return JSON.stringify([
@@ -287,7 +300,8 @@ function renderActiveAssignments(){
     ['Missing Rate',missing],
     ['Assigned PCS',qty(totalQty)],
     ['Departments',new Set(rows.map(x=>upper(x.department_code))).size],
-    ['Workers',new Set(rows.map(x=>String(x.worker_id))).size]
+    ['Workers',new Set(rows.map(x=>String(x.worker_id))).size],
+    ['Completed',rows.filter(x=>['COMPLETED','SUBMITTED','DONE','CLOSED'].includes(upper(x.status))).length]
   ].map(([a,b])=>`<div class="rr-stat"><small>${safe(a)}</small><b>${safe(b)}</b></div>`).join('');
 
   $('rrActiveRateBodyV7722').innerHTML=rows.length?rows.map(x=>{

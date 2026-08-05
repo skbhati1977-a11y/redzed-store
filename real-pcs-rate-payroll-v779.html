@@ -14,7 +14,7 @@
 .panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:12px}.panel h3{margin:0 0 12px}.grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}.grid.two{grid-template-columns:repeat(2,minmax(0,1fr))}.full{grid-column:1/-1}
 label{display:block}label>span{display:block;font-size:12px;color:var(--muted);margin-bottom:6px}input,select,textarea{width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:10px}textarea{min-height:76px;resize:vertical}
 .toolbar{display:flex;gap:10px;align-items:end;flex-wrap:wrap}.toolbar>*{min-width:150px}.toolbar .grow{flex:1;min-width:260px}.message{min-height:24px;padding:6px 0;color:var(--muted)}.message.error{color:#ff8d95}.message.success{color:#7fe0aa}.message.info{color:#8bbcff}
-.stats{display:grid;grid-template-columns:repeat(7,minmax(120px,1fr));gap:8px;margin-bottom:12px}.stat{background:var(--panel2);border:1px solid var(--line);border-radius:11px;padding:10px}.stat small{display:block;color:var(--muted)}.stat strong{font-size:20px}.stat.alert{border-color:#8d2830;background:#281216}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin-bottom:12px}.stat{background:var(--panel2);border:1px solid var(--line);border-radius:11px;padding:10px}.stat small{display:block;color:var(--muted)}.stat strong{font-size:20px}.stat.alert{border-color:#8d2830;background:#281216}
 .table-wrap{overflow:auto;border:1px solid var(--line);border-radius:12px}table{width:100%;border-collapse:collapse;min-width:1250px}th,td{padding:9px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}th{position:sticky;top:0;background:#19191f;z-index:1;font-size:12px;color:#d6d6dc}tr:hover td{background:#121217}.money{text-align:right;font-variant-numeric:tabular-nums}.muted{color:var(--muted)}
 .combo{position:relative}.combo-list{position:absolute;z-index:20;left:0;right:0;top:100%;max-height:270px;overflow:auto;background:#17171d;border:1px solid var(--line);border-radius:10px;box-shadow:0 16px 40px #0009;margin-top:4px}.combo-option{padding:10px;border-bottom:1px solid #27272e;cursor:pointer}.combo-option:hover,.combo-option.active{background:#25252d}.combo-option small{display:block;color:var(--muted);margin-top:2px}
 .checks{display:flex;gap:16px;flex-wrap:wrap}.checks label{display:flex;align-items:center;gap:7px}.checks input{width:auto}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.note{padding:10px;border-left:3px solid var(--blue);background:#10151e;color:#c8d8ee;border-radius:7px}.note.violet{border-left-color:var(--violet);background:#181223}.note.warn{border-left-color:var(--amber);background:#221b0e;color:#f0d69a}.logic-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.logic-card{padding:12px;border:1px solid var(--line);border-radius:12px;background:var(--panel2)}.logic-card b{display:block;margin-bottom:5px}.logic-card small{color:var(--muted);line-height:1.4}.status-OK{color:#7fe0aa}.status-MISSING_RATE,.status-MISSING_ACTUAL_RATE,.status-MISSING_SIZE_CAP{color:#ff8d95}.status-PRESENT{color:#7fe0aa}.status-ABSENT,.status-INCOMPLETE{color:#ff8d95}.status-HALF_DAY{color:#ffd27c}.status-WEEKLY_OFF,.status-HOLIDAY,.status-LEAVE_PAID{color:#8bbcff}
@@ -25,7 +25,7 @@ label{display:block}label>span{display:block;font-size:12px;color:var(--muted);m
 <body>
 <main class="app">
 <header class="head">
-  <div class="brand"><h1>REDZED REAL · Piece Rate Salary</h1><p>V779.2.8 · Dynamic Submit · Inline Assignment Actual Rate · Zero-Rate Submit Block</p></div>
+  <div class="brand"><h1>REDZED REAL · Piece Rate Salary</h1><p>V779.2.9 · Submitted/Completed Rate Fix · Freeze Tables · Actual Rate Only</p></div>
   <span id="accessBadge" class="badge">Checking access…</span>
 </header>
 <nav class="tabs" id="tabs">
@@ -63,8 +63,10 @@ label{display:block}label>span{display:block;font-size:12px;color:var(--muted);m
       <label><span>Data Mode</span><select id="detailMode"><option>REAL</option><option>TEST</option></select></label>
       <label><span>Month</span><input id="detailMonth" type="month"></label>
       <div class="grow"><label><span>Search Worker / Lot / Department</span><input id="detailSearch" placeholder="Worker, Lot No, Department, Colour, Size"></label></div>
+      <label class="checks" style="min-width:170px"><span>&nbsp;</span><label><input id="detailMissingOnly" type="checkbox"> Missing Rate only</label></label>
       <button id="loadDetails" class="btn">Load Details</button>
     </div>
+    <p class="note warn">Missing Rate Rows size-wise repeat ho sakti hain. Missing Assignments exact assignment count hai; ek assignment rate save karne par uski sab size rows update hongi.</p>
     <p id="detailMessage" class="message"></p>
   </div>
   <div id="detailStats" class="stats"></div>
@@ -134,8 +136,9 @@ label{display:block}label>span{display:block;font-size:12px;color:var(--muted);m
 </section>
 </main>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="config.js?v=77928"></script>
-<script src="real-common.js?v=77928"></script>
-<script src="real-pcs-rate-payroll-v779.js?v=77928"></script>
+<script src="config.js?v=77929"></script>
+<script src="real-common.js?v=77929"></script>
+<script src="real-table-freeze-v773.js?v=7731"></script>
+<script src="real-pcs-rate-payroll-v779.js?v=77929"></script>
 </body>
 </html>
