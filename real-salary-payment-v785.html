@@ -2,11 +2,55 @@
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=yes"><meta name="theme-color" content="#090b10"><title>REAL FACTORY — Salary Payment V785</title>
 <style>
 :root{color-scheme:dark;--bg:#090b10;--panel:#141820;--panel2:#0f131a;--line:#313a48;--muted:#aeb8c8;--red:#ef3340;--green:#34c47c;--amber:#ffbd52;--blue:#62a8ff}*{box-sizing:border-box}html,body{margin:0;min-height:100%;background:var(--bg);color:#fff;font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}button,input,select{font:inherit;color:inherit}button{cursor:pointer}.hidden{display:none!important}.app{max-width:1900px;margin:auto;padding:14px}.head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px}.head h1{margin:0;font-size:23px}.head p{margin:4px 0 0;color:var(--muted)}.nav{display:flex;gap:8px;flex-wrap:wrap}.nav a{color:#fff;text-decoration:none}.btn{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:9px 13px;border:1px solid var(--line);border-radius:10px;background:#222a36;color:#fff;font-weight:800}.btn.primary{background:var(--red);border-color:var(--red)}.btn.success{background:#176b47;border-color:#2d9468}.btn.danger{background:#762934;border-color:#a84552}.btn:disabled{opacity:.45}.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:13px;margin-bottom:12px}.grid{display:grid;grid-template-columns:repeat(6,minmax(145px,1fr));gap:10px}.grid .wide{grid-column:span 2}label span{display:block;font-size:12px;color:var(--muted);margin-bottom:5px}input,select{width:100%;min-height:44px;padding:9px 10px;border:1px solid var(--line);border-radius:9px;background:var(--panel2);font-size:16px}.actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:10px}.note{padding:11px;border-left:3px solid var(--blue);border-radius:8px;background:#101825;color:#d9e6f6;line-height:1.55}.message{min-height:24px;color:var(--muted)}.message.error{color:#ff8e98}.message.success{color:#79e5ae}.message.info{color:#a8ccff}.hero{display:grid;grid-template-columns:repeat(9,minmax(135px,1fr));gap:8px;margin-bottom:12px}.card{background:linear-gradient(180deg,#171d27,#10141b);border:1px solid var(--line);border-radius:12px;padding:10px;min-height:86px}.card small{display:block;color:var(--muted);font-weight:700;margin-bottom:5px}.card strong{display:block;font-size:20px}.card input{font-size:20px;font-weight:900;background:#090d13}.card.advance{border-color:#75562b;cursor:pointer}.bulk-payment-card{display:flex;flex-direction:column;gap:7px}.bulk-payment-card .btn{width:100%;min-height:40px}.bulk-status{line-height:1.35;color:var(--muted)!important}.table-wrap{overflow:auto;border:1px solid var(--line);border-radius:12px}table{border-collapse:collapse;width:100%;min-width:1700px}th,td{padding:8px;border-bottom:1px solid var(--line);white-space:nowrap;text-align:left}th{background:#202733;font-size:12px}td.money{text-align:right}.worker-check{width:20px;height:20px;min-height:20px}.amount-input{min-width:140px;text-align:right;font-weight:900}.total-row td{background:#1c2430;font-weight:900}.advance-list{display:grid;grid-template-columns:repeat(3,minmax(250px,1fr));gap:8px}.advance-item{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:10px}@media(max-width:1450px){.hero{grid-template-columns:repeat(5,1fr)}}@media(max-width:1050px){.grid{grid-template-columns:repeat(3,1fr)}.hero{grid-template-columns:repeat(3,1fr)}.advance-list{grid-template-columns:repeat(2,1fr)}}@media(max-width:700px){.grid{grid-template-columns:1fr 1fr}.grid .wide{grid-column:1/-1}.hero{grid-template-columns:1fr 1fr}.advance-list{grid-template-columns:1fr}.app{padding:8px}}@media(max-width:480px){.grid{grid-template-columns:1fr}}
+
+/* FINAL ACTION PAYMENT DASHBOARD V786.2.9 */
+label:has(#dataMode),
+label:has(#paymentMethod),
+label:has(#paymentScope),
+label:has(#paymentDate),
+label:has(#paymentMode),
+label:has(#workerSearch),
+label:has(#remarks),
+#selectAll,
+#clearAll,
+#advancePanel,
+section:has(#historyBody){
+  display:none!important;
+}
+.compat-hidden{display:none!important}
+.action-summary{
+  display:grid;
+  grid-template-columns:2fr 1fr 1.4fr;
+  gap:10px;
+  margin-bottom:12px;
+}
+.hero-card{
+  background:linear-gradient(180deg,#171d27,#10141b);
+  border:1px solid var(--line);
+  border-radius:14px;
+  padding:14px;
+}
+.hero-card small{display:block;color:var(--muted);font-weight:800}
+.hero-card strong{display:block;margin-top:5px;font-size:30px}
+.hero-card.primary{border-color:#2d7953;background:linear-gradient(180deg,#163523,#101a14)}
+.hero-card.primary strong{color:#79e5ae}
+.payment-card{display:flex;flex-direction:column;gap:8px}
+.payment-card input{font-size:22px;font-weight:900}
+.advanced-dashboard summary{cursor:pointer;font-weight:900}
+@media(max-width:900px){.action-summary{grid-template-columns:1fr}}
+
+
+.payment-choice-dialog{border:0;padding:0;background:transparent;max-width:min(560px,calc(100vw - 24px));width:100%}
+.payment-choice-dialog::backdrop{background:rgba(0,0,0,.72)}
+.payment-choice-box{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:16px;box-shadow:0 18px 60px rgba(0,0,0,.55)}
+.payment-choice-box h2{margin:0 0 8px}.payment-choice-box p{color:var(--muted);line-height:1.5}
+.choice-btn{width:100%;display:flex;flex-direction:column;align-items:flex-start;gap:4px;min-height:70px;margin:9px 0;padding:12px;border:1px solid var(--line);border-radius:11px;background:#18202b;color:#fff;cursor:pointer;text-align:left}
+.choice-btn span{font-size:12px;color:var(--muted)}.choice-btn.complete{border-color:#2d7953;background:#123120}
+
 </style></head><body><main class="app">
-<header class="head"><div><h1>REAL FACTORY · Salary Payment</h1><p>V785.1 · PCS and Monthly Same Rules · Advance Workers Separate</p></div><div class="nav">
+<header class="head"><div><h1>REAL FACTORY · Payment Dashboard</h1><p>आज कितना देना है — एक नज़र में</p></div><div class="nav">
 <a class="btn" href="real-salary-home-v786.html">← Salary Home</a>
-<a class="btn" href="real-worker-payroll-setup-v786.html">Worker Setup</a>
-<a class="btn" href="real-data-mode-control-v786.html">Data Mode</a>
+<a class="btn" href="real-pcs-work-audit-v783.html">Worker Ledgers</a>
 <span id="accessBadge" class="btn">Checking…</span>
 </div></header>
 <section class="panel"><div class="grid">
@@ -16,10 +60,75 @@
 <label><span>Payment Scope</span><select id="paymentScope" data-searchable="true"><option value="FULL_AND_FINAL">FINAL TOTAL — OLD + CURRENT</option><option value="CURRENT_PERIOD_ONLY">CURRENT WORK ONLY</option><option value="OUTSTANDING_ONLY">OLD OUTSTANDING ONLY</option></select></label>
 <label><span>Period From</span><input id="periodStart" type="date"></label><label><span>Period To / Monthly Cut-off</span><input id="periodEnd" type="date"></label>
 <label><span>Payment Date</span><input id="paymentDate" type="date"></label><label><span>Payment Mode</span><select id="paymentMode" data-searchable="true"><option>CASH</option><option>BANK</option><option>UPI</option><option>CHEQUE</option><option>OTHER</option></select></label>
-<label><span>Voucher / Reference</span><input id="voucherNo" placeholder="Example: SAL-202608-01"></label><label class="wide"><span>Search Worker</span><input id="workerSearch" placeholder="Worker name / code / department"></label><label class="wide"><span>Remarks</span><input id="remarks" placeholder="Payment remarks"></label>
-</div><div class="actions"><button id="loadPreview" class="btn primary">Load Workers — No Payment</button><button id="selectAll" class="btn">Select All</button><button id="clearAll" class="btn">Clear Selection</button><button id="postPayment" class="btn success" disabled>FINAL POST PAYMENT + MESSAGES</button></div><p id="ruleNote" class="note"></p><p id="message" class="message"></p></section>
-<section class="hero"><div class="card"><small>TOTAL AMOUNT PAYABLE — ELIGIBLE WORKERS</small><strong id="totalFinalPayable">₹0.00</strong></div><div class="card"><small>SELECTED WORKERS PAYABLE</small><strong id="selectedScopePayable">₹0.00</strong></div><div class="card bulk-payment-card"><small>MANUAL BULK PAYMENT AMOUNT</small><input id="bulkAmount" type="text" value="" inputmode="decimal" autocomplete="off" spellcheck="false" placeholder="Type payment amount"><button id="applyBulkAmount" class="btn primary" type="button" disabled>APPLY THIS BULK PAYMENT</button><small id="bulkAmountStatus" class="bulk-status">Workers load करने के बाद amount apply करें.</small></div><div class="card"><small>PREVIOUS OUTSTANDING</small><strong id="previousOutstanding">₹0.00</strong></div><div class="card"><small>CURRENT PERIOD AMOUNT PAYABLE</small><strong id="currentPayable">₹0.00</strong></div><div class="card"><small>OUTSTANDING PAYMENT</small><strong id="outstandingPayment">₹0.00</strong></div><div class="card"><small>CURRENT PERIOD PAYMENT</small><strong id="currentPayment">₹0.00</strong></div><div class="card"><small>NEW OUTSTANDING AFTER PAYMENT</small><strong id="newOutstanding">₹0.00</strong></div><div id="advanceCard" class="card advance"><small>ADVANCE WORKERS</small><strong id="advanceWorkers">0 · ₹0.00</strong></div></section>
+<label><span>Voucher / Reference (Required)</span><input id="voucherNo" placeholder="Example: SAL-202608-01"></label><label class="wide"><span>Search Worker</span><input id="workerSearch" placeholder="Worker name / code / department"></label><label class="wide"><span>Remarks</span><input id="remarks" placeholder="Payment remarks"></label>
+</div><div class="actions"><button id="loadPreview" class="btn primary">LOAD UNPAID WORKS</button><button id="selectAll" class="btn">Select All</button><button id="clearAll" class="btn">Clear Selection</button></div><p id="ruleNote" class="note">Period चुनें → LOAD UNPAID WORKS → Payment Amount और Voucher भरें → SUBMIT PAYMENT.</p><p id="message" class="message"></p></section>
+
+<section class="action-summary">
+  <div class="hero-card primary">
+    <small>CURRENT PAYABLE AMOUNT</small>
+    <strong id="totalFinalPayable">₹0.00</strong>
+  </div>
+  <div class="hero-card">
+    <small>ELIGIBLE WORKERS</small>
+    <strong id="workerCountTop">0</strong>
+  </div>
+  <div class="hero-card payment-card">
+    <small>PAYMENT AMOUNT</small>
+    <input id="bulkAmount" type="text" value="" inputmode="decimal"
+      autocomplete="off" spellcheck="false" placeholder="Type amount">
+    <button id="submitBulkPayment" class="btn success" type="button" disabled>
+      SUBMIT PAYMENT
+    </button>
+    <small id="bulkAmountStatus" class="bulk-status">
+      पहले unpaid works load करें.
+    </small>
+  </div>
+
+  <div class="compat-hidden" aria-hidden="true">
+    <strong id="selectedScopePayable">₹0.00</strong>
+    <strong id="previousOutstanding">₹0.00</strong>
+    <strong id="currentPayable">₹0.00</strong>
+    <strong id="outstandingPayment">₹0.00</strong>
+    <strong id="currentPayment">₹0.00</strong>
+    <strong id="newOutstanding">₹0.00</strong>
+    <div id="advanceCard"><strong id="advanceWorkers">0 · ₹0.00</strong></div>
+  </div>
+</section>
+
 <section id="advancePanel" class="panel hidden"><div class="actions" style="justify-content:space-between"><b>Advance workers are excluded from normal Bulk Payment</b><a class="btn" href="real-advance-worker-payment-v785.html">Open Advance Payment List</a></div><div id="advanceList" class="advance-list"></div></section>
-<section class="panel"><div class="actions" style="justify-content:space-between"><h2 style="margin:0;font-size:17px">Eligible Worker Payment Ledger</h2><span id="workerCount">0 workers</span></div><div class="table-wrap"><table><thead><tr><th>Select</th><th>Worker</th><th>Department</th><th>Previous Outstanding</th><th>Current Period Payable</th><th>Final Total Payable</th><th>Selected Scope Payable</th><th>Amount Paid</th><th>Outstanding Payment</th><th>Current Period Payment</th><th>New Outstanding</th><th>Source</th></tr></thead><tbody id="ledgerBody"></tbody><tfoot id="ledgerFoot"></tfoot></table></div></section>
+<section class="panel"><div class="actions" style="justify-content:space-between"><h2 style="margin:0;font-size:17px">Workers To Pay</h2><span id="workerCount">0 workers</span></div><div class="table-wrap"><table><thead><tr><th>Select</th><th>Worker</th><th>Department</th><th>Previous Outstanding</th><th>Current Period Payable</th><th>Final Total Payable</th><th>Selected Scope Payable</th><th>Amount Paid</th><th>Outstanding Payment</th><th>Current Period Payment</th><th>New Outstanding</th><th>Source</th></tr></thead><tbody id="ledgerBody"></tbody><tfoot id="ledgerFoot"></tfoot></table></div></section>
 <section class="panel"><div class="actions" style="justify-content:space-between"><h2 style="margin:0;font-size:17px">Payment History</h2><button id="loadHistory" class="btn">Refresh History</button></div><div class="table-wrap"><table style="min-width:1550px"><thead><tr><th>Date</th><th>Module</th><th>Period</th><th>Method</th><th>Scope</th><th>Voucher</th><th>Workers</th><th>Final Payable ₹</th><th>Bulk Payment ₹</th><th>New Outstanding ₹</th><th>Messages</th><th>Status</th><th>Action</th></tr></thead><tbody id="historyBody"></tbody></table></div></section>
-</main><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="config.js?v=7851"></script><script src="real-data-mode-controller-v786-1-1.js?v=7862"></script><script src="real-common.js?v=7862"></script><script src="real-salary-payment-v785.js?v=78624"></script></body></html>
+
+<section class="panel advanced-dashboard">
+  <details>
+    <summary>Advanced Details — जरूरत होने पर खोलें</summary>
+    <div class="actions">
+      <a class="btn" href="real-pcs-work-audit-v783.html">Worker Ledgers</a>
+      <a class="btn" href="real-advance-worker-payment-v785.html">Advance Payment</a>
+      <a class="btn" href="real-data-mode-control-v786.html">Data Mode Settings</a>
+    </div>
+  </details>
+</section>
+
+
+<dialog id="paymentChoiceDialog" class="payment-choice-dialog">
+  <form method="dialog" class="payment-choice-box">
+    <h2>Payment कैसे करना है?</h2>
+    <p id="paymentChoiceSummary">—</p>
+    <button id="choiceSelected" class="choice-btn" type="button">
+      <b>SELECTED WORKERS PARTIAL PAYMENT</b>
+      <span>Selected workers की row में manual amount भरें</span>
+    </button>
+    <button id="choiceRatio" class="choice-btn" type="button">
+      <b>RATIO DIVISION PAYMENT</b>
+      <span>Entered total amount सभी eligible workers में ratio-wise बाँटे</span>
+    </button>
+    <button id="choiceComplete" class="choice-btn complete" type="button">
+      <b>COMPLETE PAYMENT</b>
+      <span>सभी eligible workers का पूरा current payable clear करें</span>
+    </button>
+    <button class="btn" value="cancel">Cancel</button>
+  </form>
+</dialog>
+
+</main><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="config.js?v=7851"></script><script src="real-data-mode-controller-v786-1-1.js?v=7862"></script><script src="real-common.js?v=7862"></script><script src="real-salary-payment-v785.js?v=78630"></script></body></html>
