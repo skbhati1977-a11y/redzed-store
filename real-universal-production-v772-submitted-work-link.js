@@ -1,7 +1,7 @@
 (()=>{
 'use strict';
 
-const VERSION='772.6';
+const VERSION='772.7';
 const $=id=>document.getElementById(id);
 const safe=v=>String(v??'').replace(/[&<>"']/g,c=>({
   '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'
@@ -281,6 +281,12 @@ function installStyles(){
   }
   #rrActiveRateModalV7722 .rr-art-info b{color:#ffc857}
   #rrActiveRateModalV7722 .rr-art-info span{color:#d9e1ec}
+  #rrActiveRateModalV7722 .rr-group-list{
+    max-width:270px;white-space:normal;line-height:1.35;color:#d9e1ec
+  }
+  #rrActiveRateModalV7722 .rr-group-list b{color:#fff}
+  #rrActiveRateModalV7722 .rr-conflict{color:#ffb45f;font-weight:900}
+  #rrActiveRateModalV7722 .rr-missing-count{color:#ff8d95;font-weight:850;font-size:11px}
   #rrActiveRateModalV7722 .rr-stats{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}
   #rrActiveRateModalV7722 .rr-stat{
     background:#171b23;border:1px solid #303641;border-radius:10px;padding:8px 10px
@@ -319,10 +325,10 @@ function installModal(){
       </div>
 
       <div class="rr-enter-note">
-        <b>ONE LOT + ONE DEPARTMENT = ONE RATE:</b>
-        किसी एक Colour/Worker की पहली rate save करते ही उसी Lot और Department की
-        सभी Colours, सभी bound Sizes और सभी Workers की assignments में वही rate auto-fill होगी।
-        फिर cursor अगली Lot–Department missing-rate group पर जाएगा।
+        <b>ONE ROW = ONE LOT + ONE DEPARTMENT:</b>
+        इस list में एक ही Lot–Department की सभी Colours, bound Sizes और Workers एक group में रहेंगी।
+        Rate लिखकर <b>Enter</b> या <b>SAVE GROUP + NEXT</b> दबाते ही पूरी group में वही rate लगेगी,
+        group list से हटेगी और cursor अगली unresolved Lot–Department row पर जाएगा।
       </div>
 
       <div class="rr-tools">
@@ -335,7 +341,7 @@ function installModal(){
         </select>
         <label style="display:flex;gap:7px;align-items:center">
           <input id="rrMissingOnlyV7722" type="checkbox" checked style="width:20px;height:20px">
-          Missing Rate only
+          Missing / Conflict only
         </label>
         <button id="rrLoadActiveRateV7722" class="rr-load" type="button">LOAD ASSIGNMENTS</button>
       </div>
@@ -347,9 +353,9 @@ function installModal(){
         <table>
           <thead>
             <tr>
-              <th>Lot</th><th>Art Image / Item</th><th>Department</th><th>Worker</th>
-              <th>Worker Code</th><th>Colour</th><th>Status</th><th>Assigned PCS</th>
-              <th>Current Actual Rate</th><th>Rate Filled By</th><th>Fill / Edit</th>
+              <th>Lot</th><th>Art Image / Item</th><th>Department</th><th>Workers</th>
+              <th>Colours</th><th>Status</th><th>Assignments</th><th>Assigned PCS</th>
+              <th>Group Actual Rate</th><th>Rate Filled By</th><th>Fill / Edit</th>
             </tr>
           </thead>
           <tbody id="rrActiveRateBodyV7722"></tbody>
@@ -376,7 +382,7 @@ function installButtons(){
     submitted.textContent='SUBMITTED WORK';
     submitted.title='Department / Worker wise submitted PCS and Assignment Actual Rate';
     submitted.dataset.version=VERSION;
-    submitted.onclick=()=>{location.href='real-upm-submitted-work-v772.html?v=7726'};
+    submitted.onclick=()=>{location.href='real-upm-submitted-work-v772.html?v=7727'};
     const bar=document.querySelector('.modulebar')||document.querySelector('.toolbar')||document.querySelector('.top');
     if(bar)bar.appendChild(submitted);
     else{
@@ -444,7 +450,7 @@ async function loadAssignments(options={}){
     }
 
     renderAssignments(options);
-    say(`${state.rows.length} assignment rows loaded. Art/Item details available hone par saath dikhengi.`);
+    say(`${state.rows.length} assignment rows loaded. Missing Rate module अब Lot + Department group-wise चल रही है.`);
   }catch(e){
     say(errorText(e),'error');
   }finally{
@@ -453,9 +459,11 @@ async function loadAssignments(options={}){
   }
 }
 
-function filteredRows(){
-  const q=$('rrActiveRateSearchV7722').value.trim().toLowerCase();
-  const missingOnly=$('rrMissingOnlyV7722').checked;
+function groupKey(row){
+  return `${upper(row.lot_no)}||${upper(row.department_code)}`;
+}
+
+function scopedRows(){
   const scope=$('rrAssignmentScopeV7724')?.value||'ALL';
   const activeStatuses=new Set(['ASSIGNED','IN_PROGRESS']);
   const completedStatuses=new Set(['COMPLETED','SUBMITTED','DONE','CLOSED']);
@@ -466,15 +474,118 @@ function filteredRows(){
     if(excludedStatuses.has(status))return false;
     if(scope==='ACTIVE'&&!activeStatuses.has(status))return false;
     if(scope==='COMPLETED'&&!completedStatuses.has(status))return false;
-    if(missingOnly&&Number(row.actual_rate||0)>0)return false;
+    return true;
+  });
+}
+
+function buildGroups(){
+  const map=new Map();
+
+  for(const row of scopedRows()){
+    const key=groupKey(row);
+    if(!map.has(key)){
+      map.set(key,{
+        key,
+        lotNo:row.lot_no||'—',
+        departmentCode:row.department_code||'—',
+        rows:[],
+        assignedQty:0,
+        workers:new Map(),
+        colours:new Map(),
+        statuses:new Set(),
+        positiveRates:new Set(),
+        rateFilledBy:new Set(),
+        missingAssignments:0,
+        representativeRow:row
+      });
+    }
+
+    const group=map.get(key);
+    group.rows.push(row);
+    group.assignedQty+=Number(row.assigned_qty||0);
+
+    const workerKey=String(row.worker_id||row.worker_code||row.worker_name_snapshot||'—');
+    group.workers.set(
+      workerKey,
+      String(row.worker_name_snapshot||row.worker_code||'—')
+    );
+
+    const colourKey=String(row.colour_code||row.colour_name||'—');
+    group.colours.set(
+      colourKey,
+      String(row.colour_code||row.colour_name||'—')
+    );
+
+    group.statuses.add(upper(row.status)||'—');
+
+    const rate=Number(row.actual_rate||0);
+    if(rate>0)group.positiveRates.add(rate.toFixed(4));
+    else group.missingAssignments+=1;
+
+    if(row.rate_filled_by_name){
+      group.rateFilledBy.add(String(row.rate_filled_by_name));
+    }
+
+    if(rate<=0&&Number(group.representativeRow?.actual_rate||0)>0){
+      group.representativeRow=row;
+    }
+  }
+
+  return [...map.values()].map(group=>{
+    group.rateValues=[...group.positiveRates]
+      .map(Number)
+      .sort((a,b)=>a-b);
+
+    group.hasConflict=group.rateValues.length>1;
+    group.hasIssue=group.missingAssignments>0||group.hasConflict;
+    group.groupRate=group.rateValues.length===1?group.rateValues[0]:0;
+    group.assignmentCount=group.rows.length;
+    group.workerNames=[...group.workers.values()].sort();
+    group.colourCodes=[...group.colours.values()].sort();
+    group.statusNames=[...group.statuses].sort();
+
+    const missingRepresentative=group.rows.find(
+      row=>Number(row.actual_rate||0)<=0
+    );
+    group.representativeRow=missingRepresentative||group.rows[0];
+
+    return group;
+  });
+}
+
+function filteredGroups(){
+  const q=$('rrActiveRateSearchV7722').value.trim().toLowerCase();
+  const issueOnly=$('rrMissingOnlyV7722').checked;
+
+  return buildGroups().filter(group=>{
+    if(issueOnly&&!group.hasIssue)return false;
 
     if(!q)return true;
-    const meta=metaFor(row);
+
+    const meta=metaFor(group.representativeRow);
     return JSON.stringify([
-      row.lot_no,meta.artNo,meta.itemName,row.department_code,
-      row.worker_name_snapshot,row.worker_code,row.colour_code,
-      row.colour_name,row.status
+      group.lotNo,
+      meta.artNo,
+      meta.itemName,
+      group.departmentCode,
+      group.workerNames,
+      group.colourCodes,
+      group.statusNames,
+      group.rateValues
     ]).toLowerCase().includes(q);
+  }).sort((a,b)=>{
+    if(a.hasIssue!==b.hasIssue)return a.hasIssue?-1:1;
+    const lotCompare=String(a.lotNo).localeCompare(
+      String(b.lotNo),
+      undefined,
+      {numeric:true,sensitivity:'base'}
+    );
+    if(lotCompare)return lotCompare;
+    return String(a.departmentCode).localeCompare(
+      String(b.departmentCode),
+      undefined,
+      {sensitivity:'base'}
+    );
   });
 }
 
@@ -497,60 +608,121 @@ function artCell(row){
   </div>`;
 }
 
+function compactNames(values,limit=4){
+  const list=[...values];
+  const shown=list.slice(0,limit);
+  const remaining=list.length-shown.length;
+  return `${shown.map(safe).join(', ')}${remaining>0?` <b>+${remaining}</b>`:''}`;
+}
+
+function groupRateHtml(group){
+  if(group.hasConflict){
+    return `<span class="rr-conflict">CONFLICT · ${
+      group.rateValues.map(rate=>`₹${money(rate)}`).join(' / ')
+    }</span>`;
+  }
+
+  if(group.groupRate>0){
+    return `<span class="rr-ok">₹${money(group.groupRate)}</span>${
+      group.missingAssignments>0
+        ?`<div class="rr-missing-count">${group.missingAssignments} assignment(s) missing</div>`
+        :''
+    }`;
+  }
+
+  return `<span class="rr-bad">MISSING</span>`;
+}
+
 function renderAssignments(options={}){
-  const rows=filteredRows();
-  state.filtered=rows;
-  const missing=rows.filter(x=>Number(x.actual_rate||0)<=0).length;
-  const totalQty=rows.reduce((a,x)=>a+Number(x.assigned_qty||0),0);
+  const groups=filteredGroups();
+  state.filtered=groups;
+
+  const missingAssignments=groups.reduce(
+    (sum,group)=>sum+group.missingAssignments,
+    0
+  );
+  const conflictGroups=groups.filter(group=>group.hasConflict).length;
+  const totalQty=groups.reduce(
+    (sum,group)=>sum+group.assignedQty,
+    0
+  );
 
   $('rrActiveRateStatsV7722').innerHTML=[
-    ['Rows',rows.length],
-    ['Missing Rate',missing],
+    ['Lot–Dept Groups',groups.length],
+    ['Missing Assignments',missingAssignments],
+    ['Conflict Groups',conflictGroups],
     ['Assigned PCS',qty(totalQty)],
-    ['Departments',new Set(rows.map(x=>upper(x.department_code))).size],
-    ['Workers',new Set(rows.map(x=>String(x.worker_id))).size],
-    ['Items',new Set(rows.map(x=>metaFor(x).itemName).filter(x=>x&&x!=='Item name unavailable')).size],
-    ['Completed',rows.filter(x=>['COMPLETED','SUBMITTED','DONE','CLOSED'].includes(upper(x.status))).length]
+    ['Departments',new Set(groups.map(group=>upper(group.departmentCode))).size],
+    ['Workers',new Set(groups.flatMap(group=>[...group.workers.keys()])).size],
+    ['Colours',new Set(groups.flatMap(group=>[...group.colours.keys()])).size]
   ].map(([label,value])=>
     `<div class="rr-stat"><small>${safe(label)}</small><b>${safe(value)}</b></div>`
   ).join('');
 
-  $('rrActiveRateBodyV7722').innerHTML=rows.length?rows.map(row=>{
-    const current=Number(row.actual_rate||0);
-    return `<tr data-rr-row="${safe(row.id)}">
-      <td><b>${safe(row.lot_no||'—')}</b></td>
+  $('rrActiveRateBodyV7722').innerHTML=groups.length?groups.map(group=>{
+    const row=group.representativeRow;
+    const inputValue=group.groupRate>0&&!group.hasConflict
+      ?safe(group.groupRate)
+      :'';
+
+    const buttonText=group.groupRate>0||group.hasConflict
+      ?'UPDATE GROUP + NEXT'
+      :'SAVE GROUP + NEXT';
+
+    return `<tr data-rr-group-row="${safe(group.key)}">
+      <td><b>${safe(group.lotNo)}</b></td>
       <td>${artCell(row)}</td>
-      <td>${safe(row.department_code||'—')}</td>
-      <td><b>${safe(row.worker_name_snapshot||'—')}</b></td>
-      <td>${safe(row.worker_code||'—')}</td>
-      <td>${safe(row.colour_name||row.colour_code||'—')} · ${safe(row.colour_code||'—')}</td>
-      <td>${safe(row.status||'—')}</td>
-      <td>${qty(row.assigned_qty)}</td>
-      <td class="${current>0?'rr-ok':'rr-bad'}">${current>0?'₹'+money(current):'MISSING'}</td>
-      <td>${safe(row.rate_filled_by_name||'—')}</td>
+      <td><b>${safe(group.departmentCode)}</b></td>
+      <td>
+        <div class="rr-group-list">
+          ${compactNames(group.workerNames)}
+          <div class="rr-missing-count">${group.workerNames.length} worker(s)</div>
+        </div>
+      </td>
+      <td>
+        <div class="rr-group-list">
+          ${compactNames(group.colourCodes,6)}
+          <div class="rr-missing-count">${group.colourCodes.length} colour(s) · all bound sizes</div>
+        </div>
+      </td>
+      <td>${safe(group.statusNames.join(', '))}</td>
+      <td><b>${group.assignmentCount}</b></td>
+      <td>${qty(group.assignedQty)}</td>
+      <td>${groupRateHtml(group)}</td>
+      <td>${safe([...group.rateFilledBy].join(', ')||'—')}</td>
       <td>
         <div class="rr-rate-editor">
-          <input data-rr-rate="${safe(row.id)}" type="number"
+          <input data-rr-rate-group="${safe(group.key)}" type="number"
             min="0.0001" step="0.0001"
-            value="${current>0?safe(current):''}"
-            placeholder="Actual Rate"
+            value="${inputValue}"
+            placeholder="Group Actual Rate"
             inputmode="decimal">
-          <button data-rr-save="${safe(row.id)}" type="button">SAVE + NEXT</button>
+          <button
+            data-rr-save-group="${safe(group.key)}"
+            data-rr-assignment-id="${safe(row.id)}"
+            type="button">${safe(buttonText)}</button>
         </div>
       </td>
     </tr>`;
-  }).join(''):'<tr><td colspan="11" style="padding:24px;text-align:center;color:#98a2b3">No matching assignments.</td></tr>';
+  }).join(''):'<tr><td colspan="11" style="padding:24px;text-align:center;color:#98a2b3">No unresolved Lot–Department rate groups.</td></tr>';
 
   const body=$('rrActiveRateBodyV7722');
-  body.querySelectorAll('[data-rr-save]').forEach(button=>{
-    button.onclick=()=>saveRateAndNext(button);
+
+  body.querySelectorAll('[data-rr-save-group]').forEach(button=>{
+    button.onclick=()=>saveGroupRateAndNext(button);
   });
-  body.querySelectorAll('[data-rr-rate]').forEach(input=>{
+
+  body.querySelectorAll('[data-rr-rate-group]').forEach(input=>{
     input.addEventListener('keydown',event=>{
       if(event.key!=='Enter')return;
       event.preventDefault();
-      const saveButton=body.querySelector(`[data-rr-save="${CSS.escape(input.dataset.rrRate)}"]`);
-      if(saveButton&&!saveButton.disabled)saveRateAndNext(saveButton);
+      const key=input.dataset.rrRateGroup;
+      const saveButton=body.querySelector(
+        `[data-rr-save-group="${CSS.escape(key)}"]`
+      );
+      if(saveButton&&!saveButton.disabled){
+        saveGroupRateAndNext(saveButton);
+      }
     });
   });
 
@@ -559,76 +731,120 @@ function renderAssignments(options={}){
   else if(options.focusFirst)focusIndex=0;
 
   if(focusIndex!==null){
-    requestAnimationFrame(()=>focusRateAt(focusIndex));
+    requestAnimationFrame(()=>focusGroupRateAt(focusIndex));
   }
 }
 
-function focusRateAt(index){
-  const inputs=[...$('rrActiveRateBodyV7722').querySelectorAll('[data-rr-rate]')];
+function focusGroupRateAt(index){
+  const inputs=[
+    ...$('rrActiveRateBodyV7722').querySelectorAll('[data-rr-rate-group]')
+  ];
+
   if(!inputs.length)return;
 
-  const safeIndex=Math.max(0,Math.min(index,inputs.length-1));
+  const safeIndex=Math.max(
+    0,
+    Math.min(index,inputs.length-1)
+  );
   const input=inputs[safeIndex];
-  input.scrollIntoView({block:'center',inline:'nearest',behavior:'smooth'});
+
+  input.scrollIntoView({
+    block:'center',
+    inline:'nearest',
+    behavior:'smooth'
+  });
   input.focus();
   input.select();
 }
 
-async function saveRateAndNext(button){
-  const id=button.dataset.rrSave;
+async function saveGroupRateAndNext(button){
+  const key=button.dataset.rrSaveGroup;
+  const assignmentId=button.dataset.rrAssignmentId;
   const body=$('rrActiveRateBodyV7722');
-  const inputs=[...body.querySelectorAll('[data-rr-rate]')];
-  const input=body.querySelector(`[data-rr-rate="${CSS.escape(id)}"]`);
+  const inputs=[
+    ...body.querySelectorAll('[data-rr-rate-group]')
+  ];
+  const input=body.querySelector(
+    `[data-rr-rate-group="${CSS.escape(key)}"]`
+  );
   const currentIndex=Math.max(0,inputs.indexOf(input));
-  const row=state.rows.find(x=>String(x.id)===String(id));
-  const oldRate=Number(row?.actual_rate||0);
+  const group=state.filtered.find(item=>item.key===key);
   const rate=Number(input?.value);
 
+  if(!group){
+    say('Lot–Department group reload required.','error');
+    return;
+  }
+
   if(!Number.isFinite(rate)||rate<=0){
-    say('Actual Rate 0 se zyada hona chahiye.','error');
+    say('Group Actual Rate 0 se zyada honi chahiye.','error');
     input?.focus();
     input?.select();
     return;
   }
 
-  let reason='Missing Assignment Actual Rate filled from UPM Assignment Rate list';
-  if(oldRate>0&&Math.abs(oldRate-rate)>0.0000001){
+  let reason='First Lot+Department group Actual Rate filled from Missing Rate module';
+
+  const existingDifferent=
+    group.hasConflict||
+    (
+      group.groupRate>0&&
+      Math.abs(group.groupRate-rate)>0.0000001
+    );
+
+  if(existingDifferent){
     reason=prompt(
-      `Rate correction reason · ${row?.lot_no||''} · ${row?.department_code||''} · ${row?.worker_name_snapshot||''} · ${row?.colour_code||''}`,
-      'Authorized Assignment Actual Rate correction'
+      `Complete group rate correction reason · ${group.lotNo} · ${group.departmentCode}`,
+      'Authorized complete Lot+Department Actual Rate correction'
     )||'';
+
     if(!reason.trim())return;
+  }else if(group.groupRate>0){
+    reason='Existing Lot+Department rate applied to all remaining missing assignments';
   }
 
-  // Missing-only list removes the saved row. The same visual index becomes the next row.
-  const nextFocusIndex=$('rrMissingOnlyV7722').checked&&oldRate<=0
+  // Issue-only list removes the complete saved group.
+  // The same visual index therefore becomes the next unresolved group.
+  const nextFocusIndex=$('rrMissingOnlyV7722').checked
     ?currentIndex
     :currentIndex+1;
 
   try{
     button.disabled=true;
     if(input)input.disabled=true;
-    say('Assignment Actual Rate save ho rahi hai…');
 
-    const saved=await rpc('rr_upm_set_assignment_actual_rate_v772',{
-      p_assignment_id:id,
-      p_actual_rate:rate,
-      p_reason:reason.trim()
-    });
+    say(
+      `Lot ${group.lotNo} · Department ${group.departmentCode} की पूरी group rate save हो रही है…`
+    );
+
+    const saved=await rpc(
+      'rr_upm_set_assignment_actual_rate_v772',
+      {
+        p_assignment_id:assignmentId,
+        p_actual_rate:rate,
+        p_reason:reason.trim()
+      }
+    );
 
     await loadAssignments({focusIndex:nextFocusIndex});
 
-    const groupAssignments=Number(saved?.group_assignments||1);
-    const updatedAssignments=Number(saved?.updated_assignments||1);
-    const autoFilled=Number(saved?.auto_filled_assignments||0);
+    const updatedAssignments=Number(
+      saved?.updated_assignments||group.assignmentCount
+    );
+    const autoFilled=Number(
+      saved?.auto_filled_assignments||group.missingAssignments
+    );
 
     say(
-      `Lot ${saved?.lot_no||row?.lot_no||''} · Department ${saved?.department_code||row?.department_code||''} · Group Rate ₹${money(saved?.group_rate||rate)} saved. `+
-      `${updatedAssignments} assignment(s) updated; ${autoFilled} missing rate(s) auto-filled across all Colours, bound Sizes and Workers. `+
-      `Group assignments: ${groupAssignments}. Next Lot–Department rate ready.`
+      `DONE · Lot ${saved?.lot_no||group.lotNo} · Department ${saved?.department_code||group.departmentCode} · `+
+      `Group Rate ₹${money(saved?.group_rate||rate)}. `+
+      `${updatedAssignments} assignment(s) updated; ${autoFilled} missing assignment(s) auto-filled across `+
+      `${group.colourCodes.length} colour(s), all bound sizes and ${group.workerNames.length} worker(s). `+
+      `Cursor next unresolved Lot–Department group पर पहुँच गया है.`
     );
-  }catch(e){
-    say(errorText(e),'error');
+  }catch(error){
+    say(errorText(error),'error');
+
     if(input){
       input.disabled=false;
       input.focus();
