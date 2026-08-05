@@ -1,0 +1,56 @@
+(()=>{
+'use strict';
+window.REDZED_UPM_SUBMITTED_WORK_VERSION='772.1';
+const state={client:null,auth:null,rows:[],filtered:[]};
+const $=id=>document.getElementById(id);
+const safe=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
+const upper=v=>String(v||'').trim().toUpperCase();
+const money=v=>Number(v||0).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});
+const qty=v=>Number(v||0).toLocaleString('en-IN',{minimumFractionDigits:0,maximumFractionDigits:3});
+const localDateTime=v=>v?new Date(v).toLocaleString('en-IN',{timeZone:'Asia/Kolkata',dateStyle:'medium',timeStyle:'short'}):'—';
+const errorText=e=>[e?.message,e?.details,e?.hint,e?.code].filter(Boolean).join(' — ')||'Unknown error';
+function say(text,type=''){$('message').textContent=text||'';$('message').className=`message ${type}`.trim()}
+async function rpc(name,payload={}){const r=await state.client.rpc(name,payload);if(r.error)throw r.error;return r.data}
+
+class SearchSelect{
+  constructor(select){
+    this.select=select;this.filtered=[];this.index=-1;
+    this.wrap=document.createElement('div');this.wrap.className='combo';
+    this.input=document.createElement('input');this.input.autocomplete='off';
+    this.list=document.createElement('div');this.list.className='combo-list hidden';
+    select.parentNode.insertBefore(this.wrap,select);this.wrap.append(this.input,this.list,select);select.classList.add('hidden');select._searchCombo=this;
+    this.input.addEventListener('focus',()=>{this.input.select();this.render(true)});this.input.addEventListener('click',()=>this.render(true));this.input.addEventListener('input',()=>this.render(false));this.input.addEventListener('keydown',e=>this.key(e));
+    this.list.addEventListener('pointerdown',e=>{const o=e.target.closest('[data-i]');if(!o)return;e.preventDefault();this.pick(Number(o.dataset.i))});
+    this.input.addEventListener('blur',()=>setTimeout(()=>{if(!this.wrap.contains(document.activeElement)){this.list.classList.add('hidden');this.sync()}},0));
+    document.addEventListener('click',e=>{if(!this.wrap.contains(e.target)){this.list.classList.add('hidden');this.sync()}});this.sync();
+  }
+  options(){return [...this.select.options].map((o,i)=>({i,value:o.value,label:o.textContent.trim(),disabled:o.disabled}))}
+  sync(){this.input.value=this.select.selectedOptions[0]?.textContent.trim()||''}
+  render(all=false){const raw=this.input.value.trim().toLowerCase(),selected=(this.select.selectedOptions[0]?.textContent||'').trim().toLowerCase(),q=all||raw===selected?'':raw;this.filtered=this.options().filter(x=>!x.disabled&&(!q||x.label.toLowerCase().includes(q)));this.index=-1;this.list.innerHTML=this.filtered.length?this.filtered.map((x,i)=>`<div class="combo-option" data-i="${i}">${safe(x.label)}</div>`).join(''):'<div class="combo-option muted">No option</div>';this.list.classList.remove('hidden')}
+  pick(i){const x=this.filtered[i];if(!x)return;this.select.value=x.value;this.select.selectedIndex=x.i;this.sync();this.list.classList.add('hidden');this.select.dispatchEvent(new Event('change',{bubbles:true}))}
+  key(e){if(this.list.classList.contains('hidden'))return;if(e.key==='ArrowDown'){e.preventDefault();this.index=Math.min(this.filtered.length-1,this.index+1)}else if(e.key==='ArrowUp'){e.preventDefault();this.index=Math.max(0,this.index-1)}else if(e.key==='Enter'&&this.index>=0){e.preventDefault();this.pick(this.index);return}else if(e.key==='Escape'){this.list.classList.add('hidden');this.sync();return}else return;[...this.list.querySelectorAll('[data-i]')].forEach((x,i)=>x.classList.toggle('active',i===this.index))}
+}
+function syncCombos(){['departmentFilter','workerFilter'].forEach(id=>$(id)?._searchCombo?.sync())}
+function setOptions(select,rows,valueKey,label){const current=select.value;const first=select.options[0]?.outerHTML||'<option value="">ALL</option>';select.innerHTML=first+rows.map(r=>`<option value="${safe(r[valueKey])}">${safe(label(r))}</option>`).join('');if([...select.options].some(o=>o.value===current))select.value=current;else select.value='';select._searchCombo?.sync()}
+function populateFilters(){
+  const deps=[...new Set(state.rows.map(x=>upper(x.department_code)).filter(Boolean))].sort().map(department_code=>({department_code}));
+  const workers=[...new Map(state.rows.filter(x=>x.worker_id).map(x=>[String(x.worker_id),x])).values()].sort((a,b)=>String(a.worker_name).localeCompare(String(b.worker_name)));
+  setOptions($('departmentFilter'),deps,'department_code',x=>x.department_code);
+  setOptions($('workerFilter'),workers,'worker_id',x=>`${x.worker_name||'Unnamed'} · ${x.worker_code||'—'} · ${x.department_code||'—'}`);
+}
+function filteredRows(){const dept=upper($('departmentFilter').value),worker=$('workerFilter').value,q=$('searchInput').value.trim().toLowerCase(),missing=$('missingOnly').checked;return state.rows.filter(x=>(!dept||upper(x.department_code)===dept)&&(!worker||String(x.worker_id)===String(worker))&&(!missing||x.rate_status==='MISSING_ACTUAL_RATE')&&(!q||JSON.stringify([x.department_code,x.worker_name,x.worker_code,x.lot_no,x.colour_code,x.colour_name,x.size_code,x.assignment_status]).toLowerCase().includes(q)))}
+function rateEditor(x){if(!x.assignment_id)return '<span class="muted">Assignment missing</span>';if(!x.can_edit_rate)return '<span class="muted">View only</span>';const value=Number(x.actual_rate||0)>0?Number(x.actual_rate).toFixed(4):'';return `<div class="rate-editor"><input data-rate-input type="number" min="0.0001" step="0.0001" value="${safe(value)}" placeholder="Actual Rate"><button data-save-rate="${safe(x.assignment_id)}" type="button">${value?'UPDATE':'FILL RATE'}</button></div>`}
+function render(){
+  const rows=filteredRows();state.filtered=rows;const total=rows.reduce((a,x)=>a+Number(x.submitted_qty||0),0),amount=rows.reduce((a,x)=>a+Number(x.submitted_amount||0),0),missing=rows.filter(x=>x.rate_status==='MISSING_ACTUAL_RATE').length;
+  $('stats').innerHTML=[['Rows',rows.length],['Departments',new Set(rows.map(x=>x.department_code)).size],['Workers',new Set(rows.map(x=>x.worker_id)).size],['Submitted PCS',qty(total)],['Submitted Amount ₹',money(amount)],['Missing Rate',missing]].map(([a,b],i)=>`<div class="stat ${i===5&&Number(b)>0?'alert':''}"><small>${a}</small><strong>${safe(b)}</strong></div>`).join('');
+  $('reportBody').innerHTML=rows.length?rows.map((x,i)=>`<tr><td><b>${safe(x.department_code||'—')}</b></td><td>${safe(x.worker_name||'—')}</td><td>${safe(x.worker_code||'—')}</td><td><b>${safe(x.lot_no||'—')}</b></td><td>${safe(x.colour_name||x.colour_code||'—')}</td><td>${safe(x.size_code||'—')}</td><td>${safe(x.assignment_status||'—')}</td><td>${qty(x.assigned_cap_qty)}</td><td><b>${qty(x.submitted_qty)}</b></td><td class="money">${money(x.actual_rate)}</td><td class="money">${money(x.submitted_amount)}</td><td class="${x.rate_status==='ACTUAL_RATE_OK'?'ok':'bad'}">${safe(x.rate_status)}</td><td>${safe(x.rate_filled_by_name||'—')}</td><td>${safe(localDateTime(x.last_submit_at))}</td><td>${rateEditor(x)}</td><td><button data-view-index="${i}" type="button">VIEW</button></td></tr>`).join(''):'<tr><td colspan="16" class="muted">No submitted work rows.</td></tr>';
+  $('reportBody').querySelectorAll('[data-save-rate]').forEach(b=>b.onclick=()=>saveRate(b));$('reportBody').querySelectorAll('[data-view-index]').forEach(b=>b.onclick=()=>openView(Number(b.dataset.viewIndex)));
+}
+async function loadReport(){try{say('Submitted work load ho raha hai…');const rows=await rpc('rr_upm_submitted_work_report_v772',{p_from_date:$('fromDate').value,p_to_date:$('toDate').value,p_department_code:null,p_worker_id:null,p_search:null});state.rows=rows||[];populateFilters();render();say(`${state.rows.length} Department / Worker / Lot / Colour / Size submitted rows loaded.`,'success')}catch(e){say(errorText(e),'error')}}
+async function saveRate(button){const tr=button.closest('tr'),input=tr?.querySelector('[data-rate-input]'),id=button.dataset.saveRate,rate=Number(input?.value),row=state.rows.find(x=>String(x.assignment_id)===String(id));if(!Number.isFinite(rate)||rate<=0){say('Actual Rate 0 se zyada hona chahiye.','error');return}const reason=prompt(`Actual Rate save reason · ${row?.lot_no||''} · ${row?.department_code||''} · ${row?.worker_name||''}`,Number(row?.actual_rate||0)>0?'Authorized Assignment Actual Rate correction':'Missing Actual Rate filled from UPM Submitted Work')||'';if(!reason.trim())return;try{button.disabled=true;await rpc('rr_upm_set_assignment_actual_rate_v772',{p_assignment_id:id,p_actual_rate:rate,p_reason:reason.trim()});await loadReport();say(`Assignment Actual Rate ₹${money(rate)} saved. Piece Payroll ko Recalculate karein.`,'success')}catch(e){say(errorText(e),'error')}finally{button.disabled=false}}
+function openView(i){const x=state.filtered[i];if(!x)return;const values=[['Department',x.department_code],['Worker',`${x.worker_name||'—'} · ${x.worker_code||'—'}`],['Lot',x.lot_no],['Colour',`${x.colour_name||x.colour_code||'—'} · ${x.colour_code||'—'}`],['Size',x.size_code],['Assignment ID',x.assignment_id],['Assignment Status',x.assignment_status],['Assigned Qty',qty(x.assigned_qty)],['Assigned Cap',qty(x.assigned_cap_qty)],['Submitted PCS',qty(x.submitted_qty)],['Actual Rate',`₹${money(x.actual_rate)}`],['Submitted Amount',`₹${money(x.submitted_amount)}`],['Rate Status',x.rate_status],['Rate Filled By',x.rate_filled_by_name||'—'],['Rate Filled At',localDateTime(x.rate_filled_at)],['First Submit',localDateTime(x.first_submit_at)],['Last Submit',localDateTime(x.last_submit_at)]];$('viewContent').innerHTML=values.map(([a,b])=>`<div class="detail-box"><small>${safe(a)}</small><b>${safe(b)}</b></div>`).join('');$('viewModal').classList.remove('hidden')}
+function setDefaultDates(){const now=new Date(),parts=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Kolkata',year:'numeric',month:'2-digit',day:'2-digit'}).format(now),[y,m]=parts.split('-');$('fromDate').value=`${y}-${m}-01`;$('toDate').value=parts}
+function bind(){new SearchSelect($('departmentFilter'));new SearchSelect($('workerFilter'));$('loadReport').onclick=loadReport;$('departmentFilter').onchange=render;$('workerFilter').onchange=render;$('searchInput').oninput=render;$('missingOnly').onchange=render;$('closeModal').onclick=()=>$('viewModal').classList.add('hidden');$('viewModal').onclick=e=>{if(e.target===$('viewModal'))$('viewModal').classList.add('hidden')}}
+async function boot(){try{state.client=window.supabaseClient||window.supabaseDb||window.redzedSupabase||window.sb;if(!state.client)throw new Error('Supabase client unavailable. Check config.js.');if(window.RR?.requireRoles)state.auth=await RR.requireRoles(['owner','admin','manager','department_head','production','account','payroll','hr','line_man','cutting_master']);else{const s=await state.client.auth.getSession();if(!s.data?.session)throw new Error('Login required.')}setDefaultDates();bind();$('accessBadge').textContent=`ACCESS OK · ${upper(state.auth?.role_code||state.auth?.profile?.role_code||'AUTH')}`;await loadReport();window.RR?.startAccessGuard?.()}catch(e){$('accessBadge').textContent='ACCESS ERROR';say(errorText(e),'error')}}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
+})();

@@ -18,13 +18,14 @@ label{display:block}label>span{display:block;font-size:12px;color:var(--muted);m
 .table-wrap{overflow:auto;border:1px solid var(--line);border-radius:12px}table{width:100%;border-collapse:collapse;min-width:1250px}th,td{padding:9px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}th{position:sticky;top:0;background:#19191f;z-index:1;font-size:12px;color:#d6d6dc}tr:hover td{background:#121217}.money{text-align:right;font-variant-numeric:tabular-nums}.muted{color:var(--muted)}
 .combo{position:relative}.combo-list{position:absolute;z-index:20;left:0;right:0;top:100%;max-height:270px;overflow:auto;background:#17171d;border:1px solid var(--line);border-radius:10px;box-shadow:0 16px 40px #0009;margin-top:4px}.combo-option{padding:10px;border-bottom:1px solid #27272e;cursor:pointer}.combo-option:hover,.combo-option.active{background:#25252d}.combo-option small{display:block;color:var(--muted);margin-top:2px}
 .checks{display:flex;gap:16px;flex-wrap:wrap}.checks label{display:flex;align-items:center;gap:7px}.checks input{width:auto}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.note{padding:10px;border-left:3px solid var(--blue);background:#10151e;color:#c8d8ee;border-radius:7px}.note.violet{border-left-color:var(--violet);background:#181223}.note.warn{border-left-color:var(--amber);background:#221b0e;color:#f0d69a}.logic-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.logic-card{padding:12px;border:1px solid var(--line);border-radius:12px;background:var(--panel2)}.logic-card b{display:block;margin-bottom:5px}.logic-card small{color:var(--muted);line-height:1.4}.status-OK{color:#7fe0aa}.status-MISSING_RATE,.status-MISSING_ACTUAL_RATE,.status-MISSING_SIZE_CAP{color:#ff8d95}.status-PRESENT{color:#7fe0aa}.status-ABSENT,.status-INCOMPLETE{color:#ff8d95}.status-HALF_DAY{color:#ffd27c}.status-WEEKLY_OFF,.status-HOLIDAY,.status-LEAVE_PAID{color:#8bbcff}
+.rate-editor{display:flex;gap:6px;align-items:center;min-width:210px}.rate-editor input{width:105px;padding:7px}.rate-editor .rate-save{padding:7px 9px;font-size:11px;white-space:nowrap}.rate-editor input:focus{border-color:var(--green);outline:none}
 @media(max-width:1050px){.grid,.grid.two{grid-template-columns:1fr 1fr}.stats{grid-template-columns:repeat(3,1fr)}.logic-grid{grid-template-columns:1fr 1fr}}@media(max-width:600px){.grid,.grid.two,.logic-grid{grid-template-columns:1fr}.stats{grid-template-columns:repeat(2,1fr)}.head{align-items:flex-start;flex-direction:column}.app{padding:10px}}
 </style>
 </head>
 <body>
 <main class="app">
 <header class="head">
-  <div class="brand"><h1>REDZED REAL · Piece Rate Salary</h1><p>V779.2.5 · Actual Rate Only · Separate from V778 Monthly Salary</p></div>
+  <div class="brand"><h1>REDZED REAL · Piece Rate Salary</h1><p>V779.2.8 · Dynamic Submit · Inline Assignment Actual Rate · Zero-Rate Submit Block</p></div>
   <span id="accessBadge" class="badge">Checking access…</span>
 </header>
 <nav class="tabs" id="tabs">
@@ -46,7 +47,7 @@ label{display:block}label>span{display:block;font-size:12px;color:var(--muted);m
       <button id="markPaid" class="btn">Mark Paid</button>
       <button id="refreshPayroll" class="btn">Refresh</button>
     </div>
-    <p class="note violet">PCS earning = submitted UPM handoff quantity × frozen Assignment Actual Rate only. No Standard Rate or other rate fallback is permitted. Cumulative quantity is capped to assignment-size quantity and prior-period payable quantity is subtracted, preventing remake/reopen double payment.</p>
+    <p class="note violet">PCS earning = submitted UPM Dynamic Submit quantity × frozen Assignment Actual Rate only. No Standard Rate or other rate fallback is permitted. Cumulative quantity is capped to assignment-size quantity and prior-period payable quantity is subtracted, preventing remake/reopen double payment.</p>
     <p class="note warn">Piece attendance is informational only. Damage rows are shown as review reference and affect salary only after an audited DAMAGE_DEBIT adjustment.</p>
     <p id="payrollMessage" class="message"></p>
   </div>
@@ -68,7 +69,7 @@ label{display:block}label>span{display:block;font-size:12px;color:var(--muted);m
   </div>
   <div id="detailStats" class="stats"></div>
   <div class="panel"><div class="table-wrap"><table><thead><tr>
-    <th>Worker</th><th>Lot</th><th>Dept</th><th>Next</th><th>Colour</th><th>Size</th><th>Assigned Cap</th><th>Before PCS</th><th>To End PCS</th><th>Payable PCS</th><th>Actual Rate</th><th>Actual Rate Source</th><th>Payable Rate</th><th>Base ₹</th><th>Enhancement ₹</th><th>Mapping</th><th>Last Submit</th>
+    <th>Worker</th><th>Lot</th><th>Dept</th><th>Next</th><th>Colour</th><th>Size</th><th>Assigned Cap</th><th>Before PCS</th><th>To End PCS</th><th>Payable PCS</th><th>Actual Rate</th><th>Actual Rate Source</th><th>Fill / Edit Assignment Rate</th><th>Payable Rate</th><th>Base ₹</th><th>Enhancement ₹</th><th>Mapping</th><th>Last Submit</th>
   </tr></thead><tbody id="detailBody"></tbody></table></div></div>
 </section>
 
@@ -133,8 +134,8 @@ label{display:block}label>span{display:block;font-size:12px;color:var(--muted);m
 </section>
 </main>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="config.js?v=77925"></script>
-<script src="real-common.js?v=77925"></script>
-<script src="real-pcs-rate-payroll-v779.js?v=77925"></script>
+<script src="config.js?v=77928"></script>
+<script src="real-common.js?v=77928"></script>
+<script src="real-pcs-rate-payroll-v779.js?v=77928"></script>
 </body>
 </html>

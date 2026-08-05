@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#07090d">
+<title>REDZED Universal Production — Submitted Work V772</title>
+<style>
+:root{color-scheme:dark;--bg:#07090d;--panel:#12151c;--panel2:#171b23;--line:#303641;--mut:#98a2b3;--red:#cc3d55;--ok:#56efb2;--warn:#ffc857;--bad:#ff7b8a;--blue:#9ec5ff}
+*{box-sizing:border-box}html,body{margin:0;min-height:100%;background:var(--bg);color:#fff;font:14px system-ui,-apple-system,"Segoe UI",Arial,sans-serif}button,input,select{font:inherit;color:inherit}button,input,select,a{background:#242934;border:1px solid var(--line);border-radius:9px;padding:10px}button,a{font-weight:800;text-decoration:none;cursor:pointer}button:disabled{opacity:.45;cursor:not-allowed}.hidden{display:none!important}
+.page{max-width:1750px;margin:auto;padding:16px}.top{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}.top h1{margin:0;font-size:22px}.top p{margin:4px 0 0;color:var(--mut)}.badge{border:1px solid #267352;color:var(--ok);padding:6px 10px;border-radius:999px}.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px;margin-top:12px}.toolbar{display:grid;grid-template-columns:170px 170px minmax(210px,1fr) minmax(230px,1fr) minmax(220px,1fr) auto;gap:10px;align-items:end}.field span{display:block;color:var(--mut);font-size:12px;margin-bottom:6px}.field input,.field select{width:100%}.actions{display:flex;gap:8px;align-items:end}.primary{background:linear-gradient(#d84a62,#b72f48);border-color:#d84a62}.success{background:#174936;border-color:#318b65}.warning{background:#493915;border-color:#8a6b2b}.message{min-height:24px;color:var(--mut);padding-top:8px}.message.error{color:var(--bad)}.message.success{color:var(--ok)}
+.stats{display:grid;grid-template-columns:repeat(6,minmax(130px,1fr));gap:8px;margin-top:12px}.stat{background:var(--panel2);border:1px solid var(--line);border-radius:11px;padding:10px}.stat small{display:block;color:var(--mut)}.stat strong{font-size:20px}.stat.alert{border-color:#8c3c49;background:#3b171c}
+.table-wrap{overflow:auto;border:1px solid var(--line);border-radius:12px}table{width:100%;border-collapse:collapse;min-width:1650px}th,td{padding:9px;border-bottom:1px solid #2a303a;text-align:left;white-space:nowrap}th{position:sticky;top:0;background:#20252e;z-index:2;font-size:12px}tr:hover td{background:#11151c}.money{text-align:right;font-variant-numeric:tabular-nums}.muted{color:var(--mut)}.ok{color:var(--ok)}.bad{color:var(--bad)}
+.rate-editor{display:flex;gap:6px;align-items:center}.rate-editor input{width:100px;padding:7px}.rate-editor button{padding:7px 9px;font-size:11px}.checks{display:flex;align-items:center;gap:7px;padding:10px}.checks input{width:auto}.combo{position:relative}.combo-list{position:absolute;left:0;right:0;top:100%;z-index:30;max-height:280px;overflow:auto;background:#171b23;border:1px solid var(--line);border-radius:10px;box-shadow:0 18px 45px #000b;margin-top:4px}.combo-option{padding:10px;border-bottom:1px solid #2a303a;cursor:pointer}.combo-option:hover,.combo-option.active{background:#252b36}.modal{position:fixed;inset:0;background:#000c;z-index:60;display:flex;align-items:center;justify-content:center;padding:12px}.sheet{width:min(760px,100%);max-height:94vh;overflow:auto;background:#11151c;border:1px solid var(--line);border-radius:16px;padding:14px}.sheet-head{display:flex;justify-content:space-between;gap:8px;align-items:center}.detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}.detail-box{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:10px}.detail-box small{display:block;color:var(--mut);margin-bottom:4px}
+@media(max-width:1200px){.toolbar{grid-template-columns:repeat(3,1fr)}.stats{grid-template-columns:repeat(3,1fr)}}@media(max-width:650px){.page{padding:9px}.toolbar{grid-template-columns:1fr}.stats{grid-template-columns:repeat(2,1fr)}.detail-grid{grid-template-columns:1fr}.actions{align-items:stretch}.actions button{width:100%}}
+</style>
+</head>
+<body>
+<main class="page">
+  <header class="top">
+    <div><h1>REDZED Universal Production · Submitted Work</h1><p>V772 · Department / Worker wise submitted PCS · Exact Assignment Actual Rate</p></div>
+    <div class="actions"><a href="real-universal-production-v729.html">Back to Universal Production</a><span id="accessBadge" class="badge">Checking access…</span></div>
+  </header>
+
+  <section class="panel">
+    <div class="toolbar">
+      <label class="field"><span>From Date</span><input id="fromDate" type="date"></label>
+      <label class="field"><span>To Date</span><input id="toDate" type="date"></label>
+      <label class="field"><span>Department</span><select id="departmentFilter"><option value="">ALL DEPARTMENTS</option></select></label>
+      <label class="field"><span>Worker</span><select id="workerFilter"><option value="">ALL WORKERS</option></select></label>
+      <label class="field"><span>Search Lot / Colour / Size</span><input id="searchInput" placeholder="Lot No, worker, department, colour, size"></label>
+      <div class="actions"><button id="loadReport" class="primary" type="button">Load Submitted Work</button></div>
+    </div>
+    <label class="checks"><input id="missingOnly" type="checkbox"> Missing Actual Rate only</label>
+    <p id="message" class="message"></p>
+  </section>
+
+  <section id="stats" class="stats"></section>
+
+  <section class="panel">
+    <div class="table-wrap"><table><thead><tr>
+      <th>Department</th><th>Worker</th><th>Worker Code</th><th>Lot</th><th>Colour</th><th>Size</th>
+      <th>Assignment Status</th><th>Assigned Cap</th><th>Submitted PCS</th><th>Actual Rate</th><th>Submitted Amount ₹</th>
+      <th>Rate Status</th><th>Rate Filled By</th><th>Last Submit</th><th>Fill / Edit Actual Rate</th><th>View</th>
+    </tr></thead><tbody id="reportBody"></tbody></table></div>
+  </section>
+</main>
+
+<div id="viewModal" class="modal hidden"><section class="sheet"><div class="sheet-head"><h2>Submitted Work Details</h2><button id="closeModal" type="button">Close</button></div><div id="viewContent" class="detail-grid"></div></section></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js?v=7721"></script>
+<script src="real-common.js?v=7721"></script>
+<script src="real-upm-submitted-work-v772.js?v=7721"></script>
+</body>
+</html>

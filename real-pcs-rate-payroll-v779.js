@@ -1,6 +1,6 @@
 (()=>{
 'use strict';
-window.REDZED_PCS_RATE_PAYROLL_VERSION='779.2.5';
+window.REDZED_PCS_RATE_PAYROLL_VERSION='779.2.8';
 
 const state={client:null,auth:null,workers:[],run:null,lines:[],details:[],attendance:[],holidays:[],adjustments:[],mapping:[],attendanceWorkerId:'',adjustmentWorkerId:''};
 const $=id=>document.getElementById(id);
@@ -159,15 +159,40 @@ async function loadPayroll(){
     renderPayroll();say('payrollMessage',state.run?`Run loaded: ${state.run.status}`:'No calculated run for this month.','success');
   }catch(e){say('payrollMessage',err(e),'error')}
 }
-async function calculatePayroll(){try{say('payrollMessage','Reading UPM handoff, assignment-size cap and frozen rates…','info');const id=await rpc('rr_piece_payroll_calculate_v779',{p_period_month:monthStart($('payrollMonth').value),p_data_mode:$('payrollMode').value});await loadPayroll();say('payrollMessage',`Piece payroll calculated. Run ${id}`,'success')}catch(e){say('payrollMessage',err(e),'error')}}
+async function calculatePayroll(){try{say('payrollMessage','Reading UPM Dynamic Submit, assignment-size cap and frozen Assignment Actual Rate…','info');const id=await rpc('rr_piece_payroll_calculate_v779',{p_period_month:monthStart($('payrollMonth').value),p_data_mode:$('payrollMode').value});await loadPayroll();say('payrollMessage',`Piece payroll calculated. Run ${id}`,'success')}catch(e){say('payrollMessage',err(e),'error')}}
 async function approvePayroll(){try{if(!state.run)throw new Error('Calculate payroll first.');const reason=prompt('Approval reason','UPM PCS, rates and adjustments verified')||'';if(!reason)return;await rpc('rr_piece_payroll_approve_v779',{p_piece_run_id:state.run.id,p_reason:reason});await loadPayroll();say('payrollMessage','Piece payroll approved and locked.','success')}catch(e){say('payrollMessage',err(e),'error')}}
 async function reopenPayroll(){try{if(!state.run)throw new Error('Run missing.');const reason=prompt('OWNER reopen reason','Rate / UPM / adjustment correction required')||'';if(!reason)return;await rpc('rr_piece_payroll_reopen_v779',{p_piece_run_id:state.run.id,p_reason:reason});await loadPayroll();say('payrollMessage','Piece payroll reopened. Correct data and recalculate.','success')}catch(e){say('payrollMessage',err(e),'error')}}
 async function markPaid(){try{if(!state.run)throw new Error('Run missing.');const ref=prompt('Payment reference','Bank transfer / Cash voucher')||'';if(!ref)return;await rpc('rr_piece_payroll_mark_paid_v779',{p_piece_run_id:state.run.id,p_payment_reference:ref});await loadPayroll();say('payrollMessage','Piece payroll marked PAID.','success')}catch(e){say('payrollMessage',err(e),'error')}}
 
+function currentAccess(){return {role:upper(state.auth?.role_code||state.auth?.profile?.role_code||''),department:upper(state.auth?.department_code||state.auth?.profile?.department_code||'')}}
+function canShowRateEditor(row){const a=currentAccess();return ['OWNER','ADMIN','MANAGER'].includes(a.role)||(a.role==='DEPARTMENT_HEAD'&&a.department===upper(row.department_code))}
+function rateEditor(row){
+  if(!row.assignment_id)return '<span class="muted">Assignment missing</span>';
+  if(!canShowRateEditor(row))return '<span class="muted">View only</span>';
+  const value=Number(row.base_rate||0)>0?Number(row.base_rate).toFixed(4):'';
+  const label=Number(row.base_rate||0)>0?'UPDATE':'FILL RATE';
+  return `<div class="rate-editor"><input data-rate-input type="number" min="0.0001" step="0.0001" value="${safe(value)}" placeholder="Actual Rate"><button class="btn rate-save" data-save-assignment-rate="${safe(row.assignment_id)}" type="button">${label}</button></div>`;
+}
+async function saveAssignmentRate(button){
+  const tr=button.closest('tr');const input=tr?.querySelector('[data-rate-input]');const assignmentId=button.dataset.saveAssignmentRate;const rate=Number(input?.value);
+  if(!assignmentId)throw new Error('Assignment ID missing.');
+  if(!Number.isFinite(rate)||rate<=0)throw new Error('Actual Rate 0 se zyada hona chahiye.');
+  const row=state.details.find(x=>String(x.assignment_id)===String(assignmentId));
+  const reason=prompt(`Actual Rate save reason · ${row?.lot_no||''} · ${row?.department_code||''} · ${row?.worker_name||''}`,Number(row?.base_rate||0)>0?'Authorized Assignment Actual Rate correction':'Missing Assignment Actual Rate filled from Lot / PCS Details')||'';
+  if(!reason.trim())return;
+  try{
+    button.disabled=true;say('detailMessage','Assignment Actual Rate save ho rahi hai…','info');
+    await rpc('rr_upm_set_assignment_actual_rate_v772',{p_assignment_id:assignmentId,p_actual_rate:rate,p_reason:reason.trim()});
+    const runId=await rpc('rr_piece_payroll_calculate_v779',{p_period_month:monthStart($('detailMonth').value),p_data_mode:$('detailMode').value});
+    await loadDetails();
+    say('detailMessage',`Actual Rate ₹${money(rate)} saved. Payroll automatically recalculated · Run ${runId}`,'success');
+  }catch(e){say('detailMessage',err(e),'error')}finally{button.disabled=false}
+}
 function renderDetails(){
   const qv=$('detailSearch').value.trim().toLowerCase();const rows=state.details.filter(x=>!qv||JSON.stringify([x.worker_name,x.worker_code,x.lot_no,x.department_code,x.to_department_code,x.colour_code,x.colour_name,x.size_code]).toLowerCase().includes(qv));
   $('detailStats').innerHTML=[['Rows',rows.length],['Workers',new Set(rows.map(x=>x.worker_id)).size],['Payable PCS',qty(rows.reduce((a,x)=>a+Number(x.payable_qty||0),0))],['Base ₹',money(rows.reduce((a,x)=>a+Number(x.base_amount||0),0))],['Enhancement ₹',money(rows.reduce((a,x)=>a+Number(x.enhancement_amount||0),0))],['Missing Actual Rate',rows.filter(x=>x.mapping_status==='MISSING_ACTUAL_RATE'||x.mapping_status==='MISSING_RATE').length],['Missing Cap',rows.filter(x=>x.mapping_status==='MISSING_SIZE_CAP').length]].map(([a,b],i)=>`<div class="stat ${i>4&&Number(b)>0?'alert':''}"><small>${a}</small><strong>${safe(b)}</strong></div>`).join('');
-  $('detailBody').innerHTML=rows.length?rows.map(x=>`<tr><td>${safe(x.worker_name||x.worker_id)}</td><td><b>${safe(x.lot_no||'—')}</b></td><td>${safe(x.department_code||'—')}</td><td>${safe(x.to_department_code||'—')}</td><td>${safe(x.colour_name||x.colour_code||'—')}</td><td>${safe(x.size_code||'—')}</td><td>${qty(x.assigned_cap_qty)}</td><td>${qty(x.submitted_before_qty)}</td><td>${qty(x.submitted_to_end_qty)}</td><td><b>${qty(x.payable_qty)}</b></td><td class="money">${money(x.base_rate)}</td><td>${safe(x.rate_source)}</td><td class="money">${money(x.enhanced_rate)}</td><td class="money">${money(x.base_amount)}</td><td class="money">${money(x.enhancement_amount)}</td><td class="status-${safe(x.mapping_status)}">${safe(x.mapping_status)}</td><td>${safe(localDateTime(x.last_source_at))}</td></tr>`).join(''):'<tr><td colspan="17" class="muted">No detail rows.</td></tr>';
+  $('detailBody').innerHTML=rows.length?rows.map(x=>`<tr><td>${safe(x.worker_name||x.worker_id)}</td><td><b>${safe(x.lot_no||'—')}</b></td><td>${safe(x.department_code||'—')}</td><td>${safe(x.to_department_code||'—')}</td><td>${safe(x.colour_name||x.colour_code||'—')}</td><td>${safe(x.size_code||'—')}</td><td>${qty(x.assigned_cap_qty)}</td><td>${qty(x.submitted_before_qty)}</td><td>${qty(x.submitted_to_end_qty)}</td><td><b>${qty(x.payable_qty)}</b></td><td class="money">${money(x.base_rate)}</td><td>${safe(x.rate_source)}</td><td>${rateEditor(x)}</td><td class="money">${money(x.enhanced_rate)}</td><td class="money">${money(x.base_amount)}</td><td class="money">${money(x.enhancement_amount)}</td><td class="status-${safe(x.mapping_status)}">${safe(x.mapping_status)}</td><td>${safe(localDateTime(x.last_source_at))}</td></tr>`).join(''):'<tr><td colspan="18" class="muted">No detail rows.</td></tr>';
+  $('detailBody').querySelectorAll('[data-save-assignment-rate]').forEach(button=>button.onclick=()=>saveAssignmentRate(button));
 }
 async function loadDetails(){try{const month=monthStart($('detailMonth').value),mode=$('detailMode').value;const rr=await state.client.from('rr_piece_payroll_run_board_v779').select('id').eq('period_month',month).eq('data_mode',mode).maybeSingle();if(rr.error)throw rr.error;if(!rr.data){state.details=[];renderDetails();say('detailMessage','Calculate payroll first.','info');return}const d=await state.client.from('rr_piece_payroll_detail_board_v779').select('*').eq('piece_run_id',rr.data.id).order('worker_name').order('lot_no').order('department_code').order('size_code');if(d.error)throw d.error;state.details=d.data||[];renderDetails();say('detailMessage',`${state.details.length} UPM mapping rows loaded.`,'success')}catch(e){say('detailMessage',err(e),'error')}}
 
