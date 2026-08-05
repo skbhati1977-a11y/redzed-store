@@ -1,19 +1,20 @@
-REDZED UPM V769 + Assignment Rate V772.7
+REDZED PCS Payroll V779.3.1 — Collaborative Lot View
 
-PREREQUISITE
-- Supabase V772.6 ONE LOT + ONE DEPARTMENT = ONE RATE SQL must already be installed.
-- Your audit result confirms that V772.6 is installed.
+Upload/replace these matching files in GitHub root:
+1. real-pcs-rate-payroll-v779.html
+2. real-pcs-rate-payroll-v779.js
+3. real-table-freeze-v773.js
 
-UPLOAD/REPLACE BOTH FILES IN GITHUB ROOT
-1. real-universal-production-v769.html
-2. real-universal-production-v772-submitted-work-link.js
+Main view:
+- One summary row = Worker + Lot + Department
+- All Colours and all bound Sizes are combined
+- Assigned Cap, submitted quantities, payable PCS and amounts are totals
+- One Group Actual Rate editor controls the complete Lot+Department rate
+- Enter or SAVE/UPDATE GROUP + NEXT saves and moves to the next unresolved group
 
-V772.7 UI BEHAVIOUR
-- Missing Rate list is grouped by Lot No + Department.
-- One row represents all Colours, all bound Sizes and all Workers in that group.
-- Enter or SAVE GROUP + NEXT applies one rate to the complete group.
-- The resolved group disappears from Missing/Conflict-only mode.
-- Cursor automatically moves to the next unresolved Lot–Department group.
-- Conflicting historical group rates can be normalized from one group row.
-- Art image, Art No, Item Name, workers, colours and totals remain visible.
-- Header row and first Lot column remain frozen.
+Separate evaluation:
+- VIEW EVALUATION opens a separate raw Colour/Size table under the group
+- Raw assignment IDs, quantities, rates, mapping and timestamps remain visible
+- Payroll calculation still uses the raw underlying detail records
+
+This is a web-view change only. No new SQL is required because V772.6 group-rate SQL is already installed.
