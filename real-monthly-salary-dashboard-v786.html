@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=yes">
 <meta name="theme-color" content="#090b10">
-<title>REAL FACTORY — Salary Home</title>
+<title>REAL FACTORY — Monthly Salary Dashboard</title>
 <style>
 :root{color-scheme:dark;--bg:#090b10;--panel:#141820;--panel2:#0f131a;--line:#313a48;--muted:#aeb8c8;--green:#34c47c;--red:#ef3340}
 *{box-sizing:border-box}
@@ -27,23 +27,20 @@ a{font:inherit}.app{max-width:1180px;margin:auto;padding:14px}
 <body>
 <main class="app">
 <header class="head">
-  <div><h1>REAL FACTORY · Salary Home</h1><p>PCS Salary और Monthly Salary के अलग dashboards</p></div>
-  <span id="accessBadge" class="btn">Checking…</span>
+  <div><h1>REAL FACTORY · Monthly Salary Dashboard</h1><p>Attendance, monthly salary और payment</p></div>
+  <div class="nav">
+    <a class="btn" href="real-salary-home-v786.html">← Salary Home</a>
+    <span id="accessBadge" class="btn">Checking…</span>
+  </div>
 </header>
-<section class="panel note"><b>Choose one:</b> जिस salary type पर काम करना है, उसी dashboard में जाएँ.</section>
-<section class="grid">
-  <article class="card primary">
-    <div><h2>PCS Salary Dashboard</h2><p>PCS worker setup, unpaid PCS work, PCS payment और work/payment check.</p></div>
-    <a class="btn" href="real-pcs-salary-dashboard-v786.html">OPEN PCS SALARY DASHBOARD</a>
-  </article>
-  <article class="card payment">
-    <div><h2>Monthly Salary Dashboard</h2><p>Monthly worker setup, attendance salary, monthly payment और check.</p></div>
-    <a class="btn" href="real-monthly-salary-dashboard-v786.html">OPEN MONTHLY SALARY DASHBOARD</a>
-  </article>
-</section>
+<section class="panel note"><b>Daily flow:</b> Worker Setup → Monthly Salary → Monthly Payment</section>
+<section class="grid"><article class="card"><div><h2>Monthly Worker Setup</h2><p>Worker को SALARIED category, monthly salary और shift में set करें.</p></div><a class="btn" href="real-worker-payroll-setup-v786.html?category=SALARIED">OPEN MONTHLY WORKER SETUP</a></article>
+<article class="card primary"><div><h2>Monthly Salary</h2><p>Attendance, OT, leave और monthly payable calculate/check करें.</p></div><a class="btn" href="real-attendance-salary-v778.html">OPEN MONTHLY SALARY</a></article>
+<article class="card payment"><div><h2>Monthly Payment</h2><p>Monthly current payable load करें, amount भरें और payment submit करें.</p></div><a class="btn" href="real-salary-payment-v785.html?category=SALARIED">OPEN MONTHLY PAYMENT</a></article>
+<article class="card"><div><h2>Monthly Salary & Payment Check</h2><p>Monthly salary, payment और outstanding worker-wise देखें.</p></div><a class="btn" href="real-salary-payment-v785.html?category=SALARIED">OPEN MONTHLY PAYMENT CHECK</a></article></section>
 <section class="panel advanced">
   <details>
-    <summary>Advanced Settings</summary>
+    <summary>Advanced Options</summary>
     <div class="nav" style="margin-top:12px">
       <a class="btn" href="real-advance-worker-payment-v785.html">Advance Payment</a>
       <a class="btn" href="real-data-mode-control-v786.html">Data Mode Settings</a>
@@ -56,6 +53,6 @@ a{font:inherit}.app{max-width:1180px;margin:auto;padding:14px}
 <script src="config.js?v=78631"></script>
 <script src="real-data-mode-controller-v786-1-1.js?v=78631"></script>
 <script src="real-common.js?v=78631"></script>
-<script src="real-salary-home-v786.js?v=78631"></script>
+<script src="real-monthly-salary-dashboard-v786.js?v=78631"></script>
 </body>
 </html>
