@@ -1,7 +1,7 @@
 (()=>{
 'use strict';
 
-const VERSION='772.2';
+const VERSION='772.3';
 const $=id=>document.getElementById(id);
 const safe=v=>String(v??'').replace(/[&<>"']/g,c=>({
   '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'
@@ -99,13 +99,13 @@ function installStyles(){
   }
   #rrActiveRateModalV7722 .rr-msg{min-height:24px;padding:8px 0;color:#56efb2}
   #rrActiveRateModalV7722 .rr-msg.rr-error{color:#ff8d95}
-  #rrActiveRateModalV7722 .rr-wrap{overflow:auto;border:1px solid #303641;border-radius:12px}
+  #rrActiveRateModalV7722 .rr-wrap{overflow:auto;border:1px solid #303641;border-radius:12px;max-height:58vh}
   #rrActiveRateModalV7722 table{width:100%;border-collapse:collapse;min-width:1180px}
   #rrActiveRateModalV7722 th,
   #rrActiveRateModalV7722 td{
-    padding:8px;border-bottom:1px solid #2a303a;text-align:left;white-space:nowrap
+    padding:10px 8px;border-bottom:1px solid #2a303a;text-align:left;white-space:nowrap;vertical-align:middle
   }
-  #rrActiveRateModalV7722 th{position:sticky;top:76px;background:#20252e;z-index:2}
+  #rrActiveRateModalV7722 th{position:static;background:#20252e;z-index:auto}
   #rrActiveRateModalV7722 .rr-bad{color:#ff8d95;font-weight:900}
   #rrActiveRateModalV7722 .rr-ok{color:#56efb2;font-weight:900}
   #rrActiveRateModalV7722 .rr-rate-editor{display:flex;gap:6px;align-items:center}
@@ -193,7 +193,7 @@ function installButtons(){
     submitted.textContent='SUBMITTED WORK';
     submitted.title='Department / Worker wise submitted PCS and Assignment Actual Rate';
     submitted.dataset.version=VERSION;
-    submitted.onclick=()=>{location.href='real-upm-submitted-work-v772.html?v=7722'};
+    submitted.onclick=()=>{location.href='real-upm-submitted-work-v772.html?v=7723'};
     const bar=document.querySelector('.modulebar')||document.querySelector('.toolbar')||document.querySelector('.top');
     if(bar)bar.appendChild(submitted);
     else{
