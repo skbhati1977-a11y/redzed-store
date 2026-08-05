@@ -18,7 +18,6 @@
       maximumFractionDigits: 2
     }).format(number);
   };
-
   RR.number = (value, fallback = 0) => {
     const parsed = Number(value);
     return Number.isFinite(parsed) ? parsed : fallback;
@@ -31,7 +30,6 @@
 
   RR.roleCanOperateMasters = (role) =>
     ["owner", "admin"].includes(String(role || "").trim().toLowerCase());
-
   RR.requireRoles = async (allowedRoles = ["owner", "admin"]) => {
     const allowed = new Set(
       (allowedRoles || []).map((role) => String(role || "").trim().toLowerCase())
@@ -41,7 +39,6 @@
       window.location.replace("real-login.html");
       throw new Error("Login required.");
     }
-
     const user = data.session.user;
     const { data: profile, error: profileError } = await supabaseClient
       .from("rr_user_profiles")
@@ -53,7 +50,6 @@
     if (profileError || !profile?.is_active || !allowed.has(role)) {
       throw new Error(`Required permission: ${[...allowed].join(" / ")}.`);
     }
-
     return { session: data.session, user, profile: { ...profile, role_code: role } };
   };
 
@@ -63,14 +59,12 @@
       window.location.replace("real-login.html");
       throw new Error("Login required.");
     }
-
     const user = data.session.user;
     const { data: profile, error: profileError } = await supabaseClient
       .from("rr_user_profiles")
       .select("id, full_name, role_code, is_active")
       .eq("auth_user_id", user.id)
       .single();
-
     if (
       profileError ||
       !profile?.is_active ||
@@ -83,7 +77,6 @@
 
     return { session: data.session, user, profile };
   };
-
   RR.getTableColumns = async (table) => {
     const knownColumns = {
       rr_art_master: [
@@ -103,7 +96,6 @@
     };
     return new Set(knownColumns[table] || []);
   };
-
   RR.pickColumn = (columns, aliases) =>
     aliases.find((name) => columns.has(name)) || null;
 
@@ -118,7 +110,6 @@
     String(name || "file")
       .toLowerCase()
       .replace(/[^a-z0-9._-]/g, "_");
-
   RR.inferMimeType = (file) => {
     const declared = String(file?.type || "").trim().toLowerCase();
     if (declared && declared !== "application/octet-stream") return declared;
@@ -129,7 +120,6 @@
       mp4: "video/mp4", mov: "video/quicktime", webm: "video/webm", "3gp": "video/3gpp"
     })[extension] || "";
   };
-
   RR.uploadMedia = async ({
     file,
     entityType,
@@ -147,7 +137,6 @@
       String(entityId),
       `${Date.now()}-${crypto.randomUUID()}-${RR.safeFileName(file.name)}`
     ].join("/");
-
     const { error: uploadError } = await supabaseClient.storage
       .from("redzed-media")
       .upload(path, file, {
@@ -161,7 +150,6 @@
     const { data: publicData } = supabaseClient.storage
       .from("redzed-media")
       .getPublicUrl(path);
-
     const columns = await RR.getTableColumns("rr_media");
     const payload = RR.filterPayload({
       entity_type: entityType,
@@ -177,7 +165,6 @@
       is_cover: false,
       sort_order: 0
     }, columns);
-
     const { data, error } = await supabaseClient
       .from("rr_media")
       .insert(payload)
@@ -197,7 +184,6 @@
       .order("created_at", { ascending: true });
 
     if (category) query = query.eq("media_category", category);
-
     const { data, error } = await query;
     if (error) throw error;
 
@@ -213,7 +199,6 @@
   RR.installHassleFreeNumberInputs = () => {
     if (document.documentElement.dataset.rrNumberInputsReady === "1") return;
     document.documentElement.dataset.rrNumberInputsReady = "1";
-
     document.addEventListener("focusin", (event) => {
       const input = event.target;
       if (!(input instanceof HTMLInputElement) || input.type !== "number" || input.readOnly || input.disabled) return;
@@ -224,7 +209,6 @@
         input.value = "";
         return;
       }
-
       if (raw) {
         requestAnimationFrame(() => {
           try { input.select(); } catch (_) {}
@@ -236,7 +220,6 @@
       const input = event.target;
       if (!(input instanceof HTMLInputElement) || input.type !== "number" || input.readOnly || input.disabled) return;
       if (input.dataset.keepNumberFormat === "1") return;
-
       const raw = String(input.value || "").trim();
       if (!raw) return;
       const number = Number(raw);
@@ -247,4 +230,48 @@
   RR.installHassleFreeNumberInputs();
 
   window.RR = RR;
+})();
+
+/* REDZED GLOBAL TABLE PLATFORM V775.1
+ * Every page that loads real-common.js automatically receives:
+ * - Google Sheets-style per-column filters
+ * - Sort A-Z / Z-A in every column menu
+ * - Freeze top rows count
+ * - Freeze left columns count
+ * - Always-visible bottom horizontal slider
+ * - iOS/iPadOS/Android safe mobile behavior
+ */
+(()=>{
+  if(window.__REDZED_GLOBAL_UI_LOADER_V775__)return;
+  window.__REDZED_GLOBAL_UI_LOADER_V775__=true;
+
+  const current=document.currentScript?.src||location.href;
+  const base=new URL('.',current);
+
+  const load=(file,id)=>new Promise((resolve,reject)=>{
+    if(document.getElementById(id)){
+      resolve();
+      return;
+    }
+
+    const script=document.createElement('script');
+    script.id=id;
+    script.src=new URL(file,base).href;
+    script.async=false;
+    script.onload=resolve;
+    script.onerror=()=>reject(
+      new Error(`REDZED global utility failed to load: ${file}`)
+    );
+    document.head.appendChild(script);
+  });
+
+  load(
+    'real-mobile-compat-v775.js?v=7751',
+    'rr-mobile-compat-v775'
+  )
+  .then(()=>load(
+    'real-google-sheet-table-v775.js?v=7751',
+    'rr-google-sheet-table-v775'
+  ))
+  .catch(error=>console.error(error));
 })();

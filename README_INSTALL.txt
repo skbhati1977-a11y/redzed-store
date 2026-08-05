@@ -1,101 +1,79 @@
-REDZED STORE — DYNAMIC DEPARTMENT + MULTI-SKILL WORKER + COLOUR-BOUND UPM FLOW
+REDZED GLOBAL GOOGLE SHEETS TABLE PLATFORM V775.1
+================================================
+
+PURPOSE
+-------
+One global table system for the complete REDZED web app:
+- Past modules
+- Present modules
+- Future modules
+
+WHY real-common.js
+------------------
+REDZED module pages already load real-common.js.
+The new real-common.js loads the table platform globally.
+Any current or future page that contains a <table> and loads real-common.js
+receives all controls automatically. No database/Supabase SQL is required.
+
+MANDATORY TABLE FEATURES
+------------------------
+1. Every column header gets its own ▼ filter button.
+2. Column filter menu:
+   - Search values
+   - Select All
+   - Clear Selection
+   - Apply
+   - Clear Filter
+   - Sort A → Z
+   - Sort Z → A
+3. Freeze Top Rows:
+   - NONE / 1 / 2 / 3 / 4 / 5
+4. Freeze Left Columns:
+   - NONE through up to 8 columns
+5. Clear All Filters
+6. Visible row count
+7. Bottom horizontal slider always remains visible when needed.
+8. Works on dynamically created tables and nested evaluation tables.
+9. Filter/freeze settings are remembered in that browser.
+10. iPhone, iPad and Android safe-area and touch support.
+
+UPLOAD TO GITHUB ROOT
+---------------------
+Mandatory global files:
+- real-common.js
+- real-mobile-compat-v775.js
+- real-google-sheet-table-v775.js
+
+Compatibility files:
+- real-table-freeze-v773.js
+- real-mobile-compat-v774.js
+
+The compatibility files prevent old module HTML references from breaking.
+
+Matching current module files are also included:
+- real-pcs-rate-payroll-v779.html
+- real-pcs-rate-payroll-v779.js
+- real-universal-production-v769.html
+- real-universal-production-v772-submitted-work-link.js
+- real-upm-submitted-work-v772.html
+- real-upm-submitted-work-v772.js
+
+TEST
+----
+Open:
+VERIFY_REDZED_GLOBAL_TABLE_V775.html
+
+Then test:
+- Each header ▼ filter
+- Sort
+- Freeze 1/2 rows
+- Freeze 1/2 columns
+- Bottom horizontal slider
 
 IMPORTANT
-- Web filenames are intentionally unchanged.
-- Version is written only in the Git commit message.
-- Do not upload the BACKUP_BEFORE_UPDATE folder.
+---------
+Pages that do not load real-common.js are outside the global bootstrap.
+Such pages should add:
+<script src="real-common.js?v=7751"></script>
 
-FILES TO UPDATE IN REPOSITORY ROOT
-1. real-role-permission-v72054.html
-2. real-role-permission-v72054.js
-3. real-universal-production-v726.html
-4. real-universal-production-v726.js
-
-SUPABASE SQL
-Run once in Supabase SQL Editor:
-REDZED_DYNAMIC_DEPARTMENT_AND_UPM_FLOW.sql
-
-INSTALL ORDER
-1. Back up the four current web files.
-2. Run REDZED_DYNAMIC_DEPARTMENT_AND_UPM_FLOW.sql completely.
-3. Upload/replace the four web files above with the same filenames.
-4. Commit using the message in COMMIT_MESSAGE.txt.
-5. Hard refresh browser/cache.
-
-WHAT IS IMPLEMENTED
-
-A. DEPARTMENT MASTER — inside existing Role & Permission file
-- New Department Master tab.
-- Create future departments without changing filenames.
-- Permanent department_code; display name/order/capabilities can be edited.
-- Parent department and permission-template copy.
-- Auto mapping to:
-  * Role & Permission field matrix
-  * Action matrix
-  * User role/department selector
-  * Worker Skills
-  * rr_upm_departments
-- No hard delete. Archive is blocked while active UPM assignments exist.
-
-B. KAAJ / BUTTON ARCHITECTURE
-- Kaaj and Button / BTN remain separate departments/processes.
-- One worker may have Kaaj as Primary and Button as additional Skill, or vice versa.
-- The same worker then appears in both UPM department worker dropdowns.
-- Different workers can still be used for Kaaj and Button when required.
-
-C. UPM ASSIGNMENT LOCK
-- Permanent assignment unit: Lot + Department + complete Colour.
-- Every Cutting size belonging to that Colour is permanently bound together.
-- No size can be assigned to another worker separately.
-- One Colour, multiple Colours, or ALL open Colours can be selected.
-- Select All + one Bulk Worker + Assign Selected supports all-colour one-flow assignment.
-- Backend verifies full Cutting size_breakup and full Cutting colour total before assignment.
-
-D. DEPARTMENT FLOW GATE
-- A downstream department cannot assign a Colour before upstream Submit.
-- Department sequence_no controls the next department.
-- Submit is Colour-level and processes all sizes together.
-- On Submit, every size's remaining direct Pending becomes Good automatically.
-- Open Alter/Remake is excluded from that Submit and remains in the current department.
-- Submitted Good quantity opens the same Colour in the next department.
-- Repaired/remade quantity can be submitted later; an already completed downstream assignment is reopened automatically for the new inbound quantity.
-
-E. ACTIONS
-- Register Alter: Pending -> Alter Open.
-- Issue Remake: Alter Open -> Remake Open.
-- Complete Remake: Remake Open -> Good / Ready Submit.
-- Damage: can be taken from Pending, Alter, or Remake with server balance validation.
-- Reassign Direct Pending: preserves completed worker history; Alter/Remake must be resolved first.
-- Submit Selected Colours: all sizes together, non-Alter balance only.
-
-F. DEBUG / SAFETY
-- Single Lot mapping: rr_cutting_lots_v3 + rr_cutting_breakup_v3.
-- Multi Lot mapping: rr_production_lots + rr_production_lot_breakup_v3.
-- Colour identity uses cb_colour_id when available.
-- Batch actions run transactionally in Supabase RPC.
-- Request IDs prevent duplicate action posting.
-- Flow Debug reports mapping, workers, assignments, handoffs and waiting rows.
-
-VERIFICATION
-
-1. Department console:
-select public.rr_owner_department_console_v2();
-
-2. Cutting map:
-select * from public.rr_upm_verify_cutting_map_v726('YOUR-LOT-NO');
-
-3. Full flow debug:
-select public.rr_upm_debug_lot_flow_v726('YOUR-CANONICAL-LOT-ID','STITCHING');
-
-4. Handoff ledger:
-select * from public.rr_upm_handoff_ledger_v727
-where canonical_lot_id='YOUR-CANONICAL-LOT-ID'
-order by created_at;
-
-STATIC CHECKS PERFORMED
-- Both JavaScript files pass node --check.
-- HTML files have no duplicate element IDs.
-- Required RPC/function names and one final SQL COMMIT are present.
-
-LIVE DATABASE NOTE
-The package is built against the uploaded REDZED schema/code files. Run the SQL in a test Supabase project or transaction-safe staging copy first because this environment cannot execute against your live Supabase database.
+No Supabase SQL is needed.
