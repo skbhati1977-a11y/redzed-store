@@ -1,10 +1,10 @@
 (()=>{
 'use strict';
 
-window.REDZED_PCS_WORK_AUDIT_VERSION='783.1.0';
+window.REAL_FACTORY_KAAM_PAYMENT_CHECK_VERSION='786.3.2';
 
 const $=id=>document.getElementById(id);
-const state={client:null,rows:[]};
+const state={client:null,rows:[],paymentRows:[],paymentByWork:new Map(),paymentByWorker:new Map()};
 
 const safe=value=>String(value??'').replace(
   /[&<>"']/g,
@@ -86,6 +86,54 @@ function isPcsEligible(row){
     ].includes(String(row.audit_status||'').toUpperCase());
 }
 
+
+function paymentStatusLabel(row){
+  const status=String(row?.worker_batch_payment_status||'').toUpperCase();
+  return {
+    NOT_IN_SALARY_LEDGER:'NOT ADDED',
+    PAYMENT_PENDING:'PAYMENT PENDING',
+    PARTIAL_PAYMENT_POSTED:'PARTIAL PAID',
+    FULL_PAYMENT_POSTED:'FULL PAID'
+  }[status]||status.replaceAll('_',' ')||'—';
+}
+
+function buildPaymentMaps(){
+  state.paymentByWork=new Map();
+  state.paymentByWorker=new Map();
+
+  for(const row of state.paymentRows){
+    const workKey=String(row.work_key||'');
+    if(workKey){
+      const existing=state.paymentByWork.get(workKey);
+      if(!existing || String(row.payment_date||'')>String(existing.payment_date||'')){
+        state.paymentByWork.set(workKey,row);
+      }
+    }
+
+    const workerKey=String(row.worker_id||row.worker_name||'UNKNOWN');
+    if(!state.paymentByWorker.has(workerKey)){
+      state.paymentByWorker.set(workerKey,{
+        paid:0,
+        lastDate:null,
+        lastVoucher:'—',
+        seenLines:new Set()
+      });
+    }
+
+    const item=state.paymentByWorker.get(workerKey);
+    const lineKey=String(row.batch_line_id||`${row.batch_id||''}|${row.worker_id||''}|${row.payment_date||''}`);
+    if(row.batch_line_id && !item.seenLines.has(lineKey)){
+      item.seenLines.add(lineKey);
+      item.paid+=Number(row.worker_amount_paid||0);
+    }
+
+    if(row.payment_date && (!item.lastDate || String(row.payment_date)>String(item.lastDate))){
+      item.lastDate=row.payment_date;
+      item.lastVoucher=row.voucher_no||'—';
+    }
+  }
+}
+
 function workerSummary(){
   const map=new Map();
 
@@ -107,6 +155,9 @@ function workerSummary(){
         productionCost:0,
         notAdded:0,
         outstanding:Number(row.worker_outstanding||0),
+        paid:0,
+        lastPaymentDate:null,
+        lastVoucher:'—',
         attention:0
       });
     }
@@ -131,6 +182,15 @@ function workerSummary(){
     }
 
     if(row.needs_attention)item.attention+=1;
+  }
+
+  for(const [key,item] of map.entries()){
+    const payment=state.paymentByWorker.get(key);
+    if(payment){
+      item.paid=Number(payment.paid||0);
+      item.lastPaymentDate=payment.lastDate||null;
+      item.lastVoucher=payment.lastVoucher||'—';
+    }
   }
 
   return [...map.values()].sort(
@@ -211,12 +271,15 @@ function renderWorkers(){
         <td>${qty(row.eligiblePcs)}</td>
         <td class="money">₹${money(row.eligibleSalary)}</td>
         <td class="money">₹${money(row.productionCost)}</td>
+        <td class="money"><b>₹${money(row.paid)}</b></td>
+        <td>${safe(row.lastPaymentDate||'—')}</td>
+        <td>${safe(row.lastVoucher||'—')}</td>
         <td class="money">₹${money(row.notAdded)}</td>
         <td class="money"><b>₹${money(row.outstanding)}</b></td>
         <td>${safe(row.attention)}</td>
       </tr>
     `).join('')
-    :'<tr><td colspan="12">No workers found.</td></tr>';
+    :'<tr><td colspan="15">No workers found.</td></tr>';
 }
 
 function salaryAdded(row){
@@ -238,7 +301,9 @@ function renderDetails(){
   $('rowCount').textContent=`${state.rows.length} rows`;
 
   $('detailBody').innerHTML=state.rows.length
-    ?state.rows.map(row=>`
+    ?state.rows.map(row=>{
+      const payment=state.paymentByWork.get(String(row.work_key||''))||null;
+      return `
       <tr>
         <td>${safe(row.work_date)}</td>
         <td><b>${safe(row.worker_name||'Unknown')}</b><br><small>${safe(row.worker_code||'—')}</small></td>
@@ -254,12 +319,16 @@ function renderDetails(){
         <td class="money">₹${money(row.work_salary)}</td>
         <td class="money">₹${money(isPcsEligible(row)?row.work_salary:0)}</td>
         <td>${safe(isPcsEligible(row)?salaryAdded(row):'EXCLUDED')}</td>
+        <td>${safe(payment?.payment_date||'—')}</td>
+        <td>${safe(payment?.voucher_no||'—')}</td>
+        <td class="money">${payment?.worker_amount_paid!=null?`₹${money(payment.worker_amount_paid)}`:'—'}</td>
+        <td>${safe(paymentStatusLabel(payment))}</td>
         <td class="money">₹${money(row.worker_outstanding)}</td>
         <td><span class="status ${statusClass(row.audit_status)}">${safe(statusLabel(row.audit_status))}</span></td>
         <td title="${safe(row.audit_reason)}">${safe(row.audit_reason)}</td>
       </tr>
-    `).join('')
-    :'<tr><td colspan="17">No work found for this filter.</td></tr>';
+    `}).join('')
+    :'<tr><td colspan="21">No work found for this filter.</td></tr>';
 }
 
 function render(){
@@ -270,28 +339,44 @@ function render(){
 
 async function loadAudit(){
   try{
-    say('Loading all submitted work and checking salary/ledger status…','info');
+    say('Loading work, salary, payment amount और payment date…','info');
 
-    const rows=await rpc(
-      'rr_pcs_work_audit_v783',
-      {
-        p_from_date:$('fromDate').value,
-        p_to_date:$('toDate').value,
-        p_data_mode:$('dataMode').value,
-        p_status_filter:$('statusFilter').value,
-        p_search:$('searchText').value.trim()||null
-      }
-    );
+    const [rows,paymentRows]=await Promise.all([
+      rpc(
+        'rr_pcs_work_audit_v783',
+        {
+          p_from_date:$('fromDate').value,
+          p_to_date:$('toDate').value,
+          p_data_mode:$('dataMode').value,
+          p_status_filter:$('statusFilter').value,
+          p_search:$('searchText').value.trim()||null
+        }
+      ),
+      rpc(
+        'rr_pcs_work_payment_audit_v786_3_1',
+        {
+          p_from_date:$('fromDate').value,
+          p_to_date:$('toDate').value,
+          p_data_mode:$('dataMode').value,
+          p_show:'ALL',
+          p_search:$('searchText').value.trim()||null
+        }
+      )
+    ]);
 
     state.rows=rows;
+    state.paymentRows=paymentRows;
+    buildPaymentMaps();
     render();
 
     say(
-      `${rows.length} work rows loaded. Use ALL SUBMITTED WORK to compare every worker and lot.`,
+      `${rows.length} work rows loaded with payment amount, voucher and payment date.`,
       'success'
     );
   }catch(error){
     state.rows=[];
+    state.paymentRows=[];
+    buildPaymentMaps();
     render();
     say(err(error),'error');
   }
@@ -328,23 +413,6 @@ async function boot(){
     }else{
       const session=await state.client.auth.getSession();
       if(!session.data?.session)throw new Error('Login required.');
-    }
-
-    const params=new URLSearchParams(location.search);
-    const requestedMode=String(params.get('mode')||'').toUpperCase();
-    if(window.RRDataModeReadyPromise){
-      await window.RRDataModeReadyPromise;
-    }
-
-    if(window.RRDataMode){
-      await RRDataMode.applyInitialMode(
-        'dataMode',
-        requestedMode
-      );
-    }else{
-      $('dataMode').value=['REAL','TEST'].includes(requestedMode)
-        ?requestedMode
-        :'TEST';
     }
 
     const today=indiaToday();

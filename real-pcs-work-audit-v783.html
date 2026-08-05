@@ -46,12 +46,12 @@ td.money{text-align:right;font-variant-numeric:tabular-nums}
 <main class="app">
 <header class="head">
   <div>
-    <h1>REAL FACTORY · PCS Work & Outstanding Audit</h1>
-    <p>All workers · All lots · Selected date range</p>
+    <h1>REAL FACTORY · Kaam & Payment Check</h1>
+    <p>Worker work, salary, payment amount और payment date एक ही report में</p>
   </div>
   <div class="nav">
-    <a class="btn" href="real-salary-home-v786.html">← Salary Home</a>
-    <a class="btn" href="real-salary-payment-v785.html?category=PIECE_RATE">Salary Payment</a>
+    <a class="btn" href="real-salary-payment-v785.html?category=PIECE_RATE">PCS Payment</a>
+    <a class="btn" href="real-pcs-rate-payroll-v779.html">PCS Salary</a>
     <span id="accessBadge" class="btn">Checking…</span>
   </div>
 </header>
@@ -60,8 +60,8 @@ td.money{text-align:right;font-variant-numeric:tabular-nums}
   <div class="grid">
     <label>
       <span>Data Mode</span>
-      <select autocomplete="off" id="dataMode" data-rr-data-mode="true" data-searchable="true">
-        <option selected>TEST</option><option>REAL</option>
+      <select id="dataMode" data-searchable="true">
+        <option>REAL</option><option>TEST</option>
       </select>
     </label>
 
@@ -94,7 +94,7 @@ td.money{text-align:right;font-variant-numeric:tabular-nums}
 
     <label>
       <span>&nbsp;</span>
-      <button id="loadAudit" class="btn primary" type="button">Load Work Audit</button>
+      <button id="loadAudit" class="btn primary" type="button">LOAD KAAM & PAYMENT</button>
     </label>
   </div>
 
@@ -122,6 +122,7 @@ td.money{text-align:right;font-variant-numeric:tabular-nums}
           <th>Worker</th><th>Category</th><th>Departments</th><th>Lots</th>
           <th>Submitted PCS</th><th>Cap-Adjusted PCS</th><th>PCS Eligible PCS</th>
           <th>PCS Salary Eligible ₹</th><th>Production Cost ₹</th>
+          <th>Total Paid ₹</th><th>Last Payment Date</th><th>Last Voucher</th>
           <th>Not Added ₹</th><th>Worker Outstanding ₹</th><th>Attention Rows</th>
         </tr>
       </thead>
@@ -143,6 +144,7 @@ td.money{text-align:right;font-variant-numeric:tabular-nums}
           <th>Colour</th><th>Size</th><th>Submitted PCS</th><th>Cap-Adjusted PCS</th>
           <th>PCS Eligible PCS</th><th>Actual Rate</th><th>Production Cost ₹</th>
           <th>PCS Salary Eligible ₹</th><th>Salary Added</th>
+          <th>Payment Date</th><th>Voucher</th><th>Worker Paid ₹</th><th>Payment Status</th>
           <th>Worker Outstanding ₹</th><th>Status</th><th>Reason</th>
         </tr>
       </thead>
@@ -153,8 +155,8 @@ td.money{text-align:right;font-variant-numeric:tabular-nums}
 </main>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="config.js?v=7832"></script><script src="real-data-mode-controller-v786-1-1.js?v=7862"></script>
-<script src="real-common.js?v=7862"></script>
-<script src="real-pcs-work-audit-v783.js?v=7862"></script>
+<script src="config.js?v=7832"></script>
+<script src="real-common.js?v=7751"></script>
+<script src="real-pcs-work-audit-v783.js?v=78632"></script>
 </body>
 </html>
