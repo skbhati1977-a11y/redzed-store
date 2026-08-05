@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=yes">
+<meta name="theme-color" content="#090b10"><title>REAL FACTORY — Monthly Salary Payment</title>
+<style>
+:root{color-scheme:dark;--bg:#090b10;--panel:#141820;--panel2:#0f131a;--line:#313a48;--muted:#aeb8c8;--red:#ef3340;--green:#34c47c}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;background:var(--bg);color:#fff;font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+button,input,select{font:inherit;color:inherit}.app{max-width:1600px;margin:auto;padding:14px}
+.head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+.head h1{margin:0;font-size:24px}.head p{margin:4px 0 0;color:var(--muted)}
+.nav{display:flex;gap:8px;flex-wrap:wrap}.btn{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:9px 13px;border:1px solid var(--line);border-radius:10px;background:#222a36;color:#fff;text-decoration:none;font-weight:850;cursor:pointer}
+.btn.primary{background:var(--red);border-color:var(--red)}.btn.success{background:#176b47;border-color:#2d9468}.btn:disabled{opacity:.45}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:13px;margin-bottom:12px}
+.top-grid{display:grid;grid-template-columns:repeat(7,minmax(145px,1fr));gap:9px;align-items:end}
+label span{display:block;font-size:12px;color:var(--muted);margin-bottom:5px}
+input,select{width:100%;min-height:44px;padding:9px 10px;border:1px solid var(--line);border-radius:9px;background:var(--panel2);font-size:16px}
+.amount-input{min-width:125px;text-align:right;font-weight:900}.note{padding:10px 12px;border-left:4px solid var(--green);border-radius:8px;background:#102019;line-height:1.5}
+.message{min-height:24px;color:var(--muted)}.message.error{color:#ff8e98}.message.success{color:#79e5ae}.message.info{color:#a8ccff}
+.table-wrap{overflow:auto;border:1px solid var(--line);border-radius:12px}
+table{border-collapse:collapse;width:100%;min-width:1220px}th,td{padding:9px;border-bottom:1px solid var(--line);white-space:nowrap;text-align:left}
+th{background:#202733;font-size:12px;position:sticky;top:0;z-index:2}td.money{text-align:right}.total-row td{background:#1c2430;font-weight:900}
+.worker-check{width:20px;height:20px;min-height:20px}.bottom-submit{display:flex;justify-content:flex-end;margin-top:12px}.bottom-submit .btn{min-width:240px;min-height:52px;font-size:17px}
+.advanced summary{cursor:pointer;font-weight:900}.hidden{display:none!important}
+@media(max-width:1250px){.top-grid{grid-template-columns:repeat(4,1fr)}}@media(max-width:760px){.top-grid{grid-template-columns:1fr 1fr}.app{padding:8px}}@media(max-width:500px){.top-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<main class="app">
+<header class="head">
+  <div><h1>REAL FACTORY · Monthly Salary Payment</h1><p>Monthly salary + last outstanding</p></div>
+  <div class="nav"><a class="btn" href="real-monthly-salary-dashboard-v786.html">← Dashboard</a><a class="btn" href="real-pcs-work-audit-v783.html">Worker Ledgers</a><span id="accessBadge" class="btn">Checking…</span></div>
+</header>
+<section class="panel">
+  <div class="top-grid">
+    
+      <label><span>Salary Month</span><input id="salaryMonth" type="month"></label>
+      <label><span>Salary Period</span><input id="periodLabel" type="text" readonly></label>
+    
+    <label><span>Bulk Payment Amount ₹</span><input id="bulkAmount" type="text" inputmode="decimal" autocomplete="off" placeholder="Payment amount"></label>
+    <label><span>Payment Method</span>
+      <select id="paymentChoice">
+        <option value="SELECTED_PARTIAL">Selected Workers Partial Payment</option>
+        <option value="RATIO_PAYMENT" selected>Ratio Division Payment</option>
+        <option value="COMPLETE_PAYMENT">Complete Payment</option>
+      </select>
+    </label>
+    <label><span>Payment Date</span><input id="paymentDate" type="date"></label>
+    <label><span>Voucher / Reference</span><input id="voucherNo" placeholder="Required"></label>
+    <button id="loadPreview" class="btn primary" type="button">LOAD MONTHLY SALARY</button>
+  </div>
+  <div class="note" style="margin-top:10px" id="ruleNote"></div>
+  <p id="message" class="message"></p>
+</section>
+<section class="panel">
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Select</th><th>Worker</th><th>Department</th><th>Last Outstanding ₹</th><th>Current Work ₹</th><th>Total Current Payable ₹</th><th>Current Payment ₹</th><th>Current Outstanding ₹</th></tr></thead>
+      <tbody id="ledgerBody"><tr><td colspan="8">Load button दबाएँ.</td></tr></tbody>
+      <tfoot id="ledgerFoot"></tfoot>
+    </table>
+  </div>
+  <div class="bottom-submit"><button id="submitPayment" class="btn success" type="button" disabled>SUBMIT PAYMENT</button></div>
+</section>
+<section class="panel advanced"><details><summary>Advanced Details — जरूरत होने पर</summary><div class="nav" style="margin-top:12px"><a class="btn" href="real-pcs-work-audit-v783.html">Worker Ledgers</a><a class="btn" href="real-advance-worker-payment-v785.html">Advance Payment</a><a class="btn" href="real-data-mode-control-v786.html">Data Mode Settings</a></div></details></section>
+<div class="hidden">
+  <select id="dataMode" data-rr-data-mode="true"><option value="TEST">TEST</option><option value="REAL">REAL</option></select>
+  <select id="paymentMethod"><option value="PARTIAL_RATIO">PARTIAL_RATIO</option><option value="WORKER_LEDGER_WISE">WORKER_LEDGER_WISE</option><option value="FULL_PAYMENT">FULL_PAYMENT</option></select>
+</div>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js?v=78634"></script><script src="real-data-mode-controller-v786-1-1.js?v=78634"></script><script src="real-common.js?v=78634"></script>
+<script src="real-monthly-salary-payment-v786.js?v=78634"></script>
+</body></html>
