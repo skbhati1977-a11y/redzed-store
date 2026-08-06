@@ -144,7 +144,7 @@ table{min-width:820px}
 <label><span>Period From</span><input id="periodStart" type="date"></label><label><span>Period To / Monthly Cut-off</span><input id="periodEnd" type="date"></label>
 <label><span>Payment Date</span><input id="paymentDate" type="date"></label><label><span>Payment Mode</span><select id="paymentMode" data-searchable="true"><option>CASH</option><option>BANK</option><option>UPI</option><option>CHEQUE</option><option>OTHER</option></select></label>
 <label><span>Voucher No (Auto)</span><input id="voucherNo" value="CHECKING PCSL" readonly aria-readonly="true" autocomplete="off" tabindex="-1"></label><label class="wide"><span>Search Worker</span><input id="workerSearch" placeholder="Worker name / code / department"></label><label class="wide"><span>Remarks</span><input id="remarks" placeholder="Payment remarks"></label>
-</div><p id="ruleNote" class="note">Period चुनते ही workers automatically load होंगे → Advance adjust होगा → ₹100 Ready Pay auto-fill होगा → बाकी Carry Forward रहेगा → SUBMIT PAYMENT.</p><p id="message" class="message"></p></section>
+</div><p id="ruleNote" class="note">Period चुनते ही workers automatically load होंगे. Current Payment शुरू में खाली रहेगा; worker-wise manually भरें या Bulk Payment Apply करें.</p><p id="message" class="message"></p></section>
 
 <section class="action-summary">
   <div class="hero-card primary">
@@ -219,7 +219,7 @@ table{min-width:820px}
 
 
 
-</main><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="config.js?v=7851"></script><script src="real-data-mode-controller-v786-1-1.js?v=7862"></script><script src="real-common.js?v=7862"></script><script src="real-salary-payment-v785.js?v=786323"></script><script>
+</main><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="config.js?v=7851"></script><script src="real-data-mode-controller-v786-1-1.js?v=7862"></script><script src="real-common.js?v=7862"></script><script src="real-salary-payment-v785.js?v=786324"></script><script>
 (()=>{
   const normalizeVoucherText=()=>{
     const input=document.getElementById('voucherNo');

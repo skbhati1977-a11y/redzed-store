@@ -1,5 +1,5 @@
-/* REAL FACTORY Salary Payment V786.3.23 — exact five-column payment table */
-(()=>{'use strict';window.REAL_FACTORY_SALARY_PAYMENT_VERSION='786.3.23-EXACT-FIVE-COLUMN-PAYMENT-TABLE';
+/* REAL FACTORY Salary Payment V786.3.24 — blank Current Payment until manual or bulk apply */
+(()=>{'use strict';window.REAL_FACTORY_SALARY_PAYMENT_VERSION='786.3.24-BLANK-CURRENT-PAYMENT';
 const $=id=>document.getElementById(id),state={client:null,preview:null,rows:[],selected:new Set(),manual:new Map(),dirty:false,useAll:true,bulkApplied:false,history:[],activeAmountId:null,autoLoadTimer:null,loading:false,queuedLoadKey:null,contextKey:null,voucherPreviewToken:0};
 const safe=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
 const money=v=>Number(v||0).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});
@@ -206,12 +206,12 @@ function render(){
 const rows=filtered();
 const livePaid=state.rows.reduce((sum,r)=>sum+(state.selected.has(String(r.worker_id))?amount(r):0),0);
 $('ledgerBody').innerHTML=rows.length?rows.map(r=>{
-  const id=String(r.worker_id),a=amount(r);
+  const id=String(r.worker_id),a=amount(r),hasManual=state.manual.has(id)&&a>0;
   return`<tr>
     <td class="money">₹${money(grossPayable(r))}</td>
     <td class="money">₹${money(r.previous_outstanding)}</td>
     <td class="money"><b>₹${money(r.final_total_payable)}</b></td>
-    <td class="money">${method()==='WORKER_LEDGER_WISE'?`<div class="payment-entry-wrap"><input class="amount-input" type="number" min="0" max="${Number(r.scope_payable||0)}" step="100" value="${a.toFixed(2)}" data-amount="${safe(id)}"><span class="live-ttl-cell ${String(state.activeAmountId||'')===id?'active':''}" data-live-ttl="${safe(id)}" aria-live="polite">TTL ₹${ttlMoney(livePaid)}</span></div>`:`₹${money(a)}`}</td>
+    <td class="money">${method()==='WORKER_LEDGER_WISE'?`<div class="payment-entry-wrap"><input class="amount-input" type="number" min="0" max="${Number(r.scope_payable||0)}" step="100" value="${hasManual?a.toFixed(2):''}" data-amount="${safe(id)}"><span class="live-ttl-cell ${String(state.activeAmountId||'')===id?'active':''}" data-live-ttl="${safe(id)}" aria-live="polite">TTL ₹${ttlMoney(livePaid)}</span></div>`:`₹${money(a)}`}</td>
     <td class="money" data-new-balance>₹${money(newBal(r))}</td>
   </tr>`;
 }).join(''):'<tr><td colspan="5">No regular-payable worker. Advance threshold list देखें.</td></tr>';
@@ -228,10 +228,10 @@ const inputs=[...$('ledgerBody').querySelectorAll('[data-amount]')];inputs.forEa
 i.onfocus=()=>{state.activeAmountId=i.dataset.amount;updateLivePaymentTotals(false)};
 i.oninput=()=>{const id=i.dataset.amount,r=state.rows.find(x=>String(x.worker_id)===id),max=Number(r?.scope_payable||0),n=Math.min(Math.max(Number(i.value||0),0),max);
 state.activeAmountId=id;state.manual.set(id,n);const tr=i.closest('tr'),balanceCell=tr.querySelector('[data-new-balance]');if(balanceCell)balanceCell.textContent=`₹${money(newBal(r))}`;cards();updateLivePaymentTotals(true)};
-i.onblur=()=>{const value=Number(state.manual.get(i.dataset.amount)||0);if(value>0&&!isRound100(value)){state.manual.set(i.dataset.amount,0);state.activeAmountId=null;say('Current Payment ₹100 के multiple में होना चाहिए.','error');render();return}i.value=value.toFixed(2);setTimeout(()=>{if(!document.activeElement?.matches?.('[data-amount]')){state.activeAmountId=null;updateLivePaymentTotals(false)}},0)};
+i.onblur=()=>{const value=Number(state.manual.get(i.dataset.amount)||0);if(value>0&&!isRound100(value)){state.manual.delete(i.dataset.amount);state.activeAmountId=null;say('Current Payment ₹100 के multiple में होना चाहिए.','error');render();return}if(value>0)i.value=value.toFixed(2);else{state.manual.delete(i.dataset.amount);i.value=''}setTimeout(()=>{if(!document.activeElement?.matches?.('[data-amount]')){state.activeAmountId=null;updateLivePaymentTotals(false)}},0)};
 i.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();const n=inputs[k+1];if(n){n.focus();n.select()}else $('submitBulkPayment').focus()}};
 });cards();updateLivePaymentTotals(false)}
-async function recalc({applyAmount=false,expectedKey=null}={}){const p=await rpc('rr_salary_payment_preview_v786',{p_payroll_category:category(),p_period_start:$('periodStart').value,p_period_end:$('periodEnd').value,p_data_mode:$('dataMode').value,p_payment_method:method(),p_payment_scope:scope(),p_bulk_amount:method()==='PARTIAL_RATIO'&&applyAmount?Number($('bulkAmount').value||0):0,p_worker_ids:state.useAll?null:selectedIds(),p_worker_amounts:method()==='WORKER_LEDGER_WISE'?manualPayload():[]});if(expectedKey&&expectedKey!==autoLoadKey())return null;state.preview=p;state.rows=p.lines||[];if(state.useAll)state.selected=new Set(state.rows.map(r=>String(r.worker_id)));state.useAll=false;if(method()==='WORKER_LEDGER_WISE')state.rows.forEach(r=>{const id=String(r.worker_id);if(!state.manual.has(id))state.manual.set(id,Number(r.amount_paid||0))});else state.manual.clear();state.bulkApplied=method()==='PARTIAL_RATIO'?applyAmount:true;state.dirty=false;render();advance();return p}
+async function recalc({applyAmount=false,expectedKey=null}={}){const p=await rpc('rr_salary_payment_preview_v786',{p_payroll_category:category(),p_period_start:$('periodStart').value,p_period_end:$('periodEnd').value,p_data_mode:$('dataMode').value,p_payment_method:method(),p_payment_scope:scope(),p_bulk_amount:method()==='PARTIAL_RATIO'&&applyAmount?Number($('bulkAmount').value||0):0,p_worker_ids:state.useAll?null:selectedIds(),p_worker_amounts:method()==='WORKER_LEDGER_WISE'?manualPayload():[]});if(expectedKey&&expectedKey!==autoLoadKey())return null;state.preview=p;state.rows=p.lines||[];if(state.useAll)state.selected=new Set(state.rows.map(r=>String(r.worker_id)));state.useAll=false;if(method()!=='WORKER_LEDGER_WISE')state.manual.clear();state.bulkApplied=method()==='PARTIAL_RATIO'?applyAmount:true;state.dirty=false;render();advance();return p}
 async function autoLoadWorkers(key=autoLoadKey(),{refreshHistory=false}={}){
   if(!validPeriod()||key!==autoLoadKey())return null;
 
@@ -266,20 +266,12 @@ async function autoLoadWorkers(key=autoLoadKey(),{refreshHistory=false}={}){
 
     state.selected=new Set(state.rows.map(r=>String(r.worker_id)));
     state.manual.clear();
-    state.rows.forEach(r=>state.manual.set(String(r.worker_id),round100Ready(r)));
     state.useAll=false;
-    state.bulkApplied=true;
+    state.bulkApplied=false;
     state.activeAmountId=null;
     render();
 
-    const readyTotal=state.rows.reduce((sum,r)=>sum+round100Ready(r),0);
-    const carryTotal=state.rows.reduce((sum,r)=>sum+round100Carry(r),0);
-
-    say(
-      `${p.eligible_worker_count} unpaid workers auto-loaded. `
-      +`₹100 Ready Pay ₹${money(readyTotal)} auto-filled · ₹${money(carryTotal)} Carry Forward.`,
-      'success'
-    );
+    say(`${p.eligible_worker_count} unpaid workers auto-loaded. Current Payment खाली है—worker-wise manually भरें या Bulk Payment Apply करें.`,'success');
     return p;
   }catch(e){
     if(key===autoLoadKey()){
