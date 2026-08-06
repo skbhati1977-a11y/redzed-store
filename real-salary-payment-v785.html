@@ -40,12 +40,18 @@ section:has(#historyBody){
 @media(max-width:900px){.action-summary{grid-template-columns:1fr}}
 
 
-.payment-choice-dialog{border:0;padding:0;background:transparent;max-width:min(560px,calc(100vw - 24px));width:100%}
-.payment-choice-dialog::backdrop{background:rgba(0,0,0,.72)}
-.payment-choice-box{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:16px;box-shadow:0 18px 60px rgba(0,0,0,.55)}
-.payment-choice-box h2{margin:0 0 8px}.payment-choice-box p{color:var(--muted);line-height:1.5}
-.choice-btn{width:100%;display:flex;flex-direction:column;align-items:flex-start;gap:4px;min-height:70px;margin:9px 0;padding:12px;border:1px solid var(--line);border-radius:11px;background:#18202b;color:#fff;cursor:pointer;text-align:left}
-.choice-btn span{font-size:12px;color:var(--muted)}.choice-btn.complete{border-color:#2d7953;background:#123120}
+
+
+.live-payment-total{border:1px solid #2d9468;border-radius:10px;background:#102019;padding:9px 10px}
+.live-payment-total strong{display:block;margin-top:4px;font-size:24px;color:#79e5ae}
+.live-payment-total.flash{animation:liveTotalFlash .42s ease}
+@keyframes liveTotalFlash{
+  0%{transform:scale(1);box-shadow:none}
+  45%{transform:scale(1.025);box-shadow:0 0 0 3px rgba(52,196,124,.25)}
+  100%{transform:scale(1);box-shadow:none}
+}
+.bottom-submit{display:flex;justify-content:flex-end;margin-top:12px}
+.bottom-submit .btn{min-width:240px;min-height:52px;font-size:17px}
 
 </style></head><body><main class="app">
 <header class="head"><div><h1>REAL FACTORY · Payment Dashboard</h1><p>आज कितना देना है — एक नज़र में</p></div><div class="nav">
@@ -73,14 +79,27 @@ section:has(#historyBody){
     <strong id="workerCountTop">0</strong>
   </div>
   <div class="hero-card payment-card">
-    <small>PAYMENT AMOUNT</small>
+    <small>BULK PAYMENT AMOUNT</small>
     <input id="bulkAmount" type="text" value="" inputmode="decimal"
-      autocomplete="off" spellcheck="false" placeholder="Type amount">
-    <button id="submitBulkPayment" class="btn success" type="button" disabled>
-      SUBMIT PAYMENT
+      autocomplete="off" spellcheck="false" placeholder="Type bulk amount">
+
+    <small>BULK APPLY METHOD</small>
+    <select id="bulkApplyMethod" data-searchable="true">
+      <option value="RATIO_PAYMENT">RATIO DIVISION PAYMENT</option>
+      <option value="COMPLETE_PAYMENT">COMPLETE PAYMENT</option>
+    </select>
+
+    <button id="applyBulkPayment" class="btn primary" type="button">
+      APPLY PAYMENT
     </button>
+
+    <div id="livePaymentTotalBox" class="live-payment-total">
+      <small>LIVE CURRENT PAYMENT TOTAL</small>
+      <strong id="liveCurrentPaymentTop">₹0.00</strong>
+    </div>
+
     <small id="bulkAmountStatus" class="bulk-status">
-      पहले unpaid works load करें.
+      Default manual entry active: worker की Current Payment row में amount भरें.
     </small>
   </div>
 
@@ -96,7 +115,7 @@ section:has(#historyBody){
 </section>
 
 <section id="advancePanel" class="panel hidden"><div class="actions" style="justify-content:space-between"><b>Advance workers are excluded from normal Bulk Payment</b><a class="btn" href="real-advance-worker-payment-v785.html">Open Advance Payment List</a></div><div id="advanceList" class="advance-list"></div></section>
-<section class="panel"><div class="actions" style="justify-content:space-between"><h2 style="margin:0;font-size:17px">Workers To Pay</h2><span id="workerCount">0 workers</span></div><div class="table-wrap"><table><thead><tr><th>Select</th><th>Worker</th><th>Department</th><th>Previous Outstanding</th><th>Current Period Payable</th><th>Final Total Payable</th><th>Selected Scope Payable</th><th>Amount Paid</th><th>Outstanding Payment</th><th>Current Period Payment</th><th>New Outstanding</th><th>Source</th></tr></thead><tbody id="ledgerBody"></tbody><tfoot id="ledgerFoot"></tfoot></table></div></section>
+<section class="panel"><div class="actions" style="justify-content:space-between"><h2 style="margin:0;font-size:17px">Workers To Pay</h2><span id="workerCount">0 workers</span></div><div class="table-wrap"><table><thead><tr><th>Select</th><th>Worker</th><th>Department</th><th>Previous Outstanding</th><th>Current Period Payable</th><th>Final Total Payable</th><th>Selected Scope Payable</th><th>Current Payment</th><th>Outstanding Payment</th><th>Current Period Payment</th><th>New Outstanding</th><th>Source</th></tr></thead><tbody id="ledgerBody"></tbody><tfoot id="ledgerFoot"></tfoot></table></div><div class="bottom-submit"><button id="submitBulkPayment" class="btn success" type="button" disabled>SUBMIT PAYMENT</button></div></section>
 <section class="panel"><div class="actions" style="justify-content:space-between"><h2 style="margin:0;font-size:17px">Payment History</h2><button id="loadHistory" class="btn">Refresh History</button></div><div class="table-wrap"><table style="min-width:1550px"><thead><tr><th>Date</th><th>Module</th><th>Period</th><th>Method</th><th>Scope</th><th>Voucher</th><th>Workers</th><th>Final Payable ₹</th><th>Bulk Payment ₹</th><th>New Outstanding ₹</th><th>Messages</th><th>Status</th><th>Action</th></tr></thead><tbody id="historyBody"></tbody></table></div></section>
 
 <section class="panel advanced-dashboard">
@@ -111,24 +130,5 @@ section:has(#historyBody){
 </section>
 
 
-<dialog id="paymentChoiceDialog" class="payment-choice-dialog">
-  <form method="dialog" class="payment-choice-box">
-    <h2>Payment कैसे करना है?</h2>
-    <p id="paymentChoiceSummary">—</p>
-    <button id="choiceSelected" class="choice-btn" type="button" data-payment-choice="selected">
-      <b>SELECTED WORKERS PARTIAL PAYMENT</b>
-      <span>Selected workers की row में manual amount भरें</span>
-    </button>
-    <button id="choiceRatio" class="choice-btn" type="button" data-payment-choice="ratio">
-      <b>RATIO DIVISION PAYMENT</b>
-      <span>Entered total amount सभी eligible workers में ratio-wise बाँटे</span>
-    </button>
-    <button id="choiceComplete" class="choice-btn complete" type="button" data-payment-choice="complete">
-      <b>COMPLETE PAYMENT</b>
-      <span>सभी eligible workers का पूरा current payable clear करें</span>
-    </button>
-    <button class="btn" value="cancel">Cancel</button>
-  </form>
-</dialog>
 
-</main><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="config.js?v=7851"></script><script src="real-data-mode-controller-v786-1-1.js?v=7862"></script><script src="real-common.js?v=7862"></script><script src="real-salary-payment-v785.js?v=786310"></script></body></html>
+</main><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="config.js?v=7851"></script><script src="real-data-mode-controller-v786-1-1.js?v=7862"></script><script src="real-common.js?v=7862"></script><script src="real-salary-payment-v785.js?v=786311"></script></body></html>
