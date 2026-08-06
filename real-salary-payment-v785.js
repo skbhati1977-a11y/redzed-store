@@ -1,6 +1,6 @@
-/* REAL FACTORY Salary Payment V786.3.27 — Flat/Percent ratio bulk payment */
-(()=>{'use strict';window.REAL_FACTORY_SALARY_PAYMENT_VERSION='786.3.27-RATIO-FLAT-PERCENT';
-const $=id=>document.getElementById(id),state={client:null,preview:null,rows:[],selected:new Set(),manual:new Map(),dirty:false,useAll:true,bulkApplied:false,history:[],activeAmountId:null,autoLoadTimer:null,loading:false,queuedLoadKey:null,contextKey:null,voucherPreviewToken:0};
+/* REAL FACTORY Salary Payment V786.3.28 — Locked manual zero + enforced ledger schema */
+(()=>{'use strict';window.REAL_FACTORY_SALARY_PAYMENT_VERSION='786.3.28-LOCKED-ZERO-LEDGER-SCHEMA';
+const $=id=>document.getElementById(id),state={client:null,preview:null,rows:[],selected:new Set(),manual:new Map(),dirty:false,useAll:true,bulkApplied:false,paymentMethod:'WORKER_LEDGER_WISE',history:[],activeAmountId:null,autoLoadTimer:null,loading:false,queuedLoadKey:null,contextKey:null,voucherPreviewToken:0};
 const safe=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
 const money=v=>Number(v||0).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});
 const ttlMoney=v=>Number(v||0).toLocaleString('en-IN',{maximumFractionDigits:0});
@@ -8,8 +8,14 @@ const err=e=>[e?.message,e?.details,e?.hint,e?.code].filter(Boolean).join(' — 
 const today=()=>new Date().toLocaleDateString('en-CA',{timeZone:'Asia/Kolkata'});const monthStart=d=>`${(d||today()).slice(0,8)}01`;
 const say=(t,k='')=>{$('message').textContent=t||'';$('message').className=`message ${k}`.trim()};
 async function rpc(n,p={}){const r=await state.client.rpc(n,p);if(r.error)throw r.error;return r.data}
-const category=()=>$('payrollCategory').value,method=()=>$('paymentMethod').value,scope=()=>$('paymentScope').value;
+const category=()=>$('payrollCategory').value,method=()=>state.paymentMethod,scope=()=>$('paymentScope').value;
 const bulkMode=()=>$('bulkApplyMethod')?.value||'RATIO_FLAT';
+function setPaymentMethod(value='WORKER_LEDGER_WISE'){
+  const locked=value==='PARTIAL_RATIO'?'PARTIAL_RATIO':'WORKER_LEDGER_WISE';
+  state.paymentMethod=locked;
+  const compatibility=$('paymentMethod');
+  if(compatibility&&compatibility.value!==locked)compatibility.value=locked;
+}
 const selectedIds=()=>[...state.selected];const manualPayload=()=>state.rows.map(r=>({worker_id:r.worker_id,amount_paid:Number(state.manual.get(String(r.worker_id))||0)}));
 const isRound100=v=>Math.abs(Number(v||0)%100)<0.005;
 function validateManualRound100(){
@@ -79,7 +85,7 @@ function clearPaymentEntryState(){
   state.activeAmountId=null;
   state.useAll=true;
   $('bulkAmount').value='';
-  $('paymentMethod').value='WORKER_LEDGER_WISE';
+  setPaymentMethod('WORKER_LEDGER_WISE');
   updateRule();
   render();
   advance();
@@ -120,6 +126,7 @@ function updateRule(){
   updateBulkApplyUI();
 }
 function updateBulkApplyUI(){
+  enforceBulkOptions();
   const percent=bulkMode()==='RATIO_PERCENT';
   $('bulkPercentControl')?.classList.toggle('hidden',!percent);
   $('bulkAmount').readOnly=percent;
@@ -130,6 +137,28 @@ function updateBulkApplyUI(){
       :method()==='PARTIAL_RATIO'
         ?'Flat Ratio Payment applied. SUBMIT PAYMENT दबाएँ.'
         :'Flat total भरें या worker की Current Payment row manually भरें.';
+  }
+}
+function enforceBulkOptions(){
+  const modeSelect=$('bulkApplyMethod');
+  if(modeSelect){
+    const expected=['RATIO_FLAT','RATIO_PERCENT'];
+    const actual=[...modeSelect.options].map(option=>option.value);
+    if(actual.length!==2||actual.some((value,index)=>value!==expected[index])){
+      const keep=expected.includes(modeSelect.value)?modeSelect.value:'RATIO_FLAT';
+      modeSelect.innerHTML='<option value="RATIO_FLAT">RATIO DIVISION PAYMENT — FLAT</option><option value="RATIO_PERCENT">RATIO DIVISION PAYMENT — PERCENT %</option>';
+      modeSelect.value=keep;
+    }
+  }
+  const percentSelect=$('bulkPercent');
+  if(percentSelect){
+    const expected=Array.from({length:19},(_,index)=>(index+1)*5);
+    const actual=[...percentSelect.options].map(option=>Number(option.value));
+    if(actual.length!==expected.length||actual.some((value,index)=>value!==expected[index])){
+      const keep=expected.includes(Number(percentSelect.value))?Number(percentSelect.value):5;
+      percentSelect.innerHTML=expected.map(value=>`<option value="${value}">${value}%</option>`).join('');
+      percentSelect.value=String(keep);
+    }
   }
 }
 function filtered(){const q=$('workerSearch').value.trim().toLowerCase();return q?state.rows.filter(r=>[r.worker_name,r.worker_code,r.department_code,r.current_source].join(' ').toLowerCase().includes(q)):state.rows}
@@ -212,7 +241,28 @@ function updateLivePaymentTotals(flash=false){
     }
   });
 }
+function ensureLedgerSchema(){
+  const body=$('ledgerBody');
+  const table=body?.closest('table');
+  if(!table)return;
+  table.dataset.salaryLedger='v328';
+  let headerRow=table.tHead?.rows?.[0];
+  if(!headerRow){
+    const head=table.createTHead();
+    headerRow=head.insertRow();
+  }
+  const cells=[...headerRow.cells];
+  const valid=cells.length===7
+    &&/Worker Name/i.test(cells[0]?.textContent||'')
+    &&/Department/i.test(cells[1]?.textContent||'')
+    &&/Current Payment/i.test(cells[5]?.textContent||'');
+  if(!valid){
+    headerRow.innerHTML='<th>Worker Name (ID)</th><th>Department</th><th>Gross Earned</th><th>Net Previous</th><th>Net Final Payable</th><th>Current Payment</th><th>New Outstanding</th>';
+  }
+  headerRow.dataset.salarySchema='v328';
+}
 function render(){
+ensureLedgerSchema();
 const rows=filtered();
 const livePaid=state.rows.reduce((sum,r)=>sum+(state.selected.has(String(r.worker_id))?amount(r):0),0);
 $('ledgerBody').innerHTML=rows.length?rows.map(r=>{
@@ -256,7 +306,7 @@ async function autoLoadWorkers(key=autoLoadKey(),{refreshHistory=false}={}){
   setAutoLoadState(true);
 
   try{
-    $('paymentMethod').value='WORKER_LEDGER_WISE';
+    setPaymentMethod('WORKER_LEDGER_WISE');
     state.useAll=true;
     state.selected.clear();
     state.manual.clear();
@@ -276,7 +326,7 @@ async function autoLoadWorkers(key=autoLoadKey(),{refreshHistory=false}={}){
 
     if(!p)return null;
 
-    $('paymentMethod').value='WORKER_LEDGER_WISE';
+    setPaymentMethod('WORKER_LEDGER_WISE');
     state.rows=state.rows.map(r=>({...r,amount_paid:0}));
     state.selected=new Set(state.rows.map(r=>String(r.worker_id)));
     state.manual.clear();
@@ -331,7 +381,7 @@ async function applyBulkPayment(){
       if(!(entered>0))throw Error('Bulk Payment Amount required है.');
       if(!isRound100(entered))throw Error('Ratio Payment amount ₹100 के multiple में होना चाहिए.');
 
-      $('paymentMethod').value='PARTIAL_RATIO';
+      setPaymentMethod('PARTIAL_RATIO');
       updateRule();
       say(bulkMode==='RATIO_PERCENT'?`${percent}% Ratio Payment apply हो रहा है…`:'Flat Ratio Payment apply हो रहा है…','info');
       await recalc({applyAmount:true});
@@ -351,7 +401,7 @@ function applyRoundReadyAll(){
     const total=state.rows.reduce((sum,r)=>sum+round100Ready(r),0);
     const carry=state.rows.reduce((sum,r)=>sum+round100Carry(r),0);
     if(!(total>0))throw Error(`अभी ₹100 Ready Pay ₹0.00 है; ₹${money(carry)} पूरा Carry Forward रहेगा.`);
-    $('paymentMethod').value='WORKER_LEDGER_WISE';
+    setPaymentMethod('WORKER_LEDGER_WISE');
     state.selected=new Set(state.rows.map(r=>String(r.worker_id)));
     state.manual.clear();
     state.rows.forEach(r=>state.manual.set(String(r.worker_id),round100Ready(r)));
@@ -478,7 +528,7 @@ function bind(){
 
   $('bulkApplyMethod').onchange=()=>{
     const wasBulk=method()==='PARTIAL_RATIO';
-    $('paymentMethod').value='WORKER_LEDGER_WISE';
+    setPaymentMethod('WORKER_LEDGER_WISE');
     state.bulkApplied=false;
     if(wasBulk)state.rows=state.rows.map(r=>({...r,amount_paid:0}));
     state.manual.clear();
@@ -490,7 +540,7 @@ function bind(){
 
   if($('bulkPercent'))$('bulkPercent').onchange=()=>{
     const wasBulk=method()==='PARTIAL_RATIO';
-    $('paymentMethod').value='WORKER_LEDGER_WISE';
+    setPaymentMethod('WORKER_LEDGER_WISE');
     state.bulkApplied=false;
     if(wasBulk)state.rows=state.rows.map(r=>({...r,amount_paid:0}));
     state.manual.clear();
@@ -516,4 +566,4 @@ function bind(){
     }
   };
 }
-async function boot(){try{state.client=window.supabaseClient||window.supabaseDb||window.redzedSupabase||window.sb;if(!state.client)throw Error('Supabase client unavailable.');if(window.RR?.requireRoles)await RR.requireRoles(['owner','admin','account','accounts','payroll','manager','hr']);else{const s=await state.client.auth.getSession();if(!s.data?.session)throw Error('Login required.')}const p=new URLSearchParams(location.search),cat=String(p.get('category')||'').toUpperCase(),mode=String(p.get('mode')||'').toUpperCase();if(['PIECE_RATE','SALARIED'].includes(cat))$('payrollCategory').value=cat;if(window.RRDataModeReadyPromise)await window.RRDataModeReadyPromise;if(window.RRDataMode){await RRDataMode.refresh();await RRDataMode.applyInitialMode('dataMode',mode);}else $('dataMode').value='TEST';$('periodEnd').value=today();$('periodStart').value=category()==='SALARIED'?monthStart():today();$('paymentDate').value=today();$('paymentMethod').value='WORKER_LEDGER_WISE';$('bulkApplyMethod').value='RATIO_FLAT';setPeriod();updateVoucherDisplay({force:true});updateRule();bind();render();advance();await refreshVoucherPreview();await history();state.contextKey=autoLoadKey();await autoLoadWorkers(state.contextKey);$('accessBadge').textContent='ACCESS OK'}catch(e){$('accessBadge').textContent='ACCESS ERROR';say(err(e),'error')}}document.readyState==='loading'?document.addEventListener('DOMContentLoaded',boot):boot();})();
+async function boot(){try{state.client=window.supabaseClient||window.supabaseDb||window.redzedSupabase||window.sb;if(!state.client)throw Error('Supabase client unavailable.');if(window.RR?.requireRoles)await RR.requireRoles(['owner','admin','account','accounts','payroll','manager','hr']);else{const s=await state.client.auth.getSession();if(!s.data?.session)throw Error('Login required.')}const p=new URLSearchParams(location.search),cat=String(p.get('category')||'').toUpperCase(),mode=String(p.get('mode')||'').toUpperCase();if(['PIECE_RATE','SALARIED'].includes(cat))$('payrollCategory').value=cat;if(window.RRDataModeReadyPromise)await window.RRDataModeReadyPromise;if(window.RRDataMode){await RRDataMode.refresh();await RRDataMode.applyInitialMode('dataMode',mode);}else $('dataMode').value='TEST';$('periodEnd').value=today();$('periodStart').value=category()==='SALARIED'?monthStart():today();$('paymentDate').value=today();setPaymentMethod('WORKER_LEDGER_WISE');enforceBulkOptions();$('bulkApplyMethod').value='RATIO_FLAT';setPeriod();updateVoucherDisplay({force:true});updateRule();bind();render();advance();await refreshVoucherPreview();await history();state.contextKey=autoLoadKey();await autoLoadWorkers(state.contextKey);$('accessBadge').textContent='ACCESS OK · V328'}catch(e){$('accessBadge').textContent='ACCESS ERROR';say(err(e),'error')}}document.readyState==='loading'?document.addEventListener('DOMContentLoaded',boot):boot();})();
