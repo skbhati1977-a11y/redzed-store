@@ -7,7 +7,24 @@ const safe=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'
 const money=v=>Number(v||0).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});
 const err=e=>[e?.message,e?.details,e?.hint,e?.code].filter(Boolean).join(' — ')||'Unknown error';
 const today=()=>new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Kolkata',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
-function say(t,k=''){$('message').textContent=t||'';$('message').className=`message ${k}`.trim()}
+function autoVoucher(){
+  const now=new Date();
+  const stamp=new Intl.DateTimeFormat('en-GB',{
+    timeZone:'Asia/Kolkata',
+    year:'numeric',month:'2-digit',day:'2-digit',
+    hour:'2-digit',minute:'2-digit',second:'2-digit',
+    hour12:false
+  }).formatToParts(now).reduce((o,p)=>(o[p.type]=p.value,o),{});
+  const prefix=CATEGORY==='PIECE_RATE'?'PCS':'MTH';
+  const random=Math.random().toString(36).slice(2,6).toUpperCase();
+  return `${prefix}-${stamp.year}${stamp.month}${stamp.day}-${stamp.hour}${stamp.minute}${stamp.second}-${random}`;
+}
+function say(t,k=''){
+  const text=t||'';
+  const className=`message ${k}`.trim();
+  if($('message')){$('message').textContent=text;$('message').className=className}
+  if($('submitStatus')){$('submitStatus').textContent=text;$('submitStatus').className=className}
+}
 async function rpc(n,p={}){const r=await state.client.rpc(n,p);if(r.error)throw r.error;return r.data}
 function choice(){return $('paymentChoice').value}
 function method(){return $('paymentMethod').value}
@@ -119,17 +136,23 @@ async function load(){
   }catch(e){state.preview=null;state.rows=[];state.selected.clear();state.manual.clear();render();say(err(e),'error')}
 }
 async function submit(){
+  const button=$('submitPayment');
+  const originalText=button.textContent;
   try{
-    if(!state.preview)throw Error('पहले load करें.');
-    if(!$('paymentDate').value)throw Error('Payment Date required.');
-    if(!$('voucherNo').value.trim())throw Error('Voucher / Reference required.');
+    button.disabled=true;
+    button.textContent='PROCESSING…';
+    say('Submit Payment click received. Validation हो रही है…','info');
+
+    if(!state.preview)throw Error('पहले current work load करें.');
+    if(!$('paymentDate').value)$('paymentDate').value=today();
+    if(!$('voucherNo').value.trim())$('voucherNo').value=autoVoucher();
     if(!state.selected.size)throw Error('कम से कम एक worker select करें.');
     validatePaymentWindow();
     applyChoice();
     if(choice()==='RATIO_PAYMENT'){allocateRatioRound100();render()}
     if(method()==='FULL_PAYMENT'){state.selected=new Set(state.rows.map(x=>String(x.worker_id)));await preview(false)}
     if(!(totals().pay>0))throw Error('Current Payment amount required.');if(choice()==='SELECTED_PARTIAL'){const invalid=state.rows.some(r=>{const p=pay(r);return p>0&&p%100!==0});if(invalid)throw Error('Selected Workers Partial Payment में सभी payment ₹100 के multiple में होने चाहिए.');}
-    $('submitPayment').disabled=true;say('Payment save और post हो रहा है…','info');
+    button.disabled=true;button.textContent='POSTING…';say('Voucher save और payment post हो रहा है…','info');
     const r=await rpc('rr_salary_payment_post_v785',{
       p_payroll_category:CATEGORY,p_period_start:getStart(),p_period_end:getEnd(),p_data_mode:$('dataMode').value,
       p_payment_method:method(),p_payment_scope:'FULL_AND_FINAL',
@@ -138,9 +161,18 @@ async function submit(){
       p_payment_date:$('paymentDate').value,p_payment_mode:'CASH',p_voucher_no:$('voucherNo').value.trim(),
       p_remarks:choice()==='RATIO_PAYMENT'?'RATIO_PAYMENT_ROUND_100':null
     });
-    say(`Payment posted ₹${money(r.bulk_amount_payment)} · Outstanding ₹${money(r.total_new_outstanding)}.`,'success');
-    setTimeout(()=>location.href=RETURN_URL,800)
-  }catch(e){$('submitPayment').disabled=false;say(err(e),'error')}
+    button.textContent='PAYMENT POSTED';say(`Payment posted ₹${money(r.bulk_amount_payment)} · Outstanding ₹${money(r.total_new_outstanding)}.`,'success');
+    setTimeout(()=>location.href=RETURN_URL,1400)
+  }catch(e){
+    button.disabled=false;
+    button.textContent=originalText;
+    const message=err(e);
+    say(message,'error');
+    if(/Voucher/i.test(message)){$('voucherNo').focus()}
+    else if(/Payment Date/i.test(message)){$('paymentDate').focus()}
+    else if(/Bulk Payment Amount|Current Payment/i.test(message)){$('bulkAmount').focus()}
+    if($('submitStatus'))$('submitStatus').scrollIntoView({behavior:'smooth',block:'center'});
+  }
 }
 function bind(){
   $('loadPreview').onclick=load;$('submitPayment').onclick=submit;
@@ -153,7 +185,7 @@ async function boot(){
     if(window.RR?.requireRoles)await RR.requireRoles(['owner','admin','account','accounts','payroll','manager','hr']);
     if(window.RRDataModeReadyPromise)await window.RRDataModeReadyPromise;
     if(window.RRDataMode){await RRDataMode.refresh();await RRDataMode.applyInitialMode('dataMode','')}else $('dataMode').value='TEST';
-    initPeriod();$('paymentDate').value=today();applyChoice();bind();render();$('accessBadge').textContent='ACCESS OK'
+    initPeriod();$('paymentDate').value=today();if(!$('voucherNo').value.trim())$('voucherNo').value=autoVoucher();applyChoice();bind();render();$('accessBadge').textContent='ACCESS OK'
   }catch(e){$('accessBadge').textContent='ACCESS ERROR';say(err(e),'error')}
 }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();

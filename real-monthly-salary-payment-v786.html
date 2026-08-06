@@ -21,7 +21,7 @@ input,select{width:100%;min-height:44px;padding:9px 10px;border:1px solid var(--
 .table-wrap{overflow:auto;border:1px solid var(--line);border-radius:12px}
 table{border-collapse:collapse;width:100%;min-width:1220px}th,td{padding:9px;border-bottom:1px solid var(--line);white-space:nowrap;text-align:left}
 th{background:#202733;font-size:12px;position:sticky;top:0;z-index:2}td.money{text-align:right}.total-row td{background:#1c2430;font-weight:900}
-.worker-check{width:20px;height:20px;min-height:20px}.bottom-submit{display:flex;justify-content:flex-end;margin-top:12px}.bottom-submit .btn{min-width:240px;min-height:52px;font-size:17px}
+.worker-check{width:20px;height:20px;min-height:20px}.bottom-submit{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:12px}.bottom-submit #submitStatus{flex:1;margin:0}.bottom-submit .btn{min-width:240px;min-height:52px;font-size:17px}
 .advanced summary{cursor:pointer;font-weight:900}.hidden{display:none!important}
 @media(max-width:1250px){.top-grid{grid-template-columns:repeat(4,1fr)}}@media(max-width:760px){.top-grid{grid-template-columns:1fr 1fr}.app{padding:8px}}@media(max-width:500px){.top-grid{grid-template-columns:1fr}}
 </style>
@@ -62,7 +62,10 @@ th{background:#202733;font-size:12px;position:sticky;top:0;z-index:2}td.money{te
       <tfoot id="ledgerFoot"></tfoot>
     </table>
   </div>
-  <div class="bottom-submit"><button id="submitPayment" class="btn success" type="button" disabled>SUBMIT PAYMENT</button></div>
+  <div class="bottom-submit">
+      <div id="submitStatus" class="message" aria-live="polite"></div>
+      <button id="submitPayment" class="btn success" type="button" disabled>SUBMIT PAYMENT</button>
+    </div>
 </section>
 <section class="panel advanced"><details><summary>Advanced Details — जरूरत होने पर</summary><div class="nav" style="margin-top:12px"><a class="btn" href="real-pcs-work-audit-v783.html">Worker Ledgers</a><a class="btn" href="real-advance-worker-payment-v785.html">Advance Payment</a><a class="btn" href="real-data-mode-control-v786.html">Data Mode Settings</a></div></details></section>
 <div class="hidden">
@@ -71,6 +74,6 @@ th{background:#202733;font-size:12px;position:sticky;top:0;z-index:2}td.money{te
 </div>
 </main>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="config.js?v=78637"></script><script src="real-data-mode-controller-v786-1-1.js?v=78637"></script><script src="real-common.js?v=78637"></script>
-<script src="real-monthly-salary-payment-v786.js?v=78637"></script>
+<script src="config.js?v=78638"></script><script src="real-data-mode-controller-v786-1-1.js?v=78638"></script><script src="real-common.js?v=78638"></script>
+<script src="real-monthly-salary-payment-v786.js?v=78638"></script>
 </body></html>
