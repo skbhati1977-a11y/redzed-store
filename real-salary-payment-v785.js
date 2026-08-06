@@ -1,5 +1,5 @@
-/* REAL FACTORY Salary Payment V786.3.20 — hidden auto controls + voucher ASCII lock */
-(()=>{'use strict';window.REAL_FACTORY_SALARY_PAYMENT_VERSION='786.3.20-HIDDEN-AUTO-CONTROLS-VOUCHER-ASCII';
+/* REAL FACTORY Salary Payment V786.3.21 — auto ready fill + voucher number only */
+(()=>{'use strict';window.REAL_FACTORY_SALARY_PAYMENT_VERSION='786.3.21-AUTO-READY-VOUCHER-NUMBER-ONLY';
 const $=id=>document.getElementById(id),state={client:null,preview:null,rows:[],selected:new Set(),manual:new Map(),dirty:false,useAll:true,bulkApplied:false,history:[],activeAmountId:null,autoLoadTimer:null,loading:false,queuedLoadKey:null,contextKey:null,voucherPreviewToken:0};
 const safe=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
 const money=v=>Number(v||0).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});
@@ -25,7 +25,7 @@ function updateVoucherDisplay({force=false}={}){
   if(!force&&input.dataset.category===cat&&input.dataset.previewReady==='true')return;
   input.dataset.category=cat;
   input.dataset.previewReady='false';
-  input.value=cat==='PIECE_RATE'?'CHECKING — PCSL…':'CHECKING — MSL…';
+  input.value=cat==='PIECE_RATE'?'CHECKING PCSL':'CHECKING MSL';
 }
 async function refreshVoucherPreview(){
   const input=$('voucherNo'),cat=category(),token=++state.voucherPreviewToken;
@@ -35,11 +35,11 @@ async function refreshVoucherPreview(){
     if(token!==state.voucherPreviewToken||cat!==category())return;
     input.dataset.category=cat;
     input.dataset.previewReady='true';
-    input.value=result?.voucher_no?`NEXT - ${result.voucher_no}`:'NEXT - CHECKING';
+    input.value=result?.voucher_no||'CHECKING';
   }catch(_){
     if(token!==state.voucherPreviewToken||cat!==category())return;
     input.dataset.previewReady='false';
-    input.value=cat==='PIECE_RATE'?'AUTO — PCSL on submit':'AUTO — MSL on submit';
+    input.value=cat==='PIECE_RATE'?'PCSL AUTO':'MSL AUTO';
   }
 }
 function validPeriod(){
@@ -249,9 +249,20 @@ async function autoLoadWorkers(key=autoLoadKey(),{refreshHistory=false}={}){
 
     if(!p)return null;
 
+    state.selected=new Set(state.rows.map(r=>String(r.worker_id)));
+    state.manual.clear();
+    state.rows.forEach(r=>state.manual.set(String(r.worker_id),round100Ready(r)));
+    state.useAll=false;
+    state.bulkApplied=true;
+    state.activeAmountId=null;
+    render();
+
+    const readyTotal=state.rows.reduce((sum,r)=>sum+round100Ready(r),0);
+    const carryTotal=state.rows.reduce((sum,r)=>sum+round100Carry(r),0);
+
     say(
       `${p.eligible_worker_count} unpaid workers auto-loaded. `
-      +'Direct Current Payment भरें या Bulk Apply करें.',
+      +`₹100 Ready Pay ₹${money(readyTotal)} auto-filled · ₹${money(carryTotal)} Carry Forward.`,
       'success'
     );
     return p;
@@ -402,7 +413,7 @@ async function voidBatch(id){try{const reason=prompt('Void reason','Wrong paymen
 
 function bind(){
   $('applyBulkPayment').onclick=applyBulkPayment;
-  $('applyRoundReadyAll').onclick=applyRoundReadyAll;
+  if($('applyRoundReadyAll'))$('applyRoundReadyAll').onclick=applyRoundReadyAll;
   $('submitBulkPayment').onclick=submitBulkPayment;
 
   if($('loadHistory'))$('loadHistory').onclick=history;
