@@ -1,5 +1,5 @@
-/* REAL FACTORY Salary Payment V786.3.18 — ₹100 ready pay + carry forward */
-(()=>{'use strict';window.REAL_FACTORY_SALARY_PAYMENT_VERSION='786.3.18-ROUND-100-READY-PAY';
+/* REAL FACTORY Salary Payment V786.3.19 — voucher text encoding lock */
+(()=>{'use strict';window.REAL_FACTORY_SALARY_PAYMENT_VERSION='786.3.19-VOUCHER-TEXT-ENCODING-LOCK';
 const $=id=>document.getElementById(id),state={client:null,preview:null,rows:[],selected:new Set(),manual:new Map(),dirty:false,useAll:true,bulkApplied:false,history:[],activeAmountId:null,autoLoadTimer:null,loading:false,queuedLoadKey:null,contextKey:null,voucherPreviewToken:0};
 const safe=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
 const money=v=>Number(v||0).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});
@@ -35,7 +35,7 @@ async function refreshVoucherPreview(){
     if(token!==state.voucherPreviewToken||cat!==category())return;
     input.dataset.category=cat;
     input.dataset.previewReady='true';
-    input.value=result?.display_text||`NEXT — ${result?.voucher_no||''}`;
+    input.value=result?.voucher_no?`NEXT - ${result.voucher_no}`:'NEXT - CHECKING';
   }catch(_){
     if(token!==state.voucherPreviewToken||cat!==category())return;
     input.dataset.previewReady='false';
