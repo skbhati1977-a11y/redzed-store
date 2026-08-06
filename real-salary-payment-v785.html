@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=yes"><meta name="theme-color" content="#090b10"><title>REAL FACTORY — Salary Payment V786.3.21</title>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=yes"><meta name="theme-color" content="#090b10"><title>REAL FACTORY — Salary Payment V786.3.22</title>
 <style>
 :root{color-scheme:dark;--bg:#090b10;--panel:#141820;--panel2:#0f131a;--line:#313a48;--muted:#aeb8c8;--red:#ef3340;--green:#34c47c;--amber:#ffbd52;--blue:#62a8ff}*{box-sizing:border-box}html,body{margin:0;min-height:100%;background:var(--bg);color:#fff;font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}button,input,select{font:inherit;color:inherit}button{cursor:pointer}.hidden{display:none!important}.app{max-width:1900px;margin:auto;padding:14px}.head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px}.head h1{margin:0;font-size:23px}.head p{margin:4px 0 0;color:var(--muted)}.nav{display:flex;gap:8px;flex-wrap:wrap}.nav a{color:#fff;text-decoration:none}.btn{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:9px 13px;border:1px solid var(--line);border-radius:10px;background:#222a36;color:#fff;font-weight:800}.btn.primary{background:var(--red);border-color:var(--red)}.btn.success{background:#176b47;border-color:#2d9468}.btn.danger{background:#762934;border-color:#a84552}.btn:disabled{opacity:.45}.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:13px;margin-bottom:12px}.grid{display:grid;grid-template-columns:repeat(6,minmax(145px,1fr));gap:10px}.grid .wide{grid-column:span 2}label span{display:block;font-size:12px;color:var(--muted);margin-bottom:5px}input,select{width:100%;min-height:44px;padding:9px 10px;border:1px solid var(--line);border-radius:9px;background:var(--panel2);font-size:16px}.actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:10px}.note{padding:11px;border-left:3px solid var(--blue);border-radius:8px;background:#101825;color:#d9e6f6;line-height:1.55}.message{min-height:24px;color:var(--muted)}.message.error{color:#ff8e98}.message.success{color:#79e5ae}.message.info{color:#a8ccff}.hero{display:grid;grid-template-columns:repeat(9,minmax(135px,1fr));gap:8px;margin-bottom:12px}.card{background:linear-gradient(180deg,#171d27,#10141b);border:1px solid var(--line);border-radius:12px;padding:10px;min-height:86px}.card small{display:block;color:var(--muted);font-weight:700;margin-bottom:5px}.card strong{display:block;font-size:20px}.card input{font-size:20px;font-weight:900;background:#090d13}.card.advance{border-color:#75562b;cursor:pointer}.bulk-payment-card{display:flex;flex-direction:column;gap:7px}.bulk-payment-card .btn{width:100%;min-height:40px}.bulk-status{line-height:1.35;color:var(--muted)!important}.table-wrap{overflow:auto;border:1px solid var(--line);border-radius:12px}table{border-collapse:collapse;width:100%;min-width:1700px}th,td{padding:8px;border-bottom:1px solid var(--line);white-space:nowrap;text-align:left}th{background:#202733;font-size:12px}td.money{text-align:right}.worker-check{width:20px;height:20px;min-height:20px}.amount-input{min-width:140px;text-align:right;font-weight:900}.total-row td{background:#1c2430;font-weight:900}.advance-list{display:grid;grid-template-columns:repeat(3,minmax(250px,1fr));gap:8px}.advance-item{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:10px}@media(max-width:1450px){.hero{grid-template-columns:repeat(5,1fr)}}@media(max-width:1050px){.grid{grid-template-columns:repeat(3,1fr)}.hero{grid-template-columns:repeat(3,1fr)}.advance-list{grid-template-columns:repeat(2,1fr)}}@media(max-width:700px){.grid{grid-template-columns:1fr 1fr}.grid .wide{grid-column:1/-1}.hero{grid-template-columns:1fr 1fr}.advance-list{grid-template-columns:1fr}.app{padding:8px}}@media(max-width:480px){.grid{grid-template-columns:1fr}}
 
@@ -115,7 +115,7 @@ section:has(#historyBody){
 .auto-load-status.loading{color:#ffd27c;border-color:#7a6335;background:#241e10}
 #voucherNo[readonly]{cursor:default;color:#9be9bd;background:#101c17;font-weight:800}
 .advance-adjusted{font-weight:900}
-table{min-width:2450px}
+table{min-width:1050px}
 .hero-card.ready{border-color:#2d7953;background:linear-gradient(180deg,#143021,#101a14)}
 .hero-card.ready strong{color:#79e5ae}
 .hero-card.carry{border-color:#75562b;background:linear-gradient(180deg,#2b2112,#17140f)}
@@ -123,7 +123,11 @@ table{min-width:2450px}
 .round-ready-btn{min-width:112px;min-height:36px;padding:6px 9px;border:1px solid #2d9468;border-radius:8px;background:#123523;color:#79e5ae;font-weight:900;white-space:nowrap}
 .round-ready-btn:hover{background:#176b47;color:#fff}
 .ready-pay{color:#79e5ae;font-weight:900}.carry-forward{color:#ffd27c;font-weight:900}
-@media(max-width:700px){.action-summary{grid-template-columns:1fr 1fr}.payment-card{grid-column:1/-1}table{min-width:2300px}}
+.balance-pill{display:inline-flex;align-items:center;justify-content:center;min-width:105px;padding:5px 8px;border-radius:8px;font-weight:900}
+.balance-pill.due{color:#ff9ba4;background:#32151b;border:1px solid #88404a}
+.balance-pill.adv{color:#ffd27c;background:#2b2112;border:1px solid #75562b}
+.balance-pill.nil{color:#aeb8c8;background:#171d27;border:1px solid #313a48}
+@media(max-width:700px){.action-summary{grid-template-columns:1fr 1fr}.payment-card{grid-column:1/-1}table{min-width:980px}}
 @media(max-width:480px){.action-summary{grid-template-columns:1fr}.payment-card{grid-column:auto}}
 
 </style></head><body><main class="app">
@@ -199,7 +203,7 @@ table{min-width:2450px}
 </section>
 
 <section id="advancePanel" class="panel hidden"><div class="actions" style="justify-content:space-between"><b>Advance से कम/बराबर earning वाले workers — threshold पूरा होते ही regular window में आएँगे</b><a class="btn" href="real-advance-worker-payment-v785.html">Open Advance Payment List</a></div><div id="advanceList" class="advance-list"></div></section>
-<section class="panel"><div class="actions" style="justify-content:space-between"><h2 style="margin:0;font-size:17px">Workers To Pay — Net After Advance</h2><span id="workerCount">0 workers</span></div><div class="table-wrap"><table><thead><tr><th>Select</th><th>Worker</th><th>Department</th><th>Gross Earned</th><th>Advance Opening</th><th>Advance Adjusted</th><th>Net Previous</th><th>Net Current</th><th>Net Final Payable</th><th>Selected Scope</th><th>₹100 Ready Pay</th><th>Carry Forward</th><th>Current Payment</th><th>Outstanding Payment</th><th>Current Period Payment</th><th>New Outstanding</th><th>Source</th></tr></thead><tbody id="ledgerBody"></tbody><tfoot id="ledgerFoot"></tfoot></table></div><div class="bottom-submit"><button id="submitBulkPayment" class="btn success" type="button" disabled>SUBMIT PAYMENT</button></div></section>
+<section class="panel"><div class="actions" style="justify-content:space-between"><h2 style="margin:0;font-size:17px">Workers To Pay — Simple Payment View</h2><span id="workerCount">0 workers</span></div><div class="table-wrap"><table><thead><tr><th>Worker</th><th>Previous Outstanding</th><th>After Advance — ADV / DUE</th><th>Current Work</th><th>Total Payable</th><th>Current Payment</th><th>Current Outstanding</th></tr></thead><tbody id="ledgerBody"></tbody><tfoot id="ledgerFoot"></tfoot></table></div><div class="bottom-submit"><button id="submitBulkPayment" class="btn success" type="button" disabled>SUBMIT PAYMENT</button></div></section>
 <section class="panel"><div class="actions" style="justify-content:space-between"><h2 style="margin:0;font-size:17px">Payment History</h2><button id="loadHistory" class="btn">Refresh History</button></div><div class="table-wrap"><table style="min-width:1550px"><thead><tr><th>Date</th><th>Module</th><th>Period</th><th>Method</th><th>Scope</th><th>Voucher</th><th>Workers</th><th>Final Payable ₹</th><th>Bulk Payment ₹</th><th>New Outstanding ₹</th><th>Messages</th><th>Status</th><th>Action</th></tr></thead><tbody id="historyBody"></tbody></table></div></section>
 
 <section class="panel advanced-dashboard">
@@ -215,7 +219,7 @@ table{min-width:2450px}
 
 
 
-</main><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="config.js?v=7851"></script><script src="real-data-mode-controller-v786-1-1.js?v=7862"></script><script src="real-common.js?v=7862"></script><script src="real-salary-payment-v785.js?v=786321"></script><script>
+</main><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="config.js?v=7851"></script><script src="real-data-mode-controller-v786-1-1.js?v=7862"></script><script src="real-common.js?v=7862"></script><script src="real-salary-payment-v785.js?v=786322"></script><script>
 (()=>{
   const normalizeVoucherText=()=>{
     const input=document.getElementById('voucherNo');

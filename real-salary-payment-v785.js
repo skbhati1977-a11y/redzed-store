@@ -1,5 +1,5 @@
-/* REAL FACTORY Salary Payment V786.3.21 — auto ready fill + voucher number only */
-(()=>{'use strict';window.REAL_FACTORY_SALARY_PAYMENT_VERSION='786.3.21-AUTO-READY-VOUCHER-NUMBER-ONLY';
+/* REAL FACTORY Salary Payment V786.3.22 — simple seven-column payment table */
+(()=>{'use strict';window.REAL_FACTORY_SALARY_PAYMENT_VERSION='786.3.22-SIMPLE-SEVEN-COLUMN-PAYMENT-TABLE';
 const $=id=>document.getElementById(id),state={client:null,preview:null,rows:[],selected:new Set(),manual:new Map(),dirty:false,useAll:true,bulkApplied:false,history:[],activeAmountId:null,autoLoadTimer:null,loading:false,queuedLoadKey:null,contextKey:null,voucherPreviewToken:0};
 const safe=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
 const money=v=>Number(v||0).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});
@@ -137,6 +137,13 @@ function amount(r){return method()==='WORKER_LEDGER_WISE'?Number(state.manual.ge
 function split(r){const a=state.selected.has(String(r.worker_id))?amount(r):0;if(scope()==='OUTSTANDING_ONLY')return{old:Math.min(a,Number(r.previous_outstanding||0)),cur:0};if(scope()==='CURRENT_PERIOD_ONLY')return{old:0,cur:Math.min(a,Number(r.current_period_payable||0))};const old=Math.min(a,Number(r.previous_outstanding||0));return{old,cur:Math.max(a-old,0)}}
 function newBal(r){const x=split(r);return Math.max(Number(r.previous_outstanding||0)-x.old,0)+Math.max(Number(r.current_period_payable||0)-x.cur,0)}
 const grossPayable=r=>Number(r.gross_previous_outstanding||0)+Number(r.gross_current_period_payable||0);
+const afterAdvanceBalance=r=>Number(r.gross_previous_outstanding||0)-Number(r.advance_opening_balance||0);
+function afterAdvanceDisplay(r){
+  const value=afterAdvanceBalance(r);
+  if(value>0.005)return`<span class="balance-pill due">DUE ₹${money(value)}</span>`;
+  if(value<-0.005)return`<span class="balance-pill adv">ADV ₹${money(Math.abs(value))}</span>`;
+  return'<span class="balance-pill nil">NIL ₹0.00</span>';
+}
 const round100Ready=r=>'round_100_ready_payment' in r
   ?Number(r.round_100_ready_payment||0)
   :Math.floor((Number(r.scope_payable||0)+0.000001)/100)*100;
@@ -204,15 +211,37 @@ function updateLivePaymentTotals(flash=false){
 }
 function render(){
 const rows=filtered();
-const livePaid=state.rows.reduce((sum,r)=>sum+(state.selected.has(String(r.worker_id))?amount(r):0),0);$('ledgerBody').innerHTML=rows.length?rows.map(r=>{const id=String(r.worker_id),checked=state.selected.has(id),a=amount(r),x=split(r),ready=round100Ready(r),carry=round100Carry(r);return`<tr><td><input class="worker-check" type="checkbox" data-select="${safe(id)}" ${checked?'checked':''}></td><td><b>${safe(r.worker_name||id)}</b><br><small>${safe(r.worker_code||'—')}</small></td><td>${safe(r.department_code||'—')}</td><td class="money">₹${money(grossPayable(r))}</td><td class="money">₹${money(r.advance_opening_balance)}</td><td class="money advance-adjusted">₹${money(r.advance_recovery_amount)}</td><td class="money">₹${money(r.previous_outstanding)}</td><td class="money">₹${money(r.current_period_payable)}</td><td class="money"><b>₹${money(r.final_total_payable)}</b></td><td class="money">₹${money(r.scope_payable)}</td><td class="money ready-pay"><button class="round-ready-btn" type="button" data-use-round="${safe(id)}" ${ready<=0?'disabled':''}>₹${money(ready)} · USE</button></td><td class="money carry-forward">₹${money(carry)}</td><td class="money">${method()==='WORKER_LEDGER_WISE'?`<div class="payment-entry-wrap"><input class="amount-input" type="number" min="0" max="${Number(r.scope_payable||0)}" step="100" value="${a.toFixed(2)}" data-amount="${safe(id)}"><span class="live-ttl-cell ${String(state.activeAmountId||'')===id?'active':''}" data-live-ttl="${safe(id)}" aria-live="polite">TTL ₹${ttlMoney(livePaid)}</span></div>`:`₹${money(a)}`}</td><td class="money" data-old-paid>₹${money(x.old)}</td><td class="money" data-current-paid>₹${money(x.cur)}</td><td class="money" data-new-balance>₹${money(newBal(r))}</td><td>${safe(r.current_source||'—')}</td></tr>`}).join(''):'<tr><td colspan="17">No regular-payable worker. Advance threshold list देखें.</td></tr>';
-const t=state.rows.reduce((z,r)=>{const x=split(r);z.gross+=grossPayable(r);z.advance+=Number(r.advance_opening_balance||0);z.recovery+=Number(r.advance_recovery_amount||0);z.old+=Number(r.previous_outstanding||0);z.cur+=Number(r.current_period_payable||0);z.final+=Number(r.final_total_payable||0);z.scope+=Number(r.scope_payable||0);z.ready+=round100Ready(r);z.carry+=round100Carry(r);z.paid+=state.selected.has(String(r.worker_id))?amount(r):0;z.op+=x.old;z.cp+=x.cur;z.nb+=newBal(r);return z},{gross:0,advance:0,recovery:0,old:0,cur:0,final:0,scope:0,ready:0,carry:0,paid:0,op:0,cp:0,nb:0});$('ledgerFoot').innerHTML=`<tr class="total-row"><td colspan="3">TOTAL</td><td class="money">₹${money(t.gross)}</td><td class="money">₹${money(t.advance)}</td><td class="money advance-adjusted">₹${money(t.recovery)}</td><td class="money">₹${money(t.old)}</td><td class="money">₹${money(t.cur)}</td><td class="money">₹${money(t.final)}</td><td class="money">₹${money(t.scope)}</td><td class="money ready-pay">₹${money(t.ready)}</td><td class="money carry-forward">₹${money(t.carry)}</td><td id="liveTotalAmountPaid" class="money">₹${money(t.paid)}</td><td id="liveTotalOutstandingPayment" class="money">₹${money(t.op)}</td><td id="liveTotalCurrentPayment" class="money">₹${money(t.cp)}</td><td id="liveTotalNewOutstanding" class="money">₹${money(t.nb)}</td><td></td></tr>`;
+const livePaid=state.rows.reduce((sum,r)=>sum+(state.selected.has(String(r.worker_id))?amount(r):0),0);
+$('ledgerBody').innerHTML=rows.length?rows.map(r=>{
+  const id=String(r.worker_id),a=amount(r);
+  return`<tr>
+    <td><b>${safe(r.worker_name||id)}</b><br><small>${safe(r.worker_code||'—')}</small></td>
+    <td class="money">₹${money(r.gross_previous_outstanding)}</td>
+    <td class="money">${afterAdvanceDisplay(r)}</td>
+    <td class="money">₹${money(r.gross_current_period_payable)}</td>
+    <td class="money"><b>₹${money(r.final_total_payable)}</b></td>
+    <td class="money">${method()==='WORKER_LEDGER_WISE'?`<div class="payment-entry-wrap"><input class="amount-input" type="number" min="0" max="${Number(r.scope_payable||0)}" step="100" value="${a.toFixed(2)}" data-amount="${safe(id)}"><span class="live-ttl-cell ${String(state.activeAmountId||'')===id?'active':''}" data-live-ttl="${safe(id)}" aria-live="polite">TTL ₹${ttlMoney(livePaid)}</span></div>`:`₹${money(a)}`}</td>
+    <td class="money" data-new-balance>₹${money(newBal(r))}</td>
+  </tr>`;
+}).join(''):'<tr><td colspan="7">No regular-payable worker. Advance threshold list देखें.</td></tr>';
+const t=state.rows.reduce((z,r)=>{
+  const balance=afterAdvanceBalance(r);
+  z.previous+=Number(r.gross_previous_outstanding||0);
+  z.current+=Number(r.gross_current_period_payable||0);
+  z.payable+=Number(r.final_total_payable||0);
+  z.paid+=state.selected.has(String(r.worker_id))?amount(r):0;
+  z.outstanding+=newBal(r);
+  if(balance>0)z.due+=balance;else z.advance+=Math.abs(balance);
+  return z;
+},{previous:0,current:0,payable:0,paid:0,outstanding:0,due:0,advance:0});
+$('ledgerFoot').innerHTML=`<tr class="total-row"><td>TOTAL</td><td class="money">₹${money(t.previous)}</td><td class="money"><span class="balance-pill due">DUE ₹${money(t.due)}</span> <span class="balance-pill adv">ADV ₹${money(t.advance)}</span></td><td class="money">₹${money(t.current)}</td><td class="money">₹${money(t.payable)}</td><td id="liveTotalAmountPaid" class="money">₹${money(t.paid)}</td><td id="liveTotalNewOutstanding" class="money">₹${money(t.outstanding)}</td></tr>`;
 $('ledgerBody').querySelectorAll('[data-select]').forEach(i=>i.onchange=()=>{i.checked?state.selected.add(i.dataset.select):state.selected.delete(i.dataset.select);if(method()==='WORKER_LEDGER_WISE')render();else{state.dirty=true;cards();say('Selection changed. Recalculate first.','info')}});
 $('ledgerBody').querySelectorAll('[data-use-round]').forEach(b=>b.onclick=()=>{
 const id=b.dataset.useRound,r=state.rows.find(x=>String(x.worker_id)===id);if(!r)return;$('paymentMethod').value='WORKER_LEDGER_WISE';state.selected.add(id);state.manual.set(id,round100Ready(r));state.bulkApplied=true;state.useAll=false;updateRule();render();say(`${r.worker_name||id}: ₹${money(round100Ready(r))} Ready Pay set · ₹${money(round100Carry(r))} Carry Forward.`,'success')});
 const inputs=[...$('ledgerBody').querySelectorAll('[data-amount]')];inputs.forEach((i,k)=>{
 i.onfocus=()=>{state.activeAmountId=i.dataset.amount;updateLivePaymentTotals(false)};
 i.oninput=()=>{const id=i.dataset.amount,r=state.rows.find(x=>String(x.worker_id)===id),max=Number(r?.scope_payable||0),n=Math.min(Math.max(Number(i.value||0),0),max);
-state.activeAmountId=id;state.manual.set(id,n);const tr=i.closest('tr'),x=split(r);tr.querySelector('[data-old-paid]').textContent=`₹${money(x.old)}`;tr.querySelector('[data-current-paid]').textContent=`₹${money(x.cur)}`;tr.querySelector('[data-new-balance]').textContent=`₹${money(newBal(r))}`;cards();updateLivePaymentTotals(true)};
+state.activeAmountId=id;state.manual.set(id,n);const tr=i.closest('tr'),balanceCell=tr.querySelector('[data-new-balance]');if(balanceCell)balanceCell.textContent=`₹${money(newBal(r))}`;cards();updateLivePaymentTotals(true)};
 i.onblur=()=>{const value=Number(state.manual.get(i.dataset.amount)||0);if(value>0&&!isRound100(value)){state.manual.set(i.dataset.amount,0);state.activeAmountId=null;say('Current Payment ₹100 के multiple में होना चाहिए.','error');render();return}i.value=value.toFixed(2);setTimeout(()=>{if(!document.activeElement?.matches?.('[data-amount]')){state.activeAmountId=null;updateLivePaymentTotals(false)}},0)};
 i.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();const n=inputs[k+1];if(n){n.focus();n.select()}else $('submitBulkPayment').focus()}};
 });cards();updateLivePaymentTotals(false)}
