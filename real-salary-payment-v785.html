@@ -41,17 +41,72 @@ section:has(#historyBody){
 
 
 
-
-.live-payment-total{border:1px solid #2d9468;border-radius:10px;background:#102019;padding:9px 10px}
-.live-payment-total strong{display:block;margin-top:4px;font-size:24px;color:#79e5ae}
-.live-payment-total.flash{animation:liveTotalFlash .42s ease}
-@keyframes liveTotalFlash{
-  0%{transform:scale(1);box-shadow:none}
-  45%{transform:scale(1.025);box-shadow:0 0 0 3px rgba(52,196,124,.25)}
-  100%{transform:scale(1);box-shadow:none}
-}
 .bottom-submit{display:flex;justify-content:flex-end;margin-top:12px}
 .bottom-submit .btn{min-width:240px;min-height:52px;font-size:17px}
+
+
+/* INLINE LIVE TTL + MOBILE SAFE V786.3.12 */
+.payment-entry-wrap{
+  display:inline-flex;
+  align-items:center;
+  justify-content:flex-end;
+  gap:5px;
+  position:relative;
+}
+.live-ttl-cell{
+  display:none;
+  align-items:center;
+  justify-content:center;
+  min-width:68px;
+  min-height:30px;
+  padding:3px 6px;
+  border:1px solid #2d9468;
+  border-radius:7px;
+  background:#102019;
+  color:#79e5ae;
+  font-size:12px;
+  font-weight:900;
+  line-height:1;
+  white-space:nowrap;
+}
+.live-ttl-cell.active{display:inline-flex}
+.live-ttl-cell.flash{animation:inlineTtlFlash .34s ease}
+@keyframes inlineTtlFlash{
+  0%{transform:scale(1);background:#102019}
+  45%{transform:scale(1.06);background:#17442e}
+  100%{transform:scale(1);background:#102019}
+}
+.table-wrap{
+  -webkit-overflow-scrolling:touch;
+  overscroll-behavior-inline:contain;
+  touch-action:pan-x pan-y;
+}
+@media(max-width:700px){
+  .app{padding:7px}
+  .panel{padding:9px;border-radius:11px}
+  .head h1{font-size:19px}
+  .head p{font-size:12px}
+  .nav{width:100%}
+  .nav .btn{flex:1 1 auto;min-height:42px;padding:7px 9px;font-size:12px}
+  .action-summary{gap:7px;margin-bottom:9px}
+  .hero-card{padding:9px;border-radius:10px}
+  .hero-card strong{font-size:22px}
+  .payment-card{gap:6px}
+  input,select{min-height:44px;font-size:16px}
+  table{min-width:1380px}
+  th,td{padding:6px 5px;font-size:12px}
+  th{font-size:11px}
+  .amount-input{min-width:108px;width:108px;min-height:44px;padding:7px 7px}
+  .live-ttl-cell{min-width:64px;min-height:28px;padding:3px 5px;font-size:11px}
+  .bottom-submit{position:sticky;left:0;justify-content:stretch}
+  .bottom-submit .btn{width:100%;min-width:0;min-height:50px}
+}
+@media(max-width:430px){
+  table{min-width:1320px}
+  th,td{padding:5px 4px}
+  .amount-input{min-width:102px;width:102px}
+  .live-ttl-cell{min-width:60px}
+}
 
 </style></head><body><main class="app">
 <header class="head"><div><h1>REAL FACTORY · Payment Dashboard</h1><p>आज कितना देना है — एक नज़र में</p></div><div class="nav">
@@ -93,10 +148,6 @@ section:has(#historyBody){
       APPLY PAYMENT
     </button>
 
-    <div id="livePaymentTotalBox" class="live-payment-total">
-      <small>LIVE CURRENT PAYMENT TOTAL</small>
-      <strong id="liveCurrentPaymentTop">₹0.00</strong>
-    </div>
 
     <small id="bulkAmountStatus" class="bulk-status">
       Default manual entry active: worker की Current Payment row में amount भरें.
@@ -131,4 +182,4 @@ section:has(#historyBody){
 
 
 
-</main><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="config.js?v=7851"></script><script src="real-data-mode-controller-v786-1-1.js?v=7862"></script><script src="real-common.js?v=7862"></script><script src="real-salary-payment-v785.js?v=786311"></script></body></html>
+</main><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="config.js?v=7851"></script><script src="real-data-mode-controller-v786-1-1.js?v=7862"></script><script src="real-common.js?v=7862"></script><script src="real-salary-payment-v785.js?v=786312"></script></body></html>
