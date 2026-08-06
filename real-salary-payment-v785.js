@@ -1,5 +1,5 @@
-/* REAL FACTORY Salary Payment V786.3.24 — blank Current Payment until manual or bulk apply */
-(()=>{'use strict';window.REAL_FACTORY_SALARY_PAYMENT_VERSION='786.3.24-BLANK-CURRENT-PAYMENT';
+/* REAL FACTORY Salary Payment V786.3.25 — blank Current Payment for PCS and Monthly */
+(()=>{'use strict';window.REAL_FACTORY_SALARY_PAYMENT_VERSION='786.3.25-BLANK-CURRENT-PAYMENT-ALL-CATEGORIES';
 const $=id=>document.getElementById(id),state={client:null,preview:null,rows:[],selected:new Set(),manual:new Map(),dirty:false,useAll:true,bulkApplied:false,history:[],activeAmountId:null,autoLoadTimer:null,loading:false,queuedLoadKey:null,contextKey:null,voucherPreviewToken:0};
 const safe=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
 const money=v=>Number(v||0).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});
@@ -211,7 +211,7 @@ $('ledgerBody').innerHTML=rows.length?rows.map(r=>{
     <td class="money">₹${money(grossPayable(r))}</td>
     <td class="money">₹${money(r.previous_outstanding)}</td>
     <td class="money"><b>₹${money(r.final_total_payable)}</b></td>
-    <td class="money">${method()==='WORKER_LEDGER_WISE'?`<div class="payment-entry-wrap"><input class="amount-input" type="number" min="0" max="${Number(r.scope_payable||0)}" step="100" value="${hasManual?a.toFixed(2):''}" data-amount="${safe(id)}"><span class="live-ttl-cell ${String(state.activeAmountId||'')===id?'active':''}" data-live-ttl="${safe(id)}" aria-live="polite">TTL ₹${ttlMoney(livePaid)}</span></div>`:`₹${money(a)}`}</td>
+    <td class="money">${method()==='WORKER_LEDGER_WISE'?`<div class="payment-entry-wrap"><input class="amount-input" type="number" min="0" max="${Number(r.scope_payable||0)}" step="100" value="${hasManual?a.toFixed(2):''}" data-amount="${safe(id)}" autocomplete="off"><span class="live-ttl-cell ${String(state.activeAmountId||'')===id?'active':''}" data-live-ttl="${safe(id)}" aria-live="polite">TTL ₹${ttlMoney(livePaid)}</span></div>`:`₹${money(a)}`}</td>
     <td class="money" data-new-balance>₹${money(newBal(r))}</td>
   </tr>`;
 }).join(''):'<tr><td colspan="5">No regular-payable worker. Advance threshold list देखें.</td></tr>';
@@ -264,6 +264,8 @@ async function autoLoadWorkers(key=autoLoadKey(),{refreshHistory=false}={}){
 
     if(!p)return null;
 
+    $('paymentMethod').value='WORKER_LEDGER_WISE';
+    state.rows=state.rows.map(r=>({...r,amount_paid:0}));
     state.selected=new Set(state.rows.map(r=>String(r.worker_id)));
     state.manual.clear();
     state.useAll=false;
