@@ -5,6 +5,8 @@
   const refreshBtn = document.getElementById("refreshBtn");
   const message = document.getElementById("dashboardMessage");
   const lotList = document.getElementById("lotList");
+  const moduleSearch = document.getElementById("moduleSearch");
+  const moduleCount = document.getElementById("moduleCount");
 
   function setMessage(text, type = "") {
     message.textContent = text || "";
@@ -23,6 +25,28 @@
 
       return map[char];
     });
+  }
+
+  function filterModules() {
+    const query = String(moduleSearch?.value || "").trim().toLowerCase();
+    const cards = [...document.querySelectorAll("[data-module]")];
+
+    let visible = 0;
+    cards.forEach((card) => {
+      const match = !query || card.textContent.toLowerCase().includes(query);
+      card.hidden = !match;
+      if (match) visible += 1;
+    });
+
+    document.querySelectorAll("[data-module-section]").forEach((section) => {
+      section.hidden = !section.querySelector("[data-module]:not([hidden])");
+    });
+
+    if (moduleCount) {
+      moduleCount.textContent = query
+        ? `${visible} of ${cards.length} modules`
+        : `${cards.length} latest modules`;
+    }
   }
 
   async function requireOwner() {
@@ -251,6 +275,11 @@
       "click",
       refreshDashboard
     );
+  }
+
+  if (moduleSearch) {
+    moduleSearch.addEventListener("input", filterModules);
+    filterModules();
   }
 
   (async () => {
