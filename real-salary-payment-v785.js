@@ -1,5 +1,5 @@
-/* REAL FACTORY Salary Payment V786.3.22 — simple seven-column payment table */
-(()=>{'use strict';window.REAL_FACTORY_SALARY_PAYMENT_VERSION='786.3.22-SIMPLE-SEVEN-COLUMN-PAYMENT-TABLE';
+/* REAL FACTORY Salary Payment V786.3.23 — exact five-column payment table */
+(()=>{'use strict';window.REAL_FACTORY_SALARY_PAYMENT_VERSION='786.3.23-EXACT-FIVE-COLUMN-PAYMENT-TABLE';
 const $=id=>document.getElementById(id),state={client:null,preview:null,rows:[],selected:new Set(),manual:new Map(),dirty:false,useAll:true,bulkApplied:false,history:[],activeAmountId:null,autoLoadTimer:null,loading:false,queuedLoadKey:null,contextKey:null,voucherPreviewToken:0};
 const safe=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
 const money=v=>Number(v||0).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});
@@ -137,13 +137,6 @@ function amount(r){return method()==='WORKER_LEDGER_WISE'?Number(state.manual.ge
 function split(r){const a=state.selected.has(String(r.worker_id))?amount(r):0;if(scope()==='OUTSTANDING_ONLY')return{old:Math.min(a,Number(r.previous_outstanding||0)),cur:0};if(scope()==='CURRENT_PERIOD_ONLY')return{old:0,cur:Math.min(a,Number(r.current_period_payable||0))};const old=Math.min(a,Number(r.previous_outstanding||0));return{old,cur:Math.max(a-old,0)}}
 function newBal(r){const x=split(r);return Math.max(Number(r.previous_outstanding||0)-x.old,0)+Math.max(Number(r.current_period_payable||0)-x.cur,0)}
 const grossPayable=r=>Number(r.gross_previous_outstanding||0)+Number(r.gross_current_period_payable||0);
-const afterAdvanceBalance=r=>Number(r.gross_previous_outstanding||0)-Number(r.advance_opening_balance||0);
-function afterAdvanceDisplay(r){
-  const value=afterAdvanceBalance(r);
-  if(value>0.005)return`<span class="balance-pill due">DUE ₹${money(value)}</span>`;
-  if(value<-0.005)return`<span class="balance-pill adv">ADV ₹${money(Math.abs(value))}</span>`;
-  return'<span class="balance-pill nil">NIL ₹0.00</span>';
-}
 const round100Ready=r=>'round_100_ready_payment' in r
   ?Number(r.round_100_ready_payment||0)
   :Math.floor((Number(r.scope_payable||0)+0.000001)/100)*100;
@@ -215,29 +208,22 @@ const livePaid=state.rows.reduce((sum,r)=>sum+(state.selected.has(String(r.worke
 $('ledgerBody').innerHTML=rows.length?rows.map(r=>{
   const id=String(r.worker_id),a=amount(r);
   return`<tr>
-    <td><b>${safe(r.worker_name||id)}</b><br><small>${safe(r.worker_code||'—')}</small></td>
-    <td class="money">₹${money(r.gross_previous_outstanding)}</td>
-    <td class="money">${afterAdvanceDisplay(r)}</td>
-    <td class="money">₹${money(r.gross_current_period_payable)}</td>
+    <td class="money">₹${money(grossPayable(r))}</td>
+    <td class="money">₹${money(r.previous_outstanding)}</td>
     <td class="money"><b>₹${money(r.final_total_payable)}</b></td>
     <td class="money">${method()==='WORKER_LEDGER_WISE'?`<div class="payment-entry-wrap"><input class="amount-input" type="number" min="0" max="${Number(r.scope_payable||0)}" step="100" value="${a.toFixed(2)}" data-amount="${safe(id)}"><span class="live-ttl-cell ${String(state.activeAmountId||'')===id?'active':''}" data-live-ttl="${safe(id)}" aria-live="polite">TTL ₹${ttlMoney(livePaid)}</span></div>`:`₹${money(a)}`}</td>
     <td class="money" data-new-balance>₹${money(newBal(r))}</td>
   </tr>`;
-}).join(''):'<tr><td colspan="7">No regular-payable worker. Advance threshold list देखें.</td></tr>';
+}).join(''):'<tr><td colspan="5">No regular-payable worker. Advance threshold list देखें.</td></tr>';
 const t=state.rows.reduce((z,r)=>{
-  const balance=afterAdvanceBalance(r);
-  z.previous+=Number(r.gross_previous_outstanding||0);
-  z.current+=Number(r.gross_current_period_payable||0);
+  z.gross+=grossPayable(r);
+  z.previous+=Number(r.previous_outstanding||0);
   z.payable+=Number(r.final_total_payable||0);
   z.paid+=state.selected.has(String(r.worker_id))?amount(r):0;
   z.outstanding+=newBal(r);
-  if(balance>0)z.due+=balance;else z.advance+=Math.abs(balance);
   return z;
-},{previous:0,current:0,payable:0,paid:0,outstanding:0,due:0,advance:0});
-$('ledgerFoot').innerHTML=`<tr class="total-row"><td>TOTAL</td><td class="money">₹${money(t.previous)}</td><td class="money"><span class="balance-pill due">DUE ₹${money(t.due)}</span> <span class="balance-pill adv">ADV ₹${money(t.advance)}</span></td><td class="money">₹${money(t.current)}</td><td class="money">₹${money(t.payable)}</td><td id="liveTotalAmountPaid" class="money">₹${money(t.paid)}</td><td id="liveTotalNewOutstanding" class="money">₹${money(t.outstanding)}</td></tr>`;
-$('ledgerBody').querySelectorAll('[data-select]').forEach(i=>i.onchange=()=>{i.checked?state.selected.add(i.dataset.select):state.selected.delete(i.dataset.select);if(method()==='WORKER_LEDGER_WISE')render();else{state.dirty=true;cards();say('Selection changed. Recalculate first.','info')}});
-$('ledgerBody').querySelectorAll('[data-use-round]').forEach(b=>b.onclick=()=>{
-const id=b.dataset.useRound,r=state.rows.find(x=>String(x.worker_id)===id);if(!r)return;$('paymentMethod').value='WORKER_LEDGER_WISE';state.selected.add(id);state.manual.set(id,round100Ready(r));state.bulkApplied=true;state.useAll=false;updateRule();render();say(`${r.worker_name||id}: ₹${money(round100Ready(r))} Ready Pay set · ₹${money(round100Carry(r))} Carry Forward.`,'success')});
+},{gross:0,previous:0,payable:0,paid:0,outstanding:0});
+$('ledgerFoot').innerHTML=`<tr class="total-row"><td class="money">₹${money(t.gross)}</td><td class="money">₹${money(t.previous)}</td><td class="money">₹${money(t.payable)}</td><td id="liveTotalAmountPaid" class="money">₹${money(t.paid)}</td><td id="liveTotalNewOutstanding" class="money">₹${money(t.outstanding)}</td></tr>`;
 const inputs=[...$('ledgerBody').querySelectorAll('[data-amount]')];inputs.forEach((i,k)=>{
 i.onfocus=()=>{state.activeAmountId=i.dataset.amount;updateLivePaymentTotals(false)};
 i.oninput=()=>{const id=i.dataset.amount,r=state.rows.find(x=>String(x.worker_id)===id),max=Number(r?.scope_payable||0),n=Math.min(Math.max(Number(i.value||0),0),max);
