@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#0d0d0f">
+  <title>REAL FACTORY — Owner Dashboard V786.3.29</title>
+  <link rel="stylesheet" href="real-style.css?v=786329">
+  <style>
+    .rf-dashboard-version{display:inline-flex;align-items:center;min-height:30px;padding:5px 9px;border:1px solid #3b4658;border-radius:999px;background:#151b24;color:#a8ccff;font-size:12px;font-weight:900;letter-spacing:.04em}
+    .rf-hero-copy{max-width:720px}.rf-hero-copy p{line-height:1.55}
+    .rf-module-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:18px 0;padding:14px 16px;background:#17171b;border:1px solid #2a2a31;border-radius:16px}
+    .rf-module-toolbar label{flex:1;max-width:620px}.rf-module-toolbar input{width:100%;min-height:46px;padding:11px 13px;border:1px solid #34343d;border-radius:12px;background:#0f0f12;color:#fff;font:inherit}
+    .rf-module-toolbar input:focus{outline:2px solid #e32636;border-color:#e32636}
+    .rf-module-count{white-space:nowrap;color:#64e29a;font-weight:900}
+    .rf-module-section{margin-bottom:22px}
+    .rf-module-section[hidden],.rr-module-card[hidden]{display:none!important}
+    .rf-section-head{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;margin:0 0 11px;padding:0 2px}
+    .rf-section-head h2{margin:0;font-size:18px}.rf-section-head p{margin:4px 0 0;color:#aaaab4;font-size:13px}
+    .rf-section-state{color:#79e5ae;font-size:12px;font-weight:900}
+    .rr-module-card{display:flex;flex-direction:column;position:relative}
+    .rf-card-top{display:flex;align-items:center;justify-content:space-between;gap:8px}
+    .rf-version{padding:5px 8px;border-radius:999px;background:#202936;color:#a8ccff;font-size:11px;font-weight:900}
+    .rf-status{display:inline-flex;align-items:center;align-self:flex-start;margin-top:auto;padding-top:15px;color:#79e5ae;font-size:11px;font-weight:900;letter-spacing:.04em}
+    .rf-status.locked{color:#ffcf78}.rf-status.test{color:#a8ccff}
+    .rf-legacy-note{margin-top:0;border-left:4px solid #ffbd52;line-height:1.55}
+    @media(max-width:760px){.rf-module-toolbar{align-items:stretch;flex-direction:column}.rf-module-toolbar label{max-width:none}.rf-module-count{white-space:normal}.rf-section-head{align-items:flex-start;flex-direction:column}.rr-module-card{min-height:155px}}
+  </style>
+</head>
+<body class="rr-body">
+
+  <header class="rr-topbar">
+    <div>
+      <p class="rr-kicker">REAL FACTORY</p>
+      <h1>Owner Dashboard</h1>
+    </div>
+    <div class="rr-top-actions">
+      <span class="rf-dashboard-version">V786.3.29</span>
+      <span id="ownerName" class="rr-owner-name">Loading...</span>
+      <button id="logoutBtn" class="rr-btn rr-btn-secondary" type="button">Logout</button>
+    </div>
+  </header>
+
+  <main class="rr-page">
+    <section class="rr-hero">
+      <div class="rf-hero-copy">
+        <p class="rr-muted">All latest modules · One verified control center</p>
+        <h2 id="welcomeText">Welcome</h2>
+        <p class="rr-muted">यहाँ केवल latest active module links हैं. Previous और superseded versions repository history में सुरक्षित हैं.</p>
+      </div>
+      <div id="securityStatus" class="rr-status-pill">TEST DEFAULT · REAL PROTECTED</div>
+    </section>
+
+    <section class="rr-stat-grid">
+      <article class="rr-stat-card"><span>Active Arts</span><strong id="artCount">—</strong></article>
+      <article class="rr-stat-card"><span>Live Lots</span><strong id="lotCount">—</strong></article>
+      <article class="rr-stat-card"><span>Open Remakes</span><strong id="remakeCount">—</strong></article>
+      <article class="rr-stat-card"><span>Available Stock PCS</span><strong id="stockCount">—</strong></article>
+    </section>
+
+    <section class="rf-module-toolbar" aria-label="Module search">
+      <label><input id="moduleSearch" type="search" autocomplete="off" placeholder="Search module / version / work…"></label>
+      <span id="moduleCount" class="rf-module-count">17 latest modules</span>
+    </section>
+
+    <section class="rf-module-section" data-module-section>
+      <div class="rf-section-head"><div><h2>Masters & Control</h2><p>Design से user permission तक latest master modules</p></div><span class="rf-section-state">LATEST ACTIVE</span></div>
+      <div class="rr-module-grid">
+        <a class="rr-module-card" data-module href="real-art-master.html?v=786329">
+          <div class="rf-card-top"><span class="rr-module-number">01</span><span class="rf-version">LATEST</span></div>
+          <h3>Art Master</h3><p>Art references, design images और style details.</p><span class="rf-status">ACTIVE</span>
+        </a>
+        <a class="rr-module-card" data-module href="real-print-master.html?v=786329">
+          <div class="rf-card-top"><span class="rr-module-number">02</span><span class="rf-version">V610</span></div>
+          <h3>Print Master</h3><p>Print artwork, frame, colour, placement और garment preview.</p><span class="rf-status">ACTIVE</span>
+        </a>
+        <a class="rr-module-card" data-module href="real-product-master-v720.html?v=786329">
+          <div class="rf-card-top"><span class="rr-module-number">03</span><span class="rf-version">V720.36.2</span></div>
+          <h3>Product Master</h3><p>CB purchase, material, Art/Print assignment और product planning.</p><span class="rf-status locked">FINAL</span>
+        </a>
+        <a class="rr-module-card" data-module href="real-cutting-master.html?v=786329">
+          <div class="rf-card-top"><span class="rr-module-number">04</span><span class="rf-version">V720.36.2</span></div>
+          <h3>Cutting & Lots</h3><p>Lot release, CB allocation, size/colour cutting और costing.</p><span class="rf-status locked">FINAL</span>
+        </a>
+        <a class="rr-module-card" data-module href="real-role-permission-v777-4-final.html?v=786329">
+          <div class="rf-card-top"><span class="rr-module-number">05</span><span class="rf-version">V777.4</span></div>
+          <h3>Roles & Permissions</h3><p>User, worker, department, action permission और field controls.</p><span class="rf-status locked">FINAL</span>
+        </a>
+        <a class="rr-module-card" data-module href="real-data-mode-control-v786.html?v=786329">
+          <div class="rf-card-top"><span class="rr-module-number">06</span><span class="rf-version">V786.2</span></div>
+          <h3>Data Mode Control</h3><p>Global TEST default, REAL protection और permission-controlled mode.</p><span class="rf-status test">TEST CONTROL</span>
+        </a>
+      </div>
+    </section>
+
+    <section class="rf-module-section" data-module-section>
+      <div class="rf-section-head"><div><h2>Production</h2><p>Lot journey, Alter/Remake/Damage और submitted work</p></div><span class="rf-section-state">LATEST ACTIVE</span></div>
+      <div class="rr-module-grid">
+        <a class="rr-module-card" data-module href="real-universal-production-v770.html?v=786329">
+          <div class="rf-card-top"><span class="rr-module-number">07</span><span class="rf-version">V770 INTEGRATED</span></div>
+          <h3>Universal Production</h3><p>Department flow, assignments, independent Alter journeys, Remake और Damage.</p><span class="rf-status">ACTIVE</span>
+        </a>
+        <a class="rr-module-card" data-module href="real-upm-submitted-work-v772.html?v=786329">
+          <div class="rf-card-top"><span class="rr-module-number">08</span><span class="rf-version">V772.4</span></div>
+          <h3>Submitted Work</h3><p>Submitted production, lot/worker/department audit और verification.</p><span class="rf-status">ACTIVE</span>
+        </a>
+      </div>
+    </section>
+
+    <section class="rf-module-section" data-module-section>
+      <div class="rf-section-head"><div><h2>Salary, Attendance & Payment</h2><p>PCS और Monthly payroll के latest TEST-isolated modules</p></div><span class="rf-section-state">TEST DEFAULT</span></div>
+      <div class="rr-module-grid">
+        <a class="rr-module-card" data-module href="real-salary-home-v786.html?v=786329">
+          <div class="rf-card-top"><span class="rr-module-number">09</span><span class="rf-version">V786.3.1</span></div>
+          <h3>Salary Home</h3><p>PCS और Monthly salary के अलग dashboards का main control.</p><span class="rf-status">ACTIVE</span>
+        </a>
+        <a class="rr-module-card" data-module href="real-salary-payment-v785.html?mode=TEST&v=786329">
+          <div class="rf-card-top"><span class="rr-module-number">10</span><span class="rf-version">V786.3.28</span></div>
+          <h3>Salary Payment</h3><p>PCS/Monthly manual zero, Flat Ratio और Percent Ratio payment.</p><span class="rf-status locked">FINAL LOCKED</span>
+        </a>
+        <a class="rr-module-card" data-module href="real-pcs-salary-dashboard-v786.html?v=786329">
+          <div class="rf-card-top"><span class="rr-module-number">11</span><span class="rf-version">V786.3.1</span></div>
+          <h3>PCS Salary Dashboard</h3><p>PCS setup, unpaid work, payment और worker audit.</p><span class="rf-status test">TEST</span>
+        </a>
+        <a class="rr-module-card" data-module href="real-monthly-salary-dashboard-v786.html?v=786329">
+          <div class="rf-card-top"><span class="rr-module-number">12</span><span class="rf-version">V786.3.1</span></div>
+          <h3>Monthly Salary Dashboard</h3><p>Monthly setup, attendance salary, payment और outstanding.</p><span class="rf-status test">TEST</span>
+        </a>
+        <a class="rr-module-card" data-module href="real-worker-payroll-setup-v786.html?v=786329">
+          <div class="rf-card-top"><span class="rr-module-number">13</span><span class="rf-version">V786.2</span></div>
+          <h3>Worker Salary Setup</h3><p>Permanent SALARIED/PIECE_RATE category, salary और effective date.</p><span class="rf-status test">TEST</span>
+        </a>
+        <a class="rr-module-card" data-module href="real-attendance-salary-v778.html?v=786329">
+          <div class="rf-card-top"><span class="rr-module-number">14</span><span class="rf-version">V778.2</span></div>
+          <h3>Attendance & Monthly Salary</h3><p>Attendance, OT, leave, monthly payable और salary calculation.</p><span class="rf-status test">TEST</span>
+        </a>
+        <a class="rr-module-card" data-module href="real-pcs-rate-payroll-v779.html?v=786329">
+          <div class="rf-card-top"><span class="rr-module-number">15</span><span class="rf-version">V786.3.1</span></div>
+          <h3>PCS Salary Work</h3><p>Frozen Actual Rate based unpaid work और payable audit.</p><span class="rf-status test">TEST</span>
+        </a>
+        <a class="rr-module-card" data-module href="real-pcs-work-audit-v783.html?v=786329">
+          <div class="rf-card-top"><span class="rr-module-number">16</span><span class="rf-version">V786.3.2</span></div>
+          <h3>Work & Payment Audit</h3><p>Worker, lot, department, salary, payment और outstanding check.</p><span class="rf-status test">TEST</span>
+        </a>
+        <a class="rr-module-card" data-module href="real-advance-worker-payment-v785.html?v=786329">
+          <div class="rf-card-top"><span class="rr-module-number">17</span><span class="rf-version">V785.1</span></div>
+          <h3>Advance Payment</h3><p>Worker advance balance, recovery और payment adjustment.</p><span class="rf-status test">TEST</span>
+        </a>
+      </div>
+    </section>
+
+    <section class="rr-panel rf-legacy-note">
+      <strong>Latest-only rule:</strong> पुराने Dashboard V720, Role V720/V773/V776, Universal Production V720–V769 और separate Bulk/Flex Payment pages active dashboard से हटाए गए हैं. वे repository history में सुरक्षित रहेंगे.
+    </section>
+
+    <section class="rr-panel">
+      <div class="rr-panel-head"><h2>Live Lot Status</h2><button id="refreshBtn" class="rr-btn rr-btn-secondary" type="button">Refresh</button></div>
+      <div id="lotList" class="rr-list"><p class="rr-muted">Loading...</p></div>
+    </section>
+
+    <p id="dashboardMessage" class="rr-message" role="status"></p>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="config.js?v=786329"></script>
+  <script src="real-dashboard.js?v=786329"></script>
+</body>
+</html>
