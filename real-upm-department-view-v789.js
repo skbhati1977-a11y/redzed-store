@@ -177,8 +177,10 @@
 
   function applyShell() {
     document.title = `REAL FACTORY — ${label} Dashboard`;
-    document.querySelector(".top small.art-no").textContent = "REAL FACTORY · UPM";
-    document.querySelector(".top h1").textContent = `${label} Dashboard`;
+    const shellBrand = document.querySelector(".page > .top small.art-no");
+    const shellTitle = document.querySelector(".page > .top h1");
+    if (shellBrand) shellBrand.textContent = "REAL FACTORY · UPM";
+    if (shellTitle) shellTitle.textContent = `${label} Dashboard`;
     const board = document.getElementById("board");
     const section = document.createElement("section");
     section.className = "rf-queue-section";
@@ -189,21 +191,35 @@
 
   const style = document.createElement("style");
   style.textContent = `.rf-running-hidden{display:none!important}.rf-card-actions{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px;margin-top:auto}.rf-card-actions button{width:100%;min-height:46px}.rf-card-actions button:first-child{background:#174936;border-color:#318b65}.rf-card-actions button:last-child{background:#493915;border-color:#8a6b2b}.rf-queue-section{margin-top:18px;border-top:2px solid #303641;padding-top:14px}.rf-queue-title{display:flex;gap:10px;align-items:center;justify-content:space-between}.rf-queue-title h2{margin:0;color:#ffc857}.rf-queue-title span{color:#98a2b3}.rf-queue-card{background:#12151c;border:1px solid #303641;border-radius:14px;padding:12px;margin-top:10px}.rf-queue-card>div:first-child{display:flex;justify-content:space-between;gap:10px}.rf-queue-card>div:first-child span{color:#98a2b3}.rf-worker-rule{margin:8px 0 0;color:#9ec5ff;font-weight:750}.rf-route-chart{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:7px;margin-top:10px}.rf-route-chart button{width:100%;min-height:58px}.rf-route-chart small{display:block;margin-top:4px;font-size:9px}.rf-direct{border-color:#318b65;background:#174936}.rf-warning{border-color:#8a6b2b;background:#493915}
-  #traveller.rf-smart-assign .sheet,#traveller.rf-smart-submit .sheet{width:min(760px,94vw);height:auto;max-height:88vh;border-radius:18px;padding:14px}
-  #traveller.rf-smart-assign .sticky,#traveller.rf-smart-submit .sticky{position:static}
+  #traveller.rf-smart-assign,#traveller.rf-smart-submit{align-items:center;padding:10px}
+  #traveller.rf-smart-assign .sheet,#traveller.rf-smart-submit .sheet{width:min(430px,96vw);height:auto;max-height:92dvh;border-radius:20px;padding:14px;overscroll-behavior:contain}
+  #traveller.rf-smart-assign .sticky,#traveller.rf-smart-submit .sticky{position:sticky;top:-14px;padding:8px 0 10px}
+  #traveller.rf-smart-assign .sticky #identity,#traveller.rf-smart-submit .sticky #identity{display:none!important}
+  #traveller.rf-smart-assign .sticky .top,#traveller.rf-smart-submit .sticky .top{min-height:46px}
+  #traveller.rf-smart-assign .sticky [data-close],#traveller.rf-smart-submit .sticky [data-close]{min-width:76px;min-height:44px}
   #traveller.rf-smart-assign .sticky h2{font-size:0}#traveller.rf-smart-assign .sticky h2:after{content:'SMART ASSIGN';font-size:20px}
   #traveller.rf-smart-submit .sticky h2{font-size:0}#traveller.rf-smart-submit .sticky h2:after{content:'SMART SUBMIT';font-size:20px}
-  #traveller.rf-smart-assign #entryThumbs,#traveller.rf-smart-assign #summary,#traveller.rf-smart-assign #freezeSummary,#traveller.rf-smart-assign .legend,#traveller.rf-smart-assign #routeNote,#traveller.rf-smart-assign .actions,#traveller.rf-smart-assign .debug,#traveller.rf-smart-assign #stdWrap,#traveller.rf-smart-assign #marginWrap{display:none!important}
+  #traveller.rf-smart-assign #entryThumbs,#traveller.rf-smart-assign #summary,#traveller.rf-smart-assign #freezeSummary,#traveller.rf-smart-assign .legend,#traveller.rf-smart-assign #routeNote,#traveller.rf-smart-assign .actions,#traveller.rf-smart-assign .debug,#traveller.rf-smart-assign #stdWrap,#traveller.rf-smart-assign #marginWrap,#traveller.rf-smart-assign .formbar .field:first-child{display:none!important}
+  #traveller.rf-smart-assign .formbar{display:block;margin:2px 0 10px}
+  #traveller.rf-smart-assign .formbar .field:nth-child(2){display:block!important}
+  #traveller.rf-smart-assign .formbar input{width:100%;min-height:50px;font-size:17px}
   #traveller.rf-smart-assign .colour-card.assigned,#traveller.rf-smart-assign .colour-card.waiting,#traveller.rf-smart-assign .colour-card.done{display:none!important}
   #traveller.rf-smart-assign .colour-card .size-wrap,#traveller.rf-smart-assign .colour-card .colour-meta,#traveller.rf-smart-assign .worker-block label:nth-child(2){display:none!important}
-  #traveller.rf-smart-assign .bulk-assign{position:sticky;top:0;z-index:3;grid-template-columns:1fr 1.4fr 1fr 1.4fr}
+  #traveller.rf-smart-assign .bulk-assign{position:static;display:flex!important;flex-direction:column;align-items:stretch;gap:9px;margin:0;padding:11px}
+  #traveller.rf-smart-assign .bulk-assign>*{width:100%;min-height:52px}
+  #traveller.rf-smart-assign .bulk-assign label{display:flex;flex-direction:column;min-height:auto;font-size:12px}
+  #traveller.rf-smart-assign .bulk-assign select{min-height:52px;font-size:16px}
+  #traveller.rf-smart-assign #assignBtn{min-height:58px;font-size:15px}
   #traveller.rf-smart-submit .formbar,#traveller.rf-smart-submit #entryThumbs,#traveller.rf-smart-submit #summary,#traveller.rf-smart-submit #freezeSummary,#traveller.rf-smart-submit .legend,#traveller.rf-smart-submit .bulk-assign,#traveller.rf-smart-submit #routeNote,#traveller.rf-smart-submit .debug{display:none!important}
   #traveller.rf-smart-submit .colour-card:not(.assigned){display:none!important}
   #traveller.rf-smart-submit .colour-card .worker-block,#traveller.rf-smart-submit .colour-card .size-wrap{display:none!important}
-  #traveller.rf-smart-submit .actions button{display:none!important}#traveller.rf-smart-submit .actions #submitBtn{display:block!important;width:100%;min-height:52px}
-  #traveller.rf-smart-assign .colour-list,#traveller.rf-smart-submit .colour-list{max-height:47vh;overflow:auto}
-  @media(max-width:700px){.rf-queue-title,.rf-queue-card>div:first-child{align-items:flex-start;flex-direction:column}.rf-route-chart{grid-template-columns:1fr 1fr}#traveller.rf-smart-assign .bulk-assign{grid-template-columns:1fr 1fr}}
-  @media(max-width:420px){.rf-route-chart{grid-template-columns:1fr}#traveller.rf-smart-assign .bulk-assign{grid-template-columns:1fr}}`;
+  #traveller.rf-smart-submit .actions{position:sticky;bottom:-14px;padding:10px 0 0}
+  #traveller.rf-smart-submit .actions button{display:none!important}#traveller.rf-smart-submit .actions #submitBtn{display:block!important;width:100%;min-height:58px;font-size:15px}
+  #traveller.rf-smart-assign .colour-list,#traveller.rf-smart-submit .colour-list{max-height:38dvh;overflow:auto}
+  #traveller.rf-smart-assign .colour-card,#traveller.rf-smart-submit .colour-card{border-radius:12px}
+  #traveller.rf-smart-assign .colour-head,#traveller.rf-smart-submit .colour-head{padding:10px}
+  @media(max-width:700px){.rf-queue-title,.rf-queue-card>div:first-child{align-items:flex-start;flex-direction:column}.rf-route-chart{grid-template-columns:1fr 1fr}#traveller.rf-smart-assign,#traveller.rf-smart-submit{align-items:flex-end;padding:0}#traveller.rf-smart-assign .sheet,#traveller.rf-smart-submit .sheet{width:100%;max-height:94dvh;border-radius:20px 20px 0 0;padding:12px 12px calc(12px + env(safe-area-inset-bottom))}}
+  @media(max-width:420px){.rf-route-chart{grid-template-columns:1fr}#traveller.rf-smart-assign .sticky h2:after,#traveller.rf-smart-submit .sticky h2:after{font-size:18px}}`;
   document.head.append(style);
   applyShell();
 
@@ -219,5 +235,5 @@
     sync();
   }).observe(document.body, { childList: true, subtree: true });
   sync();
-  console.info("REAL FACTORY V797.3 · PRIMARY DEPARTMENT FILTER · SMART ASSIGN/SUBMIT POPUPS");
+  console.info("REAL FACTORY V797.7 · HEADER SAFE + MOBILE VERTICAL SMART ASSIGN/SUBMIT");
 })();

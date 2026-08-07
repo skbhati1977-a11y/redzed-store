@@ -1292,43 +1292,47 @@ async function directSubmitColourV7604(rowData, options = {}) {
   }
 }
 async function repairIdentityDisplayV7604() {
+  const canonical = currentMatrix?.canonical_lot_id
+    || activeCanonical
+    || locateActiveCanonical();
   const lotNo = [...document.querySelectorAll("#identity .box")]
     .find(box => upper(box.querySelector("small")?.textContent) === "LOT NO")
     ?.querySelector("b")?.textContent?.trim();
 
-  if (!lotNo) return;
+  if (!canonical || !lotNo) return;
 
   const client = getClient();
   if (!client) return;
 
   try {
     const { data, error } = await client.rpc(
-      "rr_upm_identity_check_v761",
-      { p_lot_no: lotNo }
+      "rr_upm_resolve_identity_v740",
+      {
+        p_canonical_lot_id: canonical,
+        p_force: false,
+        p_reason: null
+      }
     );
 
-    if (error || !data?.ok) return;
+    if (error || !data) return;
 
-    const registry = data.registry || {};
-    const lock = data.identity_lock || {};
-
-    const art = lock.art_no || registry.art_no || "";
-    const printNo = lock.print_no || registry.print_no || "";
-    const frameNo = lock.frame_no || registry.frame_no || "";
+    const art = data.art_no || "";
+    const printNo = data.print_no || "";
+    const frameNo = data.frame_no || "";
 
     if (art && $("identityArt")) $("identityArt").textContent = art;
 
     if ($("identityPrint")) {
       $("identityPrint").textContent =
-        printNo || (data.identity_complete ? "NOT APPLICABLE" : "MAPPING REQUIRED");
+        printNo || "NOT APPLICABLE";
     }
 
     if ($("identityFrame")) {
       $("identityFrame").textContent =
-        frameNo || (printNo ? "MAPPING REQUIRED" : "NOT APPLICABLE");
+        frameNo || "NOT APPLICABLE";
     }
   } catch (error) {
-    console.warn("V760.4 identity display check unavailable", error);
+    console.warn("V797.7 identity resolver unavailable", error);
   }
 }
 
