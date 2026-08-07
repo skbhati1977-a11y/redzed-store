@@ -78,8 +78,12 @@
       throw new Error("Owner/Admin access required.");
     }
 
-    ownerName.textContent = profile.full_name;
-    welcomeText.textContent = `Welcome, ${profile.full_name}`;
+    // Public dashboard must show the access designation, never a personal name.
+    const publicRoleLabel = ["owner", "admin"].includes(profile.role_code)
+      ? "SUPER ADMIN"
+      : String(profile.role_code || "USER").replaceAll("_", " ").toUpperCase();
+    ownerName.textContent = publicRoleLabel;
+    welcomeText.textContent = `Welcome, ${publicRoleLabel}`;
   }
 
   async function countRows(table, filterCallback) {
