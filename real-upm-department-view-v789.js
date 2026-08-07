@@ -22,6 +22,99 @@
     DESPATCH: ["DESPATCH", "DISPATCH"]
   };
   const accepted = aliases[requested] || [requested];
+  const visibilityCache = new Map();
+  const visibilityPending = new Map();
+
+  function upper(value) {
+    return String(value || "").trim().toUpperCase();
+  }
+
+  function departmentMatches(value) {
+    const code = upper(value);
+    return accepted.some(alias => upper(alias) === code);
+  }
+
+  function client() {
+    return window.supabaseClient || window.supabaseDb || window.redzedSupabase || window.sb || null;
+  }
+
+  async function runningState(canonicalLotId) {
+    const cached = visibilityCache.get(canonicalLotId);
+    if (cached && Date.now() - cached.fetchedAt < 1500) return cached;
+    if (visibilityPending.has(canonicalLotId)) return visibilityPending.get(canonicalLotId);
+
+    const request = (async () => {
+      const sb = client();
+      if (!sb) throw new Error("Production client unavailable.");
+      const { data, error } = await sb.rpc("rr_upm_board_lot_status_v743", {
+        p_canonical_lot_id: canonicalLotId
+      });
+      if (error) throw error;
+
+      const row = (data?.department_statuses || []).find(status =>
+        departmentMatches(status.department_code)
+      );
+      const activeQty = (row?.assigned_codes?.length || 0) + (row?.running_codes?.length || 0);
+      const result = { visible: activeQty > 0, row: row || null, fetchedAt: Date.now() };
+      visibilityCache.set(canonicalLotId, result);
+      return result;
+    })().finally(() => visibilityPending.delete(canonicalLotId));
+
+    visibilityPending.set(canonicalLotId, request);
+    return request;
+  }
+
+  function showVisibilityError(error) {
+    let box = document.getElementById("rfVisibilityError");
+    if (!box) {
+      box = document.createElement("div");
+      box.id = "rfVisibilityError";
+      box.className = "msg error";
+      document.getElementById("message")?.append(box);
+    }
+    box.textContent = `Running Jobs filter could not verify live assignment: ${error?.message || error}`;
+  }
+
+  function syncEmptyState() {
+    const board = document.getElementById("board");
+    if (!board) return;
+    const cards = [...board.querySelectorAll(".lot-card")];
+    let empty = board.querySelector(".rf-running-empty");
+    const hasVisibleCard = cards.some(card => !card.hidden);
+    if (!hasVisibleCard && cards.length) {
+      if (!empty) {
+        empty = document.createElement("div");
+        empty.className = "msg rf-running-empty";
+        empty.textContent = `No ${label} Running Jobs. OPEN RANDOM QUEUE items are available only in Universal Production Control.`;
+        board.append(empty);
+      }
+    } else {
+      empty?.remove();
+    }
+  }
+
+  async function filterRunningCards() {
+    const cards = [...document.querySelectorAll(".lot-card[data-lot]")];
+    await Promise.all(cards.map(async card => {
+      const canonicalLotId = String(card.dataset.lot || "").trim();
+      if (!canonicalLotId) {
+        card.hidden = true;
+        return;
+      }
+      card.hidden = true;
+      card.dataset.rfVisibility = "checking";
+      try {
+        const result = await runningState(canonicalLotId);
+        card.hidden = !result.visible;
+        card.dataset.rfVisibility = result.visible ? "running" : "queue-or-submitted";
+      } catch (error) {
+        card.hidden = true;
+        card.dataset.rfVisibility = "unverified";
+        showVisibilityError(error);
+      }
+    }));
+    syncEmptyState();
+  }
 
   function matchOption(select) {
     return [...select.options].find(option => {
@@ -98,8 +191,11 @@
   const observer = new MutationObserver(() => {
     lockDepartment();
     enhanceCards();
+    clearTimeout(filterRunningCards.timer);
+    filterRunningCards.timer = setTimeout(filterRunningCards, 40);
   });
   observer.observe(document.body, { childList: true, subtree: true });
   lockDepartment();
   enhanceCards();
+  filterRunningCards();
 })();
