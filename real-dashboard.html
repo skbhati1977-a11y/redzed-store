@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#0d0d0f">
-  <title>REAL FACTORY — Owner Dashboard V787</title>
+  <title>REAL FACTORY — Owner Dashboard V787.1</title>
   <link rel="stylesheet" href="real-style.css?v=786329">
   <style>
     .rf-dashboard-version{display:inline-flex;align-items:center;min-height:30px;padding:5px 9px;border:1px solid #3b4658;border-radius:999px;background:#151b24;color:#a8ccff;font-size:12px;font-weight:900;letter-spacing:.04em}
@@ -35,8 +35,8 @@
       <h1>Owner Dashboard</h1>
     </div>
     <div class="rr-top-actions">
-      <span class="rf-dashboard-version">V787</span>
-      <span id="ownerName" class="rr-owner-name">Loading...</span>
+      <span class="rf-dashboard-version">V787.1</span>
+      <span id="ownerName" class="rr-owner-name">SUPER ADMIN</span>
       <button id="logoutBtn" class="rr-btn rr-btn-secondary" type="button">Logout</button>
     </div>
   </header>
@@ -45,7 +45,7 @@
     <section class="rr-hero">
       <div class="rf-hero-copy">
         <p class="rr-muted">All latest modules · One verified control center</p>
-        <h2 id="welcomeText">Welcome</h2>
+        <h2 id="welcomeText">Welcome, SUPER ADMIN</h2>
         <p class="rr-muted">यहाँ केवल latest active module links हैं. Previous और superseded versions repository history में सुरक्षित हैं.</p>
       </div>
       <div id="securityStatus" class="rr-status-pill">TEST DEFAULT · REAL PROTECTED</div>
@@ -173,6 +173,25 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="config.js?v=786329"></script>
-  <script src="real-dashboard.js?v=786329"></script>
+  <script>
+    // Public identity hard-lock: cached/older scripts cannot expose a personal name.
+    (() => {
+      const lockPublicIdentity = () => {
+        const owner = document.getElementById("ownerName");
+        const welcome = document.getElementById("welcomeText");
+        if (owner && owner.textContent !== "SUPER ADMIN") owner.textContent = "SUPER ADMIN";
+        if (welcome && welcome.textContent !== "Welcome, SUPER ADMIN") {
+          welcome.textContent = "Welcome, SUPER ADMIN";
+        }
+      };
+      lockPublicIdentity();
+      new MutationObserver(lockPublicIdentity).observe(document.body, {
+        childList: true,
+        characterData: true,
+        subtree: true
+      });
+    })();
+  </script>
+  <script src="real-dashboard.js?v=78710"></script>
 </body>
 </html>
