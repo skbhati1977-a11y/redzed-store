@@ -129,12 +129,7 @@
   function eligibleTargets(departments, identity, lastSubmitted) {
     const special = specialChoice(identity);
     return departments.map(d => ({ ...d, canonical: canonical(d.department_code) })).filter(d => {
-      if (!route.includes(d.canonical) || d.canonical === "CUTTING") return false;
-      // The current dashboard must remain selectable even when it is also the
-      // most recently submitted department. Only hide a different department
-      // that was last submitted; otherwise a visible/running Lot incorrectly
-      // disappears from this dashboard's OPEN RANDOM QUEUE.
-      if (d.canonical === lastSubmitted && d.canonical !== requested) return false;
+      if (!route.includes(d.canonical) || d.canonical === "CUTTING" || d.canonical === lastSubmitted) return false;
       if (["PRINTING", "STICKER", "ID"].includes(d.canonical) && special && d.canonical !== special) return false;
       return d.is_active !== false && upper(d.department_type || "PRODUCTION") === "PRODUCTION";
     }).sort((a, b) => route.indexOf(a.canonical) - route.indexOf(b.canonical));
@@ -164,9 +159,10 @@
     const cards = [];
     for (const lot of snap.lots) {
       const meta = await statusFor(lot.canonical_lot_id);
-      // Do not hide a Lot because its colours are active in some other
-      // department. OPEN RANDOM QUEUE is department-scoped; the verified
-      // route/target checks below decide whether this screen can show it.
+      const statuses = meta.department_statuses || [];
+      const active = new Set(statuses.flatMap(s => [...(s.assigned_codes || []), ...(s.running_codes || [])]));
+      const total = Math.max(0, ...statuses.map(s => Number(s.total_colours || 0)), Array.isArray(lot.colours) ? lot.colours.length : 0);
+      if (total > 0 && active.size >= total) continue;
       const lastSubmitted = await lastSubmittedDepartment(lot.canonical_lot_id);
       const targets = eligibleTargets(snap.departments, meta.identity || {}, lastSubmitted);
       if (!targets.length) continue;
@@ -239,5 +235,5 @@
     sync();
   }).observe(document.body, { childList: true, subtree: true });
   sync();
-  console.info("REAL FACTORY V797.7.4 · CURRENT DEPARTMENT ALWAYS VISIBLE");
+  console.info("REAL FACTORY V797.8 · WORKING V797.1/V796 BASELINE + MOBILE SMART POPUPS");
 })();

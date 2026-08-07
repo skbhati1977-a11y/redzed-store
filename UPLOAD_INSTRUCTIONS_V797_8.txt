@@ -1,0 +1,22 @@
+REAL FACTORY V797.8 — WORKING BASELINE RESTORE
+
+GitHub upload:
+1. ZIP extract करें.
+2. Ctrl+A करके सभी 7 files upload/replace करें.
+3. कोई SQL दोबारा नहीं चलानी है.
+
+Restored and kept:
+- V797.1/V796 working auto Lot cards and department assignment queue
+- rr_upm_claim_colours_v796 assignment
+- rr_upm_ready_submit_v796 submit flow
+- Worker final submit confirmation
+- GPS/geofence and Line-Man activity tracking
+- Mobile Smart Assign / Smart Submit popup
+- V797.6 Alert / WhatsApp / SMS frontend flow
+- V797.7 verified Print No / Frame No resolver
+- Latest Dashboard and Refresh buttons
+
+Removed only:
+- Unwanted branding/user header
+
+Do not upload any older V797.7.1–V797.7.4 package after this package.
