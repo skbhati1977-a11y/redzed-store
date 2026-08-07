@@ -1,0 +1,15 @@
+REAL FACTORY V797.2 — CURRENT DEPARTMENT DIRECT ASSIGN
+
+NO SQL REQUIRED.
+
+GitHub repository root में केवल यह file Replace/Upload करें:
+real-upm-department-view-v789.js
+
+फिर Printing Dashboard खोलकर Ctrl + F5 दबाएँ।
+
+Expected result:
+- Print/current department green ASSIGN SELECTED COLOURS button होगा.
+- Print पर click करने से upstream warning नहीं आएगी.
+- Eligible Printing workers/Printers की assignment screen खुलेगी.
+- केवल सचमुच previous/upstream department पर warning आएगी.
+- केवल latest submitted department hidden रहेगा.

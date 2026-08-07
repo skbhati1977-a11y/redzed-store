@@ -133,7 +133,7 @@
   async function chooseTarget(lotId, target) {
     const currentRank = route.indexOf(requested);
     const targetRank = route.indexOf(target.canonical);
-    if (targetRank <= currentRank) {
+    if (targetRank < currentRank) {
       const ok = confirm(`WARNING: ${target.department_name || target.department_code} production order में ${label} से ऊपर है. क्या आप फिर भी इस Lot को वहाँ Assign करने के लिए खोलना चाहते हैं?`);
       if (!ok) return;
     }
@@ -158,7 +158,7 @@
       const lastSubmitted = await lastSubmittedDepartment(lot.canonical_lot_id);
       const targets = eligibleTargets(snap.departments, meta.identity || {}, lastSubmitted);
       if (!targets.length) continue;
-      cards.push(`<article class="rf-queue-card"><div><b>${esc(lot.lot_no)}</b><span>CB ${esc(meta.identity?.cb_no || lot.cb_no || "—")} · ART ${esc(meta.identity?.art_no || lot.art_no || "—")}</span></div><p class="rf-worker-rule">एक या multiple Colours select · हर Colour की सभी Sizes एक Worker</p><div class="rf-route-chart">${targets.map(t => `<button type="button" data-lot="${esc(lot.canonical_lot_id)}" data-dept="${esc(t.department_code)}" class="${route.indexOf(t.canonical) > route.indexOf(requested) ? "rf-direct" : "rf-warning"}">${esc(t.department_name || t.canonical)}<small>${route.indexOf(t.canonical) > route.indexOf(requested) ? "ASSIGN SELECTED COLOURS" : "⚠ WARNING ASSIGN"}</small></button>`).join("")}</div></article>`);
+      cards.push(`<article class="rf-queue-card"><div><b>${esc(lot.lot_no)}</b><span>CB ${esc(meta.identity?.cb_no || lot.cb_no || "—")} · ART ${esc(meta.identity?.art_no || lot.art_no || "—")}</span></div><p class="rf-worker-rule">एक या multiple Colours select · हर Colour की सभी Sizes एक Worker</p><div class="rf-route-chart">${targets.map(t => `<button type="button" data-lot="${esc(lot.canonical_lot_id)}" data-dept="${esc(t.department_code)}" class="${route.indexOf(t.canonical) >= route.indexOf(requested) ? "rf-direct" : "rf-warning"}">${esc(t.department_name || t.canonical)}<small>${route.indexOf(t.canonical) >= route.indexOf(requested) ? "ASSIGN SELECTED COLOURS" : "⚠ WARNING ASSIGN"}</small></button>`).join("")}</div></article>`);
     }
     host.innerHTML = cards.join("") || `<div class="msg">No OPEN RANDOM QUEUE lots available for ${esc(label)}.</div>`;
     host.querySelectorAll("[data-lot][data-dept]").forEach(button => button.onclick = () => {
@@ -196,5 +196,5 @@
     sync();
   }).observe(document.body, { childList: true, subtree: true });
   sync();
-  console.info("REAL FACTORY V797 · CURRENT DEPARTMENT VISIBLE · ONLY LAST SUBMITTED HIDDEN");
+  console.info("REAL FACTORY V797.2 · CURRENT DEPARTMENT DIRECT ASSIGN · ONLY TRUE UPSTREAM WARNING");
 })();
