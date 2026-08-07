@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#0d0d0f">
-  <title>REAL FACTORY — Owner Dashboard V787.1</title>
+  <title>REAL FACTORY — Main Dashboard V789</title>
   <link rel="stylesheet" href="real-style.css?v=786329">
   <style>
     .rf-dashboard-version{display:inline-flex;align-items:center;min-height:30px;padding:5px 9px;border:1px solid #3b4658;border-radius:999px;background:#151b24;color:#a8ccff;font-size:12px;font-weight:900;letter-spacing:.04em}
@@ -32,11 +32,11 @@
   <header class="rr-topbar">
     <div>
       <p class="rr-kicker">REAL FACTORY</p>
-      <h1>Owner Dashboard</h1>
+      <h1>Main Dashboard</h1>
     </div>
     <div class="rr-top-actions">
-      <span class="rf-dashboard-version">V787.1</span>
-      <span id="ownerName" class="rr-owner-name">SUPER ADMIN</span>
+      <span class="rf-dashboard-version">V789</span>
+      <span id="ownerName" class="rr-owner-name">Loading...</span>
       <button id="logoutBtn" class="rr-btn rr-btn-secondary" type="button">Logout</button>
     </div>
   </header>
@@ -45,7 +45,7 @@
     <section class="rr-hero">
       <div class="rf-hero-copy">
         <p class="rr-muted">All latest modules · One verified control center</p>
-        <h2 id="welcomeText">Welcome, SUPER ADMIN</h2>
+        <h2 id="welcomeText">Welcome</h2>
         <p class="rr-muted">यहाँ केवल latest active module links हैं. Previous और superseded versions repository history में सुरक्षित हैं.</p>
       </div>
       <div id="securityStatus" class="rr-status-pill">TEST DEFAULT · REAL PROTECTED</div>
@@ -60,16 +60,17 @@
 
     <section class="rf-module-toolbar" aria-label="Module search">
       <label><input id="moduleSearch" type="search" autocomplete="off" placeholder="Search module / version / work…"></label>
-      <span id="moduleCount" class="rf-module-count">18 latest modules</span>
+      <span id="moduleCount" class="rf-module-count">Latest modules</span>
     </section>
 
     <section class="rf-module-section" data-module-section>
-      <div class="rf-section-head"><div><h2>Finished Goods & Sales</h2><p>Packing se Sales Return tak central stock control</p></div><span class="rf-section-state">TEST DEFAULT</span></div>
+      <div class="rf-section-head"><div><h2>Final Product & Sales</h2><p>Store/Webstore Receive se Sales Return tak clean individual views</p></div><span class="rf-section-state">TEST DEFAULT</span></div>
       <div class="rr-module-grid">
-        <a class="rr-module-card" data-module href="real-finished-goods-v787.html?v=787">
-          <div class="rf-card-top"><span class="rr-module-number">18</span><span class="rf-version">V787</span></div>
-          <h3>Finished Goods Control</h3><p>Packing, ASST Box, Despatch, Store Receive, Webstore, PI/CPI, Qty Verify और Sales Return.</p><span class="rf-status test">TEST</span>
-        </a>
+        <a class="rr-module-card" data-module href="real-finished-goods-v787.html?view=receive&amp;v=789"><div class="rf-card-top"><span class="rr-module-number">FP1</span><span class="rf-version">V789 VIEW</span></div><h3>Store Receive</h3><p>Despatch challan acceptance, box verification और custody receive.</p><span class="rf-status test">TEST</span></a>
+        <a class="rr-module-card" data-module href="real-finished-goods-v787.html?view=stock&amp;v=789"><div class="rf-card-top"><span class="rr-module-number">FP2</span><span class="rf-version">V789 VIEW</span></div><h3>Webstore / Store Stock</h3><p>Central, physical और webstore saleable stock display.</p><span class="rf-status test">TEST</span></a>
+        <a class="rr-module-card" data-module href="real-finished-goods-v787.html?view=sale&amp;v=789"><div class="rf-card-top"><span class="rr-module-number">FP3</span><span class="rf-version">V789 VIEW</span></div><h3>Sales · PI / CPI</h3><p>Buyer sale, PI draft और final CPI stock-out.</p><span class="rf-status test">TEST</span></a>
+        <a class="rr-module-card" data-module href="real-finished-goods-v787.html?view=verify&amp;v=789"><div class="rf-card-top"><span class="rr-module-number">FP4</span><span class="rf-version">V789 VIEW</span></div><h3>Sales Qty Verify</h3><p>Final CPI physical quantity verification gate.</p><span class="rf-status test">TEST</span></a>
+        <a class="rr-module-card" data-module href="real-finished-goods-v787.html?view=returns&amp;v=789"><div class="rf-card-top"><span class="rr-module-number">FP5</span><span class="rf-version">V789 VIEW</span></div><h3>Sales Return</h3><p>Known buyer return, anonymous GR और reverse stock entry.</p><span class="rf-status test">TEST</span></a>
       </div>
     </section>
 
@@ -104,12 +105,23 @@
     </section>
 
     <section class="rf-module-section" data-module-section>
-      <div class="rf-section-head"><div><h2>Production</h2><p>Lot journey, Alter/Remake/Damage और submitted work</p></div><span class="rf-section-state">LATEST ACTIVE</span></div>
+      <div class="rf-section-head"><div><h2>UPM · Cutting to Despatch</h2><p>Same Universal engine · department-wise Running Job cards · OPEN RANDOM QUEUE unchanged</p></div><span class="rf-section-state">V789 SPLIT VIEW</span></div>
       <div class="rr-module-grid">
-        <a class="rr-module-card" data-module href="real-universal-production-v770.html?v=786329">
-          <div class="rf-card-top"><span class="rr-module-number">07</span><span class="rf-version">V770 INTEGRATED</span></div>
-          <h3>Universal Production</h3><p>Department flow, assignments, independent Alter journeys, Remake और Damage.</p><span class="rf-status">ACTIVE</span>
-        </a>
+        <a class="rr-module-card" data-module href="real-cutting-master.html?v=789"><div class="rf-card-top"><span class="rr-module-number">UP1</span><span class="rf-version">CUTTING</span></div><h3>Cutting Dashboard</h3><p>CB allocation, Lot release और cutting detail.</p><span class="rf-status locked">FINAL</span></a>
+        <a class="rr-module-card" data-module href="real-universal-production-v770.html?dept=PRINTING&amp;label=Printing&amp;v=789"><div class="rf-card-top"><span class="rr-module-number">UP2</span><span class="rf-version">V789 VIEW</span></div><h3>Printing Dashboard</h3><p>Only Printing mapped running Lot cards.</p><span class="rf-status">ACTIVE</span></a>
+        <a class="rr-module-card" data-module href="real-universal-production-v770.html?dept=STICKER&amp;label=Sticker&amp;v=789"><div class="rf-card-top"><span class="rr-module-number">UP3</span><span class="rf-version">V789 VIEW</span></div><h3>Sticker Dashboard</h3><p>Only Sticker mapped running Lot cards.</p><span class="rf-status">ACTIVE</span></a>
+        <a class="rr-module-card" data-module href="real-universal-production-v770.html?dept=ID&amp;label=ID+Work&amp;v=789"><div class="rf-card-top"><span class="rr-module-number">UP4</span><span class="rf-version">V789 VIEW</span></div><h3>ID Work Dashboard</h3><p>Only ID mapped running Lot cards.</p><span class="rf-status">ACTIVE</span></a>
+        <a class="rr-module-card" data-module href="real-universal-production-v770.html?dept=KR&amp;label=Karigar&amp;v=789"><div class="rf-card-top"><span class="rr-module-number">UP5</span><span class="rf-version">V789 VIEW</span></div><h3>Karigar Dashboard</h3><p>Assigned stitching/KR running jobs.</p><span class="rf-status">ACTIVE</span></a>
+        <a class="rr-module-card" data-module href="real-universal-production-v770.html?dept=OVERLOCK&amp;label=Overlock&amp;v=789"><div class="rf-card-top"><span class="rr-module-number">UP6</span><span class="rf-version">V789 VIEW</span></div><h3>Overlock Dashboard</h3><p>Only Overlock running jobs.</p><span class="rf-status">ACTIVE</span></a>
+        <a class="rr-module-card" data-module href="real-universal-production-v770.html?dept=FOLDING&amp;label=Folding&amp;v=789"><div class="rf-card-top"><span class="rr-module-number">UP7</span><span class="rf-version">V789 VIEW</span></div><h3>Folding Dashboard</h3><p>Only Folding/Flat running jobs.</p><span class="rf-status">ACTIVE</span></a>
+        <a class="rr-module-card" data-module href="real-universal-production-v770.html?dept=KAAJ_BUTTON&amp;label=Kaaj+Button&amp;v=789"><div class="rf-card-top"><span class="rr-module-number">UP8</span><span class="rf-version">V789 VIEW</span></div><h3>Kaaj / Button Dashboard</h3><p>Kaaj और Button mapped running jobs.</p><span class="rf-status">ACTIVE</span></a>
+        <a class="rr-module-card" data-module href="real-universal-production-v770.html?dept=TEAK_TANKI&amp;label=Teak+Tanki&amp;v=789"><div class="rf-card-top"><span class="rr-module-number">UP9</span><span class="rf-version">V789 VIEW</span></div><h3>Teak / Tanki Dashboard</h3><p>Teak/Tanki mapped running jobs.</p><span class="rf-status">ACTIVE</span></a>
+        <a class="rr-module-card" data-module href="real-universal-production-v770.html?dept=THREAD_CUT&amp;label=Thread+Cutting&amp;v=789"><div class="rf-card-top"><span class="rr-module-number">UP10</span><span class="rf-version">V789 VIEW</span></div><h3>Thread Cutting Dashboard</h3><p>Only Thread Cut running jobs.</p><span class="rf-status">ACTIVE</span></a>
+        <a class="rr-module-card" data-module href="real-universal-production-v770.html?dept=QC&amp;label=QC&amp;v=789"><div class="rf-card-top"><span class="rr-module-number">UP11</span><span class="rf-version">V789 VIEW</span></div><h3>QC Dashboard</h3><p>Only QC/Checking running jobs.</p><span class="rf-status">ACTIVE</span></a>
+        <a class="rr-module-card" data-module href="real-universal-production-v770.html?dept=PRESS&amp;label=Press&amp;v=789"><div class="rf-card-top"><span class="rr-module-number">UP12</span><span class="rf-version">V789 VIEW</span></div><h3>Press Dashboard</h3><p>Only Press running jobs and Packing handover.</p><span class="rf-status">ACTIVE</span></a>
+        <a class="rr-module-card" data-module href="real-finished-goods-v787.html?view=packing&amp;v=789"><div class="rf-card-top"><span class="rr-module-number">UP13</span><span class="rf-version">V788 ENGINE</span></div><h3>Packing Dashboard</h3><p>Press-ready cards, Assign/Accept, box algorithm और Submit Packing.</p><span class="rf-status test">TEST</span></a>
+        <a class="rr-module-card" data-module href="real-finished-goods-v787.html?view=despatch&amp;v=789"><div class="rf-card-top"><span class="rr-module-number">UP14</span><span class="rf-version">V787 ENGINE</span></div><h3>Despatch Dashboard</h3><p>Ready boxes, locked challan और Store travel gate.</p><span class="rf-status test">TEST</span></a>
+        <a class="rr-module-card" data-module href="real-universal-production-v770.html?v=789"><div class="rf-card-top"><span class="rr-module-number">UP0</span><span class="rf-version">V770 ENGINE</span></div><h3>Universal Production Control</h3><p>Combined supervisor view; existing engine and OPEN RANDOM QUEUE.</p><span class="rf-status locked">UNCHANGED</span></a>
         <a class="rr-module-card" data-module href="real-upm-submitted-work-v772.html?v=786329">
           <div class="rf-card-top"><span class="rr-module-number">08</span><span class="rf-version">V772.4</span></div>
           <h3>Submitted Work</h3><p>Submitted production, lot/worker/department audit और verification.</p><span class="rf-status">ACTIVE</span>
@@ -173,25 +185,6 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="config.js?v=786329"></script>
-  <script>
-    // Public identity hard-lock: cached/older scripts cannot expose a personal name.
-    (() => {
-      const lockPublicIdentity = () => {
-        const owner = document.getElementById("ownerName");
-        const welcome = document.getElementById("welcomeText");
-        if (owner && owner.textContent !== "SUPER ADMIN") owner.textContent = "SUPER ADMIN";
-        if (welcome && welcome.textContent !== "Welcome, SUPER ADMIN") {
-          welcome.textContent = "Welcome, SUPER ADMIN";
-        }
-      };
-      lockPublicIdentity();
-      new MutationObserver(lockPublicIdentity).observe(document.body, {
-        childList: true,
-        characterData: true,
-        subtree: true
-      });
-    })();
-  </script>
-  <script src="real-dashboard.js?v=78710"></script>
+  <script src="real-dashboard.js?v=786329"></script>
 </body>
 </html>

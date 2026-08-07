@@ -16,6 +16,8 @@
   }
   function bind(){
     $('tabs').addEventListener('click',e=>{const b=e.target.closest('[data-tab]');if(!b)return;document.querySelectorAll('[data-tab]').forEach(x=>x.classList.toggle('active',x===b));document.querySelectorAll('[data-view]').forEach(x=>x.hidden=x.dataset.view!==b.dataset.tab);msg('');});
+    const requestedView=new URLSearchParams(location.search).get('view');
+    if(requestedView){const b=document.querySelector(`[data-tab="${requestedView}"]`);if(b){b.click();document.querySelectorAll('[data-tab]').forEach(x=>x.hidden=x!==b);const names={packing:'Packing',despatch:'Despatch',receive:'Store Receive',stock:'Webstore / Store Stock',sale:'Sales · PI / CPI',verify:'Sales Qty Verify',returns:'Sales Return'};document.querySelector('h1').textContent=`${names[requestedView]||'Finished Goods'} Dashboard`;document.title=`REAL FACTORY — ${names[requestedView]||'Finished Goods'} Dashboard`;}}
     $('refreshPackLots').onclick=loadPackLots;$('packLotSearch').oninput=renderPackLots;$('closePackLot').onclick=closePackLot;$('assignPack').onclick=assignPack;$('acceptPack').onclick=acceptPack;$('submitPack').onclick=submitPack;$('loadReadyBoxes').onclick=loadReadyBoxes;$('submitDispatch').onclick=submitDispatch;
     $('loadChallans').onclick=loadChallans;$('receiveChallan').onchange=renderReceiveBoxes;$('acceptReceive').onclick=acceptReceive;$('loadStock').onclick=loadStock;
     $('saleLot').onchange=showSaleBalance;$('addPiLine').onclick=addPiLine;$('savePi').onclick=()=>savePi(false);$('submitCpi').onclick=()=>savePi(true);
