@@ -1,4 +1,4 @@
-REAL FACTORY V797.7 — FINAL COMBINED PACKAGE
+REAL FACTORY V797.7.1 — HEADER NULL FIX COMBINED PACKAGE
 
 SQL STATUS
 - MAIN: OK (already run)
@@ -10,12 +10,14 @@ Replace these exact same-name files:
 1. real-universal-production-v770.html
 2. real-universal-production-v765-independent-alter.js
 3. real-upm-department-view-v789.js
+4. real-universal-production-v729.js
 
 The two SQL files are included because the locked final combined package must
 contain SQL + JS + HTML. They are records only and must not be rerun.
 
 EXPECTED TEST
 - The complete page header above the module buttons is removed.
+- Removed header no longer causes the refresh-button null onclick error.
 - Print No and Frame No load through rr_upm_resolve_identity_v740.
 - V797.6 in-app + WhatsApp + SMS alert flow remains available.
 - First Submit Actual Rate gate remains unchanged.

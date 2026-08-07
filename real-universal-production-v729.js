@@ -211,23 +211,6 @@ async function openLot(id) {
   }
 }
 
-async function openLotAtDepartment(id, departmentCode) {
-  state.lot = state.lots.find(row => row.canonical_lot_id === id);
-  if (!state.lot) throw new Error("Lot not found.");
-  const code = upper(departmentCode);
-  const options = state.departments.map(department =>
-    `<option value="${esc(department.department_code)}">${esc(department.department_name)}</option>`
-  ).join("");
-  $("dept").innerHTML = options;
-  if (![...$("dept").options].some(option => upper(option.value) === code)) {
-    throw new Error(`Department ${code} is not active for production assignment.`);
-  }
-  $("dept").value = [...$("dept").options].find(option => upper(option.value) === code).value;
-  $("traveller").classList.remove("hidden");
-  renderIdentity();
-  await loadContext();
-}
-
 function renderIdentity() {
   const lot = state.lot;
   $("identity").innerHTML = `
@@ -549,9 +532,6 @@ async function assignWork() {
   const confirmed = await askActionConfirmation({mode:"ASSIGN", codes, full, department: $("dept").options[$("dept").selectedIndex]?.textContent || $("dept").value});
   if (!confirmed) return;
   await runBusy(async () => {
-    const gps = await realFactoryBusinessGps();
-    await rpc("rr_upm_lm_activity_v794", {p_action:"START",p_activity_code:"ASSIGN_SELECTED",p_reference_id:state.lot.canonical_lot_id});
-    try {
     const rows = selected.map(item => {
       if (!item.worker_id) throw new Error(`${item.group.colour_name}: worker required.`);
       return {
@@ -562,20 +542,13 @@ async function assignWork() {
         actual_rate: num($("actualRate").value)
       };
     });
-    await rpc("rr_upm_claim_colours_v796", {
+    await rpc("rr_upm_claim_colours_v741", {
       p_canonical_lot_id: state.lot.canonical_lot_id,
       p_lot_no: state.lot.lot_no,
       p_department_code: $("dept").value,
       p_rows: rows,
-      p_remarks: full ? "Universal Lot Form FULL available colour assignment" : "Universal Lot Form selected colour assignment",
-      p_latitude:gps.latitude,
-      p_longitude:gps.longitude,
-      p_accuracy_meters:gps.accuracy,
-      p_test_scenario:gps.testScenario
+      p_remarks: full ? "Universal Lot Form FULL available colour assignment" : "Universal Lot Form selected colour assignment"
     });
-    } finally {
-      await rpc("rr_upm_lm_activity_v794", {p_action:"END",p_activity_code:null,p_reference_id:null}).catch(()=>{});
-    }
   }, `${full ? "पूरा available Lot" : codes.join(" ")} successfully assigned.`);
 }
 
@@ -692,37 +665,25 @@ async function submitSelectedColours(){
   if(!selected.length){setFormMessage("Submit करने के लिए running Colour का Work checkbox select करें.","error");return;}
   const valid=selected.filter(({group})=>!group.completedHere && group.is_locked);
   if(!valid.length){setFormMessage("Selected Colour पहले ही submitted हैं. Submitted Colour दोबारा select नहीं हो सकता.","error");return;}
+  const allRunning=groups().filter(g=>g.is_locked && !g.completedHere);
   const codes=valid.map(({group})=>group.colour_code);
-  const ok=confirm(`READY TO SUBMIT notice भेजें?\n\n${codes.join(", ")}\n\nयह final submit नहीं है. Available Line Man count करेगा, फिर assigned worker final confirmation देगा.`);
-  if(!ok)return;
-  const rows=valid.map(({group})=>({assignment_id:group.assignment_id,colour_id:group.colour_id,colour_code:group.colour_code}));
-  const result=await runBusy(async()=>{const gps=await realFactoryBusinessGps();return rpc("rr_upm_ready_submit_v796",{
+  const full=allRunning.length>0 && valid.length===allRunning.length;
+  const answer=await askActionConfirmation({mode:"SUBMIT",codes,full,department:$("dept").options[$("dept").selectedIndex]?.textContent||$("dept").value});
+  if(!answer)return;
+  const nextDepartment=$("actionConfirmNextDept").value;
+  if(!nextDepartment){setFormMessage("Next Department select करें या Cancel दबाएँ.","error");return;}
+  const rows=valid.map(({group})=>({colour_id:group.colour_id,colour_code:group.colour_code}));
+  const result=await runBusy(()=>rpc("rr_upm_submit_colours_v741",{
     p_canonical_lot_id:state.lot.canonical_lot_id,
     p_department_code:$("dept").value,
     p_rows:rows,
-    p_latitude:gps.latitude,
-    p_longitude:gps.longitude,
-    p_accuracy_meters:gps.accuracy,
-    p_test_scenario:gps.testScenario
-  });});
+    p_remarks:`Universal Lot Form Dynamic Colour Submit · Next view ${nextDepartment}`
+  }));
   if(result){
-    setFormMessage(`${codes.join(" ")} READY notice sent · TTL ${num(result.worker_ready_total)} PCS · ${num(result.lm_candidates)} available Line Man alerted. Final submit worker confirmation के बाद होगा.`,"success");
+    setFormMessage(`${result.colours_submitted||0} Colour(s) submitted · ${num(result.qty_submitted)} PCS · ${nextDepartment} view खोला गया.`,"success");
+    $("dept").value=nextDepartment;
     await loadContext();
   }
-}
-
-function realFactoryBusinessGps(){
-  return new Promise((resolve,reject)=>{
-    const raw=prompt("TEST GEOFENCE SCENARIO चुनें (mandatory):\n\n1 = INSIDE GEOFENCE\n2 = OUTSIDE GEOFENCE\n\nLive GPS evidence भी save होगा. REAL mode का 100m rule नहीं बदलेगा.","1");
-    const testScenario=String(raw||"").trim()==="1"?"INSIDE_GEOFENCE":String(raw||"").trim()==="2"?"OUTSIDE_GEOFENCE":"";
-    if(!testScenario){reject(new Error("TEST के लिए Inside Geofence या Outside Geofence scenario चुनना जरूरी है."));return;}
-    if(!navigator.geolocation){reject(new Error("इस device/browser में GPS उपलब्ध नहीं है."));return;}
-    navigator.geolocation.getCurrentPosition(
-      p=>resolve({latitude:p.coords.latitude,longitude:p.coords.longitude,accuracy:p.coords.accuracy,testScenario}),
-      e=>reject(new Error(e.code===1?"Assign/Submit के लिए Location permission Allow करें.":"Live GPS fetch नहीं हुआ. Location ON करके फिर try करें.")),
-      {enableHighAccuracy:true,timeout:15000,maximumAge:0}
-    );
-  });
 }
 
 async function saveRates() {
@@ -898,7 +859,8 @@ async function boot() {
     }
     const access = await rpc("rr_upm_access_context_v727");
     if (!access?.allowed) throw new Error(access?.reason || "Production access denied by Role & Permission.");
-    $("refresh").onclick = load;
+    const refreshButton = $("refresh");
+    if (refreshButton) refreshButton.onclick = load;
     $("search").oninput = renderBoard;
     $("homeDept").onchange = renderBoard;
     $("dept").onchange = () => { applyDepartmentSelectColour(); loadContext(); };
@@ -948,22 +910,7 @@ async function boot() {
   }
 }
 
-window.RealFactoryUPM = Object.freeze({
-  openLotAtDepartment,
-  refresh: load,
-  snapshot() {
-    return {
-      lots: state.lots.slice(),
-      departments: state.departments.slice(),
-      boardMeta: state.lots.map(lot => ({
-        canonical_lot_id: lot.canonical_lot_id,
-        meta: boardMeta(lot) || {}
-      }))
-    };
-  }
-});
-
-console.info("REAL FACTORY UPM V796_TEST_LOCATION_ROUTING");
+console.info("REDZED UPM V744_ACTION_CONFIRM_EASY");
 
 document.readyState === "loading" ? document.addEventListener("DOMContentLoaded", boot) : boot();
 })();
