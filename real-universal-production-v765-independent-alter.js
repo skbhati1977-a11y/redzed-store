@@ -1363,6 +1363,89 @@ async function resumePendingSubmitV760(pending) {
 
   await directSubmitColourV7604(latestRow);
 }
+function ensureRateContactModalV7976() {
+  let modal = document.getElementById("rfRateContactModalV7976");
+  if (modal) return modal;
+
+  const style = document.createElement("style");
+  style.textContent = `
+    #rfRateContactModalV7976{position:fixed;inset:0;z-index:10050;background:rgba(5,8,13,.86);display:grid;place-items:center;padding:14px}
+    #rfRateContactModalV7976.rf7976-hidden{display:none}
+    .rf7976-card{width:min(560px,100%);max-height:92vh;overflow:auto;background:#141922;border:1px solid #394455;border-radius:18px;padding:18px;box-shadow:0 22px 70px #000}
+    .rf7976-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}.rf7976-head h2{margin:0;color:#ffc857;font-size:21px}.rf7976-head button{min-width:44px}
+    .rf7976-summary{margin:12px 0;padding:12px;border-radius:12px;background:#211d12;border:1px solid #745d25;color:#ffe6a3;line-height:1.45}
+    .rf7976-contact{border:1px solid #344054;border-radius:13px;padding:12px;margin-top:10px}.rf7976-contact b{display:block;margin-bottom:5px}.rf7976-contact small{display:block;color:#98a2b3;margin-bottom:10px}
+    .rf7976-actions{display:grid;grid-template-columns:1fr 1fr;gap:9px}.rf7976-actions button{min-height:50px;font-weight:800}.rf7976-wa{background:#126c43!important;border-color:#25d366!important}.rf7976-sms{background:#174d7a!important;border-color:#3d91d6!important}
+    .rf7976-note{font-size:12px;color:#98a2b3;margin:12px 0 0;line-height:1.4}
+    @media(max-width:430px){.rf7976-actions{grid-template-columns:1fr}.rf7976-card{padding:14px}}
+  `;
+  document.head.append(style);
+
+  modal = document.createElement("div");
+  modal.id = "rfRateContactModalV7976";
+  modal.className = "rf7976-hidden";
+  modal.innerHTML = `<section class="rf7976-card" role="dialog" aria-modal="true" aria-labelledby="rf7976Title">
+    <div class="rf7976-head"><div><small>REAL FACTORY · MANUAL ALERT</small><h2 id="rf7976Title">Actual Rate Required</h2></div><button type="button" data-rf7976-close>×</button></div>
+    <div id="rf7976Summary" class="rf7976-summary"></div>
+    <div id="rf7976Contacts"></div>
+    <p class="rf7976-note">WhatsApp/SMS app खुलेगी; message भेजने के लिए Send दबाना जरूरी है. App खुलने को OPENED_MANUAL माना जाएगा, DELIVERED नहीं.</p>
+  </section>`;
+  document.body.append(modal);
+  modal.querySelector("[data-rf7976-close]").onclick = () => modal.classList.add("rf7976-hidden");
+  return modal;
+}
+
+async function markManualContactOpenedV7976(queueId, channel) {
+  const client = getClient();
+  if (!client || !queueId) return;
+  const { error } = await client.rpc("rr_mark_manual_contact_opened_v797_6", {
+    p_queue_id: queueId,
+    p_channel: channel
+  });
+  if (error) console.warn("V797.6 manual contact status", error);
+}
+
+async function showManualRateContactV7976(rateRequest) {
+  const modal = ensureRateContactModalV7976();
+  const summary = modal.querySelector("#rf7976Summary");
+  const host = modal.querySelector("#rf7976Contacts");
+  summary.innerHTML = `<b>First Submit HOLD</b><br>Lot ${esc(rateRequest.lot_no || "—")} · Colour ${esc(rateRequest.colour_code || "—")} · ${esc(rateRequest.department_name || rateRequest.department_code || "Department")}<br>Actual Rate fill/approve होने तक Submit आगे नहीं जाएगा.`;
+  host.innerHTML = `<div class="msg">Contact actions loading…</div>`;
+  modal.classList.remove("rf7976-hidden");
+
+  try {
+    const client = getClient();
+    if (!client) throw new Error("Connected Supabase client nahi mila.");
+    const { data, error } = await client.rpc("rr_manual_rate_contact_payload_v797_6", { p_request_id: rateRequest.request_id });
+    if (error) throw error;
+    const contacts = Array.isArray(data?.contacts) ? data.contacts : [];
+    if (!contacts.length) {
+      host.innerHTML = `<div class="msg error">Recipient mobile ready नहीं है. In-app alert record सुरक्षित है.</div>`;
+      return;
+    }
+    host.innerHTML = contacts.map((contact, index) => {
+      const people = (Array.isArray(contact.recipients) ? contact.recipients : []).map(person => person.name).filter(Boolean).join(" + ") || "Management";
+      const last4 = String(contact.mobile || "").slice(-4);
+      return `<div class="rf7976-contact" data-rf7976-contact="${index}"><b>${esc(people)}</b><small>Shared/unique mobile · ending ${esc(last4)}</small><div class="rf7976-actions"><button type="button" class="rf7976-wa" data-rf7976-channel="WHATSAPP">OPEN WHATSAPP</button><button type="button" class="rf7976-sms" data-rf7976-channel="SMS">OPEN SMS</button></div></div>`;
+    }).join("");
+
+    host.querySelectorAll("[data-rf7976-channel]").forEach(button => {
+      button.onclick = () => {
+        const contact = contacts[Number(button.closest("[data-rf7976-contact]").dataset.rf7976Contact)];
+        const channel = button.dataset.rf7976Channel;
+        const url = channel === "WHATSAPP" ? contact.whatsapp_url : contact.sms_url;
+        if (!url) return alert(`${channel} link ready nahi hai.`);
+        const opened = window.open(url, "_blank", "noopener");
+        if (!opened && channel === "SMS") window.location.href = url;
+        void markManualContactOpenedV7976(contact.queue_id, channel);
+        button.textContent = channel === "WHATSAPP" ? "WHATSAPP OPENED" : "SMS OPENED";
+      };
+    });
+  } catch (error) {
+    host.innerHTML = `<div class="msg error">${esc(error?.message || error || "Contact payload unavailable")}</div>`;
+  }
+}
+
 async function firstSubmitRateGateV760(rowData, rowElement) {
   const client = getClient();
   if (!client) throw new Error("Connected Supabase client nahi mila.");
@@ -1413,15 +1496,8 @@ async function firstSubmitRateGateV760(rowData, rowElement) {
     rowElement
   };
 
-  alert(
-    `First Submit hold hai.\n\n` +
-    `Lot: ${data.lot_no}\n` +
-    `Colour: ${data.colour_code}\n` +
-    `Department: ${data.department_name}\n\n` +
-    `Actual Rate fill karne ke baad Submit automatically continue hoga.`
-  );
-
   await openCostingPanelV760(canonical, data.department_code);
+  await showManualRateContactV7976(data);
   return false;
 }
 

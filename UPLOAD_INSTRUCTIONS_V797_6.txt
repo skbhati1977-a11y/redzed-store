@@ -1,0 +1,14 @@
+REAL FACTORY V797.6 — COMBINED ACTUAL RATE ALERT UI
+
+GitHub repository root me isi ZIP ki dono files upload karke existing files REPLACE karein:
+1. real-universal-production-v770.html
+2. real-universal-production-v765-independent-alter.js
+
+V797.6 MAIN + VERIFY SQL pehle hi PASS hain. Purani files delete na karein; sirf same-name replacement karein.
+
+Expected TEST flow:
+- First Submit par Actual Rate missing ho to Submit blocked rahega.
+- Costing panel khulega.
+- Ek combined alert card me Open WhatsApp aur Open SMS buttons dikhenge.
+- Sanju + Nasim ke shared TEST number ke liye sirf ek contact card hoga.
+- App kholne par status OPENED_MANUAL hoga, DELIVERED nahi.
