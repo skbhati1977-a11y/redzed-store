@@ -1,0 +1,17 @@
+REAL FACTORY V797.3 — WORKER FILTER + SMART POPUPS
+
+STEP 1 — SUPABASE
+Run only: RUN_NEXT_REAL_FACTORY_V797_3_PRIMARY_DEPARTMENT_WORKER_FILTER.sql
+Expected PRINTING workers: Sanju and Chotu.
+
+STEP 2 — VERIFY
+Run: VERIFY_REAL_FACTORY_V797_3.sql
+Expected: result PASS, wrong_department_workers [].
+
+STEP 3 — GITHUB ROOT
+Replace/upload only: real-upm-department-view-v789.js
+
+STEP 4 — OPEN
+Ctrl + F5 करें। Print/Assign और Ready to Submit अब compact smart popup में खुलेंगे।
+
+No older SQL. No other GitHub files.
