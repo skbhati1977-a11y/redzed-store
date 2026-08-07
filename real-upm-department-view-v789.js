@@ -159,10 +159,9 @@
     const cards = [];
     for (const lot of snap.lots) {
       const meta = await statusFor(lot.canonical_lot_id);
-      const statuses = meta.department_statuses || [];
-      const active = new Set(statuses.flatMap(s => [...(s.assigned_codes || []), ...(s.running_codes || [])]));
-      const total = Math.max(0, ...statuses.map(s => Number(s.total_colours || 0)), Array.isArray(lot.colours) ? lot.colours.length : 0);
-      if (total > 0 && active.size >= total) continue;
+      // Do not hide a Lot because its colours are active in some other
+      // department. OPEN RANDOM QUEUE is department-scoped; the verified
+      // route/target checks below decide whether this screen can show it.
       const lastSubmitted = await lastSubmittedDepartment(lot.canonical_lot_id);
       const targets = eligibleTargets(snap.departments, meta.identity || {}, lastSubmitted);
       if (!targets.length) continue;
@@ -235,5 +234,5 @@
     sync();
   }).observe(document.body, { childList: true, subtree: true });
   sync();
-  console.info("REAL FACTORY V797.7 · HEADER SAFE + MOBILE VERTICAL SMART ASSIGN/SUBMIT");
+  console.info("REAL FACTORY V797.7.3 · DEPARTMENT-SCOPED AUTO QUEUE");
 })();

@@ -1,0 +1,12 @@
+REAL FACTORY V797.7.3 — CTRL+A DIRECT UPLOAD PACKAGE
+
+Upload all 7 files together to the GitHub repository root using Ctrl+A.
+Choose Replace/Overwrite for files with the same names.
+
+Corrections:
+1. Branding/user header remains removed.
+2. LATEST DASHBOARD and REFRESH controls are visible.
+3. OPEN RANDOM QUEUE no longer hides a Lot because colours are active in another department.
+4. Print/Frame resolver, Actual Rate gate, WhatsApp/SMS alerts and TEST/REAL separation remain unchanged.
+
+The included MAIN and VERIFY SQL already passed. Do not run them again.
