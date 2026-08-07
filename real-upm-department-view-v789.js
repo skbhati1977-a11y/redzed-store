@@ -80,8 +80,8 @@
     if (!board) return;
     const cards = [...board.querySelectorAll(".lot-card")];
     let empty = board.querySelector(".rf-running-empty");
-    const hasVisibleCard = cards.some(card => !card.hidden);
-    if (!hasVisibleCard && cards.length) {
+    const hasVisibleCard = cards.some(card => !card.classList.contains("rf-running-hidden"));
+    if (!hasVisibleCard) {
       if (!empty) {
         empty = document.createElement("div");
         empty.className = "msg rf-running-empty";
@@ -98,18 +98,27 @@
     await Promise.all(cards.map(async card => {
       const canonicalLotId = String(card.dataset.lot || "").trim();
       if (!canonicalLotId) {
-        card.hidden = true;
+        card.classList.add("rf-running-hidden");
         return;
       }
-      card.hidden = true;
+      card.classList.add("rf-running-hidden");
       card.dataset.rfVisibility = "checking";
       try {
         const result = await runningState(canonicalLotId);
-        card.hidden = !result.visible;
-        card.dataset.rfVisibility = result.visible ? "running" : "queue-or-submitted";
+        if (!result.visible) {
+          // Department dashboards are running-job views only. Remove a
+          // queue/submitted-history card from this rendered view altogether;
+          // the base UPM board may re-render it, and the observer will apply
+          // the same guard again. The source record and Random Queue stay
+          // untouched.
+          card.remove();
+          return;
+        }
+        card.classList.remove("rf-running-hidden");
+        card.style.removeProperty("display");
+        card.dataset.rfVisibility = "running";
       } catch (error) {
-        card.hidden = true;
-        card.dataset.rfVisibility = "unverified";
+        card.remove();
         showVisibilityError(error);
       }
     }));
@@ -184,7 +193,7 @@
   }
 
   const style = document.createElement("style");
-  style.textContent = '.rf-dept-locked select{font-weight:900;border-color:#56efb2}.rf-card-actions{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:auto}.rf-card-actions button{min-height:44px;padding:8px 4px}.rf-card-actions button:nth-child(1){background:#263852;border-color:#4a78b8}.rf-card-actions button:nth-child(2){background:#174936;border-color:#318b65}.rf-card-actions button:nth-child(3){background:#493915;border-color:#8a6b2b}.rf-action-focus{animation:rfFocus .45s ease-in-out 4}@keyframes rfFocus{50%{box-shadow:0 0 0 4px #ffc857;filter:brightness(1.3)}}';
+  style.textContent = '.rf-running-hidden{display:none!important}.rf-dept-locked select{font-weight:900;border-color:#56efb2}.rf-card-actions{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:auto}.rf-card-actions button{min-height:44px;padding:8px 4px}.rf-card-actions button:nth-child(1){background:#263852;border-color:#4a78b8}.rf-card-actions button:nth-child(2){background:#174936;border-color:#318b65}.rf-card-actions button:nth-child(3){background:#493915;border-color:#8a6b2b}.rf-action-focus{animation:rfFocus .45s ease-in-out 4}@keyframes rfFocus{50%{box-shadow:0 0 0 4px #ffc857;filter:brightness(1.3)}}';
   document.head.append(style);
   applyShell();
 
