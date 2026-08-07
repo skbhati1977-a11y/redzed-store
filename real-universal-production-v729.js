@@ -225,6 +225,25 @@ function renderIdentity() {
   wireImages($("entryThumbs"));
 }
 
+// Department dashboards use this entry point to open a Random Queue lot
+// directly at the chosen department. Keep this independent of the removed
+// page header so queue cards can auto-load and open exactly as before.
+async function openLotAtDepartment(id, departmentCode) {
+  state.lot = state.lots.find(row => row.canonical_lot_id === id);
+  if (!state.lot) throw new Error("Lot not found.");
+  const code = upper(departmentCode);
+  const options = state.departments.map(department =>
+    `<option value="${esc(department.department_code)}">${esc(department.department_name)}</option>`
+  ).join("");
+  $("dept").innerHTML = options;
+  const selected = [...$("dept").options].find(option => upper(option.value) === code);
+  if (!selected) throw new Error(`Department ${code} is not active for production assignment.`);
+  $("dept").value = selected.value;
+  $("traveller").classList.remove("hidden");
+  renderIdentity();
+  await loadContext();
+}
+
 async function loadContext() {
   if (!state.lot || !$("dept").value) return;
   try {
@@ -910,7 +929,22 @@ async function boot() {
   }
 }
 
-console.info("REDZED UPM V744_ACTION_CONFIRM_EASY");
+window.RealFactoryUPM = Object.freeze({
+  openLotAtDepartment,
+  refresh: load,
+  snapshot() {
+    return {
+      lots: state.lots.slice(),
+      departments: state.departments.slice(),
+      boardMeta: state.lots.map(lot => ({
+        canonical_lot_id: lot.canonical_lot_id,
+        meta: boardMeta(lot) || {}
+      }))
+    };
+  }
+});
+
+console.info("REAL FACTORY UPM V797.7.2 AUTO RANDOM QUEUE RESTORE");
 
 document.readyState === "loading" ? document.addEventListener("DOMContentLoaded", boot) : boot();
 })();

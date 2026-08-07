@@ -1,4 +1,4 @@
-REAL FACTORY V797.7.1 — HEADER NULL FIX COMBINED PACKAGE
+REAL FACTORY V797.7.2 — AUTO RANDOM QUEUE RESTORE COMBINED PACKAGE
 
 SQL STATUS
 - MAIN: OK (already run)
@@ -18,6 +18,8 @@ contain SQL + JS + HTML. They are records only and must not be rerun.
 EXPECTED TEST
 - The complete page header above the module buttons is removed.
 - Removed header no longer causes the refresh-button null onclick error.
+- OPEN RANDOM QUEUE cards load automatically; Lot search is not required.
+- Queue cards can open the selected Lot directly at the selected department.
 - Print No and Frame No load through rr_upm_resolve_identity_v740.
 - V797.6 in-app + WhatsApp + SMS alert flow remains available.
 - First Submit Actual Rate gate remains unchanged.
