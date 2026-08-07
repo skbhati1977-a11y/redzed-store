@@ -30,12 +30,16 @@
   async function statusFor(lotId) {
     const old = cache.get(lotId);
     if (old && Date.now() - old.at < 2500) return old.data;
-    const sb = client();
-    if (!sb) throw new Error("Production client unavailable.");
-    const { data, error } = await sb.rpc("rr_upm_board_lot_status_v743", { p_canonical_lot_id: lotId });
-    if (error) throw error;
-    cache.set(lotId, { data: data || {}, at: Date.now() });
-    return data || {};
+    // Reuse the base board's already-resolved metadata. Do not make a second
+    // hard dependency on the optional v743 status RPC: some deployments do
+    // not expose it, while the canonical Lot board itself remains available.
+    const snap = window.RealFactoryUPM?.snapshot?.();
+    const resolved = snap?.boardMeta?.find(row => row.canonical_lot_id === lotId)?.meta;
+    const data = resolved && Object.keys(resolved).length
+      ? resolved
+      : { department_statuses: [], identity: {}, status_unavailable: true };
+    cache.set(lotId, { data, at: Date.now() });
+    return data;
   }
 
   async function lastSubmittedDepartment(lotId) {
@@ -48,7 +52,11 @@
       .eq("canonical_lot_id", lotId)
       .order("submitted_at", { ascending: false })
       .limit(1);
-    if (error) throw error;
+    if (error) {
+      console.warn("Last submitted department unavailable", lotId, error);
+      lastSubmitCache.set(lotId, { code: "", at: Date.now() });
+      return "";
+    }
     const code = canonical(data?.[0]?.department_code || "");
     lastSubmitCache.set(lotId, { code, at: Date.now() });
     return code;
@@ -112,9 +120,13 @@
       card.classList.add("rf-running-hidden");
       try {
         const meta = await statusFor(card.dataset.lot);
+        if (meta.status_unavailable) return card.classList.remove("rf-running-hidden");
         if (!activeInCurrent(meta.department_statuses || [])) return card.remove();
         card.classList.remove("rf-running-hidden");
-      } catch (error) { card.remove(); }
+      } catch (error) {
+        console.warn("Running status unavailable; keeping Lot card", card.dataset.lot, error);
+        card.classList.remove("rf-running-hidden");
+      }
     }));
   }
 
@@ -129,7 +141,10 @@
   function eligibleTargets(departments, identity, lastSubmitted) {
     const special = specialChoice(identity);
     return departments.map(d => ({ ...d, canonical: canonical(d.department_code) })).filter(d => {
-      if (!route.includes(d.canonical) || d.canonical === "CUTTING" || d.canonical === lastSubmitted) return false;
+      if (!route.includes(d.canonical) || d.canonical === "CUTTING") return false;
+      // A department may be both the last submit point and the current screen
+      // after a reopen/return. In that case it must remain assignable here.
+      if (d.canonical === lastSubmitted && d.canonical !== requested) return false;
       if (["PRINTING", "STICKER", "ID"].includes(d.canonical) && special && d.canonical !== special) return false;
       return d.is_active !== false && upper(d.department_type || "PRODUCTION") === "PRODUCTION";
     }).sort((a, b) => route.indexOf(a.canonical) - route.indexOf(b.canonical));
@@ -159,10 +174,8 @@
     const cards = [];
     for (const lot of snap.lots) {
       const meta = await statusFor(lot.canonical_lot_id);
-      const statuses = meta.department_statuses || [];
-      const active = new Set(statuses.flatMap(s => [...(s.assigned_codes || []), ...(s.running_codes || [])]));
-      const total = Math.max(0, ...statuses.map(s => Number(s.total_colours || 0)), Array.isArray(lot.colours) ? lot.colours.length : 0);
-      if (total > 0 && active.size >= total) continue;
+      // Activity in other departments must not suppress the whole Lot from
+      // this routing view. The claim RPC validates selected colours on action.
       const lastSubmitted = await lastSubmittedDepartment(lot.canonical_lot_id);
       const targets = eligibleTargets(snap.departments, meta.identity || {}, lastSubmitted);
       if (!targets.length) continue;
@@ -235,5 +248,5 @@
     sync();
   }).observe(document.body, { childList: true, subtree: true });
   sync();
-  console.info("REAL FACTORY V797.8 · WORKING V797.1/V796 BASELINE + MOBILE SMART POPUPS");
+  console.info("REAL FACTORY V797.9 · V796 BASELINE + RANDOM QUEUE CONTRACT RESTORED");
 })();

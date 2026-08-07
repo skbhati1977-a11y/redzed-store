@@ -97,17 +97,20 @@ function cbNo(lot) {
 }
 
 async function loadBoardMeta(lot) {
-  try {
-    const meta = await rpc("rr_upm_board_lot_status_v743", {p_canonical_lot_id: lot.canonical_lot_id});
-    state.boardMeta.set(lot.canonical_lot_id, meta || {});
-    const identity = meta?.identity || {};
-    ["cb_no","art_no","print_no","frame_no","item_name"].forEach(key => {
-      if (validMappedValue(identity[key])) lot[key] = identity[key];
-    });
-  } catch (error) {
-    console.warn("Board live status unavailable", lot.lot_no, error);
-    state.boardMeta.set(lot.canonical_lot_id, {});
-  }
+  // rr_upm_lot_board_v1 is the canonical board source loaded above. The old
+  // v743 live-status RPC is optional and is absent in current deployment, so
+  // the main board must never depend on it or emit a 404 for every Lot.
+  state.boardMeta.set(lot.canonical_lot_id, {
+    status_unavailable: true,
+    department_statuses: [],
+    identity: {
+      cb_no: lot.cb_no || lot.cb_number || lot.cb_base_no || null,
+      art_no: lot.art_no || null,
+      print_no: lot.print_no || null,
+      frame_no: lot.frame_no || null,
+      item_name: lot.item_name || null
+    }
+  });
 }
 
 async function load() {
