@@ -1,0 +1,20 @@
+REAL FACTORY V797 — RANDOM QUEUE CURRENT DEPARTMENT VISIBLE
+
+1. Supabase SQL Editor:
+   RUN_NEXT_REAL_FACTORY_V797_QUEUE_CURRENT_DEPARTMENT_VISIBLE.sql
+
+2. Verification:
+   VERIFY_REAL_FACTORY_V797.sql
+   Expected result: PASS
+
+3. GitHub root: replace these four files:
+   real-universal-production-v770.html
+   real-universal-production-v729.js
+   real-upm-department-view-v789.js
+   real-upm-submit-confirm-v796.js
+
+Final rule:
+- Current dashboard department remains visible in OPEN RANDOM QUEUE.
+- Only the latest submitted department is hidden for that Lot.
+- No other department is hidden because of older submit history.
+- Cutting remains on its separate existing flow.

@@ -20,6 +20,7 @@
   const route = ["CUTTING", "PRINTING", "STICKER", "ID", "KR", "OVERLOCK", "FOLDING", "KAAJ_BUTTON", "TEAK_TANKI", "THREAD_CUT", "QC", "PRESS", "PACKING", "DESPATCH"];
   const accepted = aliases[requested] || [requested];
   const cache = new Map();
+  const lastSubmitCache = new Map();
   const upper = value => String(value || "").trim().toUpperCase();
   const esc = value => String(value ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
   const canonical = code => route.find(key => (aliases[key] || [key]).includes(upper(code))) || upper(code);
@@ -35,6 +36,22 @@
     if (error) throw error;
     cache.set(lotId, { data: data || {}, at: Date.now() });
     return data || {};
+  }
+
+  async function lastSubmittedDepartment(lotId) {
+    const old = lastSubmitCache.get(lotId);
+    if (old && Date.now() - old.at < 2500) return old.code;
+    const sb = client();
+    if (!sb) throw new Error("Production client unavailable.");
+    const { data, error } = await sb.from("rr_upm_dynamic_submit_history_v741")
+      .select("department_code,submitted_at")
+      .eq("canonical_lot_id", lotId)
+      .order("submitted_at", { ascending: false })
+      .limit(1);
+    if (error) throw error;
+    const code = canonical(data?.[0]?.department_code || "");
+    lastSubmitCache.set(lotId, { code, at: Date.now() });
+    return code;
   }
 
   function activeInCurrent(statuses) {
@@ -104,11 +121,10 @@
     return "";
   }
 
-  function eligibleTargets(departments, statuses, identity) {
-    const submitted = new Set(statuses.filter(s => (s.submitted_codes?.length || 0) > 0).map(s => canonical(s.department_code)));
+  function eligibleTargets(departments, identity, lastSubmitted) {
     const special = specialChoice(identity);
     return departments.map(d => ({ ...d, canonical: canonical(d.department_code) })).filter(d => {
-      if (!route.includes(d.canonical) || d.canonical === "CUTTING" || d.canonical === requested || submitted.has(d.canonical)) return false;
+      if (!route.includes(d.canonical) || d.canonical === "CUTTING" || d.canonical === lastSubmitted) return false;
       if (["PRINTING", "STICKER", "ID"].includes(d.canonical) && special && d.canonical !== special) return false;
       return d.is_active !== false && upper(d.department_type || "PRODUCTION") === "PRODUCTION";
     }).sort((a, b) => route.indexOf(a.canonical) - route.indexOf(b.canonical));
@@ -139,7 +155,8 @@
       const active = new Set(statuses.flatMap(s => [...(s.assigned_codes || []), ...(s.running_codes || [])]));
       const total = Math.max(0, ...statuses.map(s => Number(s.total_colours || 0)), Array.isArray(lot.colours) ? lot.colours.length : 0);
       if (total > 0 && active.size >= total) continue;
-      const targets = eligibleTargets(snap.departments, statuses, meta.identity || {});
+      const lastSubmitted = await lastSubmittedDepartment(lot.canonical_lot_id);
+      const targets = eligibleTargets(snap.departments, meta.identity || {}, lastSubmitted);
       if (!targets.length) continue;
       cards.push(`<article class="rf-queue-card"><div><b>${esc(lot.lot_no)}</b><span>CB ${esc(meta.identity?.cb_no || lot.cb_no || "—")} · ART ${esc(meta.identity?.art_no || lot.art_no || "—")}</span></div><p class="rf-worker-rule">एक या multiple Colours select · हर Colour की सभी Sizes एक Worker</p><div class="rf-route-chart">${targets.map(t => `<button type="button" data-lot="${esc(lot.canonical_lot_id)}" data-dept="${esc(t.department_code)}" class="${route.indexOf(t.canonical) > route.indexOf(requested) ? "rf-direct" : "rf-warning"}">${esc(t.department_name || t.canonical)}<small>${route.indexOf(t.canonical) > route.indexOf(requested) ? "ASSIGN SELECTED COLOURS" : "⚠ WARNING ASSIGN"}</small></button>`).join("")}</div></article>`);
     }
@@ -157,7 +174,7 @@
     const board = document.getElementById("board");
     const section = document.createElement("section");
     section.className = "rf-queue-section";
-    section.innerHTML = `<div class="rf-queue-title"><h2>OPEN RANDOM QUEUE</h2><span>Cutting अलग flow · Submitted/current hidden · नीचे Direct · ऊपर Warning</span></div><div id="rfDepartmentQueue"></div>`;
+    section.innerHTML = `<div class="rf-queue-title"><h2>OPEN RANDOM QUEUE</h2><span>Cutting अलग flow · केवल Last Submitted Department hidden · Current Department visible</span></div><div id="rfDepartmentQueue"></div>`;
     if (requested === "CUTTING") section.classList.add("hidden");
     board?.insertAdjacentElement("afterend", section);
   }
@@ -179,4 +196,5 @@
     sync();
   }).observe(document.body, { childList: true, subtree: true });
   sync();
+  console.info("REAL FACTORY V797 · CURRENT DEPARTMENT VISIBLE · ONLY LAST SUBMITTED HIDDEN");
 })();
