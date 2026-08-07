@@ -1,0 +1,9 @@
+REAL FACTORY V796.3
+
+1. Do not upload GitHub files yet.
+2. Run RUN_NEXT_REAL_FACTORY_V796_3_WORKER_LOCATION_LOCK.sql in Supabase.
+3. Run VERIFY_REAL_FACTORY_V796_3.sql.
+4. Continue only when result is PASS and worker_location_conflicts is empty.
+5. ACCOUNTS may remain SHORTAGE because it has only one active worker.
+
+V796.3 changes TEST allocation only. REAL attendance, payroll and geofence remain unchanged.
