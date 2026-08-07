@@ -129,7 +129,12 @@
   function eligibleTargets(departments, identity, lastSubmitted) {
     const special = specialChoice(identity);
     return departments.map(d => ({ ...d, canonical: canonical(d.department_code) })).filter(d => {
-      if (!route.includes(d.canonical) || d.canonical === "CUTTING" || d.canonical === lastSubmitted) return false;
+      if (!route.includes(d.canonical) || d.canonical === "CUTTING") return false;
+      // The current dashboard must remain selectable even when it is also the
+      // most recently submitted department. Only hide a different department
+      // that was last submitted; otherwise a visible/running Lot incorrectly
+      // disappears from this dashboard's OPEN RANDOM QUEUE.
+      if (d.canonical === lastSubmitted && d.canonical !== requested) return false;
       if (["PRINTING", "STICKER", "ID"].includes(d.canonical) && special && d.canonical !== special) return false;
       return d.is_active !== false && upper(d.department_type || "PRODUCTION") === "PRODUCTION";
     }).sort((a, b) => route.indexOf(a.canonical) - route.indexOf(b.canonical));
@@ -234,5 +239,5 @@
     sync();
   }).observe(document.body, { childList: true, subtree: true });
   sync();
-  console.info("REAL FACTORY V797.7.3 · DEPARTMENT-SCOPED AUTO QUEUE");
+  console.info("REAL FACTORY V797.7.4 · CURRENT DEPARTMENT ALWAYS VISIBLE");
 })();

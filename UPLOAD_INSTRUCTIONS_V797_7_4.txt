@@ -1,0 +1,13 @@
+REAL FACTORY V797.7.4 — CTRL+A DIRECT UPLOAD PACKAGE
+
+Upload all 7 files together to the GitHub repository root using Ctrl+A.
+Choose Replace/Overwrite for files with the same names.
+
+Corrections:
+1. Branding/user header remains removed.
+2. LATEST DASHBOARD and REFRESH controls remain visible.
+3. OPEN RANDOM QUEUE keeps the current dashboard department visible even when it is the last submitted department.
+4. A visible/running Lot such as 1RR66 TEST is not dropped merely because its current department is also last submitted.
+5. Print/Frame resolver, Actual Rate gate, WhatsApp/SMS alerts and TEST/REAL separation remain unchanged.
+
+The included MAIN and VERIFY SQL already passed. Do not run them again.
