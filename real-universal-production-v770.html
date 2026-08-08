@@ -39,19 +39,33 @@
 @media(max-width:430px){.rf794-matrix section>div{grid-template-columns:1fr 1fr}.rf794-totals{grid-template-columns:1fr 1fr}#rf794Sheet{padding:10px}}
 .assign-table-title{grid-column:1/-1;display:flex;align-items:baseline;justify-content:space-between;gap:12px;color:#9ec5ff}.assign-table-title small{color:var(--mut);font-weight:650}
 
-/* Smart Assign Vertical Overflow & Scroll Fix */
-#traveller.rf-smart-assign .sheet {
-    max-height: 88vh !important;
-    height: auto !important;
-    overflow-y: auto !important;
-    padding-bottom: 60px !important;
+/* KILL MODULE OVERRIDE CONFLICTS ON SMART ASSIGN MODAL */
+#traveller.rf-smart-assign {
+    align-items: center !important;
+    padding: 10px !important;
 }
 
-#traveller.rf-smart-assign #colours {
-    display: block !important;
+#traveller.rf-smart-assign .sheet {
+    width: min(1200px, 96vw) !important; /* Modal ki choudai 430px se badha kar 1200px ki */
+    height: 85vh !important;
+    max-height: 85vh !important;
+    overflow-y: auto !important; /* Force Scrollbar */
+    border-radius: 18px !important;
+}
+
+/* Allow Colours Container to Display Always */
+#traveller.rf-smart-assign #colours,
+#traveller #colours {
+    display: grid !important;
     visibility: visible !important;
     opacity: 1 !important;
     margin-top: 15px !important;
+}
+
+/* Ensure Size Tables inside Colours are never clipped */
+#traveller.rf-smart-assign .colour-card {
+    display: block !important;
+    margin-bottom: 12px !important;
 }
 </style>
 </head>
