@@ -21,6 +21,7 @@
   const accepted = aliases[requested] || [requested];
   const cache = new Map();
   const lastSubmitCache = new Map();
+  const runningCache = new Map();
   const upper = value => String(value || "").trim().toUpperCase();
   const esc = value => String(value ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
   const canonical = code => route.find(key => (aliases[key] || [key]).includes(upper(code))) || upper(code);
@@ -60,6 +61,11 @@
     const code = canonical(data?.[0]?.department_code || "");
     lastSubmitCache.set(lotId, { code, at: Date.now() });
     return code;
+  }
+  async function activeInThisDepartment(lotId) {
+    const old = runningCache.get(lotId); if (old && Date.now()-old.at < 2500) return old.active;
+    const {data,error}=await client().from("rr_upm_work_assignments_v8").select("id").eq("canonical_lot_id",lotId).in("department_code",accepted).in("status",["ASSIGNED","RUNNING","ACTIVE"]);
+    if(error) throw error; const active=(data||[]).length>0; runningCache.set(lotId,{active,at:Date.now()}); return active;
   }
 
   function activeInCurrent(statuses) {
@@ -120,8 +126,8 @@
       card.classList.add("rf-running-hidden");
       try {
         const meta = await statusFor(card.dataset.lot);
-        if (meta.status_unavailable) return card.classList.remove("rf-running-hidden");
-        if (!activeInCurrent(meta.department_statuses || [])) return card.remove();
+        const active=meta.status_unavailable ? await activeInThisDepartment(card.dataset.lot) : activeInCurrent(meta.department_statuses || []);
+        if (!active) return card.remove();
         card.classList.remove("rf-running-hidden");
       } catch (error) {
         console.warn("Running status unavailable; keeping Lot card", card.dataset.lot, error);
@@ -148,6 +154,25 @@
       if (["PRINTING", "STICKER", "ID"].includes(d.canonical) && special && d.canonical !== special) return false;
       return d.is_active !== false && upper(d.department_type || "PRODUCTION") === "PRODUCTION";
     }).sort((a, b) => route.indexOf(a.canonical) - route.indexOf(b.canonical));
+  }
+
+  function withControlledDespatch(targets) {
+    const productionTargets = targets.filter(target => target.canonical !== "DESPATCH");
+    productionTargets.push({
+      department_code: "DESPATCH",
+      department_name: "Despatch",
+      canonical: "DESPATCH",
+      controlled_flow: true
+    });
+    return productionTargets;
+  }
+
+  function openControlledDespatch(lotNo) {
+    const url = new URL("real-finished-goods-v787.html", location.href);
+    url.searchParams.set("view", "despatch");
+    url.searchParams.set("mode", params.get("mode") || "TEST");
+    if (lotNo) url.searchParams.set("lot", lotNo);
+    location.href = url.href;
   }
 
   async function chooseTarget(lotId, target) {
@@ -177,14 +202,22 @@
       // Activity in other departments must not suppress the whole Lot from
       // this routing view. The claim RPC validates selected colours on action.
       const lastSubmitted = await lastSubmittedDepartment(lot.canonical_lot_id);
-      const targets = eligibleTargets(snap.departments, meta.identity || {}, lastSubmitted);
+      if (lastSubmitted === requested) continue;
+      const targets = withControlledDespatch(
+        eligibleTargets(snap.departments, meta.identity || {}, lastSubmitted).filter(t=>t.canonical===requested)
+      );
       if (!targets.length) continue;
-      cards.push(`<article class="rf-queue-card"><div><b>${esc(lot.lot_no)}</b><span>CB ${esc(meta.identity?.cb_no || lot.cb_no || "—")} · ART ${esc(meta.identity?.art_no || lot.art_no || "—")}</span></div><p class="rf-worker-rule">एक या multiple Colours select · हर Colour की सभी Sizes एक Worker</p><div class="rf-route-chart">${targets.map(t => `<button type="button" data-lot="${esc(lot.canonical_lot_id)}" data-dept="${esc(t.department_code)}" class="${route.indexOf(t.canonical) >= route.indexOf(requested) ? "rf-direct" : "rf-warning"}">${esc(t.department_name || t.canonical)}<small>${route.indexOf(t.canonical) >= route.indexOf(requested) ? "ASSIGN SELECTED COLOURS" : "⚠ WARNING ASSIGN"}</small></button>`).join("")}</div></article>`);
+      cards.push(`<article class="rf-queue-card"><div><b>${esc(lot.lot_no)}</b><span>CB ${esc(meta.identity?.cb_no || lot.cb_no || "—")} · ART ${esc(meta.identity?.art_no || lot.art_no || "—")}</span></div><p class="rf-worker-rule">एक या multiple Colours select · हर Colour की सभी Sizes एक Worker</p><div class="rf-route-chart">${targets.map(t => t.controlled_flow
+        ? `<button type="button" data-despatch-lot="${esc(lot.lot_no)}" class="rf-despatch">${esc(t.department_name)}<small>OPEN DESPATCH</small></button>`
+        : `<button type="button" data-lot="${esc(lot.canonical_lot_id)}" data-dept="${esc(t.department_code)}" class="${route.indexOf(t.canonical) >= route.indexOf(requested) ? "rf-direct" : "rf-warning"}">${esc(t.department_name || t.canonical)}<small>${route.indexOf(t.canonical) >= route.indexOf(requested) ? "ASSIGN SELECTED COLOURS" : "⚠ WARNING ASSIGN"}</small></button>`).join("")}</div></article>`);
     }
     host.innerHTML = cards.join("") || `<div class="msg">No OPEN RANDOM QUEUE lots available for ${esc(label)}.</div>`;
     host.querySelectorAll("[data-lot][data-dept]").forEach(button => button.onclick = () => {
       const department = snap.departments.find(d => upper(d.department_code) === upper(button.dataset.dept));
       if (department) chooseTarget(button.dataset.lot, { ...department, canonical: canonical(department.department_code) });
+    });
+    host.querySelectorAll("[data-despatch-lot]").forEach(button => {
+      button.onclick = () => openControlledDespatch(button.dataset.despatchLot);
     });
   }
 
@@ -197,13 +230,13 @@
     const board = document.getElementById("board");
     const section = document.createElement("section");
     section.className = "rf-queue-section";
-    section.innerHTML = `<div class="rf-queue-title"><h2>OPEN RANDOM QUEUE</h2><span>Cutting अलग flow · केवल Last Submitted Department hidden · Current Department visible</span></div><div id="rfDepartmentQueue"></div>`;
+    section.innerHTML = `<div class="rf-queue-title"><h2>OPEN RANDOM QUEUE</h2><span>Only ${esc(label)} unassigned/newly submitted work · other department running work stays separate</span></div><div id="rfDepartmentQueue"></div>`;
     if (requested === "CUTTING") section.classList.add("hidden");
     board?.insertAdjacentElement("afterend", section);
   }
 
   const style = document.createElement("style");
-  style.textContent = `.rf-running-hidden{display:none!important}.rf-card-actions{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px;margin-top:auto}.rf-card-actions button{width:100%;min-height:46px}.rf-card-actions button:first-child{background:#174936;border-color:#318b65}.rf-card-actions button:last-child{background:#493915;border-color:#8a6b2b}.rf-queue-section{margin-top:18px;border-top:2px solid #303641;padding-top:14px}.rf-queue-title{display:flex;gap:10px;align-items:center;justify-content:space-between}.rf-queue-title h2{margin:0;color:#ffc857}.rf-queue-title span{color:#98a2b3}.rf-queue-card{background:#12151c;border:1px solid #303641;border-radius:14px;padding:12px;margin-top:10px}.rf-queue-card>div:first-child{display:flex;justify-content:space-between;gap:10px}.rf-queue-card>div:first-child span{color:#98a2b3}.rf-worker-rule{margin:8px 0 0;color:#9ec5ff;font-weight:750}.rf-route-chart{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:7px;margin-top:10px}.rf-route-chart button{width:100%;min-height:58px}.rf-route-chart small{display:block;margin-top:4px;font-size:9px}.rf-direct{border-color:#318b65;background:#174936}.rf-warning{border-color:#8a6b2b;background:#493915}
+  style.textContent = `.rf-running-hidden{display:none!important}.rf-card-actions{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px;margin-top:auto}.rf-card-actions button{width:100%;min-height:46px}.rf-card-actions button:first-child{background:#174936;border-color:#318b65}.rf-card-actions button:last-child{background:#493915;border-color:#8a6b2b}.rf-queue-section{margin-top:18px;border-top:2px solid #303641;padding-top:14px}.rf-queue-title{display:flex;gap:10px;align-items:center;justify-content:space-between}.rf-queue-title h2{margin:0;color:#ffc857}.rf-queue-title span{color:#98a2b3}.rf-queue-card{background:#12151c;border:1px solid #303641;border-radius:14px;padding:12px;margin-top:10px}.rf-queue-card>div:first-child{display:flex;justify-content:space-between;gap:10px}.rf-queue-card>div:first-child span{color:#98a2b3}.rf-worker-rule{margin:8px 0 0;color:#9ec5ff;font-weight:750}.rf-route-chart{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:7px;margin-top:10px}.rf-route-chart button{width:100%;min-height:58px}.rf-route-chart small{display:block;margin-top:4px;font-size:9px}.rf-direct{border-color:#318b65;background:#174936}.rf-warning{border-color:#8a6b2b;background:#493915}.rf-despatch{border-color:#3b82f6;background:#17365f}
   #traveller.rf-smart-assign,#traveller.rf-smart-submit{align-items:center;padding:10px}
   #traveller.rf-smart-assign .sheet,#traveller.rf-smart-submit .sheet{width:min(430px,96vw);height:auto;max-height:92dvh;border-radius:20px;padding:14px;overscroll-behavior:contain}
   #traveller.rf-smart-assign .sticky,#traveller.rf-smart-submit .sticky{position:sticky;top:-14px;padding:8px 0 10px}
@@ -248,5 +281,5 @@
     sync();
   }).observe(document.body, { childList: true, subtree: true });
   sync();
-  console.info("REAL FACTORY V797.9 · V796 BASELINE + RANDOM QUEUE CONTRACT RESTORED");
+  console.info("REAL FACTORY V798.3 · ALL-DEPARTMENT SCOPED QUEUE");
 })();

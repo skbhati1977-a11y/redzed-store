@@ -3270,7 +3270,7 @@ async function createLot(event = {}) {
       if (upmSync.error) throw upmSync.error;
     } catch (syncError) {
       console.warn("UPM V722 sync warning:", syncError);
-      upmWarning = `UPM sync: ${errorText(syncError)}`;
+      upmWarning = `UPM queue registration pending: ${errorText(syncError)}`;
     }
     const releaseWarnings = [...matchingWarnings, ...actualRateWarnings, ...(upmWarning ? [upmWarning] : [])];
     const nextStage = valid.decision?.noPrintRequired ? "OPEN FOR STICKER / KR / OV ASSIGNMENT" : "RELEASED TO PRINTER";

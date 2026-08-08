@@ -1,0 +1,12 @@
+REAL FACTORY V798.3 — COMBINED UPM QUEUE + CUTTING BINDING
+
+Upload and replace all 8 files in this ZIP to the same GitHub folder.
+
+Rules included:
+1. Each department dashboard shows only its own RUNNING jobs.
+2. Open Random Queue only opens current department work; other departments' running work never appears here.
+3. A Lot already submitted from the current department is hidden from that department's queue.
+4. Dispatch remains outside the normal Assign/Submit production queue.
+5. Latest Cutting Master is included. After every successful Cutting release it calls rr_upm_sync_cutting_lots_v2(), which registers released lots for UPM.
+
+No SQL is required for this package because the installed rr_upm_sync_cutting_lots_v2() bridge is used.
