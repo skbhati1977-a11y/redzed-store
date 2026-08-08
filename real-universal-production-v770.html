@@ -28,7 +28,6 @@
 .action-confirm-grid select{width:100%}
 .action-confirm-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
 .action-confirm-actions button{min-height:48px;font-size:15px}
-/* V746: assigned Colour remains clearly actionable after assignment */
 .work-pick,.assign-pick{accent-color:#1687ff!important;opacity:1!important;cursor:pointer!important}
 .work-pick:disabled,.assign-pick:disabled{accent-color:#666!important;opacity:.45!important;cursor:not-allowed!important}
 .colour-card.assigned .work-pick:not(:disabled){filter:drop-shadow(0 0 4px #1687ff)}
@@ -38,8 +37,22 @@
 #rf794Inbox{position:fixed;right:12px;bottom:12px;z-index:45}#rf794Bell{background:#20252e;box-shadow:0 4px 22px #0009}#rf794Bell.live{background:#8a2d3f;animation:rrBlink 1.3s infinite}
 #rf794Sheet{width:min(620px,100%);height:auto;max-height:94vh;border-radius:18px 18px 0 0;position:relative}.rf794-close{position:absolute;right:10px;top:10px;font-size:22px;padding:4px 12px}.rf794-totals{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin:10px 0}.rf794-totals b{padding:9px;border:1px solid var(--line);border-radius:9px;background:#171b23}.rf794-totals .ok{color:var(--ok)}.rf794-totals .bad{color:var(--bad)}.rf794-matrix{display:grid;gap:8px}.rf794-matrix section{border:1px solid var(--line);border-radius:10px;padding:8px}.rf794-matrix h4{margin:0 0 7px}.rf794-matrix section>div{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}.rf794-matrix label{display:grid;grid-template-columns:1fr 72px;align-items:center;gap:5px;background:#171b23;border-radius:8px;padding:6px}.rf794-matrix label span{font-weight:850}.rf794-matrix small{display:block;color:var(--mut);font-size:9px}.rf794-matrix input{width:72px;padding:8px}.rf794-actions{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:7px;margin-top:12px}.rf794-actions button{min-height:46px}.rf794-next{display:grid;gap:5px;margin-top:10px;color:var(--mut)}.rf794-lock{color:var(--warn);font-weight:800}.rf794-no-assign .rf-route-chart button{display:none}.rf794-no-assign .rf-queue-card{display:none}
 @media(max-width:430px){.rf794-matrix section>div{grid-template-columns:1fr 1fr}.rf794-totals{grid-template-columns:1fr 1fr}#rf794Sheet{padding:10px}}
-/* V798.8 Ready-to-Assign controls */
 .assign-table-title{grid-column:1/-1;display:flex;align-items:baseline;justify-content:space-between;gap:12px;color:#9ec5ff}.assign-table-title small{color:var(--mut);font-weight:650}
+
+/* Smart Assign Vertical Overflow & Scroll Fix */
+#traveller.rf-smart-assign .sheet {
+    max-height: 88vh !important;
+    height: auto !important;
+    overflow-y: auto !important;
+    padding-bottom: 60px !important;
+}
+
+#traveller.rf-smart-assign #colours {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    margin-top: 15px !important;
+}
 </style>
 </head>
 <body>
