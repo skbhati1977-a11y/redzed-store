@@ -139,9 +139,14 @@ async function load() {
 }
 
 function fillDepartments() {
-  const options = state.departments.map(department => `<option value="${esc(department.department_code)}">${esc(department.department_name)}</option>`).join("");
+  const options = state.departments.filter(isAssignableProductionDepartment).map(department => `<option value="${esc(department.department_code)}">${esc(department.department_name)}</option>`).join("");
   $("homeDept").innerHTML = '<option value="">All departments</option>' + options;
   $("dept").innerHTML = options;
+}
+
+function isAssignableProductionDepartment(department) {
+  const code = upper(department?.department_code);
+  return department?.is_active !== false && upper(department?.department_type || "PRODUCTION") === "PRODUCTION" && code !== "CUTTING" && code !== "DESPATCH" && code !== "DISPATCH";
 }
 
 function lotMatchesDepartment(lot, departmentCode) {
@@ -218,7 +223,7 @@ async function openLotAtDepartment(id, departmentCode) {
   state.lot = state.lots.find(row => row.canonical_lot_id === id);
   if (!state.lot) throw new Error("Lot not found.");
   const code = upper(departmentCode);
-  const options = state.departments.map(department =>
+  const options = state.departments.filter(isAssignableProductionDepartment).map(department =>
     `<option value="${esc(department.department_code)}">${esc(department.department_name)}</option>`
   ).join("");
   $("dept").innerHTML = options;
@@ -509,7 +514,7 @@ function eligibleNextDepartments() {
   return state.departments.filter(d => {
     const code = upper(d.department_code);
     const type = upper(d.department_type || "PRODUCTION");
-    return d.is_active !== false && code && code !== current && code !== "CUTTING" && type === "PRODUCTION" && d.colour_assignment_enabled !== false && d.worker_assignment_enabled !== false;
+    return d.is_active !== false && code && code !== current && code !== "CUTTING" && code !== "DESPATCH" && code !== "DISPATCH" && type === "PRODUCTION" && d.colour_assignment_enabled !== false && d.worker_assignment_enabled !== false;
   });
 }
 

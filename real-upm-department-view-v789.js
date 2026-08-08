@@ -15,9 +15,11 @@
     TEAK_TANKI: ["TEAK_TANKI", "TEAK", "TACK", "TANKI"],
     THREAD_CUT: ["THREAD_CUT", "THREAD_CUTTING", "TH_CUT"],
     QC: ["QC", "CHECKING", "QUALITY_CHECK"], PRESS: ["PRESS", "FINISHING"],
-    PACKING: ["PACKING", "PACK"], DESPATCH: ["DESPATCH", "DISPATCH"]
+    PACKING: ["PACKING", "PACK"]
   };
-  const route = ["CUTTING", "PRINTING", "STICKER", "ID", "KR", "OVERLOCK", "FOLDING", "KAAJ_BUTTON", "TEAK_TANKI", "THREAD_CUT", "QC", "PRESS", "PACKING", "DESPATCH"];
+  // Despatch is a separate stock/challan module. It must never be mounted in
+  // the production assignment or submit queue.
+  const route = ["CUTTING", "PRINTING", "STICKER", "ID", "KR", "OVERLOCK", "FOLDING", "KAAJ_BUTTON", "TEAK_TANKI", "THREAD_CUT", "QC", "PRESS", "PACKING"];
   const accepted = aliases[requested] || [requested];
   const cache = new Map();
   const lastSubmitCache = new Map();
@@ -156,25 +158,6 @@
     }).sort((a, b) => route.indexOf(a.canonical) - route.indexOf(b.canonical));
   }
 
-  function withControlledDespatch(targets) {
-    const productionTargets = targets.filter(target => target.canonical !== "DESPATCH");
-    productionTargets.push({
-      department_code: "DESPATCH",
-      department_name: "Despatch",
-      canonical: "DESPATCH",
-      controlled_flow: true
-    });
-    return productionTargets;
-  }
-
-  function openControlledDespatch(lotNo) {
-    const url = new URL("real-finished-goods-v787.html", location.href);
-    url.searchParams.set("view", "despatch");
-    url.searchParams.set("mode", params.get("mode") || "TEST");
-    if (lotNo) url.searchParams.set("lot", lotNo);
-    location.href = url.href;
-  }
-
   async function chooseTarget(lotId, target) {
     const currentRank = route.indexOf(requested);
     const targetRank = route.indexOf(target.canonical);
@@ -203,21 +186,15 @@
       // this routing view. The claim RPC validates selected colours on action.
       const lastSubmitted = await lastSubmittedDepartment(lot.canonical_lot_id);
       if (lastSubmitted === requested) continue;
-      const targets = withControlledDespatch(
-        eligibleTargets(snap.departments, meta.identity || {}, lastSubmitted).filter(t=>t.canonical===requested)
-      );
+      const targets = eligibleTargets(snap.departments, meta.identity || {}, lastSubmitted)
+        .filter(t => t.canonical === requested);
       if (!targets.length) continue;
-      cards.push(`<article class="rf-queue-card"><div><b>${esc(lot.lot_no)}</b><span>CB ${esc(meta.identity?.cb_no || lot.cb_no || "—")} · ART ${esc(meta.identity?.art_no || lot.art_no || "—")}</span></div><p class="rf-worker-rule">एक या multiple Colours select · हर Colour की सभी Sizes एक Worker</p><div class="rf-route-chart">${targets.map(t => t.controlled_flow
-        ? `<button type="button" data-despatch-lot="${esc(lot.lot_no)}" class="rf-despatch">${esc(t.department_name)}<small>OPEN DESPATCH</small></button>`
-        : `<button type="button" data-lot="${esc(lot.canonical_lot_id)}" data-dept="${esc(t.department_code)}" class="${route.indexOf(t.canonical) >= route.indexOf(requested) ? "rf-direct" : "rf-warning"}">${esc(t.department_name || t.canonical)}<small>${route.indexOf(t.canonical) >= route.indexOf(requested) ? "ASSIGN SELECTED COLOURS" : "⚠ WARNING ASSIGN"}</small></button>`).join("")}</div></article>`);
+      cards.push(`<article class="rf-queue-card"><div><b>${esc(lot.lot_no)}</b><span>CB ${esc(meta.identity?.cb_no || lot.cb_no || "—")} · ART ${esc(meta.identity?.art_no || lot.art_no || "—")}</span></div><p class="rf-worker-rule">READY TO ASSIGN · एक या multiple Colours select · हर Colour की सभी Sizes एक Worker</p><div class="rf-route-chart">${targets.map(t => `<button type="button" data-lot="${esc(lot.canonical_lot_id)}" data-dept="${esc(t.department_code)}" class="${route.indexOf(t.canonical) >= route.indexOf(requested) ? "rf-direct" : "rf-warning"}">${esc(t.department_name || t.canonical)}<small>READY TO ASSIGN</small></button>`).join("")}</div></article>`);
     }
     host.innerHTML = cards.join("") || `<div class="msg">No OPEN RANDOM QUEUE lots available for ${esc(label)}.</div>`;
     host.querySelectorAll("[data-lot][data-dept]").forEach(button => button.onclick = () => {
       const department = snap.departments.find(d => upper(d.department_code) === upper(button.dataset.dept));
       if (department) chooseTarget(button.dataset.lot, { ...department, canonical: canonical(department.department_code) });
-    });
-    host.querySelectorAll("[data-despatch-lot]").forEach(button => {
-      button.onclick = () => openControlledDespatch(button.dataset.despatchLot);
     });
   }
 
@@ -250,7 +227,9 @@
   #traveller.rf-smart-assign .formbar .field:nth-child(2){display:block!important}
   #traveller.rf-smart-assign .formbar input{width:100%;min-height:50px;font-size:17px}
   #traveller.rf-smart-assign .colour-card.assigned,#traveller.rf-smart-assign .colour-card.waiting,#traveller.rf-smart-assign .colour-card.done{display:none!important}
-  #traveller.rf-smart-assign .colour-card .size-wrap,#traveller.rf-smart-assign .colour-card .colour-meta,#traveller.rf-smart-assign .worker-block label:nth-child(2){display:none!important}
+  /* Ready-to-Assign keeps the same colour × size table as Submit. Qty is
+     locked from Cutting; only colour selection and worker routing are editable. */
+  #traveller.rf-smart-assign .worker-block label:nth-child(2){display:none!important}
   #traveller.rf-smart-assign .bulk-assign{position:static;display:flex!important;flex-direction:column;align-items:stretch;gap:9px;margin:0;padding:11px}
   #traveller.rf-smart-assign .bulk-assign>*{width:100%;min-height:52px}
   #traveller.rf-smart-assign .bulk-assign label{display:flex;flex-direction:column;min-height:auto;font-size:12px}
@@ -281,5 +260,5 @@
     sync();
   }).observe(document.body, { childList: true, subtree: true });
   sync();
-  console.info("REAL FACTORY V798.3 · ALL-DEPARTMENT SCOPED QUEUE");
+  console.info("REAL FACTORY V798.4 · RELEASED LOT READY-TO-ASSIGN QUEUE · DESPATCH SEPARATE");
 })();

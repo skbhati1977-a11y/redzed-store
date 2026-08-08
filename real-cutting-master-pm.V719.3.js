@@ -3247,9 +3247,35 @@ async function createLot(event = {}) {
     if (result.error) throw result.error;
     releaseCommitted = true;
 
+    // A release is not announced to Production until its UPM registry rows
+    // exist. This applies to both single and multi-lot releases and avoids a
+    // browser refresh leaving a released Cutting lot invisible to Ready to Assign.
+    const releasedNos = valid.lots.map(row => String(row.lot_no || "").trim().toUpperCase()).filter(Boolean);
+    let upmSyncError = null;
+    for (let attempt = 1; attempt <= 3; attempt += 1) {
+      try {
+        const upmSync = await client.rpc("rr_upm_sync_cutting_lots_v2");
+        if (upmSync.error) throw upmSync.error;
+        const { data: mapped, error: mapError } = await client
+          .from("rr_upm_lot_registry")
+          .select("lot_no,canonical_lot_id")
+          .in("lot_no", releasedNos);
+        if (mapError) throw mapError;
+        const mappedNos = new Set((mapped || []).map(row => String(row.lot_no || "").trim().toUpperCase()));
+        const missing = releasedNos.filter(lotNo => !mappedNos.has(lotNo));
+        if (!missing.length) { upmSyncError = null; break; }
+        upmSyncError = new Error(`UPM mapping missing for ${missing.join(", ")}.`);
+      } catch (error) {
+        upmSyncError = error;
+      }
+      await new Promise(resolve => window.setTimeout(resolve, attempt * 350));
+    }
+    if (upmSyncError) {
+      throw new Error(`Cutting release saved, but Ready to Assign mapping is not verified: ${errorText(upmSyncError)}. Run the V798.4 SQL once, then refresh Cutting and Production.`);
+    }
+
     const matchingWarnings = await confirmMatchingReservations(client, matchingReservations);
     const actualRateWarnings = await postCuttingActuals(valid, client);
-    const releasedNos = valid.lots.map(row => row.lot_no);
     lastReleasedLotNo = releasedNos[0] || "";
     lastReleasedDivisionId = activeCard.division.division_id;
 
@@ -3264,15 +3290,7 @@ async function createLot(event = {}) {
         ?.scrollIntoView({ behavior: "smooth", block: "center" });
     }, 80);
 
-    let upmWarning = "";
-    try {
-      const upmSync = await client.rpc("rr_upm_sync_cutting_lots_v2");
-      if (upmSync.error) throw upmSync.error;
-    } catch (syncError) {
-      console.warn("UPM V722 sync warning:", syncError);
-      upmWarning = `UPM queue registration pending: ${errorText(syncError)}`;
-    }
-    const releaseWarnings = [...matchingWarnings, ...actualRateWarnings, ...(upmWarning ? [upmWarning] : [])];
+    const releaseWarnings = [...matchingWarnings, ...actualRateWarnings];
     const nextStage = valid.decision?.noPrintRequired ? "OPEN FOR STICKER / KR / OV ASSIGNMENT" : "RELEASED TO PRINTER";
     const successText = releaseWarnings.length
       ? `LOT ${releasedNos.join(" · ")} RELEASED · ${nextStage} · Follow-up warning: ${releaseWarnings.join(" | ")}`

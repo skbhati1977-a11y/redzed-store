@@ -1,0 +1,18 @@
+REAL FACTORY V798.4 — RELEASED LOT → READY TO ASSIGN
+
+1. Supabase SQL Editor: run RUN_FIRST_REAL_FACTORY_V798_4_RELEASE_QUEUE_READY_ASSIGN.sql once.
+2. It must return REAL_FACTORY_V798_4_RELEASE_QUEUE_READY_ASSIGN.
+3. GitHub: upload and replace only these four files in the same app folder:
+   - real-cutting-master-pm.V719.3.js
+   - real-universal-production-v770.html
+   - real-universal-production-v729.js
+   - real-upm-department-view-v789.js
+4. Deploy and hard-refresh the app.
+
+Locked result:
+- Single and Multi Cutting releases are verified in UPM registry before success is announced.
+- A fresh released colour is READY TO ASSIGN in every production department.
+- A running colour opens only in its own current department.
+- A colour submitted from the current department never returns to that department's Open Queue.
+- Ready to Assign now keeps the same Colour × Size table view as Submit; Cutting Qty is read-only.
+- Despatch is fully separate and untouched.
