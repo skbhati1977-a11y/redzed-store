@@ -985,7 +985,10 @@ async function directBulkSubmitV763({
     canonicalDepartmentV762(departmentCode);
 
   const liveRows = bulkSubmitRowsV763(canonicalDepartment);
-  const rowsToSubmit = liveRows.length ? liveRows : rows || [];
+  const requestedCodes = new Set((rows || []).map(row => upper(row.colour_code)).filter(Boolean));
+  const rowsToSubmit = requestedCodes.size
+    ? liveRows.filter(row => requestedCodes.has(upper(row.colour_code)))
+    : liveRows;
 
   if (!rowsToSubmit.length) {
     throw new Error(
@@ -1051,7 +1054,7 @@ async function directBulkSubmitV763({
   } finally {
     if (button) {
       button.disabled = false;
-      button.textContent = "SUBMIT ALL RUNNING";
+      button.textContent = "SUBMIT SELECTED";
     }
   }
 }
@@ -1115,6 +1118,28 @@ async function bulkSubmitRateGateV763({
   return false;
 }
 
+function v799SelectedCodes() {
+  return new Set([...document.querySelectorAll('.v799-bulk-pick:checked')]
+    .map(input => upper(input.dataset.v799Colour)).filter(Boolean));
+}
+function v799SetBulkSelection(mode, departmentCode = '') {
+  const department = canonicalDepartmentV762(departmentCode);
+  document.querySelectorAll('.v799-bulk-pick').forEach(input => {
+    const row = (currentMatrix?.colours || []).find(r => upper(r.colour_code) === upper(input.dataset.v799Colour));
+    if (!row) return;
+    const status = upper(row.ownership_status);
+    const rowDepartment = canonicalDepartmentV762(row.department_code);
+    input.checked = mode === 'CLEAR' ? false
+      : mode === 'ASSIGN' ? status === 'OPEN'
+      : mode === 'SUBMIT' ? Boolean(row.assignment_id) && rowDepartment === department && ['ASSIGNED','RUNNING','IN_PROGRESS'].includes(status)
+      : input.checked;
+  });
+}
+function v799SelectedSubmitRows(departmentCode) {
+  const selected = v799SelectedCodes();
+  return bulkSubmitRowsV763(departmentCode).filter(row => selected.has(upper(row.colour_code)));
+}
+
 async function runBulkSubmitV763() {
   try {
     const department =
@@ -1126,11 +1151,11 @@ async function runBulkSubmitV763() {
       throw new Error("Bulk Submit ke liye active Department select karein.");
     }
 
-    const rows = bulkSubmitRowsV763(department);
+    const rows = v799SelectedSubmitRows(department);
 
     if (!rows.length) {
       throw new Error(
-        `${departmentLabel} me koi running Colour Submit ke liye available nahi hai.`
+        `${departmentLabel} me Submit ke liye kam se kam 1 running Colour select karein.`
       );
     }
 
@@ -1838,7 +1863,10 @@ function detailedRows(data) {
         data-v756-department="${esc(row.department_code)}"
         data-v756-status="${esc(row.ownership_status)}">
         <td class="v756-colour">
-          <b>${esc(row.colour_code)}</b>
+          <label class="v799-bulk-pick-wrap" title="Bulk action ke liye Colour select karein">
+            <input type="checkbox" class="v799-bulk-pick" data-v799-colour="${esc(row.colour_code)}">
+            <b>${esc(row.colour_code)}</b>
+          </label>
           ${sizeInfo.summary ? `<small class="v756-row-sizes">${esc(sizeInfo.summary)}</small>` : ""}
         </td>
         <td>${esc(row.department_name)}</td>
@@ -1904,20 +1932,26 @@ async function renderCheckinTable() {
       <strong>BULK ASSIGN</strong>
       <div id="v756BulkDepartmentHost"></div>
       <div id="v756BulkWorkerHost"></div>
-      <button type="button" id="v756BulkAssign">ASSIGN ALL ELIGIBLE</button>
+      <div class="v799-bulk-select-actions">
+        <button type="button" id="v799AssignSelectAll">SELECT ALL ELIGIBLE</button>
+        <button type="button" id="v799AssignClear">CLEAR</button>
+      </div>
+      <button type="button" id="v756BulkAssign">ASSIGN SELECTED</button>
       <small id="v756BulkNote">
-        Random Open Queue ke sabhi Colours selected Department/Worker ko assign honge.
+        1, 2, random multiple ya all OPEN Colours select karke selected Department/Worker ko assign karein.
       </small>
     </div>
 
     <div class="v756-bulk v763-bulk-submit">
       <strong>BULK SUBMIT</strong>
       <div id="v763BulkSubmitDepartmentHost"></div>
-      <button type="button" id="v763BulkSubmit">
-        SUBMIT ALL RUNNING
-      </button>
+      <div class="v799-bulk-select-actions">
+        <button type="button" id="v799SubmitSelectAll">SELECT ALL RUNNING</button>
+        <button type="button" id="v799SubmitClear">CLEAR</button>
+      </div>
+      <button type="button" id="v763BulkSubmit">SUBMIT SELECTED</button>
       <small id="v763BulkSubmitNote">
-        Selected active Department ke saare running Colours ek saath Submit honge.
+        1, 2, random multiple ya all running Colours select karein. Har Colour apne already assigned Worker mapping se auto Submit hoga.
       </small>
     </div>
 
@@ -1969,6 +2003,8 @@ async function renderCheckinTable() {
       console.error("V764 unfinished department list failed", error);
     });
   $("v756BulkAssign")?.addEventListener("click", runBulkAssign);
+  $("v799AssignSelectAll")?.addEventListener("click", () => v799SetBulkSelection("ASSIGN"));
+  $("v799AssignClear")?.addEventListener("click", () => v799SetBulkSelection("CLEAR"));
 
   window.v763BulkSubmitDepartmentSearch = createSearchableDropdown({
     container: $("v763BulkSubmitDepartmentHost"),
@@ -1978,6 +2014,12 @@ async function renderCheckinTable() {
   });
 
   $("v763BulkSubmit")?.addEventListener("click", runBulkSubmitV763);
+  $("v799SubmitSelectAll")?.addEventListener("click", () => {
+    const department = window.v763BulkSubmitDepartmentSearch?.getValue?.() || "";
+    if (!department) return alert("Pehle active Department select karein.");
+    v799SetBulkSelection("SUBMIT", department);
+  });
+  $("v799SubmitClear")?.addEventListener("click", () => v799SetBulkSelection("CLEAR"));
 
   repairIdentityDisplayV7604();
 
@@ -3159,7 +3201,11 @@ async function runBulkAssign() {
       );
     }
 
+    const selectedCodes = v799SelectedCodes();
+    if (!selectedCodes.size) throw new Error("Assign ke liye kam se kam 1 OPEN Colour select karein.");
+
     const eligible = (currentMatrix?.colours || []).filter(row => {
+      if (!selectedCodes.has(upper(row.colour_code))) return false;
       if (upper(row.ownership_status) !== "OPEN") return false;
 
       const completedForColour =
@@ -3173,13 +3219,13 @@ async function runBulkAssign() {
     });
 
     if (!eligible.length) {
-      throw new Error("Random Open Queue me koi Colour available nahi hai.");
+      throw new Error("Selected Colours me koi eligible OPEN Colour available nahi hai.");
     }
 
     const names = eligible.map(row => row.colour_code).join(", ");
 
     if (!confirm(
-      `Assign ALL OPEN Colours: ${names}\n` +
+      `Assign SELECTED OPEN Colours: ${names}\n` +
       `Department: ${departmentLabel}\n` +
       `Worker: ${workerLabel}\n\nConfirm?`
     )) return;
@@ -4018,4 +4064,14 @@ window.REDZED_UPM_V765 = {
 };
 
 console.info("REDZED UPM", VERSION);
+
+const v799BulkStyle = document.createElement("style");
+v799BulkStyle.textContent = `
+  .v799-bulk-pick-wrap{display:flex;align-items:center;gap:9px;cursor:pointer}
+  .v799-bulk-pick{width:20px;height:20px;accent-color:#56efb2;flex:0 0 auto}
+  .v799-bulk-select-actions{display:grid;grid-template-columns:1fr auto;gap:8px;margin-top:8px}
+  .v799-bulk-select-actions button{min-height:40px}
+`;
+document.head.appendChild(v799BulkStyle);
+console.log("REAL FACTORY V799.2 SELECTIVE BULK ASSIGN/SUBMIT ready");
 })();
