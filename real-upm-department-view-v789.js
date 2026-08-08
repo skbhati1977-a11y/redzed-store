@@ -158,6 +158,83 @@
     }).sort((a, b) => route.indexOf(a.canonical) - route.indexOf(b.canonical));
   }
 
+
+  const rfDiagRuntime = {
+    loadedAt: new Date().toISOString(),
+    lastError: "",
+    lastRejection: "",
+    lastQueueError: ""
+  };
+  window.addEventListener("error", event => {
+    rfDiagRuntime.lastError = [event.message, event.filename, event.lineno && `line ${event.lineno}`].filter(Boolean).join(" · " );
+  });
+  window.addEventListener("unhandledrejection", event => {
+    rfDiagRuntime.lastRejection = String(event.reason?.message || event.reason || "Unhandled promise rejection");
+  });
+
+  function diagRow(name, ok, value) {
+    return `<div class="rf-screen-check ${ok ? "ok" : "bad"}"><b>${ok ? "PASS" : "FAIL"}</b><span>${esc(name)}</span><strong>${esc(value)}</strong></div>`;
+  }
+
+  async function runScreenDiagnostic() {
+    const panel = document.getElementById("rfScreenErrorPanel");
+    if (!panel) return;
+    panel.classList.remove("hidden");
+    panel.innerHTML = '<div class="rf-screen-error-head"><b>UPM SCREEN ERROR CHECK</b><span class="badge warn">CHECKING…</span></div><div class="msg">Reading screen, UPM snapshot and backend source availability…</div>';
+
+    const checks = [];
+    const api = window.RealFactoryUPM;
+    const sb = client();
+    const selectedDept = document.getElementById("homeDept")?.value || "";
+    const frontMsg = (document.getElementById("message")?.textContent || "").trim();
+    let snap = null;
+    let snapError = "";
+    try { snap = api?.snapshot?.() || null; } catch (e) { snapError = e?.message || String(e); }
+
+    checks.push(["Diagnostic JS", true, "V798.8 SCREEN + POPUP"]);
+    checks.push(["Requested Department", !!requested, requested || "MISSING"]);
+    checks.push(["Home Department", matchesCurrent(selectedDept), selectedDept || "EMPTY"]);
+    checks.push(["Supabase client", !!sb, sb ? "CONNECTED OBJECT FOUND" : "CLIENT MISSING"]);
+    checks.push(["RealFactoryUPM API", !!api, api ? "LOADED" : "NOT LOADED"]);
+    checks.push(["UPM snapshot", !!snap, snap ? "READABLE" : (snapError || "UNAVAILABLE")]);
+    checks.push(["Snapshot Lots", (snap?.lots?.length || 0) > 0, String(snap?.lots?.length || 0)]);
+    checks.push(["Snapshot Departments", (snap?.departments?.length || 0) > 0, String(snap?.departments?.length || 0)]);
+    checks.push(["Main board cards", document.querySelectorAll(".lot-card[data-lot]").length > 0, String(document.querySelectorAll(".lot-card[data-lot]").length)]);
+    checks.push(["Open Random Queue cards", document.querySelectorAll("#rfDepartmentQueue .rf-queue-card").length > 0, String(document.querySelectorAll("#rfDepartmentQueue .rf-queue-card").length)]);
+    checks.push(["Queue assign buttons", document.querySelectorAll("#rfDepartmentQueue [data-lot][data-dept]").length > 0, String(document.querySelectorAll("#rfDepartmentQueue [data-lot][data-dept]").length)]);
+    checks.push(["Last JS runtime error", !rfDiagRuntime.lastError, rfDiagRuntime.lastError || "NONE"]);
+    checks.push(["Last promise rejection", !rfDiagRuntime.lastRejection, rfDiagRuntime.lastRejection || "NONE"]);
+    checks.push(["Queue render error", !rfDiagRuntime.lastQueueError, rfDiagRuntime.lastQueueError || "NONE"]);
+
+    const serverLines = [];
+    if (sb) {
+      try {
+        const { data, error } = await sb.from("rr_upm_work_assignments_v8").select("canonical_lot_id,department_code,status").in("department_code", accepted).in("status", ["ASSIGNED","RUNNING","ACTIVE"]).limit(50);
+        if (error) throw error;
+        serverLines.push(`Active assignment rows for ${requested}: ${(data || []).length}`);
+      } catch (e) { serverLines.push(`Assignments query ERROR: ${e?.message || e}`); }
+      try {
+        const { data, error } = await sb.from("rr_upm_dynamic_submit_history_v741").select("canonical_lot_id,department_code,submitted_at").order("submitted_at", { ascending:false }).limit(25);
+        if (error) throw error;
+        serverLines.push(`Recent submit-history rows readable: ${(data || []).length}`);
+      } catch (e) { serverLines.push(`Submit-history query ERROR: ${e?.message || e}`); }
+    }
+
+    const failCount = checks.filter(([,ok]) => !ok).length;
+    panel.innerHTML = `<div class="rf-screen-error-head"><b>UPM SCREEN ERROR CHECK</b><span class="badge ${failCount ? "bad" : "ok"}">${failCount ? failCount + " FAIL" : "ALL PASS"}</span></div>${checks.map(([n,o,v]) => diagRow(n,o,v)).join("")}<div class="rf-form-last"><small>Frontend message</small><div>${esc(frontMsg || "No frontend message")}</div></div><div class="rf-server-debug"><b>BACKEND READ CHECK</b><pre>${esc(serverLines.join("\n") || "Backend check unavailable.")}</pre></div><div class="rf-server-debug"><b>SCREEN URL</b><pre>${esc(location.href)}</pre></div>`;
+  }
+
+  function installScreenErrorCheck() {
+    if (document.getElementById("rfScreenErrorCheckBtn")) return;
+    const section = document.querySelector(".rf-queue-section");
+    if (!section) return;
+    const wrap = document.createElement("div");
+    wrap.className = "rf-screen-error-wrap";
+    wrap.innerHTML = '<button id="rfScreenErrorCheckBtn" class="warning" type="button">ERROR CHECK · SCREEN</button><section id="rfScreenErrorPanel" class="rf-screen-error-panel hidden"></section>';
+    section.insertAdjacentElement("afterbegin", wrap);
+    document.getElementById("rfScreenErrorCheckBtn").onclick = runScreenDiagnostic;
+  }
+
   let smartAssignDiagnosticContext = null;
 
   function installSmartAssignErrorCheck() {
@@ -336,10 +413,13 @@
   #traveller.rf-smart-assign .colour-list,#traveller.rf-smart-submit .colour-list{max-height:38dvh;overflow:auto}
   #traveller.rf-smart-assign .colour-card,#traveller.rf-smart-submit .colour-card{border-radius:12px}
   #traveller.rf-smart-assign .colour-head,#traveller.rf-smart-submit .colour-head{padding:10px}
+
+  .rf-screen-error-wrap{margin:0 0 12px;position:relative}.rf-screen-error-wrap>button{min-height:44px;border-color:#b7791f;background:#4b3412;color:#ffe3a3}.rf-screen-error-panel{margin-top:8px;border:1px solid #8a6b2b;border-radius:12px;padding:10px;background:#120f09;max-height:55vh;overflow:auto}.rf-screen-error-head{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px}.rf-screen-check{display:grid;grid-template-columns:48px minmax(120px,1fr) minmax(110px,1.5fr);gap:8px;align-items:center;padding:7px 0;border-top:1px solid #ffffff18;font-size:12px}.rf-screen-check.ok b{color:#56efb2}.rf-screen-check.bad b{color:#ff7b8a}.rf-screen-check strong{font-size:11px;overflow-wrap:anywhere;text-align:right}.rf-screen-error-panel pre{white-space:pre-wrap;overflow-wrap:anywhere;font-size:11px;color:#cbd5e1}.rf-screen-error-panel .badge.bad{color:#ff7b8a;border-color:#8c3c49}.rf-screen-error-panel .badge.ok{color:#56efb2;border-color:#34745b}
   @media(max-width:700px){.rf-queue-title,.rf-queue-card>div:first-child{align-items:flex-start;flex-direction:column}.rf-route-chart{grid-template-columns:1fr 1fr}#traveller.rf-smart-assign,#traveller.rf-smart-submit{align-items:flex-end;padding:0}#traveller.rf-smart-assign .sheet,#traveller.rf-smart-submit .sheet{width:100%;max-height:94dvh;border-radius:20px 20px 0 0;padding:12px 12px calc(12px + env(safe-area-inset-bottom))}}
   @media(max-width:420px){.rf-route-chart{grid-template-columns:1fr}#traveller.rf-smart-assign .sticky h2:after,#traveller.rf-smart-submit .sticky h2:after{font-size:18px}}`;
   document.head.append(style);
   applyShell();
+  installScreenErrorCheck();
 
   let timer;
   const sync = () => {
@@ -347,12 +427,12 @@
     enhanceRunningCards();
     installSmartAssignErrorCheck();
     clearTimeout(timer);
-    timer = setTimeout(async () => { await filterRunningCards(); await renderQueue(); }, 80);
+    timer = setTimeout(async () => { try { await filterRunningCards(); await renderQueue(); rfDiagRuntime.lastQueueError = ""; } catch (error) { rfDiagRuntime.lastQueueError = error?.message || String(error); console.error("UPM queue render failed", error); const host=document.getElementById("rfDepartmentQueue"); if(host) host.innerHTML=`<div class="msg error">Queue load failed: ${esc(rfDiagRuntime.lastQueueError)} · Run ERROR CHECK.</div>`; } }, 80);
   };
   new MutationObserver(mutations => {
     if (mutations.every(mutation => mutation.target.closest?.("#rfDepartmentQueue"))) return;
     sync();
   }).observe(document.body, { childList: true, subtree: true });
   sync();
-  console.info("REAL FACTORY V798.7 · SMART ASSIGN ERROR CHECK · RELEASED LOT QUEUE · DESPATCH SEPARATE");
+  console.info("REAL FACTORY V798.8 · SCREEN + SMART ASSIGN ERROR CHECK · RELEASED LOT QUEUE · DESPATCH SEPARATE");
 })();
