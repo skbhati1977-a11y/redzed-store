@@ -97,9 +97,6 @@ function cbNo(lot) {
 }
 
 async function loadBoardMeta(lot) {
-  // rr_upm_lot_board_v1 is the canonical board source loaded above. The old
-  // v743 live-status RPC is optional and is absent in current deployment, so
-  // the main board must never depend on it or emit a 404 for every Lot.
   state.boardMeta.set(lot.canonical_lot_id, {
     status_unavailable: true,
     department_statuses: [],
@@ -254,10 +251,17 @@ async function loadContext() {
   if (!state.lot || !$("dept").value) return;
   try {
     setFormMessage("Verified Single/Multi Cutting mapping and workflow balances loading…");
-    state.context = await rpc("rr_upm_universal_form_v741", {
+    const rawCtx = await rpc("rr_upm_universal_form_v741", {
       p_canonical_lot_id: state.lot.canonical_lot_id,
       p_department_code: $("dept").value
     });
+    if (Array.isArray(rawCtx)) {
+      state.context = { success: true, rows: rawCtx };
+    } else if (rawCtx && typeof rawCtx === "object") {
+      state.context = { ...rawCtx, rows: Array.isArray(rawCtx.rows) ? rawCtx.rows : (Array.isArray(rawCtx.data) ? rawCtx.data : []) };
+    } else {
+      state.context = { success: true, rows: [] };
+    }
     if (state.context?.lot) {
       const identity = state.context.lot;
       [["cb_no","identityCb"],["art_no","identityArt"],["print_no","identityPrint"],["frame_no","identityFrame"]].forEach(([key,id]) => {
@@ -283,7 +287,7 @@ async function loadContext() {
       : `OPEN RANDOM QUEUE · First Assignment Wins · ${openCount} Colour इस Department में claim किए जा सकते हैं.`;
     renderColours();
     const source = arr(state.context.rows)[0]?.source_type || "NO SOURCE";
-    setFormMessage(`${state.context.department_code} · ${source} Cutting source · Full-colour assignment · Transaction-safe work actions.`, "success");
+    setFormMessage(`${state.context.department_code || $("dept").value} · ${source} Cutting source · Full-colour assignment · Transaction-safe work actions.`, "success");
   } catch (error) {
     console.error(error);
     state.context = null;
@@ -296,7 +300,6 @@ function currentDepartmentWorkers() {
   const department = upper($("dept")?.value || state.context?.department_code);
   return arr(state.context?.workers).filter(worker => upper(worker.department_code) === department);
 }
-
 
 function applyDepartmentSelectColour(){
   const select=$("dept");
@@ -324,6 +327,7 @@ function filterDepartmentDropdown(){
   applyDepartmentSelectColour();
   return upper(select.value)!==current;
 }
+
 function lmCandidates(){return arr(state.mapping?.line_man_candidates);}
 function openWhatsApp(result){if(result?.whatsapp_url)window.open(result.whatsapp_url,"_blank","noopener");}
 
@@ -342,14 +346,6 @@ function fillBulkWorker() {
   if (![...select.options].some(option => option.value === selected)) select.value = "";
 }
 
-function responsibilityLabel(type) {
-  return ({ALTER_PENDING:"ALTER PENDING",LINE_MAN_PENDING:"LINE MAN PENDING",WORKER_REMAKE_PENDING:"WORKER REMAKE PENDING",DAMAGE:"DAMAGE"})[type] || type;
-}
-
-function responsibilityKind(type) {
-  return type === "ALTER_PENDING" ? "alter" : type === "DAMAGE" ? "damage" : "remake";
-}
-
 function renderSummary() {
   const total = state.context?.summary || {};
   $("summary").innerHTML = [
@@ -363,6 +359,7 @@ function renderSummary() {
     <div class="responsibility-row"><label><input class="journey-pick" type="checkbox" value="${esc(row.journey_id)}"> ${esc(row.stage_label)} · ${esc(row.colour_name||row.colour_code)} / ${esc(row.size_code)}</label></div>
   </section>`).join(""):'<section class="freeze-group"><div class="freeze-title"><span>ALTER JOURNEY</span><strong>NONE</strong></div></section>';
 }
+
 function groups() {
   const map = new Map();
   arr(state.context?.rows).forEach((row, index) => {
@@ -380,7 +377,7 @@ function groups() {
     group.workerRemakeTotal += num(row.worker_remake_pending_qty ?? row.remake_qty);
     group.damageTotal += num(row.damage_qty);
     group.unresolvedTotal += num(row.alter_open_qty ?? row.alter_qty) + num(row.line_man_pending_qty) + num(row.worker_remake_pending_qty ?? row.remake_qty);
-    group.canAssign = group.canAssign || Boolean(row.can_assign);
+    group.canAssign = group.canAssign || (row.can_assign !== false);
     group.completedHere = group.completedHere || Boolean(row.is_completed_here) || upper(row.status)==="SUBMITTED HERE";
   });
   return [...map.values()];
@@ -507,7 +504,6 @@ async function runBusy(work, successText) {
     setBusy(false);
   }
 }
-
 
 function eligibleNextDepartments() {
   const current = upper($("dept").value);
@@ -814,7 +810,6 @@ function bindGallery() {
     if (Math.abs(distance) > 45) moveImage(distance < 0 ? 1 : -1);
   }, {passive: true});
 }
-
 
 function selectedStageRows(inputClass) {
   const selected = selectedRows();
