@@ -13,6 +13,7 @@ const state = {
   sb: null,
   lots: [],
   departments: [],
+  workers: [],
   lot: null,
   context: null,
   visuals: new Map(),
@@ -110,6 +111,17 @@ async function loadBoardMeta(lot) {
   });
 }
 
+async function loadWorkers() {
+  try {
+    const { data, error } = await state.sb.from("rr_upm_workers").select("*").eq("is_active", true);
+    if (!error && data) {
+      state.workers = data;
+    }
+  } catch (e) {
+    console.warn("Workers direct fetch error:", e);
+  }
+}
+
 async function load() {
   if (state.busy) return;
   state.busy = true;
@@ -117,7 +129,8 @@ async function load() {
     setMessage("Loading lots…");
     const [departmentResult, lotResult] = await Promise.all([
       state.sb.from("rr_upm_departments").select("*").eq("is_active", true).order("sequence_no"),
-      state.sb.from("rr_upm_lot_board_v1").select("*").order("board_updated_at", {ascending: false})
+      state.sb.from("rr_upm_lot_board_v1").select("*").order("board_updated_at", {ascending: false}),
+      loadWorkers()
     ]);
     if (departmentResult.error) throw departmentResult.error;
     if (lotResult.error) throw lotResult.error;
@@ -297,8 +310,13 @@ async function loadContext() {
 }
 
 function currentDepartmentWorkers() {
-  const department = upper($("dept")?.value || state.context?.department_code);
-  return arr(state.context?.workers).filter(worker => upper(worker.department_code) === department);
+  const department = upper($("dept")?.value || state.context?.department_code || "PRINTING");
+  let list = arr(state.context?.workers);
+  if (!list.length) {
+    list = arr(state.workers);
+  }
+  const filtered = list.filter(worker => !worker.department_code || upper(worker.department_code) === department);
+  return filtered.length ? filtered : list;
 }
 
 function applyDepartmentSelectColour(){
@@ -332,10 +350,15 @@ function lmCandidates(){return arr(state.mapping?.line_man_candidates);}
 function openWhatsApp(result){if(result?.whatsapp_url)window.open(result.whatsapp_url,"_blank","noopener");}
 
 function workerOptions(selectedWorkerId = "", placeholder = "Select worker") {
-  return `<option value="">${esc(placeholder)}</option>${currentDepartmentWorkers().map(worker => `
-    <option value="${esc(worker.worker_id)}" data-name="${esc(worker.worker_name)}" data-code="${esc(worker.worker_code || "")}" ${String(worker.worker_id) === String(selectedWorkerId || "") ? "selected" : ""}>
-      ${esc(worker.worker_name)}${worker.worker_code ? ` · ${esc(worker.worker_code)}` : ""}
-    </option>`).join("")}`;
+  const workers = currentDepartmentWorkers();
+  return `<option value="">${esc(placeholder)}</option>${workers.map(worker => {
+    const id = worker.worker_id || worker.id || worker.user_id || worker.worker_name;
+    const name = worker.worker_name || worker.name || worker.display_name || id;
+    const code = worker.worker_code || worker.code || "";
+    return `<option value="${esc(id)}" data-name="${esc(name)}" data-code="${esc(code)}" ${String(id) === String(selectedWorkerId || "") ? "selected" : ""}>
+      ${esc(name)}${code ? ` · ${esc(code)}` : ""}
+    </option>`;
+  }).join("")}`;
 }
 
 function fillBulkWorker() {
@@ -958,6 +981,7 @@ window.RealFactoryUPM = Object.freeze({
     return {
       lots: state.lots.slice(),
       departments: state.departments.slice(),
+      workers: currentDepartmentWorkers(),
       boardMeta: state.lots.map(lot => ({
         canonical_lot_id: lot.canonical_lot_id,
         meta: boardMeta(lot) || {}
