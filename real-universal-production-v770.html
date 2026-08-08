@@ -3,42 +3,44 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>REDZED REAL — Universal Production Management (UPM)</title>
+    <title>REDZED REAL — Production Board & Cutting Master</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         body { background-color: #121212; color: #ffffff; padding: 20px; }
         
-        /* Header & Navigation Bar */
+        /* Header Panel */
         .header-panel { display: flex; justify-content: space-between; align-items: center; background: #1e1e24; padding: 15px 20px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #333; }
         .header-title { font-size: 20px; font-weight: bold; color: #ffffff; }
         .dept-filter-box { display: flex; align-items: center; gap: 10px; }
         .dept-select { background: #2a2a35; color: #00ffcc; border: 1px solid #444; padding: 10px 15px; border-radius: 6px; font-size: 14px; font-weight: bold; outline: none; cursor: pointer; }
         
-        /* Live Cards Grid */
-        .board-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 15px; margin-top: 10px; }
+        /* Dynamic Banners */
+        #status-message-green { display: none; background: #2ecc71; color: #ffffff; padding: 12px; border-radius: 6px; font-weight: bold; margin-bottom: 15px; text-align: center; font-size: 14px; border: 1px solid #27ae60; }
+        #status-message-red { display: none; background: #e74c3c; color: #ffffff; padding: 12px; border-radius: 6px; font-weight: bold; margin-bottom: 15px; text-align: center; font-size: 14px; border: 1px solid #c0392b; }
         
-        /* Modal Window Styling for Assignment & Checkout */
-        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); justify-content: center; align-items: center; z-index: 1000; }
-        .modal-box { background: #1e1e24; border: 1px solid #444; width: 90%; max-width: 500px; padding: 20px; border-radius: 8px; color: #fff; }
-        .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; padding-bottom: 10px; margin-bottom: 15px; }
-        .modal-header h3 { color: #00ffcc; font-size: 18px; }
-        .close-btn { background: none; border: none; color: #888; font-size: 20px; cursor: pointer; }
-        .close-btn:hover { color: #fff; }
+        /* Cutting Form Panel */
+        .cutting-panel { background: #1a1a20; border: 1px solid #333; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
         .form-group { margin-bottom: 15px; }
         .form-group label { display: block; margin-bottom: 5px; font-size: 13px; color: #aaa; font-weight: bold; }
         .form-control { width: 100%; background: #2a2a35; color: #fff; border: 1px solid #444; padding: 10px; border-radius: 6px; outline: none; font-size: 14px; }
-        .btn-confirm-assign { width: 100%; background: #27ae60; color: #fff; border: none; padding: 12px; font-size: 15px; font-weight: bold; border-radius: 6px; cursor: pointer; margin-top: 10px; }
-        .btn-confirm-assign:hover { background: #219150; }
+        .btn-group { display: flex; gap: 10px; margin-top: 15px; }
+        .btn-release-main { flex: 1; background: #e74c3c; color: #fff; border: none; padding: 12px; font-size: 15px; font-weight: bold; border-radius: 6px; cursor: pointer; transition: 0.2s; }
+        .btn-release-multi { flex: 1; background: #3498db; color: #fff; border: none; padding: 12px; font-size: 15px; font-weight: bold; border-radius: 6px; cursor: pointer; transition: 0.2s; }
+        .btn-release-main:hover { background: #c0392b; }
+        .btn-release-multi:hover { background: #2980b9; }
+
+        /* Board Grid Layout */
+        .board-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 15px; margin-top: 10px; }
     </style>
     <!-- Supabase JS Client -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 
-    <!-- Universal Top Navigation & Department Selector -->
+    <!-- Header Panel -->
     <div class="header-panel">
         <div class="header-title">
-            REDZED REAL <span style="color: #e74c3c;">— Production Board (UPM)</span>
+            REDZED REAL <span style="color: #e74c3c;">— Cutting & Production Board</span>
         </div>
         <div class="dept-filter-box">
             <label for="dept-select-filter" style="font-size: 14px; color: #bbb;">Select Department / Queue:</label>
@@ -53,41 +55,38 @@
         </div>
     </div>
 
-    <!-- Main Production Cards Grid -->
+    <!-- Status Banners -->
+    <div id="status-message-green"></div>
+    <div id="status-message-red"></div>
+
+    <!-- Cutting Release Control Panel -->
+    <div class="cutting-panel">
+        <h3 style="margin-bottom: 15px; color: #00ffcc; font-size: 16px;">CUTTING MASTER — RELEASE LOT PANEL</h3>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+            <div class="form-group">
+                <label for="manual_lot_no">Manual Lot No / CB Purchase ID *</label>
+                <input type="text" id="manual_lot_no" class="form-control" placeholder="e.g. 2603" required>
+            </div>
+            <div class="form-group">
+                <label for="operator_name">Cutting Master Operator *</label>
+                <select id="operator_name" class="form-control">
+                    <option value="">Loading Mapped Workers...</option>
+                </select>
+            </div>
+        </div>
+        
+        <div class="btn-group">
+            <button id="btn-release-lot" class="btn-release-main">RELEASE SINGLE LOT</button>
+            <button id="btn-release-multi" class="btn-release-multi">RELEASE MULTI LOTS</button>
+        </div>
+    </div>
+
+    <!-- Live Board Container -->
     <div id="board-container" class="board-grid">
         <!-- Cards loaded dynamically from real-universal-production-v729.js -->
     </div>
 
-    <!-- Assignment Modal (Line Man Checkout Window) -->
-    <div id="assignModal" class="modal-overlay">
-        <div class="modal-box">
-            <div class="modal-header">
-                <h3 id="modal-lot-title">ASSIGN LOT</h3>
-                <button class="close-btn" onclick="closeAssignModal()">&times;</button>
-            </div>
-            <div class="modal-body">
-                <input type="hidden" id="modal-lot-id">
-                <div class="form-group">
-                    <label for="target-department">Target Department *</label>
-                    <select id="target-department" class="form-control">
-                        <option value="PRINTING">PRINTING</option>
-                        <option value="KAAJ">KAAJ</option>
-                        <option value="PRESS">PRESS</option>
-                        <option value="PACKING">PACKING</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label for="target-worker">Assign Worker *</label>
-                    <select id="target-worker" class="form-control">
-                        <option value="">Select Department Worker...</option>
-                    </select>
-                </div>
-                <button class="btn-confirm-assign" onclick="confirmAssignmentSubmit()">CONFIRM & TRANSFER</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Universal Supabase Client Setup -->
+    <!-- Universal Supabase Connection Setup -->
     <script>
         const SUPABASE_URL = 'YOUR_SUPABASE_URL_HERE';
         const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY_HERE';
@@ -97,13 +96,9 @@
         } else if (typeof supabase === 'undefined' && typeof supabaseClient !== 'undefined') {
             window.supabase = supabaseClient;
         }
-
-        function closeAssignModal() {
-            document.getElementById('assignModal').style.display = 'none';
-        }
     </script>
 
-    <!-- Main Engine JavaScript File -->
+    <!-- Main Engine JS Engine -->
     <script src="real-universal-production-v729.js"></script>
 
 </body>
