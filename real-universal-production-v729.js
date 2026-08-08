@@ -294,7 +294,14 @@ async function loadContext() {
 
 function currentDepartmentWorkers() {
   const department = upper($("dept")?.value || state.context?.department_code);
-  return arr(state.context?.workers).filter(worker => upper(worker.department_code) === department);
+  const workers = arr(state.context?.workers);
+  if (!department) return workers;
+  const exact = workers.filter(worker => upper(worker.department_code) === department);
+  // The server form is already department-scoped. Older/live deployments can
+  // return the correct worker rows with a legacy/blank department label; do not
+  // erase those valid workers in the Smart Assign popup with a second strict
+  // frontend filter. Exact matches remain preferred whenever available.
+  return exact.length ? exact : workers;
 }
 
 
@@ -549,8 +556,25 @@ function closeActionConfirmation(result) {
 }
 
 async function assignWork() {
+  // Smart Assign should work in one pass: after selecting Colours + one Worker,
+  // CONFIRM automatically applies that Worker to every selected open Colour.
+  // The separate Apply Worker button remains available but is no longer a
+  // hidden prerequisite for a successful assignment.
+  const bulkWorkerId = $("bulkWorker")?.value || "";
+  if (bulkWorkerId) {
+    [...document.querySelectorAll(".colour-card")].forEach(card => {
+      if (!card.querySelector(".assign-pick")?.checked) return;
+      const select = card.querySelector(".colour-worker:not(:disabled)");
+      if (select && !select.value) select.value = bulkWorkerId;
+    });
+  }
   const selected = selectedOpenGroups();
   if (!selected.length) { setFormMessage("Assign करने के लिए कम से कम एक OPEN Colour select करें.", "error"); return; }
+  if (selected.some(item => !item.worker_id)) {
+    setFormMessage("Worker select करें. Selected Colours पर वही Worker automatically apply होगा.", "error");
+    $("bulkWorker")?.focus();
+    return;
+  }
   const available = groups().filter(g => !g.is_locked && g.canAssign && !g.completedHere);
   const codes = selected.map(x => x.group.colour_code);
   const full = available.length > 0 && selected.length === available.length;

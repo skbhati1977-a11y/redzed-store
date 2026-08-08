@@ -1,0 +1,13 @@
+REAL FACTORY V798.5 — SMART ASSIGN WORKING FIX
+
+Upload/replace these 2 files together:
+1. real-universal-production-v729.js
+2. real-universal-production-v770.html
+
+Fixed:
+- Smart Assign worker dropdown no longer becomes empty because of a duplicate strict frontend department filter when the server has already returned department-scoped workers.
+- Flow is now: select Colour(s) -> select Worker -> CONFIRM READY TO ASSIGN.
+- CONFIRM automatically applies the selected bulk Worker to the selected Colours; pressing Apply Worker separately is optional.
+- Existing backend claim RPC, GPS evidence, Actual Rate, First Assignment Wins, quantities and submit flow are unchanged.
+
+No SQL change is required for this frontend Smart Assign fix.
