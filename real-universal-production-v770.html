@@ -1,139 +1,55 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#07090d">
-<title>REAL FACTORY — Universal Production V798.8</title>
-<style>
-:root{--bg:#07090d;--panel:#12151c;--panel2:#171b23;--line:#303641;--mut:#98a2b3;--accent:#cc3d55;--ok:#56efb2;--warn:#ffc857;--bad:#ff7b8a;--locked:#252932;--info:#9ec5ff}*{box-sizing:border-box}html,body{margin:0;min-height:100%;background:var(--bg);color:#fff;font:14px system-ui,-apple-system,"Segoe UI",Arial,sans-serif}button,select,input,textarea{font:inherit}button,input,select,textarea,a{background:#242934;color:#fff;border:1px solid var(--line);border-radius:9px;padding:10px}button,a{font-weight:750;text-decoration:none;cursor:pointer}button:disabled,select:disabled,input:disabled{opacity:.5;cursor:not-allowed}.primary{background:linear-gradient(#d84a62,#b72f48)}.success{background:#174936;border-color:#318b65}.warning{background:#493915;border-color:#8a6b2b}.danger{background:#481d24;border-color:#8c3c49}.page{padding:18px;max-width:1600px;margin:auto}.top,.toolbar,.modulebar,.colour-head,.colour-meta,.action-title{display:flex;gap:8px;align-items:center;justify-content:space-between}.modulebar{margin:12px 0}.modulebar button{flex:1}.toolbar input{flex:1}.board{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:12px}.lot-card{min-height:285px;height:auto;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px;display:flex;flex-direction:column;cursor:pointer}.lot-head{display:flex;justify-content:space-between}.lot-no{font-size:19px;font-weight:900}.art-no{color:var(--warn);font-weight:800}.cb-no{color:var(--info);font-weight:900;font-size:13px}.cut{color:var(--ok);font-size:17px;font-weight:900}.thumbs,.entry-images{display:flex;gap:7px;overflow-x:auto;min-height:64px;align-items:center}.thumb{padding:0;width:58px;height:58px;flex:0 0 58px;overflow:hidden;position:relative}.thumb img{width:100%;height:100%;object-fit:cover}.thumb-label{font-size:9px;position:absolute;background:#000b;padding:2px 4px;z-index:1}.checkin{margin-top:auto;width:100%}.muted{color:var(--mut)}.hidden{display:none!important}.modal{position:fixed;inset:0;background:#000c;z-index:50;display:flex;align-items:flex-end;justify-content:center}.sheet{width:min(1450px,100%);height:min(98vh,1250px);background:#10131a;border:1px solid var(--line);border-radius:18px 18px 0 0;overflow:auto;padding:12px}.sticky{position:sticky;top:-12px;background:#10131a;z-index:8;padding:5px 0 10px}.identity{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}.box{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:9px}.box small{display:block;color:var(--mut)}.formbar{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:8px;margin:10px 0}.field label{display:block;color:var(--mut);font-size:12px}.field input,.field select{width:100%}.summary{display:grid;grid-template-columns:repeat(6,1fr);gap:7px;margin:8px 0}.colour-list{display:grid;gap:10px}.colour-card{border:1px solid var(--line);border-radius:14px;background:var(--panel);overflow:hidden}.colour-card.assigned{background:var(--locked);border-color:#555b66}.colour-card.done{border-color:#34745b}.colour-head{padding:12px;align-items:flex-end}.colour-title{display:flex;gap:9px;align-items:center}.colour-title input{width:20px;height:20px}.colour-title h3{margin:0}.badge{display:inline-flex;border:1px solid var(--line);border-radius:999px;padding:4px 8px;font-size:11px;font-weight:850}.badge.ok{border-color:#34745b;color:var(--ok)}.badge.lock{border-color:#6d737f;color:#d4d7dd}.badge.warn{border-color:#8a6b2b;color:var(--warn)}.badge.bad{border-color:#8c3c49;color:var(--bad)}.worker-block{display:grid;grid-template-columns:minmax(190px,290px) minmax(190px,290px);gap:8px}.worker-block label{font-size:11px;color:var(--mut)}.worker-block select,.worker-block input{display:block;width:100%;margin-top:4px}.colour-meta{padding:0 12px 10px;justify-content:flex-start;flex-wrap:wrap}.size-wrap{overflow:auto;border-top:1px solid var(--line)}table{width:100%;border-collapse:collapse;min-width:1420px}th,td{padding:8px;border-bottom:1px solid #2a303a;white-space:nowrap;text-align:left}th{background:#20252e;position:sticky;top:0;z-index:2}td input,td select{width:88px;padding:8px}.source-select{width:110px}.actions{position:sticky;bottom:-12px;background:#10131af5;padding:10px 0;display:flex;gap:7px;flex-wrap:wrap;z-index:9}.msg{background:#1b2029;padding:9px;border-radius:9px;margin:8px 0;white-space:pre-wrap}.msg.error{background:#3b171c;color:#ffb1ba}.msg.success{background:#14331f;color:#b9efc8}.empty{padding:24px;text-align:center;border:1px dashed var(--line);border-radius:12px}.debug{border:1px solid var(--line);border-radius:12px;background:#0e1117;margin-top:10px}.debug summary{cursor:pointer;padding:10px;font-weight:850}.debug pre{margin:0;padding:12px;max-height:320px;overflow:auto;white-space:pre-wrap;color:#cbd5e1}.gallery{position:fixed;inset:0;background:#000;z-index:100;display:flex;align-items:center;justify-content:center;touch-action:none}.gallery img{max-width:100vw;max-height:100vh;object-fit:contain;transform-origin:center}.gallery .close{position:absolute;top:max(10px,env(safe-area-inset-top));right:10px;z-index:2}.gallery .count{position:absolute;bottom:max(12px,env(safe-area-inset-bottom));background:#0009;padding:6px 10px;border-radius:20px}.gallery .arrow{position:absolute;top:50%;font-size:28px}.gallery .prev{left:10px}.gallery .next{right:10px}.legend{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}.legend span{padding:6px 8px;border:1px solid var(--line);border-radius:8px;color:#cbd5e1}.bulk-assign{display:grid;grid-template-columns:auto minmax(220px,360px) auto auto;gap:8px;align-items:end;margin:10px 0;padding:10px;border:1px solid #41506a;border-radius:12px;background:#111a27}.bulk-assign label{font-size:12px;color:var(--mut)}.bulk-assign select{display:block;width:100%;margin-top:4px}.route-note{padding:8px 10px;border-left:3px solid var(--info);background:#111a27;border-radius:8px;color:#cfe3ff;margin:8px 0}.waiting{border-color:#765f2f!important;background:#241e12!important}.waiting .badge{color:var(--warn)}
-#dept option.dept-orange{background:#b96d00;color:#fff}
-#dept option.dept-green{background:#08783f;color:#fff}
-#dept option.dept-red{background:#b42332;color:#fff}
-#dept option.dept-base{background:#10131a;color:#fff}
-#dept.dept-orange{background:#b96d00;color:#fff;border-color:#e59a27}
-#dept.dept-green{background:#08783f;color:#fff;border-color:#37b878}
-#dept.dept-red{background:#b42332;color:#fff;border-color:#ef6674}
-#dept.dept-base{background:#10131a;color:#fff}
-@media(prefers-color-scheme:light){#dept option.dept-base,#dept.dept-base{background:#fff;color:#111}}
-@media(max-width:1100px){.board{grid-template-columns:repeat(3,1fr)}}@media(max-width:800px){.board{grid-template-columns:repeat(2,1fr)}.identity{grid-template-columns:1fr 1fr}.formbar{grid-template-columns:1fr 1fr}.summary{grid-template-columns:repeat(3,1fr)}.colour-head{align-items:stretch;flex-direction:column}.worker-block{grid-template-columns:1fr 1fr}}@media(max-width:700px){.bulk-assign{grid-template-columns:1fr 1fr}.bulk-assign button{width:100%}}@media(max-width:520px){.page{padding:10px}.board{grid-template-columns:1fr}.formbar{grid-template-columns:1fr}.summary{grid-template-columns:1fr 1fr}.sheet{height:99vh}.modulebar{overflow:auto}.modulebar button{min-width:145px}.worker-block{grid-template-columns:1fr}.identity{grid-template-columns:1fr 1fr}}
-.summary-box{position:relative;overflow:hidden}.summary-box.alter,.freeze-card.alter{border-color:#9b7a16;background:#332a08}.summary-box.remake,.freeze-card.remake{border-color:#2866a8;background:#102d4e}.summary-box.damage,.freeze-card.damage{border-color:#b21f36;background:#4a111a}.summary-box.good{border-color:#237a58;background:#123628}.summary-box.pending{border-color:#75653d;background:#2c281c}@keyframes rrBlink{0%,100%{box-shadow:0 0 0 0 transparent;filter:brightness(1)}50%{box-shadow:0 0 14px 2px currentColor;filter:brightness(1.22)}}.blink-live{animation:rrBlink 1.15s ease-in-out infinite}.freeze-summary{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:8px 0}.freeze-group{border:1px solid var(--line);border-radius:12px;padding:10px;background:#151922;min-height:104px}.freeze-group.alter{border-color:#9b7a16;background:#332a08}.freeze-group.remake{border-color:#2866a8;background:#102d4e}.freeze-group.damage{border-color:#b21f36;background:#4a111a}.freeze-title{display:flex;justify-content:space-between;gap:8px;font-weight:950;margin-bottom:7px}.freeze-title span{font-size:12px}.freeze-title strong{font-size:17px}.responsibility-row{display:grid;gap:3px;padding:7px 0;border-top:1px solid #ffffff22}.responsibility-row b{font-size:13px}.responsibility-row span{font-size:11px;color:#d7deea}.freeze-empty{font-weight:900;color:var(--mut);padding-top:12px}@media(max-width:800px){.freeze-summary{grid-template-columns:1fr 1fr}}.freeze-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:10px 0}.freeze-group{border:2px solid #3b4350;border-radius:12px;padding:9px;background:#0c0f14}.freeze-title{display:flex;justify-content:space-between;font-weight:900}.responsibility-row{display:grid;gap:2px;padding:7px 0;border-top:1px solid #303641}.journey-pick{width:18px;height:18px}.camera-video{width:100%;max-height:48vh;background:#000;border-radius:12px}.blink-alter{animation:blinkYellow 1.1s steps(1) infinite}.blink-cm,.blink-lm{animation:blinkBlue 1.1s steps(1) infinite}.blink-karigar{animation:blinkOrange 1.1s steps(1) infinite}.blink-damage{animation:blinkRed 1.1s steps(1) infinite}@keyframes blinkYellow{50%{background:#000;color:#fff}0%,100%{background:#ffe347;color:#111}}@keyframes blinkBlue{50%{background:#000;color:#fff}0%,100%{background:#287bff;color:#fff}}@keyframes blinkOrange{50%{background:#000;color:#fff}0%,100%{background:#ff962e;color:#111}}@keyframes blinkRed{50%{background:#000;color:#fff}0%,100%{background:#ed3348;color:#fff}}@media(max-width:800px){.freeze-summary{grid-template-columns:1fr 1fr}}
-.lot-live-list{display:grid;gap:4px;margin:7px 0;min-height:28px}.lot-live-status{display:flex;align-items:center;justify-content:space-between;gap:8px;border:1px solid var(--line);border-radius:7px;padding:5px 7px;font-size:11px;line-height:1.15}.lot-live-status span{font-weight:750;text-align:right}.lot-live-status.orange{background:#a65e00;color:#fff;border-color:#e29322}.lot-live-status.green{background:#08783f;color:#fff;border-color:#36b876}.lot-live-status.red{background:#a9162a;color:#fff;border-color:#eb4960}.lot-live-status.base{background:var(--panel2);color:var(--mut)}.lot-live-more{font-size:10px;color:var(--mut);text-align:right;font-weight:800}
-.action-confirm-sheet{width:min(560px,calc(100% - 20px));height:auto;max-height:90vh;border-radius:16px;margin:auto;overflow:auto}
-.action-confirm-title{margin:0 0 8px;font-size:22px}
-.action-confirm-copy{font-size:16px;line-height:1.5}
-.action-confirm-colours{display:flex;gap:7px;flex-wrap:wrap;margin:12px 0}
-.action-confirm-colours .badge{font-size:13px;padding:7px 10px}
-.action-confirm-grid{display:grid;gap:10px;margin:12px 0}
-.action-confirm-grid select{width:100%}
-.action-confirm-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
-.action-confirm-actions button{min-height:48px;font-size:15px}
-.work-pick,.assign-pick{accent-color:#1687ff!important;opacity:1!important;cursor:pointer!important}
-.work-pick:disabled,.assign-pick:disabled{accent-color:#666!important;opacity:.45!important;cursor:not-allowed!important}
-.colour-card.assigned .work-pick:not(:disabled){filter:drop-shadow(0 0 4px #1687ff)}
-.colour-card.assigned{border-color:#356fa8}
-.rf-quickbar{display:flex;justify-content:flex-end;gap:8px;margin-bottom:10px}.rf-quickbar a,.rf-quickbar button{min-height:42px;display:inline-flex;align-items:center;justify-content:center}.rf-quickbar a{background:#174936;border-color:#318b65}@media(max-width:520px){.rf-quickbar>*{flex:1}}
-.rf794-no-assign .bulk-assign{display:none!important}.rf794-no-assign .colour-card:not(.assigned){display:none!important}
-#rf794Inbox{position:fixed;right:12px;bottom:12px;z-index:45}#rf794Bell{background:#20252e;box-shadow:0 4px 22px #0009}#rf794Bell.live{background:#8a2d3f;animation:rrBlink 1.3s infinite}
-#rf794Sheet{width:min(620px,100%);height:auto;max-height:94vh;border-radius:18px 18px 0 0;position:relative}.rf794-close{position:absolute;right:10px;top:10px;font-size:22px;padding:4px 12px}.rf794-totals{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin:10px 0}.rf794-totals b{padding:9px;border:1px solid var(--line);border-radius:9px;background:#171b23}.rf794-totals .ok{color:var(--ok)}.rf794-totals .bad{color:var(--bad)}.rf794-matrix{display:grid;gap:8px}.rf794-matrix section{border:1px solid var(--line);border-radius:10px;padding:8px}.rf794-matrix h4{margin:0 0 7px}.rf794-matrix section>div{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}.rf794-matrix label{display:grid;grid-template-columns:1fr 72px;align-items:center;gap:5px;background:#171b23;border-radius:8px;padding:6px}.rf794-matrix label span{font-weight:850}.rf794-matrix small{display:block;color:var(--mut);font-size:9px}.rf794-matrix input{width:72px;padding:8px}.rf794-actions{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:7px;margin-top:12px}.rf794-actions button{min-height:46px}.rf794-next{display:grid;gap:5px;margin-top:10px;color:var(--mut)}.rf794-lock{color:var(--warn);font-weight:800}.rf794-no-assign .rf-route-chart button{display:none}.rf794-no-assign .rf-queue-card{display:none}
-@media(max-width:430px){.rf794-matrix section>div{grid-template-columns:1fr 1fr}.rf794-totals{grid-template-columns:1fr 1fr}#rf794Sheet{padding:10px}}
-.assign-table-title{grid-column:1/-1;display:flex;align-items:baseline;justify-content:space-between;gap:12px;color:#9ec5ff}.assign-table-title small{color:var(--mut);font-weight:650}
-
-#traveller.rf-smart-assign {
-    align-items: center !important;
-    padding: 10px !important;
-}
-
-#traveller.rf-smart-assign .sheet {
-    width: min(1200px, 96vw) !important;
-    height: 85vh !important;
-    max-height: 85vh !important;
-    overflow-y: auto !important;
-    border-radius: 18px !important;
-}
-
-#traveller.rf-smart-assign #colours,
-#traveller #colours {
-    display: grid !important;
-    visibility: visible !important;
-    opacity: 1 !important;
-    margin-top: 15px !important;
-}
-
-#traveller.rf-smart-assign .colour-card {
-    display: block !important;
-    margin-bottom: 12px !important;
-}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>REDZED REAL — Cutting Master & Production Board</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background-color: #121212; color: #ffffff; padding: 20px; }
+        .header-panel { display: flex; justify-content: space-between; align-items: center; background: #1e1e24; padding: 15px 20px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #333; }
+        .header-title { font-size: 20px; font-weight: bold; color: #ffffff; }
+        .dept-filter-box { display: flex; align-items: center; gap: 10px; }
+        .dept-select { background: #2a2a35; color: #00ffcc; border: 1px solid #444; padding: 10px 15px; border-radius: 6px; font-size: 14px; font-weight: bold; outline: none; cursor: pointer; }
+        .board-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 15px; margin-top: 10px; }
+    </style>
+    <!-- Supabase JS Client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
-<div class="page">
-  <div class="rf-quickbar"><a href="real-dashboard.html">LATEST DASHBOARD</a><button id="refresh" type="button">REFRESH</button></div>
-  <div class="modulebar"><button class="primary">PRODUCTION</button><button data-link="real-cutting-master.html">CUTTING MODULE</button><button id="packingTab">PACKING & DISPATCH</button><button id="costingTab">COSTING</button><button id="reportsTab">REPORTS</button></div>
-  <div class="toolbar"><input id="search" placeholder="Lot No / CB No / Art No"><select id="homeDept"></select></div><div id="message"></div><main id="board" class="board"></main>
-</div>
 
-<div id="traveller" class="modal hidden">
-<section class="sheet">
-  <div class="sticky"><div class="top"><h2 style="margin:0">Universal Lot Form</h2><button data-close>Close</button></div><div id="identity" class="identity"></div><div id="entryThumbs" class="entry-images"></div></div>
-  <div class="formbar"><div class="field"><label>Department</label><select id="dept"></select></div><div class="field"><label>Actual Rate</label><input id="actualRate" type="number" min="0" step="0.01"></div><div class="field" id="stdWrap"><label>Standard Rate — Owner/Admin</label><input id="standardRate" type="number" min="0" step="0.01"></div><div class="field" id="marginWrap"><label>Owner Margin / PCS</label><input id="ownerMargin" type="number" min="0" step="0.01"></div></div>
-  <div id="summary" class="summary"></div><div id="freezeSummary" class="freeze-summary"></div>
-  <div class="legend"><span><b>Assignment lock:</b> पूरा Colour + Cutting के सभी Sizes एक Worker</span><span><b>Good Qty:</b> Main − Alter Pending − Line Man Pending − Worker Remake Pending − Damage</span><span><b>Responsibility:</b> केवल database में mapped person का नाम और department दिखेगा</span></div>
-  <section class="bulk-assign" aria-label="Ready to Assign colour table controls">
-    <div class="assign-table-title"><b>READY TO ASSIGN · COLOUR TABLE</b><small>Select one/multiple/all available colours. Cutting Qty and Size breakup are locked.</small></div>
-    <button id="selectAllBtn" type="button">1 · SELECT ALL AVAILABLE</button>
-    <label>2 · Worker for selected Colours<select id="bulkWorker"><option value="">Select worker</option></select></label>
-    <button id="applyBulkWorkerBtn" type="button">3 · APPLY WORKER</button>
-    <button id="assignBtn" class="primary" type="button">4 · CONFIRM READY TO ASSIGN</button>
-  </section>
-  <div id="routeNote" class="route-note">Downstream assignment opens only after upstream Colour Submit.</div>
-  <div id="colours" class="colour-list"></div>
-  <div class="actions">
-    <button class="success" id="submitBtn">SUBMIT SELECTED COLOURS · ALL SIZES</button>
-    <button class="warning" id="alterBtn">ALTER FILL · LINE MAN</button>
-    <button id="remakeIssueBtn">REMAKE ISSUE · CM</button>
-    <button id="remakeDeliveredBtn">RECEIVE FROM MASTER · LM</button><button id="remakeCompleteBtn">DELIVER TO KARIGAR · LM</button><button id="receiveKarigarBtn" class="success">RECEIVE FROM KARIGAR · LM</button>
-    <button class="danger" id="damageBtn">Save Damage</button>
-    <button id="reassignBtn">Reassign Direct Pending</button><button id="changeLmBtn">CHANGE LOT LM</button><button id="untraceableBtn" class="danger">UNTRACEABLE APPROVAL</button><button id="ownerApprovalBtn">OWNER APPROVALS</button>
-    <button id="saveRates">Save Rates</button>
-    <button id="debugBtn">Flow Debug</button>
-  </div>
-  <div id="formMsg" class="msg">Lot fixed है; Colour के सभी Cutting Sizes permanent bind हैं। Submit के बाद ही वही Colour अगले department में खुलेगा।</div>
-  <details class="debug"><summary>Technical flow debug</summary><pre id="debugOutput">Run Flow Debug.</pre></details>
-</section>
-</div>
-
-<div id="alterEvidenceModal" class="modal hidden"><section class="sheet" style="height:auto;max-height:95vh"><div class="top"><h2>Alter Fill Evidence</h2><button id="closeAlterEvidence" type="button">Close</button></div><p class="msg">Live camera evidence 1–3 images mandatory. Physical piece submission must be confirmed.</p><label class="field"><span>Camera Evidence</span><input id="alterEvidenceFiles" type="file" accept="image/*" capture="environment" multiple></label><label class="field"><span>Alter Receiver Line Man · This Journey</span><select id="alterLineManSelect" required><option value="">Select Alter Receiver Line Man (mandatory)</option></select></label><p id="alterReceiverRule" class="route-note">हर नई Alter journey में receiver Line Man mapping verify होगी.</p><video id="liveCamera" autoplay playsinline class="camera-video hidden"></video><canvas id="cameraCanvas" class="hidden"></canvas><div class="actions"><button id="startCamera" type="button">OPEN LIVE CAMERA</button><button id="captureCamera" type="button" class="warning" disabled>CAPTURE PHOTO</button><button id="stopCamera" type="button" disabled>STOP CAMERA</button></div><div id="alterEvidencePreview" class="entry-images"></div><label style="display:flex;gap:10px;align-items:center;margin:12px 0"><input id="physicalEvidenceSubmitted" type="checkbox" style="width:20px;height:20px"> <span id="physicalEvidenceLabel">Physical Alter Piece selected Line Man को handover किया है</span></label><div class="actions"><button id="saveAlterEvidence" class="warning" type="button">SAVE ALTER FILL</button></div><p id="alterEvidenceMsg" class="msg"></p></section></div>
-
-<div id="lmModal" class="modal hidden"><section class="sheet" style="height:auto;max-width:600px"><div class="top"><h2>Change Lot Line Man</h2><button id="closeLmModal">Close</button></div><label class="field"><span>New Line Man</span><select id="newLmSelect"></select></label><label class="field"><span>Mode</span><select id="lmTransferMode"><option value="HANDOVER">Handover</option><option value="LEAVE">Planned Leave</option><option value="FORCE_REENROL">Force Re-enrol</option><option value="INACTIVE_REPLACEMENT">Inactive Replacement</option></select></label><label class="field"><span>Reason</span><textarea id="lmTransferReason"></textarea></label><label style="display:flex;gap:10px"><input type="checkbox" id="lmPhysicalHandover"> Physical handover confirmed</label><div class="actions"><button id="saveLmTransfer" class="primary">SAVE ENROLMENT</button></div><p id="lmModalMsg" class="msg"></p></section></div>
-<div id="approvalModal" class="modal hidden"><section class="sheet" style="height:auto;max-width:800px"><div class="top"><h2>Untraceable Owner Approvals</h2><button id="closeApprovalModal">Close</button></div><div id="approvalList"></div></section></div>
-
-<div id="actionConfirmModal" class="modal hidden">
-  <section class="sheet action-confirm-sheet">
-    <h2 id="actionConfirmTitle" class="action-confirm-title">Confirm Action</h2>
-    <div id="actionConfirmCopy" class="msg action-confirm-copy"></div>
-    <div id="actionConfirmColours" class="action-confirm-colours"></div>
-    <div id="actionConfirmNextWrap" class="action-confirm-grid hidden">
-      <label class="field"><span>Next Department</span><select id="actionConfirmNextDept"></select></label>
-      <div class="route-note">Submit के बाद selected Colour Random Open Queue में आएँगे और यह Department अगली screen में खुलेगा। Assignment होने तक Colour किसी Department का owner नहीं बनेगा।</div>
+    <!-- Top Navigation & Department Selector -->
+    <div class="header-panel">
+        <div class="header-title">
+            REDZED REAL <span style="color: #e74c3c;">— Production Board</span>
+        </div>
+        <div class="dept-filter-box">
+            <label for="dept-select-filter" style="font-size: 14px; color: #bbb;">Select Department / Queue:</label>
+            <select id="dept-select-filter" class="dept-select">
+                <option value="OPEN_RANDOM_QUEUE" selected>OPEN RANDOM QUEUE</option>
+                <option value="ALL">ALL DEPARTMENTS (Read-Only)</option>
+                <option value="PRINTING">PRINTING</option>
+                <option value="KAAJ">KAAJ</option>
+                <option value="PRESS">PRESS</option>
+                <option value="PACKING">PACKING</option>
+            </select>
+        </div>
     </div>
-    <div class="action-confirm-actions">
-      <button id="actionConfirmCancel" type="button">CANCEL</button>
-      <button id="actionConfirmYes" class="primary" type="button">YES, CONTINUE</button>
+
+    <!-- Main Production Board Cards Container -->
+    <div id="board-container" class="board-grid">
+        <!-- Cards will be dynamically injected here by real-universal-production-v729.js -->
     </div>
-  </section>
-</div>
 
-<div id="gallery" class="gallery hidden"><button class="close">Close</button><button class="arrow prev">‹</button><img id="galleryImg" alt="Production reference"><button class="arrow next">›</button><div id="galleryCount" class="count"></div></div>
+    <!-- Supabase Client Setup Script -->
+    <script>
+        const SUPABASE_URL = 'YOUR_SUPABASE_URL_HERE';
+        const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY_HERE';
+        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    </script>
 
-<!-- CLEAN VERIFIED SCRIPT LOADER SEQUENCE -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="config.js?v=9999-force-fresh"></script>
-<script src="real-common.js"></script>
-<script src="real-universal-production-v729.js?v=8000-zero-error-sync"></script>
-<script src="real-universal-production-v765-independent-alter.js?v=7979-alert-identity"></script>
-<script src="real-universal-production-v770-alter-routing-fix.js?v=7701"></script>
-<script src="real-universal-production-v768-damage-balance-fix.js?v=7681"></script>
-<script src="real-universal-production-v769-worker-claim-warning-fix.js?v=7691"></script>
+    <!-- Main Engine JavaScript File -->
+    <script src="real-universal-production-v729.js"></script>
+
 </body>
 </html>
