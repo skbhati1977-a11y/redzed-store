@@ -2443,20 +2443,92 @@ function currentLotIdentity() {
 }
 
 function colourAssignedQty(colourCode) {
-  const backendRows = currentSizeMap?.get(upper(colourCode)) || [];
+  const code = upper(colourCode);
+  const backendRows = currentSizeMap?.get(code) || [];
   const backendTotal = backendRows.reduce(
     (sum, row) => sum + Number(row.qty || 0),
     0
   );
   if (backendTotal > 0) return backendTotal;
 
-  const card = findColourCard(colourCode);
-  if (!card) return 0;
+  const card = findColourCard(code);
+  if (card) {
+    const cardTotal = [...card.querySelectorAll("[data-row-index]")].reduce((sum, row) => {
+      const qty = Number(row.querySelectorAll("td")[1]?.textContent?.trim() || 0);
+      return sum + qty;
+    }, 0);
+    if (cardTotal > 0) return cardTotal;
+  }
 
-  return [...card.querySelectorAll("[data-row-index]")].reduce((sum, row) => {
-    const qty = Number(row.querySelectorAll("td")[1]?.textContent?.trim() || 0);
-    return sum + qty;
-  }, 0);
+  // Matrix payloads differ across deployed SQL versions. Use any authoritative
+  // colour total exposed by the matrix before declaring Qty unresolved.
+  const matrixRow = (currentMatrix?.colours || [])
+    .find(row => upper(row.colour_code) === code);
+  const matrixQty = Number(
+    matrixRow?.cutting_qty ??
+    matrixRow?.main_qty ??
+    matrixRow?.assigned_qty ??
+    matrixRow?.total_qty ??
+    matrixRow?.qty ??
+    0
+  );
+  return matrixQty > 0 ? matrixQty : 0;
+}
+
+async function resolveColourAssignedQtyV7993(colourCode, departmentCode) {
+  const code = upper(colourCode);
+  const immediate = colourAssignedQty(code);
+  if (immediate > 0) return immediate;
+
+  const identity = currentLotIdentity();
+  const client = getClient();
+  if (!client || !identity.canonical_lot_id) return 0;
+
+  // Root fallback: the universal form is already the authoritative UPM source
+  // for Colour x Size rows. Sum locked cutting/main qty for this Colour.
+  try {
+    const { data, error } = await client.rpc("rr_upm_universal_form_v741", {
+      p_canonical_lot_id: identity.canonical_lot_id,
+      p_department_code: canonicalDepartmentV762(departmentCode)
+    });
+    if (!error) {
+      const rows = Array.isArray(data?.rows) ? data.rows : [];
+      const total = rows
+        .filter(row => upper(row.colour_code) === code)
+        .reduce((sum, row) => sum + Number(
+          row.cutting_qty ??
+          row.main_qty ??
+          row.inbound_qty ??
+          row.assigned_qty ??
+          row.qty ??
+          0
+        ), 0);
+      if (total > 0) return total;
+    }
+  } catch (error) {
+    console.warn("V799.3 universal-form Qty fallback failed", code, error);
+  }
+
+  // Last safe fallback: ask the cut-size RPC again without trusting stale cache.
+  try {
+    lotSizeCache.delete(upper(identity.lot_no));
+    const sizeRows = await fetchLotSizeRows(identity.lot_no);
+    const total = (sizeRows || [])
+      .filter(row => upper(row.colour_code) === code)
+      .reduce((sum, row) => sum + Number(
+        row.cutting_qty ??
+        row.main_qty ??
+        row.inbound_qty ??
+        row.assigned_qty ??
+        row.qty ??
+        0
+      ), 0);
+    if (total > 0) return total;
+  } catch (error) {
+    console.warn("V799.3 cut-size Qty fallback failed", code, error);
+  }
+
+  return 0;
 }
 
 function askDirectSingleColourConfirmation({
@@ -2549,7 +2621,7 @@ async function directAssignSingleColour({
     );
   }
 
-  const assignedQty = colourAssignedQty(rowData.colour_code);
+  const assignedQty = await resolveColourAssignedQtyV7993(rowData.colour_code, rowData.department_code);
   if (assignedQty <= 0) {
     throw new Error(`${rowData.colour_code} की assigned Qty resolve नहीं हुई.`);
   }
@@ -3231,11 +3303,14 @@ async function runBulkAssign() {
     )) return;
 
     const identity = currentLotIdentity();
-    const rows = eligible.map(row => {
-      const qty = colourAssignedQty(row.colour_code);
+    const rows = await Promise.all(eligible.map(async row => {
+      const qty = await resolveColourAssignedQtyV7993(
+        row.colour_code,
+        department
+      );
       if (qty <= 0) {
         throw new Error(
-          `${row.colour_code} ki assigned Qty resolve nahi hui.`
+          `${row.colour_code} ki Cutting/assigned Qty resolve nahi hui.`
         );
       }
 
@@ -3246,7 +3321,7 @@ async function runBulkAssign() {
         assigned_qty: qty,
         actual_rate: Number($("actualRate")?.value || 0)
       };
-    });
+    }));
 
     const client = getClient();
     if (!client) throw new Error("Connected Supabase client nahi mila.");

@@ -1,11 +1,20 @@
-REAL FACTORY V798.4L LOOP-SAFE RESTORE
+REAL FACTORY V799.3 — ASSIGN QTY ROOT FIX
 
-Replace ONLY:
-real-upm-department-view-v789.js
+Replace ONLY in GitHub root:
+  real-universal-production-v765-independent-alter.js
 
-Keep HTML line:
-<script src="real-upm-department-view-v789.js?v=7984-despatch-separate"></script>
+In real-universal-production-v770.html change only the V765 cache line to:
+  <script src="real-universal-production-v765-independent-alter.js?v=7993-assign-qty-root"></script>
 
-No SQL.
-No HTML change required.
-Only the continuous MutationObserver loop is removed.
+No SQL required.
+
+Fix:
+- OPEN RANDOM QUEUE Assign Selected / single Assign no longer depends only on stale cut-size map or hidden colour card.
+- Qty resolution order:
+  1) current locked size map
+  2) hidden detailed Colour card
+  3) matrix authoritative qty fields
+  4) rr_upm_universal_form_v741 Colour×Size cutting/main qty
+  5) fresh cut-size RPC retry
+- rr_upm_claim_colours_v741 remains the assignment backend.
+- Existing submit, alter, damage, remake, history and already assigned colours are untouched.
