@@ -158,86 +158,6 @@
     }).sort((a, b) => route.indexOf(a.canonical) - route.indexOf(b.canonical));
   }
 
-  let smartAssignDiagnosticContext = null;
-
-  function installSmartAssignErrorCheck() {
-    const traveller = document.getElementById("traveller");
-    const bulk = traveller?.querySelector(".bulk-assign");
-    if (!traveller || !bulk || !traveller.classList.contains("rf-smart-assign")) return;
-
-    let button = document.getElementById("rfSmartErrorCheckBtn");
-    if (!button) {
-      button = document.createElement("button");
-      button.id = "rfSmartErrorCheckBtn";
-      button.type = "button";
-      button.className = "warning rf-error-check-btn";
-      button.textContent = "ERROR CHECK · DIAGNOSE";
-      const assign = document.getElementById("assignBtn");
-      if (assign?.parentElement === bulk) bulk.insertBefore(button, assign);
-      else bulk.appendChild(button);
-    }
-
-    let panel = document.getElementById("rfSmartErrorPanel");
-    if (!panel) {
-      panel = document.createElement("section");
-      panel.id = "rfSmartErrorPanel";
-      panel.className = "rf-error-panel hidden";
-      const colours = document.getElementById("colours");
-      colours?.insertAdjacentElement("afterend", panel);
-    }
-
-    button.onclick = async () => {
-      panel.classList.remove("hidden");
-      panel.innerHTML = '<div class="rf-error-head"><b>SMART ASSIGN ERROR CHECK</b><span class="badge warn">CHECKING…</span></div><div class="rf-error-lines">Running client + server diagnostics…</div>';
-
-      const lotId = smartAssignDiagnosticContext?.lotId || "UNKNOWN";
-      const dept = smartAssignDiagnosticContext?.departmentCode || document.getElementById("dept")?.value || "UNKNOWN";
-      const cards = [...document.querySelectorAll("#colours .colour-card")];
-      const assignableCards = cards.filter(card => card.querySelector(".assign-pick:not(:disabled)"));
-      const sizeRows = document.querySelectorAll("#colours [data-row-index]").length;
-      const workerSelect = document.getElementById("bulkWorker");
-      const workerCount = workerSelect ? [...workerSelect.options].filter(o => o.value).length : 0;
-      const formMsg = (document.getElementById("formMsg")?.textContent || "").trim();
-      const noMapping = /No Colour\s*[×xX]\s*Size mapping found/i.test(document.getElementById("colours")?.textContent || "");
-
-      const checks = [
-        ["Lot context", lotId !== "UNKNOWN", lotId],
-        ["Department", dept !== "UNKNOWN", dept],
-        ["Colour cards", cards.length > 0, String(cards.length)],
-        ["Assignable colours", assignableCards.length > 0, String(assignableCards.length)],
-        ["Colour × Size rows", sizeRows > 0, String(sizeRows)],
-        ["Workers in dropdown", workerCount > 0, String(workerCount)],
-        ["Mapping message", !noMapping, noMapping ? "NO COLOUR × SIZE MAPPING" : "Mapping visible"],
-      ];
-
-      const lineHtml = checks.map(([name, ok, value]) => `<div class="rf-check ${ok ? "ok" : "bad"}"><b>${ok ? "PASS" : "FAIL"}</b><span>${esc(name)}</span><strong>${esc(value)}</strong></div>`).join("");
-      panel.innerHTML = `<div class="rf-error-head"><b>SMART ASSIGN ERROR CHECK</b><span class="badge">${esc(label)}</span></div>${lineHtml}<div class="rf-form-last"><small>Current message</small><div>${esc(formMsg || "No frontend message")}</div></div><div class="rf-server-debug"><b>SERVER FLOW DEBUG</b><pre id="rfServerDebugText">Running rr_upm_debug_v740…</pre></div>`;
-
-      try {
-        const hiddenDebug = document.getElementById("debugBtn");
-        if (hiddenDebug) {
-          hiddenDebug.click();
-          await new Promise(resolve => setTimeout(resolve, 900));
-          const text = document.getElementById("debugOutput")?.textContent?.trim();
-          document.getElementById("rfServerDebugText").textContent = text || "Server debug returned no visible output yet. Click ERROR CHECK once more after 1 second.";
-        } else {
-          document.getElementById("rfServerDebugText").textContent = "FAIL: Flow Debug button/function not found in this build.";
-        }
-      } catch (error) {
-        document.getElementById("rfServerDebugText").textContent = `ERROR: ${error?.message || error}`;
-      }
-    };
-
-    // Auto-surface the checker when the exact mapping failure is visible.
-    if (/No Colour\s*[×xX]\s*Size mapping found/i.test(document.getElementById("colours")?.textContent || "")) {
-      button.classList.add("rf-error-pulse");
-      button.textContent = "ERROR CHECK · MAPPING FAILED";
-    } else {
-      button.classList.remove("rf-error-pulse");
-      button.textContent = "ERROR CHECK · DIAGNOSE";
-    }
-  }
-
   async function chooseTarget(lotId, target) {
     const currentRank = route.indexOf(requested);
     const targetRank = route.indexOf(target.canonical);
@@ -249,9 +169,7 @@
       const traveller = document.getElementById("traveller");
       traveller?.classList.remove("rf-smart-submit");
       traveller?.classList.add("rf-smart-assign");
-      smartAssignDiagnosticContext = { lotId, departmentCode: target.department_code, departmentName: target.department_name || target.department_code };
       await window.RealFactoryUPM.openLotAtDepartment(lotId, target.department_code);
-      installSmartAssignErrorCheck();
       document.getElementById("selectAllBtn")?.focus();
     } catch (error) { alert(error?.message || error); }
   }
@@ -317,17 +235,6 @@
   #traveller.rf-smart-assign .bulk-assign label{display:flex;flex-direction:column;min-height:auto;font-size:12px}
   #traveller.rf-smart-assign .bulk-assign select{min-height:52px;font-size:16px}
   #traveller.rf-smart-assign #assignBtn{min-height:58px;font-size:15px}
-  #traveller.rf-smart-assign .rf-error-check-btn{min-height:52px;border-color:#b7791f;background:#4b3412;color:#ffe3a3;font-weight:900}
-  #traveller.rf-smart-assign .rf-error-pulse{animation:rfErrorPulse 1s steps(1) infinite}
-  #traveller.rf-smart-assign .rf-error-panel{margin:9px 0;border:1px solid #8a6b2b;border-radius:12px;padding:10px;background:#120f09;max-height:38dvh;overflow:auto}
-  #traveller.rf-smart-assign .rf-error-head{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px}
-  #traveller.rf-smart-assign .rf-check{display:grid;grid-template-columns:48px 1fr auto;gap:8px;align-items:center;padding:7px 0;border-top:1px solid #ffffff18;font-size:12px}
-  #traveller.rf-smart-assign .rf-check.ok b{color:#56efb2}#traveller.rf-smart-assign .rf-check.bad b{color:#ff7b8a}
-  #traveller.rf-smart-assign .rf-check strong{font-size:11px;max-width:180px;overflow-wrap:anywhere;text-align:right}
-  #traveller.rf-smart-assign .rf-form-last{margin-top:8px;padding:8px;background:#171b23;border-radius:8px}.rf-form-last small{color:#98a2b3}
-  #traveller.rf-smart-assign .rf-server-debug{margin-top:8px;padding-top:8px;border-top:1px solid #ffffff22}
-  #traveller.rf-smart-assign .rf-server-debug pre{white-space:pre-wrap;overflow-wrap:anywhere;max-height:220px;overflow:auto;font-size:11px;color:#cbd5e1}
-  @keyframes rfErrorPulse{0%,100%{box-shadow:0 0 0 0 #ff7b8a00}50%{box-shadow:0 0 0 3px #ff7b8a66}}
   #traveller.rf-smart-submit .formbar,#traveller.rf-smart-submit #entryThumbs,#traveller.rf-smart-submit #summary,#traveller.rf-smart-submit #freezeSummary,#traveller.rf-smart-submit .legend,#traveller.rf-smart-submit .bulk-assign,#traveller.rf-smart-submit #routeNote,#traveller.rf-smart-submit .debug{display:none!important}
   #traveller.rf-smart-submit .colour-card:not(.assigned){display:none!important}
   #traveller.rf-smart-submit .colour-card .worker-block,#traveller.rf-smart-submit .colour-card .size-wrap{display:none!important}
@@ -341,18 +248,35 @@
   document.head.append(style);
   applyShell();
 
-  let timer;
+  // V798.4L: loop-safe startup. No MutationObserver.
+  let timer = null;
+  let syncRunning = false;
+
   const sync = () => {
-    lockDepartment();
-    enhanceRunningCards();
-    installSmartAssignErrorCheck();
-    clearTimeout(timer);
-    timer = setTimeout(async () => { await filterRunningCards(); await renderQueue(); }, 80);
+    if (syncRunning) return;
+    syncRunning = true;
+    try {
+      lockDepartment();
+      enhanceRunningCards();
+      clearTimeout(timer);
+      timer = setTimeout(async () => {
+        try {
+          await filterRunningCards();
+          await renderQueue();
+        } catch (error) {
+          console.error("REAL FACTORY V798.4L queue sync failed", error);
+        } finally {
+          syncRunning = false;
+        }
+      }, 80);
+    } catch (error) {
+      syncRunning = false;
+      console.error("REAL FACTORY V798.4L startup failed", error);
+    }
   };
-  new MutationObserver(mutations => {
-    if (mutations.every(mutation => mutation.target.closest?.("#rfDepartmentQueue"))) return;
-    sync();
-  }).observe(document.body, { childList: true, subtree: true });
-  sync();
-  console.info("REAL FACTORY V798.7 · SMART ASSIGN ERROR CHECK · RELEASED LOT QUEUE · DESPATCH SEPARATE");
+
+  // Bounded startup retries only. No continuous DOM observer.
+  [0, 350, 900, 1800].forEach(delay => setTimeout(sync, delay));
+
+  console.info("REAL FACTORY V798.4L · LOOP-SAFE RELEASED LOT READY-TO-ASSIGN QUEUE · DESPATCH SEPARATE");
 })();

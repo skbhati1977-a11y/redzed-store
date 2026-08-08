@@ -1,0 +1,11 @@
+REAL FACTORY V798.4L LOOP-SAFE RESTORE
+
+Replace ONLY:
+real-upm-department-view-v789.js
+
+Keep HTML line:
+<script src="real-upm-department-view-v789.js?v=7984-despatch-separate"></script>
+
+No SQL.
+No HTML change required.
+Only the continuous MutationObserver loop is removed.
