@@ -1,27 +1,44 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>REDZED REAL — Cutting Master & Production Board</title>
+    <title>REDZED REAL — Universal Production Management (UPM)</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         body { background-color: #121212; color: #ffffff; padding: 20px; }
+        
+        /* Header & Navigation Bar */
         .header-panel { display: flex; justify-content: space-between; align-items: center; background: #1e1e24; padding: 15px 20px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #333; }
         .header-title { font-size: 20px; font-weight: bold; color: #ffffff; }
         .dept-filter-box { display: flex; align-items: center; gap: 10px; }
         .dept-select { background: #2a2a35; color: #00ffcc; border: 1px solid #444; padding: 10px 15px; border-radius: 6px; font-size: 14px; font-weight: bold; outline: none; cursor: pointer; }
+        
+        /* Live Cards Grid */
         .board-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 15px; margin-top: 10px; }
+        
+        /* Modal Window Styling for Assignment & Checkout */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); justify-content: center; align-items: center; z-index: 1000; }
+        .modal-box { background: #1e1e24; border: 1px solid #444; width: 90%; max-width: 500px; padding: 20px; border-radius: 8px; color: #fff; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; padding-bottom: 10px; margin-bottom: 15px; }
+        .modal-header h3 { color: #00ffcc; font-size: 18px; }
+        .close-btn { background: none; border: none; color: #888; font-size: 20px; cursor: pointer; }
+        .close-btn:hover { color: #fff; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; font-size: 13px; color: #aaa; font-weight: bold; }
+        .form-control { width: 100%; background: #2a2a35; color: #fff; border: 1px solid #444; padding: 10px; border-radius: 6px; outline: none; font-size: 14px; }
+        .btn-confirm-assign { width: 100%; background: #27ae60; color: #fff; border: none; padding: 12px; font-size: 15px; font-weight: bold; border-radius: 6px; cursor: pointer; margin-top: 10px; }
+        .btn-confirm-assign:hover { background: #219150; }
     </style>
     <!-- Supabase JS Client -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 
-    <!-- Top Navigation & Department Selector -->
+    <!-- Universal Top Navigation & Department Selector -->
     <div class="header-panel">
         <div class="header-title">
-            REDZED REAL <span style="color: #e74c3c;">— Production Board</span>
+            REDZED REAL <span style="color: #e74c3c;">— Production Board (UPM)</span>
         </div>
         <div class="dept-filter-box">
             <label for="dept-select-filter" style="font-size: 14px; color: #bbb;">Select Department / Queue:</label>
@@ -36,16 +53,54 @@
         </div>
     </div>
 
-    <!-- Main Production Board Cards Container -->
+    <!-- Main Production Cards Grid -->
     <div id="board-container" class="board-grid">
-        <!-- Cards will be dynamically injected here by real-universal-production-v729.js -->
+        <!-- Cards loaded dynamically from real-universal-production-v729.js -->
     </div>
 
-    <!-- Supabase Client Setup Script -->
+    <!-- Assignment Modal (Line Man Checkout Window) -->
+    <div id="assignModal" class="modal-overlay">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3 id="modal-lot-title">ASSIGN LOT</h3>
+                <button class="close-btn" onclick="closeAssignModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="modal-lot-id">
+                <div class="form-group">
+                    <label for="target-department">Target Department *</label>
+                    <select id="target-department" class="form-control">
+                        <option value="PRINTING">PRINTING</option>
+                        <option value="KAAJ">KAAJ</option>
+                        <option value="PRESS">PRESS</option>
+                        <option value="PACKING">PACKING</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="target-worker">Assign Worker *</label>
+                    <select id="target-worker" class="form-control">
+                        <option value="">Select Department Worker...</option>
+                    </select>
+                </div>
+                <button class="btn-confirm-assign" onclick="confirmAssignmentSubmit()">CONFIRM & TRANSFER</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Universal Supabase Client Setup -->
     <script>
         const SUPABASE_URL = 'YOUR_SUPABASE_URL_HERE';
         const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY_HERE';
-        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        
+        if (typeof supabase === 'undefined' && typeof supabaseClient === 'undefined') {
+            window.supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        } else if (typeof supabase === 'undefined' && typeof supabaseClient !== 'undefined') {
+            window.supabase = supabaseClient;
+        }
+
+        function closeAssignModal() {
+            document.getElementById('assignModal').style.display = 'none';
+        }
     </script>
 
     <!-- Main Engine JavaScript File -->
