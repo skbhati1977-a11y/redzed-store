@@ -1,311 +1,977 @@
- // ============================================================================
-// REDZED REAL — UNIVERSAL PRODUCTION MANAGEMENT & CUTTING ENGINE (v729 COMPLETE)
-// Database Registered Table: rr_cutting_lots_v3
-// Database Registered RPCs: rr_upm_worker_list_v8_3 | rr_release_multi_lots_v4
-// ============================================================================
+ (() => {
+"use strict";
 
-let currentSelectedDepartment = 'OPEN_RANDOM_QUEUE';
+const $ = id => document.getElementById(id);
+const esc = value => String(value ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const arr = value => Array.isArray(value) ? value : [];
+const num = value => Number(value || 0);
+const upper = value => String(value || "").trim().toUpperCase();
+const rowKey = row => String(row.colour_id || row.colour_code || "");
+const requestId = () => globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 
-document.addEventListener('DOMContentLoaded', () => {
-    initCuttingMasterWorkerDropdown();
-    attachReleaseButtonListener();
-    initMultiLotReleaseTrigger();
-    initDepartmentDropdown();
-    loadDepartmentView('OPEN_RANDOM_QUEUE');
+const state = {
+  sb: null,
+  lots: [],
+  departments: [],
+  lot: null,
+  context: null,
+  visuals: new Map(),
+  images: [],
+  imageIndex: 0,
+  scale: 1,
+  startX: 0,
+  busy: false, pendingSubmitRows: null, cameraStream: null, cameraBlobs: [], mapping: null, boardMeta: new Map(), confirmResolve: null
+};
+
+function errorText(error) {
+  return [error?.message, error?.details, error?.hint, error?.code].filter(Boolean).join(" — ") || String(error || "Unknown error");
+}
+
+async function rpc(name, args = {}) {
+  const {data, error} = await state.sb.rpc(name, args);
+  if (error) throw error;
+  return data;
+}
+
+function setMessage(text = "", type = "") {
+  const box = $("message");
+  box.innerHTML = text ? `<div class="msg ${type}">${esc(text)}</div>` : "";
+}
+
+function setFormMessage(text = "", type = "") {
+  const box = $("formMsg");
+  box.textContent = text;
+  box.className = `msg ${type}`.trim();
+}
+
+function uniqueUrls(values) {
+  return [...new Set(arr(values).flat(Infinity).filter(v => typeof v === "string" && /^https?:\/\//i.test(v.trim())).map(v => v.trim()))];
+}
+
+async function loadVisual(lot) {
+  try {
+    const data = await rpc("rr_upm_get_lot_visuals_v6", {
+      p_canonical_lot_id: lot.canonical_lot_id,
+      p_art_no: lot.art_no || null
+    });
+    const row = arr(data)[0] || data || {};
+    state.visuals.set(lot.canonical_lot_id, {
+      art: uniqueUrls([row.garment_url, row.art_url]),
+      prints: uniqueUrls([row.print_urls, row.print_image_urls])
+    });
+  } catch (error) {
+    console.warn("Lot visual mapping unavailable", lot.lot_no, error);
+    state.visuals.set(lot.canonical_lot_id, {art: [], prints: []});
+  }
+}
+
+function visualItems(lot) {
+  const visual = state.visuals.get(lot.canonical_lot_id) || {art: [], prints: []};
+  return [
+    ...visual.art.map((url, index) => ({url, label: index ? `ART ${index + 1}` : "ART"})),
+    ...visual.prints.map((url, index) => ({url, label: `PRINT ${index + 1}`}))
+  ];
+}
+
+function thumbnails(lot, limit = 8) {
+  const items = visualItems(lot);
+  if (!items.length) return '<span class="muted">Art/Print image mapping pending</span>';
+  return items.slice(0, limit).map((item, index) => `
+    <button class="thumb" data-lot-img="${esc(lot.canonical_lot_id)}" data-img="${index}" type="button">
+      <span class="thumb-label">${esc(item.label)}</span>
+      <img loading="lazy" src="${esc(item.url)}" alt="${esc(item.label)}">
+    </button>`).join("");
+}
+
+function validMappedValue(value) {
+  return value != null && String(value).trim() && !/MAPPING REQUIRED|^—$|^â€”$/i.test(String(value).trim());
+}
+
+function boardMeta(lot) {
+  return state.boardMeta.get(lot?.canonical_lot_id) || null;
+}
+
+function cbNo(lot) {
+  const locked = boardMeta(lot)?.identity?.cb_no;
+  return validMappedValue(locked) ? locked : (lot?.cb_no || lot?.cb_number || lot?.cb_base_no || "—");
+}
+
+async function loadBoardMeta(lot) {
+  // rr_upm_lot_board_v1 is the canonical board source loaded above. The old
+  // v743 live-status RPC is optional and is absent in current deployment, so
+  // the main board must never depend on it or emit a 404 for every Lot.
+  state.boardMeta.set(lot.canonical_lot_id, {
+    status_unavailable: true,
+    department_statuses: [],
+    identity: {
+      cb_no: lot.cb_no || lot.cb_number || lot.cb_base_no || null,
+      art_no: lot.art_no || null,
+      print_no: lot.print_no || null,
+      frame_no: lot.frame_no || null,
+      item_name: lot.item_name || null
+    }
+  });
+}
+
+async function load() {
+  if (state.busy) return;
+  state.busy = true;
+  try {
+    setMessage("Loading lots…");
+    const [departmentResult, lotResult] = await Promise.all([
+      state.sb.from("rr_upm_departments").select("*").eq("is_active", true).order("sequence_no"),
+      state.sb.from("rr_upm_lot_board_v1").select("*").order("board_updated_at", {ascending: false})
+    ]);
+    if (departmentResult.error) throw departmentResult.error;
+    if (lotResult.error) throw lotResult.error;
+    state.departments = departmentResult.data || [];
+    state.lots = lotResult.data || [];
+    await Promise.all(state.lots.flatMap(lot => [loadVisual(lot), loadBoardMeta(lot)]));
+    fillDepartments();
+    renderBoard();
+    setMessage();
+  } catch (error) {
+    console.error(error);
+    setMessage(errorText(error), "error");
+  } finally {
+    state.busy = false;
+  }
+}
+
+function fillDepartments() {
+  const options = state.departments.filter(isAssignableProductionDepartment).map(department => `<option value="${esc(department.department_code)}">${esc(department.department_name)}</option>`).join("");
+  $("homeDept").innerHTML = '<option value="">All departments</option>' + options;
+  $("dept").innerHTML = options;
+}
+
+function isAssignableProductionDepartment(department) {
+  const code = upper(department?.department_code);
+  return department?.is_active !== false && upper(department?.department_type || "PRODUCTION") === "PRODUCTION" && code !== "CUTTING" && code !== "DESPATCH" && code !== "DISPATCH";
+}
+
+function lotMatchesDepartment(lot, departmentCode) {
+  if (!departmentCode) return true;
+  const statuses = arr(boardMeta(lot)?.department_statuses);
+  if (statuses.length) return statuses.some(row => upper(row.department_code) === upper(departmentCode));
+  return arr(lot.colours).some(colour => upper(colour.current_department_code) === upper(departmentCode));
+}
+
+function boardStatusRows(lot) {
+  const rows = arr(boardMeta(lot)?.department_statuses);
+  if (!rows.length) return '<div class="lot-live-status base"><b>OPEN QUEUE</b><span>Colour assignment available</span></div>';
+  return rows.slice(0,4).map(row => {
+    const colour = upper(row.status_colour || "BASE").toLowerCase();
+    return `<div class="lot-live-status ${esc(colour)}"><b>${esc(row.department_name || row.department_code)}</b><span>${esc(row.board_detail || row.display_label || "")}</span></div>`;
+  }).join("") + (rows.length > 4 ? `<div class="lot-live-more">+${rows.length - 4} MORE</div>` : "");
+}
+
+function lotCard(lot) {
+  const meta = boardMeta(lot);
+  const identity = meta?.identity || {};
+  const artNo = validMappedValue(identity.art_no) ? identity.art_no : (lot.art_no || "—");
+  return `<article class="lot-card" data-lot="${esc(lot.canonical_lot_id)}">
+    <div class="lot-head">
+      <div><div class="lot-no">${esc(lot.lot_no)}</div><div class="cb-no">CB NO · ${esc(cbNo(lot))}</div><div class="art-no">ART ${esc(artNo)}</div></div>
+      <div style="text-align:right"><small class="muted">TOTAL CUT</small><div class="cut">${num(lot.total_qty)} PCS</div></div>
+    </div>
+    <div class="lot-live-list">${boardStatusRows(lot)}</div>
+    <div class="thumbs">${thumbnails(lot, 5)}</div>
+    <button class="primary checkin" data-open-lot="${esc(lot.canonical_lot_id)}" type="button">CHECK IN</button>
+  </article>`;
+}
+
+function renderBoard() {
+  const query = $("search").value.toLowerCase().trim();
+  const department = $("homeDept").value;
+  const rows = state.lots.filter(lot => {
+    const text = `${lot.lot_no} ${cbNo(lot)} ${lot.art_no || ""} ${lot.item_name || ""}`.toLowerCase();
+    return (!query || text.includes(query)) && lotMatchesDepartment(lot, department);
+  });
+  $("board").innerHTML = rows.map(lotCard).join("") || '<div class="msg">No lots found.</div>';
+  document.querySelectorAll("[data-open-lot]").forEach(button => button.onclick = event => {
+    event.stopPropagation();
+    openLot(button.dataset.openLot);
+  });
+  document.querySelectorAll(".lot-card").forEach(card => card.onclick = () => openLot(card.dataset.lot));
+  wireImages();
+}
+
+function wireImages(scope = document) {
+  scope.querySelectorAll("[data-lot-img]").forEach(button => button.onclick = event => {
+    event.stopPropagation();
+    const lot = state.lots.find(row => row.canonical_lot_id === button.dataset.lotImg);
+    openGallery(visualItems(lot).map(item => item.url), Number(button.dataset.img || 0));
+  });
+}
+
+async function openLot(id) {
+  try {
+    state.lot = state.lots.find(row => row.canonical_lot_id === id);
+    if (!state.lot) throw new Error("Lot not found.");
+    const preferred = $("homeDept").value || arr(state.lot.colours)[0]?.current_department_code || state.departments[0]?.department_code;
+    if ([...$("dept").options].some(option => option.value === preferred)) $("dept").value = preferred;
+    $("traveller").classList.remove("hidden");
+    renderIdentity();
+    await loadContext();
+  } catch (error) {
+    console.error(error);
+    setFormMessage(errorText(error), "error");
+  }
+}
+
+async function openLotAtDepartment(id, departmentCode) {
+  state.lot = state.lots.find(row => row.canonical_lot_id === id);
+  if (!state.lot) throw new Error("Lot not found.");
+  const code = upper(departmentCode);
+  const options = state.departments.filter(isAssignableProductionDepartment).map(department =>
+    `<option value="${esc(department.department_code)}">${esc(department.department_name)}</option>`
+  ).join("");
+  $("dept").innerHTML = options;
+  if (![...$("dept").options].some(option => upper(option.value) === code)) {
+    throw new Error(`Department ${code} is not active for production assignment.`);
+  }
+  $("dept").value = [...$("dept").options].find(option => upper(option.value) === code).value;
+  $("traveller").classList.remove("hidden");
+  renderIdentity();
+  await loadContext();
+}
+
+function renderIdentity() {
+  const lot = state.lot;
+  $("identity").innerHTML = `
+    <div class="box"><small>LOT NO</small><b>${esc(lot.lot_no)}</b></div>
+    <div class="box"><small>CB NO</small><b id="identityCb">${esc(cbNo(lot))}</b></div>
+    <div class="box"><small>ART NO</small><b id="identityArt">${esc(lot.art_no || "MAPPING REQUIRED")}</b></div>
+    <div class="box"><small>PRINT NO</small><b id="identityPrint">${esc(lot.print_no || "MAPPING REQUIRED")}</b></div>
+    <div class="box"><small>FRAME NO</small><b id="identityFrame">${esc(lot.frame_no || "MAPPING REQUIRED")}</b></div>
+    <div class="box"><small>TOTAL CUTTING</small><b>${num(lot.total_qty)} PCS</b></div>
+    <div class="box"><small>ITEM</small><b>${esc(lot.item_name || "—")}</b></div>`;
+  $("entryThumbs").innerHTML = thumbnails(lot, 20);
+  wireImages($("entryThumbs"));
+}
+
+async function loadContext() {
+  if (!state.lot || !$("dept").value) return;
+  try {
+    setFormMessage("Verified Single/Multi Cutting mapping and workflow balances loading…");
+    state.context = await rpc("rr_upm_universal_form_v741", {
+      p_canonical_lot_id: state.lot.canonical_lot_id,
+      p_department_code: $("dept").value
+    });
+    if (state.context?.lot) {
+      const identity = state.context.lot;
+      [["cb_no","identityCb"],["art_no","identityArt"],["print_no","identityPrint"],["frame_no","identityFrame"]].forEach(([key,id]) => {
+        const value = identity[key];
+        if (value && !/MAPPING REQUIRED|^—$|^â€”$/i.test(String(value))) { if ($(id)) $(id).textContent = value; state.lot[key] = value; }
+      });
+      const existingMeta = boardMeta(state.lot) || {};
+      state.boardMeta.set(state.lot.canonical_lot_id, {...existingMeta, identity: {...(existingMeta.identity||{}), ...identity}});
+    }
+    $("actualRate").value = state.context.actual_rate ?? 0;
+    $("standardRate").value = state.context.standard_rate ?? "";
+    $("ownerMargin").value = state.context.owner_margin ?? "";
+    const showOwner = Boolean(state.context.can_view_standard);
+    $("stdWrap").classList.toggle("hidden", !showOwner);
+    $("marginWrap").classList.toggle("hidden", !showOwner);
+    fillBulkWorker();
+    state.mapping = state.context.mapping_context || {};
+    if(filterDepartmentDropdown()) { queueMicrotask(loadContext); return; }
+    const openCount=arr(state.context.rows).filter(r=>r.can_assign).reduce((m,r)=>m.add(upper(r.colour_code)),new Set()).size;
+    const runningCount=arr(state.context.rows).filter(r=>r.is_locked).reduce((m,r)=>m.add(upper(r.colour_code)),new Set()).size;
+    $("routeNote").textContent = runningCount
+      ? `Current Owner: ${upper($("dept").value)} · ${runningCount} Colour running · Submit के बाद फिर Random Open Queue.`
+      : `OPEN RANDOM QUEUE · First Assignment Wins · ${openCount} Colour इस Department में claim किए जा सकते हैं.`;
+    renderColours();
+    const source = arr(state.context.rows)[0]?.source_type || "NO SOURCE";
+    setFormMessage(`${state.context.department_code} · ${source} Cutting source · Full-colour assignment · Transaction-safe work actions.`, "success");
+  } catch (error) {
+    console.error(error);
+    state.context = null;
+    $("colours").innerHTML = "";
+    setFormMessage(errorText(error), "error");
+  }
+}
+
+function currentDepartmentWorkers() {
+  const department = upper($("dept")?.value || state.context?.department_code);
+  return arr(state.context?.workers).filter(worker => upper(worker.department_code) === department);
+}
+
+
+function applyDepartmentSelectColour(){
+  const select=$("dept");
+  if(!select)return;
+  const option=select.options[select.selectedIndex];
+  const colour=String(option?.dataset.statusColour||"BASE").toLowerCase();
+  select.classList.remove("dept-base","dept-orange","dept-green","dept-red");
+  select.classList.add(`dept-${colour}`);
+}
+
+function filterDepartmentDropdown(){
+  const select=$("dept");
+  const current=upper(select.value||state.context?.department_code);
+  const statuses=arr(state.context?.department_statuses);
+  if(!statuses.length)return false;
+  const icon={BASE:"",ORANGE:"🟧 ",GREEN:"🟩 ",RED:"🟥 "};
+  select.innerHTML=statuses.map(d=>{
+    const code=upper(d.department_code);
+    const status=upper(d.status_colour||"BASE");
+    const cls=`dept-${status.toLowerCase()}`;
+    return `<option value="${esc(code)}" class="${cls}" data-status-colour="${esc(status)}">${icon[status]||""}${esc(d.display_label||d.department_name||code)}</option>`;
+  }).join("");
+  if([...select.options].some(o=>upper(o.value)===current))select.value=current;
+  else if(select.options.length)select.value=select.options[0].value;
+  applyDepartmentSelectColour();
+  return upper(select.value)!==current;
+}
+function lmCandidates(){return arr(state.mapping?.line_man_candidates);}
+function openWhatsApp(result){if(result?.whatsapp_url)window.open(result.whatsapp_url,"_blank","noopener");}
+
+function workerOptions(selectedWorkerId = "", placeholder = "Select worker") {
+  return `<option value="">${esc(placeholder)}</option>${currentDepartmentWorkers().map(worker => `
+    <option value="${esc(worker.worker_id)}" data-name="${esc(worker.worker_name)}" data-code="${esc(worker.worker_code || "")}" ${String(worker.worker_id) === String(selectedWorkerId || "") ? "selected" : ""}>
+      ${esc(worker.worker_name)}${worker.worker_code ? ` · ${esc(worker.worker_code)}` : ""}
+    </option>`).join("")}`;
+}
+
+function fillBulkWorker() {
+  const select = $("bulkWorker");
+  if (!select) return;
+  const selected = select.value;
+  select.innerHTML = workerOptions(selected, "Select one worker for selected Colours");
+  if (![...select.options].some(option => option.value === selected)) select.value = "";
+}
+
+function responsibilityLabel(type) {
+  return ({ALTER_PENDING:"ALTER PENDING",LINE_MAN_PENDING:"LINE MAN PENDING",WORKER_REMAKE_PENDING:"WORKER REMAKE PENDING",DAMAGE:"DAMAGE"})[type] || type;
+}
+
+function responsibilityKind(type) {
+  return type === "ALTER_PENDING" ? "alter" : type === "DAMAGE" ? "damage" : "remake";
+}
+
+function renderSummary() {
+  const total = state.context?.summary || {};
+  $("summary").innerHTML = [
+    ["Main Qty", total.main, ""], ["Good Qty", total.good, "good"],
+    ["Alter Journey", num(total.alter)+num(total.line_man_pending)+num(total.remake), "alter"], ["Damage", total.damage, "damage"]
+  ].map(([label,value,kind])=>`<div class="box summary-box ${kind} ${num(value)>0&&kind?"blink-live":""}"><small>${label}</small><b>${num(value)} PCS</b></div>`).join("");
+  const rows=arr(state.context?.active_alter_summary), freeze=$("freezeSummary"); if(!freeze)return;
+  const kinds={LM_ALTER_PENDING:"blink-alter",CM_REMAKE_READY:"blink-cm",LM_DELIVERY_PENDING:"blink-lm",KARIGAR_REMAKE_PENDING:"blink-karigar",UNTRACEABLE_APPROVAL:"blink-damage"};
+  freeze.innerHTML=rows.length?rows.map(row=>`<section class="freeze-group ${kinds[row.stage]||""}">
+    <div class="freeze-title"><span>${esc(row.responsible_name||"MAPPING")}${row.responsible_role_short?` · ${esc(row.responsible_role_short)}`:""}</span><strong>${num(row.qty)} PCS</strong></div>
+    <div class="responsibility-row"><label><input class="journey-pick" type="checkbox" value="${esc(row.journey_id)}"> ${esc(row.stage_label)} · ${esc(row.colour_name||row.colour_code)} / ${esc(row.size_code)}</label></div>
+  </section>`).join(""):'<section class="freeze-group"><div class="freeze-title"><span>ALTER JOURNEY</span><strong>NONE</strong></div></section>';
+}
+function groups() {
+  const map = new Map();
+  arr(state.context?.rows).forEach((row, index) => {
+    const key = rowKey(row);
+    if (!map.has(key)) map.set(key, {
+      ...row, rows: [], indexes: [], total: 0, goodTotal: 0, alterTotal: 0, lineManTotal: 0, workerRemakeTotal: 0, damageTotal: 0, unresolvedTotal: 0, canAssign: false
+    });
+    const group = map.get(key);
+    group.rows.push(row);
+    group.indexes.push(index);
+    group.total += num(row.cutting_qty);
+    group.goodTotal += num(row.good_qty);
+    group.alterTotal += num(row.alter_open_qty ?? row.alter_qty);
+    group.lineManTotal += num(row.line_man_pending_qty);
+    group.workerRemakeTotal += num(row.worker_remake_pending_qty ?? row.remake_qty);
+    group.damageTotal += num(row.damage_qty);
+    group.unresolvedTotal += num(row.alter_open_qty ?? row.alter_qty) + num(row.line_man_pending_qty) + num(row.worker_remake_pending_qty ?? row.remake_qty);
+    group.canAssign = group.canAssign || Boolean(row.can_assign);
+    group.completedHere = group.completedHere || Boolean(row.is_completed_here) || upper(row.status)==="SUBMITTED HERE";
+  });
+  return [...map.values()];
+}
+
+function statusBadge(group) {
+  if (!group.is_locked && !group.canAssign) return '<span class="badge warn">RUNNING IN OTHER DEPARTMENT</span>';
+  if (!group.is_locked) return '<span class="badge ok">OPEN FOR ASSIGNMENT</span>';
+  return '<span class="badge lock">ASSIGNED / IN PROGRESS</span>';
+}
+
+function renderColours() {
+  renderSummary();
+  const colourGroups = groups();
+  $("colours").innerHTML = colourGroups.map(group => {
+    const assigned = Boolean(group.is_locked);
+    const canAssign = !assigned && Boolean(group.canAssign);
+    const done = Boolean(group.completedHere);
+    return `<article class="colour-card ${assigned ? "assigned" : ""} ${done ? "done" : ""} ${!assigned && !canAssign ? "waiting" : ""}" data-colour-key="${esc(rowKey(group))}">
+      <div class="colour-head">
+        <div class="colour-title">
+          ${assigned
+            ? `<input class="work-pick" type="checkbox" ${done ? "disabled" : ""} title="Assigned Colour: select for Alter, Damage or Submit">`
+            : `<input class="assign-pick" type="checkbox" ${canAssign ? "" : "disabled"} title="${canAssign ? "Open Colour: select for Assignment" : "Running in another Department"}">`}
+          <div><h3>${esc(group.colour_name || group.colour_code)} <span class="badge">${esc(group.colour_code)}</span></h3>
+          <div class="muted">${esc(group.source_type)} · Cutting ${group.total} PCS · ${group.rows.length} Sizes permanently bound</div></div>
+        </div>
+        <div class="worker-block">
+          <label>${assigned ? "Current Worker" : "Worker — complete Colour + all Sizes"}
+            <select class="colour-worker" ${assigned || !canAssign ? "disabled" : ""}>${workerOptions(group.worker_id)}</select>
+          </label>
+          <label>${assigned ? "Reassign all direct Pending to" : "Route gate"}
+            ${assigned
+              ? `<select class="reassign-worker" ${done ? "disabled" : ""}>${workerOptions("", "Select new worker")}</select>`
+              : `<input value="${canAssign ? "OPEN · FIRST ASSIGNMENT WINS" : "RUNNING IN OTHER DEPARTMENT"}" disabled>`}
+          </label>
+        </div>
+      </div>
+      <div class="colour-meta">${statusBadge(group)}
+        <span class="muted">Main ${group.total} · Good ${group.goodTotal} · Alter ${group.alterTotal} · Line Man ${group.lineManTotal} · Worker Remake ${group.workerRemakeTotal} · Damage ${group.damageTotal}</span>
+        <span class="muted">Worker ownership never splits by size.</span>
+      </div>
+      <div class="size-wrap"><table>
+        <thead><tr><th>Size</th><th>Main Qty</th><th>Good Qty</th><th>Alter Fill</th><th>Alter Pending</th><th>Remake Issue · CM</th><th>Master Ready / LM Pending</th><th>Receive Master · LM</th><th>Deliver Karigar · LM</th><th>Karigar Pending</th><th>Receive Karigar · LM</th><th>Saved Damage</th><th>Add Damage</th><th>Damage From</th><th>Status</th></tr></thead>
+        <tbody>${group.rows.map((row, rowIndex) => {
+          const enabled = assigned && !done;
+          const alterOpen = num(row.alter_open_qty ?? row.alter_qty);
+          const remakeOpen = num(row.remake_open_qty ?? row.remake_qty);
+          return `<tr data-row-index="${group.indexes[rowIndex]}">
+            <td><b>${esc(row.size_code)}</b></td><td>${num(row.main_qty ?? row.cutting_qty)}</td><td><b>${num(row.good_qty)}</b></td>
+            <td><input class="alterEntry" type="number" min="0" max="${Math.min(num(row.good_qty),num(row.pending_qty))}" value="0" ${enabled ? "" : "disabled"}></td>
+            <td>${alterOpen}</td>
+            <td><input class="remakeIssueEntry" type="number" min="0" max="${alterOpen}" value="0" ${enabled && alterOpen > 0 ? "" : "disabled"}></td>
+            <td>${num(row.line_man_pending_qty)}</td>
+            <td><input class="receiveMasterEntry" type="number" min="0" max="${num(row.line_man_pending_qty)}" value="0" ${enabled && num(row.line_man_pending_qty)>0 ? "" : "disabled"}></td>
+            <td><input class="deliverKarigarEntry" type="number" min="0" max="${num(row.line_man_pending_qty)}" value="0" ${enabled && num(row.line_man_pending_qty)>0 ? "" : "disabled"}></td>
+            <td>${num(row.worker_remake_pending_qty ?? remakeOpen)}</td>
+            <td><input class="receiveKarigarEntry" type="number" min="0" max="${num(row.worker_remake_pending_qty ?? remakeOpen)}" value="0" ${enabled && num(row.worker_remake_pending_qty ?? remakeOpen)>0 ? "" : "disabled"}></td>
+            <td>${num(row.damage_qty)}</td>
+            <td><input class="damageEntry" type="number" min="0" value="0" ${enabled ? "" : "disabled"}></td>
+            <td><select class="damageSource source-select" ${enabled ? "" : "disabled"}><option value="PENDING">Good Qty</option><option value="ALTER">Alter Pending</option><option value="REMAKE">Remake Pending</option></select></td>
+            <td>${esc(row.status)}</td>
+          </tr>`;
+        }).join("")}</tbody>
+      </table></div>
+    </article>`;
+  }).join("") || '<div class="empty"><h3>No Colour × Size mapping found</h3><p>Run Flow Debug. Server checks Single and Multi Lot Cutting sources.</p></div>';
+}
+
+function selectedOpenGroups() {
+  const groupList = groups();
+  return [...document.querySelectorAll(".colour-card")].filter(card => card.querySelector(".assign-pick")?.checked).map(card => {
+    const group = groupList.find(item => String(rowKey(item)) === String(card.dataset.colourKey));
+    const select = card.querySelector(".colour-worker");
+    const option = select?.options[select.selectedIndex];
+    return {
+      group,
+      worker_id: select?.value || null,
+      worker_name: option?.dataset.name || "",
+      worker_code: option?.dataset.code || ""
+    };
+  });
+}
+
+function selectedAssignedGroups() {
+  const groupList = groups();
+  return [...document.querySelectorAll(".colour-card")].filter(card => card.querySelector(".work-pick")?.checked).map(card => ({
+    card,
+    group: groupList.find(item => String(rowKey(item)) === String(card.dataset.colourKey))
+  }));
+}
+
+function selectedRows() {
+  const rows = [];
+  selectedAssignedGroups().forEach(selection => {
+    selection.card.querySelectorAll("[data-row-index]").forEach(tableRow => {
+      rows.push({
+        row: state.context.rows[Number(tableRow.dataset.rowIndex)],
+        tableRow
+      });
+    });
+  });
+  return rows;
+}
+
+function setBusy(on) {
+  state.busy = on;
+  document.querySelectorAll(".actions button").forEach(button => button.disabled = on);
+}
+
+async function runBusy(work, successText) {
+  if (state.busy) return null;
+  setBusy(true);
+  try {
+    const result = await work();
+    await loadContext();
+    if (successText) setFormMessage(successText, "success");
+    return result;
+  } catch (error) {
+    console.error(error);
+    setFormMessage(errorText(error), "error");
+    return null;
+  } finally {
+    setBusy(false);
+  }
+}
+
+
+function eligibleNextDepartments() {
+  const current = upper($("dept").value);
+  return state.departments.filter(d => {
+    const code = upper(d.department_code);
+    const type = upper(d.department_type || "PRODUCTION");
+    return d.is_active !== false && code && code !== current && code !== "CUTTING" && code !== "DESPATCH" && code !== "DISPATCH" && type === "PRODUCTION" && d.colour_assignment_enabled !== false && d.worker_assignment_enabled !== false;
+  });
+}
+
+function colourBadges(codes) {
+  return codes.map(code => `<span class="badge">${esc(code)}</span>`).join("");
+}
+
+function askActionConfirmation({mode, codes, full, department}) {
+  return new Promise(resolve => {
+    state.confirmResolve = resolve;
+    const isSubmit = mode === "SUBMIT";
+    $("actionConfirmTitle").textContent = isSubmit ? "CONFIRM SUBMIT JOB" : "CONFIRM ASSIGN JOB";
+    $("actionConfirmCopy").innerHTML = isSubmit
+      ? `<b>क्या आप अभी Submit करना चाहते हैं?</b><br>${esc(department)} से ${full ? "पूरा Lot" : "selected Colour"} Submit होगा।`
+      : `<b>क्या आप यह ${full ? "पूरा available Lot" : "selected Colour"} Assign करना चाहते हैं?</b><br>Department: ${esc(department)}`;
+    $("actionConfirmColours").innerHTML = colourBadges(codes);
+    $("actionConfirmNextWrap").classList.toggle("hidden", !isSubmit);
+    if (isSubmit) {
+      const deps = eligibleNextDepartments();
+      $("actionConfirmNextDept").innerHTML = '<option value="">Select Next Department</option>' + deps.map(d => `<option value="${esc(d.department_code)}">${esc(d.department_name || d.department_code)}</option>`).join("");
+    }
+    $("actionConfirmYes").textContent = isSubmit ? "YES · SUBMIT NOW" : "YES · ASSIGN NOW";
+    $("actionConfirmModal").classList.remove("hidden");
+  });
+}
+
+function closeActionConfirmation(result) {
+  $("actionConfirmModal").classList.add("hidden");
+  const resolve = state.confirmResolve;
+  state.confirmResolve = null;
+  if (resolve) resolve(result);
+}
+
+async function assignWork() {
+  const selected = selectedOpenGroups();
+  if (!selected.length) { setFormMessage("Assign करने के लिए कम से कम एक OPEN Colour select करें.", "error"); return; }
+  const available = groups().filter(g => !g.is_locked && g.canAssign && !g.completedHere);
+  const codes = selected.map(x => x.group.colour_code);
+  const full = available.length > 0 && selected.length === available.length;
+  const confirmed = await askActionConfirmation({mode:"ASSIGN", codes, full, department: $("dept").options[$("dept").selectedIndex]?.textContent || $("dept").value});
+  if (!confirmed) return;
+  await runBusy(async () => {
+    const gps = await realFactoryBusinessGps();
+    await rpc("rr_upm_lm_activity_v794", {p_action:"START",p_activity_code:"ASSIGN_SELECTED",p_reference_id:state.lot.canonical_lot_id});
+    try {
+    const rows = selected.map(item => {
+      if (!item.worker_id) throw new Error(`${item.group.colour_name}: worker required.`);
+      return {
+        colour_id: item.group.colour_id,
+        colour_code: item.group.colour_code,
+        worker_id: item.worker_id,
+        assigned_qty: item.group.total,
+        actual_rate: num($("actualRate").value)
+      };
+    });
+    await rpc("rr_upm_claim_colours_v796", {
+      p_canonical_lot_id: state.lot.canonical_lot_id,
+      p_lot_no: state.lot.lot_no,
+      p_department_code: $("dept").value,
+      p_rows: rows,
+      p_remarks: full ? "Universal Lot Form FULL available colour assignment" : "Universal Lot Form selected colour assignment",
+      p_latitude:gps.latitude,
+      p_longitude:gps.longitude,
+      p_accuracy_meters:gps.accuracy,
+      p_test_scenario:gps.testScenario
+    });
+    } finally {
+      await rpc("rr_upm_lm_activity_v794", {p_action:"END",p_activity_code:null,p_reference_id:null}).catch(()=>{});
+    }
+  }, `${full ? "पूरा available Lot" : codes.join(" ")} successfully assigned.`);
+}
+
+function buildActionRows(actionType, inputClass) {
+  const selected = selectedRows();
+  if (!selected.length) throw new Error("Select at least one assigned colour using its Work checkbox.");
+  const actions = [];
+  selected.forEach(({row, tableRow}) => {
+    const input = tableRow.querySelector(`.${inputClass}`);
+    const qty = num(input?.value);
+    if (qty <= 0) return;
+    const pending = num(row.pending_qty);
+    const alterOpen = num(row.alter_open_qty ?? row.alter_qty);
+    const remakeOpen = num(row.remake_open_qty ?? row.remake_qty);
+    let sourceBucket = "PENDING";
+    let maximum = pending;
+    if (actionType === "REMAKE_ISSUE") maximum = alterOpen;
+    if (actionType === "REMAKE_COMPLETE") maximum = remakeOpen;
+    if (actionType === "DAMAGE") {
+      sourceBucket = upper(tableRow.querySelector(".damageSource")?.value || "PENDING");
+      maximum = sourceBucket === "ALTER" ? alterOpen : sourceBucket === "REMAKE" ? remakeOpen : pending;
+    }
+    if (qty > maximum) throw new Error(`${row.colour_name}/${row.size_code}: ${actionType} ${qty} exceeds available ${maximum} in ${sourceBucket}.`);
+    actions.push({
+      request_id: requestId(),
+      colour_id: row.colour_id,
+      colour_code: row.colour_code,
+      colour_name: row.colour_name,
+      size_code: row.size_code,
+      action_type: actionType,
+      source_bucket: sourceBucket,
+      qty
+    });
+  });
+  if (!actions.length) throw new Error(`Enter quantity for ${actionType.replaceAll("_", " ")}.`);
+  return actions;
+}
+
+async function applyAction(actionType, inputClass, successText) {
+  await runBusy(async () => {
+    const actions = buildActionRows(actionType, inputClass);
+    if (actionType === "DAMAGE") {
+      await rpc("rr_upm_save_damage_v731", {
+        p_canonical_lot_id: state.lot.canonical_lot_id,
+        p_department_code: $("dept").value,
+        p_rows: actions,
+        p_rate: num($("actualRate").value),
+        p_remarks: "Universal Lot Form bucket-wise Damage"
+      });
+      return;
+    }
+    await rpc("rr_upm_apply_actions_batch_v726", {
+      p_canonical_lot_id: state.lot.canonical_lot_id,
+      p_department_code: $("dept").value,
+      p_actions: actions,
+      p_rate: num($("actualRate").value),
+      p_remarks: "Universal Lot Form"
+    });
+  }, successText);
+}
+
+async function reassignPending() {
+  await runBusy(async () => {
+    const selected = selectedAssignedGroups();
+    if (!selected.length) throw new Error("Select at least one assigned colour.");
+    const rows = selected.map(({card, group}) => {
+      const select = card.querySelector(".reassign-worker");
+      if (!select?.value) throw new Error(`${group.colour_name}: select new worker.`);
+      if (String(select.value) === String(group.worker_id)) throw new Error(`${group.colour_name}: new worker is the same as current worker.`);
+      if (group.pendingTotal <= 0) throw new Error(`${group.colour_name}: no pending work to reassign.`);
+      return {colour_id: group.colour_id, colour_code: group.colour_code, new_worker_id: select.value};
+    });
+    await rpc("rr_upm_reassign_colours_v726", {
+      p_canonical_lot_id: state.lot.canonical_lot_id,
+      p_department_code: $("dept").value,
+      p_rows: rows,
+      p_remarks: "Pending work reassignment from Universal Lot Form"
+    });
+  }, "Remaining pending work reassigned. Previous worker history is preserved.");
+}
+
+function selectAllOpenColours() {
+  const work = [...document.querySelectorAll(".work-pick:not(:disabled)")];
+  const open = [...document.querySelectorAll(".assign-pick:not(:disabled)")];
+  if (work.length) {
+    work.forEach(input => input.checked = true);
+    setFormMessage(`${work.length} assigned Colour(s) selected for Alter, Damage or Submit.`, "success");
+    return;
+  }
+  open.forEach(input => input.checked = true);
+  setFormMessage(`${open.length} open Colour(s) selected for Assignment.`, open.length ? "success" : "error");
+}
+
+function applyBulkWorker() {
+  const workerId = $("bulkWorker")?.value || "";
+  if (!workerId) {
+    setFormMessage("Select one worker first.", "error");
+    return;
+  }
+  const selectedCards = [...document.querySelectorAll(".colour-card")].filter(card => card.querySelector(".assign-pick")?.checked);
+  if (!selectedCards.length) {
+    setFormMessage("Select one, multiple or ALL open Colours first.", "error");
+    return;
+  }
+  selectedCards.forEach(card => {
+    const select = card.querySelector(".colour-worker:not(:disabled)");
+    if (select) select.value = workerId;
+  });
+  setFormMessage(`Worker applied to ${selectedCards.length} selected Colour(s). All Cutting sizes remain bound.`, "success");
+}
+
+async function submitSelectedColours(){
+  const selected=selectedAssignedGroups();
+  if(!selected.length){setFormMessage("Submit करने के लिए running Colour का Work checkbox select करें.","error");return;}
+  const valid=selected.filter(({group})=>!group.completedHere && group.is_locked);
+  if(!valid.length){setFormMessage("Selected Colour पहले ही submitted हैं. Submitted Colour दोबारा select नहीं हो सकता.","error");return;}
+  const codes=valid.map(({group})=>group.colour_code);
+  const ok=confirm(`READY TO SUBMIT notice भेजें?\n\n${codes.join(", ")}\n\nयह final submit नहीं है. Available Line Man count करेगा, फिर assigned worker final confirmation देगा.`);
+  if(!ok)return;
+  const rows=valid.map(({group})=>({assignment_id:group.assignment_id,colour_id:group.colour_id,colour_code:group.colour_code}));
+  const result=await runBusy(async()=>{const gps=await realFactoryBusinessGps();return rpc("rr_upm_ready_submit_v796",{
+    p_canonical_lot_id:state.lot.canonical_lot_id,
+    p_department_code:$("dept").value,
+    p_rows:rows,
+    p_latitude:gps.latitude,
+    p_longitude:gps.longitude,
+    p_accuracy_meters:gps.accuracy,
+    p_test_scenario:gps.testScenario
+  });});
+  if(result){
+    setFormMessage(`${codes.join(" ")} READY notice sent · TTL ${num(result.worker_ready_total)} PCS · ${num(result.lm_candidates)} available Line Man alerted. Final submit worker confirmation के बाद होगा.`,"success");
+    await loadContext();
+  }
+}
+
+function realFactoryBusinessGps(){
+  return new Promise((resolve,reject)=>{
+    const raw=prompt("TEST GEOFENCE SCENARIO चुनें (mandatory):\n\n1 = INSIDE GEOFENCE\n2 = OUTSIDE GEOFENCE\n\nLive GPS evidence भी save होगा. REAL mode का 100m rule नहीं बदलेगा.","1");
+    const testScenario=String(raw||"").trim()==="1"?"INSIDE_GEOFENCE":String(raw||"").trim()==="2"?"OUTSIDE_GEOFENCE":"";
+    if(!testScenario){reject(new Error("TEST के लिए Inside Geofence या Outside Geofence scenario चुनना जरूरी है."));return;}
+    if(!navigator.geolocation){reject(new Error("इस device/browser में GPS उपलब्ध नहीं है."));return;}
+    navigator.geolocation.getCurrentPosition(
+      p=>resolve({latitude:p.coords.latitude,longitude:p.coords.longitude,accuracy:p.coords.accuracy,testScenario}),
+      e=>reject(new Error(e.code===1?"Assign/Submit के लिए Location permission Allow करें.":"Live GPS fetch नहीं हुआ. Location ON करके फिर try करें.")),
+      {enableHighAccuracy:true,timeout:15000,maximumAge:0}
+    );
+  });
+}
+
+async function saveRates() {
+  await runBusy(async () => {
+    await rpc("rr_upm_set_department_rate_v2", {
+      p_canonical_lot_id: state.lot.canonical_lot_id,
+      p_department_code: $("dept").value,
+      p_actual_rate: num($("actualRate").value)
+    });
+    if (state.context.can_change_standard && $("standardRate").value !== "") {
+      await rpc("rr_upm_set_standard_rate_v723", {
+        p_canonical_lot_id: state.lot.canonical_lot_id,
+        p_department_code: $("dept").value,
+        p_standard_rate: num($("standardRate").value),
+        p_reason: "Universal Lot Form"
+      });
+    }
+    if (state.context.can_change_margin && $("ownerMargin").value !== "") {
+      await rpc("rr_upm_set_owner_margin_v723", {
+        p_amount: num($("ownerMargin").value),
+        p_reason: "Universal Lot Form owner margin update"
+      });
+    }
+  }, "Rates saved.");
+}
+
+async function runDebug() {
+  if (!state.lot) return;
+  try {
+    $("debugOutput").textContent = "Running server checks…";
+    const output = await rpc("rr_upm_debug_v740", {
+      p_canonical_lot_id: state.lot.canonical_lot_id,
+      p_department_code: $("dept").value
+    });
+    $("debugOutput").textContent = JSON.stringify(output, null, 2);
+    setFormMessage(output?.ok ? "Flow debug passed." : "Flow debug found issues. Open Technical flow debug.", output?.ok ? "success" : "error");
+  } catch (error) {
+    console.error(error);
+    $("debugOutput").textContent = errorText(error);
+    setFormMessage(errorText(error), "error");
+  }
+}
+
+function openGallery(images, index) {
+  if (!images.length) return;
+  state.images = images;
+  state.imageIndex = index;
+  state.scale = 1;
+  showImage();
+  $("gallery").classList.remove("hidden");
+}
+
+function showImage() {
+  const image = $("galleryImg");
+  image.src = state.images[state.imageIndex];
+  image.style.transform = `scale(${state.scale})`;
+  $("galleryCount").textContent = `${state.imageIndex + 1} / ${state.images.length}`;
+}
+
+function moveImage(direction) {
+  state.imageIndex = (state.imageIndex + direction + state.images.length) % state.images.length;
+  state.scale = 1;
+  showImage();
+}
+
+function bindGallery() {
+  const gallery = $("gallery");
+  const image = $("galleryImg");
+  gallery.querySelector(".close").onclick = () => gallery.classList.add("hidden");
+  gallery.querySelector(".prev").onclick = () => moveImage(-1);
+  gallery.querySelector(".next").onclick = () => moveImage(1);
+  image.ondblclick = () => { state.scale = state.scale === 1 ? 2 : 1; showImage(); };
+  gallery.addEventListener("wheel", event => {
+    event.preventDefault();
+    state.scale = Math.min(4, Math.max(1, state.scale + (event.deltaY < 0 ? .25 : -.25)));
+    showImage();
+  }, {passive: false});
+  gallery.addEventListener("touchstart", event => state.startX = event.changedTouches[0].clientX, {passive: true});
+  gallery.addEventListener("touchend", event => {
+    const distance = event.changedTouches[0].clientX - state.startX;
+    if (Math.abs(distance) > 45) moveImage(distance < 0 ? 1 : -1);
+  }, {passive: true});
+}
+
+
+function selectedStageRows(inputClass) {
+  const selected = selectedRows();
+  if (!selected.length) throw new Error("Select at least one assigned Colour using its Work checkbox.");
+  return selected.map(({row, tableRow}) => ({
+    colour_id: row.colour_id || null,
+    colour_code: row.colour_code,
+    colour_name: row.colour_name,
+    size_code: row.size_code,
+    qty: num(tableRow.querySelector(`.${inputClass}`)?.value)
+  })).filter(row => row.qty > 0);
+}
+
+async function uploadAlterEvidence(files) {
+  if (files.length < 1 || files.length > 3) throw new Error("Capture minimum 1 and maximum 3 live camera images.");
+  const urls = [];
+  for (const file of files) {
+    if (!/^image\/(jpeg|png|webp)$/i.test(file.type || "")) throw new Error(`Unsupported evidence image: ${file.name}`);
+    const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
+    const path = `${state.lot.canonical_lot_id}/${upper($("dept").value)}/${Date.now()}-${requestId()}.${ext}`;
+    const {error} = await state.sb.storage.from("production-evidence").upload(path, file, {upsert: false, contentType: file.type});
+    if (error) throw error;
+    urls.push(path);
+  }
+  return urls;
+}
+
+function openAlterEvidenceModal() {
+  const rows = selectedStageRows("alterEntry");
+  if (!rows.length) throw new Error("Enter Alter Fill Qty in at least one selected size.");
+  state.pendingAlterRows = rows;
+  const candidates=lmCandidates(); const enrolled=state.mapping?.line_man_enrolment;
+  $("alterLineManSelect").innerHTML=candidates.map(x=>`<option value="${esc(x.worker_id)}" ${String(enrolled?.person_id||"")===String(x.worker_id)?"selected":""}>${esc(x.worker_name)} · ${esc(x.worker_code||"")} · ${esc(x.department_code||"")}</option>`).join("");
+  if(!candidates.length)throw new Error("No mapped Line Man found in Worker Directory / Fabrication.");
+  if(enrolled)$("alterLineManSelect").disabled=true; else $("alterLineManSelect").disabled=candidates.length===1;
+  state.cameraBlobs=[];
+  $("alterEvidenceFiles").value = "";
+  $("physicalEvidenceSubmitted").checked = false;
+  $("alterEvidencePreview").innerHTML = "";
+  $("alterEvidenceMsg").textContent = "";
+  $("alterEvidenceModal").classList.remove("hidden");
+}
+
+async function saveAlterEvidence() {
+  const files = state.cameraBlobs.length ? state.cameraBlobs : [...($("alterEvidenceFiles").files || [])].slice(0, 3);
+  const physical = $("physicalEvidenceSubmitted").checked;
+  if (!physical) throw new Error("Confirm physical evidence submission.");
+  const paths = await uploadAlterEvidence(files);
+  const result = await rpc("rr_upm_alter_stage_v740", {
+    p_stage: "ALTER_FILL",
+    p_canonical_lot_id: state.lot.canonical_lot_id,
+    p_department_code: $("dept").value,
+    p_rows: state.pendingAlterRows || [],
+    p_evidence_urls: paths,
+    p_physical_confirmed: true,
+    p_line_man_id: $("alterLineManSelect").value || null,
+    p_remarks: "Universal Lot Form Alter Fill by mapped Line Man"
+  });
+  $("alterEvidenceModal").classList.add("hidden");
+  await loadContext();
+  setFormMessage(`${result.rows_saved || 0} Alter row(s) saved with mapped Lot Line Man.`, "success"); openWhatsApp(result);
+}
+
+async function runRemakeStage(stage, inputClass, successText) {
+  return runBusy(async () => {
+    const rows = selectedStageRows(inputClass);
+    if (!rows.length) throw new Error(`Enter Qty for ${successText}.`);
+    return rpc("rr_upm_alter_stage_v740", {
+      p_stage: stage,
+      p_canonical_lot_id: state.lot.canonical_lot_id,
+      p_department_code: $("dept").value,
+      p_rows: rows,
+      p_evidence_urls: [],
+      p_physical_confirmed: false,
+      p_line_man_id: null,
+      p_remarks: `Universal Lot Form ${successText}`
+    });
+  }, successText);
+}
+
+async function boot() {
+  try {
+    state.sb = window.supabaseClient || window.supabaseDb || window.redzedSupabase || window.sb;
+    if (!state.sb) throw new Error("Supabase client unavailable.");
+    const sessionResult = await state.sb.auth.getSession();
+    if (sessionResult.error || !sessionResult.data?.session) {
+      location.replace("real-login.html");
+      throw new Error("Login required.");
+    }
+    const access = await rpc("rr_upm_access_context_v727");
+    if (!access?.allowed) throw new Error(access?.reason || "Production access denied by Role & Permission.");
+    $("refresh").onclick = load;
+    $("search").oninput = renderBoard;
+    $("homeDept").onchange = renderBoard;
+    $("dept").onchange = () => { applyDepartmentSelectColour(); loadContext(); };
+    document.querySelector("[data-close]").onclick = () => $("traveller").classList.add("hidden");
+    document.querySelectorAll("[data-link]").forEach(button => button.onclick = () => location.href = button.dataset.link);
+    $("packingTab").onclick = () => setMessage("Existing Smart Packing remains unchanged.");
+    $("costingTab").onclick = () => setMessage("Costing uses existing ledgers.");
+    $("reportsTab").onclick = () => setMessage("Use Worker and Department ledger views.");
+    $("selectAllBtn").onclick = selectAllOpenColours;
+    $("applyBulkWorkerBtn").onclick = applyBulkWorker;
+    $("assignBtn").onclick = assignWork;
+    $("submitBtn").onclick = submitSelectedColours;
+    $("alterBtn").onclick = () => { try { openAlterEvidenceModal(); } catch (error) { setFormMessage(errorText(error), "error"); } };
+    $("remakeIssueBtn").onclick=()=>runRemakeStage("REMAKE_ISSUE","remakeIssueEntry","Cutting Master Remake Issue saved.").then(openWhatsApp);
+    $("remakeDeliveredBtn").onclick=()=>runRemakeStage("RECEIVE_FROM_MASTER","receiveMasterEntry","Line Man received from Master.").then(openWhatsApp);
+    $("remakeCompleteBtn").onclick=()=>runRemakeStage("DELIVER_TO_KARIGAR","deliverKarigarEntry","Delivered to Karigar; responsibility started.").then(openWhatsApp);
+    $("receiveKarigarBtn").onclick=()=>runRemakeStage("RECEIVE_FROM_KARIGAR","receiveKarigarEntry","Line Man final received; Qty returned to Good.").then(openWhatsApp);
+    $("damageBtn").onclick = () => applyAction("DAMAGE", "damageEntry", "Damage saved from the selected source bucket.");
+    $("reassignBtn").onclick = reassignPending;
+    $("saveRates").onclick = saveRates;
+    $("debugBtn").onclick = runDebug;
+    $("closeAlterEvidence").onclick = () => $("alterEvidenceModal").classList.add("hidden");
+    $("saveAlterEvidence").onclick = async () => { try { await saveAlterEvidence(); } catch (error) { $("alterEvidenceMsg").textContent = errorText(error); } };
+    $("alterEvidenceFiles").onchange = () => { const files=[...($("alterEvidenceFiles").files||[])].slice(0,3); $("alterEvidencePreview").innerHTML=files.map(file=>`<span class="badge">${esc(file.name)}</span>`).join(""); };
+    $("changeLmBtn").onclick=()=>{const c=lmCandidates(),cur=state.mapping?.line_man_enrolment;$("newLmSelect").innerHTML=c.filter(x=>String(x.worker_id)!==String(cur?.person_id||"")).map(x=>`<option value="${esc(x.worker_id)}">${esc(x.worker_name)} · ${esc(x.worker_code||"")}</option>`).join("");$("lmModal").classList.remove("hidden")};
+    $("closeLmModal").onclick=()=>$("lmModal").classList.add("hidden");
+    $("saveLmTransfer").onclick=async()=>{try{await rpc("rr_upm_transfer_lm_v740",{p_canonical_lot_id:state.lot.canonical_lot_id,p_department_code:$("dept").value,p_new_line_man_id:$("newLmSelect").value,p_mode:$("lmTransferMode").value,p_reason:$("lmTransferReason").value,p_physical_handover:$("lmPhysicalHandover").checked});$("lmModal").classList.add("hidden");await loadContext();}catch(e){$("lmModalMsg").textContent=errorText(e)}};
+    $("untraceableBtn").onclick=async()=>{try{const ids=[...document.querySelectorAll(".journey-pick:checked")].map(x=>x.value);if(!ids.length)throw new Error("Select Alter summary rows.");const remark=prompt("Manager investigation / search remark");if(!remark)return;const r=await rpc("rr_upm_request_untraceable_v740",{p_canonical_lot_id:state.lot.canonical_lot_id,p_journey_ids:ids,p_manager_remark:remark});openWhatsApp(r);await loadContext();}catch(e){setFormMessage(errorText(e),"error")}};
+    $("ownerApprovalBtn").onclick=async()=>{const {data,error}=await state.sb.from("rr_upm_untraceable_request_v740").select("*").eq("status","OWNER_PENDING").order("created_at",{ascending:false});if(error){setFormMessage(errorText(error),"error");return;}$("approvalList").innerHTML=arr(data).map(r=>`<div class="box"><b>${esc(r.lot_no)} · ${num(r.total_qty)} PCS</b><p>${esc(r.manager_name)}: ${esc(r.manager_remark)}</p><button data-decide="APPROVE" data-id="${r.id}">APPROVE COMPANY LOSS</button><button data-decide="DENY" data-id="${r.id}">DENY · MANAGER DEBIT</button><button data-decide="RECHECK" data-id="${r.id}">RETURN RECHECK</button></div>`).join("")||"No pending approvals.";$("approvalModal").classList.remove("hidden");$("approvalList").querySelectorAll("[data-decide]").forEach(b=>b.onclick=async()=>{const remark=prompt("Owner remark")||"";await rpc("rr_upm_decide_untraceable_v740",{p_request_id:b.dataset.id,p_decision:b.dataset.decide,p_owner_remark:remark});b.closest(".box").remove();await loadContext();});};
+    $("closeApprovalModal").onclick=()=>$("approvalModal").classList.add("hidden");
+    $("startCamera").onclick=async()=>{try{state.cameraStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:"environment"}},audio:false});$("liveCamera").srcObject=state.cameraStream;$("liveCamera").classList.remove("hidden");$("captureCamera").disabled=false;$("stopCamera").disabled=false;}catch(e){$("alterEvidenceMsg").textContent="Live camera unavailable: "+errorText(e)}};
+    $("captureCamera").onclick=()=>{if(state.cameraBlobs.length>=3){$("alterEvidenceMsg").textContent="Maximum 3 photos.";return;}const v=$("liveCamera"),c=$("cameraCanvas");c.width=v.videoWidth;c.height=v.videoHeight;c.getContext("2d").drawImage(v,0,0);c.toBlob(blob=>{blob.name=`alter-${Date.now()}.jpg`;state.cameraBlobs.push(blob);const url=URL.createObjectURL(blob);$("alterEvidencePreview").insertAdjacentHTML("beforeend",`<img src="${url}" class="thumb" alt="Evidence">`);},"image/jpeg",.85)};
+    $("stopCamera").onclick=()=>{state.cameraStream?.getTracks().forEach(t=>t.stop());state.cameraStream=null;$("liveCamera").classList.add("hidden");$("captureCamera").disabled=true;$("stopCamera").disabled=true;};
+    $("actionConfirmCancel").onclick = () => closeActionConfirmation(false);
+    $("actionConfirmYes").onclick = () => {
+      if (!$("actionConfirmNextWrap").classList.contains("hidden") && !$("actionConfirmNextDept").value) {
+        setFormMessage("Next Department select करें.", "error");
+        return;
+      }
+      closeActionConfirmation(true);
+    };
+    bindGallery();
+    await load();
+  } catch (error) {
+    console.error(error);
+    setMessage(errorText(error), "error");
+  }
+}
+
+window.RealFactoryUPM = Object.freeze({
+  openLotAtDepartment,
+  refresh: load,
+  snapshot() {
+    return {
+      lots: state.lots.slice(),
+      departments: state.departments.slice(),
+      boardMeta: state.lots.map(lot => ({
+        canonical_lot_id: lot.canonical_lot_id,
+        meta: boardMeta(lot) || {}
+      }))
+    };
+  }
 });
 
-// ----------------------------------------------------------------------------
-// 1. WORKER DROPDOWN LOADER (Roles & Permissions Mapped)
-// ----------------------------------------------------------------------------
-async function initCuttingMasterWorkerDropdown() {
-    const operatorSelect = document.getElementById('operator_name') || 
-                           document.getElementById('cutting_master_select') || 
-                           document.querySelector('select[name="operator_name"]') ||
-                           document.querySelector('.operator-select');
-                           
-    if (!operatorSelect) return;
+console.info("REAL FACTORY UPM V796_TEST_LOCATION_ROUTING");
 
-    try {
-        const { data: workers, error } = await supabase.rpc('rr_upm_worker_list_v8_3');
-
-        if (error || !workers || workers.length === 0) {
-            console.warn("Worker list RPC returned empty/error:", error);
-            return;
-        }
-
-        populateWorkerDropdown(operatorSelect, workers);
-    } catch (err) {
-        console.error("Worker Mapping Exception:", err);
-    }
-}
-
-function populateWorkerDropdown(selectElement, workers) {
-    if (!selectElement || !workers) return;
-    selectElement.innerHTML = '<option value="">-- Select Mapped Cutting Master --</option>';
-    
-    workers.forEach(w => {
-        const workerName = w.worker_name || w.name || w.full_name;
-        if (workerName) {
-            const opt = document.createElement('option');
-            opt.value = workerName;
-            opt.textContent = workerName;
-            selectElement.appendChild(opt);
-        }
-    });
-}
-
-// ----------------------------------------------------------------------------
-// 2. SINGLE LOT RELEASE ENGINE
-// ----------------------------------------------------------------------------
-function attachReleaseButtonListener() {
-    const releaseButtons = document.querySelectorAll('#btn-release-lot, .btn-release-main, button[onclick*="release"]:not([onclick*="releaseMulti"]), .btn-release');
-    
-    releaseButtons.forEach(btn => {
-        btn.removeAttribute('disabled');
-        btn.onclick = async function(e) {
-            e.preventDefault();
-            await executeLotReleaseProcess();
-        };
-    });
-}
-
-async function executeLotReleaseProcess() {
-    const lotInput = document.getElementById('manual_lot_no') || 
-                     document.querySelector('input[placeholder*="2603"]') ||
-                     document.querySelector('input[name="manual_lot_no"]') ||
-                     document.querySelector('.lot-no-input');
-                           
-    const lotNoValue = lotInput ? lotInput.value.trim() : '';
-
-    if (!lotNoValue) {
-        alert("Kripya Manual Lot No bharein!");
-        return;
-    }
-
-    const operatorSelect = document.getElementById('operator_name') || 
-                           document.getElementById('cutting_master_select') || 
-                           document.querySelector('select[name="operator_name"]');
-    const selectedOperator = operatorSelect ? operatorSelect.value : '';
-
-    const greenBanner = document.getElementById('status-message-green') || document.querySelector('.green-success-box');
-    const redBanner = document.getElementById('status-message-red') || document.querySelector('.error-message-box');
-
-    try {
-        const updatePayload = {
-            status: 'released',
-            updated_at: new Date().toISOString()
-        };
-        if (selectedOperator) {
-            updatePayload.operator_name = selectedOperator;
-        }
-
-        const { error } = await supabase
-            .from('rr_cutting_lots_v3')
-            .update(updatePayload)
-            .eq('lot_no', lotNoValue);
-
-        if (error) {
-            if (redBanner) {
-                redBanner.style.display = 'block';
-                redBanner.innerText = "Release Error: " + error.message;
-            } else {
-                alert("Release Error: " + error.message);
-            }
-            return;
-        }
-
-        if (greenBanner) {
-            greenBanner.style.display = 'block';
-            greenBanner.style.background = '#2ecc71';
-            greenBanner.style.color = '#ffffff';
-            greenBanner.style.padding = '12px';
-            greenBanner.style.borderRadius = '6px';
-            greenBanner.style.fontWeight = 'bold';
-            greenBanner.innerText = `Lot ${lotNoValue} Successfully Released — Open Random Queue Mapped!`;
-        } else {
-            alert(`Lot ${lotNoValue} Successfully Released — Open Random Queue Mapped!`);
-        }
-
-        setTimeout(() => {
-            const modals = document.querySelectorAll('.modal-overlay, #releaseModal, .modal, [data-modal]');
-            modals.forEach(m => m.style.display = 'none');
-            
-            if (typeof loadOpenRandomQueue === 'function') {
-                loadOpenRandomQueue();
-            }
-        }, 1200);
-
-    } catch (err) {
-        console.error("Single Lot Release Error:", err);
-    }
-}
-
-// ----------------------------------------------------------------------------
-// 3. MULTI-LOT RELEASE ENGINE (v4 RPC INTEGRATION)
-// ----------------------------------------------------------------------------
-function initMultiLotReleaseTrigger() {
-    const multiBtns = document.querySelectorAll('#btn-release-multi, .btn-release-combo, button[onclick*="releaseMulti"], #btn_release_multi_lots');
-    
-    multiBtns.forEach(btn => {
-        btn.removeAttribute('disabled');
-        btn.addEventListener('click', async (e) => {
-            e.preventDefault();
-            await triggerMultiLotReleaseRPC();
-        });
-    });
-}
-
-async function triggerMultiLotReleaseRPC() {
-    const cbInput = document.getElementById('cb_purchase_id') || 
-                    document.getElementById('manual_lot_no') || 
-                    document.querySelector('input[name="cb_purchase_id"]') ||
-                    document.querySelector('.lot-no-input');
-                    
-    const cbValue = cbInput ? cbInput.value.trim() : '';
-
-    if (!cbValue) {
-        alert("Kripya Multi Lot Release ke liye Lot No / CB Purchase ID bharein!");
-        return;
-    }
-
-    const greenBanner = document.getElementById('status-message-green') || document.querySelector('.green-success-box');
-    const redBanner = document.getElementById('status-message-red') || document.querySelector('.error-message-box');
-
-    try {
-        const { data, error } = await supabase.rpc('rr_release_multi_lots_v4', {
-            p_cb_purchase_id: cbValue
-        });
-
-        if (error) {
-            console.warn("Multi-lot RPC signature notice, executing direct bulk release fallback:", error.message);
-            
-            const { error: bulkErr } = await supabase
-                .from('rr_cutting_lots_v3')
-                .update({ 
-                    status: 'released', 
-                    updated_at: new Date().toISOString() 
-                })
-                .ilike('lot_no', `%${cbValue}%`);
-
-            if (bulkErr) {
-                if (redBanner) {
-                    redBanner.style.display = 'block';
-                    redBanner.innerText = "Multi Release Error: " + bulkErr.message;
-                } else {
-                    alert("Multi Release Error: " + bulkErr.message);
-                }
-                return;
-            }
-        }
-
-        if (greenBanner) {
-            greenBanner.style.display = 'block';
-            greenBanner.style.background = '#2ecc71';
-            greenBanner.style.color = '#ffffff';
-            greenBanner.style.padding = '12px';
-            greenBanner.style.borderRadius = '6px';
-            greenBanner.style.fontWeight = 'bold';
-            greenBanner.innerText = `Multi Lots (${cbValue}) Successfully Released — Open Random Queue Mapped!`;
-        } else {
-            alert(`Multi Lots (${cbValue}) Successfully Released — Open Random Queue Mapped!`);
-        }
-
-        setTimeout(() => {
-            const activeModals = document.querySelectorAll('.modal-overlay, #releaseModal, .modal, [data-modal]');
-            activeModals.forEach(m => m.style.display = 'none');
-            
-            if (typeof loadOpenRandomQueue === 'function') {
-                loadOpenRandomQueue();
-            }
-        }, 1200);
-
-    } catch (err) {
-        console.error("Multi Lot Release Fire Error:", err);
-    }
-}
-
-// ----------------------------------------------------------------------------
-// 4. OPEN RANDOM QUEUE DASHBOARD ENGINE
-// ----------------------------------------------------------------------------
-function initDepartmentDropdown() {
-    const deptDropdown = document.getElementById('dept-select-filter');
-    if (deptDropdown) {
-        deptDropdown.addEventListener('change', (e) => {
-            currentSelectedDepartment = e.target.value;
-            loadDepartmentView(e.target.value);
-        });
-    }
-}
-
-async function loadDepartmentView(deptCode) {
-    const cleanDept = (deptCode || '').toUpperCase().trim();
-    if (cleanDept === 'OPEN_RANDOM_QUEUE' || cleanDept === 'OPEN RANDOM QUEUE' || cleanDept === 'RANDOM QUEUE' || cleanDept === '') {
-        await loadOpenRandomQueue();
-    }
-}
-
-async function loadOpenRandomQueue() {
-    const container = document.getElementById('board-container');
-    if (!container) return;
-
-    container.innerHTML = '<div class="loading-state" style="padding:20px; color:#f1c40f;">Loading Open Random Queue...</div>';
-
-    try {
-        const { data, error } = await supabase
-            .from('rr_cutting_lots_v3')
-            .select('id, lot_no, style_name, art_no, print_no, operator_name, planned_pcs, status, created_at')
-            .or('status.eq.released,status.eq.RELEASED')
-            .order('created_at', { ascending: false });
-
-        if (error) {
-            container.innerHTML = `<div class="error-state" style="padding:20px; color:#e74c3c;">Error: ${error.message}</div>`;
-            return;
-        }
-
-        renderOpenQueueCards(data);
-    } catch (err) {
-        container.innerHTML = `<div class="error-state" style="padding:20px; color:#e74c3c;">Failed to load data.</div>`;
-    }
-}
-
-function renderOpenQueueCards(lots) {
-    const container = document.getElementById('board-container');
-    if (!container) return;
-    container.innerHTML = '';
-
-    if (!lots || lots.length === 0) {
-        container.innerHTML = `
-            <div class="empty-state" style="text-align:center; padding:40px; color:#888; grid-column: 1 / -1;">
-                <h3>Open Random Queue mein koi lot available nahi hai.</h3>
-            </div>`;
-        return;
-    }
-
-    lots.forEach(lot => {
-        const cardHtml = `
-            <div class="lot-card" data-id="${lot.id}" style="border:1px solid #333; background:#1e1e24; border-radius:8px; padding:15px; margin-bottom:12px; color:#fff;">
-                <div class="card-header" style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #333; padding-bottom:8px; margin-bottom:10px;">
-                    <span class="badge" style="background:#e74c3c; color:#fff; padding:3px 8px; border-radius:4px; font-size:11px; font-weight:bold;">OPEN RANDOM QUEUE</span>
-                    <span class="lot-title" style="font-size:18px; font-weight:bold; color:#00ffcc;">${lot.lot_no}</span>
-                </div>
-                <div class="card-body" style="font-size:13px; line-height:1.6;">
-                    <p style="margin:2px 0;"><strong>Style:</strong> ${lot.style_name || 'N/A'}</p>
-                    <p style="margin:2px 0;"><strong>Art No:</strong> ${lot.art_no || 'N/A'} | <strong>Print:</strong> ${lot.print_no || 'N/A'}</p>
-                    <p style="margin:2px 0;"><strong>Planned Pcs:</strong> <span style="font-size:15px; font-weight:bold; color:#f1c40f;">${lot.planned_pcs || 'N/A'}</span></p>
-                    <p style="margin:2px 0;"><strong>Cutting Master:</strong> ${lot.operator_name || 'N/A'}</p>
-                </div>
-                <div class="card-actions" style="margin-top:12px;">
-                    <button class="btn-assign" 
-                            style="width:100%; background:#27ae60; color:#fff; border:none; padding:10px; border-radius:6px; cursor:pointer; font-weight:bold; font-size:14px;"
-                            onclick="openAssignModal('${lot.id}', '${lot.lot_no}')">
-                        READY TO ASSIGN
-                    </button>
-                </div>
-            </div>`;
-        container.insertAdjacentHTML('beforeend', cardHtml);
-    });
-}
-
-function openAssignModal(id, lotNo) {
-    alert(`Lot ${lotNo} ko assign karne ke liye Line Man Assignment Modal khul raha hai.`);
-}
+document.readyState === "loading" ? document.addEventListener("DOMContentLoaded", boot) : boot();
+})();
