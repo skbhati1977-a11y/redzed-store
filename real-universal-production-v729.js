@@ -557,7 +557,6 @@ async function assignWork() {
   const confirmed = await askActionConfirmation({mode:"ASSIGN", codes, full, department: $("dept").options[$("dept").selectedIndex]?.textContent || $("dept").value});
   if (!confirmed) return;
   await runBusy(async () => {
-    const gps = await realFactoryBusinessGps();
     await rpc("rr_upm_lm_activity_v794", {p_action:"START",p_activity_code:"ASSIGN_SELECTED",p_reference_id:state.lot.canonical_lot_id});
     try {
     const rows = selected.map(item => {
@@ -570,16 +569,12 @@ async function assignWork() {
         actual_rate: num($("actualRate").value)
       };
     });
-    await rpc("rr_upm_claim_colours_v796", {
+    await rpc("rr_upm_claim_colours_v741", {
       p_canonical_lot_id: state.lot.canonical_lot_id,
       p_lot_no: state.lot.lot_no,
       p_department_code: $("dept").value,
       p_rows: rows,
-      p_remarks: full ? "Universal Lot Form FULL available colour assignment" : "Universal Lot Form selected colour assignment",
-      p_latitude:gps.latitude,
-      p_longitude:gps.longitude,
-      p_accuracy_meters:gps.accuracy,
-      p_test_scenario:gps.testScenario
+      p_remarks: full ? "Universal Lot Form FULL available colour assignment" : "Universal Lot Form selected colour assignment"
     });
     } finally {
       await rpc("rr_upm_lm_activity_v794", {p_action:"END",p_activity_code:null,p_reference_id:null}).catch(()=>{});
