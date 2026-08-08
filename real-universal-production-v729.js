@@ -114,20 +114,11 @@ async function loadBoardMeta(lot) {
 async function loadWorkers() {
   try {
     const { data, error } = await state.sb.from("rr_upm_workers").select("*").eq("is_active", true);
-    if (!error && data && data.length) {
+    if (!error && data) {
       state.workers = data;
-    } else {
-      state.workers = [
-        { worker_id: "sanju", worker_name: "sanju", worker_code: "W-SANJU", department_code: "PRINTING" },
-        { worker_id: "chotu", worker_name: "chotu", worker_code: "W-CHOTU", department_code: "PRINTING" }
-      ];
     }
   } catch (e) {
-    console.warn("Workers fetch fallback enabled:", e);
-    state.workers = [
-      { worker_id: "sanju", worker_name: "sanju", worker_code: "W-SANJU", department_code: "PRINTING" },
-      { worker_id: "chotu", worker_name: "chotu", worker_code: "W-CHOTU", department_code: "PRINTING" }
-    ];
+    console.warn("Workers direct fetch:", e);
   }
 }
 
@@ -319,19 +310,12 @@ async function loadContext() {
 }
 
 function currentDepartmentWorkers() {
-  const department = upper($("dept")?.value || state.context?.department_code || "PRINTING");
+  const department = upper($("dept")?.value || state.context?.department_code);
   let list = arr(state.context?.workers);
   if (!list.length) {
     list = arr(state.workers);
   }
-  if (!list.length) {
-    list = [
-      { worker_id: "sanju", worker_name: "sanju", worker_code: "W-SANJU", department_code: department },
-      { worker_id: "chotu", worker_name: "chotu", worker_code: "W-CHOTU", department_code: department }
-    ];
-  }
-  const filtered = list.filter(worker => !worker.department_code || upper(worker.department_code) === department);
-  return filtered.length ? filtered : list;
+  return list.filter(worker => !worker.department_code || upper(worker.department_code) === department);
 }
 
 function applyDepartmentSelectColour(){
@@ -482,7 +466,7 @@ function renderColours() {
         }).join("")}</tbody>
       </table></div>
     </article>`;
-  }).join("") || '<div class="empty"><h3>No Colour × Size mapping found</h3><p>Run Flow Debug. Server checks Single and Multi Lot Cutting sources.</p></div>';
+  }).join("") || '<div class="empty"><h3>No Colour × Size mapping found for this Lot</h3><p>Ensure Cutting Entry is registered for this Lot.</p></div>';
 }
 
 function selectedOpenGroups() {
@@ -1005,7 +989,7 @@ window.RealFactoryUPM = Object.freeze({
   }
 });
 
-console.info("REAL FACTORY UPM V796_TEST_LOCATION_ROUTING");
+console.info("REAL FACTORY UPM V797_REAL_MAPPING_NO_FAKE");
 
 document.readyState === "loading" ? document.addEventListener("DOMContentLoaded", boot) : boot();
 })();
