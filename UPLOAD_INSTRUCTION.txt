@@ -1,24 +1,34 @@
-REAL FACTORY V799.3 — ROOT CUTTING QTY MAP + COMPLETED DEPARTMENT TEMP HIDE
+REAL FACTORY V799.4 — WORKING VIEW PRESERVED
 
-ROOT FIX:
-1) Cutting Colour×Size Qty now reads actual_qty first (authoritative release qty).
-   Legacy cutting_qty/main_qty/inbound_qty/assigned_qty/qty remain fallback-only.
-2) Bulk/Selected Assign stays single/random-multiple/all.
-3) When an Assign Department is selected, any OPEN Colour that already completed
-   that Department is temporarily hidden from the Assign table and excluded from
-   SELECT ALL ELIGIBLE. Nothing is deleted or rewritten.
-4) Existing Submit / Alter / Remake / Damage balance logic is unchanged.
+This revision starts from the working V799.2 Alter JS.
 
-UPLOAD:
-Replace ONLY:
-  real-universal-production-v765-independent-alter.js
+KEPT UNCHANGED:
+- Current Job cards
+- Lot cards
+- OPEN RANDOM QUEUE cards
+- Existing Assign / Submit visual workflow
+- Selective Bulk Assign / Bulk Submit
+- Alter / Remake / Damage flows
+- V789 department view
 
-Keep your current HTML V765 cache line but bump it to:
-  <script src="real-universal-production-v765-independent-alter.js?v=7993-actual-qty-completion-hide"></script>
+ONLY TWO REPAIRS:
+1) Cutting Colour×Size Qty resolution:
+   actual_qty is now the first authoritative Qty source.
+2) Completed-department temporary hide:
+   When you select a Department in BULK ASSIGN, ONLY the checkbox table row
+   for an OPEN Colour that already completed that Department is temporarily hidden.
+   It does NOT hide/change Current Job cards or OPEN RANDOM QUEUE cards.
+
+Example:
+- C1 completed KR, C2 not completed KR -> select KR -> C1 table row hides, C2 remains.
+- C1 and C2 both completed PRINT -> select PRINT -> both table rows hide.
+- Change Department -> rows are recalculated; history is never deleted.
+
+UPLOAD ONLY:
+real-universal-production-v765-independent-alter.js
+
+HTML cache line:
+<script src="real-universal-production-v765-independent-alter.js?v=7994-working-view-qty-table-hide"></script>
 
 Do NOT replace V789.
-No SQL required for this JS repair.
-
-Optional:
-The ZIP also contains the already badge-hidden real-data-mode-controller-v786.js
-from V799.2. Replace it only if the TEST badge is still visible.
+No SQL required for this JS revision.

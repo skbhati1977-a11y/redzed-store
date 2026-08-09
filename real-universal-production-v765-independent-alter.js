@@ -157,26 +157,17 @@ function buildSizeMap(rows) {
 
     if (!map.has(code)) map.set(code, []);
 
-    const qtyCandidates = [
-      row.actual_qty,
-      row.cutting_qty,
-      row.main_qty,
-      row.inbound_qty,
-      row.assigned_qty,
-      row.qty
-    ];
-    const resolvedQtyValue = qtyCandidates.find(value =>
-      value !== null &&
-      value !== undefined &&
-      String(value).trim() !== "" &&
-      Number.isFinite(Number(value))
-    );
-
     map.get(code).push({
       size,
-      // Cutting release authoritative Qty is actual_qty when supplied.
-      // Legacy fields remain fallback-only for older lots.
-      qty: Number(resolvedQtyValue ?? 0),
+      qty: Number(
+        row.actual_qty ??
+        row.cutting_qty ??
+        row.main_qty ??
+        row.inbound_qty ??
+        row.assigned_qty ??
+        row.qty ??
+        0
+      ),
       alter: Number(
         row.alter_open_qty ??
         row.alter_qty ??
@@ -1140,9 +1131,9 @@ function v799SetBulkSelection(mode, departmentCode = '') {
     const status = upper(row.ownership_status);
     const rowDepartment = canonicalDepartmentV762(row.department_code);
     const tableRow = input.closest(".v756-colour-row");
-    const visibleForAssign = !tableRow?.hidden && !input.disabled;
+    const visibleAndEnabled = !tableRow?.hidden && !input.disabled;
     input.checked = mode === 'CLEAR' ? false
-      : mode === 'ASSIGN' ? status === 'OPEN' && visibleForAssign
+      : mode === 'ASSIGN' ? status === 'OPEN' && visibleAndEnabled
       : mode === 'SUBMIT' ? Boolean(row.assignment_id) && rowDepartment === department && ['ASSIGNED','RUNNING','IN_PROGRESS'].includes(status)
       : input.checked;
   });
@@ -1865,6 +1856,58 @@ async function renderBulkWorkers(departmentCode) {
   });
 }
 
+
+async function v7994FilterAssignTableByCompletedDepartment(departmentCode = "") {
+  const department = canonicalDepartmentV762(departmentCode);
+  const matrixRows = [...document.querySelectorAll(
+    "#v756ColourActionPanel .v756-table-wrap .v756-colour-row"
+  )];
+
+  // Restore every checkbox row when there is no selected Assign department.
+  if (!department) {
+    matrixRows.forEach(rowElement => {
+      rowElement.hidden = false;
+      rowElement.classList.remove("v7994-completed-dept-hidden");
+      const pick = rowElement.querySelector(".v799-bulk-pick");
+      if (pick) pick.disabled = false;
+    });
+    return;
+  }
+
+  const completedState = await fetchCompletedDepartmentMapV764();
+
+  matrixRows.forEach(rowElement => {
+    const colour = upper(rowElement.dataset.v756Colour);
+    const matrixRow = (currentMatrix?.colours || [])
+      .find(row => upper(row.colour_code) === colour);
+
+    const isOpen = upper(
+      matrixRow?.ownership_status || rowElement.dataset.v756Status
+    ) === "OPEN";
+
+    const completedForColour =
+      completedState.completedByColour.get(colour) || new Set();
+
+    // IMPORTANT: only the checkbox table row is temporarily hidden.
+    // Running Job cards, lot cards, OPEN RANDOM QUEUE cards and Submit view
+    // are not touched.
+    const hideForAssign =
+      isOpen && completedForColour.has(department);
+
+    rowElement.hidden = hideForAssign;
+    rowElement.classList.toggle(
+      "v7994-completed-dept-hidden",
+      hideForAssign
+    );
+
+    const pick = rowElement.querySelector(".v799-bulk-pick");
+    if (pick) {
+      if (hideForAssign) pick.checked = false;
+      pick.disabled = hideForAssign;
+    }
+  });
+}
+
 function detailedRows(data) {
   return (data?.colours || []).map(row => {
     const sizeInfo = colourSizeInfo(row.colour_code);
@@ -1905,50 +1948,6 @@ function removeLegacyCheckinUi() {
   $("formMsg")?.setAttribute("hidden", "hidden");
 
   // V755.2 may recreate these through its observer; CSS also hard-hides them.
-}
-
-
-async function applyAssignDepartmentCompletionFilterV7993(departmentCode = "") {
-  const department = canonicalDepartmentV762(departmentCode);
-  const rows = [...document.querySelectorAll("#v756ColourActionPanel .v756-colour-row")];
-
-  // No department selected: restore the complete matrix view.
-  if (!department) {
-    rows.forEach(rowElement => {
-      rowElement.hidden = false;
-      rowElement.classList.remove("v7993-completed-hidden");
-      const pick = rowElement.querySelector(".v799-bulk-pick");
-      if (pick) pick.disabled = false;
-    });
-    return;
-  }
-
-  const completedState = await fetchCompletedDepartmentMapV764();
-
-  rows.forEach(rowElement => {
-    const colour = upper(rowElement.dataset.v756Colour);
-    const matrixRow = (currentMatrix?.colours || [])
-      .find(row => upper(row.colour_code) === colour);
-    const status = upper(matrixRow?.ownership_status || rowElement.dataset.v756Status);
-    const completedForColour =
-      completedState.completedByColour.get(colour) || new Set();
-
-    // Temporary Assign-view hide only:
-    // if this Colour already completed the selected department, do not offer
-    // it again for assignment. No history/state is deleted.
-    const shouldHide =
-      status === "OPEN" &&
-      completedForColour.has(department);
-
-    rowElement.hidden = shouldHide;
-    rowElement.classList.toggle("v7993-completed-hidden", shouldHide);
-
-    const pick = rowElement.querySelector(".v799-bulk-pick");
-    if (pick) {
-      if (shouldHide) pick.checked = false;
-      pick.disabled = shouldHide;
-    }
-  });
 }
 
 async function renderCheckinTable() {
@@ -2053,8 +2052,11 @@ async function renderCheckinTable() {
           "Lot ke sabhi eligible Departments complete ho chuke hain",
         onSelect: item => {
           renderBulkWorkers(item.value);
-          applyAssignDepartmentCompletionFilterV7993(item.value)
-            .catch(error => console.error("V799.3 completion filter failed", error));
+          v7994FilterAssignTableByCompletedDepartment(item.value)
+            .catch(error => console.error(
+              "V799.4 checkbox-table completed-department filter failed",
+              error
+            ));
         }
       });
       renderBulkWorkers("");
@@ -4131,8 +4133,7 @@ v799BulkStyle.textContent = `
   .v799-bulk-pick{width:20px;height:20px;accent-color:#56efb2;flex:0 0 auto}
   .v799-bulk-select-actions{display:grid;grid-template-columns:1fr auto;gap:8px;margin-top:8px}
   .v799-bulk-select-actions button{min-height:40px}
-  .v7993-completed-hidden{display:none!important}
 `;
 document.head.appendChild(v799BulkStyle);
-console.log("REAL FACTORY V799.3 ACTUAL_QTY ROOT MAP + COMPLETED-DEPT TEMP HIDE + SELECTIVE BULK ready");
+console.log("REAL FACTORY V799.4 WORKING VIEW PRESERVED · ACTUAL_QTY + TABLE-ONLY COMPLETION HIDE ready");
 })();
