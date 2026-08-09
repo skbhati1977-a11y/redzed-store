@@ -1,20 +1,24 @@
-REAL FACTORY V799.3 — ASSIGN QTY ROOT FIX
+REAL FACTORY V799.3 — ROOT CUTTING QTY MAP + COMPLETED DEPARTMENT TEMP HIDE
 
-Replace ONLY in GitHub root:
+ROOT FIX:
+1) Cutting Colour×Size Qty now reads actual_qty first (authoritative release qty).
+   Legacy cutting_qty/main_qty/inbound_qty/assigned_qty/qty remain fallback-only.
+2) Bulk/Selected Assign stays single/random-multiple/all.
+3) When an Assign Department is selected, any OPEN Colour that already completed
+   that Department is temporarily hidden from the Assign table and excluded from
+   SELECT ALL ELIGIBLE. Nothing is deleted or rewritten.
+4) Existing Submit / Alter / Remake / Damage balance logic is unchanged.
+
+UPLOAD:
+Replace ONLY:
   real-universal-production-v765-independent-alter.js
 
-In real-universal-production-v770.html change only the V765 cache line to:
-  <script src="real-universal-production-v765-independent-alter.js?v=7993-assign-qty-root"></script>
+Keep your current HTML V765 cache line but bump it to:
+  <script src="real-universal-production-v765-independent-alter.js?v=7993-actual-qty-completion-hide"></script>
 
-No SQL required.
+Do NOT replace V789.
+No SQL required for this JS repair.
 
-Fix:
-- OPEN RANDOM QUEUE Assign Selected / single Assign no longer depends only on stale cut-size map or hidden colour card.
-- Qty resolution order:
-  1) current locked size map
-  2) hidden detailed Colour card
-  3) matrix authoritative qty fields
-  4) rr_upm_universal_form_v741 Colour×Size cutting/main qty
-  5) fresh cut-size RPC retry
-- rr_upm_claim_colours_v741 remains the assignment backend.
-- Existing submit, alter, damage, remake, history and already assigned colours are untouched.
+Optional:
+The ZIP also contains the already badge-hidden real-data-mode-controller-v786.js
+from V799.2. Replace it only if the TEST badge is still visible.

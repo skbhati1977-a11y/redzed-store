@@ -157,16 +157,26 @@ function buildSizeMap(rows) {
 
     if (!map.has(code)) map.set(code, []);
 
+    const qtyCandidates = [
+      row.actual_qty,
+      row.cutting_qty,
+      row.main_qty,
+      row.inbound_qty,
+      row.assigned_qty,
+      row.qty
+    ];
+    const resolvedQtyValue = qtyCandidates.find(value =>
+      value !== null &&
+      value !== undefined &&
+      String(value).trim() !== "" &&
+      Number.isFinite(Number(value))
+    );
+
     map.get(code).push({
       size,
-      qty: Number(
-        row.cutting_qty ??
-        row.main_qty ??
-        row.inbound_qty ??
-        row.assigned_qty ??
-        row.qty ??
-        0
-      ),
+      // Cutting release authoritative Qty is actual_qty when supplied.
+      // Legacy fields remain fallback-only for older lots.
+      qty: Number(resolvedQtyValue ?? 0),
       alter: Number(
         row.alter_open_qty ??
         row.alter_qty ??
@@ -1129,8 +1139,10 @@ function v799SetBulkSelection(mode, departmentCode = '') {
     if (!row) return;
     const status = upper(row.ownership_status);
     const rowDepartment = canonicalDepartmentV762(row.department_code);
+    const tableRow = input.closest(".v756-colour-row");
+    const visibleForAssign = !tableRow?.hidden && !input.disabled;
     input.checked = mode === 'CLEAR' ? false
-      : mode === 'ASSIGN' ? status === 'OPEN'
+      : mode === 'ASSIGN' ? status === 'OPEN' && visibleForAssign
       : mode === 'SUBMIT' ? Boolean(row.assignment_id) && rowDepartment === department && ['ASSIGNED','RUNNING','IN_PROGRESS'].includes(status)
       : input.checked;
   });
@@ -1895,6 +1907,50 @@ function removeLegacyCheckinUi() {
   // V755.2 may recreate these through its observer; CSS also hard-hides them.
 }
 
+
+async function applyAssignDepartmentCompletionFilterV7993(departmentCode = "") {
+  const department = canonicalDepartmentV762(departmentCode);
+  const rows = [...document.querySelectorAll("#v756ColourActionPanel .v756-colour-row")];
+
+  // No department selected: restore the complete matrix view.
+  if (!department) {
+    rows.forEach(rowElement => {
+      rowElement.hidden = false;
+      rowElement.classList.remove("v7993-completed-hidden");
+      const pick = rowElement.querySelector(".v799-bulk-pick");
+      if (pick) pick.disabled = false;
+    });
+    return;
+  }
+
+  const completedState = await fetchCompletedDepartmentMapV764();
+
+  rows.forEach(rowElement => {
+    const colour = upper(rowElement.dataset.v756Colour);
+    const matrixRow = (currentMatrix?.colours || [])
+      .find(row => upper(row.colour_code) === colour);
+    const status = upper(matrixRow?.ownership_status || rowElement.dataset.v756Status);
+    const completedForColour =
+      completedState.completedByColour.get(colour) || new Set();
+
+    // Temporary Assign-view hide only:
+    // if this Colour already completed the selected department, do not offer
+    // it again for assignment. No history/state is deleted.
+    const shouldHide =
+      status === "OPEN" &&
+      completedForColour.has(department);
+
+    rowElement.hidden = shouldHide;
+    rowElement.classList.toggle("v7993-completed-hidden", shouldHide);
+
+    const pick = rowElement.querySelector(".v799-bulk-pick");
+    if (pick) {
+      if (shouldHide) pick.checked = false;
+      pick.disabled = shouldHide;
+    }
+  });
+}
+
 async function renderCheckinTable() {
   const traveller = $("traveller");
   if (!traveller || traveller.classList.contains("hidden")) return;
@@ -1995,7 +2051,11 @@ async function renderCheckinTable() {
         placeholder: "Search unfinished department",
         emptyText:
           "Lot ke sabhi eligible Departments complete ho chuke hain",
-        onSelect: item => renderBulkWorkers(item.value)
+        onSelect: item => {
+          renderBulkWorkers(item.value);
+          applyAssignDepartmentCompletionFilterV7993(item.value)
+            .catch(error => console.error("V799.3 completion filter failed", error));
+        }
       });
       renderBulkWorkers("");
     })
@@ -2443,92 +2503,20 @@ function currentLotIdentity() {
 }
 
 function colourAssignedQty(colourCode) {
-  const code = upper(colourCode);
-  const backendRows = currentSizeMap?.get(code) || [];
+  const backendRows = currentSizeMap?.get(upper(colourCode)) || [];
   const backendTotal = backendRows.reduce(
     (sum, row) => sum + Number(row.qty || 0),
     0
   );
   if (backendTotal > 0) return backendTotal;
 
-  const card = findColourCard(code);
-  if (card) {
-    const cardTotal = [...card.querySelectorAll("[data-row-index]")].reduce((sum, row) => {
-      const qty = Number(row.querySelectorAll("td")[1]?.textContent?.trim() || 0);
-      return sum + qty;
-    }, 0);
-    if (cardTotal > 0) return cardTotal;
-  }
+  const card = findColourCard(colourCode);
+  if (!card) return 0;
 
-  // Matrix payloads differ across deployed SQL versions. Use any authoritative
-  // colour total exposed by the matrix before declaring Qty unresolved.
-  const matrixRow = (currentMatrix?.colours || [])
-    .find(row => upper(row.colour_code) === code);
-  const matrixQty = Number(
-    matrixRow?.cutting_qty ??
-    matrixRow?.main_qty ??
-    matrixRow?.assigned_qty ??
-    matrixRow?.total_qty ??
-    matrixRow?.qty ??
-    0
-  );
-  return matrixQty > 0 ? matrixQty : 0;
-}
-
-async function resolveColourAssignedQtyV7993(colourCode, departmentCode) {
-  const code = upper(colourCode);
-  const immediate = colourAssignedQty(code);
-  if (immediate > 0) return immediate;
-
-  const identity = currentLotIdentity();
-  const client = getClient();
-  if (!client || !identity.canonical_lot_id) return 0;
-
-  // Root fallback: the universal form is already the authoritative UPM source
-  // for Colour x Size rows. Sum locked cutting/main qty for this Colour.
-  try {
-    const { data, error } = await client.rpc("rr_upm_universal_form_v741", {
-      p_canonical_lot_id: identity.canonical_lot_id,
-      p_department_code: canonicalDepartmentV762(departmentCode)
-    });
-    if (!error) {
-      const rows = Array.isArray(data?.rows) ? data.rows : [];
-      const total = rows
-        .filter(row => upper(row.colour_code) === code)
-        .reduce((sum, row) => sum + Number(
-          row.cutting_qty ??
-          row.main_qty ??
-          row.inbound_qty ??
-          row.assigned_qty ??
-          row.qty ??
-          0
-        ), 0);
-      if (total > 0) return total;
-    }
-  } catch (error) {
-    console.warn("V799.3 universal-form Qty fallback failed", code, error);
-  }
-
-  // Last safe fallback: ask the cut-size RPC again without trusting stale cache.
-  try {
-    lotSizeCache.delete(upper(identity.lot_no));
-    const sizeRows = await fetchLotSizeRows(identity.lot_no);
-    const total = (sizeRows || [])
-      .filter(row => upper(row.colour_code) === code)
-      .reduce((sum, row) => sum + Number(
-        row.cutting_qty ??
-        row.main_qty ??
-        row.inbound_qty ??
-        row.assigned_qty ??
-        row.qty ??
-        0
-      ), 0);
-    if (total > 0) return total;
-  } catch (error) {
-    console.warn("V799.3 cut-size Qty fallback failed", code, error);
-  }
-
-  return 0;
+  return [...card.querySelectorAll("[data-row-index]")].reduce((sum, row) => {
+    const qty = Number(row.querySelectorAll("td")[1]?.textContent?.trim() || 0);
+    return sum + qty;
+  }, 0);
 }
 
 function askDirectSingleColourConfirmation({
@@ -2621,7 +2609,7 @@ async function directAssignSingleColour({
     );
   }
 
-  const assignedQty = await resolveColourAssignedQtyV7993(rowData.colour_code, rowData.department_code);
+  const assignedQty = colourAssignedQty(rowData.colour_code);
   if (assignedQty <= 0) {
     throw new Error(`${rowData.colour_code} की assigned Qty resolve नहीं हुई.`);
   }
@@ -3303,14 +3291,11 @@ async function runBulkAssign() {
     )) return;
 
     const identity = currentLotIdentity();
-    const rows = await Promise.all(eligible.map(async row => {
-      const qty = await resolveColourAssignedQtyV7993(
-        row.colour_code,
-        department
-      );
+    const rows = eligible.map(row => {
+      const qty = colourAssignedQty(row.colour_code);
       if (qty <= 0) {
         throw new Error(
-          `${row.colour_code} ki Cutting/assigned Qty resolve nahi hui.`
+          `${row.colour_code} ki assigned Qty resolve nahi hui.`
         );
       }
 
@@ -3321,7 +3306,7 @@ async function runBulkAssign() {
         assigned_qty: qty,
         actual_rate: Number($("actualRate")?.value || 0)
       };
-    }));
+    });
 
     const client = getClient();
     if (!client) throw new Error("Connected Supabase client nahi mila.");
@@ -4146,7 +4131,8 @@ v799BulkStyle.textContent = `
   .v799-bulk-pick{width:20px;height:20px;accent-color:#56efb2;flex:0 0 auto}
   .v799-bulk-select-actions{display:grid;grid-template-columns:1fr auto;gap:8px;margin-top:8px}
   .v799-bulk-select-actions button{min-height:40px}
+  .v7993-completed-hidden{display:none!important}
 `;
 document.head.appendChild(v799BulkStyle);
-console.log("REAL FACTORY V799.2 SELECTIVE BULK ASSIGN/SUBMIT ready");
+console.log("REAL FACTORY V799.3 ACTUAL_QTY ROOT MAP + COMPLETED-DEPT TEMP HIDE + SELECTIVE BULK ready");
 })();
