@@ -1,0 +1,10 @@
+REAL FACTORY GLOBAL ENTER KEY RULE
+
+1. Applies across ALL modules, but only where Enter-to-next improves data entry.
+2. Ledger/data-entry forms: Enter moves to the next visible, enabled, eligible field.
+3. Hidden, disabled, read-only action buttons are skipped.
+4. On the last eligible field, Enter triggers the form's Save/Submit action.
+5. After successful Save/Submit, follow the module's normal close/exit/reset flow.
+6. Multiline textarea, search boxes, filters, chat/message boxes, confirmation dialogs, and places where Enter has a natural meaning keep normal behavior unless explicitly marked for Enter-flow.
+7. Enter-flow is a FRONTEND behavior; do not put it in database/backend logic.
+8. Every JS replacement must be delivered with its matching HTML replacement in the same version.
