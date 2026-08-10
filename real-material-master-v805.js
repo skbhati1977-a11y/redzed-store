@@ -1,6 +1,34 @@
-(()=>{const $=id=>document.getElementById(id),UNITS=["PCS","KG","MTR","ROLL","BOX","PACKET","PKT","GADDI","SET"];let client,state={material_types:[],materials:[],ledgers:[]},selected=null,timer=null;
+(()=>{const $=id=>document.getElementById(id),UNITS=["PCS","KG","MTR","ROLL","BOX","PACKET","PKT","GADDI","SET"];
+const TYPE_UNITS={
+  MATCHING_CLOTH:{purchase:"KG",stock:"KG",consumption:"KG"},
+  STICKER:{purchase:"PCS",stock:"PCS",consumption:"PCS"},
+  METAL_ID:{purchase:"PCS",stock:"PCS",consumption:"PCS"},
+  PANNI:{purchase:"KG",stock:"PKT",consumption:"PCS"},
+  GATTA:{purchase:"KG",stock:"GADDI",consumption:"PCS"},
+  BOX:{purchase:"PCS",stock:"PCS",consumption:"PCS"},
+  PASTING_ROLL:{purchase:"MTR",stock:"ROLL",consumption:"MTR"},
+  KANDHI_TAPE:{purchase:"MTR",stock:"ROLL",consumption:"MTR"},
+  PACKING_MATERIAL:{purchase:"PCS",stock:"PCS",consumption:"PCS"},
+  TOOLS_MACHINE:{purchase:"PCS",stock:"PCS",consumption:"PCS"},
+  OTHER_MATERIAL:{purchase:"PCS",stock:"PCS",consumption:"PCS"}
+};
+let client,state={material_types:[],materials:[],ledgers:[]},selected=null,timer=null;
 const esc=s=>String(s??"").replace(/[&<>\"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'\"':"&quot;","'":"&#39;"}[c]));const money=n=>new Intl.NumberFormat("en-IN",{style:"currency",currency:"INR",maximumFractionDigits:2}).format(Number(n||0));const num=(n,d=3)=>Number(n||0).toLocaleString("en-IN",{maximumFractionDigits:d});
-function units(v=""){return UNITS.map(u=>`<option ${u===v?"selected":""}>${u}</option>`).join("")}for(const id of ["purchaseUnit","stockUnit","consumptionUnit"])$(id).innerHTML=units();
+function units(v=""){return UNITS.map(u=>`<option ${u===v?"selected":""}>${u}</option>`).join("")}
+for(const id of ["purchaseUnit","stockUnit","consumptionUnit"])$(id).innerHTML=units();
+function setUnit(id,value){
+  const el=$(id),v=String(value||"").toUpperCase().trim();
+  if(!el||!v)return;
+  if(![...el.options].some(o=>o.value===v))el.add(new Option(v,v));
+  el.value=v;
+}
+function applyTypeUnits(typeCode,typeRow){
+  const code=String(typeCode||"").toUpperCase();
+  const fixed=TYPE_UNITS[code]||{};
+  setUnit("purchaseUnit",fixed.purchase||typeRow?.default_purchase_unit||"PCS");
+  setUnit("stockUnit",fixed.stock||typeRow?.default_stock_unit||typeRow?.default_consumption_unit||typeRow?.default_purchase_unit||"PCS");
+  setUnit("consumptionUnit",fixed.consumption||typeRow?.default_consumption_unit||"PCS");
+}
 function ledgerOptions(rows){return `<option value="">Select…</option>`+rows.map(x=>`<option value="${esc(x.id)}">${esc(x.ledger_name)}</option>`).join("")}
 function purchaseLedgerForType(t){const code=t==="REGULAR_CLOTH"?"REGULAR_CLOTH_PURCHASE":t==="MATCHING_CLOTH"?"MATCHING_CLOTH_PURCHASE":t==="STICKER"?"STICKER_PURCHASE":t==="METAL_ID"?"METAL_ID_PURCHASE":"OTHER_MATERIAL_PURCHASE";return state.ledgers.find(x=>String(x.category_code||"").toUpperCase()===code)||null}
 async function load(){client=client||(window.RR?.getClient?RR.getClient():window.supabaseClient);if(!client)throw Error("Supabase client not available.");const {data,error}=await client.rpc("rr_material_purchase_bootstrap_v805_1",{p_data_mode:$("dataMode").value});if(error)throw error;state=data||state;{
@@ -42,7 +70,30 @@ async function loadSourceHistory(r){
   }
 }
 
-function selectMapped(r){selected=r;$("name").value=r.material_name||"";$("no").value=r.material_no||"";$("purchaseUnit").value=r.purchase_unit||"PCS";$("stockUnit").value=r.stock_unit||"PCS";$("consumptionUnit").value=r.consumption_unit||"PCS";for(const id of ["purchaseUnit","stockUnit","consumptionUnit"])$(id).classList.add("locked");$("suggestions").classList.add("hidden");$("floatMaterial").textContent=[r.material_no,r.material_name].filter(Boolean).join(" · ");$("balanceStrip").classList.add("show");const t=$("type").value;if(r.source_managed){$("floatBefore").textContent=r.current_balance_qty==null?"Managed in source":`${num(r.current_balance_qty)} ${r.stock_unit}`;$("floatAfter").textContent="Source-managed";$("floatRunning").textContent=r.current_weighted_cost==null?"Source-managed":`${money(r.current_weighted_cost)} / ${r.consumption_unit}`;$("beforeMetric").textContent=$("floatBefore").textContent;$("runningCost").textContent=$("floatRunning").textContent;$("savePost").disabled=true;$("sourceNotice").classList.remove("hidden");$("sourceNotice").textContent=t==="REGULAR_CLOTH"?"Regular Cloth is mapped from CB Regular Cloth and stays outside this generic weighted-consumption engine. Use its existing CB purchase + actual Cutting consumption flow.":t==="MATCHING_CLOTH"?"Matching Cloth is mapped from existing Matching Stock. Existing current balance and weighted average remain source-of-truth.":`${t.replaceAll("_"," ")} is mapped from its existing verified master/inventory. Use its existing purchase module; duplicate inventory posting is blocked here.`}else{$("sourceNotice").classList.add("hidden");$("savePost").disabled=false;calc()}loadSourceHistory(r).catch(console.warn)}
+function selectMapped(r){selected=r;$("name").value=r.material_name||"";$("no").value=r.material_no||"";setUnit("purchaseUnit",r.purchase_unit||TYPE_UNITS[$("type").value]?.purchase||"PCS");setUnit("stockUnit",r.stock_unit||TYPE_UNITS[$("type").value]?.stock||"PCS");setUnit("consumptionUnit",r.consumption_unit||TYPE_UNITS[$("type").value]?.consumption||"PCS");for(const id of ["purchaseUnit","stockUnit","consumptionUnit"])$(id).classList.add("locked");$("suggestions").classList.add("hidden");$("floatMaterial").textContent=[r.material_no,r.material_name].filter(Boolean).join(" · ");$("balanceStrip").classList.add("show");const t=$("type").value;if(r.source_managed){$("floatBefore").textContent=r.current_balance_qty==null?"Managed in source":`${num(r.current_balance_qty)} ${r.stock_unit}`;$("floatAfter").textContent="Source-managed";$("floatRunning").textContent=r.current_weighted_cost==null?"Source-managed":`${money(r.current_weighted_cost)} / ${r.consumption_unit}`;$("beforeMetric").textContent=$("floatBefore").textContent;$("runningCost").textContent=$("floatRunning").textContent;$("savePost").disabled=true;$("sourceNotice").classList.remove("hidden");$("sourceNotice").textContent=t==="REGULAR_CLOTH"?"Regular Cloth is mapped from CB Regular Cloth and stays outside this generic weighted-consumption engine. Use its existing CB purchase + actual Cutting consumption flow.":t==="MATCHING_CLOTH"?"Matching Cloth is mapped from existing Matching Stock. Existing current balance and weighted average remain source-of-truth.":`${t.replaceAll("_"," ")} is mapped from its existing verified master/inventory. Use its existing purchase module; duplicate inventory posting is blocked here.`}else{$("sourceNotice").classList.add("hidden");$("savePost").disabled=false;calc()}loadSourceHistory(r).catch(console.warn)}
 function calc(){const q=Number($("purchaseQty").value||0),r=Number($("rate").value||0),sq=Number($("stockQty").value||0),cq=Number($("consumptionQty").value||0),val=q*r,cur=cq>0?val/cq:0;$("currentValue").textContent=money(val);$("currentCost").textContent=`${money(cur)} / ${$("consumptionUnit").value}`;if(selected&&!selected.source_managed){const m=state.materials.find(x=>x.material_id===selected.existing_material_id)||{},oldQ=Number(m.running_consumption_qty||0),oldV=Number(m.running_purchase_value||0),before=Number(selected.current_balance_qty||0),avg=oldQ+cq>0?(oldV+val)/(oldQ+cq):0,after=before+sq;$("beforeMetric").textContent=`${num(before)} ${$("stockUnit").value}`;$("runningCost").textContent=`${money(avg)} / ${$("consumptionUnit").value}`;$("floatBefore").textContent=`${num(before)} ${$("stockUnit").value}`;$("floatAfter").textContent=`${num(after)} ${$("stockUnit").value}`;$("floatRunning").textContent=`${money(avg)} / ${$("consumptionUnit").value}`;$("balanceStrip").classList.add("show")}else if(!selected){$("beforeMetric").textContent=`0 ${$("stockUnit").value}`;$("runningCost").textContent=cq>0?`${money(cur)} / ${$("consumptionUnit").value}`:"₹0.00"}}
 async function savePost(){$("msg").textContent="";const t=$("type").value;if(!t)throw Error("Select Material Type.");if(selected?.source_managed)throw Error("Source-managed Material must be purchased in its existing module.");const pq=Number($("purchaseQty").value||0),sq=Number($("stockQty").value||0),cq=Number($("consumptionQty").value||0);let mid=selected?.existing_material_id||null;if(!mid){const {data,error}=await client.rpc("rr_material_resolve_v805_1",{p_type_code:t,p_existing_material_id:null,p_material_name:$("name").value,p_material_no:$("no").value||null,p_purchase_unit:$("purchaseUnit").value,p_stock_unit:$("stockUnit").value,p_consumption_unit:$("consumptionUnit").value,p_purchase_qty:pq,p_stock_qty:sq,p_consumption_qty:cq,p_consumption_basis:$("basis").value,p_applicable_to:{tags:$("applies").value.split(",").map(x=>x.trim()).filter(Boolean)}});if(error)throw error;mid=data}const {data,error}=await client.rpc("rr_material_post_purchase_v805_1",{p_supplier_ledger_id:$("supplier").value||null,p_material_id:mid,p_purchase_ledger_id:$("purchaseLedger").value||null,p_purchase_qty:pq,p_purchase_unit:$("purchaseUnit").value,p_stock_qty:sq,p_stock_unit:$("stockUnit").value,p_consumption_qty:cq,p_consumption_unit:$("consumptionUnit").value,p_rate:Number($("rate").value||0),p_bill_no:$("billNo").value||null,p_bill_date:$("billDate").value||null,p_gst_amount:Number($("gst").value||0),p_payment_status:$("paymentStatus").value,p_paid_amount:Number($("paidAmount").value||0),p_cash_bank_ledger_id:$("cashBank").value||null,p_data_mode:$("dataMode").value});if(error)throw error;$("msg").className="ok";$("msg").textContent=`Posted · Before ${num(data.balance_before_purchase)} ${$("stockUnit").value} · After ${num(data.balance_after_purchase)} ${$("stockUnit").value} · Running Avg ${money(data.running_weighted_avg_cost_per_consumption_unit)}/${$("consumptionUnit").value}`;await load();$("floatBefore").textContent=`${num(data.balance_before_purchase)} ${$("stockUnit").value}`;$("floatAfter").textContent=`${num(data.balance_after_purchase)} ${$("stockUnit").value}`;$("floatRunning").textContent=`${money(data.running_weighted_avg_cost_per_consumption_unit)} / ${$("consumptionUnit").value}`;$("balanceStrip").classList.add("show")}
-$("type").onchange=async()=>{clearSelection();$("name").value="";const t=state.material_types.find(x=>x.type_code===$("type").value);if(t){$("purchaseUnit").value=t.default_purchase_unit||"PCS";$("consumptionUnit").value=t.default_consumption_unit||"PCS";$("stockUnit").value=t.default_consumption_unit||t.default_purchase_unit||"PCS"}const pl=purchaseLedgerForType($("type").value);if(pl)$("purchaseLedger").value=pl.id;await searchMapped()};$("name").oninput=()=>{clearTimeout(timer);clearSelection();timer=setTimeout(()=>searchMapped().catch(e=>{$("msg").textContent=e.message}),160)};$("name").onfocus=()=>searchMapped().catch(()=>{});document.addEventListener("click",e=>{if(!e.target.closest(".mapped"))$("suggestions").classList.add("hidden")});for(const id of ["purchaseQty","stockQty","consumptionQty","rate"])$(id).addEventListener("input",calc);$("paymentStatus").onchange=()=>{const s=$("paymentStatus").value!=="CREDIT";$("paidWrap").classList.toggle("hidden",!s);$("cashWrap").classList.toggle("hidden",!s)};$("savePost").onclick=()=>savePost().catch(e=>{$("msg").className="err";$("msg").textContent=e.message});$("refresh").onclick=()=>load().catch(e=>alert(e.message));$("dataMode").onchange=()=>{clearSelection();load().catch(e=>alert(e.message))};$("billDate").value=new Date().toISOString().slice(0,10);if(window.RR?.enableZeroClean)RR.enableZeroClean(document);if(window.RR?.enableEnterNext)RR.enableEnterNext($("form"));load().catch(e=>alert(e.message));})();
+$("type").onchange=async()=>{clearSelection();$("name").value="";const t=state.material_types.find(x=>x.type_code===$("type").value);applyTypeUnits($("type").value,t);const pl=purchaseLedgerForType($("type").value);if(pl)$("purchaseLedger").value=pl.id;await searchMapped()};$("name").oninput=()=>{clearTimeout(timer);clearSelection();timer=setTimeout(()=>searchMapped().catch(e=>{$("msg").textContent=e.message}),160)};$("name").onfocus=()=>searchMapped().catch(()=>{});document.addEventListener("click",e=>{if(!e.target.closest(".mapped"))$("suggestions").classList.add("hidden")});for(const id of ["purchaseQty","stockQty","consumptionQty","rate"])$(id).addEventListener("input",calc);$("paymentStatus").onchange=()=>{const s=$("paymentStatus").value!=="CREDIT";$("paidWrap").classList.toggle("hidden",!s);$("cashWrap").classList.toggle("hidden",!s)};$("savePost").onclick=()=>savePost().catch(e=>{$("msg").className="err";$("msg").textContent=e.message});$("refresh").onclick=()=>load().catch(e=>alert(e.message));$("dataMode").onchange=()=>{clearSelection();load().catch(e=>alert(e.message))};$("billDate").value=new Date().toISOString().slice(0,10);
+if(window.RR?.enableZeroClean)RR.enableZeroClean(document);
+
+function installMaterialEnterNext(){
+  const form=$("form");
+  if(!form)return;
+  form.addEventListener("keydown",e=>{
+    if(e.key!=="Enter"||e.shiftKey||e.ctrlKey||e.altKey||e.metaKey)return;
+    const target=e.target;
+    if(!target||target.tagName==="TEXTAREA"||target.type==="file"||target.type==="search")return;
+    e.preventDefault();
+    const controls=[...form.querySelectorAll("input,select,button")].filter(el=>{
+      if(el===target)return true;
+      const hidden=el.hidden||el.closest(".hidden")||getComputedStyle(el).display==="none"||getComputedStyle(el).visibility==="hidden";
+      return !hidden&&!el.disabled&&el.tabIndex!==-1&&el.type!=="hidden";
+    });
+    const i=controls.indexOf(target);
+    if(i<0)return;
+    const next=controls.slice(i+1).find(el=>!el.disabled&&!el.readOnly);
+    if(next){next.focus();if(next.select&&next.tagName==="INPUT")next.select();}
+  },true);
+}
+installMaterialEnterNext();
+load().catch(e=>alert(e.message));})();
