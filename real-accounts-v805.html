@@ -12,7 +12,7 @@ button,a,select,input{border:1px solid var(--line);background:#0d141e;color:var(
 .panel{background:var(--p);border:1px solid var(--line);border-radius:14px;padding:13px;margin:10px 0}.grid{display:grid;grid-template-columns:repeat(4,minmax(180px,1fr));gap:9px}label{display:flex;flex-direction:column;gap:4px;color:var(--muted);font-weight:800}.wide{grid-column:1/-1}
 .tabs button.active{background:#243c67}.hidden{display:none!important}.scroll{overflow:auto}table{border-collapse:collapse;width:100%;min-width:1000px}th,td{padding:8px;border-bottom:1px solid #293445;text-align:left;white-space:nowrap}th{position:sticky;top:0;background:#151d29}.msg{font-weight:800;color:var(--ok)}
 @media(max-width:900px){.grid{grid-template-columns:repeat(2,1fr)}}@media(max-width:520px){.grid{grid-template-columns:1fr}}
-</style>
+.mapped-inlay{padding:0;overflow:hidden}.mapped-inlay-head{padding:12px 12px 0}.mapped-frame{display:block;width:100%;height:calc(100vh - 230px);min-height:760px;border:0;background:#090c12;border-radius:12px}@media(max-width:700px){.mapped-frame{height:calc(100vh - 190px);min-height:680px}}</style>
 </head>
 <body><main class="app">
 <header>
@@ -26,13 +26,17 @@ button,a,select,input{border:1px solid var(--line);background:#0d141e;color:var(
 </header>
 
 <section class="tabs">
-  <button class="active" data-tab="purchase">Sales & Purchase</button>
+  <button class="active" data-tab="purchase">Material Purchase</button>
   <button data-tab="money">Receipt & Payment</button>
   <button data-tab="daybook">Day Book</button>
   <button data-tab="approvals">Approvals</button>
 </section>
 
-<section id="purchase" class="panel tabpage">
+<section id="purchase" class="panel tabpage mapped-inlay">
+  <div class="mapped-inlay-head"><div class="k">ACCOUNTS · MAPPED MATERIAL PURCHASE</div></div>
+  <iframe class="mapped-frame" title="Mapped Material Purchase"
+    src="real-material-master-v805.html?v=80527&inlay=accounts"></iframe>
+</section><section id="purchaseLegacy" class="panel tabpage hidden">
 <h2>Purchase Template</h2>
 <div class="grid">
 <label>Supplier / Party<select id="pSupplier"></select></label>
@@ -86,5 +90,5 @@ button,a,select,input{border:1px solid var(--line);background:#0d141e;color:var(
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="config.js"></script>
 <script src="real-common.js"></script>
-<script src="real-accounts-v805.js?v=8052"></script>
+<script src="real-accounts-v805.js?v=80529"></script>
 </main></body></html>

@@ -1,19 +1,15 @@
-REAL FACTORY · V805.27 · CHAT-STYLE DASHBOARD + MAPPED MATERIAL PURCHASE
+REAL FACTORY V805.29 — ACCOUNTS DUPLICATE PURCHASE FIX
 
-UPLOAD/REPLACE THESE 4 TOGETHER:
-1. real-dashboard.html
-2. real-dashboard-v805-sidepanel.js
-3. real-material-master-v805.html
-4. real-material-master-v805.js
+UPLOAD/REPLACE ONLY THESE 4 FILES:
+1. real-accounts-v805.html
+2. real-accounts-v805.js
+3. real-dashboard.html
+4. real-dashboard-v805-sidepanel.js
 
-THIS PACKAGE DOES ONLY THIS:
-- Keeps the new ChatGPT-like dashboard / left side panel / Flow Setter.
-- Dashboard Material card opens the mapped Material Purchase & Costing module.
-- Relevant mapped search remains rr_material_source_search_v805_1.
-- Regular Cloth remains hidden from generic Material Purchase.
-- Matching Cloth remains source-mapped.
-- Sticker and Metal ID remain source-mapped.
-- Purchase / Stock / Consumption units auto-map.
-- Source/saved material units override type defaults.
-- Enter moves to next eligible entry field.
-- No Accounts, Finished Goods, UPM, Product, config.js, real-common.js or backend SQL changed.
+RESULT:
+- Accounts no longer shows the old generic Purchase Template.
+- Accounts > Material Purchase shows the SAME latest mapped Material Purchase v80527.
+- Matching Cloth / Sticker / Metal ID / mapped units remain from that same v80527 form.
+- Legacy Accounts Purchase Template stays hidden only for compatibility; no duplicate entry UI.
+- ChatGPT-style dashboard remains unchanged except Accounts link cache version.
+- No Material JS/HTML, backend SQL, Finished Goods, UPM, Product, config.js or real-common.js changed.
