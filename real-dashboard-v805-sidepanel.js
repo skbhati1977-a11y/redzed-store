@@ -17,7 +17,7 @@
     {id:"return",group:"finished",title:"Sales Return",desc:"Known buyer return, anonymous GR and reverse stock entry.",href:"real-finished-goods-v787.html?view=returns&v=789",tag:"RETURN",status:"TEST"},
 
     {id:"accounts",group:"accounts",title:"Accounts",desc:"Receipt & Payment, Sales & Purchase, Ledgers, Day Book, Suspense and approvals.",href:"real-accounts-v805.html?v=805",tag:"V805",status:"TEST"},
-    {id:"material",group:"accounts",title:"Material Master & Costing",desc:"Units, conversions, estimated consumption, weighted average rate and Material Cost / Good PCS.",href:"real-material-master-v805.html?v=805",tag:"V805",status:"TEST"},
+    {id:"material",group:"accounts",title:"Material Purchase & Costing",desc:"Mapped material search, mapped units, current balance and weighted purchase costing.",href:"real-material-master-v805.html?v=80527",tag:"V805",status:"TEST"},
 
     {id:"salaryhome",group:"payroll",title:"Salary Home",desc:"PCS and Monthly salary dashboards main control.",href:"real-salary-home-v786.html?v=786329",tag:"V786",status:"ACTIVE"},
     {id:"salarypay",group:"payroll",title:"Salary Payment",desc:"PCS/Monthly manual zero, Flat Ratio and Percent Ratio payment.",href:"real-salary-payment-v785.html?mode=TEST&v=786329",tag:"FINAL",status:"LOCKED"},
