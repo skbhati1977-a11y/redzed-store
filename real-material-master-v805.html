@@ -1,19 +1,74 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>REAL FACTORY · Material Purchase V805.1</title>
 <style>:root{color-scheme:dark;--bg:#090b0e;--p:#11151b;--line:#2b333d;--txt:#f4f6f8;--muted:#9aa4af;--green:#6fdda3;--blue:#7fabff;--warn:#efc66d;--red:#ef7180}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--txt);font:14px/1.45 system-ui,-apple-system,Segoe UI,sans-serif}.app{max-width:1500px;margin:auto;padding:14px}.sticky{position:sticky;top:0;z-index:50;background:rgba(9,11,14,.96);backdrop-filter:blur(10px);border-bottom:1px solid var(--line);margin:-14px -14px 10px;padding:10px 14px}.head{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap}.k{font-size:11px;color:var(--muted);font-weight:900;letter-spacing:.1em}h1{font-size:22px;margin:2px 0}h2{font-size:17px;margin:0 0 10px}.actions{display:flex;gap:7px;align-items:center;flex-wrap:wrap}a,button{border:1px solid var(--line);background:#171c23;color:white;border-radius:9px;padding:9px 11px;text-decoration:none;font-weight:850;cursor:pointer}button.primary{background:#274a7a;border-color:#416aa3}.panel{background:var(--p);border:1px solid var(--line);border-radius:14px;padding:13px;margin:10px 0}.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}.field{display:flex;flex-direction:column;gap:5px;min-width:0}.field>span{font-size:12px;color:var(--muted);font-weight:800}input,select{width:100%;min-width:0;border:1px solid var(--line);background:#0d1116;color:white;border-radius:8px;padding:10px;font-size:16px}.pair{display:grid;grid-template-columns:minmax(90px,1fr) 84px;gap:5px}.pair select{font-weight:900}.mapped{position:relative}.suggestions{position:absolute;top:100%;left:0;right:0;z-index:80;background:#151a21;border:1px solid #39434e;border-radius:10px;max-height:270px;overflow:auto;box-shadow:0 15px 35px #000a}.suggestion{width:100%;display:flex;justify-content:space-between;gap:10px;text-align:left;border:0;border-bottom:1px solid #29313a;border-radius:0;background:transparent;padding:10px}.suggestion:hover{background:#20262e}.suggestion small{color:var(--muted)}.hidden{display:none!important}.locked{pointer-events:none;opacity:.8}.balance-strip{display:none;gap:8px;align-items:stretch;flex-wrap:wrap}.balance-strip.show{display:flex}.bcard{min-width:150px;background:#111820;border:1px solid #354352;border-radius:10px;padding:7px 10px}.bcard small{display:block;color:var(--muted);font-size:10px}.bcard strong{font-size:16px}.bcard.balance strong{color:var(--green)}.metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:10px}.metric{background:#0c1015;border:1px solid var(--line);border-radius:10px;padding:10px}.metric small{display:block;color:var(--muted)}.metric strong{font-size:16px}.notice{margin:9px 0;padding:10px;border-left:3px solid var(--warn);background:#19170f;border-radius:0 9px 9px 0}.scroll{overflow:auto}table{border-collapse:collapse;width:100%;min-width:1450px}th,td{padding:8px;border-bottom:1px solid #29313a;text-align:left;white-space:nowrap}th{background:#171c23}.err{color:var(--red)}.ok{color:var(--green)}@media(max-width:900px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}.metrics{grid-template-columns:repeat(2,1fr)}}@media(max-width:560px){.grid{grid-template-columns:1fr}.metrics{grid-template-columns:1fr}.pair{grid-template-columns:1fr 82px}.bcard{min-width:calc(50% - 5px)}}
+.inline-field{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px;align-items:end}
+.mini-add{white-space:nowrap;padding:10px 11px}
+.combo{position:relative}.combo-list{position:absolute;top:100%;left:0;right:0;z-index:90;background:#151a21;border:1px solid #39434e;border-radius:10px;max-height:250px;overflow:auto;box-shadow:0 15px 35px #000a}
+.combo-item{width:100%;display:flex;justify-content:space-between;gap:8px;text-align:left;border:0;border-bottom:1px solid #29313a;border-radius:0;background:transparent;padding:10px}.combo-item:hover{background:#20262e}
+.modal{position:fixed;inset:0;z-index:200;background:#000b;display:grid;place-items:center;padding:16px}.modal-card{width:min(760px,100%);max-height:92vh;overflow:auto;background:#11151b;border:1px solid #39434e;border-radius:15px;padding:14px}
+.modal-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.modal-actions{display:flex;justify-content:flex-end;gap:7px;margin-top:12px}
+.backend-note{font-size:11px;color:var(--muted);margin-top:5px}.purchase-metrics{grid-template-columns:repeat(3,minmax(0,1fr))}
+@media(max-width:700px){.modal-grid{grid-template-columns:1fr}}
 </style></head><body><main class="app">
-<div class="sticky"><div class="head"><div><div class="k">REAL FACTORY · MATERIAL PURCHASE V805.1</div><h1>Material Purchase & Costing</h1><div id="who" class="k">Checking login…</div></div><div id="balanceStrip" class="balance-strip"><div class="bcard"><small>Mapped Material</small><strong id="floatMaterial">—</strong></div><div class="bcard balance"><small>Current Balance Before Purchase</small><strong id="floatBefore">—</strong></div><div class="bcard balance"><small>Balance After Purchase</small><strong id="floatAfter">—</strong></div><div class="bcard"><small>Running W.Avg / Consumption Unit</small><strong id="floatRunning">—</strong></div></div><div class="actions"><select id="dataMode" style="width:auto"><option>TEST</option><option>REAL</option></select><a href="real-accounts-v805.html">Accounts</a><a href="real-dashboard.html">Dashboard</a><button id="refresh">Refresh</button></div></div></div>
+<div class="sticky"><div class="head"><div><div class="k">REAL FACTORY · MATERIAL PURCHASE V805.31 · CLEAN MAPPED</div><h1>Material Purchase & Costing</h1><div id="who" class="k">Checking login…</div></div><div id="balanceStrip" class="balance-strip"><div class="bcard"><small>Mapped Material</small><strong id="floatMaterial">—</strong></div><div class="bcard balance"><small>Current Balance Before Purchase</small><strong id="floatBefore">—</strong></div><div class="bcard balance"><small>Balance After Purchase</small><strong id="floatAfter">—</strong></div><div class="bcard"><small>Running W.Avg / Consumption Unit</small><strong id="floatRunning">—</strong></div></div><div class="actions"><select id="dataMode" style="width:auto"><option>TEST</option><option>REAL</option></select><a href="real-accounts-v805.html">Accounts</a><a href="real-dashboard.html">Dashboard</a><button id="refresh">Refresh</button></div></div></div>
 <section class="panel"><h2>Material Purchase</h2><div class="grid" id="form">
-<label class="field"><span>Material Type</span><select id="type"></select></label>
-<label class="field mapped"><span id="nameLabel">Material Name · Relevant Mapped Searchable</span><input id="name" type="search" autocomplete="off" placeholder="Type to search relevant mapped material…"><div id="suggestions" class="suggestions hidden"></div></label>
+<label class="field"><span>Material Type</span><div class="inline-field"><select id="type"></select><button id="addType" class="mini-add" type="button">+ New</button></div></label>
+<label class="field mapped"><span id="nameLabel">Material Name · Mapped Search</span><div class="inline-field"><div style="position:relative"><input id="name" type="search" autocomplete="off" placeholder="Type to search mapped material…"><div id="suggestions" class="suggestions hidden"></div></div><button id="addMaterial" class="mini-add" type="button">+ New</button></div></label>
 <label class="field"><span>Material No.</span><input id="no" placeholder="Mapped if available · blank allowed"></label>
 <label class="field"><span>Purchase Qty + Unit</span><div class="pair"><input id="purchaseQty" type="number" step="0.001" value="0"><select id="purchaseUnit"></select></div></label>
-<label class="field"><span>Stock Qty + Unit</span><div class="pair"><input id="stockQty" type="number" step="0.001" value="0"><select id="stockUnit"></select></div></label>
-<label class="field"><span>Consumption Qty + Unit</span><div class="pair"><input id="consumptionQty" type="number" step="0.001" value="0"><select id="consumptionUnit"></select></div></label>
 <label class="field"><span>Purchase Rate / Purchase Unit</span><input id="rate" type="number" step="0.01" value="0"></label>
-<label class="field"><span>Supplier Ledger</span><select id="supplier"></select></label><label class="field"><span>Purchase Ledger</span><select id="purchaseLedger"></select></label>
-<label class="field"><span>Bill No.</span><input id="billNo"></label><label class="field"><span>Bill Date</span><input id="billDate" type="date"></label><label class="field"><span>GST Amount</span><input id="gst" type="number" step="0.01" value="0"></label>
-<label class="field"><span>Payment Status</span><select id="paymentStatus"><option>CREDIT</option><option>PAID</option><option>PART_PAID</option></select></label><label class="field hidden" id="paidWrap"><span>Paid Amount</span><input id="paidAmount" type="number" step="0.01" value="0"></label><label class="field hidden" id="cashWrap"><span>Cash / Bank</span><select id="cashBank"></select></label>
-<label class="field"><span>Consumption Method</span><select id="basis"><option>AUTO_STANDARD</option><option>PACKING_STANDARD</option><option>PERIODIC_STOCK_ADJUSTMENT</option><option>MANUAL</option></select></label><label class="field" style="grid-column:span 2"><span>Applicable To</span><input id="applies" placeholder="ALL PACKED GOODS, POLO, SELF COLLAR…"></label>
-</div><div id="sourceNotice" class="notice hidden"></div><div class="metrics"><div class="metric"><small>Current Purchase Value</small><strong id="currentValue">₹0.00</strong></div><div class="metric"><small>Current Cost / Consumption Unit</small><strong id="currentCost">₹0.00</strong></div><div class="metric"><small>Running Weighted Avg / Consumption Unit</small><strong id="runningCost">₹0.00</strong></div><div class="metric"><small>Current Balance Before Purchase</small><strong id="beforeMetric">0</strong></div></div><div class="actions" style="margin-top:10px"><button class="primary" id="savePost">Save & Post Purchase</button><span id="msg"></span></div></section>
-<section class="panel"><h2>Material Cost & Consumption</h2><div class="scroll"><table><thead><tr><th>Type</th><th>No</th><th>Material Name</th><th>Purchase Unit</th><th>Stock Unit</th><th>Consumption Unit</th><th>Current Balance</th><th>Running Purchase Value</th><th>Running Equivalent Consumption</th><th>Running W.Avg / Consumption Unit</th><th>Method</th><th>Applicable To</th></tr></thead><tbody id="body"><tr><td colspan="12">Loading…</td></tr></tbody></table></div></section>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="config.js"></script><script src="real-common.js"></script><script src="real-material-master-v805.js?v=80527"></script></main></body></html>
+<label class="field combo"><span>Supplier / Party · Mapped Search</span><div class="inline-field"><div style="position:relative"><input id="supplierSearch" type="search" autocomplete="off" placeholder="Type supplier name…"><div id="supplierSuggestions" class="combo-list hidden"></div></div><button id="addSupplier" class="mini-add" type="button">+ New</button></div><select id="supplier" class="hidden" tabindex="-1"></select></label>
+<label class="field"><span>Purchase Ledger</span><select id="purchaseLedger"></select></label>
+<label class="field"><span>Bill No.</span><input id="billNo"></label>
+<label class="field"><span>Bill Date</span><input id="billDate" type="date"></label>
+<label class="field"><span>GST Amount</span><input id="gst" type="number" step="0.01" value="0"></label>
+<label class="field"><span>Payment Status</span><select id="paymentStatus"><option>CREDIT</option><option>PAID</option><option>PART_PAID</option></select></label>
+<label class="field hidden" id="paidWrap"><span>Paid Amount</span><input id="paidAmount" type="number" step="0.01" value="0"></label>
+<label class="field hidden" id="cashWrap"><span>Cash / Bank</span><select id="cashBank"></select></label>
+<div class="hidden" aria-hidden="true">
+  <input id="stockQty" type="number" value="0" tabindex="-1"><select id="stockUnit" tabindex="-1"></select>
+  <input id="consumptionQty" type="number" value="0" tabindex="-1"><select id="consumptionUnit" tabindex="-1"></select>
+  <select id="basis" tabindex="-1"><option>AUTO_STANDARD</option><option>PACKING_STANDARD</option><option>PERIODIC_STOCK_ADJUSTMENT</option><option>MANUAL</option></select>
+  <input id="applies" tabindex="-1">
+</div>
+</div>
+<div id="sourceNotice" class="notice hidden"></div>
+<div class="metrics purchase-metrics">
+  <div class="metric"><small>Current Purchase Value</small><strong id="currentValue">₹0.00</strong></div>
+  <div class="metric"><small>Running Weighted Avg</small><strong id="runningCost">₹0.00</strong></div>
+  <div class="metric"><small>Current Balance Before Purchase</small><strong id="beforeMetric">0</strong></div>
+  <div class="metric hidden"><small>Current Cost / Consumption Unit</small><strong id="currentCost">₹0.00</strong></div>
+</div>
+<div class="backend-note">Stock quantity, conversion and consumption are calculated from saved material configuration in backend.</div>
+<div class="actions" style="margin-top:10px"><button class="primary" id="savePost">Save & Post Purchase</button><span id="msg"></span></div>
+</section>
+
+<div id="materialModal" class="modal hidden">
+<section class="modal-card"><div class="head"><div><div class="k">FIRST-TIME MATERIAL CONFIG</div><h2>Add New Material</h2></div><button type="button" data-close="materialModal">Close</button></div>
+<div class="modal-grid">
+<label class="field"><span>Material Type</span><select id="newMaterialType"></select></label>
+<label class="field"><span>Material Name</span><input id="newMaterialName"></label>
+<label class="field"><span>Material No. (optional)</span><input id="newMaterialNo"></label>
+<label class="field"><span>Purchase Unit</span><select id="newPurchaseUnit"></select></label>
+<label class="field"><span>Stock Unit</span><select id="newStockUnit"></select></label>
+<label class="field"><span>Purchase → Stock Conversion</span><input id="newPurchaseToStock" type="number" step="0.000001" value="1"></label>
+<label class="field"><span>Consumption Unit</span><select id="newConsumptionUnit"></select></label>
+<label class="field"><span>Consumption → Stock Conversion</span><input id="newConsumptionToStock" type="number" step="0.000001" value="1"></label>
+<label class="field"><span>Consumption Method</span><select id="newBasis"><option>AUTO_STANDARD</option><option>PACKING_STANDARD</option><option>PERIODIC_STOCK_ADJUSTMENT</option><option>MANUAL</option></select></label>
+<label class="field"><span>Consumption / Good PCS (if applicable)</span><input id="newConsumptionPerGood" type="number" step="0.000001" value="0"></label>
+<label class="field"><span>Auto Consumption Event (optional)</span><input id="newAutoEvent"></label>
+<label class="field"><span>Preferred Supplier (optional)</span><select id="newPreferredSupplier"></select></label>
+<label class="field" style="grid-column:1/-1"><span>Applicable To (optional)</span><input id="newApplicableTo"></label>
+</div>
+<div class="modal-actions"><button type="button" data-close="materialModal">Cancel</button><button id="saveNewMaterial" class="primary" type="button">Save & Map Material</button></div><div id="newMaterialMsg"></div></section></div>
+
+<div id="supplierModal" class="modal hidden"><section class="modal-card" style="width:min(520px,100%)">
+<div class="head"><div><div class="k">CANONICAL SUPPLIER LEDGER</div><h2>Add New Supplier</h2></div><button type="button" data-close="supplierModal">Close</button></div>
+<label class="field"><span>Supplier / Party Name</span><input id="newSupplierName"></label>
+<div class="modal-actions"><button type="button" data-close="supplierModal">Cancel</button><button id="saveNewSupplier" class="primary" type="button">Save & Map Supplier</button></div><div id="newSupplierMsg"></div></section></div>
+
+<div id="typeModal" class="modal hidden"><section class="modal-card" style="width:min(560px,100%)">
+<div class="head"><div><div class="k">MATERIAL TYPE</div><h2>Add New Material Type</h2></div><button type="button" data-close="typeModal">Close</button></div>
+<div class="modal-grid"><label class="field"><span>Type Name</span><input id="newTypeName"></label><label class="field"><span>Type Code</span><input id="newTypeCode"></label><label class="field"><span>Default Purchase Unit</span><select id="newTypePU"></select></label><label class="field"><span>Default Consumption Unit</span><select id="newTypeCU"></select></label></div>
+<div class="modal-actions"><button type="button" data-close="typeModal">Cancel</button><button id="saveNewType" class="primary" type="button">Save Type</button></div><div id="newTypeMsg"></div></section></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="config.js"></script><script src="real-common.js"></script><script src="real-material-master-v805.js?v=80531"></script></main></body></html>
