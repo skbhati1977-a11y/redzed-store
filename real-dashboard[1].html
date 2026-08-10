@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#0d0d0f">
-  <title>REAL FACTORY — Owner Dashboard V787</title>
+  <title>REAL FACTORY — Main Dashboard V805</title>
   <link rel="stylesheet" href="real-style.css?v=786329">
   <style>
     .rf-dashboard-version{display:inline-flex;align-items:center;min-height:30px;padding:5px 9px;border:1px solid #3b4658;border-radius:999px;background:#151b24;color:#a8ccff;font-size:12px;font-weight:900;letter-spacing:.04em}
@@ -32,11 +32,11 @@
   <header class="rr-topbar">
     <div>
       <p class="rr-kicker">REAL FACTORY</p>
-      <h1>Owner Dashboard</h1>
+      <h1>Main Dashboard</h1>
     </div>
     <div class="rr-top-actions">
-      <span class="rf-dashboard-version">V787</span>
-      <span id="ownerName" class="rr-owner-name">SUPER ADMIN</span>
+      <span class="rf-dashboard-version">V805</span>
+      <span id="ownerName" class="rr-owner-name">Loading...</span>
       <button id="logoutBtn" class="rr-btn rr-btn-secondary" type="button">Logout</button>
     </div>
   </header>
@@ -45,7 +45,7 @@
     <section class="rr-hero">
       <div class="rf-hero-copy">
         <p class="rr-muted">All latest modules · One verified control center</p>
-        <h2 id="welcomeText">Welcome, SUPER ADMIN</h2>
+        <h2 id="welcomeText">Welcome</h2>
         <p class="rr-muted">यहाँ केवल latest active module links हैं. Previous और superseded versions repository history में सुरक्षित हैं.</p>
       </div>
       <div id="securityStatus" class="rr-status-pill">TEST DEFAULT · REAL PROTECTED</div>
@@ -60,16 +60,17 @@
 
     <section class="rf-module-toolbar" aria-label="Module search">
       <label><input id="moduleSearch" type="search" autocomplete="off" placeholder="Search module / version / work…"></label>
-      <span id="moduleCount" class="rf-module-count">18 latest modules</span>
+      <span id="moduleCount" class="rf-module-count">Latest modules</span>
     </section>
 
     <section class="rf-module-section" data-module-section>
-      <div class="rf-section-head"><div><h2>Finished Goods & Sales</h2><p>Packing se Sales Return tak central stock control</p></div><span class="rf-section-state">TEST DEFAULT</span></div>
+      <div class="rf-section-head"><div><h2>Final Product & Sales</h2><p>Store/Webstore Receive se Sales Return tak clean individual views</p></div><span class="rf-section-state">TEST DEFAULT</span></div>
       <div class="rr-module-grid">
-        <a class="rr-module-card" data-module href="real-finished-goods-v787.html?v=787">
-          <div class="rf-card-top"><span class="rr-module-number">18</span><span class="rf-version">V787</span></div>
-          <h3>Finished Goods Control</h3><p>Packing, ASST Box, Despatch, Store Receive, Webstore, PI/CPI, Qty Verify और Sales Return.</p><span class="rf-status test">TEST</span>
-        </a>
+        <a class="rr-module-card" data-module href="real-finished-goods-v787.html?view=receive&amp;v=80521"><div class="rf-card-top"><span class="rr-module-number">FP1</span><span class="rf-version">V789 VIEW</span></div><h3>Store Receive</h3><p>Despatch challan acceptance, box verification और custody receive.</p><span class="rf-status test">TEST</span></a>
+        <a class="rr-module-card" data-module href="real-finished-goods-v787.html?view=stock&amp;v=80521"><div class="rf-card-top"><span class="rr-module-number">FP2</span><span class="rf-version">V789 VIEW</span></div><h3>Webstore / Store Stock</h3><p>Central, physical और webstore saleable stock display.</p><span class="rf-status test">TEST</span></a>
+        <a class="rr-module-card" data-module href="real-finished-goods-v787.html?view=sale&amp;v=80521"><div class="rf-card-top"><span class="rr-module-number">FP3</span><span class="rf-version">V789 VIEW</span></div><h3>Sales · PI / CPI</h3><p>Buyer sale, PI draft और final CPI stock-out.</p><span class="rf-status test">TEST</span></a>
+        <a class="rr-module-card" data-module href="real-finished-goods-v787.html?view=verify&amp;v=80521"><div class="rf-card-top"><span class="rr-module-number">FP4</span><span class="rf-version">V789 VIEW</span></div><h3>Sales Qty Verify</h3><p>Final CPI physical quantity verification gate.</p><span class="rf-status test">TEST</span></a>
+        <a class="rr-module-card" data-module href="real-finished-goods-v787.html?view=returns&amp;v=80521"><div class="rf-card-top"><span class="rr-module-number">FP5</span><span class="rf-version">V789 VIEW</span></div><h3>Sales Return</h3><p>Known buyer return, anonymous GR और reverse stock entry.</p><span class="rf-status test">TEST</span></a>
       </div>
     </section>
 
@@ -84,9 +85,9 @@
           <div class="rf-card-top"><span class="rr-module-number">02</span><span class="rf-version">V610</span></div>
           <h3>Print Master</h3><p>Print artwork, frame, colour, placement और garment preview.</p><span class="rf-status">ACTIVE</span>
         </a>
-        <a class="rr-module-card" data-module href="real-product-master-v720.html?v=786329">
-          <div class="rf-card-top"><span class="rr-module-number">03</span><span class="rf-version">V720.36.2</span></div>
-          <h3>Product Master</h3><p>CB purchase, material, Art/Print assignment और product planning.</p><span class="rf-status locked">FINAL</span>
+        <a class="rr-module-card" data-module href="real-product-master-v804.html?v=804">
+          <div class="rf-card-top"><span class="rr-module-number">03</span><span class="rf-version">V804</span></div>
+          <h3>Product Master</h3><p>CB purchase, Art → Print → Sticker → Metal ID decision, due tabs और accessory requirement mapping.</p><span class="rf-status locked">V804 ACCESSORY</span>
         </a>
         <a class="rr-module-card" data-module href="real-cutting-master.html?v=786329">
           <div class="rf-card-top"><span class="rr-module-number">04</span><span class="rf-version">V720.36.2</span></div>
@@ -103,19 +104,50 @@
       </div>
     </section>
 
+    
     <section class="rf-module-section" data-module-section>
-      <div class="rf-section-head"><div><h2>Production</h2><p>Lot journey, Alter/Remake/Damage और submitted work</p></div><span class="rf-section-state">LATEST ACTIVE</span></div>
+      <div class="rf-section-head">
+        <div><h2>Accounts & Material Costing</h2><p>Day Book, ledgers, purchase/receipt/payment and universal material consumption costing</p></div>
+        <span class="rf-section-state">V805 TEST</span>
+      </div>
       <div class="rr-module-grid">
-        <a class="rr-module-card" data-module href="real-universal-production-v770.html?v=786329">
-          <div class="rf-card-top"><span class="rr-module-number">07</span><span class="rf-version">V770 INTEGRATED</span></div>
-          <h3>Universal Production</h3><p>Department flow, assignments, independent Alter journeys, Remake और Damage.</p><span class="rf-status">ACTIVE</span>
+        <a class="rr-module-card" data-module href="real-accounts-v805.html?v=805">
+          <div class="rf-card-top"><span class="rr-module-number">AC1</span><span class="rf-version">V805</span></div>
+          <h3>Accounts</h3>
+          <p>Receipt & Payment, Sales & Purchase, Ledgers, Day Book, Suspense and approvals.</p>
+          <span class="rf-status test">TEST</span>
         </a>
-        <a class="rr-module-card" data-module href="real-upm-submitted-work-v772.html?v=786329">
-          <div class="rf-card-top"><span class="rr-module-number">08</span><span class="rf-version">V772.4</span></div>
-          <h3>Submitted Work</h3><p>Submitted production, lot/worker/department audit और verification.</p><span class="rf-status">ACTIVE</span>
+        <a class="rr-module-card" data-module href="real-material-master-v805.html?v=80521">
+          <div class="rf-card-top"><span class="rr-module-number">AC2</span><span class="rf-version">V805</span></div>
+          <h3>Material Master & Costing</h3>
+          <p>Units, conversions, estimated consumption, weighted average rate and Material Cost / Good PCS.</p>
+          <span class="rf-status test">TEST</span>
         </a>
       </div>
     </section>
+
+
+    <section class="rf-module-section" data-module-section>
+      <div class="rf-section-head">
+        <div>
+          <h2>UPM · Production Departments</h2>
+          <p>One inlay module · all relevant department tabs mounted inside</p>
+        </div>
+        <span class="rf-section-state">V805 INLAY</span>
+      </div>
+      <div class="rr-module-grid">
+        <a class="rr-module-card" data-module href="real-upm-home-v805.html?v=805">
+          <div class="rf-card-top">
+            <span class="rr-module-number">UPM</span>
+            <span class="rf-version">V805 INLAY</span>
+          </div>
+          <h3>Universal Production Manager</h3>
+          <p>Cutting → Printing → Sticker → Metal ID → Stitching → Finishing → Packing → Despatch, all department tabs in one control window.</p>
+          <span class="rf-status">ACTIVE</span>
+        </a>
+      </div>
+    </section>
+
 
     <section class="rf-module-section" data-module-section>
       <div class="rf-section-head"><div><h2>Salary, Attendance & Payment</h2><p>PCS और Monthly payroll के latest TEST-isolated modules</p></div><span class="rf-section-state">TEST DEFAULT</span></div>
@@ -173,6 +205,6 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="config.js?v=786329"></script>
-  <script src="real-dashboard.js?v=78702"></script>
+  <script src="real-dashboard.js?v=786329"></script>
 </body>
 </html>
