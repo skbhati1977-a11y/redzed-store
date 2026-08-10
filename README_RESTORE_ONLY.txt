@@ -1,0 +1,7 @@
+REAL FACTORY · CHAT-STYLE DASHBOARD RESTORE ONLY
+
+UPLOAD ONLY:
+1. real-dashboard.html
+2. real-dashboard-v805-sidepanel.js
+
+DO NOT CHANGE ANY OTHER FILE.
