@@ -1,0 +1,33 @@
+REAL FACTORY · CONFIG + DASHBOARD RULE BOOK · V805
+====================================================
+
+PUBLIC APP BASE
+https://skbhati1977-a11y.github.io
+
+SUPABASE PROJECT URL
+https://hruartsemierwhtzonei.supabase.co
+
+FRONTEND CLIENT KEYS
+Primary Publishable Key:
+sb_publishable_uo3dcrFuRvGsvRzPcdTV0A_5ZVwgzga
+
+Legacy anon/public JWT (compatibility fallback only):
+eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhydWFydHNlbWllcndodHpvbmVpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI5Mjg5NzksImV4cCI6MjA5ODUwNDk3OX0.Cm_RW1ir7IDRmjH3Xqn9rMnDeel0DYpo3CWtQ32tE7o
+
+LOCKED RULES
+1. Primary frontend key is the Publishable API key.
+2. Legacy anon/public JWT is retained only for compatibility/future fallback.
+3. NEVER place service_role / secret key / database password / private token in frontend.
+4. Public/client keys and Supabase URL must never be shown as normal app UI text.
+5. Security is enforced by Auth + RLS + backend permission RPC/guards, not by hiding the public key.
+6. Canonical config.js must be reused by every module. Never deploy a PASTE_* placeholder config over it.
+7. Existing legacy aliases remain supported: SUPABASE_URL, SUPABASE_ANON_KEY, supabaseClient, supabaseDb, redzedSupabase, sb.
+8. HTML + matching JS are always deployed together.
+9. Main dashboard uses left side panel + icon + description + Flow Setter.
+10. Sticker Master and Metal ID Master are hidden as direct main-dashboard cards.
+11. Product Master remains the product inlay for Art/Print/Sticker/Metal ID decisions.
+12. UPM is a single inlay with all relevant department tabs.
+13. Accounts + Material Costing are mounted in the dashboard.
+14. TEST is default; REAL remains protected.
+15. Internal owner role is displayed to users as Super Admin; Admin stays lower in hierarchy.
+16. Enter-to-next applies only on eligible data-entry forms; ordinary/search controls keep normal behavior.

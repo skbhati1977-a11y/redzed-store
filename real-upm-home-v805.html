@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#0d0d0f">
+  <title>REAL FACTORY — UPM V805</title>
+  <link rel="stylesheet" href="real-style.css?v=786329">
+  <style>
+    :root{color-scheme:dark}
+    body{margin:0;background:#0b0b0e;color:#f4f4f6;font-family:system-ui,-apple-system,Segoe UI,sans-serif}
+    .upm-shell{height:100vh;display:grid;grid-template-rows:auto auto 1fr;min-height:0}
+    .upm-head{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:12px 14px;border-bottom:1px solid #292a31;background:#111216}
+    .upm-head h1{font-size:20px;margin:2px 0}.upm-kicker{font-size:11px;color:#a8ccff;font-weight:900;letter-spacing:.12em}
+    .upm-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+    .upm-actions a,.upm-actions button{border:1px solid #353742;background:#181a20;color:#fff;border-radius:9px;padding:8px 11px;text-decoration:none;font-weight:800;cursor:pointer}
+    .upm-tabs-wrap{border-bottom:1px solid #292a31;background:#101116;padding:8px 10px}
+    .upm-tabs{display:flex;gap:7px;overflow-x:auto;scrollbar-width:thin;padding-bottom:2px}
+    .upm-tab{flex:0 0 auto;border:1px solid #343640;background:#181a20;color:#d9dce3;border-radius:9px;padding:9px 11px;font-weight:850;cursor:pointer;white-space:nowrap}
+    .upm-tab.active{background:#6b1f2b;border-color:#d64559;color:#fff}
+    .upm-tab[data-kind="finish"]{border-style:dashed}
+    .upm-stage{position:relative;min-height:0;background:#090a0d}
+    #upmFrame{width:100%;height:100%;border:0;display:block;background:#090a0d}
+    .upm-loading{position:absolute;right:12px;top:10px;padding:6px 9px;border:1px solid #343640;border-radius:999px;background:#151820;color:#a8ccff;font-size:11px;font-weight:900;pointer-events:none}
+    @media(max-width:700px){.upm-head{align-items:flex-start;flex-direction:column}.upm-head h1{font-size:18px}}
+  </style>
+</head>
+<body>
+  <main class="upm-shell">
+    <header class="upm-head">
+      <div>
+        <div class="upm-kicker">REAL FACTORY · UPM</div>
+        <h1>Universal Production Manager</h1>
+        <div id="currentView">All relevant departments in one inlay window</div>
+      </div>
+      <div class="upm-actions">
+        <a href="real-dashboard.html">Main Dashboard</a>
+        <button id="reloadTab" type="button">Refresh Current</button>
+        <a id="openDirect" href="real-universal-production-v770.html?v=805" target="_blank" rel="noopener">Open Direct</a>
+      </div>
+    </header>
+
+    <nav class="upm-tabs-wrap" aria-label="UPM department tabs">
+      <div id="upmTabs" class="upm-tabs"></div>
+    </nav>
+
+    <section class="upm-stage">
+      <iframe id="upmFrame" title="UPM Department View"></iframe>
+      <div id="loadingBadge" class="upm-loading">Loading…</div>
+    </section>
+  </main>
+
+  <script src="real-upm-home-v805.js?v=8051"></script>
+</body>
+</html>
