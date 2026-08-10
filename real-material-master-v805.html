@@ -1,63 +1,19 @@
-<!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>REAL FACTORY · Material Master V805</title>
-<style>
-:root{color-scheme:dark;--bg:#070a0f;--p:#111722;--line:#2b3648;--txt:#eef4ff;--muted:#9ba9bc;--ok:#73dfa7}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--txt);font:14px/1.45 system-ui,Segoe UI,sans-serif}.app{max-width:1550px;margin:auto;padding:14px}
-header,.actions{display:flex;gap:9px;align-items:center;flex-wrap:wrap}header{justify-content:space-between}.k{font-size:11px;font-weight:900;letter-spacing:.12em;color:var(--muted)}
-button,a,select,input{border:1px solid var(--line);background:#0d141e;color:var(--txt);border-radius:9px;padding:10px;font-size:16px}button,a{text-decoration:none;font-weight:850;cursor:pointer}.primary{background:#203b70}
-.panel{background:var(--p);border:1px solid var(--line);border-radius:14px;padding:13px;margin:10px 0}.grid{display:grid;grid-template-columns:repeat(4,minmax(180px,1fr));gap:9px}label{display:flex;flex-direction:column;gap:4px;color:var(--muted);font-weight:800}.wide{grid-column:1/-1}
-.scroll{overflow:auto}table{border-collapse:collapse;width:100%;min-width:1350px}th,td{padding:8px;border-bottom:1px solid #293445;text-align:left;white-space:nowrap}th{position:sticky;top:0;background:#151d29}.msg{font-weight:800;color:var(--ok)}
-@media(max-width:900px){.grid{grid-template-columns:repeat(2,1fr)}}@media(max-width:520px){.grid{grid-template-columns:1fr}}
-</style>
-</head>
-<body><main class="app">
-<header>
-  <div><div class="k">REAL FACTORY · UNIVERSAL MATERIAL</div><h1>Material Master & Costing</h1><div id="who" class="k">Checking access…</div></div>
-  <div class="actions">
-    <select id="dataMode"><option>TEST</option><option>REAL</option></select>
-    <a href="real-accounts-v805.html">Accounts</a>
-    <a href="real-dashboard.html">Dashboard</a>
-    <button id="refresh" type="button">Refresh</button>
-  </div>
-</header>
-
-<section class="panel" id="materialForm">
-<h2>Material Setup</h2>
-<p>Purchase Unit + Consumption Unit + Estimated Consumption / Good PCS + Weighted Avg Rate = Cost / Good PCS.</p>
-<div class="grid">
-<label>Material Type<select id="type"></select></label>
-<label>Material Name<input id="name"></label>
-<label>Material No<input id="no"></label>
-<label>Purchase Unit<select id="pu"><option>PCS</option><option>KG</option><option>MTR</option><option>ROLL</option><option>BOX</option><option>PACKET</option><option>SET</option></select></label>
-<label>Stock Unit<select id="bu"><option>PCS</option><option>KG</option><option>MTR</option></select></label>
-<label>Consumption Unit<select id="cu"><option>PCS</option><option>KG</option><option>MTR</option></select></label>
-<label>Purchase → Stock Conversion<input id="ptb" type="number" step="0.000001" value="1"></label>
-<label>Consumption → Stock Conversion<input id="ctb" type="number" step="0.000001" value="1"></label>
-<label>Alternate Unit 1<input id="a1" placeholder="PACKET / ROLL"></label>
-<label>Alt Unit 1 → Stock<input id="a1b" type="number" step="0.000001" value="0"></label>
-<label>Alternate Unit 2<input id="a2" placeholder="PCS"></label>
-<label>Alt Unit 2 → Stock<input id="a2b" type="number" step="0.000001" value="0"></label>
-<label>Est. Consumption / Good PCS<input id="est" type="number" step="0.000001" value="0"></label>
-<label>Consumption Method<select id="basis"><option>AUTO_STANDARD</option><option>PACKING_STANDARD</option><option>PERIODIC_STOCK_ADJUSTMENT</option><option>MANUAL</option></select></label>
-<label class="wide">Applicable To<input id="applies" placeholder="POLO, SELF COLLAR, ELT COLLAR, ALL PACKED GOODS"></label>
-</div>
-<div class="actions" style="margin-top:10px"><button class="primary" data-enter-submit="true" id="save">Save / Update Material</button><span class="msg" id="msg"></span></div>
-</section>
-
-<section class="panel">
-<h2>Material Cost & Consumption</h2>
-<div class="scroll"><table>
-<thead><tr><th>Type</th><th>No</th><th>Material Name</th><th>Purchase Unit</th><th>Consumption Unit</th><th>Est. Consumption / Good PCS</th><th>W.Avg / Stock Unit</th><th>W.Avg / Consumption Unit</th><th>Material Cost / Good PCS</th><th>Available Stock</th><th>Method</th><th>Applicable To</th><th>Edit</th></tr></thead>
-<tbody id="body"></tbody>
-</table></div>
-</section>
-
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="config.js"></script>
-<script src="real-common.js"></script>
-<script src="real-material-master-v805.js?v=8052"></script>
-</main></body></html>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>REAL FACTORY · Material Purchase V805.1</title>
+<style>:root{color-scheme:dark;--bg:#090b0e;--p:#11151b;--line:#2b333d;--txt:#f4f6f8;--muted:#9aa4af;--green:#6fdda3;--blue:#7fabff;--warn:#efc66d;--red:#ef7180}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--txt);font:14px/1.45 system-ui,-apple-system,Segoe UI,sans-serif}.app{max-width:1500px;margin:auto;padding:14px}.sticky{position:sticky;top:0;z-index:50;background:rgba(9,11,14,.96);backdrop-filter:blur(10px);border-bottom:1px solid var(--line);margin:-14px -14px 10px;padding:10px 14px}.head{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap}.k{font-size:11px;color:var(--muted);font-weight:900;letter-spacing:.1em}h1{font-size:22px;margin:2px 0}h2{font-size:17px;margin:0 0 10px}.actions{display:flex;gap:7px;align-items:center;flex-wrap:wrap}a,button{border:1px solid var(--line);background:#171c23;color:white;border-radius:9px;padding:9px 11px;text-decoration:none;font-weight:850;cursor:pointer}button.primary{background:#274a7a;border-color:#416aa3}.panel{background:var(--p);border:1px solid var(--line);border-radius:14px;padding:13px;margin:10px 0}.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}.field{display:flex;flex-direction:column;gap:5px;min-width:0}.field>span{font-size:12px;color:var(--muted);font-weight:800}input,select{width:100%;min-width:0;border:1px solid var(--line);background:#0d1116;color:white;border-radius:8px;padding:10px;font-size:16px}.pair{display:grid;grid-template-columns:minmax(90px,1fr) 84px;gap:5px}.pair select{font-weight:900}.mapped{position:relative}.suggestions{position:absolute;top:100%;left:0;right:0;z-index:80;background:#151a21;border:1px solid #39434e;border-radius:10px;max-height:270px;overflow:auto;box-shadow:0 15px 35px #000a}.suggestion{width:100%;display:flex;justify-content:space-between;gap:10px;text-align:left;border:0;border-bottom:1px solid #29313a;border-radius:0;background:transparent;padding:10px}.suggestion:hover{background:#20262e}.suggestion small{color:var(--muted)}.hidden{display:none!important}.locked{pointer-events:none;opacity:.8}.balance-strip{display:none;gap:8px;align-items:stretch;flex-wrap:wrap}.balance-strip.show{display:flex}.bcard{min-width:150px;background:#111820;border:1px solid #354352;border-radius:10px;padding:7px 10px}.bcard small{display:block;color:var(--muted);font-size:10px}.bcard strong{font-size:16px}.bcard.balance strong{color:var(--green)}.metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:10px}.metric{background:#0c1015;border:1px solid var(--line);border-radius:10px;padding:10px}.metric small{display:block;color:var(--muted)}.metric strong{font-size:16px}.notice{margin:9px 0;padding:10px;border-left:3px solid var(--warn);background:#19170f;border-radius:0 9px 9px 0}.scroll{overflow:auto}table{border-collapse:collapse;width:100%;min-width:1450px}th,td{padding:8px;border-bottom:1px solid #29313a;text-align:left;white-space:nowrap}th{background:#171c23}.err{color:var(--red)}.ok{color:var(--green)}@media(max-width:900px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}.metrics{grid-template-columns:repeat(2,1fr)}}@media(max-width:560px){.grid{grid-template-columns:1fr}.metrics{grid-template-columns:1fr}.pair{grid-template-columns:1fr 82px}.bcard{min-width:calc(50% - 5px)}}
+</style></head><body><main class="app">
+<div class="sticky"><div class="head"><div><div class="k">REAL FACTORY · MATERIAL PURCHASE V805.1</div><h1>Material Purchase & Costing</h1><div id="who" class="k">Checking login…</div></div><div id="balanceStrip" class="balance-strip"><div class="bcard"><small>Mapped Material</small><strong id="floatMaterial">—</strong></div><div class="bcard balance"><small>Current Balance Before Purchase</small><strong id="floatBefore">—</strong></div><div class="bcard balance"><small>Balance After Purchase</small><strong id="floatAfter">—</strong></div><div class="bcard"><small>Running W.Avg / Consumption Unit</small><strong id="floatRunning">—</strong></div></div><div class="actions"><select id="dataMode" style="width:auto"><option>TEST</option><option>REAL</option></select><a href="real-accounts-v805.html">Accounts</a><a href="real-dashboard.html">Dashboard</a><button id="refresh">Refresh</button></div></div></div>
+<section class="panel"><h2>Material Purchase</h2><div class="grid" id="form">
+<label class="field"><span>Material Type</span><select id="type"></select></label>
+<label class="field mapped"><span id="nameLabel">Material Name · Relevant Mapped Searchable</span><input id="name" type="search" autocomplete="off" placeholder="Type to search relevant mapped material…"><div id="suggestions" class="suggestions hidden"></div></label>
+<label class="field"><span>Material No.</span><input id="no" placeholder="Mapped if available · blank allowed"></label>
+<label class="field"><span>Purchase Qty + Unit</span><div class="pair"><input id="purchaseQty" type="number" step="0.001" value="0"><select id="purchaseUnit"></select></div></label>
+<label class="field"><span>Stock Qty + Unit</span><div class="pair"><input id="stockQty" type="number" step="0.001" value="0"><select id="stockUnit"></select></div></label>
+<label class="field"><span>Consumption Qty + Unit</span><div class="pair"><input id="consumptionQty" type="number" step="0.001" value="0"><select id="consumptionUnit"></select></div></label>
+<label class="field"><span>Purchase Rate / Purchase Unit</span><input id="rate" type="number" step="0.01" value="0"></label>
+<label class="field"><span>Supplier Ledger</span><select id="supplier"></select></label><label class="field"><span>Purchase Ledger</span><select id="purchaseLedger"></select></label>
+<label class="field"><span>Bill No.</span><input id="billNo"></label><label class="field"><span>Bill Date</span><input id="billDate" type="date"></label><label class="field"><span>GST Amount</span><input id="gst" type="number" step="0.01" value="0"></label>
+<label class="field"><span>Payment Status</span><select id="paymentStatus"><option>CREDIT</option><option>PAID</option><option>PART_PAID</option></select></label><label class="field hidden" id="paidWrap"><span>Paid Amount</span><input id="paidAmount" type="number" step="0.01" value="0"></label><label class="field hidden" id="cashWrap"><span>Cash / Bank</span><select id="cashBank"></select></label>
+<label class="field"><span>Consumption Method</span><select id="basis"><option>AUTO_STANDARD</option><option>PACKING_STANDARD</option><option>PERIODIC_STOCK_ADJUSTMENT</option><option>MANUAL</option></select></label><label class="field" style="grid-column:span 2"><span>Applicable To</span><input id="applies" placeholder="ALL PACKED GOODS, POLO, SELF COLLAR…"></label>
+</div><div id="sourceNotice" class="notice hidden"></div><div class="metrics"><div class="metric"><small>Current Purchase Value</small><strong id="currentValue">₹0.00</strong></div><div class="metric"><small>Current Cost / Consumption Unit</small><strong id="currentCost">₹0.00</strong></div><div class="metric"><small>Running Weighted Avg / Consumption Unit</small><strong id="runningCost">₹0.00</strong></div><div class="metric"><small>Current Balance Before Purchase</small><strong id="beforeMetric">0</strong></div></div><div class="actions" style="margin-top:10px"><button class="primary" id="savePost">Save & Post Purchase</button><span id="msg"></span></div></section>
+<section class="panel"><h2>Material Cost & Consumption</h2><div class="scroll"><table><thead><tr><th>Type</th><th>No</th><th>Material Name</th><th>Purchase Unit</th><th>Stock Unit</th><th>Consumption Unit</th><th>Current Balance</th><th>Running Purchase Value</th><th>Running Equivalent Consumption</th><th>Running W.Avg / Consumption Unit</th><th>Method</th><th>Applicable To</th></tr></thead><tbody id="body"><tr><td colspan="12">Loading…</td></tr></tbody></table></div></section>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="config.js"></script><script src="real-common.js"></script><script src="real-material-master-v805.js?v=80511"></script></main></body></html>
