@@ -34,13 +34,6 @@
   document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{document.querySelectorAll('[data-tab]').forEach(x=>x.classList.remove('active'));b.classList.add('active');document.querySelectorAll('.page').forEach(x=>x.classList.add('hidden'));$(b.dataset.tab)?.classList.remove('hidden');if(b.dataset.tab==="ledgers"&&!state.bookRows.length)loadDayBook().catch(()=>{})});
 
   function calc(){const q=Number($("qty")?.value||0),r=Number($("rate")?.value||0);if($("total"))$("total").value=(q*r).toFixed(2)}
-  function dynamicLabel(){const code=$("type")?.value;const names={REGULAR_CLOTH:"Cloth Name",MATCHING_CLOTH:"Matching Cloth Name",STICKER:"Sticker Name",METAL_ID:"Metal ID Name",PANNI:"Panni Name",GATTA:"Gatta Name",BOX:"Box Name",PASTING_ROLL:"Pasting Name",KANDHI_TAPE:"Kandhi Tape Name"};const label=$("materialLabel");if(label?.childNodes?.[0])label.childNodes[0].nodeValue=names[code]||"Material Name";const rows=state.materials.filter(x=>String(x.material_type||"").toUpperCase()===String(code||"").toUpperCase());if($("material"))$("material").innerHTML='<option value="">Select material…</option>'+rows.map(x=>`<option value="${esc(x.material_id)}">${esc(x.material_name)}</option>`).join("");syncMaterial();calc()}
-  function syncMaterial(){const id=$("material")?.value;const m=state.materials.find(x=>String(x.material_id)===String(id));if($("uom"))$("uom").value=m?.purchase_unit||"";calc()}
-
-  function fillLedgerSelects(){const options='<option value="">Select ledger…</option>'+state.ledgers.map(x=>`<option value="${esc(x.id)}">${esc(x.ledger_name)}${x.ledger_code?` · ${esc(x.ledger_code)}`:""}</option>`).join("");["reportLedger","bookLedger","supplier","against","cashbank"].forEach(id=>{const el=$(id);if(el)el.innerHTML=options})}
-  async function loadLedgers(){try{const c=resolveClient();const r=await c.from("rr_ledgers_v805").select("id,ledger_code,ledger_name,ledger_kind,is_active").eq("is_active",true).order("ledger_name",{ascending:true});if(r.error)throw r.error;state.ledgers=r.data||[];fillLedgerSelects()}catch(e){console.warn("Ledger list unavailable",e)}}
-
-
   function normalizeMaterialType(x={}){
     return {
       id:x.id||x.material_type_id||"",
@@ -51,10 +44,10 @@
   function normalizeMaterial(x={}){
     return {
       ...x,
-      material_id:x.material_id||x.id||x.source_id||"",
-      material_type:x.material_type||x.type_code||x.material_type_code||"",
-      material_name:x.material_name||x.name||x.display_name||x.source_name||"",
-      purchase_unit:x.purchase_unit||x.uom||x.unit||x.stock_unit||x.base_stock_unit||""
+      material_id:x.material_id||x.id||x.source_id||x.item_id||"",
+      material_type:x.material_type||x.type_code||x.material_type_code||x.category_code||"",
+      material_name:x.material_name||x.name||x.display_name||x.source_name||x.fabric_name||x.item_name||"",
+      purchase_unit:x.purchase_unit||x.uom||x.unit||x.stock_unit||x.base_stock_unit||x.purchase_uom||""
     };
   }
   function renderMaterialTypes(){
@@ -63,35 +56,114 @@
     el.innerHTML='<option value="">Select material type…</option>'+rows.map(x=>`<option value="${esc(x.type_code)}">${esc(x.type_name||x.type_code)}</option>`).join("");
     dynamicLabel();
   }
+  function dynamicLabel(){
+    const code=$("type")?.value;
+    const names={REGULAR_CLOTH:"Cloth Name",MATCHING_CLOTH:"Matching Cloth Name",STICKER:"Sticker Name",METAL_ID:"Metal ID Name",PANNI:"Panni Name",GATTA:"Gatta Name",BOX:"Box Name",PASTING_ROLL:"Pasting Name",KANDHI_TAPE:"Kandhi Tape Name"};
+    const label=$("materialLabel");
+    if(label?.childNodes?.[0])label.childNodes[0].nodeValue=names[code]||"Material Name";
+    const rows=state.materials.filter(x=>String(x.material_type||"").toUpperCase()===String(code||"").toUpperCase());
+    if($("material"))$("material").innerHTML='<option value="">Select material…</option>'+rows.map(x=>`<option value="${esc(x.material_id)}">${esc(x.material_name)}</option>`).join("");
+    syncMaterial();
+  }
+  function syncMaterial(){
+    const id=$("material")?.value;
+    const m=state.materials.find(x=>String(x.material_id)===String(id));
+    if($("uom"))$("uom").value=m?.purchase_unit||"";
+    calc();
+  }
   async function loadMaterials(){
     const errors=[];
     const accept=(types,materials)=>{
       const nt=(Array.isArray(types)?types:[]).map(normalizeMaterialType).filter(x=>x.type_code);
       const nm=(Array.isArray(materials)?materials:[]).map(normalizeMaterial).filter(x=>x.material_id&&x.material_name);
-      if(nt.length||nm.length){
-        state.materialTypes=nt;
-        state.materials=nm;
-        renderMaterialTypes();
-        return true;
-      }
-      return false;
+      if(!nt.length&&!nm.length)return false;
+      state.materialTypes=nt;
+      state.materials=nm;
+      renderMaterialTypes();
+      return true;
     };
 
+    // Canonical Accounts bootstrap: expected to contain the already mapped
+    // Regular Cloth / Matching Cloth / Sticker / Metal ID / generic materials.
     try{
       const d=await rpc("rr_accounts_bootstrap_v805",{p_data_mode:mode()});
-      if(accept(d?.material_types||d?.types, d?.materials||d?.material_list))return;
-      errors.push("rr_accounts_bootstrap_v805 returned no mapped materials.");
+      if(accept(d?.material_types||d?.types,d?.materials||d?.material_list))return;
+      errors.push("rr_accounts_bootstrap_v805 returned no mapped material list.");
     }catch(e){errors.push(`rr_accounts_bootstrap_v805: ${errorText(e)}`)}
 
+    // V807 bootstrap fallback if the consolidated report/accounts bootstrap exposes them.
     try{
       const d=await rpc("rr_report_bootstrap_v807",{p_data_mode:mode()});
-      if(accept(d?.material_types||d?.types, d?.materials||d?.material_list))return;
+      if(accept(d?.material_types||d?.types,d?.materials||d?.material_list))return;
     }catch(e){errors.push(`rr_report_bootstrap_v807: ${errorText(e)}`)}
 
-    state.materialTypes=[];
-    state.materials=[];
-    renderMaterialTypes();
+    // Generic material master fallback. This is only a safety fallback;
+    // source-managed CB/Matching/Sticker/Metal ID should normally come via bootstrap.
+    try{
+      const c=resolveClient();
+      const r=await c.from("rr_material_master_v805").select("*");
+      if(!r.error&&Array.isArray(r.data)&&r.data.length){
+        const mats=r.data.map(normalizeMaterial).filter(x=>x.material_id&&x.material_name);
+        const typeMap=new Map();
+        mats.forEach(m=>{if(m.material_type&&!typeMap.has(m.material_type))typeMap.set(m.material_type,{type_code:m.material_type,type_name:m.material_type})});
+        if(accept([...typeMap.values()],mats))return;
+      }
+      if(r.error)errors.push(`rr_material_master_v805: ${r.error.message}`);
+    }catch(e){errors.push(`rr_material_master_v805: ${errorText(e)}`)}
+
+    state.materialTypes=[]; state.materials=[]; renderMaterialTypes();
     throw new Error(`Material mapping unavailable. ${errors.filter(Boolean).join(" | ")}`);
+  }
+
+  function normalizeLedger(x={}){
+    return {
+      id:x.id||x.ledger_id||x.account_ledger_id||x.value||"",
+      ledger_name:x.ledger_name||x.name||x.account_name||x.party_name||x.label||x.ledger_code||"",
+      ledger_code:x.ledger_code||x.code||x.account_code||"",
+      ledger_kind:x.ledger_kind||x.kind||x.ledger_type||x.account_type||"",
+      is_active:x.is_active!==false
+    };
+  }
+  function fillLedgerSelects(){
+    const rows=state.ledgers.filter(x=>x.id&&x.ledger_name&&x.is_active!==false);
+    const make=(first,filter=null)=>{
+      const list=filter?rows.filter(filter):rows;
+      return `<option value="">${first}</option>`+list.map(x=>`<option value="${esc(x.id)}">${esc(x.ledger_name)}${x.ledger_code?` · ${esc(x.ledger_code)}`:""}</option>`).join("");
+    };
+    if($("reportLedger"))$("reportLedger").innerHTML=make("Select ledger…");
+    if($("bookLedger"))$("bookLedger").innerHTML=make("All / Select ledger…");
+    if($("supplier"))$("supplier").innerHTML=make("Select supplier…",x=>/supplier|vendor|creditor|purchase/i.test(x.ledger_kind)||!/cash|bank/i.test(x.ledger_kind));
+    if($("against"))$("against").innerHTML=make("Select ledger…",x=>!/cash|bank/i.test(x.ledger_kind));
+    if($("cashbank"))$("cashbank").innerHTML=make("Select cash / bank…",x=>/cash|bank/i.test(x.ledger_kind));
+  }
+  async function loadLedgers(){
+    const errors=[];
+    const accept=rows=>{
+      const seen=new Set();
+      const normalized=(Array.isArray(rows)?rows:[]).map(normalizeLedger).filter(x=>{
+        const key=String(x.id);
+        if(!x.id||!x.ledger_name||x.is_active===false||seen.has(key))return false;
+        seen.add(key); return true;
+      }).sort((a,b)=>a.ledger_name.localeCompare(b.ledger_name));
+      if(!normalized.length)return false;
+      state.ledgers=normalized; fillLedgerSelects(); return true;
+    };
+    try{
+      const c=resolveClient();
+      const r=await c.from("rr_ledgers_v805").select("*").order("ledger_name",{ascending:true});
+      if(!r.error&&accept(r.data))return;
+      if(r.error)errors.push(`rr_ledgers_v805: ${r.error.message}`);
+    }catch(e){errors.push(`rr_ledgers_v805: ${errorText(e)}`)}
+    for(const fn of ["rr_report_bootstrap_v807","rr_accounts_bootstrap_v805"]){
+      try{
+        const d=await rpc(fn,{p_data_mode:mode()});
+        for(const rows of [d?.ledgers,d?.ledger_list,d?.accounts?.ledgers,d?.data?.ledgers]){
+          if(accept(rows))return;
+        }
+      }catch(e){errors.push(`${fn}: ${errorText(e)}`)}
+    }
+    state.ledgers=[]; fillLedgerSelects();
+    throw new Error(`Ledger mapping unavailable. ${errors.filter(Boolean).join(" | ")}`);
   }
 
   function suggestionHtml(x){const req=[x.requires_from_date?"From":"",x.requires_to_date?"To":"",x.requires_as_of_date?"As-of":"",x.requires_ledger?"Ledger":""].filter(Boolean).join(" · ");return `<button type="button" class="suggestion ${state.selected?.report_code===x.report_code?"active":""}" data-report="${esc(x.report_code)}"><b>${esc(x.report_name)}</b><small>${esc(x.report_description||"")}</small><span class="chip" style="margin-top:6px">${esc(x.report_family||"REPORT")}${req?` · ${esc(req)}`:""}</span></button>`}
@@ -132,7 +204,27 @@
     $("receiptMode")?.addEventListener("click",()=>{receipt=true;syncMoney()});$("paymentMode")?.addEventListener("click",()=>{receipt=false;syncMoney()});$("saveMoney")?.addEventListener("click",()=>message("mmsg",`${receipt?"Receipt":"Payment"} preview ${money($("amount").value)}.`,"ok"));syncMoney();
   }
 
-  async function refresh(){if(state.busy)return;state.busy=true;const btn=$("refreshAll");setBusy(btn,true,"Refreshing…");try{await Promise.all([loadLedgers(),loadMaterials(),searchReports($("reportSearch")?.value||"")]);$("modeMirror").value=mode()}catch(e){console.error(e);message("searchMsg",errorText(e),"error")}finally{state.busy=false;setBusy(btn,false)}}
+  async function refresh(){
+    if(state.busy)return;
+    state.busy=true;
+    const btn=$("refreshAll");
+    setBusy(btn,true,"Refreshing…");
+    try{
+      const results=await Promise.allSettled([
+        loadLedgers(),
+        loadMaterials(),
+        searchReports($("reportSearch")?.value||"")
+      ]);
+      const failures=results.filter(x=>x.status==="rejected").map(x=>errorText(x.reason));
+      if(failures.length)console.warn("Accounts partial mapping warnings:",failures);
+      if($("modeMirror"))$("modeMirror").value=mode();
+      // Never clear a successfully loaded mapping just because another source failed.
+      if(failures.length&&$("searchMsg")&&!state.suggestions.length)message("searchMsg",failures.join(" | "),"error");
+    }finally{
+      state.busy=false;
+      setBusy(btn,false);
+    }
+  }
 
   function initDates(){const t=today(),m=monthStart();["date","toDate","asOfDate","bookTo"].forEach(id=>{if($(id))$(id).value=t});["fromDate","bookFrom"].forEach(id=>{if($(id))$(id).value=m});if($("modeMirror"))$("modeMirror").value=mode()}
   function wire(){
