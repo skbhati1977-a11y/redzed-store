@@ -34,51 +34,64 @@
   document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{document.querySelectorAll('[data-tab]').forEach(x=>x.classList.remove('active'));b.classList.add('active');document.querySelectorAll('.page').forEach(x=>x.classList.add('hidden'));$(b.dataset.tab)?.classList.remove('hidden');if(b.dataset.tab==="ledgers"&&!state.bookRows.length)loadDayBook().catch(()=>{})});
 
   function calc(){const q=Number($("qty")?.value||0),r=Number($("rate")?.value||0);if($("total"))$("total").value=(q*r).toFixed(2)}
-  function dynamicLabel(){const code=$("type")?.value;const names={REGULAR_CLOTH:"Cloth Name",MATCHING_CLOTH:"Matching Cloth Name",STICKER:"Sticker Name",METAL_ID:"Metal ID Name",PANNI:"Panni Name",GATTA:"Gatta Name",BOX:"Box Name",PASTING_ROLL:"Pasting Name",KANDHI_TAPE:"Kandhi Tape Name"};const label=$("materialLabel");if(label?.childNodes?.[0])label.childNodes[0].nodeValue=names[code]||"Material Name";const rows=state.materials.filter(x=>x.material_type===code);if($("material"))$("material").innerHTML='<option value="">Select…</option>'+rows.map(x=>`<option value="${esc(x.material_id)}">${esc(x.material_name)}</option>`).join("")}
+  function dynamicLabel(){const code=$("type")?.value;const names={REGULAR_CLOTH:"Cloth Name",MATCHING_CLOTH:"Matching Cloth Name",STICKER:"Sticker Name",METAL_ID:"Metal ID Name",PANNI:"Panni Name",GATTA:"Gatta Name",BOX:"Box Name",PASTING_ROLL:"Pasting Name",KANDHI_TAPE:"Kandhi Tape Name"};const label=$("materialLabel");if(label?.childNodes?.[0])label.childNodes[0].nodeValue=names[code]||"Material Name";const rows=state.materials.filter(x=>String(x.material_type||"").toUpperCase()===String(code||"").toUpperCase());if($("material"))$("material").innerHTML='<option value="">Select material…</option>'+rows.map(x=>`<option value="${esc(x.material_id)}">${esc(x.material_name)}</option>`).join("");syncMaterial();calc()}
+  function syncMaterial(){const id=$("material")?.value;const m=state.materials.find(x=>String(x.material_id)===String(id));if($("uom"))$("uom").value=m?.purchase_unit||"";calc()}
 
-  function normalizeLedger(x={}){
-    const id=x.id||x.ledger_id||x.account_ledger_id||x.value||"";
-    const ledger_name=x.ledger_name||x.name||x.account_name||x.party_name||x.label||x.ledger_code||"";
-    const ledger_code=x.ledger_code||x.code||x.account_code||"";
-    const ledger_kind=x.ledger_kind||x.kind||x.ledger_type||x.account_type||"";
-    return {id,ledger_name,ledger_code,ledger_kind,is_active:x.is_active!==false};
-  }
-  function fillLedgerSelects(){
-    const rows=state.ledgers.filter(x=>x.id&&x.ledger_name);
-    const make=(first,filter=null)=>{
-      const list=filter?rows.filter(filter):rows;
-      return `<option value="">${first}</option>`+list.map(x=>`<option value="${esc(x.id)}">${esc(x.ledger_name)}${x.ledger_code?` · ${esc(x.ledger_code)}`:""}</option>`).join("");
+  function fillLedgerSelects(){const options='<option value="">Select ledger…</option>'+state.ledgers.map(x=>`<option value="${esc(x.id)}">${esc(x.ledger_name)}${x.ledger_code?` · ${esc(x.ledger_code)}`:""}</option>`).join("");["reportLedger","bookLedger","supplier","against","cashbank"].forEach(id=>{const el=$(id);if(el)el.innerHTML=options})}
+  async function loadLedgers(){try{const c=resolveClient();const r=await c.from("rr_ledgers_v805").select("id,ledger_code,ledger_name,ledger_kind,is_active").eq("is_active",true).order("ledger_name",{ascending:true});if(r.error)throw r.error;state.ledgers=r.data||[];fillLedgerSelects()}catch(e){console.warn("Ledger list unavailable",e)}}
+
+
+  function normalizeMaterialType(x={}){
+    return {
+      id:x.id||x.material_type_id||"",
+      type_code:x.type_code||x.material_type||x.code||"",
+      type_name:x.type_name||x.material_type_name||x.name||x.type_code||x.material_type||""
     };
-    if($("reportLedger"))$("reportLedger").innerHTML=make("Select ledger…");
-    if($("bookLedger"))$("bookLedger").innerHTML=make("All / Select ledger…");
-    if($("supplier"))$("supplier").innerHTML=make("Select supplier…",x=>/supplier|vendor|creditor|purchase/i.test(x.ledger_kind)||!/cash|bank/i.test(x.ledger_kind));
-    if($("against"))$("against").innerHTML=make("Select ledger…",x=>!/cash|bank/i.test(x.ledger_kind));
-    if($("cashbank"))$("cashbank").innerHTML=make("Select cash / bank…",x=>/cash|bank/i.test(x.ledger_kind));
   }
-  async function loadLedgers(){
+  function normalizeMaterial(x={}){
+    return {
+      ...x,
+      material_id:x.material_id||x.id||x.source_id||"",
+      material_type:x.material_type||x.type_code||x.material_type_code||"",
+      material_name:x.material_name||x.name||x.display_name||x.source_name||"",
+      purchase_unit:x.purchase_unit||x.uom||x.unit||x.stock_unit||x.base_stock_unit||""
+    };
+  }
+  function renderMaterialTypes(){
+    const el=$("type"); if(!el)return;
+    const rows=state.materialTypes.filter(x=>x.type_code);
+    el.innerHTML='<option value="">Select material type…</option>'+rows.map(x=>`<option value="${esc(x.type_code)}">${esc(x.type_name||x.type_code)}</option>`).join("");
+    dynamicLabel();
+  }
+  async function loadMaterials(){
     const errors=[];
-    const accept=rows=>{
-      const seen=new Set();
-      state.ledgers=(Array.isArray(rows)?rows:[]).map(normalizeLedger).filter(x=>{
-        const k=String(x.id); if(!x.id||!x.ledger_name||seen.has(k)||x.is_active===false)return false; seen.add(k); return true;
-      }).sort((a,b)=>a.ledger_name.localeCompare(b.ledger_name));
-      if(state.ledgers.length){fillLedgerSelects();return true} return false;
+    const accept=(types,materials)=>{
+      const nt=(Array.isArray(types)?types:[]).map(normalizeMaterialType).filter(x=>x.type_code);
+      const nm=(Array.isArray(materials)?materials:[]).map(normalizeMaterial).filter(x=>x.material_id&&x.material_name);
+      if(nt.length||nm.length){
+        state.materialTypes=nt;
+        state.materials=nm;
+        renderMaterialTypes();
+        return true;
+      }
+      return false;
     };
+
     try{
-      const c=resolveClient();
-      let r=await c.from("rr_ledgers_v805").select("*").order("ledger_name",{ascending:true});
-      if(!r.error&&accept(r.data))return;
-      if(r.error)errors.push(r.error.message);
-    }catch(e){errors.push(errorText(e))}
-    for(const fn of ["rr_report_bootstrap_v807","rr_accounts_bootstrap_v805"]){
-      try{
-        const d=await rpc(fn,{p_data_mode:mode()});
-        const candidates=[d?.ledgers,d?.ledger_list,d?.accounts?.ledgers,d?.data?.ledgers];
-        for(const rows of candidates)if(accept(rows))return;
-      }catch(e){errors.push(`${fn}: ${errorText(e)}`)}
-    }
-    fillLedgerSelects();
-    throw new Error(`No active ledgers returned by Accounts backend. ${errors.filter(Boolean).join(" | ")}`);
+      const d=await rpc("rr_accounts_bootstrap_v805",{p_data_mode:mode()});
+      if(accept(d?.material_types||d?.types, d?.materials||d?.material_list))return;
+      errors.push("rr_accounts_bootstrap_v805 returned no mapped materials.");
+    }catch(e){errors.push(`rr_accounts_bootstrap_v805: ${errorText(e)}`)}
+
+    try{
+      const d=await rpc("rr_report_bootstrap_v807",{p_data_mode:mode()});
+      if(accept(d?.material_types||d?.types, d?.materials||d?.material_list))return;
+    }catch(e){errors.push(`rr_report_bootstrap_v807: ${errorText(e)}`)}
+
+    state.materialTypes=[];
+    state.materials=[];
+    renderMaterialTypes();
+    throw new Error(`Material mapping unavailable. ${errors.filter(Boolean).join(" | ")}`);
   }
 
   function suggestionHtml(x){const req=[x.requires_from_date?"From":"",x.requires_to_date?"To":"",x.requires_as_of_date?"As-of":"",x.requires_ledger?"Ledger":""].filter(Boolean).join(" · ");return `<button type="button" class="suggestion ${state.selected?.report_code===x.report_code?"active":""}" data-report="${esc(x.report_code)}"><b>${esc(x.report_name)}</b><small>${esc(x.report_description||"")}</small><span class="chip" style="margin-top:6px">${esc(x.report_family||"REPORT")}${req?` · ${esc(req)}`:""}</span></button>`}
@@ -119,15 +132,15 @@
     $("receiptMode")?.addEventListener("click",()=>{receipt=true;syncMoney()});$("paymentMode")?.addEventListener("click",()=>{receipt=false;syncMoney()});$("saveMoney")?.addEventListener("click",()=>message("mmsg",`${receipt?"Receipt":"Payment"} preview ${money($("amount").value)}.`,"ok"));syncMoney();
   }
 
-  async function refresh(){if(state.busy)return;state.busy=true;const btn=$("refreshAll");setBusy(btn,true,"Refreshing…");try{await Promise.all([loadLedgers(),searchReports($("reportSearch")?.value||"")]);$("modeMirror").value=mode()}catch(e){console.error(e);message("searchMsg",errorText(e),"error")}finally{state.busy=false;setBusy(btn,false)}}
+  async function refresh(){if(state.busy)return;state.busy=true;const btn=$("refreshAll");setBusy(btn,true,"Refreshing…");try{await Promise.all([loadLedgers(),loadMaterials(),searchReports($("reportSearch")?.value||"")]);$("modeMirror").value=mode()}catch(e){console.error(e);message("searchMsg",errorText(e),"error")}finally{state.busy=false;setBusy(btn,false)}}
 
   function initDates(){const t=today(),m=monthStart();["date","toDate","asOfDate","bookTo"].forEach(id=>{if($(id))$(id).value=t});["fromDate","bookFrom"].forEach(id=>{if($(id))$(id).value=m});if($("modeMirror"))$("modeMirror").value=mode()}
   function wire(){
-    $("type")?.addEventListener("change",dynamicLabel);$("qty")?.addEventListener("input",calc);$("rate")?.addEventListener("input",calc);$("runReport")?.addEventListener("click",runSelectedReport);$("searchReports")?.addEventListener("click",()=>searchReports());$("reportSearch")?.addEventListener("input",()=>{clearTimeout(searchTimer);searchTimer=setTimeout(()=>searchReports(),220)});$("reportSearch")?.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();searchReports()}});$("loadDayBook")?.addEventListener("click",loadDayBook);$("bookSearch")?.addEventListener("input",renderBook);$("bookView")?.addEventListener("change",()=>{$("bookLedger").parentElement.classList.toggle("hidden",$("bookView").value!=="LEDGER")});$("dataMode")?.addEventListener("change",()=>{$("modeMirror").value=mode();refresh()});$("refreshAll")?.addEventListener("click",refresh);wirePreviewTemplates();zeroClean();enterFlow($("purchase"));enterFlow($("money"));
+    $("type")?.addEventListener("change",dynamicLabel);$("material")?.addEventListener("change",syncMaterial);$("qty")?.addEventListener("input",calc);$("rate")?.addEventListener("input",calc);$("runReport")?.addEventListener("click",runSelectedReport);$("searchReports")?.addEventListener("click",()=>searchReports());$("reportSearch")?.addEventListener("input",()=>{clearTimeout(searchTimer);searchTimer=setTimeout(()=>searchReports(),220)});$("reportSearch")?.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();searchReports()}});$("loadDayBook")?.addEventListener("click",loadDayBook);$("bookSearch")?.addEventListener("input",renderBook);$("bookView")?.addEventListener("change",()=>{$("bookLedger").parentElement.classList.toggle("hidden",$("bookView").value!=="LEDGER")});$("dataMode")?.addEventListener("change",()=>{$("modeMirror").value=mode();refresh()});$("refreshAll")?.addEventListener("click",refresh);wirePreviewTemplates();zeroClean();enterFlow($("purchase"));enterFlow($("money"));
   }
 
   window.RR_ACCOUNTS_V805={
-    setData:(d={})=>{state.materialTypes=d.material_types||[];state.materials=d.materials||[];if($("type"))$("type").innerHTML='<option value="">Select…</option>'+state.materialTypes.map(x=>`<option value="${esc(x.type_code)}">${esc(x.type_name)}</option>`).join("");dynamicLabel()},
+    setData:(d={})=>{state.materialTypes=(d.material_types||[]).map(normalizeMaterialType);state.materials=(d.materials||[]).map(normalizeMaterial);renderMaterialTypes()},
     refresh,
     searchReports,
     runSelectedReport
