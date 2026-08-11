@@ -13,7 +13,7 @@
 <main class="app">
   <header class="top">
     <div class="brand">
-      <small>REAL FACTORY · ACCOUNTS · EXACT MAPPING V8075</small>
+      <small>REAL FACTORY · ACCOUNTS · ADD NEW APPROVAL V8076</small>
       <h1>Accounts & Intelligent Reports</h1>
       <p>AUTO POST FIRST · TEST FIRST · report search + direct analysis</p>
     </div>
@@ -61,6 +61,13 @@
         <div id="reportResult"><div class="empty">Report output will appear here.</div></div>
       </section>
     </div>
+    <section class="panel">
+      <div class="result-head">
+        <div><small class="chip">SUPER ADMIN</small><h2>New Material Requests</h2><p class="muted">No spelling/similarity match → request → Super Admin maps existing, approves new, or rejects.</p></div>
+        <button id="loadMaterialRequests" type="button">Refresh Requests</button>
+      </div>
+      <div id="materialRequestResult"><div class="empty">Load requests to review.</div></div>
+    </section>
   </section>
 
   <section id="ledgers" class="panel page hidden">
@@ -82,7 +89,15 @@
     <div class="grid">
       <label>Supplier Ledger<select id="supplier"></select></label>
       <label>Material Type<select id="type"></select></label>
-      <label id="materialLabel">Material Name<select id="material"></select></label>
+      <label id="materialLabel">Material Name
+        <div class="inline" style="align-items:stretch">
+          <input id="materialSearch" type="search" autocomplete="off" placeholder="Type material name…" style="flex:1;min-width:180px">
+          <button id="requestNewMaterial" type="button" class="hidden">+ Add New</button>
+        </div>
+        <select id="material" class="hidden"><option value="">Select material…</option></select>
+        <div id="materialSuggestions" class="suggestions hidden"></div>
+        <small id="materialMatchNote" class="muted"></small>
+      </label>
       <label>Qty<input id="qty" type="number" value="0" step="0.001"></label>
       <label>UOM<input id="uom" readonly tabindex="-1"></label>
       <label>Rate / Unit<input id="rate" type="number" value="0" step="0.01"></label>
@@ -107,9 +122,24 @@
     <div class="actions" style="margin-top:10px"><button class="primary" id="saveMoney" type="button">Preview</button><span id="mmsg" class="msg"></span></div>
   </section>
 </main>
+<section id="newMaterialModal" class="hidden" style="position:fixed;inset:0;background:#000b;z-index:100;display:grid;place-items:center;padding:16px">
+  <div class="panel" style="width:min(620px,100%);max-height:90vh;overflow:auto">
+    <div class="result-head"><div><small class="chip">APPROVAL REQUIRED</small><h2>Request New Material</h2></div><button id="closeNewMaterial" type="button">Close</button></div>
+    <div class="grid" style="grid-template-columns:1fr 1fr">
+      <label>Material Type<input id="newMaterialType" readonly></label>
+      <label>Requested Name<input id="newMaterialName"></label>
+      <label>Material No. (optional)<input id="newMaterialNo"></label>
+      <label>Purchase Unit<select id="newMaterialPurchaseUnit"><option>PCS</option><option>KG</option><option>MTR</option><option>ROLL</option><option>BOX</option><option>PACKET</option><option>SET</option></select></label>
+      <label>Stock Unit<select id="newMaterialStockUnit"><option>PCS</option><option>KG</option><option>MTR</option><option>ROLL</option><option>BOX</option><option>PACKET</option><option>SET</option></select></label>
+      <label>Consumption Unit<select id="newMaterialConsumptionUnit"><option>PCS</option><option>KG</option><option>MTR</option><option>ROLL</option><option>BOX</option><option>PACKET</option><option>SET</option></select></label>
+    </div>
+    <p id="newMaterialSimilar" class="msg"></p>
+    <div class="actions"><button id="submitNewMaterialRequest" class="primary" type="button">Send for Super Admin Approval</button><span id="newMaterialMsg" class="msg"></span></div>
+  </div>
+</section>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="config.js"></script>
 <script src="real-common.js"></script>
-<script src="real-accounts-v805.js?v=8075"></script>
+<script src="real-accounts-v805.js?v=8076"></script>
 </body>
 </html>
