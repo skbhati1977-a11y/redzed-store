@@ -36,8 +36,50 @@
   function calc(){const q=Number($("qty")?.value||0),r=Number($("rate")?.value||0);if($("total"))$("total").value=(q*r).toFixed(2)}
   function dynamicLabel(){const code=$("type")?.value;const names={REGULAR_CLOTH:"Cloth Name",MATCHING_CLOTH:"Matching Cloth Name",STICKER:"Sticker Name",METAL_ID:"Metal ID Name",PANNI:"Panni Name",GATTA:"Gatta Name",BOX:"Box Name",PASTING_ROLL:"Pasting Name",KANDHI_TAPE:"Kandhi Tape Name"};const label=$("materialLabel");if(label?.childNodes?.[0])label.childNodes[0].nodeValue=names[code]||"Material Name";const rows=state.materials.filter(x=>x.material_type===code);if($("material"))$("material").innerHTML='<option value="">Select…</option>'+rows.map(x=>`<option value="${esc(x.material_id)}">${esc(x.material_name)}</option>`).join("")}
 
-  function fillLedgerSelects(){const options='<option value="">Select ledger…</option>'+state.ledgers.map(x=>`<option value="${esc(x.id)}">${esc(x.ledger_name)}${x.ledger_code?` · ${esc(x.ledger_code)}`:""}</option>`).join("");["reportLedger","bookLedger","supplier","against","cashbank"].forEach(id=>{const el=$(id);if(el)el.innerHTML=options})}
-  async function loadLedgers(){try{const c=resolveClient();const r=await c.from("rr_ledgers_v805").select("id,ledger_code,ledger_name,ledger_kind,is_active").eq("is_active",true).order("ledger_name",{ascending:true});if(r.error)throw r.error;state.ledgers=r.data||[];fillLedgerSelects()}catch(e){console.warn("Ledger list unavailable",e)}}
+  function normalizeLedger(x={}){
+    const id=x.id||x.ledger_id||x.account_ledger_id||x.value||"";
+    const ledger_name=x.ledger_name||x.name||x.account_name||x.party_name||x.label||x.ledger_code||"";
+    const ledger_code=x.ledger_code||x.code||x.account_code||"";
+    const ledger_kind=x.ledger_kind||x.kind||x.ledger_type||x.account_type||"";
+    return {id,ledger_name,ledger_code,ledger_kind,is_active:x.is_active!==false};
+  }
+  function fillLedgerSelects(){
+    const rows=state.ledgers.filter(x=>x.id&&x.ledger_name);
+    const make=(first,filter=null)=>{
+      const list=filter?rows.filter(filter):rows;
+      return `<option value="">${first}</option>`+list.map(x=>`<option value="${esc(x.id)}">${esc(x.ledger_name)}${x.ledger_code?` · ${esc(x.ledger_code)}`:""}</option>`).join("");
+    };
+    if($("reportLedger"))$("reportLedger").innerHTML=make("Select ledger…");
+    if($("bookLedger"))$("bookLedger").innerHTML=make("All / Select ledger…");
+    if($("supplier"))$("supplier").innerHTML=make("Select supplier…",x=>/supplier|vendor|creditor|purchase/i.test(x.ledger_kind)||!/cash|bank/i.test(x.ledger_kind));
+    if($("against"))$("against").innerHTML=make("Select ledger…",x=>!/cash|bank/i.test(x.ledger_kind));
+    if($("cashbank"))$("cashbank").innerHTML=make("Select cash / bank…",x=>/cash|bank/i.test(x.ledger_kind));
+  }
+  async function loadLedgers(){
+    const errors=[];
+    const accept=rows=>{
+      const seen=new Set();
+      state.ledgers=(Array.isArray(rows)?rows:[]).map(normalizeLedger).filter(x=>{
+        const k=String(x.id); if(!x.id||!x.ledger_name||seen.has(k)||x.is_active===false)return false; seen.add(k); return true;
+      }).sort((a,b)=>a.ledger_name.localeCompare(b.ledger_name));
+      if(state.ledgers.length){fillLedgerSelects();return true} return false;
+    };
+    try{
+      const c=resolveClient();
+      let r=await c.from("rr_ledgers_v805").select("*").order("ledger_name",{ascending:true});
+      if(!r.error&&accept(r.data))return;
+      if(r.error)errors.push(r.error.message);
+    }catch(e){errors.push(errorText(e))}
+    for(const fn of ["rr_report_bootstrap_v807","rr_accounts_bootstrap_v805"]){
+      try{
+        const d=await rpc(fn,{p_data_mode:mode()});
+        const candidates=[d?.ledgers,d?.ledger_list,d?.accounts?.ledgers,d?.data?.ledgers];
+        for(const rows of candidates)if(accept(rows))return;
+      }catch(e){errors.push(`${fn}: ${errorText(e)}`)}
+    }
+    fillLedgerSelects();
+    throw new Error(`No active ledgers returned by Accounts backend. ${errors.filter(Boolean).join(" | ")}`);
+  }
 
   function suggestionHtml(x){const req=[x.requires_from_date?"From":"",x.requires_to_date?"To":"",x.requires_as_of_date?"As-of":"",x.requires_ledger?"Ledger":""].filter(Boolean).join(" · ");return `<button type="button" class="suggestion ${state.selected?.report_code===x.report_code?"active":""}" data-report="${esc(x.report_code)}"><b>${esc(x.report_name)}</b><small>${esc(x.report_description||"")}</small><span class="chip" style="margin-top:6px">${esc(x.report_family||"REPORT")}${req?` · ${esc(req)}`:""}</span></button>`}
   function renderSuggestions(){const box=$("reportSuggestions");if(!box)return;if(!state.suggestions.length){box.innerHTML='<div class="empty">No matching report template.</div>';return}box.innerHTML=state.suggestions.map(suggestionHtml).join("");box.querySelectorAll("[data-report]").forEach(btn=>btn.onclick=()=>selectReport(btn.dataset.report))}
