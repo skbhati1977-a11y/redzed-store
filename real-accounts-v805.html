@@ -1,94 +1,115 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>REAL FACTORY · Accounts V805</title>
-<style>
-:root{color-scheme:dark;--bg:#070a0f;--p:#111722;--line:#2b3648;--txt:#eef4ff;--muted:#9ba9bc;--ok:#73dfa7;--warn:#ffd27c}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--txt);font:14px/1.45 system-ui,Segoe UI,sans-serif}.app{max-width:1550px;margin:auto;padding:14px}
-header,.actions,.tabs{display:flex;gap:9px;align-items:center;flex-wrap:wrap}header{justify-content:space-between}.k{font-size:11px;font-weight:900;letter-spacing:.12em;color:var(--muted)}
-button,a,select,input{border:1px solid var(--line);background:#0d141e;color:var(--txt);border-radius:9px;padding:10px;font-size:16px}button,a{text-decoration:none;font-weight:850;cursor:pointer}.primary{background:#203b70}
-.panel{background:var(--p);border:1px solid var(--line);border-radius:14px;padding:13px;margin:10px 0}.grid{display:grid;grid-template-columns:repeat(4,minmax(180px,1fr));gap:9px}label{display:flex;flex-direction:column;gap:4px;color:var(--muted);font-weight:800}.wide{grid-column:1/-1}
-.tabs button.active{background:#243c67}.hidden{display:none!important}.scroll{overflow:auto}table{border-collapse:collapse;width:100%;min-width:1000px}th,td{padding:8px;border-bottom:1px solid #293445;text-align:left;white-space:nowrap}th{position:sticky;top:0;background:#151d29}.msg{font-weight:800;color:var(--ok)}
-@media(max-width:900px){.grid{grid-template-columns:repeat(2,1fr)}}@media(max-width:520px){.grid{grid-template-columns:1fr}}
-.mapped-inlay{padding:0;overflow:hidden}.mapped-inlay-head{padding:12px 12px 0}.mapped-frame{display:block;width:100%;height:calc(100vh - 230px);min-height:760px;border:0;background:#090c12;border-radius:12px}@media(max-width:700px){.mapped-frame{height:calc(100vh - 190px);min-height:680px}}</style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <title>REAL FACTORY · Accounts & Reports</title>
+  <style>
+    :root{color-scheme:dark;--bg:#090c12;--panel:#111722;--panel2:#0d131d;--line:#2b3648;--line2:#344258;--text:#eef4ff;--muted:#9daabd;--blue:#4f7fd8;--green:#49b987;--red:#e26773;--amber:#e4b45c;--shadow:0 18px 50px rgba(0,0,0,.22)}
+    *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:radial-gradient(circle at top,#111a29 0,#090c12 42%);color:var(--text);font:14px/1.45 Inter,system-ui,-apple-system,Segoe UI,sans-serif}.app{max-width:1550px;margin:auto;padding:14px 14px 60px}.top{position:sticky;top:0;z-index:30;margin:-14px -14px 12px;padding:12px 14px;background:rgba(9,12,18,.92);backdrop-filter:blur(18px);border-bottom:1px solid var(--line);display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap}.brand small{display:block;color:#9fb8de;font-weight:900;letter-spacing:.08em}.brand h1{font-size:22px;margin:2px 0}.brand p{margin:0;color:var(--muted)}.actions,.tabs,.inline{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.panel{background:linear-gradient(180deg,#121925,#0f151f);border:1px solid var(--line);border-radius:15px;padding:13px;margin:12px 0;box-shadow:var(--shadow)}.panel h2,.panel h3{margin:0 0 10px}.grid{display:grid;grid-template-columns:repeat(4,minmax(180px,1fr));gap:10px}.report-grid{display:grid;grid-template-columns:minmax(320px,.8fr) minmax(460px,1.7fr);gap:12px}.filter-grid{display:grid;grid-template-columns:repeat(5,minmax(150px,1fr));gap:9px}label{display:flex;flex-direction:column;gap:5px;color:var(--muted);font-weight:800}input,select,button,a,textarea{min-height:42px;background:var(--panel2);color:var(--text);border:1px solid var(--line2);border-radius:10px;padding:9px 10px;font:inherit;font-size:16px}button,a{text-decoration:none;font-weight:900;cursor:pointer}button:hover,a:hover{border-color:#627a9f}.active,.primary{background:linear-gradient(180deg,#31538d,#243f6e);border-color:#577bb8}.success{background:rgba(73,185,135,.12);border-color:rgba(73,185,135,.5)}.danger{background:rgba(226,103,115,.12);border-color:rgba(226,103,115,.45)}.hidden{display:none!important}.muted{color:var(--muted)}.msg{min-height:20px;color:var(--muted)}.msg.ok{color:#79d5aa}.msg.error{color:#ff8b96}.scroll{overflow:auto;border:1px solid var(--line);border-radius:11px}table{border-collapse:separate;border-spacing:0;width:100%;min-width:900px}th,td{padding:9px;border-bottom:1px solid #263245;text-align:left;white-space:nowrap}th{position:sticky;top:0;z-index:2;background:#17202e;color:#c8d7ea}.table-wrap{position:relative}.hscroll{overflow-x:auto;overflow-y:hidden;height:13px;margin-top:5px}.hscroll>div{height:1px}.cards{display:grid;grid-template-columns:repeat(4,minmax(150px,1fr));gap:9px}.metric{background:#0c121b;border:1px solid var(--line);border-radius:12px;padding:11px}.metric small{display:block;color:var(--muted);font-weight:800}.metric strong{display:block;font-size:20px;margin-top:3px}.suggestions{display:grid;gap:7px;margin-top:8px}.suggestion{width:100%;text-align:left;background:#0b111a;border:1px solid #2c3a4f;padding:10px;border-radius:11px}.suggestion.active{border-color:#6d92d2;background:#14213a}.suggestion b{display:block}.suggestion small{display:block;color:var(--muted);margin-top:2px}.chip{display:inline-flex;align-items:center;border:1px solid #40506a;border-radius:999px;padding:3px 7px;font-size:11px;font-weight:900;color:#bfd0e7}.searchbox{position:relative}.searchbox input{width:100%;padding-right:46px}.searchbox button{position:absolute;right:4px;top:4px;min-height:34px;height:34px;padding:4px 10px}.result-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap}.result-title{margin:0}.empty{padding:28px;text-align:center;color:var(--muted)}.json-block{white-space:pre-wrap;word-break:break-word;background:#0a1018;border:1px solid var(--line);border-radius:10px;padding:12px;max-height:550px;overflow:auto}.section-title{margin:16px 0 7px;color:#bcd0ee;font-size:13px;text-transform:uppercase;letter-spacing:.07em}.kv{display:grid;grid-template-columns:minmax(170px,.8fr) 1.2fr;gap:1px;background:#263245;border:1px solid #263245;border-radius:10px;overflow:hidden}.kv div{background:#0e151f;padding:8px 10px}.kv div:nth-child(odd){color:var(--muted);font-weight:800}.mode-note{font-size:12px;color:#cbd7e8}.status-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--green);margin-right:6px}.freeze-first th:first-child,.freeze-first td:first-child{position:sticky;left:0;z-index:1;background:#111925}.freeze-first th:first-child{z-index:3;background:#17202e}.tabs{margin-bottom:4px}.tabs button{min-height:40px}.page{animation:fade .15s ease}@keyframes fade{from{opacity:.4;transform:translateY(2px)}to{opacity:1;transform:none}}@media(max-width:1100px){.report-grid{grid-template-columns:1fr}.filter-grid{grid-template-columns:repeat(3,1fr)}.grid{grid-template-columns:repeat(2,1fr)}.cards{grid-template-columns:repeat(2,1fr)}}@media(max-width:650px){.app{padding:10px 10px 45px}.top{margin:-10px -10px 10px;padding:10px}.grid,.filter-grid,.cards{grid-template-columns:1fr}.tabs{overflow:auto;flex-wrap:nowrap;padding-bottom:3px}.tabs button{white-space:nowrap}.panel{padding:10px}.report-grid{display:block}.report-grid>.panel{margin:0 0 10px}.kv{grid-template-columns:1fr}.kv div:nth-child(odd){padding-bottom:2px}.kv div:nth-child(even){padding-top:2px}}
+  </style>
 </head>
-<body><main class="app">
-<header>
-  <div><div class="k">REAL FACTORY · TEST FIRST · BUILD 80531 CLEAN MAPPED</div><h1>Accounts</h1><div id="who" class="k">Checking access…</div></div>
-  <div class="actions">
-    <select id="dataMode"><option>TEST</option><option>REAL</option></select>
-    <a href="real-material-master-v805.html">Material Master</a>
-    <a href="real-dashboard.html">Dashboard</a>
-    <button id="refresh" type="button">Refresh</button>
-  </div>
-</header>
+<body>
+<main class="app">
+  <header class="top">
+    <div class="brand">
+      <small>REAL FACTORY · ACCOUNTS</small>
+      <h1>Accounts & Intelligent Reports</h1>
+      <p>AUTO POST FIRST · TEST FIRST · report search + direct analysis</p>
+    </div>
+    <div class="actions">
+      <label style="min-width:112px">Data Mode<select id="dataMode"><option>TEST</option><option>REAL</option></select></label>
+      <a href="real-material-master-v805.html">Material Master</a>
+      <a href="real-dashboard.html">Dashboard</a>
+      <button id="refreshAll" type="button">Refresh</button>
+    </div>
+  </header>
 
-<section class="tabs">
-  <button class="active" data-tab="purchase">Material Purchase</button>
-  <button data-tab="money">Receipt & Payment</button>
-  <button data-tab="daybook">Day Book</button>
-  <button data-tab="approvals">Approvals</button>
-</section>
+  <nav class="tabs" aria-label="Accounts sections">
+    <button type="button" data-tab="reports" class="active">Reports / Ask</button>
+    <button type="button" data-tab="ledgers">Day Book / Ledgers</button>
+    <button type="button" data-tab="purchase">Sales & Purchase</button>
+    <button type="button" data-tab="money">Receipt & Payment</button>
+  </nav>
 
-<section id="purchase" class="panel tabpage mapped-inlay">
-  <div class="mapped-inlay-head"><div class="k">ACCOUNTS · MAPPED MATERIAL PURCHASE</div></div>
-  <iframe class="mapped-frame" title="Mapped Material Purchase"
-    src="real-material-master-v805.html?v=80531&inlay=accounts"></iframe>
-</section><section id="purchaseLegacy" class="panel tabpage hidden">
-<h2>Purchase Template</h2>
-<div class="grid">
-<label>Supplier / Party<select id="pSupplier"></select></label>
-<label>Material Type<select id="pType"></select></label>
-<label id="pMaterialLabel">Material Name<select id="pMaterial"></select></label>
-<label>Qty<input id="pQty" type="number" step="0.001" value="0"></label>
-<label>Unit<input id="pUom" readonly tabindex="-1"></label>
-<label>Rate / Unit<input id="pRate" type="number" step="0.01" value="0"></label>
-<label>Total<input id="pTotal" readonly tabindex="-1"></label>
-<label>Purchase Ledger<select id="pPurchaseLedger"></select></label>
-<label>Bill No<input id="pBill"></label>
-<label>Bill Date<input id="pDate" type="date"></label>
-<label>GST Amount<input id="pGst" type="number" step="0.01" value="0"></label>
-<label>Payment Status<select id="pStatus"><option>CREDIT</option><option>PAID</option><option>PART_PAID</option></select></label>
-<label id="pPaidWrap" class="hidden">Paid Amount<input id="pPaid" type="number" step="0.01" value="0"></label>
-<label id="pCashWrap" class="hidden">Paid From<select id="pCash"></select></label>
-</div>
-<div class="actions" style="margin-top:10px"><button class="primary" data-enter-submit="true" id="postPurchase">Post Purchase</button><span class="msg" id="purchaseMsg"></span></div>
-</section>
+  <section id="reports" class="page">
+    <div class="report-grid">
+      <section class="panel">
+        <h2>Ask Reports</h2>
+        <p class="muted">Type a report name or business question. Related templates appear while you type.</p>
+        <div class="searchbox">
+          <input id="reportSearch" type="search" autocomplete="off" placeholder="profit, supplier ledger, purchase return, balance sheet…">
+          <button id="searchReports" type="button">Go</button>
+        </div>
+        <div id="reportSuggestions" class="suggestions"><div class="empty">Loading report templates…</div></div>
+        <p id="searchMsg" class="msg"></p>
+      </section>
 
-<section id="money" class="panel tabpage hidden">
-<h2>Receipt & Payment</h2>
-<div class="actions"><button id="receiptMode" class="active">Receipt</button><button id="paymentMode">Payment</button></div>
-<div class="grid" style="margin-top:10px">
-<label id="againstLabel">Received From<select id="mAgainst"></select></label>
-<label>Cash / Bank<select id="mCash"></select></label>
-<label>Amount<input id="mAmount" type="number" step="0.01" value="0"></label>
-<label>Reference<input id="mRef"></label>
-<label class="wide">Narration<input id="mNote"></label>
-</div>
-<div class="actions" style="margin-top:10px"><button class="primary" data-enter-submit="true" id="postMoney">Post Receipt</button><span class="msg" id="moneyMsg"></span></div>
-</section>
+      <section class="panel">
+        <div class="result-head">
+          <div><small class="chip" id="selectedFamily">REPORT</small><h2 id="selectedReportName" class="result-title">Select a report</h2><div id="selectedReportDesc" class="muted">Choose from suggestions on the left.</div></div>
+          <button id="runReport" class="primary" type="button" disabled>Run Report</button>
+        </div>
+        <div class="filter-grid" style="margin-top:12px">
+          <label id="fromWrap">From Date<input id="fromDate" type="date"></label>
+          <label id="toWrap">To Date<input id="toDate" type="date"></label>
+          <label id="asOfWrap">As Of Date<input id="asOfDate" type="date"></label>
+          <label id="ledgerWrap">Ledger<select id="reportLedger"><option value="">Select ledger…</option></select></label>
+          <label>Mode<input id="modeMirror" readonly tabindex="-1"></label>
+        </div>
+        <p id="reportMsg" class="msg"></p>
+        <div id="reportResult"><div class="empty">Report output will appear here.</div></div>
+      </section>
+    </div>
+  </section>
 
-<section id="daybook" class="panel tabpage hidden">
-<h2>Posted Day Book</h2>
-<div class="scroll"><table>
-<thead><tr><th>Date/Time</th><th>Voucher</th><th>Type</th><th>Source</th><th>Bill/Ref</th><th>Amount</th><th>Status</th></tr></thead>
-<tbody id="txBody"></tbody>
-</table></div>
-</section>
+  <section id="ledgers" class="panel page hidden">
+    <div class="result-head"><div><h2>Day Book / Ledgers</h2><p class="muted">Posted voucher lines from the Accounts engine.</p></div><button id="loadDayBook" class="primary" type="button">Load Day Book</button></div>
+    <div class="filter-grid">
+      <label>From Date<input id="bookFrom" type="date"></label>
+      <label>To Date<input id="bookTo" type="date"></label>
+      <label>Ledger<select id="bookLedger"><option value="">All / Select ledger…</option></select></label>
+      <label>Search<input id="bookSearch" type="search" placeholder="voucher, ledger, source…"></label>
+      <label>View<select id="bookView"><option value="DAY_BOOK">Day Book</option><option value="LEDGER">Ledger Statement</option></select></label>
+    </div>
+    <p id="bookMsg" class="msg"></p>
+    <div id="bookResult" class="table-wrap"><div class="empty">Load Day Book to view entries.</div></div>
+  </section>
 
-<section id="approvals" class="panel tabpage hidden">
-<h2>New Name Approvals</h2>
-<p class="k">New creation → suggestions → Super Admin permission.</p>
-<div class="scroll"><table>
-<thead><tr><th>Requested</th><th>Type</th><th>Name</th><th>Suggested Matches</th><th>Status</th><th>Super Admin Remark</th></tr></thead>
-<tbody id="reqBody"></tbody>
-</table></div>
-</section>
+  <section id="purchase" class="panel page hidden">
+    <h2>Sales & Purchase Template</h2>
+    <p class="mode-note"><span class="status-dot"></span>Existing posting backends remain unchanged. This screen keeps the current entry layout while reports use the new Accounts engine.</p>
+    <div class="grid">
+      <label>Supplier Ledger<select id="supplier"></select></label>
+      <label>Material Type<select id="type"></select></label>
+      <label id="materialLabel">Material Name<select id="material"></select></label>
+      <label>Qty<input id="qty" type="number" value="0" step="0.001"></label>
+      <label>UOM<input id="uom" readonly tabindex="-1"></label>
+      <label>Rate / Unit<input id="rate" type="number" value="0" step="0.01"></label>
+      <label>Total<input id="total" readonly tabindex="-1"></label>
+      <label>Bill No<input id="bill"></label>
+      <label>Bill Date<input id="date" type="date"></label>
+      <label>Payment Status<select id="status"><option>CREDIT</option><option>PAID</option><option>PART_PAID</option></select></label>
+    </div>
+    <div class="actions" style="margin-top:10px"><button class="primary" id="previewPurchase" type="button">Preview</button><span id="pmsg" class="msg"></span></div>
+  </section>
 
+  <section id="money" class="panel page hidden">
+    <h2>Receipt & Payment Template</h2>
+    <div class="actions"><button id="receiptMode" class="active" type="button">Receipt</button><button id="paymentMode" type="button">Payment</button></div>
+    <div class="grid" style="margin-top:10px">
+      <label id="againstLabel">Received From<select id="against"></select></label>
+      <label>Cash / Bank<select id="cashbank"></select></label>
+      <label>Amount<input id="amount" type="number" value="0" step="0.01"></label>
+      <label>Reference<input id="ref"></label>
+      <label style="grid-column:1/-1">Narration<input id="note"></label>
+    </div>
+    <div class="actions" style="margin-top:10px"><button class="primary" id="saveMoney" type="button">Preview</button><span id="mmsg" class="msg"></span></div>
+  </section>
+</main>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="config.js"></script>
 <script src="real-common.js"></script>
-<script src="real-accounts-v805.js?v=80529"></script>
-</main></body></html>
+<script src="real-accounts-v805.js?v=8071"></script>
+</body>
+</html>

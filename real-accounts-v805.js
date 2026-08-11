@@ -1,179 +1,95 @@
-(() => {
-  const $ = id => document.getElementById(id);
-  let client, state = {groups:[],categories:[],ledgers:[],material_types:[],materials:[],transactions:[],name_requests:[]};
-  let moneyMode = "RECEIPT";
+(()=>{
+  "use strict";
+  const $=id=>document.getElementById(id);
+  const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+  const fmt=v=>{const n=Number(v);return Number.isFinite(n)?new Intl.NumberFormat("en-IN",{maximumFractionDigits:2}).format(n):String(v??"—")};
+  const money=v=>`₹${fmt(v)}`;
+  const today=()=>new Date().toISOString().slice(0,10);
+  const monthStart=()=>{const d=new Date();d.setDate(1);return d.toISOString().slice(0,10)};
+  const state={client:null,ledgers:[],suggestions:[],selected:null,bookRows:[],materialTypes:[],materials:[],busy:false};
 
-  function optionRows(rows, valueKey="id", labelKey="ledger_name") {
-    return `<option value="">Select…</option>` + rows.map(x =>
-      `<option value="${RR.escapeHtml(x[valueKey])}">${RR.escapeHtml(x[labelKey])}</option>`
-    ).join("");
+  function message(id,text,type=""){const el=$(id);if(!el)return;el.textContent=text||"";el.className=`msg ${type}`.trim()}
+  function errorText(e){return e?.message||e?.error_description||e?.details||String(e||"Unknown error")}
+  function setBusy(btn,on,label="Working…"){if(!btn)return;if(on){btn.dataset.old=btn.textContent;btn.textContent=label;btn.disabled=true}else{btn.textContent=btn.dataset.old||btn.textContent;btn.disabled=false}}
+  function mode(){return String($("dataMode")?.value||"TEST").toUpperCase()}
+
+  function resolveClient(){
+    if(state.client)return state.client;
+    if(window.supabaseClient){state.client=window.supabaseClient;return state.client}
+    if(window.RR?.client){state.client=window.RR.client;return state.client}
+    if(window.RR?.supabaseClient){state.client=window.RR.supabaseClient;return state.client}
+    const cfg=window.RR_CONFIG||{};
+    const url=cfg.supabaseUrl||cfg.supabase_url||cfg.url||window.SUPABASE_URL;
+    const key=cfg.supabaseAnonKey||cfg.supabase_anon_key||cfg.anonKey||cfg.anon_key||window.SUPABASE_ANON_KEY;
+    if(url&&key&&window.supabase?.createClient){state.client=window.supabase.createClient(url,key);return state.client}
+    throw new Error("Accounts connection is not ready. Keep the existing canonical config.js in the GitHub root.");
   }
 
-  function category(code) { return state.categories.find(x => x.category_code === code); }
-  function ledgersByKind(...kinds) { return state.ledgers.filter(x => kinds.includes(x.ledger_kind)); }
-  function purchaseLedgerForType(typeCode) {
-    const map = {
-      REGULAR_CLOTH:"REGULAR_CLOTH_PURCHASE",
-      MATCHING_CLOTH:"MATCHING_CLOTH_PURCHASE",
-      STICKER:"STICKER_PURCHASE",
-      METAL_ID:"METAL_ID_PURCHASE"
-    };
-    const cat = category(map[typeCode] || "OTHER_MATERIAL_PURCHASE");
-    return state.ledgers.find(x => x.category_id === cat?.id);
+  async function rpc(name,args={}){const c=resolveClient();const r=await c.rpc(name,args);if(r.error)throw r.error;return r.data}
+  async function table(name,select="*"){const c=resolveClient();const r=await c.from(name).select(select);if(r.error)throw r.error;return r.data||[]}
+
+  function zeroClean(root=document){root.querySelectorAll('input[type=number]').forEach(i=>{i.addEventListener('focus',()=>{if(Number(i.value||0)===0)i.value=""});i.addEventListener('blur',()=>{if(i.value==="")i.value="0"})})}
+  function enterFlow(root){if(!root)return;root.addEventListener('keydown',e=>{if(e.key!=="Enter"||e.shiftKey||e.ctrlKey||e.altKey)return;const t=e.target;if(!["INPUT","SELECT"].includes(t.tagName)||t.type==="search")return;const els=[...root.querySelectorAll('input,select,button.primary')].filter(x=>!x.disabled&&x.tabIndex!==-1&&x.offsetParent!==null);const i=els.indexOf(t);if(i<0)return;e.preventDefault();(els[i+1]||root.querySelector('button.primary'))?.focus();if(!els[i+1])root.querySelector('button.primary')?.click()})}
+
+  document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{document.querySelectorAll('[data-tab]').forEach(x=>x.classList.remove('active'));b.classList.add('active');document.querySelectorAll('.page').forEach(x=>x.classList.add('hidden'));$(b.dataset.tab)?.classList.remove('hidden');if(b.dataset.tab==="ledgers"&&!state.bookRows.length)loadDayBook().catch(()=>{})});
+
+  function calc(){const q=Number($("qty")?.value||0),r=Number($("rate")?.value||0);if($("total"))$("total").value=(q*r).toFixed(2)}
+  function dynamicLabel(){const code=$("type")?.value;const names={REGULAR_CLOTH:"Cloth Name",MATCHING_CLOTH:"Matching Cloth Name",STICKER:"Sticker Name",METAL_ID:"Metal ID Name",PANNI:"Panni Name",GATTA:"Gatta Name",BOX:"Box Name",PASTING_ROLL:"Pasting Name",KANDHI_TAPE:"Kandhi Tape Name"};const label=$("materialLabel");if(label?.childNodes?.[0])label.childNodes[0].nodeValue=names[code]||"Material Name";const rows=state.materials.filter(x=>x.material_type===code);if($("material"))$("material").innerHTML='<option value="">Select…</option>'+rows.map(x=>`<option value="${esc(x.material_id)}">${esc(x.material_name)}</option>`).join("")}
+
+  function fillLedgerSelects(){const options='<option value="">Select ledger…</option>'+state.ledgers.map(x=>`<option value="${esc(x.id)}">${esc(x.ledger_name)}${x.ledger_code?` · ${esc(x.ledger_code)}`:""}</option>`).join("");["reportLedger","bookLedger","supplier","against","cashbank"].forEach(id=>{const el=$(id);if(el)el.innerHTML=options})}
+  async function loadLedgers(){try{const c=resolveClient();const r=await c.from("rr_ledgers_v805").select("id,ledger_code,ledger_name,ledger_kind,is_active").eq("is_active",true).order("ledger_name",{ascending:true});if(r.error)throw r.error;state.ledgers=r.data||[];fillLedgerSelects()}catch(e){console.warn("Ledger list unavailable",e)}}
+
+  function suggestionHtml(x){const req=[x.requires_from_date?"From":"",x.requires_to_date?"To":"",x.requires_as_of_date?"As-of":"",x.requires_ledger?"Ledger":""].filter(Boolean).join(" · ");return `<button type="button" class="suggestion ${state.selected?.report_code===x.report_code?"active":""}" data-report="${esc(x.report_code)}"><b>${esc(x.report_name)}</b><small>${esc(x.report_description||"")}</small><span class="chip" style="margin-top:6px">${esc(x.report_family||"REPORT")}${req?` · ${esc(req)}`:""}</span></button>`}
+  function renderSuggestions(){const box=$("reportSuggestions");if(!box)return;if(!state.suggestions.length){box.innerHTML='<div class="empty">No matching report template.</div>';return}box.innerHTML=state.suggestions.map(suggestionHtml).join("");box.querySelectorAll("[data-report]").forEach(btn=>btn.onclick=()=>selectReport(btn.dataset.report))}
+  function selectReport(code){const row=state.suggestions.find(x=>x.report_code===code)||state.selected;if(!row)return;state.selected=row;$("selectedReportName").textContent=row.report_name||code;$("selectedReportDesc").textContent=row.report_description||"";$("selectedFamily").textContent=row.report_family||"REPORT";$("runReport").disabled=false;$("fromWrap").classList.toggle("hidden",!row.requires_from_date);$("toWrap").classList.toggle("hidden",!row.requires_to_date);$("asOfWrap").classList.toggle("hidden",!row.requires_as_of_date);$("ledgerWrap").classList.toggle("hidden",!row.requires_ledger);renderSuggestions();message("reportMsg","")}
+
+  let searchTimer=null;
+  async function searchReports(text=$("reportSearch")?.value||""){
+    clearTimeout(searchTimer);message("searchMsg","Searching…");
+    try{const data=await rpc("rr_report_search_bridge_v807",{p_search_text:String(text||""),p_limit:10});state.suggestions=Array.isArray(data)?data:[];renderSuggestions();if(!state.selected&&state.suggestions.length)selectReport(state.suggestions[0].report_code);message("searchMsg",`${state.suggestions.length} report suggestion${state.suggestions.length===1?"":"s"}.`,"ok")}
+    catch(e){console.error(e);state.suggestions=[];renderSuggestions();message("searchMsg",errorText(e),"error")}
   }
 
-  async function identifyUser() {
-    const user = await RR.requireLogin();
-    const { data, error } = await client.from("rr_user_profiles")
-      .select("full_name,role_code,is_active,access_status")
-      .eq("auth_user_id", user.id).maybeSingle();
-    if (error) throw error;
-    if (!data?.is_active) throw new Error("Active profile required.");
-    $("who").textContent = `${data.full_name || user.email} · ${RR.friendlyRole(data.role_code)}`;
+  function renderTable(rows){if(!Array.isArray(rows)||!rows.length)return '<div class="empty">No rows for selected filters.</div>';const cols=[...new Set(rows.flatMap(r=>Object.keys(r||{})))];return `<div class="scroll"><table class="freeze-first"><thead><tr>${cols.map(c=>`<th>${esc(c.replaceAll("_"," "))}</th>`).join("")}</tr></thead><tbody>${rows.map(r=>`<tr>${cols.map(c=>`<td>${renderCell(r?.[c],c)}</td>`).join("")}</tr>`).join("")}</tbody></table></div>`}
+  function renderCell(v,key=""){if(v===null||v===undefined||v==="")return "—";if(typeof v==="boolean")return v?"Yes":"No";if(typeof v==="object")return `<span title="${esc(JSON.stringify(v))}">${esc(JSON.stringify(v).slice(0,90))}${JSON.stringify(v).length>90?"…":""}</span>`;if(/amount|debit|credit|value|profit|income|expense|purchase|salary|balance/i.test(key)&&!Number.isNaN(Number(v)))return money(v);return esc(v)}
+  function humanKey(k){return String(k).replaceAll("_"," ").replace(/\b\w/g,m=>m.toUpperCase())}
+  function renderJsonReport(obj){if(!obj||typeof obj!=="object")return `<div class="json-block">${esc(String(obj??""))}</div>`;const omit=new Set(["sections","asset_rows","liability_rows","equity_rows"]);const scalar=Object.entries(obj).filter(([k,v])=>!omit.has(k)&&!(v&&typeof v==="object"));const cards=scalar.filter(([k,v])=>typeof v==="number"||/profit|income|expense|purchase|asset|liabilit|equity|difference/i.test(k)).slice(0,8);let html=cards.length?`<div class="cards">${cards.map(([k,v])=>`<div class="metric"><small>${esc(humanKey(k))}</small><strong>${renderCell(v,k)}</strong></div>`).join("")}</div>`:"";const meta=scalar.filter(([k])=>!cards.some(([ck])=>ck===k));if(meta.length)html+=`<div class="section-title">Report details</div><div class="kv">${meta.map(([k,v])=>`<div>${esc(humanKey(k))}</div><div>${renderCell(v,k)}</div>`).join("")}</div>`;for(const key of ["sections","asset_rows","liability_rows","equity_rows"]){if(Array.isArray(obj[key]))html+=`<div class="section-title">${esc(humanKey(key))}</div>${renderTable(obj[key])}`}return html||`<div class="json-block">${esc(JSON.stringify(obj,null,2))}</div>`}
+
+  async function runSelectedReport(){const r=state.selected;if(!r)return;const btn=$("runReport");setBusy(btn,true,"Running…");message("reportMsg","Running report…");try{const common={from:$("fromDate").value,to:$("toDate").value,asOf:$("asOfDate").value,ledger:$("reportLedger").value,dataMode:mode()};let data;
+      switch(r.report_code){
+        case "TRIAL_BALANCE":data=await rpc("rr_trial_balance_v806",{p_from_date:common.from,p_to_date:common.to,p_data_mode:common.dataMode});break;
+        case "PROFIT_LOSS":data=await rpc("rr_profit_loss_v806",{p_from_date:common.from,p_to_date:common.to,p_data_mode:common.dataMode});break;
+        case "BALANCE_SHEET":data=await rpc("rr_balance_sheet_v806",{p_as_of_date:common.asOf,p_data_mode:common.dataMode});break;
+        case "DAY_BOOK":data=await rpc("rr_day_book_v806",{p_from_date:common.from,p_to_date:common.to,p_data_mode:common.dataMode});break;
+        case "LEDGER_STATEMENT":if(!common.ledger)throw new Error("Select Ledger first.");data=await rpc("rr_ledger_statement_v806",{p_ledger_id:common.ledger,p_from_date:common.from,p_to_date:common.to,p_data_mode:common.dataMode});break;
+        case "PURCHASE_RETURN":{const c=resolveClient();let q=c.from("rr_purchase_return_status_universal_v806").select("*").eq("data_mode",common.dataMode).order("created_at",{ascending:false}).limit(500);const out=await q;if(out.error)throw out.error;data=out.data||[];break}
+        default:throw new Error(`Report ${r.report_code} is not wired in this UI.`)
+      }
+      $("reportResult").innerHTML=Array.isArray(data)?renderTable(data):renderJsonReport(data);message("reportMsg",`${r.report_name} loaded.`,"ok")
+    }catch(e){console.error(e);$("reportResult").innerHTML=`<div class="empty">${esc(errorText(e))}</div>`;message("reportMsg",errorText(e),"error")}finally{setBusy(btn,false)}}
+
+  async function loadDayBook(){const btn=$("loadDayBook");setBusy(btn,true,"Loading…");message("bookMsg","Loading…");try{const view=$("bookView").value;let data;if(view==="LEDGER"){const ledger=$("bookLedger").value;if(!ledger)throw new Error("Select Ledger for Ledger Statement.");data=await rpc("rr_ledger_statement_v806",{p_ledger_id:ledger,p_from_date:$("bookFrom").value,p_to_date:$("bookTo").value,p_data_mode:mode()})}else{data=await rpc("rr_day_book_v806",{p_from_date:$("bookFrom").value,p_to_date:$("bookTo").value,p_data_mode:mode()})}state.bookRows=Array.isArray(data)?data:[];renderBook();message("bookMsg",`${state.bookRows.length} row${state.bookRows.length===1?"":"s"} loaded.`,"ok")}catch(e){console.error(e);state.bookRows=[];renderBook();message("bookMsg",errorText(e),"error")}finally{setBusy(btn,false)}}
+  function renderBook(){const q=String($("bookSearch")?.value||"").trim().toLowerCase();const rows=q?state.bookRows.filter(r=>JSON.stringify(r).toLowerCase().includes(q)):state.bookRows;$("bookResult").innerHTML=renderTable(rows)}
+
+  function wirePreviewTemplates(){
+    $("previewPurchase")?.addEventListener("click",()=>{calc();message("pmsg",`Preview total ${money($("total").value)}. Posting continues through the dedicated material/purchase backend.`,"ok")});
+    let receipt=true;const syncMoney=()=>{if($("receiptMode"))$("receiptMode").classList.toggle("active",receipt);if($("paymentMode"))$("paymentMode").classList.toggle("active",!receipt);if($("againstLabel"))$("againstLabel").childNodes[0].nodeValue=receipt?"Received From":"Paid To"};
+    $("receiptMode")?.addEventListener("click",()=>{receipt=true;syncMoney()});$("paymentMode")?.addEventListener("click",()=>{receipt=false;syncMoney()});$("saveMoney")?.addEventListener("click",()=>message("mmsg",`${receipt?"Receipt":"Payment"} preview ${money($("amount").value)}.`,"ok"));syncMoney();
   }
 
-  async function load() {
-    client = client || RR.getClient();
-    await identifyUser();
-    const { data, error } = await client.rpc("rr_accounts_bootstrap_v805", { p_data_mode: $("dataMode").value });
-    if (error) throw error;
-    state = data || state;
-    render();
+  async function refresh(){if(state.busy)return;state.busy=true;const btn=$("refreshAll");setBusy(btn,true,"Refreshing…");try{await Promise.all([loadLedgers(),searchReports($("reportSearch")?.value||"")]);$("modeMirror").value=mode()}catch(e){console.error(e);message("searchMsg",errorText(e),"error")}finally{state.busy=false;setBusy(btn,false)}}
+
+  function initDates(){const t=today(),m=monthStart();["date","toDate","asOfDate","bookTo"].forEach(id=>{if($(id))$(id).value=t});["fromDate","bookFrom"].forEach(id=>{if($(id))$(id).value=m});if($("modeMirror"))$("modeMirror").value=mode()}
+  function wire(){
+    $("type")?.addEventListener("change",dynamicLabel);$("qty")?.addEventListener("input",calc);$("rate")?.addEventListener("input",calc);$("runReport")?.addEventListener("click",runSelectedReport);$("searchReports")?.addEventListener("click",()=>searchReports());$("reportSearch")?.addEventListener("input",()=>{clearTimeout(searchTimer);searchTimer=setTimeout(()=>searchReports(),220)});$("reportSearch")?.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();searchReports()}});$("loadDayBook")?.addEventListener("click",loadDayBook);$("bookSearch")?.addEventListener("input",renderBook);$("bookView")?.addEventListener("change",()=>{$("bookLedger").parentElement.classList.toggle("hidden",$("bookView").value!=="LEDGER")});$("dataMode")?.addEventListener("change",()=>{$("modeMirror").value=mode();refresh()});$("refreshAll")?.addEventListener("click",refresh);wirePreviewTemplates();zeroClean();enterFlow($("purchase"));enterFlow($("money"));
   }
 
-  function render() {
-    $("pSupplier").innerHTML = optionRows(state.ledgers.filter(x => ["SUPPLIER","PARTY","GENERAL"].includes(x.ledger_kind)));
-    $("pType").innerHTML = `<option value="">Select…</option>` + state.material_types.map(x =>
-      `<option value="${RR.escapeHtml(x.type_code)}">${RR.escapeHtml(x.type_name)}</option>`).join("");
-    $("pCash").innerHTML = optionRows(ledgersByKind("CASH","BANK"));
-    $("mCash").innerHTML = optionRows(ledgersByKind("CASH","BANK"));
-    $("mAgainst").innerHTML = optionRows(state.ledgers);
-    renderMaterials();
+  window.RR_ACCOUNTS_V805={
+    setData:(d={})=>{state.materialTypes=d.material_types||[];state.materials=d.materials||[];if($("type"))$("type").innerHTML='<option value="">Select…</option>'+state.materialTypes.map(x=>`<option value="${esc(x.type_code)}">${esc(x.type_name)}</option>`).join("");dynamicLabel()},
+    refresh,
+    searchReports,
+    runSelectedReport
+  };
 
-    $("txBody").innerHTML = state.transactions.length ? state.transactions.map(t => `
-      <tr><td>${RR.escapeHtml(new Date(t.transaction_datetime).toLocaleString())}</td>
-      <td>${RR.escapeHtml(t.voucher_no)}</td><td>${RR.escapeHtml(t.transaction_type)}</td>
-      <td>${RR.escapeHtml(t.source_module)}</td><td>${RR.escapeHtml(t.bill_no || "—")}</td>
-      <td>${RR.money(t.total_amount)}</td><td>${RR.escapeHtml(t.status)}</td></tr>`).join("") :
-      `<tr><td colspan="7">No posted entries.</td></tr>`;
-
-    $("reqBody").innerHTML = state.name_requests.length ? state.name_requests.map(r => `
-      <tr><td>${RR.escapeHtml(new Date(r.requested_at).toLocaleString())}</td>
-      <td>${RR.escapeHtml(r.entity_type)}</td><td>${RR.escapeHtml(r.requested_name)}</td>
-      <td>${RR.escapeHtml((r.suggested_matches || []).slice(0,3).map(x => x.display_name).join(", ") || "—")}</td>
-      <td>${RR.escapeHtml(r.status)}</td><td>${RR.escapeHtml(r.super_admin_remark || "—")}</td></tr>`).join("") :
-      `<tr><td colspan="6">No pending approvals.</td></tr>`;
-  }
-
-  function renderMaterials() {
-    const type = $("pType").value;
-    const rows = state.materials.filter(x => x.material_type === type);
-    $("pMaterial").innerHTML = `<option value="">Select…</option>` + rows.map(m =>
-      `<option value="${m.material_id}">${RR.escapeHtml([m.material_no,m.material_name].filter(Boolean).join(" · "))}</option>`
-    ).join("");
-
-    const labels = {
-      REGULAR_CLOTH:"Cloth Name",
-      MATCHING_CLOTH:"Matching Cloth Name",
-      STICKER:"Sticker Name",
-      METAL_ID:"Metal ID Name",
-      PANNI:"Panni Name",
-      GATTA:"Gatta Name",
-      BOX:"Box Name",
-      PASTING_ROLL:"Pasting Roll Name",
-      KANDHI_TAPE:"Kandhi Tape Name"
-    };
-    $("pMaterialLabel").childNodes[0].nodeValue = labels[type] || "Material Name";
-    const pl = purchaseLedgerForType(type);
-    if (pl) $("pPurchaseLedger").value = pl.id;
-    calcPurchase();
-  }
-
-  function calcPurchase() {
-    const m = state.materials.find(x => x.material_id === $("pMaterial").value);
-    $("pUom").value = m?.purchase_unit || "";
-    const total = Number($("pQty").value || 0) * Number($("pRate").value || 0) + Number($("pGst").value || 0);
-    $("pTotal").value = total.toFixed(2);
-  }
-
-  async function postPurchase() {
-    const { data, error } = await client.rpc("rr_accounts_post_material_purchase_v805", {
-      p_supplier_ledger_id: $("pSupplier").value || null,
-      p_material_id: $("pMaterial").value || null,
-      p_purchase_ledger_id: $("pPurchaseLedger").value || null,
-      p_purchase_qty: Number($("pQty").value || 0),
-      p_rate: Number($("pRate").value || 0),
-      p_bill_no: $("pBill").value || null,
-      p_bill_date: $("pDate").value || null,
-      p_gst_amount: Number($("pGst").value || 0),
-      p_payment_status: $("pStatus").value,
-      p_paid_amount: Number($("pPaid").value || 0),
-      p_cash_bank_ledger_id: $("pCash").value || null,
-      p_source_module: "ACCOUNTS_TEMPLATE",
-      p_source_record_id: null,
-      p_data_mode: $("dataMode").value
-    });
-    if (error) throw error;
-    $("purchaseMsg").textContent = `Posted · ${data.voucher_no}`;
-    await load();
-  }
-
-  async function postMoney() {
-    const params = moneyMode === "RECEIPT" ? {
-      p_party_ledger_id: $("mAgainst").value,
-      p_cash_bank_ledger_id: $("mCash").value,
-      p_amount: Number($("mAmount").value || 0),
-      p_ref_no: $("mRef").value || null,
-      p_narration: $("mNote").value || null,
-      p_data_mode: $("dataMode").value
-    } : {
-      p_against_ledger_id: $("mAgainst").value,
-      p_cash_bank_ledger_id: $("mCash").value,
-      p_amount: Number($("mAmount").value || 0),
-      p_ref_no: $("mRef").value || null,
-      p_narration: $("mNote").value || null,
-      p_data_mode: $("dataMode").value
-    };
-    const fn = moneyMode === "RECEIPT" ? "rr_accounts_post_receipt_v805" : "rr_accounts_post_payment_v805";
-    const { data, error } = await client.rpc(fn, params);
-    if (error) throw error;
-    $("moneyMsg").textContent = `Posted · ${data.voucher_no}`;
-    await load();
-  }
-
-  document.querySelectorAll("[data-tab]").forEach(b => b.addEventListener("click", () => {
-    document.querySelectorAll("[data-tab]").forEach(x => x.classList.remove("active"));
-    b.classList.add("active");
-    document.querySelectorAll(".tabpage").forEach(x => x.classList.add("hidden"));
-    $(b.dataset.tab).classList.remove("hidden");
-  }));
-
-  $("pType").addEventListener("change", renderMaterials);
-  $("pMaterial").addEventListener("change", calcPurchase);
-  ["pQty","pRate","pGst"].forEach(id => $(id).addEventListener("input", calcPurchase));
-  $("pStatus").addEventListener("change", () => {
-    const s = $("pStatus").value;
-    $("pPaidWrap").classList.toggle("hidden", s !== "PART_PAID");
-    $("pCashWrap").classList.toggle("hidden", s === "CREDIT");
-  });
-
-  $("receiptMode").addEventListener("click", () => {
-    moneyMode = "RECEIPT"; $("againstLabel").childNodes[0].nodeValue = "Received From";
-    $("postMoney").textContent = "Post Receipt";
-  });
-  $("paymentMode").addEventListener("click", () => {
-    moneyMode = "PAYMENT"; $("againstLabel").childNodes[0].nodeValue = "Paid To / Expense Ledger";
-    $("postMoney").textContent = "Post Payment";
-  });
-
-  $("postPurchase").addEventListener("click", () => postPurchase().catch(e => $("purchaseMsg").textContent = e.message));
-  $("postMoney").addEventListener("click", () => postMoney().catch(e => $("moneyMsg").textContent = e.message));
-  $("refresh").addEventListener("click", () => load().catch(e => alert(e.message)));
-  $("dataMode").addEventListener("change", () => load().catch(e => alert(e.message)));
-
-  $("pDate").value = new Date().toISOString().slice(0,10);
-  RR.enableZeroClean(document);
-  RR.enableEnterNext($("purchase"));
-  RR.enableEnterNext($("money"));
-  load().catch(e => alert(e.message));
+  document.addEventListener("DOMContentLoaded",()=>{initDates();wire();refresh()});
 })();
