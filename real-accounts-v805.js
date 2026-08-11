@@ -6,7 +6,7 @@
   const money=v=>`₹${fmt(v)}`;
   const today=()=>new Date().toISOString().slice(0,10);
   const monthStart=()=>{const d=new Date();d.setDate(1);return d.toISOString().slice(0,10)};
-  const state={client:null,ledgers:[],suggestions:[],selected:null,bookRows:[],materialTypes:[],materials:[],busy:false};
+  const state={client:null,ledgers:[],suggestions:[],selected:null,bookRows:[],materialTypes:[],materials:[],busy:false,addEntity:null,addTarget:null,masterRequests:[],accountCategories:[]};
 
   function message(id,text,type=""){const el=$(id);if(!el)return;el.textContent=text||"";el.className=`msg ${type}`.trim()}
   function errorText(e){return e?.message||e?.error_description||e?.details||String(e||"Unknown error")}
@@ -145,73 +145,150 @@
   }
 
   async function refresh(){if(state.busy)return;state.busy=true;const btn=$("refreshAll");setBusy(btn,true,"Refreshing…");try{
-      const rs=await Promise.allSettled([loadLedgers(),loadMaterialBootstrap(),searchReports($("reportSearch")?.value||"")]);
+      const rs=await Promise.allSettled([loadLedgers(),loadMaterialBootstrap(),searchReports($("reportSearch")?.value||""),loadAccountCategories(),loadMasterRequests()]);
       rs.filter(x=>x.status==="rejected").forEach(x=>console.warn("Accounts mapping warning",x.reason));
       if($("modeMirror"))$("modeMirror").value=mode();
     }finally{state.busy=false;setBusy(btn,false)}}
 
   function initDates(){const t=today(),m=monthStart();["date","toDate","asOfDate","bookTo"].forEach(id=>{if($(id))$(id).value=t});["fromDate","bookFrom"].forEach(id=>{if($(id))$(id).value=m});if($("modeMirror"))$("modeMirror").value=mode()}
   function wire(){
-    $("type")?.addEventListener("change",dynamicLabel);$("material")?.addEventListener("change",syncMappedMaterial);$("qty")?.addEventListener("input",calc);$("rate")?.addEventListener("input",calc);$("checkMaterialAdd")?.addEventListener("click",checkMaterialAdd);$("requestNewMaterial")?.addEventListener("click",openAddRequest);$("closeNewMaterial")?.addEventListener("click",closeAddRequest);$("submitNewMaterialRequest")?.addEventListener("click",submitAddRequest);$("loadMaterialRequests")?.addEventListener("click",loadMaterialRequests);$("runReport")?.addEventListener("click",runSelectedReport);
-  const sourceManagedAddTypes=new Set(["REGULAR_CLOTH","MATCHING_CLOTH","STICKER","METAL_ID"]);
-  function normAdd(s){return String(s||"").trim().toLowerCase().replace(/[^a-z0-9]+/g,"")}
-  function levAdd(a,b){a=normAdd(a);b=normAdd(b);const m=a.length,n=b.length;if(!m)return n;if(!n)return m;let p=Array.from({length:n+1},(_,i)=>i);for(let i=1;i<=m;i++){let c=[i];for(let j=1;j<=n;j++)c[j]=Math.min(c[j-1]+1,p[j]+1,p[j-1]+(a[i-1]===b[j-1]?0:1));p=c}return p[n]}
-  function simAdd(a,b){a=normAdd(a);b=normAdd(b);if(!a||!b)return 0;if(a===b)return 1;return 1-levAdd(a,b)/Math.max(a.length,b.length)}
-  async function checkMaterialAdd(){
-    const code=$("type")?.value||"",q=String($("materialAddSearch")?.value||"").trim(),note=$("materialAddNote"),box=$("materialAddSuggestions"),add=$("requestNewMaterial");
-    if(!code)return note.textContent="Select Material Type first.";
-    if(!q)return note.textContent="Type a new material name to check.";
-    add.classList.add("hidden");box.classList.add("hidden");box.innerHTML="";note.textContent="Checking existing mapped names…";
+    $("type")?.addEventListener("change",dynamicLabel);$("material")?.addEventListener("change",syncMappedMaterial);$("qty")?.addEventListener("input",calc);$("rate")?.addEventListener("input",calc);document.querySelectorAll("[data-add-entity]").forEach(b=>b.addEventListener("click",()=>openFieldAdd(b)));$("closeAddMaster")?.addEventListener("click",closeFieldAdd);$("checkAddMaster")?.addEventListener("click",checkFieldAdd);$("submitAddMaster")?.addEventListener("click",submitFieldAdd);$("loadMasterRequests")?.addEventListener("click",loadMasterRequests);$("runReport")?.addEventListener("click",runSelectedReport);
+  const ADD_LABELS={
+    PARTY:"Party / Supplier",
+    MATERIAL_TYPE:"Material Type",
+    MATERIAL:"Material",
+    LEDGER:"Ledger"
+  };
+  function normMaster(v){return String(v||"").trim().toLowerCase().replace(/[^a-z0-9]+/g,"")}
+  function levMaster(a,b){a=normMaster(a);b=normMaster(b);const m=a.length,n=b.length;if(!m)return n;if(!n)return m;let p=Array.from({length:n+1},(_,i)=>i);for(let i=1;i<=m;i++){const c=[i];for(let j=1;j<=n;j++)c[j]=Math.min(c[j-1]+1,p[j]+1,p[j-1]+(a[i-1]===b[j-1]?0:1));p=c}return p[n]}
+  function simMaster(a,b){a=normMaster(a);b=normMaster(b);if(!a||!b)return 0;if(a===b)return 1;return 1-levMaster(a,b)/Math.max(a.length,b.length)}
+
+  async function loadAccountCategories(){
     try{
-      const rows=await rpc("rr_material_source_search_v805_1",{p_type_code:code,p_search:q,p_data_mode:mode(),p_limit:20});
-      const scored=(Array.isArray(rows)?rows:[]).map(r=>({...r,_score:simAdd(q,r.material_name||r.material_no)})).sort((a,b)=>b._score-a._score);
-      const close=scored.filter(r=>r._score>=0.72||normAdd(r.material_name).includes(normAdd(q))||normAdd(q).includes(normAdd(r.material_name))).slice(0,6);
-      if(close.length){
-        note.textContent="Similar/existing material found. Select it from Material Name dropdown; Add New is blocked.";
-        box.innerHTML=close.map(r=>`<div class="suggestion"><b>${esc(r.material_name||r.material_no)}</b><small>${esc(r.material_no||r.source_type||"Mapped")} · ${Math.round(r._score*100)}% match</small></div>`).join("");
-        box.classList.remove("hidden");
+      const c=resolveClient();
+      const r=await c.from("rr_account_categories_v805").select("id,category_code,category_name,group_id,is_active").eq("is_active",true).order("category_name",{ascending:true});
+      if(r.error)throw r.error;
+      state.accountCategories=r.data||[];
+    }catch(e){console.warn("Account categories unavailable",e);state.accountCategories=[]}
+    const el=$("addMasterCategory");if(el)el.innerHTML='<option value="">Select category…</option>'+state.accountCategories.map(x=>`<option value="${esc(x.id)}">${esc(x.category_name)} · ${esc(x.category_code)}</option>`).join("");
+  }
+
+  function fieldCurrentText(target){
+    const el=$(target); if(!el)return "";
+    const opt=el.selectedOptions?.[0];
+    const t=String(opt?.textContent||"").trim();
+    return /select|all/i.test(t)?"":t.split(" · ")[0].trim();
+  }
+
+  function openFieldAdd(btn){
+    state.addEntity=btn.dataset.addEntity||"";
+    state.addTarget=btn.dataset.target||"";
+    const entity=state.addEntity;
+    const title=ADD_LABELS[entity]||entity;
+    $("addMasterTitle").textContent=`Add New ${title}`;
+    $("addMasterSub").textContent=`${title} not found? Type the exact new name. Existing spelling/similarity will be checked first.`;
+    $("addMasterName").value=fieldCurrentText(state.addTarget);
+    $("addMasterCode").value="";
+    $("addMasterMatches").innerHTML="";$("addMasterMatches").classList.add("hidden");
+    $("addMasterMsg").textContent="";$("submitAddMaster").disabled=true;
+
+    const isLedger=entity==="PARTY"||entity==="LEDGER";
+    $("addMasterKindWrap").classList.toggle("hidden",!isLedger);
+    $("addMasterCategoryWrap").classList.toggle("hidden",!isLedger);
+    $("addMasterUnitWrap").classList.toggle("hidden",entity!=="MATERIAL_TYPE");
+    $("addMasterCodeWrap").classList.toggle("hidden",false);
+
+    if(entity==="PARTY")$("addMasterKind").value="SUPPLIER";
+    else if(entity==="LEDGER"){
+      const k=btn.dataset.ledgerKind||"GENERAL";
+      $("addMasterKind").value=k==="CASH_BANK"?"CASH":"GENERAL";
+    }
+
+    const m=$("addMasterModal");m.classList.remove("hidden");m.style.display="grid";
+    setTimeout(()=>$("addMasterName")?.focus(),30);
+  }
+  function closeFieldAdd(){const m=$("addMasterModal");m.classList.add("hidden");m.style.display=""}
+
+  async function checkFieldAdd(){
+    const name=String($("addMasterName").value||"").trim(),entity=state.addEntity;
+    if(!name)return message("addMasterMsg","Name required.","error");
+    message("addMasterMsg","Checking existing names…");
+    $("submitAddMaster").disabled=true;
+    try{
+      let rows=[];
+      if(entity==="MATERIAL"){
+        const type=$("type")?.value||"";
+        if(!type)throw new Error("Select Material Type first.");
+        rows=await rpc("rr_material_source_search_v805_1",{p_type_code:type,p_search:name,p_data_mode:mode(),p_limit:20});
+        rows=(Array.isArray(rows)?rows:[]).map(r=>({id:r.existing_material_id||r.source_id,display_name:r.material_name||r.material_no,detail:r.material_no||r.source_type}));
       }else{
-        note.textContent="No close spelling/similarity match found. Add New request is available.";
-        add.classList.remove("hidden");
+        rows=await rpc("rr_master_name_candidates_v8078",{p_entity_type:entity,p_search:name,p_limit:20});
+        rows=Array.isArray(rows)?rows:[];
       }
-    }catch(e){note.textContent=`Name check failed: ${errorText(e)}`}
+      const scored=rows.map(r=>({...r,_score:Number(r.similarity_score||simMaster(name,r.display_name||r.name))})).sort((a,b)=>b._score-a._score);
+      const close=scored.filter(r=>r._score>=0.72||normMaster(r.display_name).includes(normMaster(name))||normMaster(name).includes(normMaster(r.display_name))).slice(0,8);
+      const box=$("addMasterMatches");
+      if(close.length){
+        box.innerHTML=close.map(r=>`<div class="suggestion"><b>${esc(r.display_name||r.name)}</b><small>${esc(r.detail||r.code||"Existing")} · ${Math.round(r._score*100)}% match</small></div>`).join("");
+        box.classList.remove("hidden");
+        message("addMasterMsg","Existing / similar name found. Select existing in the original field; duplicate creation is blocked.","error");
+        $("submitAddMaster").disabled=true;
+      }else{
+        box.innerHTML='<div class="empty">No close spelling/similarity match found.</div>';box.classList.remove("hidden");
+        message("addMasterMsg","No close match found. You can send this as a new master request.","ok");
+        $("submitAddMaster").disabled=false;
+      }
+    }catch(e){message("addMasterMsg",errorText(e),"error")}
   }
-  function openAddRequest(){
-    const code=$("type")?.value||"",name=String($("materialAddSearch")?.value||"").trim();
-    if(!code||!name)return;
-    $("newMaterialType").value=code;$("newMaterialName").value=name;$("newMaterialNo").value="";
-    const t=state.materialTypes.find(x=>String(x.type_code)===code)||{};
-    const pu=String(t.default_purchase_unit||"PCS").toUpperCase(),cu=String(t.default_consumption_unit||pu).toUpperCase();
-    for(const [id,val] of [["newMaterialPurchaseUnit",pu],["newMaterialStockUnit",pu],["newMaterialConsumptionUnit",cu]])if($(id)&&[...$(id).options].some(o=>o.value===val))$(id).value=val;
-    $("newMaterialSimilar").textContent=sourceManagedAddTypes.has(code)?`${code.replaceAll("_"," ")} is source-managed. Approval will route it to its canonical master; no generic duplicate will be created.`:"Request will stay pending until Super Admin approves.";
-    $("newMaterialMsg").textContent="";
-    const m=$("newMaterialModal");m.classList.remove("hidden");m.style.display="grid";
-  }
-  function closeAddRequest(){const m=$("newMaterialModal");m.classList.add("hidden");m.style.display=""}
-  async function submitAddRequest(){
-    const btn=$("submitNewMaterialRequest"),name=$("newMaterialName").value.trim();
-    if(!name)return message("newMaterialMsg","Material Name required.","error");
-    setBusy(btn,true,"Sending…");
+
+  async function submitFieldAdd(){
+    const name=String($("addMasterName").value||"").trim(),entity=state.addEntity;
+    if(!name)return;
+    const btn=$("submitAddMaster");setBusy(btn,true,"Sending…");
     try{
-      const d=await rpc("rr_material_name_request_v8076",{p_type_code:$("newMaterialType").value,p_requested_name:name,p_material_no:$("newMaterialNo").value||null,p_purchase_unit:$("newMaterialPurchaseUnit").value,p_stock_unit:$("newMaterialStockUnit").value,p_consumption_unit:$("newMaterialConsumptionUnit").value,p_data_mode:mode()});
-      if(d?.blocked_by_match)message("newMaterialMsg","Similar existing Material found. Select existing; Add New blocked.","error");
-      else{message("newMaterialMsg",`Request sent for Super Admin approval${d?.request_id?` · ${d.request_id}`:""}.`,"ok");await loadMaterialRequests().catch(()=>{})}
-    }catch(e){message("newMaterialMsg",errorText(e),"error")}
+      const payload={
+        target_field:state.addTarget,
+        ledger_kind:$("addMasterKind")?.value||null,
+        category_id:$("addMasterCategory")?.value||null,
+        type_code:$("type")?.value||null,
+        default_unit:$("addMasterUnit")?.value||null,
+        code_no:String($("addMasterCode")?.value||"").trim()||null,
+        data_mode:mode()
+      };
+      const d=await rpc("rr_master_name_request_v8078",{p_entity_type:entity,p_requested_name:name,p_payload:payload});
+      if(d?.blocked_by_match){
+        message("addMasterMsg","Similar existing name found. Creation blocked; use existing option.","error");
+      }else{
+        message("addMasterMsg",`Request sent for Super Admin approval${d?.request_id?` · ${d.request_id}`:""}.`,"ok");
+        $("submitAddMaster").disabled=true;
+        await loadMasterRequests().catch(()=>{});
+      }
+    }catch(e){message("addMasterMsg",errorText(e),"error")}
     finally{setBusy(btn,false)}
   }
-  async function loadMaterialRequests(){
-    const box=$("materialRequestResult");if(!box)return;
+
+  async function loadMasterRequests(){
+    const box=$("masterRequestResult");if(!box)return;
     try{
-      const data=await rpc("rr_material_name_requests_v8076",{p_status:null,p_limit:100}),rows=Array.isArray(data)?data:[];
-      if(!rows.length){box.innerHTML='<div class="empty">No material name requests.</div>';return}
-      box.innerHTML=`<div class="scroll"><table><thead><tr><th>Requested</th><th>Type</th><th>Name</th><th>Suggested</th><th>Status</th><th>Action</th></tr></thead><tbody>`+rows.map(r=>`<tr><td>${esc(new Date(r.requested_at).toLocaleString())}</td><td>${esc(r.type_code||"")}</td><td><b>${esc(r.requested_name)}</b></td><td>${esc((r.suggested_matches||[]).slice(0,3).map(x=>x.display_name).join(", ")||"—")}</td><td>${esc(r.status)}</td><td>${r.status==="PENDING"?`<button data-apreq="${r.id}" class="primary">Approve</button> <button data-rejreq="${r.id}">Reject</button>`:"—"}</td></tr>`).join("")+`</tbody></table></div>`;
-      box.querySelectorAll("[data-apreq]").forEach(b=>b.onclick=()=>decideAddRequest(b.dataset.apreq,"APPROVE_NEW"));
-      box.querySelectorAll("[data-rejreq]").forEach(b=>b.onclick=()=>decideAddRequest(b.dataset.rejreq,"REJECT"));
+      const rows=await rpc("rr_master_name_requests_v8078",{p_status:null,p_limit:100});
+      state.masterRequests=Array.isArray(rows)?rows:[];
+      if(!state.masterRequests.length){box.innerHTML='<div class="empty">No new master requests.</div>';return}
+      box.innerHTML=`<div class="scroll"><table><thead><tr><th>Requested</th><th>Entity</th><th>Name</th><th>Suggested</th><th>Status</th><th>Action</th></tr></thead><tbody>`+
+        state.masterRequests.map(r=>`<tr><td>${esc(new Date(r.requested_at).toLocaleString())}</td><td>${esc(r.entity_type)}</td><td><b>${esc(r.requested_name)}</b></td><td>${esc((r.suggested_matches||[]).slice(0,3).map(x=>x.display_name).join(", ")||"—")}</td><td>${esc(r.status)}</td><td>${r.status==="PENDING"?`<button data-approve-master="${r.id}" class="primary">Approve</button> <button data-reject-master="${r.id}">Reject</button>`:"—"}</td></tr>`).join("")+
+        `</tbody></table></div>`;
+      box.querySelectorAll("[data-approve-master]").forEach(b=>b.onclick=()=>decideMasterRequest(b.dataset.approveMaster,"APPROVE_NEW"));
+      box.querySelectorAll("[data-reject-master]").forEach(b=>b.onclick=()=>decideMasterRequest(b.dataset.rejectMaster,"REJECT"));
     }catch(e){box.innerHTML=`<div class="empty">${esc(errorText(e))}</div>`}
   }
-  async function decideAddRequest(id,decision){
+
+  async function decideMasterRequest(id,decision){
     const remark=prompt(decision==="REJECT"?"Rejection reason:":"Super Admin remark (optional):","")??"";
-    try{const d=await rpc("rr_material_name_decide_v8076",{p_request_id:id,p_decision:decision,p_existing_source_id:null,p_remark:remark});alert(d?.message||"Decision saved.");await loadMaterialRequests();}catch(e){alert(errorText(e))}
+    try{
+      const d=await rpc("rr_master_name_decide_v8078",{p_request_id:id,p_decision:decision,p_remark:remark});
+      alert(d?.message||"Decision saved.");
+      await Promise.allSettled([loadMasterRequests(),loadLedgers(),loadMaterialBootstrap()]);
+      if($("type")?.value)await loadMappedMaterialsForType("");
+    }catch(e){alert(errorText(e))}
   }
 
 $("searchReports")?.addEventListener("click",()=>searchReports());$("reportSearch")?.addEventListener("input",()=>{clearTimeout(searchTimer);searchTimer=setTimeout(()=>searchReports(),220)});$("reportSearch")?.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();searchReports()}});$("loadDayBook")?.addEventListener("click",loadDayBook);$("bookSearch")?.addEventListener("input",renderBook);$("bookView")?.addEventListener("change",()=>{$("bookLedger").parentElement.classList.toggle("hidden",$("bookView").value!=="LEDGER")});$("dataMode")?.addEventListener("change",()=>{$("modeMirror").value=mode();refresh()});$("refreshAll")?.addEventListener("click",refresh);wirePreviewTemplates();zeroClean();enterFlow($("purchase"));enterFlow($("money"));
