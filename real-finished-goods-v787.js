@@ -167,8 +167,42 @@
   function printSelectedPackingAi(){const ids=[...state.aiSelected];printAiA4(ids)}
 
   async function boot(){
-    const auth=await RR.requireRoles(['owner','admin','manager','packing','store','sales','accounts']); state.profile=auth.profile; const role=String(auth.profile.role_code||'').toLowerCase();$('operator').textContent=['owner','admin'].includes(role)?'SUPER ADMIN':(auth.profile.full_name||'Authorized User');
-    bind(); await Promise.allSettled([loadPackLots(),loadPackWorkers(),loadReadyBoxes(),loadChallans(),loadStock(),loadCpis(),loadSuggestions(),loadMaterialBoxes()]);
+    try{
+      let auth=null;
+      if(window.RR?.requireRoles){
+        auth=await RR.requireRoles(['owner','admin','manager','packing','store','sales','accounts']);
+        state.profile=auth?.profile||auth||null;
+      }else{
+        const s=await supabaseClient.auth.getSession();
+        if(!s.data?.session)throw Error('Login required.');
+        const u=s.data.session.user;
+        let p=null;
+        try{
+          const r=await supabaseClient.from('rr_user_profiles').select('*').eq('auth_user_id',u.id).eq('is_active',true).limit(1).maybeSingle();
+          if(!r.error)p=r.data;
+        }catch(_){}
+        state.profile=p||{auth_user_id:u.id,role_code:'authenticated',full_name:u.email||'Authorized User'};
+      }
+
+      const role=String(state.profile?.role_code||'').toLowerCase();
+      $('operator').textContent=['owner','admin'].includes(role)?'SUPER ADMIN':(state.profile?.full_name||'Authorized User');
+
+      bind();
+      await Promise.allSettled([
+        loadPackLots(),
+        loadPackWorkers(),
+        loadReadyBoxes(),
+        loadChallans(),
+        loadStock(),
+        loadCpis(),
+        loadSuggestions(),
+        loadMaterialBoxes()
+      ]);
+    }catch(e){
+      console.error('Finished Goods boot error',e);
+      msg(e.message||String(e),'error');
+      $('operator').textContent='ACCESS ERROR';
+    }
   }
   function bind(){
     $('tabs').addEventListener('click',e=>{const b=e.target.closest('[data-tab]');if(!b)return;document.querySelectorAll('[data-tab]').forEach(x=>x.classList.toggle('active',x===b));document.querySelectorAll('[data-view]').forEach(x=>x.hidden=x.dataset.view!==b.dataset.tab);msg('');});
