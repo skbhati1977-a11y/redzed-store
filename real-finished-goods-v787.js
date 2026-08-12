@@ -3,7 +3,7 @@
   const $ = (id) => document.getElementById(id);
   const esc = (v) => String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const money = (v) => new Intl.NumberFormat('en-IN',{style:'currency',currency:'INR'}).format(Number(v||0));
-  const state = { profile:null, packPlan:null, packLots:[], selectedPack:null, piId:null, piLines:[], stock:[], cpis:[], materialBoxes:[] };
+  const state = { profile:null, packPlan:null, packLots:[], selectedPack:null, piId:null, piLines:[], stock:[], cpis:[], materialBoxes:[], lotMedia:null, aiSelected:new Set() };
   function msg(text,type=''){ $('message').textContent=text||''; $('message').className=`fg-msg ${type}`; }
   async function rpc(name,args={}){ const r=await supabaseClient.rpc(name,args); if(r.error) throw r.error; return r.data; }
   async function rows(table,select='*'){ const r=await supabaseClient.from(table).select(select); if(r.error) throw r.error; return r.data||[]; }
@@ -15,6 +15,156 @@
   function ensureBoxMaterialControl(){if($('boxMaterialSelect'))return;const a=$('packSummary');if(!a)return;const w=document.createElement('div');w.id='boxMaterialWrap';w.style.cssText='margin:10px 0;padding:10px;border:1px solid #39424d;border-radius:10px;background:#10151b';w.innerHTML=`<label style="display:grid;gap:6px"><b>Box Name / Material *</b><select id="boxMaterialSelect" style="padding:10px;background:#0c1015;color:#fff;border:1px solid #39424d;border-radius:8px"></select><small id="boxMaterialMeta">Mandatory · Material Master BOX mapping</small></label>`;a.parentNode.insertBefore(w,a.nextSibling);$('boxMaterialSelect').onchange=renderSelectedBoxMaterial}
   function renderBoxMaterialOptions(){ensureBoxMaterialControl();if(!$('boxMaterialSelect'))return;$('boxMaterialSelect').innerHTML='<option value="">Select Box Name…</option>'+state.materialBoxes.map(x=>`<option value="${x.material_id}">${esc([x.material_name,x.material_no].filter(Boolean).join(' · '))}</option>`).join('');renderSelectedBoxMaterial()}
   function renderSelectedBoxMaterial(){const m=state.materialBoxes.find(x=>String(x.material_id)===String($('boxMaterialSelect')?.value));if($('boxMaterialMeta'))$('boxMaterialMeta').textContent=m?`Current Bal ${Number(m.current_balance_qty||0).toLocaleString('en-IN')} ${m.base_stock_unit} · W.Avg ${money(m.running_weighted_avg_cost_per_consumption_unit)} / Box`:'Mandatory · Material Master BOX mapping'}
+
+
+  // ===== V808_2 Packing Final Image / AI Media (additive) =====
+  const MEDIA_BUCKET='product-images';
+  function aiAdmin(){return ['owner','admin'].includes(String(state.profile?.role_code||'').toLowerCase())}
+  function mediaMsg(t,type=''){const e=$('packingMediaMsg');if(e){e.textContent=t||'';e.className=`fg-msg ${type}`}}
+  function mediaStatus(t){if($('aiMediaStatus'))$('aiMediaStatus').textContent=t}
+  function safeName(s){return String(s||'image').replace(/[^a-zA-Z0-9._-]+/g,'-').slice(-90)}
+  function lotPath(kind,name){const lot=String(state.selectedPack?.lot_no||'UNKNOWN');return `TEST/${lot}/${kind}/${Date.now()}-${crypto.randomUUID()}-${safeName(name)}`}
+  function dataUrlToBlob(dataUrl){
+    const [head,b64]=String(dataUrl).split(',');const mime=(head.match(/data:([^;]+)/)||[])[1]||'image/png';
+    const bin=atob(b64||''),arr=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)arr[i]=bin.charCodeAt(i);
+    return new Blob([arr],{type:mime});
+  }
+  async function uploadBlob(path,blob,contentType){
+    const r=await supabaseClient.storage.from(MEDIA_BUCKET).upload(path,blob,{contentType:contentType||blob.type,upsert:false});
+    if(r.error)throw r.error;
+    const p=supabaseClient.storage.from(MEDIA_BUCKET).getPublicUrl(path);
+    return {path,url:p.data.publicUrl};
+  }
+  async function invokeFactoryAi(body){
+    const r=await supabaseClient.functions.invoke('real-factory-ai',{body});
+    if(r.error)throw r.error;
+    if(r.data?.ok===false)throw Error(r.data.error||'AI request failed.');
+    return r.data;
+  }
+  async function loadLotMedia(){
+    if(!state.selectedPack){state.lotMedia=null;return}
+    try{
+      state.lotMedia=await rpc('rr_media_ai_lot_state_v808',{p_lot_no:String(state.selectedPack.lot_no),p_data_mode:'TEST'});
+      state.aiSelected=new Set();
+      renderLotMedia();
+    }catch(e){mediaMsg(e.message,'error')}
+  }
+  function mediaImageUrl(m){return m.file_url||''}
+  function renderLotMedia(){
+    const d=state.lotMedia||{}, media=Array.isArray(d.media)?d.media:[];
+    const sources=media.filter(x=>x.media_stage==='PACKING_FINAL_SOURCE');
+    const variants=media.filter(x=>x.media_stage==='AI_VARIANT');
+    mediaStatus(`${sources.length}/4 SOURCE`);
+    $('aiVariantCount').textContent=`${variants.length} AI`;
+    $('packingSourceMedia').innerHTML=sources.length?sources.map(x=>`<div class="ai-card"><img src="${esc(mediaImageUrl(x))}" alt="Packing source"><small>Source ${x.source_seq} · Lot ${esc(x.lot_no)}</small></div>`).join(''):'<div class="fg-muted">Final image pending.</div>';
+    $('packingAiVariants').innerHTML=variants.length?variants.map(x=>{
+      const checked=state.aiSelected.has(x.media_id);
+      const cls=x.is_webstore_published?'published':x.approval_status==='APPROVED'?'approved':x.approval_status==='REGENERATE_REQUESTED'?'regenerate':'';
+      return `<div class="ai-card">
+        <div class="ai-media-head"><b>AI ${x.variant_no||''}</b><span class="ai-badge ${cls}">${esc(x.is_webstore_published?'PUBLISHED':x.approval_status)}</span></div>
+        <img src="${esc(mediaImageUrl(x))}" alt="AI variant">
+        <label class="ai-inline" style="margin-top:7px"><input type="checkbox" data-ai-media="${esc(x.media_id)}" ${checked?'checked':''}><span>Select</span></label>
+        <div class="ai-actions"><button type="button" data-ai-print="${esc(x.media_id)}">Print A4</button></div>
+      </div>`;
+    }).join(''):'<div class="fg-muted">AI images pending.</div>';
+    $('packingAiVariants').querySelectorAll('[data-ai-media]').forEach(c=>c.onchange=()=>{c.checked?state.aiSelected.add(c.dataset.aiMedia):state.aiSelected.delete(c.dataset.aiMedia)});
+    $('packingAiVariants').querySelectorAll('[data-ai-print]').forEach(b=>b.onclick=()=>printAiA4([b.dataset.aiPrint]));
+    $('packingAiAdminActions').hidden=!aiAdmin()||!variants.length;
+    mediaMsg(`${sources.length} source · ${variants.length} AI · ${Number(d.approved_count||0)} approved · ${Number(d.published_count||0)} published.`,'ok');
+  }
+  async function uploadPackingFinalImages(){
+    try{
+      if(!state.selectedPack)throw Error('Lot select karein.');
+      const files=[...($('packingFinalImages').files||[])];
+      if(!files.length)throw Error('1–4 Final Images select karein.');
+      const existing=Number(state.lotMedia?.source_count||0);
+      if(existing+files.length>4)throw Error(`Max 4 Final Images. Existing ${existing}, selected ${files.length}.`);
+      const b=$('uploadPackingFinalImages');b.disabled=true;mediaMsg('Final Images save ho rahi hain…');
+      for(const f of files){
+        if(!['image/jpeg','image/png','image/webp'].includes(f.type))throw Error('Only JPG/PNG/WEBP.');
+        if(f.size>12*1024*1024)throw Error(`${f.name}: max 12 MB.`);
+        const up=await uploadBlob(lotPath('packing-final',f.name),f,f.type);
+        await rpc('rr_media_ai_add_source_v808',{
+          p_lot_no:String(state.selectedPack.lot_no),p_file_url:up.url,p_storage_path:up.path,
+          p_file_name:f.name,p_mime_type:f.type,p_data_mode:'TEST',p_is_mock:false,
+          p_metadata:{source_module:'PACKING',lot_no:String(state.selectedPack.lot_no)}
+        });
+      }
+      $('packingFinalImages').value='';await loadLotMedia();mediaMsg('Final Images saved · same Lot locked.','ok');b.disabled=false;
+    }catch(e){$('uploadPackingFinalImages').disabled=false;mediaMsg(e.message,'error')}
+  }
+  async function generatePackingAi(){
+    try{
+      if(!state.selectedPack)throw Error('Lot select karein.');
+      const sources=(state.lotMedia?.media||[]).filter(x=>x.media_stage==='PACKING_FINAL_SOURCE');
+      if(!sources.length)throw Error('Pehle Final Image save karein.');
+      const b=$('generatePackingAi');b.disabled=true;mediaMsg('AI 5 promotion images generate kar raha hai…');
+      const group=crypto.randomUUID(), made=[];
+      // Use uploaded source set across the five outputs (round-robin). Existing AI backend remains untouched.
+      for(let i=0;i<5;i++){
+        const src=sources[i%sources.length];
+        const a=await invokeFactoryAi({
+          action:'IMAGE_VARIANTS_GENERATE',data_mode:'TEST',variant_count:1,
+          source_image_url:src.file_url,
+          product_context:{lot_no:String(state.selectedPack.lot_no),source_module:'PACKING_FINAL_IMAGE'},
+          image_context:{workflow:'PACKING_TO_WEBSTORE',source_number:src.source_seq,requested_variant:i+1}
+        });
+        const v=(a.variants||[])[0];if(!v)throw Error(`AI ${i+1} image return nahi hui.`);
+        const blob=dataUrlToBlob(`data:${v.mime_type||'image/png'};base64,${v.base64}`);
+        const up=await uploadBlob(`TEST/${state.selectedPack.lot_no}/ai/${group}/variant-${i+1}.png`,blob,v.mime_type||'image/png');
+        made.push({variant_no:i+1,file_url:up.url,storage_path:up.path,file_name:`variant-${i+1}.png`,mime_type:v.mime_type||'image/png',openai_response_id:v.openai_response_id||null,prompt_version:'REAL_FACTORY_AI_V2_2',metadata:{source_media_id:src.media_id,source_seq:src.source_seq}});
+      }
+      await rpc('rr_media_ai_register_variants_v808',{
+        p_lot_no:String(state.selectedPack.lot_no),
+        p_source_media_ids:sources.map(x=>x.media_id),
+        p_variants:made,p_data_mode:'TEST',p_generation_group:group
+      });
+      await loadLotMedia();mediaMsg('5 AI images ready · Admin approval notification created.','ok');b.disabled=false;
+    }catch(e){$('generatePackingAi').disabled=false;mediaMsg(e.message,'error')}
+  }
+  function selectedAiRows(){const ids=[...state.aiSelected];return (state.lotMedia?.media||[]).filter(x=>ids.includes(String(x.media_id)))}
+  async function acceptPackingAi(){
+    try{if(!aiAdmin())throw Error('Admin required.');const ids=[...state.aiSelected];if(!ids.length)throw Error('AI image select karein.');
+      await rpc('rr_media_ai_admin_decide_v808',{p_lot_no:String(state.selectedPack.lot_no),p_accept_media_ids:ids,p_regenerate_media_ids:[],p_data_mode:'TEST'});
+      await loadLotMedia();mediaMsg(`${ids.length} image accepted.`,'ok');
+    }catch(e){mediaMsg(e.message,'error')}
+  }
+  async function regeneratePackingAi(){
+    try{
+      if(!aiAdmin())throw Error('Admin required.');const old=selectedAiRows();if(!old.length)throw Error('Regenerate image select karein.');
+      await rpc('rr_media_ai_admin_decide_v808',{p_lot_no:String(state.selectedPack.lot_no),p_accept_media_ids:[],p_regenerate_media_ids:old.map(x=>x.media_id),p_data_mode:'TEST'});
+      const sources=(state.lotMedia?.media||[]).filter(x=>x.media_stage==='PACKING_FINAL_SOURCE');if(!sources.length)throw Error('Source image missing.');
+      const group=crypto.randomUUID(), made=[];
+      for(let i=0;i<old.length;i++){
+        const src=sources[i%sources.length];
+        const a=await invokeFactoryAi({action:'IMAGE_VARIANT_REGENERATE',data_mode:'TEST',variant_count:1,source_image_url:src.file_url,regenerate_instruction:'Create a different premium promotional alternative. Preserve exact garment identity.',product_context:{lot_no:String(state.selectedPack.lot_no)},image_context:{workflow:'PACKING_TO_WEBSTORE_REGENERATE'}});
+        const v=(a.variants||[])[0];if(!v)throw Error('Replacement image missing.');
+        const blob=dataUrlToBlob(`data:${v.mime_type||'image/png'};base64,${v.base64}`);
+        const up=await uploadBlob(`TEST/${state.selectedPack.lot_no}/ai/${group}/variant-${i+1}.png`,blob,v.mime_type||'image/png');
+        made.push({variant_no:i+1,file_url:up.url,storage_path:up.path,file_name:`regen-${i+1}.png`,mime_type:v.mime_type||'image/png',openai_response_id:v.openai_response_id||null,prompt_version:'REAL_FACTORY_AI_V2_2',metadata:{regenerated_from:old[i].media_id,source_media_id:src.media_id}});
+      }
+      await rpc('rr_media_ai_register_variants_v808',{p_lot_no:String(state.selectedPack.lot_no),p_source_media_ids:sources.map(x=>x.media_id),p_variants:made,p_data_mode:'TEST',p_generation_group:group});
+      await loadLotMedia();mediaMsg(`${made.length} replacement image ready · approval pending.`,'ok');
+    }catch(e){mediaMsg(e.message,'error')}
+  }
+  async function publishPackingAi(){
+    try{if(!aiAdmin())throw Error('Admin required.');const rows=selectedAiRows().filter(x=>x.approval_status==='APPROVED');if(!rows.length)throw Error('Approved image select karein.');
+      await rpc('rr_media_ai_publish_v808',{p_lot_no:String(state.selectedPack.lot_no),p_media_ids:rows.map(x=>x.media_id),p_data_mode:'TEST'});
+      await loadLotMedia();mediaMsg(`${rows.length} image Webstore published.`,'ok');
+    }catch(e){mediaMsg(e.message,'error')}
+  }
+  function comparePackingAi(){
+    const src=(state.lotMedia?.media||[]).filter(x=>x.media_stage==='PACKING_FINAL_SOURCE'), ai=selectedAiRows().length?selectedAiRows():(state.lotMedia?.media||[]).filter(x=>x.media_stage==='AI_VARIANT');
+    $('aiCompareBody').innerHTML=src.map(x=>`<div class="ai-card"><b>SOURCE ${x.source_seq}</b><img src="${esc(x.file_url)}"></div>`).join('')+ai.map(x=>`<div class="ai-card"><b>AI ${x.variant_no||''}</b><img src="${esc(x.file_url)}"><small>${esc(x.approval_status)}</small></div>`).join('');
+    const d=$('aiCompareDialog');typeof d.showModal==='function'?d.showModal():d.setAttribute('open','');
+  }
+  function printAiA4(ids){
+    const rows=(state.lotMedia?.media||[]).filter(x=>ids.includes(String(x.media_id)));if(!rows.length){mediaMsg('Print ke liye image select karein.','error');return}
+    const lot=state.selectedPack?.lot_no||'—', pages=rows.map(x=>`<section class="p"><header><b>REAL FACTORY</b><b>LOT ${esc(lot)}</b></header><div class="m">AI ${x.variant_no||''} · ${esc(x.approval_status)}</div><div class="photo"><img src="${esc(x.file_url)}"></div><footer>Packing Final Image based · Admin controlled</footer></section>`).join('');
+    const w=window.open('','_blank');if(!w){mediaMsg('Browser pop-up allow karein.','error');return}
+    w.document.write(`<!doctype html><html><head><title>Lot ${esc(lot)} A4</title><style>@page{size:A4 portrait;margin:10mm}body{margin:0;font-family:Arial}.p{width:190mm;min-height:277mm;page-break-after:always;display:flex;flex-direction:column}.p:last-child{page-break-after:auto}header{display:flex;justify-content:space-between;border-bottom:2px solid;padding-bottom:6mm}.m{padding:5mm 0;font-weight:bold}.photo{flex:1;display:grid;place-items:center;border:1px solid #bbb}.photo img{max-width:100%;max-height:230mm;object-fit:contain}footer{margin-top:5mm;font-size:10px}</style></head><body>${pages}</body></html>`);w.document.close();setTimeout(()=>w.print(),500);
+  }
+  function printSelectedPackingAi(){const ids=[...state.aiSelected];printAiA4(ids)}
 
   async function boot(){
     const auth=await RR.requireRoles(['owner','admin','manager','packing','store','sales','accounts']); state.profile=auth.profile; const role=String(auth.profile.role_code||'').toLowerCase();$('operator').textContent=['owner','admin'].includes(role)?'SUPER ADMIN':(auth.profile.full_name||'Authorized User');
@@ -29,6 +179,15 @@
     $('saleLot').onchange=showSaleBalance;$('addPiLine').onclick=addPiLine;$('savePi').onclick=()=>savePi(false);$('submitCpi').onclick=()=>savePi(true);
     $('loadCpis').onclick=loadCpis;$('verifyQty').onclick=verifyQty;$('returnMode').onchange=toggleReturnMode;$('returnCpi').onchange=loadReturnLines;$('returnLine').onchange=fillReturnRate;$('postReturn').onclick=postReturn;
     $('valueAdded').oninput=renderPi;$('packingOther').oninput=renderPi;
+    $('uploadPackingFinalImages').onclick=uploadPackingFinalImages;
+    $('generatePackingAi').onclick=generatePackingAi;
+    $('refreshPackingMedia').onclick=loadLotMedia;
+    $('acceptPackingAi').onclick=acceptPackingAi;
+    $('regeneratePackingAi').onclick=regeneratePackingAi;
+    $('comparePackingAi').onclick=comparePackingAi;
+    $('printPackingAi').onclick=printSelectedPackingAi;
+    $('publishPackingAi').onclick=publishPackingAi;
+    $('closeAiCompare').onclick=()=>{const d=$('aiCompareDialog');if(d?.close)d.close();else d?.removeAttribute('open')};
   }
   async function loadSuggestions(){
     try{const [lots,buyers]=await Promise.all([rows('rr_fg_stock_balance_v787'),rows('rr_buyers_v787')]);$('saleLotSuggestions').innerHTML=lots.filter(x=>Number(x.available_qty)>0).map(x=>`<option value="${esc(x.lot_no)}">${esc(x.short_item_name||'')}</option>`).join('');$('buyerSuggestions').innerHTML=buyers.map(x=>`<option value="${esc(x.buyer_name)}">${esc(x.gst_no||'')}</option>`).join('');}catch(e){console.warn(e);}
@@ -37,8 +196,8 @@
   async function loadPackLots(){try{msg('Press se Ready Lots fetch ho rahe hain…');state.packLots=await rpc('rr_fg_ready_packing_cards_v788',{p_data_mode:'TEST'});renderPackLots();msg(`${state.packLots.length} Ready Packing Lot cards loaded.`,'ok');}catch(e){$('packLotCards').innerHTML='<p class="fg-warning">Ready lots load nahi hue. V788 SQL run karein.</p>';msg(e.message,'error');}}
   function renderPackLots(){const q=$('packLotSearch').value.trim().toLowerCase(),list=state.packLots.filter(x=>String(x.lot_no).toLowerCase().includes(q));$('packLotCards').innerHTML=list.length?list.map(x=>`<button class="fg-lot-card" data-pack-lot="${esc(x.lot_no)}"><div class="fg-card-line"><strong>${esc(x.lot_no)}</strong><span class="fg-status ${x.is_mine?'mine':x.assignment_id?'':'open'}">${esc(x.status_label)}</span></div><div class="fg-card-line"><span>Ready PCS</span><b>${x.ready_qty}</b></div><div class="fg-card-line"><span>Colours / Sizes</span><span>${x.colours} / ${x.sizes}</span></div><div class="fg-card-line"><span>Packer</span><span>${esc(x.worker_name||'Not Assigned')}</span></div></button>`).join(''):'<p class="fg-muted">Koi matching Ready Lot nahi hai.</p>';$('packLotCards').querySelectorAll('[data-pack-lot]').forEach(b=>b.onclick=()=>openPackLot(b.dataset.packLot));}
   async function loadPackWorkers(){try{const data=await rpc('rr_fg_packing_workers_v788');$('packWorker').innerHTML='<option value="">Select Packing Worker…</option>'+data.map(x=>`<option value="${x.user_id}">${esc(x.display_name)}${x.worker_code?' · '+esc(x.worker_code):''}</option>`).join('');}catch(e){console.warn(e);}}
-  function openPackLot(lot){const x=state.packLots.find(v=>String(v.lot_no)===String(lot));if(!x)return;state.selectedPack=x;state.packPlan=null;$('packWorkspace').hidden=false;$('selectedPackLot').textContent=`Lot ${x.lot_no}`;$('selectedPackMeta').innerHTML=`<span class="fg-chip">Ready PCS <b>${x.ready_qty}</b></span><span class="fg-chip">Status <b>${esc(x.status_label)}</b></span>${x.worker_name?`<span class="fg-chip">Packer <b>${esc(x.worker_name)}</b></span>`:''}`;$('assignPackBlock').hidden=!canAssign()||Boolean(x.assignment_id);$('workerPackBlock').hidden=!(x.is_mine&&x.assignment_status==='ASSIGNED');$('submitPack').disabled=true;$('packRows').innerHTML='';$('packSummary').innerHTML='';ensureBoxMaterialControl();if($('boxMaterialSelect'))$('boxMaterialSelect').value='';renderSelectedBoxMaterial();$('packWorkspace').scrollIntoView({behavior:'smooth',block:'start'});if(x.is_mine&&x.assignment_status==='ACCEPTED')generatePack();}
-  function closePackLot(){$('packWorkspace').hidden=true;state.selectedPack=null;state.packPlan=null;}
+  function openPackLot(lot){const x=state.packLots.find(v=>String(v.lot_no)===String(lot));if(!x)return;state.selectedPack=x;state.packPlan=null;$('packWorkspace').hidden=false;$('selectedPackLot').textContent=`Lot ${x.lot_no}`;$('selectedPackMeta').innerHTML=`<span class="fg-chip">Ready PCS <b>${x.ready_qty}</b></span><span class="fg-chip">Status <b>${esc(x.status_label)}</b></span>${x.worker_name?`<span class="fg-chip">Packer <b>${esc(x.worker_name)}</b></span>`:''}`;$('assignPackBlock').hidden=!canAssign()||Boolean(x.assignment_id);$('workerPackBlock').hidden=!(x.is_mine&&x.assignment_status==='ASSIGNED');$('submitPack').disabled=true;$('packRows').innerHTML='';$('packSummary').innerHTML='';ensureBoxMaterialControl();if($('boxMaterialSelect'))$('boxMaterialSelect').value='';renderSelectedBoxMaterial();loadLotMedia();$('packWorkspace').scrollIntoView({behavior:'smooth',block:'start'});if(x.is_mine&&x.assignment_status==='ACCEPTED')generatePack();}
+  function closePackLot(){$('packWorkspace').hidden=true;state.selectedPack=null;state.packPlan=null;state.lotMedia=null;state.aiSelected=new Set();}
   async function assignPack(){try{if(!state.selectedPack)throw Error('Lot card select karein.');const worker=$('packWorker').value;if(!worker)throw Error('Packing Worker select karein.');await rpc('rr_fg_assign_packing_v788',{p_lot_no:state.selectedPack.lot_no,p_worker_user_id:worker,p_data_mode:'TEST'});msg(`Lot ${state.selectedPack.lot_no} packing worker ko assigned.`,'ok');closePackLot();await loadPackLots();}catch(e){msg(e.message,'error');}}
   async function acceptPack(){try{if(!state.selectedPack?.assignment_id)throw Error('Assigned Lot required.');await rpc('rr_fg_accept_packing_v788',{p_assignment_id:state.selectedPack.assignment_id});state.selectedPack.assignment_status='ACCEPTED';$('workerPackBlock').hidden=true;msg('Work accepted. Algorithm auto-run ho raha hai…','ok');await generatePack();}catch(e){msg(e.message,'error');}}
   async function generatePack(){try{const x=state.selectedPack;if(!x)throw Error('Lot card select karein.');msg('Packing algorithm chal raha hai…');state.packPlan=await rpc('rr_fg_generate_assigned_pack_v788',{p_assignment_id:x.assignment_id});const detail=await rpc('rr_fg_pack_plan_detail_v787',{p_plan_id:state.packPlan.plan_id});$('packRows').innerHTML=(detail.boxes||[]).map(v=>`<tr><td>${esc(v.box_code)}</td><td>${esc(v.box_type)}</td><td>${v.qty}</td><td>${esc(composition(v.cells))}</td></tr>`).join('');$('packSummary').innerHTML=`<span class="fg-chip">Boxes <b>${detail.boxes.length}</b></span><span class="fg-chip">PCS <b>${detail.total_qty}</b></span>`;$('submitPack').disabled=false;msg('Algorithm ready; physical boxes verify karke Submit Packing karein.','ok');}catch(e){msg(e.message,'error');}}
