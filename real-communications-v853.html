@@ -1,15 +1,18 @@
 <!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Communication / WhatsApp</title><link rel="stylesheet" href="rf-v853.css"></head><body><main class="rf-shell">
-<header class="rf-head"><div class="rf-brand"><small>REAL FACTORY · FRONTEND SYNC V853</small><h1>Communication / WhatsApp</h1><div class="muted">V853 outbox + WA-LINK direct opener</div></div>
-<div class="rf-actions"><select id="dataMode"><option>TEST</option><option>REAL</option></select><a class="btn" href="real-dashboard-v853.html">Dashboard</a></div></header>
+<title>Communication / WhatsApp</title><link rel="stylesheet" href="rf-v853.css">
+<style>
+.wa-open{background:#173b2d;border-color:#2f7658;font-weight:900}.wa-row{display:grid;grid-template-columns:minmax(130px,1fr) minmax(130px,1.2fr) minmax(240px,4fr) minmax(110px,.8fr) auto;gap:8px;align-items:center;padding:9px;border-bottom:1px solid var(--line,#2b3648)}.wa-row.head{position:sticky;top:0;background:var(--panel,#111722);font-weight:900;font-size:11px;z-index:2}.wa-msg{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.wa-mobile{font-weight:900}.wa-list{overflow:auto;max-height:55vh}.wa-hint{font-size:12px}.wa-state{min-height:24px;margin-top:8px}@media(max-width:800px){.wa-row{grid-template-columns:1fr auto}.wa-row.head{display:none}.wa-row>div:nth-child(1),.wa-row>div:nth-child(4){display:none}.wa-msg{grid-column:1/-1;white-space:normal}.wa-mobile{grid-column:1/2}}
+</style></head><body><main class="rf-shell">
+<header class="rf-head"><div class="rf-brand"><small>REAL FACTORY · WHATSAPP FINAL</small><h1>Communication / WhatsApp</h1><div class="muted">WA-LINK direct opener · prefilled message · user presses Send</div></div>
+<div class="rf-actions"><select id="dataMode"><option>TEST</option><option>REAL</option></select><a class="btn" href="real-dashboard.html">Dashboard</a></div></header>
 
 <section class="grid">
-<article class="card span-4"><h3>WhatsApp WA-LINK</h3><p class="muted">Damage-module method: opens WhatsApp with prefilled message. No Cloud API send.</p>
-<label>Message ID<input id="mid" placeholder="UUID"></label><button class="primary" id="openById" style="margin-top:8px">Open queued WhatsApp</button><div id="msg"></div></article>
-<article class="card span-8"><h3>Manual message</h3><div class="formgrid"><label>Mobile<input id="phone" inputmode="tel"></label><label style="grid-column:span 3">Message<textarea id="text" rows="3"></textarea></label></div><button id="manual" style="margin-top:8px">Open WhatsApp</button></article>
-<article class="card span-12"><h3>Outbox</h3><div class="toolbar"><button id="refresh">Refresh</button><input id="filter" placeholder="Search status / mobile / message"></div><div id="outbox"></div></article>
+<article class="card span-4"><h3>Open queued message</h3><p class="muted wa-hint">Message ID paste karke WhatsApp me exact queued message open karein.</p>
+<label>Message ID<input id="mid" placeholder="UUID" autocomplete="off"></label><button class="primary wa-open" id="openById" style="margin-top:8px">OPEN WHATSAPP MESSAGE</button><div id="msg" class="wa-state"></div></article>
+<article class="card span-8"><h3>Manual WhatsApp message</h3><div class="formgrid"><label>Mobile<input id="phone" inputmode="tel" autocomplete="tel" placeholder="10 digit / country code"></label><label style="grid-column:span 3">Message<textarea id="text" rows="3" placeholder="Type message"></textarea></label></div><button id="manual" class="wa-open" style="margin-top:8px">OPEN WHATSAPP</button><div class="muted wa-hint" style="margin-top:7px">Message auto-send nahi hoga. WhatsApp khulne ke baad Send user press karega.</div></article>
+<article class="card span-12"><h3>Outbox</h3><div class="toolbar"><button id="refresh">Refresh</button><input id="filter" placeholder="Search mobile / status / message"></div><div id="outbox"></div></article>
 <article class="card span-12"><h3>Delivery / action log</h3><div id="logs"></div></article>
 </section>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="config.js"></script><script src="real-common.js"></script><script src="rf-v853-core.js"></script><script src="real-communications-v853.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="config.js"></script><script src="real-common.js"></script><script src="rf-v853-core.js"></script><script src="real-communications-v853.js?v=855"></script>
 </main></body></html>

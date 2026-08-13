@@ -1,0 +1,26 @@
+{
+  "version": "V855",
+  "entry": "real-dashboard.html",
+  "dashboard_js": "real-dashboard-v855.js",
+  "latest_sync_base": "V853",
+  "preserve_existing": [
+    "config.js",
+    "real-common.js",
+    "stable payroll/attendance/product/cutting files"
+  ],
+  "new_frontend_modules": [
+    "real-upm-v853.html/js",
+    "real-finished-goods-v853.html/js",
+    "real-production-due-v853.html/js",
+    "real-lot-media-v853.html/js",
+    "real-material-master-v853.html/js",
+    "real-accounts-v853.html/js",
+    "real-commerce-v853.html/js",
+    "real-costing-v853.html/js",
+    "real-reports-v853.html/js",
+    "real-communications-v853.html/js",
+    "real-security-v853.html/js"
+  ],
+  "whatsapp_flow": "FINAL_OPEN_WHATSAPP_MESSAGE",
+  "note": "Dashboard package/version corrected to V855; V853 module filenames remain canonical module versions."
+}
