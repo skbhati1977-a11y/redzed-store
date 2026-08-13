@@ -1,0 +1,48 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>REAL FACTORY · Material</title>
+<style>
+:root{color-scheme:dark;--b:#090b0e;--p:#12161c;--l:#2b333d;--t:#f4f6f8;--m:#9aa4af}
+*{box-sizing:border-box}body{margin:0;background:var(--b);color:var(--t);font:14px system-ui}.app{max-width:1450px;margin:auto;padding:14px}
+header,.row,.tabs{display:flex;gap:8px;align-items:center;flex-wrap:wrap}header{justify-content:space-between}.panel{background:var(--p);border:1px solid var(--l);border-radius:13px;padding:13px;margin:10px 0}
+h1,h2{margin:3px 0 10px}.k{color:var(--m);font-size:11px;font-weight:900}button,a{border:1px solid var(--l);background:#171c23;color:#fff;border-radius:8px;padding:9px 11px;text-decoration:none;font-weight:800}
+input,select{width:100%;border:1px solid var(--l);background:#0c1015;color:#fff;border-radius:8px;padding:10px;font-size:16px}.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}.f{display:flex;flex-direction:column;gap:4px}.f span{color:var(--m);font-size:12px;font-weight:800}.pair{display:grid;grid-template-columns:1fr 85px;gap:5px}
+.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:10px}.metric{background:#0d1116;border:1px solid var(--l);border-radius:9px;padding:9px}.metric small{display:block;color:var(--m)}.metric strong{font-size:16px}
+.scroll{overflow:auto}table{border-collapse:collapse;width:100%;min-width:1200px}th,td{padding:8px;border-bottom:1px solid #29313a;text-align:left;white-space:nowrap}.hidden{display:none!important}
+@media(max-width:850px){.grid{grid-template-columns:1fr 1fr}.metrics{grid-template-columns:1fr 1fr}}@media(max-width:520px){.grid,.metrics{grid-template-columns:1fr}}
+</style><link rel="stylesheet" href="rf-v853.css"></head><body><main class="app">
+<header><div><div class="k">REAL FACTORY · V805.2</div><h1>Material Purchase & Consumption</h1></div><div class="row"><select id="mode" style="width:auto"><option>TEST</option><option>REAL</option></select><a href="real-dashboard.html">Dashboard</a><button id="refresh">Refresh</button></div></header>
+<div class="tabs"><button data-tab="purchase">Purchase / IN</button><button data-tab="stock">Stock & Cost</button><button data-tab="reorder">Reorder / PI</button></div>
+
+<section class="panel" data-page="purchase"><h2>Purchase / IN</h2>
+<div class="grid">
+<label class="f"><span>Material Type</span><select id="type"></select></label>
+<label class="f"><span>Material Name</span><select id="material"></select></label>
+<label class="f"><span>Material No.</span><input id="no" readonly></label>
+<label class="f"><span>Purchase Qty + Unit</span><div class="pair"><input id="pq" type="number" step="0.001"><select id="pu"></select></div></label>
+<label class="f"><span>Stock Qty + Unit</span><div class="pair"><input id="sq" type="number" step="0.001"><select id="su"></select></div></label>
+<label class="f"><span>Consumption Qty + Unit</span><div class="pair"><input id="cq" type="number" step="0.001"><select id="cu"></select></div></label>
+<label class="f"><span>Purchase Rate</span><div class="pair"><input id="rate" type="number" step="0.01"><select id="rateBasis"><option value="PURCHASE">/Purchase</option><option value="STOCK">/Stock</option></select></div></label>
+<label class="f"><span>Supplier</span><select id="supplier"></select></label>
+<label class="f"><span>Bill No.</span><input id="bill"></label>
+<label class="f"><span>Bill Date</span><input id="date" type="date"></label>
+<label class="f"><span>Consumption / Good PCS</span><input id="perGood" type="number" step="0.000001"></label>
+<label class="f"><span>Auto Consumption</span><select id="autoConsume"><option value="false">OFF</option><option value="true">ON</option></select></label>
+<label class="f"><span>Event</span><select id="event"><option>PACKING_SUBMIT</option><option>MANUAL</option></select></label>
+<label class="f"><span>Reorder Alert Below</span><input id="below" type="number" step="0.001"></label>
+<label class="f"><span>Reorder Qty</span><input id="reorder" type="number" step="0.001"></label>
+<label class="f"><span>Auto PI</span><select id="autoPi"><option value="false">OFF</option><option value="true">ON</option></select></label>
+</div>
+<div class="metrics">
+<div class="metric"><small>Current Balance Before Purchase</small><strong id="before">0</strong></div>
+<div class="metric"><small>Balance After Purchase</small><strong id="after">0</strong></div>
+<div class="metric"><small>Current Cost / Consumption Unit</small><strong id="cur">₹0</strong></div>
+<div class="metric"><small>Running Weighted Avg</small><strong id="avg">₹0</strong></div>
+</div>
+<div class="row" style="margin-top:10px"><button id="save" style="background:#244b78">Save & Post Purchase</button><span id="msg"></span></div>
+<div class="k" style="margin-top:8px">Regular Cloth is excluded here. Its unique purchase source remains CB New / CB Purchase.</div>
+</section>
+
+<section class="panel hidden" data-page="stock"><h2>Stock & Cost</h2><div class="scroll"><table><thead><tr><th>Type</th><th>No</th><th>Material</th><th>Current Balance</th><th>Stock Unit</th><th>Running W.Avg</th><th>Consumption/Good PCS</th><th>Event</th><th>Reorder Below</th><th>Reorder Qty</th></tr></thead><tbody id="stockBody"></tbody></table></div></section>
+<section class="panel hidden" data-page="reorder"><h2>Reorder / Purchase PI</h2><div class="scroll"><table><thead><tr><th>PI</th><th>Material</th><th>Current Balance</th><th>Order Qty</th><th>Status</th><th>Message</th></tr></thead><tbody id="piBody"></tbody></table></div></section>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="config.js"></script><script src="real-common.js"></script><script src="real-material-master-v853.js?v=8052"></script>
+</main></body></html>

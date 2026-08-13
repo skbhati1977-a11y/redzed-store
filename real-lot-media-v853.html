@@ -1,0 +1,14 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Lot Media + AI Approval</title><link rel="stylesheet" href="rf-v853.css"></head><body><main class="rf-shell">
+<header class="rf-head"><div class="rf-brand"><small>REAL FACTORY · FRONTEND SYNC V853</small><h1>Lot Media + AI Approval</h1><div class="muted">Packing final source → AI variants → Admin approval → publish</div></div>
+<div class="rf-actions"><select id="dataMode"><option>TEST</option><option>REAL</option></select><a class="btn" href="real-dashboard-v853.html">Dashboard</a></div></header>
+
+<section class="grid">
+<article class="card span-4"><h3>Lot</h3><label>Lot No<input id="lot"></label><div class="toolbar" style="margin-top:8px"><button class="primary" id="load">Load</button></div><div id="msg"></div></article>
+<article class="card span-8"><h3>Pending AI approval notifications</h3><div id="notes"></div></article>
+<article class="card span-12"><h3>Media</h3><div id="media"></div></article>
+<article class="card span-12"><h3>Audit events</h3><div id="events"></div></article>
+</section>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="config.js"></script><script src="real-common.js"></script><script src="rf-v853-core.js"></script><script src="real-lot-media-v853.js"></script>
+</main></body></html>

@@ -1,0 +1,36 @@
+{
+  "package": "REAL_FACTORY_FRONTEND_SYNC_V853",
+  "generated_for": "backend-first frontend synchronization",
+  "default_data_mode": "TEST",
+  "keep_existing": [
+    "config.js",
+    "real-common.js"
+  ],
+  "modules": [
+    "real-accounts-v853.html",
+    "real-accounts-v853.js",
+    "real-commerce-v853.html",
+    "real-commerce-v853.js",
+    "real-communications-v853.html",
+    "real-communications-v853.js",
+    "real-costing-v853.html",
+    "real-costing-v853.js",
+    "real-dashboard-v853.html",
+    "real-dashboard-v853.js",
+    "real-finished-goods-v853.html",
+    "real-finished-goods-v853.js",
+    "real-lot-media-v853.html",
+    "real-lot-media-v853.js",
+    "real-material-master-v853.html",
+    "real-material-master-v853.js",
+    "real-production-due-v853.html",
+    "real-production-due-v853.js",
+    "real-reports-v853.html",
+    "real-reports-v853.js",
+    "real-security-v853.html",
+    "real-security-v853.js",
+    "real-upm-v853.html",
+    "real-upm-v853.js",
+    "rf-v853-core.js"
+  ]
+}

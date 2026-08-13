@@ -1,0 +1,7 @@
+
+(() => {let cache=[];
+function render(){const q=filter.value.toLowerCase();RF853.table("outbox",!q?cache:cache.filter(x=>JSON.stringify(x).toLowerCase().includes(q)),["message_id","recipient_mobile","channel","message_text","send_status","provider_code","attempt_count","created_at"])}
+async function load(){try{cache=await RF853.rows("rr_comm_outbox_v853",{order:"created_at",limit:200});render();let l=[];try{l=await RF853.rows("rr_comm_delivery_log_v853",{order:"created_at",limit:200})}catch{}RF853.table("logs",l,["message_id","provider_status","provider_message_id","created_at","provider_payload"])}catch(e){RF853.msg("msg",e.message,"error")}}
+async function openId(){try{const id=mid.value.trim();if(!id)throw Error("Message ID required.");const c=await RF853.client();const {data:r,error}=await c.from("rr_comm_outbox_v853").select("message_id,recipient_mobile,message_text").eq("message_id",id).single();if(error)throw error;RF853.openWhatsapp(r.recipient_mobile,r.message_text);try{await RF853.rpc("rr_comm_mark_whatsapp_opened_v853",{p_message_id:id})}catch(e){console.warn(e)}RF853.msg("msg","WhatsApp opened; user must press Send.","ok");load()}catch(e){RF853.msg("msg",e.message,"error")}}
+openById.onclick=openId;manual.onclick=()=>{try{RF853.openWhatsapp(phone.value,text.value)}catch(e){RF853.msg("msg",e.message,"error")}};refresh.onclick=load;filter.oninput=render;load();
+})();

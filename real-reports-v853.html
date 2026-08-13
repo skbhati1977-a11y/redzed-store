@@ -1,0 +1,13 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Reports + AI Search</title><link rel="stylesheet" href="rf-v853.css"></head><body><main class="rf-shell">
+<header class="rf-head"><div class="rf-brand"><small>REAL FACTORY · FRONTEND SYNC V853</small><h1>Reports + AI Search</h1><div class="muted">Template suggestions plus question-driven report analysis bridge</div></div>
+<div class="rf-actions"><select id="dataMode"><option>TEST</option><option>REAL</option></select><a class="btn" href="real-dashboard-v853.html">Dashboard</a></div></header>
+
+<section class="grid">
+<article class="card span-12"><div class="formgrid"><label>Ask report question<input id="query" placeholder="e.g. lot profitability, salary, stock, outstanding"></label><label>From<input id="from" type="date"></label><label>To<input id="to" type="date"></label><label>Mode<select id="reportMode"><option>AUTO</option><option>TEMPLATE</option><option>AI_ANALYSIS</option></select></label></div>
+<div class="toolbar" style="margin-top:10px"><button class="primary" id="run">Analyze</button></div><div id="msg"></div></article>
+<article class="card span-12"><h3>Suggested templates / result</h3><div id="result"></div></article>
+</section>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="config.js"></script><script src="real-common.js"></script><script src="rf-v853-core.js"></script><script src="real-reports-v853.js"></script>
+</main></body></html>

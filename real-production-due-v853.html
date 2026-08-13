@@ -1,0 +1,19 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Production Due Control</title><link rel="stylesheet" href="rf-v853.css"></head><body><main class="rf-shell">
+<header class="rf-head"><div class="rf-brand"><small>REAL FACTORY · FRONTEND SYNC V853</small><h1>Production Due Control</h1><div class="muted">Print / Sticker / Metal ID activated only from live cut quantity</div></div>
+<div class="rf-actions"><select id="dataMode"><option>TEST</option><option>REAL</option></select><a class="btn" href="real-dashboard-v853.html">Dashboard</a></div></header>
+
+<section class="grid">
+<article class="card span-3 metric"><span>Print Due</span><b id="mPrint">—</b></article>
+<article class="card span-3 metric"><span>Sticker Due</span><b id="mSticker">—</b></article>
+<article class="card span-3 metric"><span>Metal ID Due</span><b id="mMetal">—</b></article>
+<article class="card span-3 metric"><span>Cut Qty rows</span><b id="mCut">—</b></article>
+<article class="card span-12"><div class="toolbar"><button class="primary" id="refresh">Refresh</button><input id="search" placeholder="Search lot / particular / status"></div><div id="msg"></div></article>
+<article class="card span-12"><h3>Print due activation</h3><div id="print"></div></article>
+<article class="card span-12"><h3>Sticker due activation</h3><div id="sticker"></div></article>
+<article class="card span-12"><h3>Metal ID due activation</h3><div id="metal"></div></article>
+<article class="card span-12"><h3>Cut quantity source audit</h3><div id="cut"></div></article>
+</section>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="config.js"></script><script src="real-common.js"></script><script src="rf-v853-core.js"></script><script src="real-production-due-v853.js"></script>
+</main></body></html>

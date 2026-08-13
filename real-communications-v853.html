@@ -1,0 +1,15 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Communication / WhatsApp</title><link rel="stylesheet" href="rf-v853.css"></head><body><main class="rf-shell">
+<header class="rf-head"><div class="rf-brand"><small>REAL FACTORY · FRONTEND SYNC V853</small><h1>Communication / WhatsApp</h1><div class="muted">V853 outbox + WA-LINK direct opener</div></div>
+<div class="rf-actions"><select id="dataMode"><option>TEST</option><option>REAL</option></select><a class="btn" href="real-dashboard-v853.html">Dashboard</a></div></header>
+
+<section class="grid">
+<article class="card span-4"><h3>WhatsApp WA-LINK</h3><p class="muted">Damage-module method: opens WhatsApp with prefilled message. No Cloud API send.</p>
+<label>Message ID<input id="mid" placeholder="UUID"></label><button class="primary" id="openById" style="margin-top:8px">Open queued WhatsApp</button><div id="msg"></div></article>
+<article class="card span-8"><h3>Manual message</h3><div class="formgrid"><label>Mobile<input id="phone" inputmode="tel"></label><label style="grid-column:span 3">Message<textarea id="text" rows="3"></textarea></label></div><button id="manual" style="margin-top:8px">Open WhatsApp</button></article>
+<article class="card span-12"><h3>Outbox</h3><div class="toolbar"><button id="refresh">Refresh</button><input id="filter" placeholder="Search status / mobile / message"></div><div id="outbox"></div></article>
+<article class="card span-12"><h3>Delivery / action log</h3><div id="logs"></div></article>
+</section>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="config.js"></script><script src="real-common.js"></script><script src="rf-v853-core.js"></script><script src="real-communications-v853.js"></script>
+</main></body></html>
