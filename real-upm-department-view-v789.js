@@ -21,7 +21,7 @@
   const accepted = aliases[requested] || [requested];
   const cache = new Map();
   const lastSubmitCache = new Map();
-  let viewMode = "submit";
+  let filterMode = "submit";
   const upper = value => String(value || "").trim().toUpperCase();
   const esc = value => String(value ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
   const canonical = code => route.find(key => (aliases[key] || [key]).includes(upper(code))) || upper(code);
@@ -96,7 +96,7 @@
       const traveller = document.getElementById("traveller");
       if (target && traveller && !traveller.classList.contains("hidden")) {
         clearInterval(timer);
-        target.scrollIntoView({ behavior: "smooth", block: "center" });
+        target.scrollIntoFilter({ behavior: "smooth", block: "center" });
       } else if (++tries > 40) clearInterval(timer);
     }, 100);
   }
@@ -159,7 +159,7 @@
     }
     try {
       await window.RealFactoryUPM.openLotAtDepartment(lotId, target.department_code);
-      document.getElementById("selectAllBtn")?.scrollIntoView({ behavior: "smooth", block: "center" });
+      document.getElementById("selectAllBtn")?.scrollIntoFilter({ behavior: "smooth", block: "center" });
     } catch (error) { alert(error?.message || error); }
   }
 
@@ -202,15 +202,15 @@
   }
 
   function setMode(mode) {
-    viewMode = mode === "submit" ? "submit" : "assign";
+    filterMode = mode === "submit" ? "submit" : "assign";
     document.querySelectorAll("[data-rf-due-mode]").forEach(button => {
-      button.classList.toggle("active", button.dataset.rfDueMode === viewMode);
+      button.classList.toggle("active", button.dataset.rfDueMode === filterMode);
     });
     const board = document.getElementById("board");
     const queue = document.querySelector(".rf-queue-section");
-    if (board) board.classList.toggle("hidden", viewMode !== "submit");
-    if (queue) queue.classList.toggle("hidden", viewMode !== "assign" || requested === "CUTTING");
-    if (viewMode === "assign") document.getElementById("rfDepartmentQueue")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    if (board) board.classList.toggle("hidden", filterMode !== "submit");
+    if (queue) queue.classList.toggle("hidden", filterMode !== "assign" || requested === "CUTTING");
+    if (filterMode === "assign") document.getElementById("rfDepartmentQueue")?.scrollIntoFilter({ behavior: "smooth", block: "start" });
   }
 
   function applyShell() {
@@ -244,7 +244,7 @@
       try {
         await filterRunningCards();
         await renderQueue();
-        setMode(viewMode);
+        setMode(filterMode);
       } catch (error) {
         const host = document.getElementById("rfDepartmentQueue");
         if (host) host.innerHTML = `<div class="msg">ASSIGN DUE load failed: ${esc(error?.message || error)}</div>`;
@@ -258,5 +258,5 @@
   sync();
   setTimeout(sync, 1000);
   setMode("submit");
-  console.info("REAL FACTORY V867 · UPM DEPARTMENT SPECIFIC DUE MAPPING");
+  console.info("REAL FACTORY V870 · DUE FILTER BUTTONS DATASET FIX");
 })();

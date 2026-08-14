@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="filterport" content="width=device-width,initial-scale=1,filterport-fit=cover">
 <meta name="theme-color" content="#07090d">
 <title>REAL FACTORY — Universal Production V789</title>
 <style>
@@ -71,7 +71,7 @@
 </section>
 </div>
 
-<div id="alterEvidenceModal" class="modal hidden"><section class="sheet" style="height:auto;max-height:95vh"><div class="top"><h2>Alter Fill Evidence</h2><button id="closeAlterEvidence" type="button">Close</button></div><p class="msg">Live camera evidence 1–3 images mandatory. Physical piece submission must be confirmed.</p><label class="field"><span>Camera Evidence</span><input id="alterEvidenceFiles" type="file" accept="image/*" capture="environment" multiple></label><label class="field"><span>Alter Receiver Line Man · This Journey</span><select id="alterLineManSelect" required><option value="">Select Alter Receiver Line Man (mandatory)</option></select></label><p id="alterReceiverRule" class="route-note">हर नई Alter journey में receiver Line Man mapping verify होगी.</p><video id="liveCamera" autoplay playsinline class="camera-video hidden"></video><canvas id="cameraCanvas" class="hidden"></canvas><div class="actions"><button id="startCamera" type="button">OPEN LIVE CAMERA</button><button id="captureCamera" type="button" class="warning" disabled>CAPTURE PHOTO</button><button id="stopCamera" type="button" disabled>STOP CAMERA</button></div><div id="alterEvidencePreview" class="entry-images"></div><label style="display:flex;gap:10px;align-items:center;margin:12px 0"><input id="physicalEvidenceSubmitted" type="checkbox" style="width:20px;height:20px"> <span id="physicalEvidenceLabel">Physical Alter Piece selected Line Man को handover किया है</span></label><div class="actions"><button id="saveAlterEvidence" class="warning" type="button">SAVE ALTER FILL</button></div><p id="alterEvidenceMsg" class="msg"></p></section></div>
+<div id="alterEvidenceModal" class="modal hidden"><section class="sheet" style="height:auto;max-height:95vh"><div class="top"><h2>Alter Fill Evidence</h2><button id="closeAlterEvidence" type="button">Close</button></div><p class="msg">Live camera evidence 1–3 images mandatory. Physical piece submission must be confirmed.</p><label class="field"><span>Camera Evidence</span><input id="alterEvidenceFiles" type="file" accept="image/*" capture="environment" multiple></label><label class="field"><span>Alter Receiver Line Man · This Journey</span><select id="alterLineManSelect" required><option value="">Select Alter Receiver Line Man (mandatory)</option></select></label><p id="alterReceiverRule" class="route-note">हर नई Alter journey में receiver Line Man mapping verify होगी.</p><video id="liveCamera" autoplay playsinline class="camera-video hidden"></video><canvas id="cameraCanvas" class="hidden"></canvas><div class="actions"><button id="startCamera" type="button">OPEN LIVE CAMERA</button><button id="captureCamera" type="button" class="warning" disabled>CAPTURE PHOTO</button><button id="stopCamera" type="button" disabled>STOP CAMERA</button></div><div id="alterEvidencePrefilter" class="entry-images"></div><label style="display:flex;gap:10px;align-items:center;margin:12px 0"><input id="physicalEvidenceSubmitted" type="checkbox" style="width:20px;height:20px"> <span id="physicalEvidenceLabel">Physical Alter Piece selected Line Man को handover किया है</span></label><div class="actions"><button id="saveAlterEvidence" class="warning" type="button">SAVE ALTER FILL</button></div><p id="alterEvidenceMsg" class="msg"></p></section></div>
 
 <div id="lmModal" class="modal hidden"><section class="sheet" style="height:auto;max-width:600px"><div class="top"><h2>Change Lot Line Man</h2><button id="closeLmModal">Close</button></div><label class="field"><span>New Line Man</span><select id="newLmSelect"></select></label><label class="field"><span>Mode</span><select id="lmTransferMode"><option value="HANDOVER">Handover</option><option value="LEAVE">Planned Leave</option><option value="FORCE_REENROL">Force Re-enrol</option><option value="INACTIVE_REPLACEMENT">Inactive Replacement</option></select></label><label class="field"><span>Reason</span><textarea id="lmTransferReason"></textarea></label><label style="display:flex;gap:10px"><input type="checkbox" id="lmPhysicalHandover"> Physical handover confirmed</label><div class="actions"><button id="saveLmTransfer" class="primary">SAVE ENROLMENT</button></div><p id="lmModalMsg" class="msg"></p></section></div>
 <div id="approvalModal" class="modal hidden"><section class="sheet" style="height:auto;max-width:800px"><div class="top"><h2>Untraceable Owner Approvals</h2><button id="closeApprovalModal">Close</button></div><div id="approvalList"></div></section></div>
@@ -96,13 +96,13 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="config.js"></script>
 <script src="real-common.js"></script>
-<script src="real-universal-production-v729.js?v=867"></script>
+<script src="real-universal-production-v729.js?v=870"></script>
 <script src="real-universal-production-v765-independent-alter.js?v=7651"></script>
 <script src="real-universal-production-v770-alter-routing-fix.js?v=7701"></script>
 <script src="real-universal-production-v768-damage-balance-fix.js?v=7681"></script>
 <script src="real-universal-production-v769-worker-claim-warning-fix.js?v=7691"></script>
-<script src="real-upm-submit-confirm-v796.js?v=867"></script>
-<script src="real-upm-department-view-v789.js?v=867"></script>
+<script src="real-upm-submit-confirm-v796.js?v=870"></script>
+<script src="real-upm-department-filter-v789.js?v=870"></script>
   
 </body>
 </html>
