@@ -1,0 +1,56 @@
+REAL FACTORY V874 ASSIGN DUE COLOUR LEVEL ONLY
+
+Upload/replace these files together in the app root.
+
+Main open:
+
+https://skbhati1977-a11y.github.io/redzed-store/real-dashboard.html?v=874
+
+UPM All department direct tests:
+
+https://skbhati1977-a11y.github.io/redzed-store/real-universal-production-v770.html?dept=KR&label=Karigar&v=874
+
+Check these after upload:
+
+1. Dashboard -> UPM Flow Window
+2. Any UPM department dashboard -> Open Random Queue card/message
+3. Dashboard -> Reports & AI Query
+4. Dashboard -> Accounts Suite
+5. UPM -> REPORTS button
+6. Dashboard -> Production Due
+
+Added in V874:
+
+- Open Random Queue no longer stays blank:
+  - Shows UPM engine loading + retry if scripts are still loading
+  - Shows exact no-lot/no-eligible-queue reason if TEST lot source is empty
+  - Shows visible error if backend/filter load fails
+
+- Dashboard cache/version updated to V874.
+
+- Reports & AI Query module:
+  - Template report list
+  - Search suggestions
+  - AI question box
+  - Calls Supabase Edge Function `real-factory-ai`
+  - Fallback table report data remains visible if AI function is blocked
+
+- Accounts Suite module:
+  - P&L tab
+  - Balance Sheet tab
+  - Receivable tab
+  - Payment tab
+  - Purchase tab
+  - Sales tab
+  - Uses V857 filters when available, with fallback to existing V847/V849/V850/V787 filters
+
+- UPM REPORTS button now opens Reports & AI Query page.
+
+- Previous V857 patches retained:
+  - Single UPM inlay/tabs
+  - Submit Due script attached
+  - Open Queue / Assign Due linked
+  - Explicit DUE guard
+  - Product/Cutting visible REAL FACTORY branding
+
+TEST default retained. REAL default is not changed.

@@ -258,5 +258,5 @@
   sync();
   setTimeout(sync, 1000);
   setMode("submit");
-  console.info("REAL FACTORY V871 · ASSIGN DUE COMPLETED DEPT EXCLUDE");
+  console.info("REAL FACTORY V874 · ASSIGN DUE COLOUR LEVEL ONLY");
 })();

@@ -187,17 +187,10 @@ function lotAssignDueTargets(lot, departmentCode) {
   const statuses = arr(meta.department_statuses);
   const special = specialChoice(meta.identity || {});
   const selectedStatus = statuses.find(row => canonicalDept(row.department_code || row.department_name) === selected);
+  if (selected !== "CUTTING" && statuses.length && !selectedStatus) return [];
   if (selectedStatus) {
-    const total = Number(selectedStatus.total_colours || selectedStatus.total_codes || selectedStatus.colour_count || arr(lot.colours).length || 0);
-    const active = new Set([
-      ...arr(selectedStatus.assigned_codes), ...arr(selectedStatus.running_codes),
-      ...arr(selectedStatus.submitted_codes), ...arr(selectedStatus.completed_codes),
-      ...arr(selectedStatus.done_codes), ...arr(selectedStatus.locked_codes)
-    ]);
-    const label = upper([selectedStatus.status_colour, selectedStatus.status, selectedStatus.display_label, selectedStatus.board_detail].join(" "));
-    const completed = label.includes("GREEN") || label.includes("COMPLETED") || label.includes("SUBMITTED") || label.includes("DONE");
-    if (completed) return [];
-    if (total > 0 && active.size >= total) return [];
+    const openCodes = assignDueOpenCodes(lot, departmentCode);
+    if (!openCodes.length) return [];
   }
   return arr(state.departments)
     .map(department => ({ ...department, canonical: canonicalDept(department.department_code) }))
@@ -214,6 +207,29 @@ function lotAssignDueTargets(lot, departmentCode) {
 
 function lotHasAssignDue(lot, departmentCode) {
   return lotAssignDueTargets(lot, departmentCode).length > 0;
+}
+
+function assignDueOpenCodes(lot, departmentCode) {
+  const selected = canonicalDept(departmentCode);
+  const meta = boardMeta(lot) || {};
+  const statuses = arr(meta.department_statuses);
+  const selectedStatus = statuses.find(row => canonicalDept(row.department_code || row.department_name) === selected);
+  const explicitOpen = [
+    ...arr(selectedStatus?.open_codes),
+    ...arr(selectedStatus?.assignable_codes),
+    ...arr(selectedStatus?.pending_codes)
+  ].map(upper).filter(Boolean);
+  if (explicitOpen.length) return [...new Set(explicitOpen)];
+  const baseCodes = arr(lot.colours).map(row => upper(row.colour_code || row.colour_id || row.colour_name)).filter(Boolean);
+  const total = Number(selectedStatus?.total_colours || selectedStatus?.total_codes || selectedStatus?.colour_count || baseCodes.length || 0);
+  const closed = new Set([
+    ...arr(selectedStatus?.assigned_codes), ...arr(selectedStatus?.running_codes),
+    ...arr(selectedStatus?.submitted_codes), ...arr(selectedStatus?.completed_codes),
+    ...arr(selectedStatus?.done_codes), ...arr(selectedStatus?.locked_codes)
+  ].map(upper).filter(Boolean));
+  if (baseCodes.length) return baseCodes.filter(code => !closed.has(code));
+  if (total > 0 && closed.size < total) return [`${total - closed.size} COLOUR PENDING`];
+  return [];
 }
 
 function selectedDueRows() {
@@ -250,6 +266,10 @@ function lotCard(lot) {
   const artNo = validMappedValue(identity.art_no) ? identity.art_no : (lot.art_no || "—");
   const department = $("homeDept")?.value || "";
   const assignTargets = state.dueFilter === "assign" && department ? lotAssignDueTargets(lot, department) : [];
+  const openAssignCodes = state.dueFilter === "assign" && department ? assignDueOpenCodes(lot, department) : [];
+  const assignNote = state.dueFilter === "assign" && openAssignCodes.length
+    ? `<div class="rf-assign-open-codes">Assignable colours: ${esc(openAssignCodes.join(", "))}</div>`
+    : "";
   const actionHtml = state.dueFilter === "assign" && assignTargets.length
     ? `<div class="rf-universal-assign-actions">${assignTargets.map(target => `<button class="primary" data-assign-lot="${esc(lot.canonical_lot_id)}" data-assign-dept="${esc(target.department_code)}" type="button">ASSIGN DUE · ${esc(target.department_name || target.department_code)}</button>`).join("")}</div>`
     : `<button class="primary checkin" data-open-lot="${esc(lot.canonical_lot_id)}" type="button">${state.dueFilter === "submit" ? "SUBMIT DUE" : "CHECK IN"}</button>`;
@@ -259,6 +279,7 @@ function lotCard(lot) {
       <div style="text-align:right"><small class="muted">TOTAL CUT</small><div class="cut">${num(lot.total_qty)} PCS</div></div>
     </div>
     <div class="lot-live-list">${boardStatusRows(lot)}</div>
+    ${assignNote}
     <div class="thumbs">${thumbnails(lot, 5)}</div>
     ${actionHtml}
   </article>`;
@@ -295,7 +316,7 @@ function attachUniversalDueToolbar() {
     };
   });
   const style = document.createElement("style");
-  style.textContent = `#rfUniversalDueToolbar{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 16px}#rfUniversalDueToolbar button{min-height:48px;border:1px solid #303641;background:#202635;color:#fff;border-radius:10px;font-weight:950}#rfUniversalDueToolbar button.active{background:#d43d5e;border-color:#ff6b8a}#rfUniversalDueToolbar b{margin-left:6px;color:#2bf6a2}.rf-universal-assign-actions{display:grid;gap:8px;margin-top:auto}.rf-universal-assign-actions button{width:100%;min-height:46px;background:#174936;border-color:#318b65}@media(max-width:520px){#rfUniversalDueToolbar{grid-template-columns:1fr}}`;
+  style.textContent = `#rfUniversalDueToolbar{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 16px}#rfUniversalDueToolbar button{min-height:48px;border:1px solid #303641;background:#202635;color:#fff;border-radius:10px;font-weight:950}#rfUniversalDueToolbar button.active{background:#d43d5e;border-color:#ff6b8a}#rfUniversalDueToolbar b{margin-left:6px;color:#2bf6a2}.rf-assign-open-codes{margin:8px 0;color:#2bf6a2;font-size:12px;font-weight:900}.rf-universal-assign-actions{display:grid;gap:8px;margin-top:auto}.rf-universal-assign-actions button{width:100%;min-height:46px;background:#174936;border-color:#318b65}@media(max-width:520px){#rfUniversalDueToolbar{grid-template-columns:1fr}}`;
   document.head.append(style);
 }
 
@@ -439,7 +460,12 @@ function filterDepartmentDropdown(){
   const statuses=arr(state.context?.department_statuses);
   if(!statuses.length)return false;
   const icon={BASE:"",ORANGE:"🟧 ",GREEN:"🟩 ",RED:"🟥 "};
-  select.innerHTML=statuses.map(d=>{
+  const filtered = statuses.filter(d => {
+    const label = upper([d.status_colour, d.status, d.display_label, d.board_detail].join(" "));
+    if (label.includes("GREEN") || label.includes("COMPLETED") || label.includes("SUBMITTED") || label.includes("DONE")) return false;
+    return true;
+  });
+  select.innerHTML=(filtered.length ? filtered : statuses).map(d=>{
     const code=upper(d.department_code);
     const status=upper(d.status_colour||"BASE");
     const cls=`dept-${status.toLowerCase()}`;
@@ -1019,7 +1045,7 @@ async function boot() {
     document.querySelectorAll("[data-link]").forEach(button => button.onclick = () => location.href = button.dataset.link);
     $("packingTab").onclick = () => setMessage("Existing Smart Packing remains unchanged.");
     $("costingTab").onclick = () => setMessage("Costing uses existing ledgers.");
-    $("reportsTab").onclick = () => location.href = "real-reports-ai-v857.html?v=871";
+    $("reportsTab").onclick = () => location.href = "real-reports-ai-v857.html?v=874";
     $("selectAllBtn").onclick = selectAllOpenColours;
     $("applyBulkWorkerBtn").onclick = applyBulkWorker;
     $("assignBtn").onclick = assignWork;
