@@ -221,13 +221,15 @@ function renderCuttingMasterOptions() {
 
 function validateMappedCuttingMaster() {
   const input = $("operatorName");
-  if (!input || !cuttingMasterRows.length) return;
+  if (!input) return;
 
   const value = workerName({ worker_name: input.value });
   if (!value) throw new Error("Mapped Cutting Master select karo.");
 
   const matched = cuttingMasterRows.some(row => workerName(row).toUpperCase() === value.toUpperCase());
-  if (!matched) throw new Error(`${value} backend mapped Cutting Master list me nahi hai.`);
+  if (cuttingMasterRows.length && !matched) {
+    console.warn(`${value} loaded Cutting Master list me nahi mila; backend release RPC ko final mapping decide karne diya ja raha hai.`);
+  }
 }
 
 function getClient() {
@@ -1371,6 +1373,60 @@ function printText(prints) {
   return text || "N/A";
 }
 
+function firstText(row = {}, keys = []) {
+  for (const key of keys) {
+    const value = row?.[key];
+    if (value !== undefined && value !== null && String(value).trim()) {
+      return String(value).trim();
+    }
+  }
+  return "";
+}
+
+function galleryArtNo(row = {}) {
+  return firstText(row, ["art_no", "art_code", "art", "article_no"]);
+}
+
+function galleryPrintNo(row = {}) {
+  return firstText(row, ["print_no", "print_code", "print", "print_name"]);
+}
+
+function galleryStyleName(row = {}) {
+  return firstText(row, [
+    "style_name",
+    "style",
+    "product_name",
+    "item_name",
+    "category"
+  ]);
+}
+
+function galleryImageUrl(row = {}) {
+  return firstText(row, [
+    "art_image_url",
+    "hero_image_url",
+    "image_url",
+    "photo_url",
+    "artwork_url",
+    "reference_image_url",
+    "garment_preview_url",
+    "thumbnail_url"
+  ]);
+}
+
+function galleryLooksReady(row = {}) {
+  const status = String(row.division_status || row.status || "")
+    .trim()
+    .toLowerCase();
+
+  return (
+    status === "ready_for_cutting" ||
+    status === "cutting" ||
+    status === "completed" ||
+    Boolean(galleryArtNo(row) || galleryStyleName(row) || galleryPrintNo(row))
+  );
+}
+
 function carouselItemsForAssignment(art, prints = []) {
   if (!art && !prints.length) return [];
 
@@ -1391,6 +1447,21 @@ function carouselItemsForAssignment(art, prints = []) {
       kind: "print"
     });
   });
+
+  return items;
+}
+
+function carouselItemsForCard(card, decision) {
+  const items = carouselItemsForAssignment(decision.art, decision.prints);
+  const fallbackUrl = galleryImageUrl(card.division);
+
+  if (!items.some(item => item.url) && fallbackUrl) {
+    items.push({
+      url: fallbackUrl,
+      label: galleryArtNo(card.division) || "ART",
+      kind: "art"
+    });
+  }
 
   return items;
 }
@@ -1506,22 +1577,27 @@ function cardDecision(card) {
   const prints = assignedPrintsForDivision(
     card.division.division_id
   );
+  const fallbackArtNo = galleryArtNo(card.division);
+  const fallbackPrintNo = galleryPrintNo(card.division);
+  const fallbackStyleName = galleryStyleName(card.division);
 
   const noPrintRequired = Boolean(
-    assignment && (
-      assignment.no_print_required === true ||
-      assignment.print_required === false ||
-      assignment.print_not_applicable === true ||
-      String(assignment.print_status || "")
-        .trim()
-        .toLowerCase() === "not_required"
-    )
+    (assignment && (
+        assignment.no_print_required === true ||
+        assignment.print_required === false ||
+        assignment.print_not_applicable === true ||
+        String(assignment.print_status || "")
+          .trim()
+          .toLowerCase() === "not_required"
+      )) ||
+    (!assignment && !fallbackPrintNo)
   );
 
   const ready = Boolean(
-    assignment &&
-    art &&
-    (prints.length > 0 || noPrintRequired)
+    (assignment &&
+      art &&
+      (prints.length > 0 || noPrintRequired)) ||
+    (!assignment && galleryLooksReady(card.division))
   );
 
   return {
@@ -1530,9 +1606,9 @@ function cardDecision(card) {
     prints,
     noPrintRequired,
     ready,
-    artNo: artNo(art),
-    printNo: noPrintRequired ? "N/A" : printText(prints),
-    styleName: styleNameFromArt(art)
+    artNo: artNo(art) || fallbackArtNo,
+    printNo: noPrintRequired ? "N/A" : (prints.length ? printText(prints) : fallbackPrintNo),
+    styleName: styleNameFromArt(art) || fallbackStyleName
   };
 }
 
@@ -1690,6 +1766,10 @@ function renderStats(cards) {
   const stats = $("cmStats");
 
   if (!stats) return;
+  stats.innerHTML = "";
+  stats.hidden = true;
+  stats.style.display = "none";
+  return;
 
   const ready = cards.filter(
     card => cardState(card) === "ready"
@@ -1822,10 +1902,7 @@ function renderGallery() {
       const lot = lots[0] || null;
       const colours = coloursFor(card.group.cb_id);
       const purchases = purchasesFor(card.group.cb_id);
-      const items = carouselItemsForAssignment(
-        decision.art,
-        decision.prints
-      );
+      const items = carouselItemsForCard(card, decision);
       const isNewLot = Boolean(
         lots.length &&
         lastReleasedDivisionId &&
@@ -4011,7 +4088,7 @@ loadMatchingLotSource(client)
   refreshMatchingStockControls();
   renderGallery();
 
-  console.info("REAL FACTORY Cutting Master PM Core V896 loaded", {
+  console.info("REAL FACTORY Cutting Master PM Core V898 loaded", {
     galleryRows: galleryRows.length,
     purchaseRows: purchaseRows.length,
     matchingPurchaseRows: matchingPurchaseRows.length,

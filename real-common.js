@@ -233,7 +233,7 @@
 })();
 
 (() => {
-  const VERSION = "896";
+  const VERSION = "895";
   function isLocalModule(url) {
     try {
       const u = new URL(url, location.href);
@@ -295,7 +295,7 @@
   });
 
   const dataModeLoader=load(
-    'real-data-mode-controller-v786-1-1.js?v=896',
+    'real-data-mode-controller-v786-1-1.js?v=898',
     'rr-data-mode-controller-v786-1-1'
   );
 
@@ -303,11 +303,11 @@
 
   dataModeLoader
   .then(()=>load(
-    'real-mobile-compat-v775.js?v=896',
+    'real-mobile-compat-v775.js?v=898',
     'rr-mobile-compat-v775'
   ))
   .then(()=>load(
-    'real-google-sheet-table-v775.js?v=896',
+    'real-google-sheet-table-v775.js?v=898',
     'rr-google-sheet-table-v775'
   ))
   .catch(error=>console.error(error));
