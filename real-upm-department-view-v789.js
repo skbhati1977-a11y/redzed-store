@@ -258,5 +258,5 @@
   sync();
   setTimeout(sync, 1000);
   setMode("submit");
-  console.info("REAL FACTORY V880 · RESTORE WORKING SUBMIT DUE GUARDED ASSIGN");
+  console.info("REAL FACTORY V884 · CUTTING DUPLICATE FAST SAVE GUARD");
 })();

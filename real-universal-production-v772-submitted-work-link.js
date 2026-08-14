@@ -382,7 +382,7 @@ function installButtons(){
     submitted.textContent='SUBMITTED WORK';
     submitted.title='Department / Worker wise submitted PCS and Assignment Actual Rate';
     submitted.dataset.version=VERSION;
-    submitted.onclick=()=>{location.href='real-upm-submitted-work-v772.html?v=7727'};
+    submitted.onclick=()=>{location.href='real-universal-production-v770.html?v=884'};
     const bar=document.querySelector('.modulebar')||document.querySelector('.toolbar')||document.querySelector('.top');
     if(bar)bar.appendChild(submitted);
     else{

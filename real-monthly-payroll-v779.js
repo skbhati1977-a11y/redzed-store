@@ -1,8 +1,8 @@
 (() => {
 "use strict";
-window.REDZED_MONTHLY_PAYROLL_VERSION="779.7.1";
-const REDZED_PAYROLL_DATA_MODE="TEST";
-window.REDZED_PAYROLL_DATA_MODE=REDZED_PAYROLL_DATA_MODE;
+window.REAL FACTORY_MONTHLY_PAYROLL_VERSION="779.7.1";
+const REAL FACTORY_PAYROLL_DATA_MODE="TEST";
+window.REAL FACTORY_PAYROLL_DATA_MODE=REAL FACTORY_PAYROLL_DATA_MODE;
 
 function previousMonthStart(){
   const d=new Date();
@@ -67,7 +67,7 @@ function workflowHtml(status){
 
 function showTab(tab){state.tab=tab;$("tab-my").classList.toggle("hidden",tab!=="my");$("tab-management").classList.toggle("hidden",tab!=="management");document.querySelectorAll("#tabs button").forEach(b=>b.classList.toggle("active",b.dataset.tab===tab));if(tab==="management")loadManagement()}
 function payrollCard(p){return `<article class="item"><div class="item-head"><div><h4>${safe(p.salary_month)}</h4><p class="muted">${badge(p.payroll_status)} ${p.settlement_status?badge(p.settlement_status):""}</p></div><strong>${money(p.net_payable_salary)}</strong></div><div class="detail-grid"><div class="detail-box"><small>Monthly Salary</small><strong>${money(p.monthly_salary)}</strong></div><div class="detail-box"><small>Net Extra Work</small><strong>${money(p.net_extra_work?.amount)}</strong><span class="muted">${safe(p.net_extra_work?.time||"0 M")}</span></div><div class="detail-box"><small>Monthly Incentive</small><strong>${money(p.monthly_incentive)}</strong></div><div class="detail-box"><small>Claims / Recovery</small><strong>${money(p.claims_recovery)}</strong></div></div><div class="actions"><button class="btn" data-summary="${safe(p.payroll_id)}">Open Payroll</button>${p.pdf_available?`<button class="btn" data-pdf="${safe(p.payroll_id)}">PDF</button>`:""}${p.whatsapp_available?`<button class="btn" data-wa="${safe(p.payroll_id)}">WhatsApp</button>`:""}</div></article>`}
-async function loadMy(){try{say("Loading payroll…");const data=await rpc("rr_get_my_payroll_history_v779_3",{p_limit:24,p_data_mode:REDZED_PAYROLL_DATA_MODE});state.history=data?.payroll_history||[];$("tab-my").innerHTML=`<div class="toolbar"><button id="refreshMy" class="btn">Refresh</button></div><div class="list">${state.history.map(payrollCard).join("")||'<div class="panel empty">Abhi koi Monthly Payroll record nahi hai.</div>'}</div>`;$("refreshMy").onclick=loadMy;bindPayrollButtons();say("")}catch(e){console.error(e);$("tab-my").innerHTML=`<div class="panel empty">${safe(err(e))}</div>`;say(err(e),"error")}}
+async function loadMy(){try{say("Loading payroll…");const data=await rpc("rr_get_my_payroll_history_v779_3",{p_limit:24,p_data_mode:REAL FACTORY_PAYROLL_DATA_MODE});state.history=data?.payroll_history||[];$("tab-my").innerHTML=`<div class="toolbar"><button id="refreshMy" class="btn">Refresh</button></div><div class="list">${state.history.map(payrollCard).join("")||'<div class="panel empty">Abhi koi Monthly Payroll record nahi hai.</div>'}</div>`;$("refreshMy").onclick=loadMy;bindPayrollButtons();say("")}catch(e){console.error(e);$("tab-my").innerHTML=`<div class="panel empty">${safe(err(e))}</div>`;say(err(e),"error")}}
 async function openSummary(id){try{if(state.tab==="management")showTab("my");const d=await rpc("rr_get_payroll_summary_v779_3",{p_payroll_id:id});const heads=d.heads||[];$("tab-my").innerHTML=`<div class="toolbar"><button id="backHistory" class="btn">← Payroll History</button></div><article class="payroll-slip"><div class="slip-head"><div><p class="kicker">${safe(d.header?.title)}</p><h2>${safe(d.header?.salary_month)}</h2><p class="muted">${safe(d.header?.worker_name)} · ${safe(d.header?.worker_code)} · ${safe(d.header?.department_code)}</p></div><div>${badge(d.status?.payroll_status)} ${d.status?.settlement_status?badge(d.status.settlement_status):""}</div></div>${heads.map(h=>`<div class="slip-row"><div><b>${safe(h.label)}</b>${h.time?`<span class="sub">${safe(h.time)}</span>`:""}</div><span class="amount">${money(h.amount)}</span><button class="btn" data-detail-section="${safe(h.code)}" data-payroll="${safe(id)}">Details</button></div>`).join("")}<div class="slip-total"><span>${safe(d.net_payable?.label)}</span><strong>${money(d.net_payable?.amount)}</strong></div><div class="status-row"><span class="badge">Paid ${money(d.payment?.paid_amount)}</span><span class="badge">Balance ${money(d.payment?.closing_balance)}</span></div>${workflowHtml(d.status?.payroll_status)}<div class="actions"><button class="btn" data-detail-section="PAYMENT" data-payroll="${safe(id)}">Payment Details</button>${d.actions?.raise_dispute?`<button class="btn warn" data-dispute="${safe(id)}">Raise Dispute</button>`:""}${d.actions?.download_pdf?`<button class="btn" data-pdf="${safe(id)}">PDF</button>`:""}${d.actions?.share_whatsapp?`<button class="btn" data-wa="${safe(id)}">WhatsApp</button>`:""}</div></article>`;$("backHistory").onclick=loadMy;bindPayrollButtons();say("")}catch(e){say(err(e),"error")}}
 
 function renderDetails(title,html){
@@ -286,7 +286,7 @@ async function generateAllPayroll(){
   try{
     const d=await rpc("rr_generate_monthly_payroll_batch_v779_5",{
       p_payroll_month:state.month,
-      p_data_mode:REDZED_PAYROLL_DATA_MODE,
+      p_data_mode:REAL FACTORY_PAYROLL_DATA_MODE,
       p_reason:"Owner generated completed monthly payroll"
     });
     say(`Generated ${d.generated||0}; existing ${d.already_existing||0}; attendance pending ${d.skipped_no_attendance||0}; failed ${d.failed||0}.`,d.failed?"error":"success");
@@ -299,7 +299,7 @@ async function generateOnePayroll(workerId){
     await rpc("rr_generate_worker_monthly_payroll_safe_v779_5",{
       p_worker_id:workerId,
       p_payroll_month:state.month,
-      p_data_mode:REDZED_PAYROLL_DATA_MODE,
+      p_data_mode:REAL FACTORY_PAYROLL_DATA_MODE,
       p_reason:"Owner generated worker monthly payroll"
     });
     say("Worker payroll generated.","success");
@@ -312,7 +312,7 @@ async function generateLegacyPayroll(workerId){
   try{
     await rpc("rr_generate_worker_monthly_payroll_legacy_v779_5",{
       p_worker_id:workerId,p_payroll_month:state.month,
-      p_reason:reason.trim(),p_data_mode:REDZED_PAYROLL_DATA_MODE
+      p_reason:reason.trim(),p_data_mode:REAL FACTORY_PAYROLL_DATA_MODE
     });
     say("Legacy monthly payroll generated.","success");
     await loadManagement();
@@ -325,7 +325,7 @@ async function generateAllLegacyPayroll(){
   if(btn){btn.disabled=true;btn.textContent="Generating Legacy…"}
   try{
     const d=await rpc("rr_generate_monthly_payroll_legacy_batch_v779_5",{
-      p_payroll_month:state.month,p_reason:reason.trim(),p_data_mode:REDZED_PAYROLL_DATA_MODE
+      p_payroll_month:state.month,p_reason:reason.trim(),p_data_mode:REAL FACTORY_PAYROLL_DATA_MODE
     });
     say(`Legacy generated ${d.legacy_generated||0}; existing ${d.already_existing||0}; attendance available ${d.skipped_attendance_available||0}; failed ${d.failed||0}.`,d.failed?"error":"success");
     await loadManagement();
@@ -361,7 +361,7 @@ async function loadManagement(){
   if(!canManage())return;
   try{
     say("Loading management payroll…");
-    const d=normalizeManagementBoard(await rpc("rr_get_payroll_management_board_v779_5",{p_payroll_month:state.month,p_data_mode:REDZED_PAYROLL_DATA_MODE}));
+    const d=normalizeManagementBoard(await rpc("rr_get_payroll_management_board_v779_5",{p_payroll_month:state.month,p_data_mode:REAL FACTORY_PAYROLL_DATA_MODE}));
     state.management=d;
     const s=d.summary||{},completed=d.month_completed!==false,ownerAdmin=["owner","admin"].includes(state.role);
     $("tab-management").innerHTML=`<div class="toolbar"><label><span>Payroll Month</span><input id="managementMonth" type="month" value="${safe(state.month.slice(0,7))}"></label><button id="refreshManagement" class="btn">Refresh</button><button id="generateAllPayroll" class="btn primary" ${completed?"":"disabled"}>Generate Attendance Payroll</button>${ownerAdmin?`<button id="generateAllLegacyPayroll" class="btn warn" ${completed?"":"disabled"}>Generate All Legacy</button>`:""}${completed?"":'<span class="muted">Current/future month generate nahi hoga.</span>'}</div><div class="summary-grid">

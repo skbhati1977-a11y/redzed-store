@@ -64,7 +64,7 @@
       error: profileError
     } = await supabaseClient
       .from("rr_user_profiles")
-      .select("role_code, is_active")
+      .select("full_name, role_code, is_active")
       .eq("auth_user_id", user.id)
       .single();
 
@@ -78,9 +78,12 @@
       throw new Error("Owner/Admin access required.");
     }
 
-    // Public dashboard identity is intentionally fixed; never render profile.full_name.
-    ownerName.textContent = "SUPER ADMIN";
-    welcomeText.textContent = "Welcome, SUPER ADMIN";
+    // Public dashboard must show the access designation, never a personal name.
+    const publicRoleLabel = ["owner", "admin"].includes(profile.role_code)
+      ? "SUPER ADMIN"
+      : String(profile.role_code || "USER").replaceAll("_", " ").toUpperCase();
+    ownerName.textContent = publicRoleLabel;
+    welcomeText.textContent = `Welcome, ${publicRoleLabel}`;
   }
 
   async function countRows(table, filterCallback) {

@@ -1,5 +1,5 @@
 /*
-REDZED Smart Caption Builder V1
+REAL FACTORY Smart Caption Builder V1
 
 Usage:
 const builder = new RRCaptionBuilder({
