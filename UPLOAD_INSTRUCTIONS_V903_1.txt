@@ -1,0 +1,22 @@
+REAL FACTORY V903.1 PRODUCT MASTER SUBMIT FIX
+
+First live frontend blocker found during TEST E2E:
+The Product Master Create CB button could fall through to the browser's native
+form GET submit instead of staying in the async save flow. The fresh TEST CB
+was not verifiable after submit and the page redirected incorrectly.
+
+Replace only:
+real-product-master-v720.js
+
+Fix included:
+- Create CB action is explicitly kept as a button inside the SPA save handler.
+- Native form navigation is prevented for the primary CB save action.
+- No database schema, backend RPC, or business rule was changed.
+
+Validation:
+- JavaScript syntax check passed after the fix.
+- Scope is limited to Product Master CB creation submit wiring.
+
+After upload/redeploy, rerun the same fresh TEST CB entry. Expected result:
+the new CB remains visible in Product Master with its two D cards instead of
+navigating away before verification.
