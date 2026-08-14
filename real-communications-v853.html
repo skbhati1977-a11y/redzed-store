@@ -1,18 +1,77 @@
-<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Communication / WhatsApp</title><link rel="stylesheet" href="rf-v853.css">
-<style>
-.wa-open{background:#173b2d;border-color:#2f7658;font-weight:900}.wa-row{display:grid;grid-template-columns:minmax(130px,1fr) minmax(130px,1.2fr) minmax(240px,4fr) minmax(110px,.8fr) auto;gap:8px;align-items:center;padding:9px;border-bottom:1px solid var(--line,#2b3648)}.wa-row.head{position:sticky;top:0;background:var(--panel,#111722);font-weight:900;font-size:11px;z-index:2}.wa-msg{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.wa-mobile{font-weight:900}.wa-list{overflow:auto;max-height:55vh}.wa-hint{font-size:12px}.wa-state{min-height:24px;margin-top:8px}@media(max-width:800px){.wa-row{grid-template-columns:1fr auto}.wa-row.head{display:none}.wa-row>div:nth-child(1),.wa-row>div:nth-child(4){display:none}.wa-msg{grid-column:1/-1;white-space:normal}.wa-mobile{grid-column:1/2}}
-</style></head><body><main class="rf-shell">
-<header class="rf-head"><div class="rf-brand"><small>REAL FACTORY · WHATSAPP FINAL</small><h1>Communication / WhatsApp</h1><div class="muted">WA-LINK direct opener · prefilled message · user presses Send</div></div>
-<div class="rf-actions"><select id="dataMode"><option>TEST</option><option>REAL</option></select><a class="btn" href="real-dashboard.html">Dashboard</a></div></header>
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#0d0d0f">
+  <title>REAL FACTORY - WhatsApp Messages V853</title>
+  <link rel="stylesheet" href="real-style.css?v=857">
+  <style>
+    .rf-comm-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:18px 0;padding:14px 16px;background:#17171b;border:1px solid #2a2a31;border-radius:16px}
+    .rf-comm-toolbar label{display:grid;gap:7px;min-width:180px;color:#d6d6dc;font-size:13px;font-weight:800}
+    .rf-comm-toolbar select{min-height:42px;padding:10px 12px;border:1px solid #34343d;border-radius:12px;background:#0f0f12;color:#fff;font:inherit}
+    .rf-comm-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+    .rf-comm-list{display:grid;gap:12px}
+    .rf-comm-card{display:grid;gap:12px;padding:18px;background:#17171b;border:1px solid #2a2a31;border-radius:16px}
+    .rf-comm-head{display:flex;justify-content:space-between;gap:14px;align-items:flex-start}
+    .rf-comm-title{display:grid;gap:4px}
+    .rf-comm-title strong{font-size:16px}
+    .rf-comm-title span,.rf-comm-meta{color:#aaaab4;font-size:13px}
+    .rf-comm-text{white-space:pre-wrap;margin:0;padding:13px;border-radius:12px;background:#0f0f12;border:1px solid #282830;color:#f4f4f6;line-height:1.48}
+    .rf-comm-card-actions{display:flex;gap:10px;flex-wrap:wrap}
+    .rf-comm-status{padding:6px 9px;border-radius:999px;background:#202936;color:#a8ccff;font-size:11px;font-weight:900;white-space:nowrap}
+    @media(max-width:760px){.rf-comm-toolbar,.rf-comm-head{align-items:stretch;flex-direction:column}.rf-comm-actions,.rf-comm-card-actions{display:grid}.rr-topbar{align-items:flex-start;flex-direction:column}}
+  </style>
+</head>
+<body class="rr-body">
+  <header class="rr-topbar">
+    <div>
+      <p class="rr-kicker">REAL FACTORY</p>
+      <h1>WhatsApp Messages</h1>
+    </div>
+    <div class="rr-top-actions">
+      <span class="rf-dashboard-version">V853</span>
+      <span id="ownerName" class="rr-owner-name">Loading...</span>
+      <a class="rr-btn rr-btn-secondary" href="real-dashboard.html?v=857">Dashboard</a>
+      <button id="logoutBtn" class="rr-btn rr-btn-secondary" type="button">Logout</button>
+    </div>
+  </header>
 
-<section class="grid">
-<article class="card span-4"><h3>Open queued message</h3><p class="muted wa-hint">Message ID paste karke WhatsApp me exact queued message open karein.</p>
-<label>Message ID<input id="mid" placeholder="UUID" autocomplete="off"></label><button class="primary wa-open" id="openById" style="margin-top:8px">OPEN WHATSAPP MESSAGE</button><div id="msg" class="wa-state"></div></article>
-<article class="card span-8"><h3>Manual WhatsApp message</h3><div class="formgrid"><label>Mobile<input id="phone" inputmode="tel" autocomplete="tel" placeholder="10 digit / country code"></label><label style="grid-column:span 3">Message<textarea id="text" rows="3" placeholder="Type message"></textarea></label></div><button id="manual" class="wa-open" style="margin-top:8px">OPEN WHATSAPP</button><div class="muted wa-hint" style="margin-top:7px">Message auto-send nahi hoga. WhatsApp khulne ke baad Send user press karega.</div></article>
-<article class="card span-12"><h3>Outbox</h3><div class="toolbar"><button id="refresh">Refresh</button><input id="filter" placeholder="Search mobile / status / message"></div><div id="outbox"></div></article>
-<article class="card span-12"><h3>Delivery / action log</h3><div id="logs"></div></article>
-</section>
+  <main class="rr-page">
+    <section class="rr-hero">
+      <div class="rf-hero-copy">
+        <p class="rr-muted">TEST DEFAULT - REAL PROTECTED</p>
+        <h2>Open WhatsApp Message Flow</h2>
+        <p class="rr-muted">Backend outbox rows yahan se WhatsApp Web/App mein prefilled message ke saath open honge. Send manual rahega.</p>
+      </div>
+      <div id="securityStatus" class="rr-status-pill">WA LINK</div>
+    </section>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="config.js"></script><script src="real-common.js"></script><script src="rf-v853-core.js"></script><script src="real-communications-v853.js?v=855"></script>
-</main></body></html>
+    <section class="rf-comm-toolbar" aria-label="Message controls">
+      <label>
+        Status
+        <select id="statusFilter">
+          <option value="READY">READY</option>
+          <option value="PENDING">PENDING</option>
+          <option value="OPENED_IN_WHATSAPP">OPENED</option>
+          <option value="">ALL</option>
+        </select>
+      </label>
+      <div class="rf-comm-actions">
+        <button id="refreshBtn" class="rr-btn rr-btn-secondary" type="button">Refresh</button>
+      </div>
+    </section>
+
+    <section class="rr-panel">
+      <div class="rr-panel-head"><h2>Outbox</h2><span id="rowCount" class="rr-muted">Loading...</span></div>
+      <div id="messageList" class="rf-comm-list"><p class="rr-muted">Loading...</p></div>
+    </section>
+
+    <p id="pageMessage" class="rr-message" role="status"></p>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="config.js?v=857"></script>
+  <script src="real-communications-v853.js?v=857"></script>
+</body>
+</html>

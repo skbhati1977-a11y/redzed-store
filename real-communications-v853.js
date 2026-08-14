@@ -1,82 +1,252 @@
 (() => {
-  "use strict";
-  let cache=[];
-  const $=id=>document.getElementById(id);
+  const ownerName = document.getElementById("ownerName");
+  const logoutBtn = document.getElementById("logoutBtn");
+  const refreshBtn = document.getElementById("refreshBtn");
+  const statusFilter = document.getElementById("statusFilter");
+  const messageList = document.getElementById("messageList");
+  const rowCount = document.getElementById("rowCount");
+  const pageMessage = document.getElementById("pageMessage");
 
-  function esc(v){return RF853.esc(v)}
-  function shortDate(v){try{return v?new Date(v).toLocaleString():""}catch{return String(v||"")}}
+  const OUTBOX_TABLE = "rr_comm_outbox_v853";
+  const MARK_OPENED_RPC = "rr_comm_mark_whatsapp_opened_v853";
 
-  function render(){
-    const q=String($("filter").value||"").trim().toLowerCase();
-    const rows=!q?cache:cache.filter(x=>JSON.stringify(x).toLowerCase().includes(q));
-    const host=$("outbox");
-    if(!rows.length){host.innerHTML='<div class="msg">No queued WhatsApp rows.</div>';return}
-    host.innerHTML=`<div class="wa-list"><div class="wa-row head"><div>Created</div><div>Mobile</div><div>Message</div><div>Status</div><div>Action</div></div>${rows.map(r=>`
-      <div class="wa-row" data-id="${esc(r.message_id)}">
-        <div>${esc(shortDate(r.created_at))}</div>
-        <div class="wa-mobile">${esc(r.recipient_mobile||"")}</div>
-        <div class="wa-msg" title="${esc(r.message_text||"")}">${esc(r.message_text||"")}</div>
-        <div>${esc(r.send_status||r.provider_code||"")}</div>
-        <button type="button" class="wa-open open-row" data-id="${esc(r.message_id)}">OPEN WHATSAPP</button>
-      </div>`).join("")}</div>`;
+  function setMessage(text, type = "") {
+    pageMessage.textContent = text || "";
+    pageMessage.className = `rr-message ${type}`.trim();
   }
 
-  async function load(){
-    try{
-      cache=await RF853.rows("rr_comm_outbox_v853",{order:"created_at",limit:200});
-      render();
-      let l=[];try{l=await RF853.rows("rr_comm_delivery_log_v853",{order:"created_at",limit:200})}catch{}
-      RF853.table("logs",l,["message_id","provider_status","provider_message_id","created_at","provider_payload"]);
-    }catch(e){RF853.msg("msg",e.message,"error")}
+  function safeText(value) {
+    return String(value ?? "").replace(/[&<>"']/g, (char) => ({
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#039;"
+    }[char]));
   }
 
-  function reserveWhatsappTab(){
-    const w=window.open("about:blank","_blank");
-    if(w){try{w.opener=null;w.document.title="Opening WhatsApp…";w.document.body.innerHTML='<div style="font:16px system-ui;padding:24px">Opening WhatsApp…</div>'}catch{}}
-    return w;
+  function firstValue(row, keys, fallback = "") {
+    for (const key of keys) {
+      const value = row?.[key];
+      if (value !== null && value !== undefined && String(value).trim() !== "") {
+        return value;
+      }
+    }
+    return fallback;
   }
 
-  async function openQueued(id){
-    id=String(id||"").trim();
-    if(!id){RF853.msg("msg","Message ID required.","error");return}
+  function normalizePhone(value) {
+    const digits = String(value || "").replace(/\D/g, "");
+    if (!digits) return "";
+    if (digits.length === 10) return `91${digits}`;
+    return digits;
+  }
 
-    // Reserve a tab immediately inside the user click event. This avoids popup blocking
-    // after the asynchronous Supabase lookup finishes.
-    const reserved=reserveWhatsappTab();
-    try{
-      const c=await RF853.client();
-      const {data:r,error}=await c.from("rr_comm_outbox_v853")
-        .select("message_id,recipient_mobile,message_text")
-        .eq("message_id",id).single();
-      if(error)throw error;
-      if(!r?.recipient_mobile)throw new Error("WhatsApp mobile missing in queued message.");
-      const url=RF853.whatsappUrl(r.recipient_mobile,r.message_text||"");
-      if(reserved && !reserved.closed){reserved.location.replace(url)}
-      else location.assign(url);
-      try{await RF853.rpc("rr_comm_mark_whatsapp_opened_v853",{p_message_id:id})}catch(e){console.warn("WA open audit",e)}
-      RF853.msg("msg","WhatsApp message opened. Send button WhatsApp me press karein.","ok");
-      setTimeout(load,250);
-    }catch(e){
-      try{if(reserved && !reserved.closed)reserved.close()}catch{}
-      RF853.msg("msg",e.message||String(e),"error");
+  function buildWhatsappUrl(row) {
+    const existingUrl = firstValue(row, ["whatsapp_url", "wa_url", "link_url"]);
+    if (existingUrl && /^https:\/\/wa\.me\//i.test(existingUrl)) {
+      return existingUrl;
+    }
+
+    const phone = normalizePhone(firstValue(row, [
+      "mobile",
+      "phone",
+      "phone_no",
+      "recipient_phone",
+      "receiver_phone",
+      "customer_phone",
+      "whatsapp_number"
+    ]));
+
+    const text = firstValue(row, [
+      "message",
+      "message_text",
+      "message_body",
+      "body",
+      "content",
+      "whatsapp_message"
+    ]);
+
+    if (!phone || !text) return "";
+    return `https://wa.me/${phone}?text=${encodeURIComponent(text)}`;
+  }
+
+  function messageBody(row) {
+    return firstValue(row, [
+      "message",
+      "message_text",
+      "message_body",
+      "body",
+      "content",
+      "whatsapp_message"
+    ], "No message text found.");
+  }
+
+  function recipientLabel(row) {
+    return firstValue(row, [
+      "customer_name",
+      "party_name",
+      "receiver_name",
+      "recipient_name",
+      "name",
+      "mobile",
+      "phone",
+      "recipient_phone"
+    ], "Recipient");
+  }
+
+  async function requireOwner() {
+    const { data, error } = await supabaseClient.auth.getSession();
+    if (error || !data.session) {
+      window.location.replace("real-login.html");
+      throw new Error("Login required.");
+    }
+
+    const { data: profile, error: profileError } = await supabaseClient
+      .from("rr_user_profiles")
+      .select("role_code, is_active")
+      .eq("auth_user_id", data.session.user.id)
+      .single();
+
+    if (profileError || !profile?.is_active || !["owner", "admin"].includes(profile.role_code)) {
+      await supabaseClient.auth.signOut();
+      window.location.replace("real-login.html");
+      throw new Error("Owner/Admin access required.");
+    }
+
+    ownerName.textContent = "SUPER ADMIN";
+  }
+
+  async function markOpened(messageId) {
+    const { error } = await supabaseClient.rpc(MARK_OPENED_RPC, {
+      p_message_id: messageId
+    });
+
+    if (error) throw error;
+  }
+
+  async function openWhatsapp(row) {
+    const id = firstValue(row, ["id", "message_id", "outbox_id"]);
+    const url = buildWhatsappUrl(row);
+
+    if (!id) {
+      throw new Error("Message ID missing in outbox row.");
+    }
+
+    if (!url) {
+      throw new Error("WhatsApp number/message missing in outbox row.");
+    }
+
+    const popup = window.open(url, "_blank", "noopener,noreferrer");
+    if (!popup) {
+      throw new Error("Browser ne WhatsApp popup block kiya. Popup allow karke dobara try karein.");
+    }
+
+    await markOpened(id);
+    setMessage("WhatsApp opened. Send button manually press karna hoga.", "success");
+    await loadMessages();
+  }
+
+  function renderMessages(rows) {
+    rowCount.textContent = `${rows.length} rows`;
+
+    if (!rows.length) {
+      messageList.innerHTML = '<p class="rr-muted">No outbox messages found.</p>';
+      return;
+    }
+
+    messageList.innerHTML = rows.map((row, index) => {
+      const id = safeText(firstValue(row, ["id", "message_id", "outbox_id"], `row-${index}`));
+      const status = safeText(firstValue(row, ["status", "delivery_status"], "READY"));
+      const phone = safeText(firstValue(row, ["mobile", "phone", "recipient_phone", "customer_phone"], ""));
+      const created = safeText(firstValue(row, ["created_at", "inserted_at", "queued_at"], ""));
+
+      return `
+        <article class="rf-comm-card" data-message-index="${index}">
+          <div class="rf-comm-head">
+            <div class="rf-comm-title">
+              <strong>${safeText(recipientLabel(row))}</strong>
+              <span>${phone}${phone && created ? " - " : ""}${created}</span>
+            </div>
+            <span class="rf-comm-status">${status}</span>
+          </div>
+          <p class="rf-comm-text">${safeText(messageBody(row))}</p>
+          <div class="rf-comm-card-actions">
+            <button class="rr-btn rr-btn-primary" type="button" data-open-message="${id}">Open WhatsApp</button>
+          </div>
+        </article>
+      `;
+    }).join("");
+
+    messageList.querySelectorAll("[data-open-message]").forEach((button) => {
+      button.addEventListener("click", async () => {
+        const card = button.closest("[data-message-index]");
+        const row = rows[Number(card.dataset.messageIndex)];
+
+        button.disabled = true;
+        button.textContent = "Opening...";
+        setMessage("");
+
+        try {
+          await openWhatsapp(row);
+        } catch (error) {
+          console.error(error);
+          setMessage(error.message || "WhatsApp open failed.", "error");
+        } finally {
+          button.disabled = false;
+          button.textContent = "Open WhatsApp";
+        }
+      });
+    });
+  }
+
+  async function loadMessages() {
+    setMessage("");
+    refreshBtn.disabled = true;
+    refreshBtn.textContent = "Loading...";
+
+    try {
+      const selectedStatus = statusFilter.value;
+      let query = supabaseClient
+        .from(OUTBOX_TABLE)
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(50);
+
+      if (selectedStatus) {
+        query = query.eq("status", selectedStatus);
+      }
+
+      const { data, error } = await query;
+      if (error) throw error;
+
+      renderMessages(data || []);
+    } catch (error) {
+      console.error(error);
+      rowCount.textContent = "Error";
+      messageList.innerHTML = '<p class="rr-muted">Outbox data could not load.</p>';
+      setMessage(error.message || "Outbox load failed.", "error");
+    } finally {
+      refreshBtn.disabled = false;
+      refreshBtn.textContent = "Refresh";
     }
   }
 
-  $("openById").onclick=()=>openQueued($("mid").value);
-  $("manual").onclick=()=>{
-    try{
-      const p=$("phone").value, t=$("text").value;
-      if(!String(t||"").trim())throw new Error("Message required.");
-      RF853.openWhatsapp(p,t);
-      RF853.msg("msg","Manual WhatsApp message opened.","ok");
-    }catch(e){RF853.msg("msg",e.message,"error")}
-  };
-  $("outbox").addEventListener("click",e=>{
-    const b=e.target.closest(".open-row");
-    if(b)openQueued(b.dataset.id);
+  logoutBtn.addEventListener("click", async () => {
+    await supabaseClient.auth.signOut();
+    window.location.replace("real-login.html");
   });
-  $("refresh").onclick=load;
-  $("filter").oninput=render;
-  $("dataMode").onchange=load;
-  load();
+
+  refreshBtn.addEventListener("click", loadMessages);
+  statusFilter.addEventListener("change", loadMessages);
+
+  (async () => {
+    try {
+      await requireOwner();
+      await loadMessages();
+    } catch (error) {
+      console.error(error);
+      setMessage(error.message || "Access failed.", "error");
+    }
+  })();
 })();

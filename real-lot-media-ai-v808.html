@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#0d0d0f">
+  <title>REAL FACTORY - Lot Media AI V808</title>
+  <link rel="stylesheet" href="real-style.css?v=857">
+  <style>
+    .rf-media-form{display:grid;grid-template-columns:1fr 1fr 2fr auto;gap:10px;align-items:end}
+    .rf-media-form label{display:grid;gap:7px;color:#d6d6dc;font-size:13px;font-weight:800}
+    .rf-media-form input,.rf-media-form select{min-height:42px;padding:10px 12px;border:1px solid #34343d;border-radius:12px;background:#0f0f12;color:#fff;font:inherit}
+    .rf-media-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+    .rf-media-card{padding:14px;border:1px solid #2a2a31;border-radius:16px;background:#17171b}
+    .rf-media-card img{width:100%;aspect-ratio:1/1;object-fit:cover;border-radius:12px;background:#0f0f12}
+    .rf-media-head{display:flex;justify-content:space-between;gap:10px;margin:10px 0}.rf-media-head span{color:#a8a8b3;font-size:12px}
+    .rf-media-meta{display:grid;gap:5px;color:#aaaab4;font-size:13px}.rf-media-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+    @media(max-width:900px){.rf-media-grid{grid-template-columns:repeat(2,1fr)}.rf-media-form{grid-template-columns:1fr 1fr}}@media(max-width:620px){.rf-media-grid,.rf-media-form{grid-template-columns:1fr}.rr-topbar{align-items:flex-start;flex-direction:column}}
+  </style>
+</head>
+<body class="rr-body">
+  <header class="rr-topbar"><div><p class="rr-kicker">REAL FACTORY</p><h1>Lot Media & AI</h1></div><div class="rr-top-actions"><span class="rf-dashboard-version">V808</span><span id="ownerName" class="rr-owner-name">Loading...</span><a class="rr-btn rr-btn-secondary" href="real-dashboard.html?v=857">Dashboard</a><button id="logoutBtn" class="rr-btn rr-btn-secondary" type="button">Logout</button></div></header>
+  <main class="rr-page">
+    <section class="rr-hero"><div><p class="rr-muted">TEST DEFAULT</p><h2>Packing Final Photo to AI Publish</h2><p class="rr-muted">Original packing final image safe रहती है; AI variants approval के बाद publish होंगे.</p></div><button id="refreshBtn" class="rr-btn rr-btn-secondary" type="button">Refresh</button></section>
+    <section class="rr-panel">
+      <div class="rr-panel-head"><h2>Add Final Photo URL</h2></div>
+      <div class="rf-media-form">
+        <label>Lot No.<input id="lotNo" autocomplete="off" placeholder="Lot no"></label>
+        <label>Media Type<select id="mediaType"><option value="PACKING_FINAL">PACKING FINAL</option><option value="AI_VARIANT">AI VARIANT</option></select></label>
+        <label>Image URL<input id="imageUrl" autocomplete="off" placeholder="https://..."></label>
+        <button id="saveMediaBtn" class="rr-btn rr-btn-primary" type="button">Save</button>
+      </div>
+    </section>
+    <section class="rr-panel">
+      <div class="rr-panel-head"><h2>Media / AI Queue</h2><span id="rowCount" class="rr-muted">Loading...</span></div>
+      <div id="mediaGrid" class="rf-media-grid"></div>
+    </section>
+    <p id="pageMessage" class="rr-message" role="status"></p>
+  </main>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="config.js?v=857"></script><script src="real-lot-media-ai-v808.js?v=857"></script>
+</body>
+</html>

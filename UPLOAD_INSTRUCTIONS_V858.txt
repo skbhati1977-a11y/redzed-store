@@ -1,0 +1,45 @@
+REAL FACTORY V858 REPORTS AI ACCOUNTS FINAL CHECK
+
+Upload/replace these files together in the app root.
+
+Main open:
+
+https://skbhati1977-a11y.github.io/real-dashboard.html?v=858
+
+Check these after upload:
+
+1. Dashboard -> Reports & AI Query
+2. Dashboard -> Accounts Suite
+3. UPM -> REPORTS button
+4. Dashboard -> Full Flow Audit
+5. Dashboard -> UPM Flow Window
+6. Dashboard -> Production Due
+
+Added in V858:
+
+- Reports & AI Query module:
+  - Template report list
+  - Search suggestions
+  - AI question box
+  - Calls Supabase Edge Function `real-factory-ai`
+  - Fallback table report data remains visible if AI function is blocked
+
+- Accounts Suite module:
+  - P&L tab
+  - Balance Sheet tab
+  - Receivable tab
+  - Payment tab
+  - Purchase tab
+  - Sales tab
+  - Uses V857 views when available, with fallback to existing V847/V849/V850/V787 views
+
+- UPM REPORTS button now opens Reports & AI Query page.
+
+- Previous V857 patches retained:
+  - Single UPM inlay/tabs
+  - Submit Due script attached
+  - Open Queue / Assign Due linked
+  - Explicit DUE guard
+  - Product/Cutting visible REAL FACTORY branding
+
+TEST default retained. REAL default is not changed.
