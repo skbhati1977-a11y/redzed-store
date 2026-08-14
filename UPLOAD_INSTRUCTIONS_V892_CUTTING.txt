@@ -1,0 +1,12 @@
+REAL_FACTORY_V892_CUTTING_RELEASE_SINGLE_FIRE_TIMEOUT_LOCK
+
+Fix over V891:
+- Release button single-fire locked.
+- Button turns grey/disabled during release.
+- Repeat click/Enter submit shows Release already running and does not refire RPC.
+- rr_release_single_lot_v4 / rr_release_multi_lots_v4 wrapped with 25 sec timeout.
+- Timeout/error unlocks button and shows error.
+- Duplicate exact check and mapped Cutting Master backend conversion retained.
+
+Open:
+https://skbhati1977-a11y.github.io/redzed-store/real-cutting-master.html?v=892

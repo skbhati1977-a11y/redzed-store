@@ -419,8 +419,25 @@ function ensureDuplicateLotStyle() {
 
   const style = document.createElement("style");
   style.id = "cmDuplicateLotStyle";
-  style.textContent = `.cm-lot-duplicate{border-color:#ff3b5f!important;box-shadow:0 0 0 2px rgba(255,59,95,.35)!important;background:#32131b!important;color:#fff!important}`;
+  style.textContent = `.cm-lot-duplicate{border-color:#ff3b5f!important;box-shadow:0 0 0 2px rgba(255,59,95,.35)!important;background:#32131b!important;color:#fff!important}
+#lotForm[data-release-busy="1"] [data-release-lot-submit],#lotForm[data-release-busy="1"] button[type="submit"],button.cm-release-locked{background:#4b5563!important;border-color:#4b5563!important;color:#cbd5e1!important;cursor:not-allowed!important;pointer-events:none!important;opacity:.72!important}`;
   document.head.append(style);
+}
+
+function setReleaseUiLocked(locked, text = "") {
+  const form = $("lotForm");
+  const button = $("releaseLotBtn") || form?.querySelector('button[type="submit"]');
+
+  if (form) form.dataset.releaseBusy = locked ? "1" : "0";
+  if (!button) return;
+
+  if (!button.dataset.originalText) button.dataset.originalText = button.textContent || "Release Lot No";
+  button.disabled = Boolean(locked);
+  button.classList.toggle("cm-release-locked", Boolean(locked));
+  button.setAttribute("aria-busy", locked ? "true" : "false");
+  button.textContent = locked
+    ? (text || "Release locked...")
+    : (button.dataset.originalText || "Release Lot No");
 }
 
 function money(value) {
@@ -3417,7 +3434,10 @@ async function createLot(event = {}) {
     return;
   }
 
-  if (createLot.busy) return;
+  if (createLot.busy || $("lotForm")?.dataset.releaseBusy === "1") {
+    setLotReleaseFeedback("Release already running. कृपया wait करें.", "info");
+    return;
+  }
   createLot.busy = true;
 
   const button =
@@ -3425,18 +3445,16 @@ async function createLot(event = {}) {
     $("lotForm")?.querySelector('button[type="submit"]') ||
     $("lotForm")?.querySelector("button");
 
-  const originalText = button?.textContent || "Release Lot No";
   let matchingReservations = [];
   let releaseCommitted = false;
 
   try {
-    if (button) {
-      button.disabled = true;
-      button.textContent =
-        currentLotMode === "multi"
-          ? "Releasing Multi Lots..."
-          : "Releasing Lot...";
-    }
+    setReleaseUiLocked(
+      true,
+      currentLotMode === "multi"
+        ? "Releasing Multi Lots..."
+        : "Releasing Lot..."
+    );
 
     const valid = validateLot();
     await validateLotNosUniqueLive({ hard: true });
@@ -3470,7 +3488,11 @@ async function createLot(event = {}) {
           }
         });
       }
-      result = await client.rpc("rr_release_multi_lots_v4", payload);
+      result = await withTimeout(
+        client.rpc("rr_release_multi_lots_v4", payload),
+        25000,
+        "Multi Lot release"
+      );
 
       const hasMatching = valid.lots.some(row => Boolean(row.matching_item_id));
 
@@ -3479,7 +3501,11 @@ async function createLot(event = {}) {
           "rr_release_multi_lots_v4 unavailable; using V3 only because no Matching Cloth is selected.",
           result.error
         );
-        result = await client.rpc("rr_release_multi_lots_v3", payload);
+        result = await withTimeout(
+          client.rpc("rr_release_multi_lots_v3", payload),
+          25000,
+          "Multi Lot release fallback"
+        );
       }
     } else {
       const payload = singleRpcPayload(valid);
@@ -3487,9 +3513,13 @@ async function createLot(event = {}) {
         payload.p_matching_item_id = null;
         payload.p_matching_qty = 0;
       }
-      result = await client.rpc(
-        "rr_release_single_lot_v4",
-        payload
+      result = await withTimeout(
+        client.rpc(
+          "rr_release_single_lot_v4",
+          payload
+        ),
+        25000,
+        "Single Lot release"
       );
     }
 
@@ -3543,11 +3573,7 @@ async function createLot(event = {}) {
     }
   } finally {
     createLot.busy = false;
-
-    if (button) {
-      button.disabled = false;
-      button.textContent = originalText;
-    }
+    setReleaseUiLocked(false);
   }
 }
 
@@ -3897,7 +3923,7 @@ loadMatchingLotSource(client)
   refreshMatchingStockControls();
   renderGallery();
 
-  console.info("REAL FACTORY Cutting Master PM Core V891 loaded", {
+  console.info("REAL FACTORY Cutting Master PM Core V892 loaded", {
     galleryRows: galleryRows.length,
     purchaseRows: purchaseRows.length,
     matchingPurchaseRows: matchingPurchaseRows.length,
