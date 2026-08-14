@@ -1,0 +1,17 @@
+REAL FACTORY V903.4 — Product Master Create CB submit blocker
+
+Replace these two files in the GitHub Pages root:
+1. real-product-master-v720.html
+2. real-product-master-v720.js
+
+Deploy both files together. The HTML now loads real-product-master-v720.js?v=9034.
+
+Why this patch:
+- In live TEST mode, even a blank Create CB click navigated to Data Mode Control.
+- The button was already type=button and the handler marker was present, so the remaining blocker was event propagation into a global router.
+- V903.4 binds the Create CB click in capture phase and stops propagation/immediate propagation before calling the existing async save/validation function.
+
+Scope:
+- Frontend submit/event routing only.
+- No Supabase schema, RPC, accounting, purchase, vendor, fabric, or ledger logic changed.
+- After deployment, test blank Create CB first: it must stay on Product Master and show validation; then run a fresh unique TEST CB.

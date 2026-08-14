@@ -1,7 +1,7 @@
 (() => {
 "use strict";
 
-window.REAL_FACTORY_PRODUCT_MASTER_VERSION = "720.36.2-MC-FABRIC-LEDGER-FINAL";
+window.REDZED_PRODUCT_MASTER_VERSION = "720.36.2-MC-FABRIC-LEDGER-FINAL";
 const $ = id => document.getElementById(id);
 const state = {
   client:null, filter:"all", mode:"create", activeCbId:null, activeUnitId:null,
@@ -582,16 +582,18 @@ function bindStatic(){
   $("divisionCount").oninput=()=>{state.materialEntries.forEach(e=>{if(e.scope==="all")e.selected=[]});renderMaterialList();updateCbSummary()};
   $("colourCount").oninput=()=>{const n=Math.max(1,Math.min(20,Number($("colourCount").value||1)));while(state.colourDrafts.length<n)state.colourDrafts.push(newColour(state.colourDrafts.length));while(state.colourDrafts.length>n){const c=state.colourDrafts.pop();if(c.objectUrl)URL.revokeObjectURL(c.objectUrl)}state.materialEntries.forEach(ensureEntryRolls);renderCbForm()};
   $("addMaterial").onclick=()=>{state.materialEntries.push(newMaterial("material"));renderMaterialList();updateCbSummary()};
-  $("cbForm").onsubmit=saveCbForm;
-  // Keep the primary action inside the SPA flow. Without this guard, a browser
-  // can perform the native GET form submit before the async save handler runs.
+  $("cbForm").onsubmit=saveCbForm;$("mcForm").onsubmit=saveMcForm;$("mcBillQty").oninput=()=>syncMcPricing("qty");$("mcBillRate").oninput=()=>syncMcPricing("rate");$("mcBillValue").oninput=()=>syncMcPricing("value");
   const saveCbButton=$("saveCb");
   saveCbButton.type="button";
   if(!saveCbButton.dataset.asyncBound){
     saveCbButton.dataset.asyncBound="1";
-    saveCbButton.addEventListener("click",ev=>{ev.preventDefault();void saveCbForm(ev)});
+    saveCbButton.addEventListener("click",ev=>{
+      ev.preventDefault();
+      ev.stopPropagation();
+      ev.stopImmediatePropagation();
+      void saveCbForm(ev);
+    },true);
   }
-  $("mcForm").onsubmit=saveMcForm;$("mcBillQty").oninput=()=>syncMcPricing("qty");$("mcBillRate").oninput=()=>syncMcPricing("rate");$("mcBillValue").oninput=()=>syncMcPricing("value");
   $("artTab").onclick=()=>showAssignTab("art");$("printTab").onclick=()=>showAssignTab("print");$("assignSearch").oninput=renderAssignmentPickers;$("saveAssignment").onclick=saveAssignment;
   $("opsForm").onsubmit=submitOperation;
   document.addEventListener("keydown",e=>{if(e.key==="Escape"){const open=document.querySelector(".sheet:not(.hidden)");if(open)closeSheet(open.id)}});
