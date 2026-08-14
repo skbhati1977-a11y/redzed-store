@@ -1,0 +1,16 @@
+REAL FACTORY V903.6 — Product Master CB colour sequence fix
+
+Replace these two files in the GitHub Pages root:
+1. real-product-master-v720.html
+2. real-product-master-v720.js
+
+Deploy both files together. The HTML loads real-product-master-v720.js?v=9036.
+
+Live E2E evidence:
+- V903.5 blank Create CB validation and overlay fix: PASS.
+- Fresh TEST CB reached backend, then failed with: “Colour sequence number is required. — P0001”.
+- Backend trigger rr_cb_colour_code_lock_v754 requires rr_cb_colours.col_no.
+
+Fix:
+- Frontend now sends col_no: i + 1 along with the existing colour_order.
+- No schema, RPC, purchase, accounting, vendor, fabric, or ledger logic changed.
