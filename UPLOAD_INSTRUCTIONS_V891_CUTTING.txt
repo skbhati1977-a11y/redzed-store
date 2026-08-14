@@ -1,0 +1,12 @@
+REAL_FACTORY_V891_CUTTING_DUPLICATE_ON_ENTER_EXACT_ONLY
+
+Fix over V890:
+- Lot No typing ke time duplicate warning nahi aayegi.
+- Duplicate check only Enter, blur, and Release click par chalega.
+- Backend duplicate check exact match only: rr_cutting_lots_v3.lot_no = entered lot, rr_production_lots.lot_no = entered lot.
+- 1-2 character partial input par backend duplicate warning nahi.
+- Save/Release hard block retained for exact duplicate.
+- Mapped Cutting Master backend list retained.
+
+Open:
+https://skbhati1977-a11y.github.io/redzed-store/real-cutting-master.html?v=891

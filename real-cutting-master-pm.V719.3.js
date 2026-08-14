@@ -323,6 +323,7 @@ const duplicateLotState = new Map();
 async function existingLotNo(lotNo) {
   const key = normalizeLotNo(lotNo);
   if (!key) return null;
+  if (key.length < 3) return null;
 
   const cached = duplicateLotState.get(key);
   if (cached && Date.now() - cached.at < 15000) return cached.row;
@@ -331,8 +332,8 @@ async function existingLotNo(lotNo) {
   if (!client) return null;
 
   const checks = [
-    client.from("rr_cutting_lots_v3").select("id, lot_no").ilike("lot_no", key).limit(1),
-    client.from("rr_production_lots").select("id, lot_no").ilike("lot_no", key).limit(1)
+    client.from("rr_cutting_lots_v3").select("id, lot_no").eq("lot_no", key).limit(1),
+    client.from("rr_production_lots").select("id, lot_no").eq("lot_no", key).limit(1)
   ];
 
   for (const check of checks) {
@@ -358,11 +359,11 @@ function markLotInputDuplicate(input, messageText = "") {
 }
 
 function currentLotInputs() {
-  return [
-    $("cmManualLotNo"),
-    $("lotNo"),
-    ...document.querySelectorAll(".cm-dev-lot-no")
-  ].filter(Boolean);
+  if (currentLotMode === "multi") {
+    return [...document.querySelectorAll(".cm-dev-lot-no")].filter(Boolean);
+  }
+
+  return [$("cmManualLotNo")].filter(Boolean);
 }
 
 async function validateLotNosUniqueLive({ hard = false } = {}) {
@@ -2262,7 +2263,10 @@ function ensureComboUi() {
 
   $("cmManualLotNo")?.addEventListener("input", event => {
     setInputValue("lotNo", String(event.target.value || "").trim().toUpperCase());
-    scheduleLotNoDuplicateCheck();
+  });
+  $("cmManualLotNo")?.addEventListener("blur", scheduleLotNoDuplicateCheck);
+  $("cmManualLotNo")?.addEventListener("keydown", event => {
+    if (event.key === "Enter") scheduleLotNoDuplicateCheck();
   });
 
   ["cmSingleSizeCombo", "cmSingleSleeve", "cmSingleBorder"].forEach(id => {
@@ -2605,6 +2609,12 @@ function renderDevRows() {
   holder.querySelectorAll("[data-dev-index]").forEach(input => {
     if (input.classList.contains("cm-dev-size") || input.classList.contains("cm-dev-sleeve") || input.classList.contains("cm-dev-border") || input.classList.contains("cm-dev-match-item")) return;
     input.addEventListener("input", () => updateDevRowFromInput(input));
+    if (input.classList.contains("cm-dev-lot-no")) {
+      input.addEventListener("blur", scheduleLotNoDuplicateCheck);
+      input.addEventListener("keydown", event => {
+        if (event.key === "Enter") scheduleLotNoDuplicateCheck();
+      });
+    }
   });
 
   updatePieceTotals();
@@ -2619,7 +2629,6 @@ function updateDevRowFromInput(input, options = {}) {
   if (input.classList.contains("cm-dev-lot-no")) {
     row.lot_no = String(input.value || "").trim().toUpperCase();
     input.value = row.lot_no;
-    if (!options.skipDuplicateCheck) scheduleLotNoDuplicateCheck();
   }
   if (input.classList.contains("cm-dev-size")) {
     row.size_combo = input.value || DEFAULT_SIZE_COMBO;
@@ -3888,7 +3897,7 @@ loadMatchingLotSource(client)
   refreshMatchingStockControls();
   renderGallery();
 
-  console.info("REAL FACTORY Cutting Master PM Core V889 loaded", {
+  console.info("REAL FACTORY Cutting Master PM Core V891 loaded", {
     galleryRows: galleryRows.length,
     purchaseRows: purchaseRows.length,
     matchingPurchaseRows: matchingPurchaseRows.length,

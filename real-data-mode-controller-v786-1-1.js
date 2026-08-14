@@ -223,7 +223,7 @@ function installPhaseBadge(state){
   if(!badge){
     badge=document.createElement('a');
     badge.id='rr-global-data-mode-badge-v786-1-1';
-    badge.href='real-data-mode-control-v786.html?v=889';
+    badge.href='real-data-mode-control-v786.html?v=891';
     badge.setAttribute('aria-label','Open Global Data Mode Control');
 
     Object.assign(badge.style,{
