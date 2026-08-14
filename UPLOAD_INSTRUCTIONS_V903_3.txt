@@ -1,0 +1,13 @@
+REAL FACTORY V903.3 PRODUCT MASTER SUBMIT FIX
+
+V903.2 correctly cache-busted the deployed files, but the live Create CB click
+still did not stay in the async submit handler. V903.3 adds a guarded native
+addEventListener click binding and prevents the default action at click time.
+
+Replace both:
+real-product-master-v720.html
+real-product-master-v720.js
+
+The HTML now loads real-product-master-v720.js?v=9033.
+
+No backend, vendor/fabric mapping, costing, schema, or business rule changed.

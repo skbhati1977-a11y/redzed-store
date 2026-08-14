@@ -585,8 +585,12 @@ function bindStatic(){
   $("cbForm").onsubmit=saveCbForm;
   // Keep the primary action inside the SPA flow. Without this guard, a browser
   // can perform the native GET form submit before the async save handler runs.
-  $("saveCb").type="button";
-  $("saveCb").onclick=()=>saveCbForm({preventDefault(){}});
+  const saveCbButton=$("saveCb");
+  saveCbButton.type="button";
+  if(!saveCbButton.dataset.asyncBound){
+    saveCbButton.dataset.asyncBound="1";
+    saveCbButton.addEventListener("click",ev=>{ev.preventDefault();void saveCbForm(ev)});
+  }
   $("mcForm").onsubmit=saveMcForm;$("mcBillQty").oninput=()=>syncMcPricing("qty");$("mcBillRate").oninput=()=>syncMcPricing("rate");$("mcBillValue").oninput=()=>syncMcPricing("value");
   $("artTab").onclick=()=>showAssignTab("art");$("printTab").onclick=()=>showAssignTab("print");$("assignSearch").oninput=renderAssignmentPickers;$("saveAssignment").onclick=saveAssignment;
   $("opsForm").onsubmit=submitOperation;
