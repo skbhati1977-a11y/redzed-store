@@ -295,7 +295,7 @@ async function loadContext() {
     const runningCount=arr(state.context.rows).filter(r=>r.is_locked).reduce((m,r)=>m.add(upper(r.colour_code)),new Set()).size;
     $("routeNote").textContent = runningCount
       ? `Current Owner: ${upper($("dept").value)} · ${runningCount} Colour running · Submit के बाद फिर Random Open Queue.`
-      : `OPEN RANDOM QUEUE · First Assignment Wins · ${openCount} Colour इस Department में claim किए जा सकते हैं.`;
+      : `ASSIGN DUE · First Assignment Wins · ${openCount} Colour इस Department में claim किए जा सकते हैं.`;
     renderColours();
     const source = arr(state.context.rows)[0]?.source_type || "NO SOURCE";
     setFormMessage(`${state.context.department_code} · ${source} Cutting source · Full-colour assignment · Transaction-safe work actions.`, "success");
@@ -908,7 +908,7 @@ async function boot() {
     document.querySelectorAll("[data-link]").forEach(button => button.onclick = () => location.href = button.dataset.link);
     $("packingTab").onclick = () => setMessage("Existing Smart Packing remains unchanged.");
     $("costingTab").onclick = () => setMessage("Costing uses existing ledgers.");
-    $("reportsTab").onclick = () => location.href = "real-reports-ai-v857.html?v=861";
+    $("reportsTab").onclick = () => location.href = "real-reports-ai-v857.html?v=867";
     $("selectAllBtn").onclick = selectAllOpenColours;
     $("applyBulkWorkerBtn").onclick = applyBulkWorker;
     $("assignBtn").onclick = assignWork;

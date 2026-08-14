@@ -21,6 +21,7 @@
   const accepted = aliases[requested] || [requested];
   const cache = new Map();
   const lastSubmitCache = new Map();
+  let viewMode = "submit";
   const upper = value => String(value || "").trim().toUpperCase();
   const esc = value => String(value ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
   const canonical = code => route.find(key => (aliases[key] || [key]).includes(upper(code))) || upper(code);
@@ -107,7 +108,7 @@
       if (old) old.hidden = true;
       const actions = document.createElement("div");
       actions.className = "rf-card-actions";
-      actions.innerHTML = '<button type="button" data-rf-action="alter">ALTER</button><button type="button" data-rf-action="submit">READY TO SUBMIT</button>';
+      actions.innerHTML = '<button type="button" data-rf-action="alter">RECTIFICATION</button><button type="button" data-rf-action="submit">SUBMIT DUE</button>';
       actions.onclick = event => {
         event.stopPropagation();
         const action = event.target.closest("[data-rf-action]")?.dataset.rfAction;
@@ -127,6 +128,9 @@
         card.classList.remove("rf-running-hidden");
       } catch (error) { card.remove(); }
     }));
+    const count = String(document.querySelectorAll(".lot-card[data-lot]:not(.rf-running-hidden)").length);
+    document.getElementById("rfSubmitDueCount")?.replaceChildren(document.createTextNode(count));
+    document.getElementById("rfSubmitDueCountTop")?.replaceChildren(document.createTextNode(count));
   }
 
   function specialChoice(identity) {
@@ -174,6 +178,7 @@
       return;
     }
     const cards = [];
+    let dueTargets = 0;
     for (const lot of snap.lots) {
       const meta = await statusFor(lot);
       const statuses = meta.department_statuses || [];
@@ -181,15 +186,31 @@
       const total = Math.max(0, ...statuses.map(s => Number(s.total_colours || 0)), Array.isArray(lot.colours) ? lot.colours.length : 0);
       if (total > 0 && active.size >= total) continue;
       const lastSubmitted = await lastSubmittedDepartment(lot);
-      const targets = eligibleTargets(snap.departments, meta.identity || {}, lastSubmitted);
+      const targets = eligibleTargets(snap.departments, meta.identity || {}, lastSubmitted)
+        .filter(target => target.canonical === requested || matchesCurrent(target.department_code) || matchesCurrent(target.department_name));
       if (!targets.length) continue;
-      cards.push(`<article class="rf-queue-card"><div><b>${esc(lot.lot_no)}</b><span>CB ${esc(meta.identity?.cb_no || lot.cb_no || "—")} · ART ${esc(meta.identity?.art_no || lot.art_no || "—")}</span></div><p class="rf-worker-rule">एक या multiple Colours select · हर Colour की सभी Sizes एक Worker</p><div class="rf-route-chart">${targets.map(t => `<button type="button" data-lot="${esc(lot.canonical_lot_id)}" data-dept="${esc(t.department_code)}" class="${route.indexOf(t.canonical) >= route.indexOf(requested) ? "rf-direct" : "rf-warning"}">${esc(t.department_name || t.canonical)}<small>${route.indexOf(t.canonical) >= route.indexOf(requested) ? "ASSIGN SELECTED COLOURS" : "⚠ WARNING ASSIGN"}</small></button>`).join("")}</div></article>`);
+      dueTargets += targets.length;
+      cards.push(`<article class="rf-queue-card"><div><b>${esc(lot.lot_no)}</b><span>CB ${esc(meta.identity?.cb_no || lot.cb_no || "—")} · ART ${esc(meta.identity?.art_no || lot.art_no || "—")}</span></div><p class="rf-worker-rule">ASSIGN DUE · एक या multiple Colours select · हर Colour की सभी Sizes एक Worker</p><div class="rf-due-column-head"><span>Department</span><span>Assign Due</span><span>Submit Due</span></div><div class="rf-route-chart">${targets.map(t => `<button type="button" data-lot="${esc(lot.canonical_lot_id)}" data-dept="${esc(t.department_code)}" class="${route.indexOf(t.canonical) >= route.indexOf(requested) ? "rf-direct" : "rf-warning"}"><b>${esc(t.department_name || t.canonical)}</b><small>${route.indexOf(t.canonical) >= route.indexOf(requested) ? "ASSIGN DUE · SELECT COLOURS" : "⚠ WARNING ASSIGN DUE"}</small><em>Submit Due after worker ready</em></button>`).join("")}</div></article>`);
     }
-    host.innerHTML = cards.join("") || `<div class="msg">No OPEN RANDOM QUEUE lots available for ${esc(label)}. Agar Universal page me lots dikh rahe hain to current department/last submitted mapping verify karein.</div>`;
+    document.getElementById("rfAssignDueCount")?.replaceChildren(document.createTextNode(String(dueTargets)));
+    document.getElementById("rfAssignDueCountTop")?.replaceChildren(document.createTextNode(String(dueTargets)));
+    host.innerHTML = cards.join("") || `<div class="msg">No ASSIGN DUE lots available for ${esc(label)}. Agar Universal page me lots dikh rahe hain to current department/last submitted mapping verify karein.</div>`;
     host.querySelectorAll("[data-lot][data-dept]").forEach(button => button.onclick = () => {
       const department = snap.departments.find(d => upper(d.department_code) === upper(button.dataset.dept));
       if (department) chooseTarget(button.dataset.lot, { ...department, canonical: canonical(department.department_code) });
     });
+  }
+
+  function setMode(mode) {
+    viewMode = mode === "submit" ? "submit" : "assign";
+    document.querySelectorAll("[data-rf-due-mode]").forEach(button => {
+      button.classList.toggle("active", button.dataset.rfDueMode === viewMode);
+    });
+    const board = document.getElementById("board");
+    const queue = document.querySelector(".rf-queue-section");
+    if (board) board.classList.toggle("hidden", viewMode !== "submit");
+    if (queue) queue.classList.toggle("hidden", viewMode !== "assign" || requested === "CUTTING");
+    if (viewMode === "assign") document.getElementById("rfDepartmentQueue")?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
   function applyShell() {
@@ -197,15 +218,20 @@
     document.querySelector(".top small.art-no").textContent = "REAL FACTORY · UPM";
     document.querySelector(".top h1").textContent = `${label} Dashboard`;
     const board = document.getElementById("board");
+    const toolbar = document.createElement("section");
+    toolbar.className = "rf-due-toolbar";
+    toolbar.innerHTML = `<button type="button" data-rf-due-mode="submit" class="active">SUBMIT DUE <b id="rfSubmitDueCountTop">0</b></button><button type="button" data-rf-due-mode="assign">ASSIGN DUE <b id="rfAssignDueCountTop">0</b></button>`;
+    board?.insertAdjacentElement("beforebegin", toolbar);
     const section = document.createElement("section");
     section.className = "rf-queue-section";
-    section.innerHTML = `<div class="rf-queue-title"><h2>OPEN RANDOM QUEUE</h2><span>Cutting अलग flow · केवल Last Submitted Department hidden · Current Department visible</span></div><div id="rfDepartmentQueue"></div>`;
+    section.innerHTML = `<div class="rf-queue-title"><div><h2>ASSIGN DUE</h2><p>Assign due work list.</p></div><span>Assign Due <b id="rfAssignDueCount">0</b> · Submit Due running cards/header से</span></div><div id="rfDepartmentQueue"></div>`;
     if (requested === "CUTTING") section.classList.add("hidden");
     board?.insertAdjacentElement("afterend", section);
+    toolbar.querySelectorAll("[data-rf-due-mode]").forEach(button => button.onclick = () => setMode(button.dataset.rfDueMode));
   }
 
   const style = document.createElement("style");
-  style.textContent = `.rf-running-hidden{display:none!important}.rf-card-actions{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px;margin-top:auto}.rf-card-actions button{width:100%;min-height:46px}.rf-card-actions button:first-child{background:#174936;border-color:#318b65}.rf-card-actions button:last-child{background:#493915;border-color:#8a6b2b}.rf-queue-section{margin-top:18px;border-top:2px solid #303641;padding-top:14px}.rf-queue-title{display:flex;gap:10px;align-items:center;justify-content:space-between}.rf-queue-title h2{margin:0;color:#ffc857}.rf-queue-title span{color:#98a2b3}.rf-queue-card{background:#12151c;border:1px solid #303641;border-radius:14px;padding:12px;margin-top:10px}.rf-queue-card>div:first-child{display:flex;justify-content:space-between;gap:10px}.rf-queue-card>div:first-child span{color:#98a2b3}.rf-worker-rule{margin:8px 0 0;color:#9ec5ff;font-weight:750}.rf-route-chart{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:7px;margin-top:10px}.rf-route-chart button{width:100%;min-height:58px}.rf-route-chart small{display:block;margin-top:4px;font-size:9px}.rf-direct{border-color:#318b65;background:#174936}.rf-warning{border-color:#8a6b2b;background:#493915}@media(max-width:700px){.rf-queue-title,.rf-queue-card>div:first-child{align-items:flex-start;flex-direction:column}.rf-route-chart{grid-template-columns:1fr 1fr}}@media(max-width:420px){.rf-route-chart{grid-template-columns:1fr}}`;
+  style.textContent = `.rf-running-hidden{display:none!important}.rf-due-toolbar{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 16px}.rf-due-toolbar button{min-height:48px;border:1px solid #303641;background:#202635;color:#fff;border-radius:10px;font-weight:950}.rf-due-toolbar button.active{background:#d43d5e;border-color:#ff6b8a}.rf-due-toolbar b{margin-left:6px;color:#2bf6a2}.rf-card-actions{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px;margin-top:auto}.rf-card-actions button{width:100%;min-height:46px}.rf-card-actions button:first-child{background:#174936;border-color:#318b65}.rf-card-actions button:last-child{background:#493915;border-color:#8a6b2b}.rf-queue-section{margin-top:18px;border-top:2px solid #303641;padding:14px 16px 0}.rf-queue-title{display:flex;gap:10px;align-items:center;justify-content:space-between}.rf-queue-title h2{margin:0;color:#ffc857}.rf-queue-title p{margin:4px 0 0;color:#9ec5ff;font-weight:750}.rf-queue-title span{color:#98a2b3}.rf-queue-title b{color:#2bf6a2}.rf-queue-card{background:#12151c;border:1px solid #303641;border-radius:14px;padding:12px;margin-top:10px}.rf-queue-card>div:first-child{display:flex;justify-content:space-between;gap:10px}.rf-queue-card>div:first-child span{color:#98a2b3}.rf-worker-rule{margin:8px 0 0;color:#9ec5ff;font-weight:750}.rf-due-column-head{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;margin-top:10px;color:#ffc857;font-size:11px;font-weight:900;text-transform:uppercase}.rf-due-column-head span{background:#080a0f;border:1px solid #303641;border-radius:8px;padding:7px;text-align:center}.rf-route-chart{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:7px;margin-top:7px}.rf-route-chart button{width:100%;min-height:68px}.rf-route-chart b{display:block}.rf-route-chart small{display:block;margin-top:4px;font-size:9px}.rf-route-chart em{display:block;margin-top:3px;color:#cbd5e1;font-size:9px;font-style:normal}.rf-direct{border-color:#318b65;background:#174936}.rf-warning{border-color:#8a6b2b;background:#493915}@media(max-width:700px){.rf-queue-title,.rf-queue-card>div:first-child{align-items:flex-start;flex-direction:column}.rf-route-chart{grid-template-columns:1fr 1fr}}@media(max-width:520px){.rf-due-toolbar,.rf-route-chart{grid-template-columns:1fr}.rf-due-column-head{grid-template-columns:1fr}}`;
   document.head.append(style);
   applyShell();
 
@@ -218,9 +244,10 @@
       try {
         await filterRunningCards();
         await renderQueue();
+        setMode(viewMode);
       } catch (error) {
         const host = document.getElementById("rfDepartmentQueue");
-        if (host) host.innerHTML = `<div class="msg">OPEN RANDOM QUEUE load failed: ${esc(error?.message || error)}</div>`;
+        if (host) host.innerHTML = `<div class="msg">ASSIGN DUE load failed: ${esc(error?.message || error)}</div>`;
       }
     }, 80);
   };
@@ -230,5 +257,6 @@
   }).observe(document.body, { childList: true, subtree: true });
   sync();
   setTimeout(sync, 1000);
-  console.info("REAL FACTORY V861 · UPM ALL DEPARTMENT QUEUE BRIDGE");
+  setMode("submit");
+  console.info("REAL FACTORY V867 · UPM DEPARTMENT SPECIFIC DUE MAPPING");
 })();
