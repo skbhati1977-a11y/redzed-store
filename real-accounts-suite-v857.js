@@ -6,7 +6,7 @@
     { id: "balance", title: "Balance Sheet", table: "rr_balance_sheet_v857", fallback: "rr_accounts_voucher_v847" },
     { id: "receivable", title: "Receivable", table: "rr_receivable_v857", fallback: "rr_fg_final_cpi_v787" },
     { id: "payment", title: "Payment", table: "rr_payment_ledger_v857", fallback: "rr_accounts_voucher_v847" },
-    { id: "purchase", title: "Purchase", table: "rr_purchase_ledger_v857", fallback: "rr_costing_expense_pool_v850" },
+    { id: "purchase", title: "Purchase", table: "rr_purchase_ledger_v857", fallback: "rr_cb_purchase_entries" },
     { id: "sales", title: "Sales", table: "rr_sales_ledger_v857", fallback: "rr_universal_sale_lot_v849" }
   ];
   let active = tabs[0];

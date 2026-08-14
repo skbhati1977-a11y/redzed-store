@@ -1,0 +1,16 @@
+REAL FACTORY V903.9 — Accounts Purchase mapping fallback
+
+Replace these two files in the GitHub Pages root:
+1. real-accounts-suite-v857.html
+2. real-accounts-suite-v857.js
+
+Deploy both files together. The HTML loads the JS with ?v=9039.
+
+Live TEST evidence for E2E9036:
+- Product Master CB purchase ledger: vendor, fabric/item, bill, quantity, rate, value, colour/roll and D1/D2 allocation all mapped correctly.
+- Accounts Suite Purchase tab primary rr_purchase_ledger_v857 was unavailable.
+- Its previous fallback rr_costing_expense_pool_v850 was also unavailable (schema-cache error).
+
+Fix:
+- Purchase tab now falls back to existing rr_cb_purchase_entries, which contains the verified purchase accountability fields.
+- No data is copied, altered, or deleted. No REAL data is touched.
