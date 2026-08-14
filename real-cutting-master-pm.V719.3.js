@@ -44,6 +44,7 @@ let currentRole = "";
 let currentFilter = "all";
 let activeCard = null;
 let releaseLock = false;
+let releaseInFlightKey = "";
 let lastReleasedLotNo = "";
 let lastReleasedDivisionId = "";
 let costSettings = {
@@ -420,7 +421,9 @@ function ensureDuplicateLotStyle() {
   const style = document.createElement("style");
   style.id = "cmDuplicateLotStyle";
   style.textContent = `.cm-lot-duplicate{border-color:#ff3b5f!important;box-shadow:0 0 0 2px rgba(255,59,95,.35)!important;background:#32131b!important;color:#fff!important}
-#lotForm[data-release-busy="1"] [data-release-lot-submit],#lotForm[data-release-busy="1"] button[type="submit"],button.cm-release-locked{background:#4b5563!important;border-color:#4b5563!important;color:#cbd5e1!important;cursor:not-allowed!important;pointer-events:none!important;opacity:.72!important}`;
+#lotForm[data-release-busy="1"] [data-release-lot-submit],#lotForm[data-release-busy="1"] button[type="submit"],button.cm-release-locked{background:#4b5563!important;border-color:#4b5563!important;color:#cbd5e1!important;cursor:not-allowed!important;pointer-events:none!important;opacity:.72!important}
+#lotForm[data-release-busy="1"] input,#lotForm[data-release-busy="1"] select,#lotForm[data-release-busy="1"] textarea,#lotForm[data-release-busy="1"] button{pointer-events:none!important}
+#lotForm[data-release-busy="1"]{cursor:progress!important}`;
   document.head.append(style);
 }
 
@@ -1565,17 +1568,44 @@ function cardSearchText(card) {
 
 function filterMatches(card) {
   const state = cardState(card);
+  const releasedCount = lotsForDivision(card.division.division_id).length;
 
   if (currentFilter === "all") return true;
   if (currentFilter === "ready") return state === "ready";
-  if (currentFilter === "released") return state === "released";
-  if (currentFilter === "completed") return state === "completed";
+  if (currentFilter === "single_released") return releasedCount === 1;
+  if (currentFilter === "multi_released") return releasedCount > 1;
+  if (currentFilter === "released") return releasedCount > 0;
+  if (currentFilter === "completed") return releasedCount > 0;
   if (currentFilter === "art_due") return state === "art_due";
   if (currentFilter === "planning") return state === "art_due";
   if (currentFilter === "child") return true;
   if (currentFilter === "child_batches") return true;
 
   return true;
+}
+
+function releaseFilterCounts(cards = []) {
+  return {
+    all: cards.length,
+    ready: cards.filter(card => cardState(card) === "ready").length,
+    single_released: cards.filter(card => lotsForDivision(card.division.division_id).length === 1).length,
+    multi_released: cards.filter(card => lotsForDivision(card.division.division_id).length > 1).length
+  };
+}
+
+function updateFilterCounts(cards = []) {
+  const counts = releaseFilterCounts(cards);
+  $("cmFilters")?.querySelectorAll("[data-filter]").forEach(button => {
+    const key = button.dataset.filter || "all";
+    const count = counts[key] ?? 0;
+    let badge = button.querySelector("b");
+    if (!badge) {
+      badge = document.createElement("b");
+      button.append(" ");
+      button.appendChild(badge);
+    }
+    badge.textContent = String(count);
+  });
 }
 
 function injectStyles() {
@@ -1654,12 +1684,12 @@ function renderStats(cards) {
     card => cardState(card) === "ready"
   ).length;
 
-  const released = cards.filter(
-    card => cardState(card) === "released"
+  const singleReleased = cards.filter(
+    card => lotsForDivision(card.division.division_id).length === 1
   ).length;
 
-  const completed = cards.filter(
-    card => cardState(card) === "completed"
+  const multiReleased = cards.filter(
+    card => lotsForDivision(card.division.division_id).length > 1
   ).length;
 
   const artDue = cards.filter(
@@ -1673,13 +1703,13 @@ function renderStats(cards) {
     </article>
 
     <article>
-      <small>Ready</small>
+      <small>Release Pending</small>
       <strong>${ready}</strong>
     </article>
 
     <article>
-      <small>Released</small>
-      <strong>${released}</strong>
+      <small>Single Lot Released</small>
+      <strong>${singleReleased}</strong>
     </article>
 
     <article>
@@ -1688,8 +1718,8 @@ function renderStats(cards) {
     </article>
 
     <article>
-      <small>Completed</small>
-      <strong>${completed}</strong>
+      <small>Multi Lot Released</small>
+      <strong>${multiReleased}</strong>
     </article>
   `;
 }
@@ -1756,6 +1786,7 @@ function renderGallery() {
 
   gallery.setAttribute("aria-busy", "false");
   renderStats(allCards);
+  updateFilterCounts(allCards);
 
   if (!cards.length) {
     gallery.innerHTML = `
@@ -3457,6 +3488,12 @@ async function createLot(event = {}) {
     );
 
     const valid = validateLot();
+    const releaseKey = valid.lots.map(row => normalizeLotNo(row.lot_no)).join("|");
+    if (releaseInFlightKey && releaseInFlightKey === releaseKey) {
+      setLotReleaseFeedback("Same Lot release already running. कृपया wait करें.", "info");
+      return;
+    }
+    releaseInFlightKey = releaseKey;
     await validateLotNosUniqueLive({ hard: true });
     validateMappedCuttingMaster();
     matchingReservations = await reserveMatchingForLots(valid, client);
@@ -3526,8 +3563,16 @@ async function createLot(event = {}) {
     if (result.error) throw result.error;
     releaseCommitted = true;
 
-    const matchingWarnings = await confirmMatchingReservations(client, matchingReservations);
-    const actualRateWarnings = await postCuttingActuals(valid, client);
+    const matchingWarnings = await withTimeout(
+      confirmMatchingReservations(client, matchingReservations),
+      15000,
+      "Matching confirmation"
+    );
+    const actualRateWarnings = await withTimeout(
+      postCuttingActuals(valid, client),
+      15000,
+      "Cutting actual rate posting"
+    );
     const releasedNos = valid.lots.map(row => row.lot_no);
     lastReleasedLotNo = releasedNos[0] || "";
     lastReleasedDivisionId = activeCard.division.division_id;
@@ -3535,7 +3580,7 @@ async function createLot(event = {}) {
     closeSheet(lotSheet);
     activeCard = null;
 
-    await loadAllData();
+    await withTimeout(loadAllData(), 20000, "Cutting data refresh");
 
     window.setTimeout(() => {
       gallery
@@ -3545,7 +3590,11 @@ async function createLot(event = {}) {
 
     let upmWarning = "";
     try {
-      const upmSync = await client.rpc("rr_upm_sync_cutting_lots_v2");
+      const upmSync = await withTimeout(
+        client.rpc("rr_upm_sync_cutting_lots_v2"),
+        10000,
+        "UPM cutting sync"
+      );
       if (upmSync.error) throw upmSync.error;
     } catch (syncError) {
       console.warn("UPM V722 sync warning:", syncError);
@@ -3560,7 +3609,11 @@ async function createLot(event = {}) {
     setLotReleaseFeedback(successText, releaseWarnings.length ? "info" : "success");
   } catch (error) {
     if (!releaseCommitted && matchingReservations.length) {
-      await cancelMatchingReservations(client, matchingReservations, "Lot release failed");
+      await withTimeout(
+        cancelMatchingReservations(client, matchingReservations, "Lot release failed"),
+        10000,
+        "Matching reservation cancel"
+      ).catch(cancelError => console.warn("Matching cancel timeout/warning:", cancelError));
     }
     console.error("Lot release failed:", error);
     const messageText = releaseErrorText(error);
@@ -3573,8 +3626,45 @@ async function createLot(event = {}) {
     }
   } finally {
     createLot.busy = false;
+    releaseInFlightKey = "";
     setReleaseUiLocked(false);
   }
+}
+
+function focusNextCuttingField(current) {
+  const form = $("lotForm");
+  if (!form || !current) return false;
+
+  const fields = [...form.querySelectorAll("input,select,textarea,button")]
+    .filter(el =>
+      !el.disabled &&
+      el.type !== "hidden" &&
+      el.offsetParent !== null &&
+      !el.matches("[data-close-lot], [data-release-lot-submit], button[type='submit']")
+    );
+
+  const index = fields.indexOf(current);
+  const next = fields[index + 1];
+  if (!next) return false;
+
+  next.focus();
+  if (typeof next.select === "function" && /^(text|number|search)$/i.test(next.type || "")) {
+    next.select();
+  }
+  return true;
+}
+
+function bindEnterNextFlow() {
+  const form = $("lotForm");
+  if (!form || form.dataset.enterNextBound === "1") return;
+  form.dataset.enterNextBound = "1";
+  form.addEventListener("keydown", event => {
+    if (event.key !== "Enter") return;
+    const target = event.target;
+    if (!target || target.matches("textarea,button,[data-release-lot-submit]")) return;
+    event.preventDefault();
+    focusNextCuttingField(target);
+  }, true);
 }
 
 function openCostSettingsSheet() {
@@ -3923,7 +4013,7 @@ loadMatchingLotSource(client)
   refreshMatchingStockControls();
   renderGallery();
 
-  console.info("REAL FACTORY Cutting Master PM Core V892 loaded", {
+  console.info("REAL FACTORY Cutting Master PM Core V893 loaded", {
     galleryRows: galleryRows.length,
     purchaseRows: purchaseRows.length,
     matchingPurchaseRows: matchingPurchaseRows.length,
@@ -3955,6 +4045,7 @@ function bindEvents() {
   bindEvents.bound = true;
 
   ensureDuplicateLotStyle();
+  bindEnterNextFlow();
   $("lotForm")?.addEventListener("submit", createLot);
 
   gallery?.addEventListener("click", event => {

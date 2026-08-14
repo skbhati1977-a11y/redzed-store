@@ -1,0 +1,13 @@
+REAL_FACTORY_V893_CUTTING_RELEASE_ROOT_LOCK_FILTER_ENTER_FIX
+
+Fixes over V892:
+- Release root lock: full form pointer lock while saving.
+- Release button grey/disabled during save.
+- Same lot in-flight key blocks repeat fire.
+- All release/post-release steps wrapped with timeout: release RPC, matching confirm, actual rate post, data refresh, UPM sync, reservation cancel.
+- Filters simplified with counts: All, Release Pending, Single Lot Released, Multi Lot Released.
+- Removed D Cards and Completed filter.
+- Enter key moves cursor to next visible field instead of scrolling/submitting.
+
+Open:
+https://skbhati1977-a11y.github.io/redzed-store/real-cutting-master.html?v=893
