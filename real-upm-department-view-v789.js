@@ -258,5 +258,5 @@
   sync();
   setTimeout(sync, 1000);
   setMode("submit");
-  console.info("REAL FACTORY V870 · DUE FILTER BUTTONS DATASET FIX");
+  console.info("REAL FACTORY V871 · ASSIGN DUE COMPLETED DEPT EXCLUDE");
 })();

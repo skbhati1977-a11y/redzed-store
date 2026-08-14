@@ -185,10 +185,20 @@ function lotAssignDueTargets(lot, departmentCode) {
   if (!selected) return [];
   const meta = boardMeta(lot) || {};
   const statuses = arr(meta.department_statuses);
-  const active = new Set(statuses.flatMap(row => [...arr(row.assigned_codes), ...arr(row.running_codes)]));
-  const total = Math.max(0, ...statuses.map(row => Number(row.total_colours || 0)), arr(lot.colours).length);
-  if (total > 0 && active.size >= total) return [];
   const special = specialChoice(meta.identity || {});
+  const selectedStatus = statuses.find(row => canonicalDept(row.department_code || row.department_name) === selected);
+  if (selectedStatus) {
+    const total = Number(selectedStatus.total_colours || selectedStatus.total_codes || selectedStatus.colour_count || arr(lot.colours).length || 0);
+    const active = new Set([
+      ...arr(selectedStatus.assigned_codes), ...arr(selectedStatus.running_codes),
+      ...arr(selectedStatus.submitted_codes), ...arr(selectedStatus.completed_codes),
+      ...arr(selectedStatus.done_codes), ...arr(selectedStatus.locked_codes)
+    ]);
+    const label = upper([selectedStatus.status_colour, selectedStatus.status, selectedStatus.display_label, selectedStatus.board_detail].join(" "));
+    const completed = label.includes("GREEN") || label.includes("COMPLETED") || label.includes("SUBMITTED") || label.includes("DONE");
+    if (completed) return [];
+    if (total > 0 && active.size >= total) return [];
+  }
   return arr(state.departments)
     .map(department => ({ ...department, canonical: canonicalDept(department.department_code) }))
     .filter(department => {
@@ -1009,7 +1019,7 @@ async function boot() {
     document.querySelectorAll("[data-link]").forEach(button => button.onclick = () => location.href = button.dataset.link);
     $("packingTab").onclick = () => setMessage("Existing Smart Packing remains unchanged.");
     $("costingTab").onclick = () => setMessage("Costing uses existing ledgers.");
-    $("reportsTab").onclick = () => location.href = "real-reports-ai-v857.html?v=870";
+    $("reportsTab").onclick = () => location.href = "real-reports-ai-v857.html?v=871";
     $("selectAllBtn").onclick = selectAllOpenColours;
     $("applyBulkWorkerBtn").onclick = applyBulkWorker;
     $("assignBtn").onclick = assignWork;
