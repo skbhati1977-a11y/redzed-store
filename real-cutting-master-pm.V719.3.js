@@ -136,10 +136,26 @@ function isCuttingMasterWorker(row = {}) {
   return /CUTTING_MASTER|CUTTING MASTER|CUTTING/.test(text);
 }
 
-async function loadCuttingMasters(client) {
+async function loadCuttingMasters(client, recoverySource = null) {
   if (!client) return [];
 
   const candidates = [];
+
+  if (recoverySource && Array.isArray(recoverySource.cutting_masters)) {
+    recoverySource.cutting_masters.forEach(row => candidates.push(row));
+  }
+
+  const recoveredCandidates = candidates
+    .filter(row => workerName(row))
+    .filter(row => isCuttingMasterWorker(row));
+
+  if (recoveredCandidates.length) {
+    cuttingMasterRows = recoveredCandidates
+      .sort((a, b) => workerName(a).localeCompare(workerName(b)));
+    renderCuttingMasterOptions();
+    return cuttingMasterRows;
+  }
+
   const attempts = [
     () => client.rpc("rr_upm_worker_list_v8_4", { p_department_code: "CUTTING_MASTER" }),
     () => client.rpc("rr_upm_worker_list_v8_4", { p_department_code: "CUTTING" }),
@@ -3425,11 +3441,7 @@ function singleRpcPayload(valid) {
       colour_name: row.colour_name,
       size_code: row.size_name,
       qty: row.quantity
-    })),
-    p_matching_item_id: lot.matching_item_id || null,
-    p_matching_qty: lot.matching_item_id
-      ? Number(lot.matching_consumption || 0)
-      : 0
+    }))
   };
 }
 
@@ -3654,10 +3666,6 @@ async function createLot(event = {}) {
       );
     } else {
       const payload = singleRpcPayload(valid);
-      if (matchingReservations.length) {
-        payload.p_matching_item_id = null;
-        payload.p_matching_qty = 0;
-      }
       result = await withTimeout(
         client.rpc(
           "rr_release_single_lot_v3",
@@ -3858,7 +3866,28 @@ async function saveCostSettings(event) {
   }
 }
 
-async function loadCostSettings(client) {
+async function loadCostSettings(client, recoverySource = null) {
+  if (recoverySource && Array.isArray(recoverySource.cost_settings)) {
+    const recovered = recoverySource.cost_settings[0];
+    if (recovered) {
+      costSettings = {
+        ...costSettings,
+        ...recovered
+      };
+    }
+  }
+
+  if (recoverySource) {
+    setInputValue(
+      "baseCost",
+      Number(costSettings.default_base_cost || 0) > 0 ? costSettings.default_base_cost : ""
+    );
+    if ($("customAdjustment")) {
+      $("customAdjustment").disabled = costSettings.allow_custom_adjustment === false;
+    }
+    return;
+  }
+
   const result = await client
     .from("rr_cutting_cost_settings_v3")
     .select("*")
@@ -4012,6 +4041,20 @@ async function loadReleasedLotSource(client) {
   return [...singles, ...(multiRows || [])];
 }
 
+async function loadCuttingPmRecoverySource(client) {
+  const result = await client.rpc("rr_cutting_pm_recovery_source_v901");
+
+  if (result.error || !result.data || result.data.ok !== true) {
+    console.warn(
+      "CB card recovery source unavailable; using normal source reads.",
+      result.error
+    );
+    return null;
+  }
+
+  return result.data;
+}
+
 async function loadAllData() {
   const client = getClient();
 
@@ -4021,8 +4064,14 @@ async function loadAllData() {
     );
   }
 
+  const recoverySource = await withTimeout(
+    loadCuttingPmRecoverySource(client),
+    20000,
+    "Cutting CB card recovery source"
+  );
+
   await loadCuttingRole(client);
-  await loadCuttingMasters(client);
+  await loadCuttingMasters(client, recoverySource);
 
   if (gallery) {
     gallery.setAttribute("aria-busy", "true");
@@ -4065,57 +4114,85 @@ async function loadAllData() {
     matchingStockResult,
     matchingLotResult
   ] = await Promise.all([
-    withTimeout(
-      loadGallerySource(client),
-      35000,
-      "Product gallery"
-    ),
+    recoverySource
+      ? Promise.resolve(
+          (recoverySource.gallery || []).map(normalizeGalleryRow)
+        )
+      : withTimeout(
+          loadGallerySource(client),
+          35000,
+          "Product gallery"
+        ),
 
-    selectRows(client, "rr_cb_purchase_entries", {
-      order: "created_at",
-      ascending: false
-    }),
+    recoverySource
+      ? Promise.resolve({ data: recoverySource.purchases || [], error: null })
+      : selectRows(client, "rr_cb_purchase_entries", {
+          order: "created_at",
+          ascending: false
+        }),
 
-    optionalRows(client, "rr_matching_purchase_entries", {
-      order: "created_at",
-      ascending: false
-    }),
+    recoverySource
+      ? Promise.resolve(recoverySource.matching_purchases || [])
+      : optionalRows(client, "rr_matching_purchase_entries", {
+          order: "created_at",
+          ascending: false
+        }),
 
-    selectRows(client, "rr_cb_colours", {
-      order: "colour_order",
-      ascending: true
-    }),
+    recoverySource
+      ? Promise.resolve({ data: recoverySource.colours || [], error: null })
+      : selectRows(client, "rr_cb_colours", {
+          order: "colour_order",
+          ascending: true
+        }),
 
-    selectRows(client, "rr_art_master", {
-      eq: { is_active: true },
-      order: "updated_at",
-      ascending: false
-    }),
+    recoverySource
+      ? Promise.resolve({ data: recoverySource.art || [], error: null })
+      : selectRows(client, "rr_art_master", {
+          eq: { is_active: true },
+          order: "updated_at",
+          ascending: false
+        }),
 
-    loadPrintSource(client),
+    recoverySource
+      ? Promise.resolve(recoverySource.prints || [])
+      : loadPrintSource(client),
 
-    selectRows(client, "rr_cb_art_assignments", {
-      order: "updated_at",
-      ascending: false
-    }),
+    recoverySource
+      ? Promise.resolve({ data: recoverySource.assignments || [], error: null })
+      : selectRows(client, "rr_cb_art_assignments", {
+          order: "updated_at",
+          ascending: false
+        }),
 
-    selectRows(client, "rr_cb_print_assignments", {
-      order: "sequence_no",
-      ascending: true
-    }),
+    recoverySource
+      ? Promise.resolve({ data: recoverySource.print_assignments || [], error: null })
+      : selectRows(client, "rr_cb_print_assignments", {
+          order: "sequence_no",
+          ascending: true
+        }),
 
-    optionalRows(client, "rr_media"),
+    recoverySource
+      ? Promise.resolve(recoverySource.media || [])
+      : optionalRows(client, "rr_media"),
 
-    loadReleasedLotSource(client),
+    recoverySource
+      ? Promise.resolve(recoverySource.lots || [])
+      : loadReleasedLotSource(client),
 
-    selectRows(client, "rr_cutting_breakup_v3", {
-      order: "created_at",
-      ascending: false
-    }),
+    recoverySource
+      ? Promise.resolve({ data: recoverySource.breakup || [], error: null })
+      : selectRows(client, "rr_cutting_breakup_v3", {
+          order: "created_at",
+          ascending: false
+        }),
 
-    loadMatchingStockSource(client),
+    recoverySource
+      ? Promise.resolve(recoverySource.matching_stock || [])
+      : loadMatchingStockSource(client),
 
-loadMatchingLotSource(client)
+    recoverySource
+      ? Promise.resolve(recoverySource.matching_lots || [])
+      : loadMatchingLotSource(client)
   ]);
 
   purchaseRows = requiredData(purchaseResult, "Purchase rows");
@@ -4140,7 +4217,7 @@ loadMatchingLotSource(client)
   matchingStockRows = (matchingStockResult || []).map(normalizeMatchingStockRow);
   matchingLotRows = matchingLotResult || [];
 
-  await loadCostSettings(client);
+  await loadCostSettings(client, recoverySource);
   refreshMatchingStockControls();
   renderGallery();
 
@@ -4308,7 +4385,7 @@ async function start() {
 }
 
 window.RRCuttingMasterPM = {
-  version: "pm-core-v720.36.2-mc-ledger-rate-foundation",
+  version: "pm-core-v901-cb-card-lot-recovery",
 
   state() {
     return {
