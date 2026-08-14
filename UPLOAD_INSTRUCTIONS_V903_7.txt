@@ -1,0 +1,18 @@
+REAL FACTORY V903.7 — Cutting single-lot duplicate alias fix
+
+Replace these two files in the GitHub Pages root:
+1. real-cutting-master.html
+2. redzed-cutting-cb-actions-v72035.js
+
+Deploy both files together. The HTML now loads the CB-actions script with ?v=9037.
+
+Live E2E evidence:
+- Product Master V903.6 fresh CB creation: PASS.
+- Cutting Master art/print assignment: PASS.
+- TEST cutting rate ₹2.50 saved through Cost Settings.
+- Single-lot release then failed with: “Duplicate Lot No 2E2E36D2A isi sheet me hai.”
+- Cause: visible cmManualLotNo and hidden legacy lotNo were both counted by the duplicate checker as two lot inputs.
+
+Fix:
+- On release submit, when cmManualLotNo is filled, the hidden legacy lotNo alias is cleared before duplicate/release guards run.
+- No Supabase schema, RPC, accounting, damage, GR, or lot-release backend logic changed.
