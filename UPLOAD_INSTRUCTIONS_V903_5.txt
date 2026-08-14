@@ -1,0 +1,15 @@
+REAL FACTORY V903.5 — Product Master Create CB overlay blocker
+
+Replace these two files in the GitHub Pages root:
+1. real-product-master-v720.html
+2. real-product-master-v720.js
+
+Deploy both files together. The HTML loads real-product-master-v720.js?v=9035.
+
+Live blocker found:
+The fixed global TEST/REAL mode badge was physically overlaying the bottom-right Create CB button. Its click opened Data Mode Control instead of running Create CB.
+
+Fix:
+While any Product Master modal sheet is open, the global badge becomes non-clickable. It becomes clickable again after the sheet closes. The Create CB capture-phase guard remains included.
+
+Scope: frontend overlay/event routing only. No Supabase schema, RPC, purchase, accounting, vendor, fabric, or ledger logic changed.

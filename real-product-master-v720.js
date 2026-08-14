@@ -67,8 +67,9 @@ async function waitForRuntime(){
   }
   return null;
 }
-function openSheet(id){const el=$(id);el.classList.remove("hidden");el.setAttribute("aria-hidden","false");document.body.style.overflow="hidden";}
-function closeSheet(id){const el=$(id);el.classList.add("hidden");el.setAttribute("aria-hidden","true");if(!document.querySelector(".sheet:not(.hidden)"))document.body.style.overflow="";}
+function setGlobalModeBadgeInteractive(enabled){const badge=$("rr-global-data-mode-badge-v786-1-1");if(badge)badge.style.pointerEvents=enabled?"auto":"none";}
+function openSheet(id){const el=$(id);el.classList.remove("hidden");el.setAttribute("aria-hidden","false");document.body.style.overflow="hidden";setGlobalModeBadgeInteractive(false);}
+function closeSheet(id){const el=$(id);el.classList.add("hidden");el.setAttribute("aria-hidden","true");if(!document.querySelector(".sheet:not(.hidden)")){document.body.style.overflow="";setGlobalModeBadgeInteractive(true);}}
 function setBusy(button,busy,text){if(!button)return;if(busy){button.dataset.old=button.textContent;button.disabled=true;button.textContent=text}else{button.disabled=false;button.textContent=button.dataset.old||button.textContent}}
 function categoryByCode(code){return state.categories.find(x=>String(x.category_code||"").toLowerCase()===String(code).toLowerCase())||null;}
 function categoryById(id){return state.categories.find(x=>String(x.id)===String(id))||null;}
