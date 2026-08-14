@@ -38,9 +38,9 @@ table{border-collapse:collapse;width:100%;min-width:1900px}th,td{padding:9px;bor
     <p>Unpaid, salary-added और payment-posted work एक ही जगह</p>
   </div>
   <div class="nav">
-    <a class="btn" href="real-salary-home-v786.html">← Salary Home</a>
-    <a id="paymentLink" class="btn success" href="real-salary-payment-v785.html?category=PIECE_RATE">PCS Payment</a>
-    <a class="btn" href="real-worker-payroll-setup-v786.html">Worker Setup</a>
+    <a class="btn" href="real-salary-home-v786.html?v=887">← Salary Home</a>
+    <a id="paymentLink" class="btn success" href="real-salary-payment-v785.html?category=PIECE_RATE&v=887">PCS Payment</a>
+    <a class="btn" href="real-worker-payroll-setup-v786.html?v=887">Worker Setup</a>
     <span id="accessBadge" class="btn">Checking…</span>
   </div>
 </header>
@@ -112,9 +112,16 @@ table{border-collapse:collapse;width:100%;min-width:1900px}th,td{padding:9px;bor
 </main>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="config.js?v=884"></script>
-<script src="real-data-mode-controller-v786-1-1.js?v=884"></script>
-<script src="real-common.js?v=884"></script>
-<script src="real-pcs-rate-payroll-v779.js?v=884"></script>
+<script src="config.js?v=887"></script>
+<script src="real-data-mode-controller-v786-1-1.js?v=887"></script>
+<script src="real-common.js?v=887"></script>
+<script src="real-pcs-rate-payroll-v779.js?v=887"></script>
+<script>
+(function(){
+  var V='887';
+  function localHtml(h){try{var u=new URL(h,location.href);return u.origin===location.origin&&/\.html$/i.test(u.pathname)}catch(e){return false}}
+  document.addEventListener('click',function(e){var a=e.target&&e.target.closest?e.target.closest('a[href]'):null;if(!a||a.target||a.hasAttribute('download'))return;var h=a.getAttribute('href')||'';if(!h||h[0]==='#'||/^(mailto:|tel:|javascript:)/i.test(h)||!localHtml(h))return;var u=new URL(h,location.href);if(u.searchParams.get('v')!==V){u.searchParams.set('v',V);e.preventDefault();location.href=u.href;}},true);
+})();
+</script>
 </body>
 </html>

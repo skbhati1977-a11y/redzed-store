@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#0d0d0f">
   <title>REAL FACTORY - WhatsApp Messages V853</title>
-  <link rel="stylesheet" href="real-style.css?v=884">
+  <link rel="stylesheet" href="real-style.css?v=887">
   <style>
     .rf-comm-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:18px 0;padding:14px 16px;background:#17171b;border:1px solid #2a2a31;border-radius:16px}
     .rf-comm-toolbar label{display:grid;gap:7px;min-width:180px;color:#d6d6dc;font-size:13px;font-weight:800}
@@ -32,7 +32,7 @@
     <div class="rr-top-actions">
       <span class="rf-dashboard-version">V853</span>
       <span id="ownerName" class="rr-owner-name">Loading...</span>
-      <a class="rr-btn rr-btn-secondary" href="real-dashboard.html?v=884">Dashboard</a>
+      <a class="rr-btn rr-btn-secondary" href="real-dashboard.html?v=887">Dashboard</a>
       <button id="logoutBtn" class="rr-btn rr-btn-secondary" type="button">Logout</button>
     </div>
   </header>
@@ -71,7 +71,14 @@
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="config.js?v=884"></script>
-  <script src="real-communications-v853.js?v=884"></script>
+  <script src="config.js?v=887"></script>
+  <script src="real-communications-v853.js?v=887"></script>
+<script>
+(function(){
+  var V='887';
+  function localHtml(h){try{var u=new URL(h,location.href);return u.origin===location.origin&&/\.html$/i.test(u.pathname)}catch(e){return false}}
+  document.addEventListener('click',function(e){var a=e.target&&e.target.closest?e.target.closest('a[href]'):null;if(!a||a.target||a.hasAttribute('download'))return;var h=a.getAttribute('href')||'';if(!h||h[0]==='#'||/^(mailto:|tel:|javascript:)/i.test(h)||!localHtml(h))return;var u=new URL(h,location.href);if(u.searchParams.get('v')!==V){u.searchParams.set('v',V);e.preventDefault();location.href=u.href;}},true);
+})();
+</script>
 </body>
 </html>

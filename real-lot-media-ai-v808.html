@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#0d0d0f">
   <title>REAL FACTORY - Lot Media AI V808</title>
-  <link rel="stylesheet" href="real-style.css?v=884">
+  <link rel="stylesheet" href="real-style.css?v=887">
   <style>
     .rf-media-form{display:grid;grid-template-columns:1fr 1fr 2fr auto;gap:10px;align-items:end}
     .rf-media-form label{display:grid;gap:7px;color:#d6d6dc;font-size:13px;font-weight:800}
@@ -19,7 +19,7 @@
   </style>
 </head>
 <body class="rr-body">
-  <header class="rr-topbar"><div><p class="rr-kicker">REAL FACTORY</p><h1>Lot Media & AI</h1></div><div class="rr-top-actions"><span class="rf-dashboard-version">V808</span><span id="ownerName" class="rr-owner-name">Loading...</span><a class="rr-btn rr-btn-secondary" href="real-dashboard.html?v=884">Dashboard</a><button id="logoutBtn" class="rr-btn rr-btn-secondary" type="button">Logout</button></div></header>
+  <header class="rr-topbar"><div><p class="rr-kicker">REAL FACTORY</p><h1>Lot Media & AI</h1></div><div class="rr-top-actions"><span class="rf-dashboard-version">V808</span><span id="ownerName" class="rr-owner-name">Loading...</span><a class="rr-btn rr-btn-secondary" href="real-dashboard.html?v=887">Dashboard</a><button id="logoutBtn" class="rr-btn rr-btn-secondary" type="button">Logout</button></div></header>
   <main class="rr-page">
     <section class="rr-hero"><div><p class="rr-muted">TEST DEFAULT</p><h2>Packing Final Photo to AI Publish</h2><p class="rr-muted">Original packing final image safe रहती है; AI variants approval के बाद publish होंगे.</p></div><button id="refreshBtn" class="rr-btn rr-btn-secondary" type="button">Refresh</button></section>
     <section class="rr-panel">
@@ -37,6 +37,13 @@
     </section>
     <p id="pageMessage" class="rr-message" role="status"></p>
   </main>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="config.js?v=884"></script><script src="real-lot-media-ai-v808.js?v=884"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="config.js?v=887"></script><script src="real-lot-media-ai-v808.js?v=887"></script>
+<script>
+(function(){
+  var V='887';
+  function localHtml(h){try{var u=new URL(h,location.href);return u.origin===location.origin&&/\.html$/i.test(u.pathname)}catch(e){return false}}
+  document.addEventListener('click',function(e){var a=e.target&&e.target.closest?e.target.closest('a[href]'):null;if(!a||a.target||a.hasAttribute('download'))return;var h=a.getAttribute('href')||'';if(!h||h[0]==='#'||/^(mailto:|tel:|javascript:)/i.test(h)||!localHtml(h))return;var u=new URL(h,location.href);if(u.searchParams.get('v')!==V){u.searchParams.set('v',V);e.preventDefault();location.href=u.href;}},true);
+})();
+</script>
 </body>
 </html>

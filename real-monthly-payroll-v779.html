@@ -37,7 +37,7 @@
 </head>
 <body>
 <main class="page">
-<header class="topbar"><div><p class="kicker">REAL FACTORY · V779.7.1 FINAL LOCK · TEST</p><h1>Monthly Payroll</h1></div><nav class="links"><a href="real-dashboard.html">Dashboard</a><a href="real-role-permission-v777-4-final.html">Role & Permission</a></nav></header>
+<header class="topbar"><div><p class="kicker">REAL FACTORY · V779.7.1 FINAL LOCK · TEST</p><h1>Monthly Payroll</h1></div><nav class="links"><a href="real-dashboard.html?v=887">Dashboard</a><a href="real-role-permission-v777-4-final.html?v=887">Role & Permission</a></nav></header>
 <section class="hero"><p class="kicker">30-DAY · 18,000-MINUTE UNIVERSAL SALARY</p><h2>Monthly Salary · Extra Work · Incentive · Claims · Net Payable</h2><p>Worker apni linked User ID se sirf apna Payroll dekhega. Management authorized scope me review, finalise aur payment karega.</p>
 <p style="margin-top:12px">
   <span style="display:inline-flex;padding:6px 10px;border:1px solid #8a6b22;border-radius:999px;background:#382b0e;color:#ffe09a;font-size:12px;font-weight:900">
@@ -52,8 +52,15 @@
 <section id="detailsSheet" class="sheet hidden" aria-hidden="true"><div class="backdrop" data-close="detailsSheet"></div><div class="sheet-panel"><header class="sheet-head"><div><p class="kicker">PAYROLL DETAILS</p><h2 id="detailsTitle">Details</h2></div><button class="close" data-close="detailsSheet">×</button></header><div id="detailsBody"></div></div></section>
 <section id="actionSheet" class="sheet hidden" aria-hidden="true"><div class="backdrop" data-close="actionSheet"></div><div class="sheet-panel"><header class="sheet-head"><div><p class="kicker">PAYROLL ACTION</p><h2 id="actionTitle">Action</h2></div><button class="close" data-close="actionSheet">×</button></header><form id="actionForm"><input id="actionPayrollId" type="hidden"><input id="actionType" type="hidden"><div id="actionFields"></div><p id="actionMessage" class="message"></p><div class="actions"><button type="button" class="btn" data-close="actionSheet">Cancel</button><button type="submit" class="btn primary">Confirm</button></div></form></div></section>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="config.js?v=884"></script>
-<script src="real-common.js?v=884"></script>
-<script>window.REAL FACTORY_MONTHLY_PAYROLL_PAGE_VERSION="779.7.1";</script>
-<script src="real-monthly-payroll-v779.js?v=884"></script>
+<script src="config.js?v=887"></script>
+<script src="real-common.js?v=887"></script>
+<script>window.REAL_FACTORY_MONTHLY_PAYROLL_PAGE_VERSION="779.7.1";</script>
+<script src="real-monthly-payroll-v779.js?v=887"></script>
+<script>
+(function(){
+  var V='887';
+  function localHtml(h){try{var u=new URL(h,location.href);return u.origin===location.origin&&/\.html$/i.test(u.pathname)}catch(e){return false}}
+  document.addEventListener('click',function(e){var a=e.target&&e.target.closest?e.target.closest('a[href]'):null;if(!a||a.target||a.hasAttribute('download'))return;var h=a.getAttribute('href')||'';if(!h||h[0]==='#'||/^(mailto:|tel:|javascript:)/i.test(h)||!localHtml(h))return;var u=new URL(h,location.href);if(u.searchParams.get('v')!==V){u.searchParams.set('v',V);e.preventDefault();location.href=u.href;}},true);
+})();
+</script>
 </body></html>

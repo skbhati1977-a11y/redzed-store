@@ -134,8 +134,8 @@ table{min-width:1120px}
 
 </style></head><body><main class="app">
 <header class="head"><div><h1>REAL FACTORY · Payment Dashboard</h1><p>आज कितना देना है — एक नज़र में</p></div><div class="nav">
-<a class="btn" href="real-salary-home-v786.html">← Salary Home</a>
-<a class="btn" href="real-pcs-work-audit-v783.html">Worker Ledgers</a>
+<a class="btn" href="real-salary-home-v786.html?v=887">← Salary Home</a>
+<a class="btn" href="real-pcs-work-audit-v783.html?v=887">Worker Ledgers</a>
 <span id="accessBadge" class="btn">Checking…</span>
 </div></header>
 <section class="panel"><div class="grid">
@@ -217,7 +217,7 @@ table{min-width:1120px}
   </div>
 </section>
 
-<section id="advancePanel" class="panel hidden"><div class="actions" style="justify-content:space-between"><b>Advance से कम/बराबर earning वाले workers — threshold पूरा होते ही regular window में आएँगे</b><a class="btn" href="real-advance-worker-payment-v785.html">Open Advance Payment List</a></div><div id="advanceList" class="advance-list"></div></section>
+<section id="advancePanel" class="panel hidden"><div class="actions" style="justify-content:space-between"><b>Advance से कम/बराबर earning वाले workers — threshold पूरा होते ही regular window में आएँगे</b><a class="btn" href="real-advance-worker-payment-v785.html?v=887">Open Advance Payment List</a></div><div id="advanceList" class="advance-list"></div></section>
 <section class="panel"><div class="actions" style="justify-content:space-between"><h2 style="margin:0;font-size:17px">Workers To Pay — Net After Advance</h2><span id="workerCount">0 workers</span></div><div class="table-wrap"><table data-salary-ledger="v328"><thead><tr data-salary-schema="v328"><th>Worker Name (ID)</th><th>Department</th><th>Gross Earned</th><th>Net Previous</th><th>Net Final Payable</th><th>Current Payment</th><th>New Outstanding</th></tr></thead><tbody id="ledgerBody"></tbody><tfoot id="ledgerFoot"></tfoot></table></div><div class="bottom-submit"><button id="submitBulkPayment" class="btn success" type="button" disabled>SUBMIT PAYMENT</button></div></section>
 <section class="panel"><div class="actions" style="justify-content:space-between"><h2 style="margin:0;font-size:17px">Payment History</h2><button id="loadHistory" class="btn">Refresh History</button></div><div class="table-wrap"><table style="min-width:1550px"><thead><tr><th>Date</th><th>Module</th><th>Period</th><th>Method</th><th>Scope</th><th>Voucher</th><th>Workers</th><th>Final Payable ₹</th><th>Bulk Payment ₹</th><th>New Outstanding ₹</th><th>Messages</th><th>Status</th><th>Action</th></tr></thead><tbody id="historyBody"></tbody></table></div></section>
 
@@ -225,16 +225,16 @@ table{min-width:1120px}
   <details>
     <summary>Advanced Details — जरूरत होने पर खोलें</summary>
     <div class="actions">
-      <a class="btn" href="real-pcs-work-audit-v783.html">Worker Ledgers</a>
-      <a class="btn" href="real-advance-worker-payment-v785.html">Advance Payment</a>
-      <a class="btn" href="real-data-mode-control-v786.html">Data Mode Settings</a>
+      <a class="btn" href="real-pcs-work-audit-v783.html?v=887">Worker Ledgers</a>
+      <a class="btn" href="real-advance-worker-payment-v785.html?v=887">Advance Payment</a>
+      <a class="btn" href="real-data-mode-control-v786.html?v=887">Data Mode Settings</a>
     </div>
   </details>
 </section>
 
 
 
-</main><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="config.js?v=884"></script><script src="real-data-mode-controller-v786-1-1.js?v=884"></script><script src="real-common.js?v=884"></script><script src="real-salary-payment-v785.js?v=884"></script><script>
+</main><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="config.js?v=887"></script><script src="real-data-mode-controller-v786-1-1.js?v=887"></script><script src="real-common.js?v=887"></script><script src="real-salary-payment-v785.js?v=887"></script><script>
 (()=>{
   const normalizeVoucherText=()=>{
     const input=document.getElementById('voucherNo');
@@ -256,4 +256,11 @@ table{min-width:1120px}
   };
   document.readyState==='loading'?document.addEventListener('DOMContentLoaded',start):start();
 })();
-</script></body></html>
+</script><script>
+(function(){
+  var V='887';
+  function localHtml(h){try{var u=new URL(h,location.href);return u.origin===location.origin&&/\.html$/i.test(u.pathname)}catch(e){return false}}
+  document.addEventListener('click',function(e){var a=e.target&&e.target.closest?e.target.closest('a[href]'):null;if(!a||a.target||a.hasAttribute('download'))return;var h=a.getAttribute('href')||'';if(!h||h[0]==='#'||/^(mailto:|tel:|javascript:)/i.test(h)||!localHtml(h))return;var u=new URL(h,location.href);if(u.searchParams.get('v')!==V){u.searchParams.set('v',V);e.preventDefault();location.href=u.href;}},true);
+})();
+</script>
+</body></html>

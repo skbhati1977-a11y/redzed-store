@@ -50,8 +50,8 @@ td.money{text-align:right;font-variant-numeric:tabular-nums}
     <p>Worker work, salary, payment amount और payment date एक ही report में</p>
   </div>
   <div class="nav">
-    <a class="btn" href="real-salary-payment-v785.html?category=PIECE_RATE">PCS Payment</a>
-    <a class="btn" href="real-pcs-rate-payroll-v779.html">PCS Salary</a>
+    <a class="btn" href="real-salary-payment-v785.html?category=PIECE_RATE&v=887">PCS Payment</a>
+    <a class="btn" href="real-pcs-rate-payroll-v779.html?v=887">PCS Salary</a>
     <span id="accessBadge" class="btn">Checking…</span>
   </div>
 </header>
@@ -155,8 +155,15 @@ td.money{text-align:right;font-variant-numeric:tabular-nums}
 </main>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="config.js?v=884"></script>
-<script src="real-common.js?v=884"></script>
-<script src="real-pcs-work-audit-v783.js?v=884"></script>
+<script src="config.js?v=887"></script>
+<script src="real-common.js?v=887"></script>
+<script src="real-pcs-work-audit-v783.js?v=887"></script>
+<script>
+(function(){
+  var V='887';
+  function localHtml(h){try{var u=new URL(h,location.href);return u.origin===location.origin&&/\.html$/i.test(u.pathname)}catch(e){return false}}
+  document.addEventListener('click',function(e){var a=e.target&&e.target.closest?e.target.closest('a[href]'):null;if(!a||a.target||a.hasAttribute('download'))return;var h=a.getAttribute('href')||'';if(!h||h[0]==='#'||/^(mailto:|tel:|javascript:)/i.test(h)||!localHtml(h))return;var u=new URL(h,location.href);if(u.searchParams.get('v')!==V){u.searchParams.set('v',V);e.preventDefault();location.href=u.href;}},true);
+})();
+</script>
 </body>
 </html>

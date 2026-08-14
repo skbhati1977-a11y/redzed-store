@@ -34,28 +34,35 @@ a{font:inherit}.app{max-width:1180px;margin:auto;padding:14px}
 <section class="grid">
   <article class="card primary">
     <div><h2>PCS Salary Dashboard</h2><p>PCS worker setup, unpaid PCS work, PCS payment और work/payment check.</p></div>
-    <a class="btn" href="real-pcs-salary-dashboard-v786.html">OPEN PCS SALARY DASHBOARD</a>
+    <a class="btn" href="real-pcs-salary-dashboard-v786.html?v=887">OPEN PCS SALARY DASHBOARD</a>
   </article>
   <article class="card payment">
     <div><h2>Monthly Salary Dashboard</h2><p>Monthly worker setup, attendance salary, monthly payment और check.</p></div>
-    <a class="btn" href="real-monthly-salary-dashboard-v786.html">OPEN MONTHLY SALARY DASHBOARD</a>
+    <a class="btn" href="real-monthly-salary-dashboard-v786.html?v=887">OPEN MONTHLY SALARY DASHBOARD</a>
   </article>
 </section>
 <section class="panel advanced">
   <details>
     <summary>Advanced Settings</summary>
     <div class="nav" style="margin-top:12px">
-      <a class="btn" href="real-advance-worker-payment-v785.html">Advance Payment</a>
-      <a class="btn" href="real-data-mode-control-v786.html">Data Mode Settings</a>
+      <a class="btn" href="real-advance-worker-payment-v785.html?v=887">Advance Payment</a>
+      <a class="btn" href="real-data-mode-control-v786.html?v=887">Data Mode Settings</a>
     </div>
   </details>
 </section>
 <p id="message"></p>
 </main>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="config.js?v=884"></script>
-<script src="real-data-mode-controller-v786-1-1.js?v=884"></script>
-<script src="real-common.js?v=884"></script>
-<script src="real-salary-home-v786.js?v=884"></script>
+<script src="config.js?v=887"></script>
+<script src="real-data-mode-controller-v786-1-1.js?v=887"></script>
+<script src="real-common.js?v=887"></script>
+<script src="real-salary-home-v786.js?v=887"></script>
+<script>
+(function(){
+  var V='887';
+  function localHtml(h){try{var u=new URL(h,location.href);return u.origin===location.origin&&/\.html$/i.test(u.pathname)}catch(e){return false}}
+  document.addEventListener('click',function(e){var a=e.target&&e.target.closest?e.target.closest('a[href]'):null;if(!a||a.target||a.hasAttribute('download'))return;var h=a.getAttribute('href')||'';if(!h||h[0]==='#'||/^(mailto:|tel:|javascript:)/i.test(h)||!localHtml(h))return;var u=new URL(h,location.href);if(u.searchParams.get('v')!==V){u.searchParams.set('v',V);e.preventDefault();location.href=u.href;}},true);
+})();
+</script>
 </body>
 </html>

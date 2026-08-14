@@ -232,6 +232,35 @@
   window.RR = RR;
 })();
 
+(() => {
+  const VERSION = "887";
+  function isLocalModule(url) {
+    try {
+      const u = new URL(url, location.href);
+      return u.origin === location.origin && /\.html$/i.test(u.pathname);
+    } catch (_) {
+      return false;
+    }
+  }
+  function withLatestVersion(url) {
+    const u = new URL(url, location.href);
+    u.searchParams.set("v", VERSION);
+    return u.href;
+  }
+  document.addEventListener("click", event => {
+    const link = event.target && event.target.closest ? event.target.closest("a[href]") : null;
+    if (!link || link.target || link.hasAttribute("download")) return;
+    const href = link.getAttribute("href") || "";
+    if (!href || href.startsWith("#") || /^(mailto:|tel:|javascript:)/i.test(href)) return;
+    if (!isLocalModule(href)) return;
+    const next = withLatestVersion(href);
+    if (next !== new URL(href, location.href).href) {
+      event.preventDefault();
+      location.href = next;
+    }
+  }, true);
+})();
+
 /* REAL FACTORY GLOBAL TABLE PLATFORM V775.1
  * Every page that loads real-common.js automatically receives:
  * - Google Sheets-style per-column filters
@@ -242,8 +271,8 @@
  * - iOS/iPadOS/Android safe mobile behavior
  */
 (()=>{
-  if(window.__REAL FACTORY_GLOBAL_UI_LOADER_V775__)return;
-  window.__REAL FACTORY_GLOBAL_UI_LOADER_V775__=true;
+  if(window.__REAL_FACTORY_GLOBAL_UI_LOADER_V775__)return;
+  window.__REAL_FACTORY_GLOBAL_UI_LOADER_V775__=true;
 
   const current=document.currentScript?.src||location.href;
   const base=new URL('.',current);
@@ -266,7 +295,7 @@
   });
 
   const dataModeLoader=load(
-    'real-data-mode-controller-v786-1-1.js?v=884',
+    'real-data-mode-controller-v786-1-1.js?v=887',
     'rr-data-mode-controller-v786-1-1'
   );
 
@@ -274,11 +303,11 @@
 
   dataModeLoader
   .then(()=>load(
-    'real-mobile-compat-v775.js?v=884',
+    'real-mobile-compat-v775.js?v=887',
     'rr-mobile-compat-v775'
   ))
   .then(()=>load(
-    'real-google-sheet-table-v775.js?v=884',
+    'real-google-sheet-table-v775.js?v=887',
     'rr-google-sheet-table-v775'
   ))
   .catch(error=>console.error(error));

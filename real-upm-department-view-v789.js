@@ -258,5 +258,5 @@
   sync();
   setTimeout(sync, 1000);
   setMode("submit");
-  console.info("REAL FACTORY V884 · CUTTING DUPLICATE FAST SAVE GUARD");
+  console.info("REAL FACTORY V887 · CUTTING DUPLICATE FAST SAVE GUARD");
 })();

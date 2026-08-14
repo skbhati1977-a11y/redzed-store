@@ -1,0 +1,16 @@
+REAL FACTORY V887 MODULE VERSION MAP
+
+All internal module travel locked to v=887.
+
+Dashboard: real-dashboard.html?v=887
+Product Master: real-product-master-v720.html?v=887
+Cutting Master: real-cutting-master.html?v=887
+UPM all departments: real-universal-production-v770.html?...&v=887
+Packing/Despatch/Webstore/Sales/Return: real-finished-goods-v787.html?view=...&v=887
+Salary/Attendance/Payment: salary module pages all v=887
+Accounts/Reports/WhatsApp/AI/Config: bridge pages all v=887
+
+Frontend base decisions retained:
+- Cutting V881 duplicate lot/save guard retained.
+- UPM V880 submit due restore retained.
+- V878/V879 normalized frontend excluded because it caused 0/0 regression.

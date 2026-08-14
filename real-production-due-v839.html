@@ -5,13 +5,13 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#0d0d0f">
   <title>REAL FACTORY - Production Due V839</title>
-  <link rel="stylesheet" href="real-style.css?v=884">
+  <link rel="stylesheet" href="real-style.css?v=887">
   <style>
     .rf-bridge-grid{display:grid;gap:16px}.rf-bridge-table-wrap{overflow:auto}.rf-bridge-table{width:100%;min-width:880px;border-collapse:collapse}.rf-bridge-table th,.rf-bridge-table td{padding:10px;border-bottom:1px solid #2a2a31;text-align:left;vertical-align:top}.rf-bridge-table th{position:sticky;top:0;background:#20202a;color:#fff}.rf-bridge-card{padding:16px;border:1px solid #2a2a31;border-radius:16px;background:#17171b}.rf-bridge-card-head{display:flex;justify-content:space-between;gap:12px}.rf-bridge-card-head span{color:#a8a8b3}.rf-bridge-fields{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}.rf-bridge-fields div{padding:10px;border-radius:12px;background:#0f0f12;border:1px solid #292930}.rf-bridge-fields small{display:block;color:#aaaab4}.rf-bridge-fields b{font-size:13px}@media(max-width:760px){.rf-bridge-fields{grid-template-columns:1fr}.rr-topbar{align-items:flex-start;flex-direction:column}}
   </style>
 </head>
 <body class="rr-body">
-  <header class="rr-topbar"><div><p class="rr-kicker">REAL FACTORY</p><h1>Production Due</h1></div><div class="rr-top-actions"><span class="rf-dashboard-version">V839</span><span id="ownerName" class="rr-owner-name">Loading...</span><a class="rr-btn rr-btn-secondary" href="real-dashboard.html?v=884">Dashboard</a><button id="logoutBtn" class="rr-btn rr-btn-secondary" type="button">Logout</button></div></header>
+  <header class="rr-topbar"><div><p class="rr-kicker">REAL FACTORY</p><h1>Production Due</h1></div><div class="rr-top-actions"><span class="rf-dashboard-version">V839</span><span id="ownerName" class="rr-owner-name">Loading...</span><a class="rr-btn rr-btn-secondary" href="real-dashboard.html?v=887">Dashboard</a><button id="logoutBtn" class="rr-btn rr-btn-secondary" type="button">Logout</button></div></header>
   <main class="rr-page">
     <section class="rr-hero"><div><p class="rr-muted">TEST DEFAULT</p><h2>Cut / Print / Sticker / Metal ID Due</h2><p class="rr-muted">Backend due activation views से current pending work दिखेगा.</p></div><button id="refreshBtn" class="rr-btn rr-btn-secondary" type="button">Refresh</button></section>
     <section class="rf-bridge-grid">
@@ -23,6 +23,13 @@
     <p id="bridgeMessage" class="rr-message" role="status"></p>
   </main>
   <script>window.REAL_FACTORY_BRIDGE={sources:[{key:"cutAudit",table:"rr_cut_qty_source_audit_v839",target:"cutAudit",orderBy:"lot_no"},{key:"printDue",table:"rr_print_due_activation_v839",target:"printDue",orderBy:"lot_no",onlyExplicitDue:true},{key:"stickerDue",table:"rr_sticker_due_activation_v839",target:"stickerDue",orderBy:"lot_no",onlyExplicitDue:true},{key:"metalDue",table:"rr_metal_id_due_activation_v839",target:"metalDue",orderBy:"lot_no",onlyExplicitDue:true}]};</script>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="config.js?v=884"></script><script src="real-backend-bridge-v855.js?v=884"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="config.js?v=887"></script><script src="real-backend-bridge-v855.js?v=887"></script>
+<script>
+(function(){
+  var V='887';
+  function localHtml(h){try{var u=new URL(h,location.href);return u.origin===location.origin&&/\.html$/i.test(u.pathname)}catch(e){return false}}
+  document.addEventListener('click',function(e){var a=e.target&&e.target.closest?e.target.closest('a[href]'):null;if(!a||a.target||a.hasAttribute('download'))return;var h=a.getAttribute('href')||'';if(!h||h[0]==='#'||/^(mailto:|tel:|javascript:)/i.test(h)||!localHtml(h))return;var u=new URL(h,location.href);if(u.searchParams.get('v')!==V){u.searchParams.set('v',V);e.preventDefault();location.href=u.href;}},true);
+})();
+</script>
 </body>
 </html>

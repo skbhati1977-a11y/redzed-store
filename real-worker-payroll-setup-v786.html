@@ -66,8 +66,8 @@ textarea{min-height:80px;resize:vertical}
     <p>Simple page — केवल worker की PCS / Monthly salary profile set करें</p>
   </div>
   <div class="nav">
-    <a class="btn" href="real-salary-home-v786.html">← Salary Home</a>
-    <a class="btn" href="real-salary-payment-v785.html">Salary Payment</a>
+    <a class="btn" href="real-salary-home-v786.html?v=887">← Salary Home</a>
+    <a class="btn" href="real-salary-payment-v785.html?v=887">Salary Payment</a>
     <span id="accessBadge" class="btn">Checking…</span>
   </div>
 </header>
@@ -178,7 +178,7 @@ textarea{min-height:80px;resize:vertical}
         <button id="saveProfile" class="btn success" type="submit" disabled>
           Save Worker Salary Profile
         </button>
-        <a class="btn" href="real-role-permission-v777-4-final.html?v=884">
+        <a class="btn" href="real-role-permission-v777-4-final.html?v=887">
           Advanced Role & Permission
         </a>
       </div>
@@ -189,9 +189,16 @@ textarea{min-height:80px;resize:vertical}
 </main>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="config.js?v=884"></script>
-<script src="real-data-mode-controller-v786-1-1.js?v=884"></script>
-<script src="real-common.js?v=884"></script>
-<script src="real-worker-payroll-setup-v786.js?v=884"></script>
+<script src="config.js?v=887"></script>
+<script src="real-data-mode-controller-v786-1-1.js?v=887"></script>
+<script src="real-common.js?v=887"></script>
+<script src="real-worker-payroll-setup-v786.js?v=887"></script>
+<script>
+(function(){
+  var V='887';
+  function localHtml(h){try{var u=new URL(h,location.href);return u.origin===location.origin&&/\.html$/i.test(u.pathname)}catch(e){return false}}
+  document.addEventListener('click',function(e){var a=e.target&&e.target.closest?e.target.closest('a[href]'):null;if(!a||a.target||a.hasAttribute('download'))return;var h=a.getAttribute('href')||'';if(!h||h[0]==='#'||/^(mailto:|tel:|javascript:)/i.test(h)||!localHtml(h))return;var u=new URL(h,location.href);if(u.searchParams.get('v')!==V){u.searchParams.set('v',V);e.preventDefault();location.href=u.href;}},true);
+})();
+</script>
 </body>
 </html>

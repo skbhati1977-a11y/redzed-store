@@ -78,7 +78,7 @@
 </head>
 <body>
 <main class="page">
-<header class="topbar"><div><p class="kicker">REAL FACTORY</p><h1>Role & Permission</h1></div><nav class="links"><a href="real-dashboard.html">Dashboard</a><a href="real-product-master-v720.html">Product Master</a><a href="real-cutting-master.html">Cutting Master</a><a href="real-monthly-payroll-v779.html">Monthly Payroll</a></nav></header>
+<header class="topbar"><div><p class="kicker">REAL FACTORY</p><h1>Role & Permission</h1></div><nav class="links"><a href="real-dashboard.html?v=887">Dashboard</a><a href="real-product-master-v720.html?v=887">Product Master</a><a href="real-cutting-master.html?v=887">Cutting Master</a><a href="real-monthly-payroll-v779.html?v=887">Monthly Payroll</a></nav></header>
 <section class="hero"><p class="kicker">V777.4 FINAL · SALARY + SALE INCENTIVE</p><h2>Fields vertical · Departments horizontal · Hide / View / Edit</h2><p>हर CB-to-Packing field की अलग row, department templates, particular-user override, action permissions, field demo/impact और one-tap user block एक ही control room में।</p><div id="stats" class="stats"></div></section>
 <div class="tabs" id="tabs"><button class="active" data-tab="matrix">Field Matrix</button><button data-tab="actions">Action Matrix</button><button data-tab="overrides">User Overrides</button><button data-tab="fields">Field Master</button><button data-tab="users">Users & Access</button><button data-tab="workers">Worker Directory</button><button data-tab="departments">Department Master</button></div>
 <p id="message" class="message" role="status" aria-live="polite"></p>
@@ -483,7 +483,14 @@
 </section>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="config.js?v=884"></script>
-<script src="real-common.js?v=884"></script>
-<script src="real-role-permission-v777-4-final.js?v=884"></script>
+<script src="config.js?v=887"></script>
+<script src="real-common.js?v=887"></script>
+<script src="real-role-permission-v777-4-final.js?v=887"></script>
+<script>
+(function(){
+  var V='887';
+  function localHtml(h){try{var u=new URL(h,location.href);return u.origin===location.origin&&/\.html$/i.test(u.pathname)}catch(e){return false}}
+  document.addEventListener('click',function(e){var a=e.target&&e.target.closest?e.target.closest('a[href]'):null;if(!a||a.target||a.hasAttribute('download'))return;var h=a.getAttribute('href')||'';if(!h||h[0]==='#'||/^(mailto:|tel:|javascript:)/i.test(h)||!localHtml(h))return;var u=new URL(h,location.href);if(u.searchParams.get('v')!==V){u.searchParams.set('v',V);e.preventDefault();location.href=u.href;}},true);
+})();
+</script>
 </body></html>

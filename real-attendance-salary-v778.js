@@ -1,6 +1,6 @@
 (()=>{
 'use strict';
-window.REAL FACTORY_ATTENDANCE_SALARY_VERSION='778.2.0';
+window.REAL_FACTORY_ATTENDANCE_SALARY_VERSION='778.2.0';
 const state={client:null,auth:null,workers:[],attendanceWorkerId:'',adjustmentWorkerId:'',attendance:[],holidays:[],run:null,lines:[],adjustments:[]};
 const $=id=>document.getElementById(id);
 const safe=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));

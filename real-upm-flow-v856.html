@@ -4,13 +4,13 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <title>REAL FACTORY - UPM Flow V857</title>
-  <link rel="stylesheet" href="real-style.css?v=884">
+  <link rel="stylesheet" href="real-style.css?v=887">
   <style>
     .rf-tabs{display:flex;gap:8px;overflow:auto;margin:18px 0;padding-bottom:4px}.rf-tabs a{flex:0 0 auto;min-height:42px;padding:11px 13px;border:1px solid #2a2a31;border-radius:12px;background:#17171b;color:#fff;text-decoration:none;font-weight:900}.rf-tabs a:first-child{border-color:#e32636}.rf-flow-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}.rf-flow-card{padding:18px;border:1px solid #2a2a31;border-radius:16px;background:#17171b;color:white;text-decoration:none}.rf-flow-card h3{margin:10px 0 8px}.rf-flow-card p{color:#aaaab4;line-height:1.5}.rf-flow-badge{display:inline-flex;padding:5px 8px;border-radius:999px;background:#202936;color:#a8ccff;font-size:11px;font-weight:900}.rf-flow-list{display:grid;gap:8px}.rf-flow-row{display:flex;justify-content:space-between;gap:12px;padding:12px;border:1px solid #2a2a31;border-radius:12px;background:#0f0f12}.rf-flow-row span{color:#aaaab4}@media(max-width:900px){.rf-flow-grid{grid-template-columns:repeat(2,1fr)}}@media(max-width:620px){.rf-flow-grid{grid-template-columns:1fr}.rr-topbar{align-items:flex-start;flex-direction:column}.rf-flow-row{align-items:flex-start;flex-direction:column}}
   </style>
 </head>
 <body class="rr-body">
-  <header class="rr-topbar"><div><p class="rr-kicker">REAL FACTORY</p><h1>UPM Flow</h1></div><div class="rr-top-actions"><span class="rf-dashboard-version">V857</span><span id="ownerName" class="rr-owner-name">SUPER ADMIN</span><a class="rr-btn rr-btn-secondary" href="real-dashboard.html?v=884">Dashboard</a></div></header>
+  <header class="rr-topbar"><div><p class="rr-kicker">REAL FACTORY</p><h1>UPM Flow</h1></div><div class="rr-top-actions"><span class="rf-dashboard-version">V857</span><span id="ownerName" class="rr-owner-name">SUPER ADMIN</span><a class="rr-btn rr-btn-secondary" href="real-dashboard.html?v=887">Dashboard</a></div></header>
   <main class="rr-page">
     <section class="rr-hero"><div><p class="rr-muted">CUTTING TO DESPATCH</p><h2>Assign Due · Submit Due · Open Queue · Rectification</h2><p class="rr-muted">ये page UPM के full flow links और checkpoints को एक जगह रखता है. Actual work same UPM engine में होगा.</p></div></section>
     <nav class="rf-tabs" id="flowTabs" aria-label="UPM tabs"></nav>
@@ -25,23 +25,30 @@
   </main>
   <script>
     const depts=[
-      ["CUTTING","Cutting","real-cutting-master.html?v=884"],
-      ["PRINTING","Printing","real-universal-production-v770.html?dept=PRINTING&label=Printing&v=884"],
-      ["STICKER","Sticker","real-universal-production-v770.html?dept=STICKER&label=Sticker&v=884"],
-      ["ID","Metal ID","real-universal-production-v770.html?dept=ID&label=ID+Work&v=884"],
-      ["KR","Karigar","real-universal-production-v770.html?dept=KR&label=Karigar&v=884"],
-      ["OVERLOCK","Overlock","real-universal-production-v770.html?dept=OVERLOCK&label=Overlock&v=884"],
-      ["FOLDING","Folding","real-universal-production-v770.html?dept=FOLDING&label=Folding&v=884"],
-      ["KAAJ_BUTTON","Kaaj Button","real-universal-production-v770.html?dept=KAAJ_BUTTON&label=Kaaj+Button&v=884"],
-      ["TEAK_TANKI","Teak Tanki","real-universal-production-v770.html?dept=TEAK_TANKI&label=Teak+Tanki&v=884"],
-      ["THREAD_CUT","Thread Cutting","real-universal-production-v770.html?dept=THREAD_CUT&label=Thread+Cutting&v=884"],
-      ["QC","QC","real-universal-production-v770.html?dept=QC&label=QC&v=884"],
-      ["PRESS","Press","real-universal-production-v770.html?dept=PRESS&label=Press&v=884"],
-      ["PACKING","Packing","real-finished-goods-v787.html?view=packing&v=884"],
-      ["DESPATCH","Despatch","real-finished-goods-v787.html?view=despatch&v=884"]
+      ["CUTTING","Cutting","real-cutting-master.html?v=887"],
+      ["PRINTING","Printing","real-universal-production-v770.html?dept=PRINTING&label=Printing&v=887"],
+      ["STICKER","Sticker","real-universal-production-v770.html?dept=STICKER&label=Sticker&v=887"],
+      ["ID","Metal ID","real-universal-production-v770.html?dept=ID&label=ID+Work&v=887"],
+      ["KR","Karigar","real-universal-production-v770.html?dept=KR&label=Karigar&v=887"],
+      ["OVERLOCK","Overlock","real-universal-production-v770.html?dept=OVERLOCK&label=Overlock&v=887"],
+      ["FOLDING","Folding","real-universal-production-v770.html?dept=FOLDING&label=Folding&v=887"],
+      ["KAAJ_BUTTON","Kaaj Button","real-universal-production-v770.html?dept=KAAJ_BUTTON&label=Kaaj+Button&v=887"],
+      ["TEAK_TANKI","Teak Tanki","real-universal-production-v770.html?dept=TEAK_TANKI&label=Teak+Tanki&v=887"],
+      ["THREAD_CUT","Thread Cutting","real-universal-production-v770.html?dept=THREAD_CUT&label=Thread+Cutting&v=887"],
+      ["QC","QC","real-universal-production-v770.html?dept=QC&label=QC&v=887"],
+      ["PRESS","Press","real-universal-production-v770.html?dept=PRESS&label=Press&v=887"],
+      ["PACKING","Packing","real-finished-goods-v787.html?view=packing&v=887"],
+      ["DESPATCH","Despatch","real-finished-goods-v787.html?view=despatch&v=887"]
     ];
     document.getElementById("flowTabs").innerHTML=depts.map(([code,name,href])=>`<a href="${href}">${name}</a>`).join("");
     document.getElementById("flowGrid").innerHTML=depts.map(([code,name,href])=>`<a class="rf-flow-card" href="${href}"><span class="rf-flow-badge">${code}</span><h3>${name}</h3><p>Assign due, submit due, running cards and next flow checkpoint.</p></a>`).join("");
   </script>
+<script>
+(function(){
+  var V='887';
+  function localHtml(h){try{var u=new URL(h,location.href);return u.origin===location.origin&&/\.html$/i.test(u.pathname)}catch(e){return false}}
+  document.addEventListener('click',function(e){var a=e.target&&e.target.closest?e.target.closest('a[href]'):null;if(!a||a.target||a.hasAttribute('download'))return;var h=a.getAttribute('href')||'';if(!h||h[0]==='#'||/^(mailto:|tel:|javascript:)/i.test(h)||!localHtml(h))return;var u=new URL(h,location.href);if(u.searchParams.get('v')!==V){u.searchParams.set('v',V);e.preventDefault();location.href=u.href;}},true);
+})();
+</script>
 </body>
 </html>

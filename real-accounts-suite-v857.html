@@ -4,13 +4,13 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <title>REAL FACTORY - Accounts Suite V857</title>
-  <link rel="stylesheet" href="real-style.css?v=884">
+  <link rel="stylesheet" href="real-style.css?v=887">
   <style>
     .rf-tabs{display:flex;gap:8px;overflow:auto;margin:18px 0;padding-bottom:4px}.rf-tabs button{flex:0 0 auto;min-height:42px;padding:10px 13px;border:1px solid #2a2a31;border-radius:12px;background:#17171b;color:#fff;font-weight:900}.rf-tabs button.active{border-color:#e32636;background:#351a20}.rf-summary{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}.rf-summary div{padding:14px;border:1px solid #2a2a31;border-radius:14px;background:#17171b}.rf-summary small{display:block;color:#aaaab4}.rf-summary b{font-size:22px}.rf-table-wrap{overflow:auto}.rf-table{width:100%;min-width:960px;border-collapse:collapse}.rf-table th,.rf-table td{padding:10px;border-bottom:1px solid #2a2a31;text-align:left;vertical-align:top}.rf-table th{background:#20202a}.rf-toolbar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px}.rf-toolbar input{min-height:42px;padding:10px;border:1px solid #34343d;border-radius:12px;background:#0f0f12;color:#fff}@media(max-width:760px){.rf-summary{grid-template-columns:repeat(2,1fr)}.rr-topbar{align-items:flex-start;flex-direction:column}}@media(max-width:460px){.rf-summary{grid-template-columns:1fr}}
   </style>
 </head>
 <body class="rr-body">
-  <header class="rr-topbar"><div><p class="rr-kicker">REAL FACTORY</p><h1>Accounts Suite</h1></div><div class="rr-top-actions"><span class="rf-dashboard-version">V857</span><span id="ownerName" class="rr-owner-name">Loading...</span><a class="rr-btn rr-btn-secondary" href="real-dashboard.html?v=884">Dashboard</a><button id="logoutBtn" class="rr-btn rr-btn-secondary" type="button">Logout</button></div></header>
+  <header class="rr-topbar"><div><p class="rr-kicker">REAL FACTORY</p><h1>Accounts Suite</h1></div><div class="rr-top-actions"><span class="rf-dashboard-version">V857</span><span id="ownerName" class="rr-owner-name">Loading...</span><a class="rr-btn rr-btn-secondary" href="real-dashboard.html?v=887">Dashboard</a><button id="logoutBtn" class="rr-btn rr-btn-secondary" type="button">Logout</button></div></header>
   <main class="rr-page">
     <section class="rr-hero"><div><p class="rr-muted">TEST DEFAULT</p><h2>P&L · Balance Sheet · Receivable · Payment · Purchase · Sales</h2><p class="rr-muted">Accounts ke major reports अलग tabs me. Backend source available hoga to data load hoga; blocked source ka error yahin dikhega.</p></div><button id="refreshBtn" class="rr-btn rr-btn-secondary" type="button">Refresh</button></section>
     <nav id="tabs" class="rf-tabs"></nav>
@@ -18,6 +18,13 @@
     <section class="rr-panel"><div class="rr-panel-head"><h2 id="activeTitle">Accounts</h2><span id="rowCount" class="rr-muted">Loading...</span></div><div class="rf-toolbar"><input id="searchBox" type="search" placeholder="Search current tab..." autocomplete="off"></div><div id="tableHost"></div></section>
     <p id="pageMessage" class="rr-message" role="status"></p>
   </main>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="config.js?v=884"></script><script src="real-accounts-suite-v857.js?v=884"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="config.js?v=887"></script><script src="real-accounts-suite-v857.js?v=887"></script>
+<script>
+(function(){
+  var V='887';
+  function localHtml(h){try{var u=new URL(h,location.href);return u.origin===location.origin&&/\.html$/i.test(u.pathname)}catch(e){return false}}
+  document.addEventListener('click',function(e){var a=e.target&&e.target.closest?e.target.closest('a[href]'):null;if(!a||a.target||a.hasAttribute('download'))return;var h=a.getAttribute('href')||'';if(!h||h[0]==='#'||/^(mailto:|tel:|javascript:)/i.test(h)||!localHtml(h))return;var u=new URL(h,location.href);if(u.searchParams.get('v')!==V){u.searchParams.set('v',V);e.preventDefault();location.href=u.href;}},true);
+})();
+</script>
 </body>
 </html>

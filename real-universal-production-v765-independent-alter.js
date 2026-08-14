@@ -4012,7 +4012,7 @@ document.readyState === "loading"
   ? document.addEventListener("DOMContentLoaded", install)
   : install();
 
-window.REAL FACTORY_UPM_V765 = {
+window.REAL_FACTORY_UPM_V765 = {
   version: VERSION,
   sync: syncAll
 };

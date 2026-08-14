@@ -1,7 +1,7 @@
 (() => {
 "use strict";
 
-window.REAL FACTORY_PRODUCT_MASTER_VERSION = "720.36.2-MC-FABRIC-LEDGER-FINAL";
+window.REAL_FACTORY_PRODUCT_MASTER_VERSION = "720.36.2-MC-FABRIC-LEDGER-FINAL";
 const $ = id => document.getElementById(id);
 const state = {
   client:null, filter:"all", mode:"create", activeCbId:null, activeUnitId:null,

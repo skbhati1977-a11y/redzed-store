@@ -1,0 +1,15 @@
+REAL_FACTORY_V887_GLOBAL_INTERNAL_LATEST_TRAVEL_LOCK
+
+Upload/replace all files from this ZIP into GitHub Pages root.
+
+Main fix:
+- Dashboard se module open latest hota tha, but module ke andar travel/back/next links old cache ya old version khol sakte the.
+- Ab har HTML page me inline global travel guard hai.
+- Any internal local .html click automatically opens with v=887.
+- Static href/src and JS location links normalized to v=887.
+- Cutting direct link: real-cutting-master.html?v=887
+- Cutting JS: real-cutting-master-pm.V719.3.js?v=887
+- UPM stable V880 behavior retained; risky V878/V879 normalized frontend not used.
+
+Open:
+https://skbhati1977-a11y.github.io/redzed-store/real-dashboard.html?v=887

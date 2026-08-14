@@ -1,6 +1,6 @@
 (() => {
 "use strict";
-window.REAL FACTORY_ROLE_PERMISSION_VERSION="777.4.2";
+window.REAL_FACTORY_ROLE_PERMISSION_VERSION="777.4.2";
 
 const state={client:null,auth:null,data:null,tab:"matrix",module:"all",search:"",departmentView:"main",editingField:null,editingDepartment:null,editingWorker:null,editingIdentityWorker:null,impactMode:"NON_IMPACT",routes:[],selectedUser:"",workerSearch:"",departmentSearch:"",busy:false};
 const $=id=>document.getElementById(id);

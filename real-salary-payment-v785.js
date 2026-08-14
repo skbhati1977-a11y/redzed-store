@@ -210,7 +210,7 @@ function cards(){
   if(method()==='PARTIAL_RATIO')$('bulkAmountStatus').textContent=!state.preview?'Unpaid workers auto-load हो रहे हैं.':entered>0?`₹${money(entered)} submit करने के लिए button दबाएँ.`:'Bulk Payment Amount लिखें.';
   if($('workerCountTop'))$('workerCountTop').textContent=String(state.rows.length);
 }
-function advance(){const a=state.preview?.advance_workers||[];$('advanceList').innerHTML=a.length?a.map(r=>`<div class="advance-item"><b>${safe(r.worker_name||r.worker_id)}</b><div>Gross Earned: ₹${money(r.final_total_payable)}</div><div>Remaining Advance: ₹${money(r.total_advance_balance)}</div><div>Regular window के लिए और: ₹${money(r.amount_needed_for_regular)}</div><a class="btn" href="real-advance-worker-payment-v785.html?mode=${encodeURIComponent($('dataMode').value)}&worker=${encodeURIComponent(r.worker_id)}">Open Account</a></div>`).join(''):'<div>No worker is waiting below the advance threshold.</div>'}
+function advance(){const a=state.preview?.advance_workers||[];$('advanceList').innerHTML=a.length?a.map(r=>`<div class="advance-item"><b>${safe(r.worker_name||r.worker_id)}</b><div>Gross Earned: ₹${money(r.final_total_payable)}</div><div>Remaining Advance: ₹${money(r.total_advance_balance)}</div><div>Regular window के लिए और: ₹${money(r.amount_needed_for_regular)}</div><a class="btn" href="real-advance-worker-payment-v785.html?mode=${encodeURIComponent($('dataMode').value)}&worker=${encodeURIComponent(r.worker_id)}&v=887">Open Account</a></div>`).join(''):'<div>No worker is waiting below the advance threshold.</div>'}
 function updateLivePaymentTotals(flash=false){
   const t=state.rows.reduce((z,r)=>{
     const x=split(r);

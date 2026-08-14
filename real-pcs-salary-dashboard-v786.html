@@ -29,30 +29,37 @@ a{font:inherit}.app{max-width:1180px;margin:auto;padding:14px}
 <header class="head">
   <div><h1>REAL FACTORY · PCS Salary Dashboard</h1><p>PCS work, payable और payment</p></div>
   <div class="nav">
-    <a class="btn" href="real-salary-home-v786.html">← Salary Home</a>
+    <a class="btn" href="real-salary-home-v786.html?v=887">← Salary Home</a>
     <span id="accessBadge" class="btn">Checking…</span>
   </div>
 </header>
 <section class="panel note"><b>Daily flow:</b> Worker Setup → PCS Salary Work → PCS Payment</section>
-<section class="grid"><article class="card"><div><h2>PCS Worker Setup</h2><p>Worker को PIECE_RATE category और effective date में set करें.</p></div><a class="btn" href="real-worker-payroll-setup-v786.html?category=PIECE_RATE">OPEN PCS WORKER SETUP</a></article>
-<article class="card primary"><div><h2>PCS Salary Work</h2><p>Unpaid Work, Salary Added, Payment Posted और All Work देखें.</p></div><a class="btn" href="real-pcs-rate-payroll-v779.html">OPEN PCS SALARY WORK</a></article>
-<article class="card payment"><div><h2>PCS Payment</h2><p>Current payable load करें, amount भरें और payment submit करें.</p></div><a class="btn" href="real-salary-payment-v785.html?category=PIECE_RATE">OPEN PCS PAYMENT</a></article>
-<article class="card"><div><h2>Kaam & Payment Check</h2><p>Worker, lot, department, salary और outstanding detail देखें.</p></div><a class="btn" href="real-pcs-work-audit-v783.html">OPEN KAAM & PAYMENT CHECK</a></article></section>
+<section class="grid"><article class="card"><div><h2>PCS Worker Setup</h2><p>Worker को PIECE_RATE category और effective date में set करें.</p></div><a class="btn" href="real-worker-payroll-setup-v786.html?category=PIECE_RATE&v=887">OPEN PCS WORKER SETUP</a></article>
+<article class="card primary"><div><h2>PCS Salary Work</h2><p>Unpaid Work, Salary Added, Payment Posted और All Work देखें.</p></div><a class="btn" href="real-pcs-rate-payroll-v779.html?v=887">OPEN PCS SALARY WORK</a></article>
+<article class="card payment"><div><h2>PCS Payment</h2><p>Current payable load करें, amount भरें और payment submit करें.</p></div><a class="btn" href="real-salary-payment-v785.html?category=PIECE_RATE&v=887">OPEN PCS PAYMENT</a></article>
+<article class="card"><div><h2>Kaam & Payment Check</h2><p>Worker, lot, department, salary और outstanding detail देखें.</p></div><a class="btn" href="real-pcs-work-audit-v783.html?v=887">OPEN KAAM & PAYMENT CHECK</a></article></section>
 <section class="panel advanced">
   <details>
     <summary>Advanced Options</summary>
     <div class="nav" style="margin-top:12px">
-      <a class="btn" href="real-advance-worker-payment-v785.html">Advance Payment</a>
-      <a class="btn" href="real-data-mode-control-v786.html">Data Mode Settings</a>
+      <a class="btn" href="real-advance-worker-payment-v785.html?v=887">Advance Payment</a>
+      <a class="btn" href="real-data-mode-control-v786.html?v=887">Data Mode Settings</a>
     </div>
   </details>
 </section>
 <p id="message"></p>
 </main>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="config.js?v=884"></script>
-<script src="real-data-mode-controller-v786-1-1.js?v=884"></script>
-<script src="real-common.js?v=884"></script>
-<script src="real-pcs-salary-dashboard-v786.js?v=884"></script>
+<script src="config.js?v=887"></script>
+<script src="real-data-mode-controller-v786-1-1.js?v=887"></script>
+<script src="real-common.js?v=887"></script>
+<script src="real-pcs-salary-dashboard-v786.js?v=887"></script>
+<script>
+(function(){
+  var V='887';
+  function localHtml(h){try{var u=new URL(h,location.href);return u.origin===location.origin&&/\.html$/i.test(u.pathname)}catch(e){return false}}
+  document.addEventListener('click',function(e){var a=e.target&&e.target.closest?e.target.closest('a[href]'):null;if(!a||a.target||a.hasAttribute('download'))return;var h=a.getAttribute('href')||'';if(!h||h[0]==='#'||/^(mailto:|tel:|javascript:)/i.test(h)||!localHtml(h))return;var u=new URL(h,location.href);if(u.searchParams.get('v')!==V){u.searchParams.set('v',V);e.preventDefault();location.href=u.href;}},true);
+})();
+</script>
 </body>
 </html>

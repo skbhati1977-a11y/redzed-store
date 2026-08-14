@@ -1,7 +1,7 @@
 (() => {
 "use strict";
 
-window.REAL FACTORY_PRODUCT_CB_LEDGER_VERSION = "720.36.2-PERMISSION-LEDGER";
+window.REAL_FACTORY_PRODUCT_CB_LEDGER_VERSION = "720.36.2-PERMISSION-LEDGER";
 
 const state = {client:null,role:"",ledger:[],actions:[],effects:[],lastCb:"",busy:false};
 const $ = id => document.getElementById(id);
@@ -143,7 +143,7 @@ async function boot(){
   const observer=new MutationObserver(scheduleRender);observer.observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:["class","aria-hidden"]});
   $("refresh")?.addEventListener("click",()=>setTimeout(async()=>{await loadData();renderCurrent()},800));
   scheduleRender();
-  window.REAL FACTORY_PRODUCT_CB_LEDGER={refresh:async()=>{await loadData();renderCurrent()},state:()=>({...state})};
+  window.REAL_FACTORY_PRODUCT_CB_LEDGER={refresh:async()=>{await loadData();renderCurrent()},state:()=>({...state})};
 }
 
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",boot);else boot();

@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#0b0b0e">
   <title>REAL FACTORY - Cutting Master V720.36.2 FINAL</title>
-  <link rel="stylesheet" href="real-style.css?v=884">
+  <link rel="stylesheet" href="real-style.css?v=887">
 <style>
 :root{
   color-scheme:dark;
@@ -155,8 +155,8 @@ button:disabled{cursor:not-allowed;opacity:.48}
     <div><p class="cm-kicker">REAL FACTORY</p><h1>Cutting Master</h1></div>
     <div class="cm-links">
       <button id="openCostSettings" class="cm-settings-btn" type="button">Cost Settings</button>
-      <a href="real-product-master-v720.html?v=884">Product Master</a>
-      <a href="real-dashboard.html">Dashboard</a>
+      <a href="real-product-master-v720.html?v=887">Product Master</a>
+      <a href="real-dashboard.html?v=887">Dashboard</a>
     </div>
   </header>
 
@@ -338,8 +338,8 @@ button:disabled{cursor:not-allowed;opacity:.48}
   </div>
 </section>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="config.js?v=884"></script>
-<script src="real-common.js?v=884"></script>
+<script src="config.js?v=887"></script>
+<script src="real-common.js?v=887"></script>
 <script>
 window.onerror = function(message, source, line, column) {
   const text = "CUTTING JS ERROR: " + message + " | line " + line + ":" + column;
@@ -354,7 +354,14 @@ window.onunhandledrejection = function(event) {
   if (box) { box.textContent = text; box.className = "rr-message error"; }
 };
 </script>
-<script src="real-cutting-master-pm.V719.3.js?v=884"></script>
-<script src="redzed-cutting-cb-actions-v72035.js?v=884"></script>
+<script src="real-cutting-master-pm.V719.3.js?v=887"></script>
+<script src="redzed-cutting-cb-actions-v72035.js?v=887"></script>
+<script>
+(function(){
+  var V='887';
+  function localHtml(h){try{var u=new URL(h,location.href);return u.origin===location.origin&&/\.html$/i.test(u.pathname)}catch(e){return false}}
+  document.addEventListener('click',function(e){var a=e.target&&e.target.closest?e.target.closest('a[href]'):null;if(!a||a.target||a.hasAttribute('download'))return;var h=a.getAttribute('href')||'';if(!h||h[0]==='#'||/^(mailto:|tel:|javascript:)/i.test(h)||!localHtml(h))return;var u=new URL(h,location.href);if(u.searchParams.get('v')!==V){u.searchParams.set('v',V);e.preventDefault();location.href=u.href;}},true);
+})();
+</script>
 </body>
 </html>
