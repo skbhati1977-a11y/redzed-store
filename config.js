@@ -1,5 +1,5 @@
 /******************************************************************
- * REAL FACTORY Dealer Catalog
+ * REDZED Dealer Catalog
  * File        : config.js
  * Recovery ID : RR-005
  * Status      : RECOVERED

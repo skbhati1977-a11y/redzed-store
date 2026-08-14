@@ -4,7 +4,7 @@
 "use strict";
 
 /*
-  REAL FACTORY — Cutting Master PM Core V719.2.1
+  REAL FACTORY — Cutting Master PM Core V719.4 + Individual Multi Lot Cards
   Product Master child-aware Cutting Lots.
 
   Locked architecture:
@@ -37,6 +37,9 @@ let singleLotRows = [];
 let multiLotRows = [];
 let breakupRows = [];
 let matchingStockRows = [];
+let matchingLotRows = [];
+let cuttingMasterRows = [];
+let currentRole = "";
 
 let currentFilter = "all";
 let activeCard = null;
@@ -78,6 +81,150 @@ function safe(value) {
   } catch (_) {}
 
   return esc(value);
+}
+
+function cuttingCanViewFinancials() {
+  return ["owner","admin","account","accounts"].includes(String(currentRole||"").toLowerCase());
+}
+function cuttingCanConfigure() {
+  return ["owner","admin"].includes(String(currentRole||"").toLowerCase());
+}
+
+async function loadCuttingRole(client) {
+  if (currentRole) return currentRole;
+  try {
+    const result = await client.rpc("rr_current_role");
+    if (!result.error && result.data) currentRole = String(result.data).toLowerCase();
+  } catch (_) {}
+  const settingsButton = $("openCostSettings");
+  if (settingsButton && !cuttingCanConfigure()) settingsButton.style.display = "none";
+  return currentRole;
+}
+
+function workerName(row = {}) {
+  return String(
+    row.worker_name ||
+    row.full_name ||
+    row.name ||
+    row.display_name ||
+    row.worker_code ||
+    ""
+  ).trim();
+}
+
+function workerDepartment(row = {}) {
+  return String(
+    row.department_code ||
+    row.department_name ||
+    row.primary_department_code ||
+    row.home_department_code ||
+    ""
+  ).trim().toUpperCase();
+}
+
+function isCuttingMasterWorker(row = {}) {
+  const text = [
+    workerDepartment(row),
+    row.role_code,
+    row.worker_role,
+    row.payroll_role,
+    row.work_type,
+    row.designation
+  ].map(value => String(value || "").toUpperCase()).join(" ");
+
+  return /CUTTING_MASTER|CUTTING MASTER|CUTTING/.test(text);
+}
+
+async function loadCuttingMasters(client) {
+  if (!client) return [];
+
+  const candidates = [];
+  const attempts = [
+    () => client.rpc("rr_upm_worker_list_v8_4", { p_department_code: "CUTTING_MASTER" }),
+    () => client.rpc("rr_upm_worker_list_v8_4", { p_department_code: "CUTTING" }),
+    () => client.rpc("rr_upm_worker_list_v8_3", { p_department_code: "CUTTING_MASTER" }),
+    () => client.rpc("rr_upm_worker_list_v8_3", { p_department_code: "CUTTING" })
+  ];
+
+  for (const attempt of attempts) {
+    try {
+      const result = await attempt();
+      if (result.error) {
+        if (isMissingRpcError(result.error)) continue;
+        console.warn("Cutting master worker list warning:", result.error);
+        continue;
+      }
+      (Array.isArray(result.data) ? result.data : []).forEach(row => candidates.push(row));
+    } catch (error) {
+      console.warn("Cutting master worker list fallback:", error);
+    }
+  }
+
+  if (!candidates.length) {
+    try {
+      const result = await client
+        .from("rr_workers")
+        .select("id,worker_id,worker_code,worker_name,full_name,name,department_code,department_name,role_code,is_active")
+        .eq("is_active", true)
+        .limit(500);
+
+      if (!result.error && Array.isArray(result.data)) {
+        result.data.filter(isCuttingMasterWorker).forEach(row => candidates.push(row));
+      }
+    } catch (error) {
+      console.warn("rr_workers cutting master fallback warning:", error);
+    }
+  }
+
+  const seen = new Set();
+  cuttingMasterRows = candidates
+    .filter(row => workerName(row))
+    .filter(row => {
+      const key = workerName(row).toUpperCase();
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    })
+    .sort((a, b) => workerName(a).localeCompare(workerName(b)));
+
+  renderCuttingMasterOptions();
+  return cuttingMasterRows;
+}
+
+function renderCuttingMasterOptions() {
+  const input = $("operatorName");
+  if (!input) return;
+
+  let list = $("cuttingMasterOptions");
+  if (!list) {
+    list = document.createElement("datalist");
+    list.id = "cuttingMasterOptions";
+    input.insertAdjacentElement("afterend", list);
+  }
+
+  input.setAttribute("list", "cuttingMasterOptions");
+  input.placeholder = cuttingMasterRows.length
+    ? "Search mapped Cutting Master"
+    : "Mapped Cutting Master loading...";
+
+  list.innerHTML = cuttingMasterRows
+    .map(row => {
+      const name = workerName(row);
+      const meta = [row.worker_code, workerDepartment(row)].filter(Boolean).join(" · ");
+      return `<option value="${safe(name)}" label="${safe(meta || name)}"></option>`;
+    })
+    .join("");
+}
+
+function validateMappedCuttingMaster() {
+  const input = $("operatorName");
+  if (!input || !cuttingMasterRows.length) return;
+
+  const value = workerName({ worker_name: input.value });
+  if (!value) throw new Error("Mapped Cutting Master select karo.");
+
+  const matched = cuttingMasterRows.some(row => workerName(row).toUpperCase() === value.toUpperCase());
+  if (!matched) throw new Error(`${value} backend mapped Cutting Master list me nahi hai.`);
 }
 
 function getClient() {
@@ -176,23 +323,29 @@ const duplicateLotState = new Map();
 async function existingLotNo(lotNo) {
   const key = normalizeLotNo(lotNo);
   if (!key) return null;
+
   const cached = duplicateLotState.get(key);
   if (cached && Date.now() - cached.at < 15000) return cached.row;
+
   const client = getClient();
   if (!client) return null;
+
   const checks = [
     client.from("rr_cutting_lots_v3").select("id, lot_no").ilike("lot_no", key).limit(1),
     client.from("rr_production_lots").select("id, lot_no").ilike("lot_no", key).limit(1)
   ];
+
   for (const check of checks) {
     const result = await withTimeout(check, 4500, `Duplicate Lot ${key} check`);
     if (result.error && !/does not exist|schema cache/i.test(errorText(result.error))) throw result.error;
+
     const row = Array.isArray(result.data) ? result.data[0] : result.data;
     if (row) {
       duplicateLotState.set(key, { at: Date.now(), row });
       return row;
     }
   }
+
   duplicateLotState.set(key, { at: Date.now(), row: null });
   return null;
 }
@@ -216,26 +369,36 @@ async function validateLotNosUniqueLive({ hard = false } = {}) {
   const inputs = currentLotInputs();
   const values = inputs.map(input => normalizeLotNo(input.value)).filter(Boolean);
   const seen = new Set();
-  for (const input of inputs) markLotInputDuplicate(input, "");
+
+  inputs.forEach(input => markLotInputDuplicate(input, ""));
+
   for (const input of inputs) {
     const lotNo = normalizeLotNo(input.value);
     if (!lotNo) continue;
+
     if (seen.has(lotNo)) {
-      const msg = `Duplicate Lot No ${lotNo} isi sheet me hai.`;
-      markLotInputDuplicate(input, msg);
-      if (hard) throw new Error(msg);
+      const messageText = `Duplicate Lot No ${lotNo} isi sheet me hai.`;
+      markLotInputDuplicate(input, messageText);
+      setLotReleaseFeedback(messageText, "error");
+      say(messageText, "error");
+      if (hard) throw new Error(messageText);
       continue;
     }
+
     seen.add(lotNo);
   }
+
   for (const lotNo of [...new Set(values)]) {
     const row = await existingLotNo(lotNo);
     if (!row) continue;
-    const msg = `Lot No ${lotNo} already exists. Duplicate allowed nahi hai.`;
-    inputs.filter(input => normalizeLotNo(input.value) === lotNo).forEach(input => markLotInputDuplicate(input, msg));
-    setLotReleaseFeedback(msg, "error");
-    say(msg, "error");
-    if (hard) throw new Error(msg);
+
+    const messageText = `Lot No ${lotNo} already exists. Duplicate allowed nahi hai.`;
+    inputs
+      .filter(input => normalizeLotNo(input.value) === lotNo)
+      .forEach(input => markLotInputDuplicate(input, messageText));
+    setLotReleaseFeedback(messageText, "error");
+    say(messageText, "error");
+    if (hard) throw new Error(messageText);
   }
 }
 
@@ -243,13 +406,16 @@ function scheduleLotNoDuplicateCheck() {
   window.clearTimeout(duplicateLotTimer);
   duplicateLotTimer = window.setTimeout(() => {
     validateLotNosUniqueLive().catch(error => {
-      setLotReleaseFeedback(errorText(error), "error");
+      const text = errorText(error);
+      setLotReleaseFeedback(text, "error");
+      say(text, "error");
     });
   }, 350);
 }
 
 function ensureDuplicateLotStyle() {
   if ($("cmDuplicateLotStyle")) return;
+
   const style = document.createElement("style");
   style.id = "cmDuplicateLotStyle";
   style.textContent = `.cm-lot-duplicate{border-color:#ff3b5f!important;box-shadow:0 0 0 2px rgba(255,59,95,.35)!important;background:#32131b!important;color:#fff!important}`;
@@ -395,7 +561,7 @@ function matchingStockOptions(selectedId = "") {
         ${String(id) === selected ? "selected" : ""}
         ${available <= 0 && String(id) !== selected ? "disabled" : ""}
       >
-        ${safe(row.fabric_name || "Matching Cloth")} · ${available.toFixed(3)} kg · ${money(avg)}/kg
+        ${safe(row.fabric_name || "Matching Cloth")} · ${available.toFixed(3)} kg${cuttingCanViewFinancials() ? ` · ${money(avg)}/kg` : ""}
       </option>
     `;
   });
@@ -419,6 +585,21 @@ function matchingSnapshot(id) {
   };
 }
 
+function matchingPostingForLot(lotNo) {
+  return matchingLotRows.find(row =>
+    String(row.lot_no || "").trim().toUpperCase() === String(lotNo || "").trim().toUpperCase() &&
+    String(row.status || "").toUpperCase() === "POSTED"
+  ) || null;
+}
+
+function effectiveLotTotalCost(lot = {}) {
+  const base = Number(lot.total_cutting_cost || 0);
+  const posted = matchingPostingForLot(lot.lot_no);
+  if (!posted) return base;
+  const alreadyStored = Number(lot.matching_total_cost || 0);
+  return base + Math.max(0, Number(posted.total_cost || 0) - alreadyStored);
+}
+
 function setSingleMatchingState(selectedId = null) {
   const select = $("cmSingleMatchingItem");
   const qtyInput = $("cmSingleMatchingQty");
@@ -431,17 +612,19 @@ function setSingleMatchingState(selectedId = null) {
   select.value = snapshot.itemId || "";
 
   if (snapshot.itemId) {
-    if (qtyInput) qtyInput.disabled = false;
+    if (qtyInput) { qtyInput.disabled = false; if (Number(qtyInput.value || 0) === 0) qtyInput.value = ""; }
     if (avgInput) avgInput.value = String(snapshot.avgCost || 0);
     if (info) {
-      info.textContent = `Available ${snapshot.availableQty.toFixed(3)} kg · Current Avg ${money(snapshot.avgCost)}/kg`;
+      info.textContent = cuttingCanViewFinancials()
+        ? `Available ${snapshot.availableQty.toFixed(3)} kg · Current Avg ${money(snapshot.avgCost)}/kg`
+        : `Available ${snapshot.availableQty.toFixed(3)} kg`;
     }
   } else {
     if (qtyInput) {
-      qtyInput.value = "0";
+      qtyInput.value = "";
       qtyInput.disabled = true;
     }
-    if (avgInput) avgInput.value = "0";
+    if (avgInput) avgInput.value = "";
     if (info) {
       info.textContent = matchingRowsForActiveCard().length
         ? "No Matching Cloth selected · Qty 0 · Avg Cost 0 · Release allowed."
@@ -1402,6 +1585,15 @@ function injectStyles() {
     .cm-size-grid label{display:block}
     .cm-size-grid span{font-size:11px;color:#aaa;font-weight:800}
     .cm-size-grid input{width:100%}
+    .cm-colour-cut-card{border:1px solid #35353f;background:#0d0d12;border-radius:14px;padding:11px;margin:10px 0}
+    .cm-colour-cut-head{display:grid;grid-template-columns:minmax(0,1fr) minmax(145px,190px);gap:10px;align-items:end}
+    .cm-colour-name{display:flex;align-items:center;gap:8px;min-width:0}.cm-colour-name img{width:38px;height:38px;object-fit:cover;border-radius:9px}.cm-colour-name strong{overflow:hidden;text-overflow:ellipsis}
+    .cm-colour-total-label span{display:block;color:#f3c96a;font-size:11px;font-weight:900;margin-bottom:5px}.cm-colour-total-label input{width:100%}
+    .cm-colour-balance{display:flex;justify-content:space-between;gap:8px;margin-top:9px;padding:8px 9px;border:1px solid #35353f;border-radius:10px;background:#14141a;font-size:11px;font-weight:850;color:#c8c8d0}
+    .cm-colour-balance.is-ok{border-color:#277849;background:#11291b;color:#9be8b5}.cm-colour-balance.is-bad{border-color:#a43d4a;background:#38171d;color:#ffc4cc}
+    .cm-dev-auto-total{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:10px}.cm-dev-auto-total span{padding:9px;border:1px solid #363640;border-radius:10px;background:#101015}.cm-dev-auto-total small,.cm-dev-auto-total strong{display:block}.cm-dev-auto-total small{color:#999;font-size:10px}.cm-dev-auto-total strong{margin-top:4px}
+    .cm-cutting-grand-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin-top:14px;padding:13px;border:1px solid #5d4a2b;border-radius:15px;background:linear-gradient(145deg,#221d13,#111116)}
+    .cm-cutting-grand-summary>div,.cm-cutting-grand-summary>label{min-width:0;padding:10px;border:1px solid #3b3a35;border-radius:11px;background:#0d0d11}.cm-cutting-grand-summary small,.cm-cutting-grand-summary label>span{display:block;color:#bcb6a6;font-size:10px;font-weight:850;margin-bottom:5px}.cm-cutting-grand-summary strong{display:block;font-size:16px}.cm-cutting-grand-summary input{width:100%}.cm-grand-main{border-color:#8e6b28!important;background:#2b2415!important}.cm-grand-main strong{font-size:23px;color:#ffe39a}.cm-piece-balance.is-ok{color:#8fe4ad}.cm-piece-balance.is-bad{color:#ff9ba7}
     .cm-newly-released{border:2px solid #f4c542!important;box-shadow:0 0 0 3px rgba(244,197,66,.18),0 16px 42px rgba(244,197,66,.18)!important;animation:cmLotPulse 1.2s ease-in-out 2}
     .cm-lot-number-highlight{background:#f4c542;color:#18140a!important;border-radius:9px;padding:4px 9px;font-size:1.08em;letter-spacing:.04em;box-shadow:0 0 0 2px rgba(244,197,66,.24)}
     .cm-lot-identity{margin:12px 0;padding:14px;border-radius:15px;text-align:center;border:2px solid #f4c542;background:linear-gradient(180deg,rgba(244,197,66,.18),rgba(244,197,66,.06))}
@@ -1409,6 +1601,17 @@ function injectStyles() {
     .cm-lot-identity strong{display:block;font-size:22px;line-height:1.15;color:#fff;word-break:break-word}
     .cm-lot-identity span{display:block;margin-top:5px;font-size:11px;font-weight:850;color:#cfcfcf}
     .cm-lot-title-new{color:#f4c542}
+    .cm-lot-release-summary{margin:12px 0;padding:14px;border-radius:15px;border:2px solid #f4c542;background:linear-gradient(180deg,rgba(244,197,66,.16),rgba(244,197,66,.05))}
+    .cm-lot-release-summary small{display:block;font-size:10px;font-weight:950;letter-spacing:.12em;color:#f4c542;margin-bottom:5px}
+    .cm-lot-release-summary strong{display:block;font-size:20px;color:#fff}
+    .cm-lot-release-summary span{display:block;margin-top:5px;font-size:11px;font-weight:800;color:#cfcfcf}
+    .cm-individual-lot-grid{display:grid;gap:12px;margin:12px 0}
+    .cm-independent-lot-card{border:2px solid rgba(244,197,66,.7)!important;border-radius:15px!important}
+    .cm-independent-lot-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+    .cm-independent-lot-head small{display:block;font-size:10px;font-weight:950;letter-spacing:.1em;color:#f4c542}
+    .cm-dev-code-badge{display:inline-flex;align-items:center;justify-content:center;min-width:50px;padding:7px 10px;border-radius:999px;background:#f4c542;color:#18140a;font-weight:950}
+    .cm-independent-note{margin-top:10px;padding-top:10px;border-top:1px dashed #444;font-size:11px;color:#bdbdbd;line-height:1.45}
+    @media(min-width:900px){.cm-individual-lot-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
     .cm-release-feedback{margin:12px 0;padding:12px 14px;border-radius:12px;border:1px solid #4a4a55;background:#17171d;color:#fff;font-weight:800;line-height:1.45;white-space:pre-wrap}
     .cm-release-feedback.is-info{border-color:#3b82f6;background:rgba(59,130,246,.13);color:#dbeafe}
     .cm-release-feedback.is-success{border-color:#22c55e;background:rgba(34,197,94,.13);color:#dcfce7}
@@ -1417,6 +1620,7 @@ function injectStyles() {
     @media(max-width:620px){
       .cm-pm-decision{grid-template-columns:1fr}
       .cm-size-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+      .cm-colour-cut-head,.cm-cutting-grand-summary{grid-template-columns:1fr}
     }
   `;
 
@@ -1475,6 +1679,7 @@ function renderStats(cards) {
 let comboDevRows = [];
 let currentLotMode = "single";
 let matrixQtyMemory = new Map();
+let matrixColourTotalMemory = new Map();
 
 const SIZE_COMBO_OPTIONS = [
   "M",
@@ -1578,7 +1783,7 @@ function renderGallery() {
       );
 
       const totalCost = lots.reduce(
-        (sum, row) => sum + Number(row.total_cutting_cost || 0),
+        (sum, row) => sum + effectiveLotTotalCost(row),
         0
       );
 
@@ -1605,7 +1810,7 @@ function renderGallery() {
 
           <div class="cm-pm-decision">
             <span>
-              <small>Child</small>
+              <small>D No.</small>
               <strong>${safe(childCode)}</strong>
             </span>
             <span>
@@ -1642,7 +1847,7 @@ function renderGallery() {
             <span class="${isNewLot ? "cm-lot-metric-new" : ""}">
               <small>Lot</small>
               <strong class="cm-lot-number ${isNewLot ? "cm-lot-number-highlight" : ""}">
-                ${lotNos.length ? safe(lotNos.join(" · ")) : "Due"}
+                ${lotNos.length ? `${lots.length} Individual Lot${lots.length > 1 ? "s" : ""}` : "Due"}
               </strong>
             </span>
           </div>
@@ -1650,34 +1855,98 @@ function renderGallery() {
           ${
             lots.length
               ? `
-                <div class="cm-lot-identity ${isNewLot ? "is-new" : ""}">
-                  <small>RELEASED LOT NO · PRIMARY IDENTITY</small>
-                  <strong>${safe(lotNos.join(" · "))}</strong>
-                  <span>${safe(childCode)} · ${totalPcs} pcs · ${safe(lotStatusLabel(lot))}</span>
+                <div class="cm-lot-release-summary ${isNewLot ? "is-new" : ""}">
+                  <small>${lots.length > 1 ? "MULTI RELEASED · INDIVIDUAL PRODUCTION LOTS" : "RELEASED LOT NO · PRIMARY IDENTITY"}</small>
+                  <strong>${lots.length} Lot${lots.length > 1 ? "s" : ""} · ${totalPcs} pcs</strong>
+                  <span>हर Lot No अलग जगह और अलग समय पर independently process हो सकता है.</span>
                 </div>
 
-                <div class="cm-lot-box">
-                  <h4 class="${isNewLot ? "cm-lot-title-new" : ""}">
-                    ${lots.length > 1 ? "MULTI LOT" : "LOT"}
-                    <span class="cm-lot-number ${isNewLot ? "cm-lot-number-highlight" : ""}">
-                      ${safe(lotNos.join(" · "))}
-                    </span>
-                  </h4>
-                  <p>${safe(lot?.style_name || decision.styleName || "")}</p>
-                  <p>
-                    ${totalPcs} pcs ·
-                    <strong>${safe(lotStatusLabel(lot))}</strong>
-                  </p>
-                  <div class="cm-lot-cost">
-                    <span>
-                      Final / Pc:
-                      <strong>${money(finalPerPiece)}</strong>
-                    </span>
-                    <span>
-                      Total:
-                      <strong>${money(totalCost)}</strong>
-                    </span>
-                  </div>
+                <div class="cm-individual-lot-grid">
+                  ${lots.map((individualLot, lotIndex) => {
+                    const individualLotNo = String(individualLot.lot_no || "")
+                      .trim()
+                      .toUpperCase();
+
+                    const individualPcs = Number(
+                      individualLot.planned_pcs ||
+                      individualLot.cutting_pcs ||
+                      0
+                    );
+
+                    const individualTotalCost = effectiveLotTotalCost(individualLot);
+
+                    const individualFinalPerPiece = individualPcs > 0
+                      ? individualTotalCost / individualPcs
+                      : Number(individualLot.final_cost_per_piece || 0);
+
+                    const individualDevCode = canonicalDevelopmentCode(
+                      individualLot.variant_code ||
+                      individualLot.dev_code ||
+                      individualLot.development_code ||
+                      individualLot.child_code ||
+                      (lots.length > 1
+                        ? subDevelopmentCode(childCode, lotIndex)
+                        : childCode)
+                    );
+
+                    const individualMatching = matchingPostingForLot(
+                      individualLot.lot_no
+                    );
+
+                    return `
+                      <article
+                        class="cm-lot-box cm-independent-lot-card ${isNewLot ? "is-new" : ""}"
+                        data-production-lot-id="${safe(individualLot.id || individualLot.production_lot_id || "")}"
+                        data-lot-no="${safe(individualLotNo)}"
+                        data-dev-code="${safe(individualDevCode)}"
+                      >
+                        <div class="cm-independent-lot-head">
+                          <div>
+                            <small>INDIVIDUAL RELEASED LOT</small>
+                            <h4 class="${isNewLot ? "cm-lot-title-new" : ""}">
+                              <span class="cm-lot-number ${isNewLot ? "cm-lot-number-highlight" : ""}">
+                                ${safe(individualLotNo)}
+                              </span>
+                            </h4>
+                          </div>
+                          <span class="cm-dev-code-badge">${safe(individualDevCode)}</span>
+                        </div>
+
+                        <p>${safe(individualLot.style_name || decision.styleName || "")}</p>
+                        <p>
+                          <strong>${individualPcs} pcs</strong> ·
+                          ${safe(lotStatusLabel(individualLot))}
+                        </p>
+
+                        ${individualMatching
+                          ? `<p><strong>Matching:</strong> ${safe(individualMatching.fabric_name || "Matching Cloth")} · ${Number(individualMatching.qty || 0).toFixed(3)} kg</p>`
+                          : ""
+                        }
+
+                        <div class="cm-lot-cost">
+                          <span>
+                            Actual Cutting Rate:
+                            <strong>${money(Number(individualLot.base_cost || individualLot.process_cost_per_piece || 0))} / pc</strong>
+                          </span>
+
+                          ${cuttingCanViewFinancials() ? `
+                            <span>
+                              Final / Pc:
+                              <strong>${money(individualFinalPerPiece)}</strong>
+                            </span>
+                            <span>
+                              Total:
+                              <strong>${money(individualTotalCost)}</strong>
+                            </span>
+                          ` : ""}
+                        </div>
+
+                        <div class="cm-independent-note">
+                          Printing, KR, Overlock, Folding, QC, Press और Packing में यह Lot अलग चलेगा।
+                        </div>
+                      </article>
+                    `;
+                  }).join("")}
                 </div>
               `
               : `
@@ -1813,12 +2082,13 @@ function openLotByDivision(divisionId, requestedMode = "single") {
     }
 
     if (lotsForDivision(divisionId).length) {
-      throw new Error("इस Child का Lot पहले ही release हो चुका है.");
+      throw new Error("इस D card का Lot पहले ही release हो चुका है.");
     }
 
     activeCard = card;
     currentLotMode = requestedMode === "multi" ? "multi" : "single";
     matrixQtyMemory = new Map();
+    matrixColourTotalMemory = new Map();
 
     if (typeof setActiveUnit === "function") {
       setActiveUnit(card.division);
@@ -1836,9 +2106,9 @@ function openLotByDivision(divisionId, requestedMode = "single") {
     setInputValue("sizeSet", sizes.join(","));
     setInputValue("lotNotes", "");
     setInputValue("fabricUsed", unitWeight ? unitWeight.toFixed(3) : "");
-    setInputValue("wastageWeight", "0");
-    setInputValue("remnantWeight", "0");
-    setInputValue("baseCost", String(costSettings.default_base_cost || 0));
+    setInputValue("wastageWeight", "");
+    setInputValue("remnantWeight", "");
+    setInputValue("baseCost", Number(costSettings.default_base_cost || 0) > 0 ? String(costSettings.default_base_cost) : "");
 
     if ($("lotContext")) {
       $("lotContext").textContent =
@@ -1884,14 +2154,12 @@ function openLotByDivision(divisionId, requestedMode = "single") {
 
 function hideBundleUi() {
   const legacySizeSet = $("sizeSet");
-
   if (legacySizeSet) {
     const label = legacySizeSet.closest("label");
     if (label) label.style.display = "none";
   }
 
   const parentTotal = $("cmParentCuttingPcs");
-
   if (parentTotal) {
     const label = parentTotal.closest("label");
     if (label) label.style.display = "none";
@@ -1903,11 +2171,10 @@ function hideBundleUi() {
   const totalPieces = $("totalPieces");
   if (totalPieces) {
     const totalLine = totalPieces.closest(".cm-total-line");
-    if (totalLine) totalLine.style.display = "none";
+    if (totalLine) totalLine.style.display = "";
   }
 
   const bundle = $("bundleQty");
-
   if (bundle) {
     bundle.value = "";
     const label = bundle.closest("label");
@@ -1915,27 +2182,19 @@ function hideBundleUi() {
   }
 
   const totalBundles = $("totalBundles");
-
   if (totalBundles) {
     totalBundles.textContent = "";
-    const holder =
-      totalBundles.closest("span") ||
-      totalBundles.closest("article") ||
-      totalBundles.parentElement;
-
+    const holder = totalBundles.closest("span") || totalBundles.parentElement;
     if (holder) holder.style.display = "none";
   }
 
   document
     .querySelectorAll("[data-bundle], .bundle, .bundle-count, .bundle-qty")
-    .forEach(el => {
-      el.style.display = "none";
-    });
+    .forEach(el => { el.style.display = "none"; });
 }
 
 function ensureComboUi() {
   const existingPanel = $("cmComboPanel");
-
   if (existingPanel) {
     hideBundleUi();
     refreshMatchingStockControls();
@@ -1948,15 +2207,11 @@ function ensureComboUi() {
   const firstCard = form.querySelector(".cm-form-card");
   const lotNoInput = $("lotNo");
   const lotNoLabel = lotNoInput?.closest("label");
-
-  if (lotNoLabel) {
-    lotNoLabel.style.display = "none";
-  }
+  if (lotNoLabel) lotNoLabel.style.display = "none";
 
   const panel = document.createElement("section");
   panel.id = "cmComboPanel";
   panel.className = "cm-form-card cm-decision-panel";
-
   panel.innerHTML = `
     <div class="cm-matrix-head">
       <h3>Cutting Lot</h3>
@@ -1964,163 +2219,56 @@ function ensureComboUi() {
     </div>
 
     <section id="cmSinglePanel">
-      <div class="cm-grid-2 cm-primary-input-row">
+      <div class="cm-primary-input-row">
         <label>
           <span>Manual Lot No *</span>
-          <input
-            id="cmManualLotNo"
-            type="text"
-            autocomplete="off"
-            placeholder="2N2526"
-          >
-        </label>
-
-        <label>
-          <span>Total Cutting Pcs *</span>
-          <input
-            id="cmSingleCuttingPcs"
-            type="number"
-            min="0"
-            step="1"
-            placeholder="0"
-          >
+          <input id="cmManualLotNo" type="text" autocomplete="off" placeholder="2N2526">
         </label>
       </div>
 
       <div class="cm-grid-3">
-        <label>
-          <span>Size Combo</span>
-          <select id="cmSingleSizeCombo"></select>
-        </label>
-
-        <label>
-          <span>Sleeve</span>
-          <select id="cmSingleSleeve">
-            <option value="Half">Half Sleeve</option>
-            <option value="Full">Full Sleeve</option>
-          </select>
-        </label>
-
-        <label>
-          <span>Border</span>
-          <select id="cmSingleBorder">
-            <option value="Without Border">Without Border</option>
-            <option value="With Border">With Border</option>
-          </select>
-        </label>
+        <label><span>Size Combo</span><select id="cmSingleSizeCombo"></select></label>
+        <label><span>Sleeve</span><select id="cmSingleSleeve"><option value="Half">Half Sleeve</option><option value="Full">Full Sleeve</option></select></label>
+        <label><span>Border</span><select id="cmSingleBorder"><option value="Without Border">Without Border</option><option value="With Border">With Border</option></select></label>
       </div>
 
       <div class="cm-grid-3">
-        <label>
-          <span>Matching Cloth Stock (Optional)</span>
-          <select id="cmSingleMatchingItem">
-            ${matchingStockOptions()}
-          </select>
-        </label>
-
-        <label>
-          <span>Matching Cloth Qty (kg)</span>
-          <input
-            id="cmSingleMatchingQty"
-            type="number"
-            min="0"
-            step="0.001"
-            value="0"
-            disabled
-          >
-        </label>
-
-        <label>
-          <span>Matching Cloth Avg Cost</span>
-          <input
-            id="cmSingleMatchingAvgCost"
-            type="number"
-            min="0"
-            step="0.0001"
-            readonly
-            value="0"
-          >
-        </label>
+        <label><span>Matching Cloth Stock (Optional)</span><select id="cmSingleMatchingItem">${matchingStockOptions()}</select></label>
+        <label><span>Matching Cloth Qty (kg)</span><input id="cmSingleMatchingQty" type="number" min="0" step="0.001" disabled></label>
+        ${cuttingCanViewFinancials() ? `<label><span>Matching Cloth Avg Cost</span><input id="cmSingleMatchingAvgCost" type="number" min="0" step="0.0001" readonly></label>` : ""}
       </div>
-      <p id="cmSingleMatchingStockInfo" class="cm-rule-note">
-        No Matching Cloth selected · Qty 0 · Avg Cost 0 · Release allowed.
-      </p>
+      <p id="cmSingleMatchingStockInfo" class="cm-rule-note">No Matching Cloth selected · Qty 0 · Avg Cost 0 · Release allowed.</p>
     </section>
 
     <section id="cmMultiPanel" class="cm-hidden">
-      <div class="cm-grid-2 cm-primary-input-row">
+      <div class="cm-primary-input-row">
         <label>
           <span>Sub-Dev Count</span>
-          <select id="cmDevCount">
-            <option value="2">2 Sub-Dev</option>
-            <option value="3">3 Sub-Dev</option>
-            <option value="4">4 Sub-Dev</option>
-          </select>
-        </label>
-
-        <label>
-          <span>Total Cutting Pcs *</span>
-          <input
-            id="cmParentCuttingPcs"
-            type="number"
-            min="0"
-            step="1"
-            placeholder="0"
-          >
+          <select id="cmDevCount"><option value="2">2 Sub-Dev</option><option value="3">3 Sub-Dev</option><option value="4">4 Sub-Dev</option></select>
         </label>
       </div>
-
-      <div class="cm-actions">
-        <button
-          id="cmBuildDevRows"
-          type="button"
-          class="cm-secondary"
-        >
-          Build Sub-Dev Cards
-        </button>
-
-        <button
-          id="cmEqualDevPcs"
-          type="button"
-          class="cm-secondary"
-        >
-          Equal Sub-Dev Pcs
-        </button>
+      <div class="cm-actions cm-actions-one">
+        <button id="cmBuildDevRows" type="button" class="cm-secondary">Build Sub-Dev Cards</button>
       </div>
-
       <div id="cmDevRows"></div>
     </section>
   `;
 
-  if (firstCard) {
-    firstCard.insertAdjacentElement("beforebegin", panel);
-  } else {
-    form.prepend(panel);
-  }
+  if (firstCard) firstCard.insertAdjacentElement("beforebegin", panel);
+  else form.prepend(panel);
 
   fillSizeComboOptions("cmSingleSizeCombo");
   refreshMatchingStockControls();
 
   $("cmManualLotNo")?.addEventListener("input", event => {
-    setInputValue(
-      "lotNo",
-      String(event.target.value || "").trim().toUpperCase()
-    );
+    setInputValue("lotNo", String(event.target.value || "").trim().toUpperCase());
     scheduleLotNoDuplicateCheck();
   });
 
-  [
-    "cmSingleSizeCombo",
-    "cmSingleSleeve",
-    "cmSingleBorder"
-  ].forEach(id => {
+  ["cmSingleSizeCombo", "cmSingleSleeve", "cmSingleBorder"].forEach(id => {
     $(id)?.addEventListener("change", () => {
-      matrixQtyMemory = new Map();
-      buildComboDevRows({
-        keepManual: false,
-        autoDistribute: true,
-        resetMatrix: true
-      });
+      if (id === "cmSingleSizeCombo") clearMatrixMemoryForDev(activeChildCode());
+      buildComboDevRows({ keepManual: true, autoDistribute: false, resetMatrix: false });
       renderCuttingMatrix();
       updateCostPreview();
     });
@@ -2128,72 +2276,28 @@ function ensureComboUi() {
 
   $("cmSingleMatchingItem")?.addEventListener("change", event => {
     setSingleMatchingState(event.target.value);
-    buildComboDevRows({
-      keepManual: true,
-      autoDistribute: false,
-      resetMatrix: false
-    });
+    buildComboDevRows({ keepManual: true, autoDistribute: false, resetMatrix: false });
     updateCostPreview();
   });
 
   $("cmSingleMatchingQty")?.addEventListener("input", () => {
-    buildComboDevRows({
-      keepManual: true,
-      autoDistribute: false,
-      resetMatrix: false
-    });
-    updateCostPreview();
-  });
-
-  $("cmSingleCuttingPcs")?.addEventListener("input", () => {
-    matrixQtyMemory = new Map();
-    buildComboDevRows({
-      keepManual: true,
-      autoDistribute: true,
-      resetMatrix: true
-    });
-    renderCuttingMatrix();
-    updatePieceTotals();
+    buildComboDevRows({ keepManual: true, autoDistribute: false, resetMatrix: false });
     updateCostPreview();
   });
 
   $("cmDevCount")?.addEventListener("change", () => {
     matrixQtyMemory = new Map();
-    buildComboDevRows({
-      keepManual: true,
-      autoDistribute: true,
-      resetMatrix: true
-    });
+    matrixColourTotalMemory = new Map();
+    buildComboDevRows({ keepManual: true, autoDistribute: false, resetMatrix: true });
     renderCuttingMatrix();
-    updateCostPreview();
-  });
-
-  $("cmParentCuttingPcs")?.addEventListener("input", () => {
-    matrixQtyMemory = new Map();
-    distributeDevPcs();
-    renderDevRows();
-    renderCuttingMatrix();
-    updatePieceTotals();
     updateCostPreview();
   });
 
   $("cmBuildDevRows")?.addEventListener("click", () => {
     matrixQtyMemory = new Map();
-    buildComboDevRows({
-      keepManual: true,
-      autoDistribute: true,
-      resetMatrix: true
-    });
+    matrixColourTotalMemory = new Map();
+    buildComboDevRows({ keepManual: true, autoDistribute: false, resetMatrix: true });
     renderCuttingMatrix();
-    updateCostPreview();
-  });
-
-    $("cmEqualDevPcs")?.addEventListener("click", () => {
-    matrixQtyMemory = new Map();
-    distributeDevPcs();
-    renderDevRows();
-    renderCuttingMatrix();
-    updatePieceTotals();
     updateCostPreview();
   });
 
@@ -2201,16 +2305,8 @@ function ensureComboUi() {
 }
 
 function hideLegacyOwnerCosting() {
-  const base = $("baseCost");
-
-  const card =
-    base?.closest(".cm-form-card") ||
-    base?.closest("section") ||
-    null;
-
-  if (card && card.id !== "cmComboPanel") {
-    card.style.display = "none";
-  }
+  const card = document.querySelector("#lotForm .cm-cost-card");
+  if (card) card.style.display = "none";
 }
 
 function setLotMode(mode) {
@@ -2234,6 +2330,7 @@ function setLotMode(mode) {
   );
 
   matrixQtyMemory = new Map();
+  matrixColourTotalMemory = new Map();
 
   buildComboDevRows({
     keepManual: false,
@@ -2278,7 +2375,6 @@ function fillSizeComboSelect(select, value) {
 
 function setComboDefaults() {
   const singleSize = $("cmSingleSizeCombo");
-
   if (singleSize) singleSize.value = DEFAULT_SIZE_COMBO;
   if ($("cmSingleSleeve")) $("cmSingleSleeve").value = "Half";
   if ($("cmSingleBorder")) $("cmSingleBorder").value = "Without Border";
@@ -2286,15 +2382,15 @@ function setComboDefaults() {
   setInputValue("cmManualLotNo", "");
   setInputValue("lotNo", "");
   setInputValue("cmSingleMatchingItem", "");
-  setInputValue("cmSingleMatchingQty", "0");
-  setInputValue("cmSingleMatchingAvgCost", "0");
+  setInputValue("cmSingleMatchingQty", "");
+  setInputValue("cmSingleMatchingAvgCost", "");
   refreshMatchingStockControls();
-  setInputValue("cmSingleCuttingPcs", "");
 
   if ($("cmDevCount")) $("cmDevCount").value = "2";
-  setInputValue("cmParentCuttingPcs", "");
 
   comboDevRows = [];
+  matrixQtyMemory = new Map();
+  matrixColourTotalMemory = new Map();
   hideBundleUi();
 }
 
@@ -2342,13 +2438,8 @@ function defaultDevSizeCombo(index) {
 }
 
 function singleRowFromInputs(old = {}) {
-  const sizeCombo =
-    selectValue("cmSingleSizeCombo") ||
-    DEFAULT_SIZE_COMBO;
-
-  const snapshot = matchingSnapshot(
-    selectValue("cmSingleMatchingItem")
-  );
+  const sizeCombo = selectValue("cmSingleSizeCombo") || DEFAULT_SIZE_COMBO;
+  const snapshot = matchingSnapshot(selectValue("cmSingleMatchingItem"));
 
   return {
     ...old,
@@ -2359,18 +2450,11 @@ function singleRowFromInputs(old = {}) {
     sizes: sizesFromText(sizeCombo),
     sleeve: selectValue("cmSingleSleeve") || "Half",
     border: selectValue("cmSingleBorder") || "Without Border",
-    cutting_pcs: Math.max(
-      0,
-      Math.floor(numberValue("cmSingleCuttingPcs"))
-    ),
+    cutting_pcs: plannedTotalForDev(activeChildCode()),
     matching_item_id: snapshot.itemId || null,
-    matching_consumption: snapshot.itemId
-      ? numberValue("cmSingleMatchingQty")
-      : 0,
-    matching_avg_cost: snapshot.itemId
-      ? snapshot.avgCost
-      : 0,
-    custom_adjustment: Number(old.custom_adjustment || 0)
+    matching_consumption: snapshot.itemId ? numberValue("cmSingleMatchingQty") : 0,
+    matching_avg_cost: snapshot.itemId ? snapshot.avgCost : 0,
+    custom_adjustment: 0
   };
 }
 
@@ -2431,7 +2515,7 @@ function buildComboDevRows(options = {}) {
       matching_avg_cost: stock.itemId
         ? stock.avgCost
         : 0,
-      custom_adjustment: Number(old.custom_adjustment || 0)
+      custom_adjustment: 0
     });
   }
 
@@ -2445,7 +2529,6 @@ function buildComboDevRows(options = {}) {
 
 function renderDevRows() {
   const holder = $("cmDevRows");
-
   if (!holder) return;
 
   if (currentLotMode !== "multi") {
@@ -2455,261 +2538,104 @@ function renderDevRows() {
   }
 
   if (!comboDevRows.length) {
-    holder.innerHTML = `
-      <div class="cm-empty">
-        <p>No Sub-Dev cards. Select Sub-Dev Count.</p>
-      </div>
-    `;
+    holder.innerHTML = `<div class="cm-empty"><p>No Sub-Dev cards. Select Sub-Dev Count.</p></div>`;
     hideBundleUi();
     return;
   }
 
-  holder.innerHTML = comboDevRows
-    .map((row, index) => {
-      const hasMatching = Boolean(row.matching_item_id);
-      const stock = matchingSnapshot(row.matching_item_id);
+  holder.innerHTML = comboDevRows.map((row, index) => {
+    const hasMatching = Boolean(row.matching_item_id);
+    const stock = matchingSnapshot(row.matching_item_id);
+    const autoPcs = plannedTotalForDev(row.dev_no);
+    row.cutting_pcs = autoPcs;
 
-      return `
-        <article class="cm-matrix-card" data-dev-card="${index}">
-          <div class="cm-matrix-head">
-            <strong>${safe(row.dev_no)}</strong>
-            <span>
-              ${safe(row.size_combo)} ·
-              ${safe(row.sleeve)} ·
-              ${safe(row.border)}
-            </span>
-          </div>
+    return `
+      <article class="cm-matrix-card" data-dev-card="${index}">
+        <div class="cm-matrix-head"><strong>${safe(row.dev_no)}</strong><span>${safe(row.size_combo)} · ${safe(row.sleeve)} · ${safe(row.border)}</span></div>
 
-          <div class="cm-grid-2 cm-primary-input-row">
-            <label>
-              <span>${safe(row.dev_no)} Manual Lot No *</span>
-              <input
-                class="cm-dev-lot-no"
-                type="text"
-                autocomplete="off"
-                value="${safe(row.lot_no || "")}"
-                placeholder="${safe(row.dev_no)} Lot No"
-                data-dev-index="${index}"
-              >
-            </label>
+        <div class="cm-primary-input-row">
+          <label><span>${safe(row.dev_no)} Manual Lot No *</span><input class="cm-dev-lot-no" type="text" autocomplete="off" value="${safe(row.lot_no || "")}" placeholder="${safe(row.dev_no)} Lot No" data-dev-index="${index}"></label>
+        </div>
 
-            <label>
-              <span>Cutting Pcs *</span>
-              <input
-                class="cm-dev-pcs"
-                type="number"
-                min="0"
-                step="1"
-                value="${Number(row.cutting_pcs || 0)}"
-                data-dev-index="${index}"
-              >
-            </label>
-          </div>
+        <div class="cm-grid-3">
+          <label><span>Size Combo</span><select class="cm-dev-size" data-dev-index="${index}"></select></label>
+          <label><span>Sleeve</span><select class="cm-dev-sleeve" data-dev-index="${index}"><option value="Half">Half Sleeve</option><option value="Full">Full Sleeve</option></select></label>
+          <label><span>Border</span><select class="cm-dev-border" data-dev-index="${index}"><option value="Without Border">Without Border</option><option value="With Border">With Border</option></select></label>
+        </div>
 
-          <div class="cm-grid-3">
-            <label>
-              <span>Size Combo</span>
-              <select class="cm-dev-size" data-dev-index="${index}"></select>
-            </label>
+        <div class="cm-grid-3">
+          <label><span>Matching Cloth Stock (Optional)</span><select class="cm-dev-match-item" data-dev-index="${index}">${matchingStockOptions(row.matching_item_id)}</select></label>
+          <label><span>Matching Cloth Qty (kg)</span><input class="cm-dev-match-cons" type="number" min="0" step="0.001" value="${hasMatching && Number(row.matching_consumption || 0) ? Number(row.matching_consumption) : ""}" data-dev-index="${index}" ${hasMatching ? "" : "disabled"}></label>
+          ${cuttingCanViewFinancials() ? `<label><span>Matching Cloth Avg Cost</span><input class="cm-dev-match-cost" type="number" min="0" step="0.0001" readonly value="${hasMatching && Number(stock.avgCost || 0) ? Number(stock.avgCost) : ""}" data-dev-index="${index}"></label>` : ""}
+        </div>
 
-            <label>
-              <span>Sleeve</span>
-              <select class="cm-dev-sleeve" data-dev-index="${index}">
-                <option value="Half">Half Sleeve</option>
-                <option value="Full">Full Sleeve</option>
-              </select>
-            </label>
+        <p class="cm-rule-note">${hasMatching ? (cuttingCanViewFinancials() ? `Available ${stock.availableQty.toFixed(3)} kg · Current Avg ${money(stock.avgCost)}/kg` : `Available ${stock.availableQty.toFixed(3)} kg`) : (matchingRowsForActiveCard().length ? "No Matching Cloth · Qty 0 · Release allowed." : "Stock नहीं मिला · Product Master में + MC New से stock डालें.")}</p>
 
-            <label>
-              <span>Border</span>
-              <select class="cm-dev-border" data-dev-index="${index}">
-                <option value="Without Border">Without Border</option>
-                <option value="With Border">With Border</option>
-              </select>
-            </label>
-          </div>
+        ${cuttingCanViewFinancials() ? `<div class="cm-grid-2">
+          <label><span>Sub-Dev Cost Preview</span><input class="cm-dev-cost-preview" type="text" readonly value="${safe(devCostText(row))}"></label>
+        </div>` : ""}
 
-          <div class="cm-grid-3">
-            <label>
-              <span>Matching Cloth Stock (Optional)</span>
-              <select class="cm-dev-match-item" data-dev-index="${index}">
-                ${matchingStockOptions(row.matching_item_id)}
-              </select>
-            </label>
-
-            <label>
-              <span>Matching Cloth Qty (kg)</span>
-              <input
-                class="cm-dev-match-cons"
-                type="number"
-                min="0"
-                step="0.001"
-                value="${hasMatching ? Number(row.matching_consumption || 0) : 0}"
-                data-dev-index="${index}"
-                ${hasMatching ? "" : "disabled"}
-              >
-            </label>
-
-            <label>
-              <span>Matching Cloth Avg Cost</span>
-              <input
-                class="cm-dev-match-cost"
-                type="number"
-                min="0"
-                step="0.0001"
-                readonly
-                value="${hasMatching ? Number(stock.avgCost || 0) : 0}"
-                data-dev-index="${index}"
-              >
-            </label>
-          </div>
-
-          <p class="cm-rule-note">
-            ${hasMatching
-              ? `Available ${stock.availableQty.toFixed(3)} kg · Current Avg ${money(stock.avgCost)}/kg`
-              : (matchingRowsForActiveCard().length
-                  ? "No Matching Cloth · Qty 0 · Avg Cost 0 · Release allowed."
-                  : "Stock नहीं मिला · Product Master में + Add Matching Purchase करें.")}
-          </p>
-
-          <div class="cm-grid-2">
-            <label>
-              <span>Custom Adjustment / Pc</span>
-              <input
-                class="cm-dev-custom"
-                type="number"
-                step="0.01"
-                value="${Number(row.custom_adjustment || 0)}"
-                data-dev-index="${index}"
-              >
-            </label>
-
-            <label>
-              <span>Sub-Dev Cost Preview</span>
-              <input
-                class="cm-dev-cost-preview"
-                type="text"
-                readonly
-                value="${safe(devCostText(row))}"
-              >
-            </label>
-          </div>
-        </article>
-      `;
-    })
-    .join("");
+        <div class="cm-dev-auto-total">
+          <span><small>${safe(row.dev_no)} Auto Cutting Pcs</small><strong data-dev-planned-total="${safe(row.dev_no)}">${autoPcs}</strong></span>
+          <span><small>Size Matrix Pcs</small><strong data-dev-actual-total="${safe(row.dev_no)}">${actualTotalForDev(row.dev_no)}</strong></span>
+        </div>
+      </article>`;
+  }).join("");
 
   holder.querySelectorAll(".cm-dev-size").forEach(select => {
     const index = Number(select.dataset.devIndex);
-    fillSizeComboSelect(
-      select,
-      comboDevRows[index]?.size_combo || DEFAULT_SIZE_COMBO
-    );
-    select.addEventListener("change", () => {
-      updateDevRowFromInput(select, { resetMatrix: true });
-    });
+    fillSizeComboSelect(select, comboDevRows[index]?.size_combo || DEFAULT_SIZE_COMBO);
+    select.addEventListener("change", () => updateDevRowFromInput(select, { resetMatrix: true }));
   });
-
   holder.querySelectorAll(".cm-dev-sleeve").forEach(select => {
     const index = Number(select.dataset.devIndex);
     select.value = comboDevRows[index]?.sleeve || "Half";
-    select.addEventListener("change", () => {
-      updateDevRowFromInput(select, { resetMatrix: true });
-    });
+    select.addEventListener("change", () => updateDevRowFromInput(select));
   });
-
   holder.querySelectorAll(".cm-dev-border").forEach(select => {
     const index = Number(select.dataset.devIndex);
     select.value = comboDevRows[index]?.border || "Without Border";
-    select.addEventListener("change", () => {
-      updateDevRowFromInput(select, { resetMatrix: true });
-    });
+    select.addEventListener("change", () => updateDevRowFromInput(select));
   });
-
   holder.querySelectorAll(".cm-dev-match-item").forEach(select => {
     const index = Number(select.dataset.devIndex);
     select.value = comboDevRows[index]?.matching_item_id || "";
-    select.addEventListener("change", () => {
-      updateDevRowFromInput(select, { rerenderDev: true });
-    });
+    select.addEventListener("change", () => updateDevRowFromInput(select, { rerenderDev: true }));
   });
-
   holder.querySelectorAll("[data-dev-index]").forEach(input => {
-    if (
-      input.classList.contains("cm-dev-size") ||
-      input.classList.contains("cm-dev-sleeve") ||
-      input.classList.contains("cm-dev-border") ||
-      input.classList.contains("cm-dev-match-item")
-    ) return;
-
-    input.addEventListener("input", () => {
-      updateDevRowFromInput(input);
-    });
+    if (input.classList.contains("cm-dev-size") || input.classList.contains("cm-dev-sleeve") || input.classList.contains("cm-dev-border") || input.classList.contains("cm-dev-match-item")) return;
+    input.addEventListener("input", () => updateDevRowFromInput(input));
   });
 
   updatePieceTotals();
   hideBundleUi();
-      }
-  
+}
+
 function updateDevRowFromInput(input, options = {}) {
   const index = Number(input.dataset.devIndex);
   const row = comboDevRows[index];
-
   if (!row) return;
-
-  let rebuildMatrixOnly = false;
 
   if (input.classList.contains("cm-dev-lot-no")) {
     row.lot_no = String(input.value || "").trim().toUpperCase();
     input.value = row.lot_no;
-    scheduleLotNoDuplicateCheck();
+    if (!options.skipDuplicateCheck) scheduleLotNoDuplicateCheck();
   }
-
   if (input.classList.contains("cm-dev-size")) {
     row.size_combo = input.value || DEFAULT_SIZE_COMBO;
     row.sizes = sizesFromText(row.size_combo);
   }
-
-  if (input.classList.contains("cm-dev-sleeve")) {
-    row.sleeve = input.value || "Half";
-  }
-
-  if (input.classList.contains("cm-dev-border")) {
-    row.border = input.value || "Without Border";
-  }
-
+  if (input.classList.contains("cm-dev-sleeve")) row.sleeve = input.value || "Half";
+  if (input.classList.contains("cm-dev-border")) row.border = input.value || "Without Border";
   if (input.classList.contains("cm-dev-match-item")) {
     const snapshot = matchingSnapshot(input.value);
     row.matching_item_id = snapshot.itemId || null;
     row.matching_avg_cost = snapshot.itemId ? snapshot.avgCost : 0;
     if (!snapshot.itemId) row.matching_consumption = 0;
   }
-
-  if (input.classList.contains("cm-dev-match-cons")) {
-    row.matching_consumption = row.matching_item_id
-      ? Number(input.value || 0)
-      : 0;
-  }
-
-  if (input.classList.contains("cm-dev-match-cost")) {
-    row.matching_avg_cost = row.matching_item_id
-      ? Number(input.value || 0)
-      : 0;
-  }
-
-  if (input.classList.contains("cm-dev-pcs")) {
-    row.cutting_pcs = Math.max(
-      0,
-      Math.floor(Number(input.value || 0))
-    );
-
-    clearMatrixMemoryForDev(row.dev_no);
-    rebuildMatrixOnly = true;
-  }
-
-  if (input.classList.contains("cm-dev-custom")) {
-    row.custom_adjustment = Number(input.value || 0);
-  }
+  if (input.classList.contains("cm-dev-match-cons")) row.matching_consumption = row.matching_item_id ? Number(input.value || 0) : 0;
+  if (input.classList.contains("cm-dev-match-cost")) row.matching_avg_cost = row.matching_item_id ? Number(input.value || 0) : 0;
+  if (input.classList.contains("cm-dev-custom")) row.custom_adjustment = Number(input.value || 0);
 
   if (options.rerenderDev) {
     renderDevRows();
@@ -2717,12 +2643,9 @@ function updateDevRowFromInput(input, options = {}) {
     clearMatrixMemoryForDev(row.dev_no);
     renderDevRows();
     renderCuttingMatrix();
-  } else if (rebuildMatrixOnly) {
-    renderCuttingMatrix();
   } else {
     const card = input.closest("[data-dev-card]");
     const preview = card?.querySelector(".cm-dev-cost-preview");
-
     if (preview) preview.value = devCostText(row);
   }
 
@@ -2753,9 +2676,7 @@ function distributeDevPcs() {
 
 function clearMatrixMemoryForDev(devNo) {
   [...matrixQtyMemory.keys()].forEach(key => {
-    if (key.startsWith(`${devNo}|`)) {
-      matrixQtyMemory.delete(key);
-    }
+    if (key.startsWith(`${devNo}|`)) matrixQtyMemory.delete(key);
   });
 }
 
@@ -2846,12 +2767,10 @@ function devCost(row, pcsOverride = null) {
     ? Number(row.cutting_pcs || 0)
     : Number(pcsOverride || 0);
 
-  const processPerPiece =
-    base +
-    sizeFactorForCombo(row) +
-    sleeveFactorFor(row) +
-    borderFactorFor(row) +
-    Number(row.custom_adjustment || 0);
+  // Actual Cutting Rate is the final approved process rate for this Lot.
+  // Size/sleeve/border remain production attributes; they do not silently
+  // change the operator-entered actual rate.
+  const processPerPiece = base;
 
   const regularMaterial = regularMaterialCostSnapshot();
   const regularMaterialPerPiece = regularMaterial.perPiece;
@@ -2885,202 +2804,164 @@ function devCostText(row) {
 }
 
 function matrixInputs() {
-  return [
-    ...($("cuttingMatrix")?.querySelectorAll(".cm-size-qty") || [])
-  ];
+  return [...($("cuttingMatrix")?.querySelectorAll(".cm-size-qty") || [])];
+}
+
+function matrixColourTotalInputs() {
+  return [...($("cuttingMatrix")?.querySelectorAll(".cm-colour-total") || [])];
 }
 
 function cuttingEntries() {
-  return matrixInputs()
-    .map(input => ({
-      colour_id:
-        input.dataset.colourId ||
-        input.dataset.colorId ||
-        null,
-      colour_name:
-        input.dataset.colourName ||
-        input.dataset.colorName ||
-        "",
-      size_name:
-        input.dataset.size ||
-        input.dataset.sizeName ||
-        "",
-      quantity: Math.max(
-        0,
-        Math.floor(Number(input.value || 0))
-      ),
-      dev_no:
-        input.dataset.devNo ||
-        activeChildCode()
-    }))
-    .filter(row => row.quantity > 0);
+  return matrixInputs().map(input => ({
+    colour_id: input.dataset.colourId || input.dataset.colorId || null,
+    colour_name: input.dataset.colourName || input.dataset.colorName || "",
+    size_name: input.dataset.size || input.dataset.sizeName || "",
+    quantity: Math.max(0, Math.floor(Number(input.value || 0))),
+    dev_no: input.dataset.devNo || activeChildCode()
+  })).filter(row => row.quantity > 0);
 }
 
 function parseSizes() {
-  if (comboDevRows.length) {
-    return [
-      ...new Set(
-        comboDevRows.flatMap(row => row.sizes)
-      )
-    ];
-  }
-
+  if (comboDevRows.length) return [...new Set(comboDevRows.flatMap(row => row.sizes))];
   return sizesFromText(DEFAULT_SIZE_COMBO);
 }
 
 function matrixColours() {
   if (!activeCard) return [];
-
   const list = coloursFor(activeCard.group.cb_id);
-
   if (list.length) return list;
-
-  return [
-    {
-      id: "",
-      colour_name: "Default Colour",
-      image_url: "",
-      colour_order: 1
-    }
-  ];
+  return [{ id: "", colour_name: "Default Colour", image_url: "", colour_order: 1 }];
 }
 
 function matrixKey(dev, colour, size) {
-  return [
-    dev.dev_no,
-    colour.id || colour.colour_name || "",
-    size
-  ].join("|");
+  return [dev.dev_no, colour.id || colour.colour_name || "", size].join("|");
 }
 
-function autoQtyForCell(dev, colourIndex, sizeIndex, colourCount) {
-  const sizeCount = dev.sizes.length || 1;
-  const totalCells = Math.max(1, colourCount * sizeCount);
+function colourTotalKey(dev, colour) {
+  return [dev.dev_no, colour.id || colour.colour_name || ""].join("|");
+}
 
-  const pcs = Math.max(
-    0,
-    Math.floor(Number(dev.cutting_pcs || 0))
-  );
+function plannedColourQty(dev, colour) {
+  const key = colourTotalKey(dev, colour);
+  return Math.max(0, Math.floor(Number(matrixColourTotalMemory.get(key) || 0)));
+}
 
-  const base = Math.floor(pcs / totalCells);
-  const remainder = pcs - base * totalCells;
+function splitColourQty(total, sizeCount, sizeIndex) {
+  const count = Math.max(1, Number(sizeCount || 1));
+  const qty = Math.max(0, Math.floor(Number(total || 0)));
+  const base = Math.floor(qty / count);
+  const remainder = qty - base * count;
+  return base + (sizeIndex < remainder ? 1 : 0);
+}
 
-  const flatIndex = colourIndex * sizeCount + sizeIndex;
-  const lastIndex = totalCells - 1;
+function autoQtyForCell(dev, colour, sizeIndex) {
+  return splitColourQty(plannedColourQty(dev, colour), dev.sizes.length, sizeIndex);
+}
 
-  return base + (flatIndex === lastIndex ? remainder : 0);
+function distributeColourQty(dev, colour, total) {
+  const planned = Math.max(0, Math.floor(Number(total || 0)));
+  matrixColourTotalMemory.set(colourTotalKey(dev, colour), planned);
+  dev.sizes.forEach((size, sizeIndex) => {
+    matrixQtyMemory.set(matrixKey(dev, colour, size), splitColourQty(planned, dev.sizes.length, sizeIndex));
+  });
+}
+
+function plannedTotalForDev(devNo) {
+  let total = 0;
+  matrixColourTotalMemory.forEach((qty, key) => {
+    if (String(key).startsWith(`${devNo}|`)) total += Math.max(0, Math.floor(Number(qty || 0)));
+  });
+  return total;
+}
+
+function actualTotalForDev(devNo) {
+  return matrixInputs().filter(input => String(input.dataset.devNo) === String(devNo)).reduce((sum, input) => sum + Math.max(0, Math.floor(Number(input.value || 0))), 0);
+}
+
+function colourPlanRows() {
+  return matrixColourTotalInputs().map(input => {
+    const key = input.dataset.colourTotalKey || "";
+    const planned = Math.max(0, Math.floor(Number(input.value || 0)));
+    const actual = matrixInputs().filter(sizeInput => sizeInput.dataset.colourTotalKey === key).reduce((sum, sizeInput) => sum + Math.max(0, Math.floor(Number(sizeInput.value || 0))), 0);
+    return {
+      key,
+      dev_no: input.dataset.devNo || activeChildCode(),
+      colour_id: input.dataset.colourId || null,
+      colour_name: input.dataset.colourName || "Colour",
+      planned,
+      actual
+    };
+  });
+}
+
+function renderMatrixBalanceState() {
+  const plans = colourPlanRows();
+  plans.forEach(plan => {
+    const node = $("cuttingMatrix")?.querySelector(`[data-colour-balance-key="${CSS.escape(plan.key)}"]`);
+    if (!node) return;
+    const difference = plan.actual - plan.planned;
+    node.classList.toggle("is-ok", difference === 0 && plan.planned > 0);
+    node.classList.toggle("is-bad", difference !== 0);
+    node.innerHTML = `<span>Size Total: ${plan.actual}</span><span>${difference === 0 ? "Balance: 0" : `Balance: ${difference > 0 ? "+" : ""}${difference}`}</span>`;
+  });
+
+  comboDevRows.forEach(row => {
+    row.cutting_pcs = plannedTotalForDev(row.dev_no);
+    document.querySelectorAll(`[data-dev-planned-total="${CSS.escape(row.dev_no)}"]`).forEach(node => { node.textContent = String(row.cutting_pcs); });
+    document.querySelectorAll(`[data-dev-actual-total="${CSS.escape(row.dev_no)}"]`).forEach(node => { node.textContent = String(actualTotalForDev(row.dev_no)); });
+  });
 }
 
 function renderCuttingMatrix() {
   const holder = $("cuttingMatrix");
-
   if (!holder || !activeCard) return;
 
   const colours = matrixColours();
+  if (!comboDevRows.length) buildComboDevRows({ keepManual: true, autoDistribute: false });
 
-  if (!comboDevRows.length) {
-    buildComboDevRows({
-      keepManual: true,
-      autoDistribute: true
+  holder.innerHTML = comboDevRows.map((dev, devIndex) => `
+    <article class="cm-matrix-card">
+      <div class="cm-matrix-head"><strong>${safe(dev.dev_no)}</strong><span>${safe(dev.size_combo)} · ${safe(dev.sleeve)} · ${safe(dev.border)}</span></div>
+      ${colours.map(colour => {
+        const colourName = colour.colour_name || colour.color_name || "Colour";
+        const totalKey = colourTotalKey(dev, colour);
+        const planned = plannedColourQty(dev, colour);
+        return `
+          <div class="cm-colour-cut-card">
+            <div class="cm-colour-cut-head">
+              <div class="cm-colour-name">${colour.image_url ? `<img src="${safe(colour.image_url)}" alt="${safe(colourName)}">` : `<strong>●</strong>`}<strong>${safe(colourName)}</strong></div>
+              <label class="cm-colour-total-label"><span>Colour Cutting Qty *</span><input class="cm-colour-total" type="number" min="0" step="1" placeholder="Pcs" value="${planned || ""}" data-dev-index="${devIndex}" data-dev-no="${safe(dev.dev_no)}" data-colour-id="${safe(colour.id || "")}" data-colour-name="${safe(colourName)}" data-colour-total-key="${safe(totalKey)}"></label>
+            </div>
+            <div class="cm-size-grid">
+              ${dev.sizes.map((size, sizeIndex) => {
+                const key = matrixKey(dev, colour, size);
+                const qty = matrixQtyMemory.has(key) ? matrixQtyMemory.get(key) : autoQtyForCell(dev, colour, sizeIndex);
+                return `<label><span>${safe(size)}</span><input class="cm-size-qty" type="number" min="0" step="1" placeholder="Pcs" value="${qty || ""}" data-dev-index="${devIndex}" data-dev-no="${safe(dev.dev_no)}" data-size-combo="${safe(dev.size_combo)}" data-sleeve="${safe(dev.sleeve)}" data-border="${safe(dev.border)}" data-colour-id="${safe(colour.id || "")}" data-colour-name="${safe(colourName)}" data-size="${safe(size)}" data-matrix-key="${safe(key)}" data-colour-total-key="${safe(totalKey)}"></label>`;
+              }).join("")}
+            </div>
+            <div class="cm-colour-balance" data-colour-balance-key="${safe(totalKey)}"><span>Size Total: 0</span><span>Balance: 0</span></div>
+          </div>`;
+      }).join("")}
+      <div class="cm-dev-auto-total"><span><small>${safe(dev.dev_no)} Auto Cutting Pcs</small><strong data-dev-planned-total="${safe(dev.dev_no)}">${plannedTotalForDev(dev.dev_no)}</strong></span><span><small>Size Matrix Pcs</small><strong data-dev-actual-total="${safe(dev.dev_no)}">${actualTotalForDev(dev.dev_no)}</strong></span></div>
+    </article>`).join("");
+
+  matrixColourTotalInputs().forEach(input => {
+    input.addEventListener("input", () => {
+      const dev = comboDevRows[Number(input.dataset.devIndex)];
+      const colour = colours.find(row => String(row.id || "") === String(input.dataset.colourId || "")) || { id: input.dataset.colourId || "", colour_name: input.dataset.colourName || "Colour" };
+      const total = Math.max(0, Math.floor(Number(input.value || 0)));
+      distributeColourQty(dev, colour, total);
+      matrixInputs().filter(sizeInput => sizeInput.dataset.colourTotalKey === input.dataset.colourTotalKey).forEach(sizeInput => {
+        sizeInput.value = matrixQtyMemory.get(sizeInput.dataset.matrixKey) || "";
+      });
+      updatePieceTotals();
     });
-  }
-
-  holder.innerHTML = comboDevRows
-    .map((dev, devIndex) => `
-      <article class="cm-matrix-card">
-        <div class="cm-matrix-head">
-          <strong>${safe(dev.dev_no)}</strong>
-          <span>
-            ${safe(dev.size_combo)} ·
-            ${safe(dev.sleeve)} ·
-            ${safe(dev.border)}
-          </span>
-        </div>
-
-        ${colours
-          .map((colour, colourIndex) => {
-            const colourName =
-              colour.colour_name ||
-              colour.color_name ||
-              "Colour";
-
-            return `
-              <div class="cm-matrix-card">
-                <div class="cm-matrix-head">
-                  ${
-                    colour.image_url
-                      ? `
-                        <img
-                          src="${safe(colour.image_url)}"
-                          alt="${safe(colourName)}"
-                        >
-                      `
-                      : `<strong>●</strong>`
-                  }
-
-                  <strong>${safe(colourName)}</strong>
-                </div>
-
-                <div class="cm-size-grid">
-                  ${dev.sizes
-                    .map((size, sizeIndex) => {
-                      const key = matrixKey(dev, colour, size);
-
-                      const qty = matrixQtyMemory.has(key)
-                        ? matrixQtyMemory.get(key)
-                        : autoQtyForCell(
-                            dev,
-                            colourIndex,
-                            sizeIndex,
-                            colours.length
-                          );
-
-                      return `
-                        <label>
-                          <span>${safe(size)}</span>
-
-                          <input
-                            class="cm-size-qty"
-                            type="number"
-                            min="0"
-                            step="1"
-                            value="${qty || ""}"
-                            data-dev-index="${devIndex}"
-                            data-dev-no="${safe(dev.dev_no)}"
-                            data-size-combo="${safe(dev.size_combo)}"
-                            data-sleeve="${safe(dev.sleeve)}"
-                            data-border="${safe(dev.border)}"
-                            data-colour-id="${safe(colour.id || "")}"
-                            data-colour-name="${safe(colourName)}"
-                            data-size="${safe(size)}"
-                            data-matrix-key="${safe(key)}"
-                          >
-                        </label>
-                      `;
-                    })
-                    .join("")}
-                </div>
-              </div>
-            `;
-          })
-          .join("")}
-      </article>
-    `)
-    .join("");
+  });
 
   matrixInputs().forEach(input => {
     input.addEventListener("input", () => {
-      matrixQtyMemory.set(
-        input.dataset.matrixKey,
-        Math.max(
-          0,
-          Math.floor(Number(input.value || 0))
-        )
-      );
-
+      matrixQtyMemory.set(input.dataset.matrixKey, Math.max(0, Math.floor(Number(input.value || 0))));
       updatePieceTotals();
-      updateCostPreview();
-      hideBundleUi();
     });
   });
 
@@ -3089,40 +2970,23 @@ function renderCuttingMatrix() {
 }
 
 function updatePieceTotals() {
-  const pieces = cuttingEntries().reduce(
-    (sum, row) => sum + row.quantity,
-    0
-  );
+  const plans = colourPlanRows();
+  const plannedPieces = plans.reduce((sum, row) => sum + row.planned, 0);
+  const actualPieces = plans.reduce((sum, row) => sum + row.actual, 0);
+  const balance = actualPieces - plannedPieces;
 
-  if ($("cmParentCuttingPcs") && currentLotMode === "multi") {
-    $("cmParentCuttingPcs").value = String(pieces);
+  comboDevRows.forEach(row => { row.cutting_pcs = plannedTotalForDev(row.dev_no); });
+
+  if ($("totalPieces")) $("totalPieces").textContent = String(plannedPieces);
+  if ($("cmMatrixPieces")) $("cmMatrixPieces").textContent = String(actualPieces);
+  if ($("cmPieceBalance")) {
+    $("cmPieceBalance").textContent = balance === 0 ? "0" : `${balance > 0 ? "+" : ""}${balance}`;
+    $("cmPieceBalance").classList.toggle("is-ok", balance === 0 && plannedPieces > 0);
+    $("cmPieceBalance").classList.toggle("is-bad", balance !== 0);
   }
+  if ($("cmTotalColours")) $("cmTotalColours").textContent = String(plans.filter(row => row.planned > 0).length);
 
-  if ($("totalPieces")) {
-    $("totalPieces").textContent = String(pieces);
-
-    const holder =
-      $("totalPieces").closest(".cm-total-line") ||
-      $("totalPieces").closest(".cm-total-card") ||
-      $("totalPieces").closest(".cm-summary-card") ||
-      $("totalPieces").closest("article") ||
-      $("totalPieces").parentElement;
-
-    if (holder) holder.style.display = "none";
-  }
-
-  if ($("totalBundles")) {
-    $("totalBundles").textContent = "";
-
-    const holder =
-      $("totalBundles").closest(".cm-total-card") ||
-      $("totalBundles").closest(".cm-summary-card") ||
-      $("totalBundles").closest("article") ||
-      $("totalBundles").parentElement;
-
-    if (holder) holder.style.display = "none";
-  }
-
+  renderMatrixBalanceState();
   hideBundleUi();
   updateCostPreview();
 }
@@ -3205,12 +3069,15 @@ function setMoneyText(id, value) {
 
 function updateCostPreview() {
   const result = costResult();
+  const actualRate = Number(numberValue("baseCost") || costSettings.default_base_cost || 0);
+  const actualCuttingAmount = actualRate * Number(result.pcs || 0);
 
   setMoneyText("sizeCostPreview", 0);
   setMoneyText("sleeveCostPreview", 0);
   setMoneyText("borderCostPreview", 0);
   setMoneyText("finalCostPreview", result.final);
   setMoneyText("totalCostPreview", result.total);
+  setMoneyText("cmActualCuttingAmount", actualCuttingAmount);
 
   setMoneyText("costBasePreview", result.base);
   setMoneyText("costAdjustmentPreview", result.adjustmentTotal);
@@ -3247,77 +3114,48 @@ function notesForRelease(valid, extra = []) {
     readText("lotNotes"),
     readText("operatorName") ? `Operator: ${readText("operatorName")}` : "",
     cbNo ? `CB: ${cbNo}` : "",
-    childNo ? `Child: ${childNo}` : "",
+    childNo ? `D No.: ${childNo}` : "",
     `Lot Mode: ${valid.lotMode}`,
     ...extra
   ].filter(Boolean).join("\n");
 }
 
 function validateLot() {
-  if (!activeCard) {
-    throw new Error("No Product Master card selected.");
-  }
+  if (!activeCard) throw new Error("No Product Master card selected.");
 
   const decision = cardDecision(activeCard);
-
-  if (!decision.ready) {
-    throw new Error(
-      decision.art
-        ? "Print assign करें या No Print Required final करें."
-        : "Art decision missing."
-    );
-  }
+  if (!decision.ready) throw new Error(decision.art ? "Print assign करें या No Print Required final करें." : "Art decision missing.");
 
   const styleName = readText("styleName");
   if (!styleName) throw new Error("Style name required.");
 
+  const actualCuttingRate = numberValue("baseCost");
+  if (actualCuttingRate <= 0) throw new Error("Actual Cutting Rate / Pc required.");
+
   const lotMode = currentLotMode || "single";
+  const plans = colourPlanRows();
+  if (!plans.length || plans.every(row => row.planned <= 0)) throw new Error("कम से कम एक Colour Cutting Qty required है.");
+
+  plans.forEach(row => {
+    if (row.planned !== row.actual) {
+      throw new Error(`${row.dev_no} · ${row.colour_name}: Colour Cutting Qty ${row.planned} है, लेकिन Size total ${row.actual} है.`);
+    }
+  });
+
   const allEntries = cuttingEntries();
 
   if (lotMode === "single") {
-    const lotNo = String(
-      readText("cmManualLotNo") || readText("lotNo")
-    ).trim().toUpperCase();
-
+    const lotNo = String(readText("cmManualLotNo") || readText("lotNo")).trim().toUpperCase();
     if (!lotNo) throw new Error("Manual Lot No required.");
 
     const rawRow = comboDevRows[0] || singleRowFromInputs();
-    const row = normalizeMatchingRow(
-      {
-        ...rawRow,
-        dev_no: activeChildCode()
-      },
-      activeChildCode()
-    );
-
-    const entries = allEntries.map(entry => ({
-      ...entry,
-      dev_no: row.dev_no,
-      lot_no: lotNo
-    }));
-
-    const totalPieces = entries.reduce(
-      (sum, entry) => sum + entry.quantity,
-      0
-    );
-
-    const enteredTotal = Math.floor(numberValue("cmSingleCuttingPcs"));
-
-    if (enteredTotal <= 0) {
-      throw new Error("Total Cutting Pcs required.");
-    }
-
-    if (enteredTotal !== totalPieces) {
-      throw new Error(
-        `Total Cutting Pcs ${enteredTotal} है, लेकिन Colour × Size total ${totalPieces} है.`
-      );
-    }
+    const row = normalizeMatchingRow({ ...rawRow, dev_no: activeChildCode() }, activeChildCode());
+    const entries = allEntries.map(entry => ({ ...entry, dev_no: row.dev_no, lot_no: lotNo }));
+    const totalPieces = plans.filter(plan => String(plan.dev_no) === String(row.dev_no)).reduce((sum, plan) => sum + plan.planned, 0);
+    if (totalPieces <= 0) throw new Error("Grand Total Cutting Pcs required.");
 
     return {
-      decision,
-      styleName,
-      lotMode,
-      totalPieces,
+      decision, styleName, lotMode, totalPieces,
       lots: [{
         dev_no: row.dev_no,
         parent_child_code: activeChildCode(),
@@ -3330,101 +3168,38 @@ function validateLot() {
         matching_item_id: row.matching_item_id,
         matching_consumption: Number(row.matching_consumption || 0),
         matching_avg_cost: Number(row.matching_avg_cost || 0),
-        custom_adjustment: Number(row.custom_adjustment || 0),
+        custom_adjustment: 0,
         entries
       }]
     };
   }
 
-  if (comboDevRows.length < 2 || comboDevRows.length > 4) {
-    throw new Error("Multi Lot में 2 से 4 Sub-Dev required हैं.");
-  }
-
-  const lotNos = comboDevRows.map(row =>
-    String(row.lot_no || "").trim().toUpperCase()
-  );
-
-  if (lotNos.some(value => !value)) {
-    throw new Error("हर Sub-Dev का Manual Lot No required है.");
-  }
-
-  if (new Set(lotNos.map(value => value.toLowerCase())).size !== lotNos.length) {
-    throw new Error("Multi Lot में duplicate Lot No allowed नहीं है.");
-  }
+  if (comboDevRows.length < 2 || comboDevRows.length > 4) throw new Error("Multi Lot में 2 से 4 Sub-Dev required हैं.");
+  const lotNos = comboDevRows.map(row => String(row.lot_no || "").trim().toUpperCase());
+  if (lotNos.some(value => !value)) throw new Error("हर Sub-Dev का Manual Lot No required है.");
+  if (new Set(lotNos.map(value => value.toLowerCase())).size !== lotNos.length) throw new Error("Multi Lot में duplicate Lot No allowed नहीं है.");
 
   const lots = comboDevRows.map(rawRow => {
     const row = normalizeMatchingRow(rawRow, rawRow.dev_no);
-
-    const entries = allEntries
-      .filter(entry => String(entry.dev_no) === String(row.dev_no))
-      .map(entry => ({
-        ...entry,
-        lot_no: String(row.lot_no || "").trim().toUpperCase()
-      }));
-
-    const total = entries.reduce(
-      (sum, entry) => sum + entry.quantity,
-      0
-    );
-
-    const expected = Math.floor(Number(row.cutting_pcs || 0));
-
-    if (expected <= 0) {
-      throw new Error(`${row.dev_no} Cutting Pcs required.`);
-    }
-
-    if (total !== expected) {
-      throw new Error(
-        `${row.dev_no} Cutting Pcs ${expected} है, लेकिन matrix total ${total} है.`
-      );
-    }
-
-    return {
-      ...row,
-      parent_child_code: activeChildCode(),
-      lot_no: String(row.lot_no || "").trim().toUpperCase(),
-      cutting_pcs: total,
-      entries
-    };
+    const entries = allEntries.filter(entry => String(entry.dev_no) === String(row.dev_no)).map(entry => ({ ...entry, lot_no: String(row.lot_no || "").trim().toUpperCase() }));
+    const total = plans.filter(plan => String(plan.dev_no) === String(row.dev_no)).reduce((sum, plan) => sum + plan.planned, 0);
+    if (total <= 0) throw new Error(`${row.dev_no} Colour Cutting Qty required.`);
+    return { ...row, parent_child_code: activeChildCode(), lot_no: String(row.lot_no || "").trim().toUpperCase(), cutting_pcs: total, entries };
   });
 
   const matchingUse = new Map();
   lots.forEach(row => {
     if (!row.matching_item_id) return;
-
     const key = String(row.matching_item_id);
-    matchingUse.set(
-      key,
-      Number(matchingUse.get(key) || 0) +
-      Number(row.matching_consumption || 0)
-    );
+    matchingUse.set(key, Number(matchingUse.get(key) || 0) + Number(row.matching_consumption || 0));
   });
-
   matchingUse.forEach((requiredQty, itemId) => {
     const stock = matchingSnapshot(itemId);
-    if (requiredQty > stock.availableQty + 0.0005) {
-      throw new Error(
-        `${stock.fabricName || "Matching Cloth"}: available ${stock.availableQty.toFixed(3)} kg, required ${requiredQty.toFixed(3)} kg.`
-      );
-    }
+    if (requiredQty > stock.availableQty + 0.0005) throw new Error(`${stock.fabricName || "Matching Cloth"}: available ${stock.availableQty.toFixed(3)} kg, required ${requiredQty.toFixed(3)} kg.`);
   });
 
-  const totalPieces = lots.reduce(
-    (sum, row) => sum + row.cutting_pcs,
-    0
-  );
-
-  if ($("cmParentCuttingPcs")) {
-    $("cmParentCuttingPcs").value = String(totalPieces);
-  }
-
-  return {
-    decision,
-    styleName,
-    lotMode,
-    totalPieces,
-    lots
-  };
+  const totalPieces = lots.reduce((sum, row) => sum + row.cutting_pcs, 0);
+  return { decision, styleName, lotMode, totalPieces, lots };
 }
 
 function singleRpcPayload(valid) {
@@ -3450,9 +3225,9 @@ function singleRpcPayload(valid) {
     p_size_type: sizeTypeForCombo(lot.size_combo),
     p_sleeve_type: normalizedSleeve(lot.sleeve),
     p_border_type: normalizedBorder(lot.border),
-    p_custom_adjustment: Number(lot.custom_adjustment || 0),
+    p_custom_adjustment: 0,
     p_notes: notesForRelease(valid, [
-      `Child: ${lot.dev_no}`,
+      `D No.: ${lot.dev_no}`,
       lot.matching_item_id
         ? `Matching Qty: ${lot.matching_consumption}`
         : "Matching Cloth: No",
@@ -3461,6 +3236,8 @@ function singleRpcPayload(valid) {
         : "Matching Avg Cost: 0",
       `Raw Material Total: ${cost.regularMaterialTotal}`,
       `Raw Material / Pc: ${cost.regularMaterialPerPiece}`,
+      `Actual Cutting Rate / Pc: ${cost.base}`,
+      `Actual Cutting Amount: ${cost.base * lot.cutting_pcs}`,
       `Process / Pc: ${cost.processPerPiece}`,
       `Final Product / Pc: ${cost.finalPerPiece}`
     ]) || null,
@@ -3492,7 +3269,8 @@ function multiRpcPayload(valid) {
     p_remnant_weight: numberValue("remnantWeight"),
     p_base_cost: numberValue("baseCost") || costSettings.default_base_cost || 0,
     p_notes: notesForRelease(valid, [
-      `Parent Child: ${activeChildCode()}`
+      `Parent D No.: ${activeChildCode()}`,
+      `Actual Cutting Rate / Pc: ${numberValue("baseCost") || costSettings.default_base_cost || 0}`
     ]) || null,
     p_lots: valid.lots.map((row, index) => {
       const cost = devCost(row, row.cutting_pcs);
@@ -3515,10 +3293,10 @@ function multiRpcPayload(valid) {
           ? Number(row.matching_avg_cost || 0)
           : 0,
         base_cost: cost.base,
-        size_adjustment: sizeFactorForCombo(row),
-        sleeve_adjustment: sleeveFactorFor(row),
-        border_adjustment: borderFactorFor(row),
-        custom_adjustment: Number(row.custom_adjustment || 0),
+        size_adjustment: 0,
+        sleeve_adjustment: 0,
+        border_adjustment: 0,
+        custom_adjustment: 0,
         raw_material_total: cost.regularMaterialTotal,
         raw_material_cost_per_piece: cost.regularMaterialPerPiece,
         matching_total_cost: cost.matchingTotal,
@@ -3536,6 +3314,89 @@ function multiRpcPayload(valid) {
       };
     })
   };
+}
+
+async function reserveMatchingForLots(valid, client) {
+  const reserved = [];
+  for (const lot of valid.lots) {
+    if (!lot.matching_item_id) continue;
+    const result = await client.rpc("rr_reserve_lot_matching_v2", {
+      p_fabric_id: lot.matching_item_id,
+      p_lot_no: lot.lot_no,
+      p_qty: Number(lot.matching_consumption || 0),
+      p_source_kind: "CUTTING_MASTER",
+      p_remarks: `${valid.lotMode || "single"} Lot reservation`
+    });
+    if (result.error) {
+      if (isMissingRpcError(result.error)) {
+        throw new Error("Matching Fabric V720.36 SQL patch required before Lot release.");
+      }
+      throw result.error;
+    }
+    const row = result.data || {};
+    lot.matching_avg_cost = Number(row.avg_rate_snapshot || lot.matching_avg_cost || 0);
+    reserved.push({ lotNo: lot.lot_no, data: row });
+  }
+  return reserved;
+}
+
+async function cancelMatchingReservations(client, reserved, reason) {
+  await Promise.all((reserved || []).map(item =>
+    client.rpc("rr_cancel_lot_matching_v2", {
+      p_lot_no: item.lotNo,
+      p_reason: reason || "Lot release failed"
+    }).catch(() => null)
+  ));
+}
+
+async function confirmMatchingReservations(client, reserved) {
+  const warnings = [];
+  for (const item of reserved || []) {
+    const result = await client.rpc("rr_confirm_lot_matching_v2", {
+      p_lot_no: item.lotNo,
+      p_source_id: null
+    });
+    if (result.error) warnings.push(`${item.lotNo}: ${errorText(result.error)}`);
+  }
+  return warnings;
+}
+
+async function postCuttingActuals(valid, client) {
+  const warnings = [];
+  const actualRate = Number(numberValue("baseCost") || costSettings.default_base_cost || 0);
+
+  for (const lot of valid.lots || []) {
+    for (const entry of lot.entries || []) {
+      const qty = Math.max(0, Math.floor(Number(entry.quantity || 0)));
+      if (!qty) continue;
+
+      const result = await client.rpc("rr_upsert_lot_process_actual_v1", {
+        p_lot_no: lot.lot_no,
+        p_process_code: "CUTTING",
+        p_art_no: valid.decision?.artNo || null,
+        p_print_no: valid.decision?.noPrintRequired ? "N/A" : (valid.decision?.printNo || null),
+        p_colour_id: entry.colour_id || null,
+        p_colour_name: entry.colour_name || null,
+        p_size_code: entry.size_name || null,
+        p_in_pcs: qty,
+        p_out_pcs: qty,
+        p_short_pcs: 0,
+        p_reject_pcs: 0,
+        p_actual_rate: actualRate,
+        p_process_status: "COMPLETED",
+        p_remarks: "Cutting Lot release"
+      });
+
+      if (result.error) {
+        if (isMissingRpcError(result.error)) {
+          return ["Production Actual Rate foundation SQL अभी install नहीं है."];
+        }
+        warnings.push(`${lot.lot_no} · ${entry.colour_name || "Colour"} · ${entry.size_name || "Size"}: ${errorText(result.error)}`);
+      }
+    }
+  }
+
+  return warnings;
 }
 
 async function createLot(event = {}) {
@@ -3556,6 +3417,8 @@ async function createLot(event = {}) {
     $("lotForm")?.querySelector("button");
 
   const originalText = button?.textContent || "Release Lot No";
+  let matchingReservations = [];
+  let releaseCommitted = false;
 
   try {
     if (button) {
@@ -3568,6 +3431,8 @@ async function createLot(event = {}) {
 
     const valid = validateLot();
     await validateLotNosUniqueLive({ hard: true });
+    validateMappedCuttingMaster();
+    matchingReservations = await reserveMatchingForLots(valid, client);
     const progressText = valid.lotMode === "multi"
       ? "Multi Lots save हो रहे हैं..."
       : "Cutting Lot save हो रहा है...";
@@ -3579,11 +3444,24 @@ async function createLot(event = {}) {
 
     if (valid.lotMode === "multi") {
       const payload = multiRpcPayload(valid);
-      result = await withTimeout(
-        client.rpc("rr_release_multi_lots_v4", payload),
-        25000,
-        "Multi Lot release"
-      );
+      if (matchingReservations.length) {
+        payload.p_lots.forEach(row => {
+          const matchingCost = Number(row.matching_total_cost || 0);
+          const pcs = Number(row.cutting_pcs || 0);
+          row.matching_item_id = null;
+          row.matching_qty = 0;
+          row.matching_avg_cost = 0;
+          row.matching_total_cost = 0;
+          row.final_product_cost = Math.max(0, Number(row.final_product_cost || 0) - matchingCost);
+          row.total_cutting_cost = Math.max(0, Number(row.total_cutting_cost || 0) - matchingCost);
+          if (pcs > 0) {
+            const matchingPerPiece = matchingCost / pcs;
+            row.final_product_cost_per_piece = Math.max(0, Number(row.final_product_cost_per_piece || 0) - matchingPerPiece);
+            row.final_cost_per_piece = Math.max(0, Number(row.final_cost_per_piece || 0) - matchingPerPiece);
+          }
+        });
+      }
+      result = await client.rpc("rr_release_multi_lots_v4", payload);
 
       const hasMatching = valid.lots.some(row => Boolean(row.matching_item_id));
 
@@ -3592,25 +3470,25 @@ async function createLot(event = {}) {
           "rr_release_multi_lots_v4 unavailable; using V3 only because no Matching Cloth is selected.",
           result.error
         );
-        result = await withTimeout(
-          client.rpc("rr_release_multi_lots_v3", payload),
-          25000,
-          "Multi Lot release fallback"
-        );
+        result = await client.rpc("rr_release_multi_lots_v3", payload);
       }
     } else {
-      result = await withTimeout(
-        client.rpc(
-          "rr_release_single_lot_v4",
-          singleRpcPayload(valid)
-        ),
-        25000,
-        "Single Lot release"
+      const payload = singleRpcPayload(valid);
+      if (matchingReservations.length) {
+        payload.p_matching_item_id = null;
+        payload.p_matching_qty = 0;
+      }
+      result = await client.rpc(
+        "rr_release_single_lot_v4",
+        payload
       );
     }
 
     if (result.error) throw result.error;
+    releaseCommitted = true;
 
+    const matchingWarnings = await confirmMatchingReservations(client, matchingReservations);
+    const actualRateWarnings = await postCuttingActuals(valid, client);
     const releasedNos = valid.lots.map(row => row.lot_no);
     lastReleasedLotNo = releasedNos[0] || "";
     lastReleasedDivisionId = activeCard.division.division_id;
@@ -3626,10 +3504,25 @@ async function createLot(event = {}) {
         ?.scrollIntoView({ behavior: "smooth", block: "center" });
     }, 80);
 
-    const successText = `LOT ${releasedNos.join(" · ")} RELEASED · Ready for KR / OV.`;
-    say(successText, "success");
-    setLotReleaseFeedback(successText, "success");
+    let upmWarning = "";
+    try {
+      const upmSync = await client.rpc("rr_upm_sync_cutting_lots_v2");
+      if (upmSync.error) throw upmSync.error;
+    } catch (syncError) {
+      console.warn("UPM V722 sync warning:", syncError);
+      upmWarning = `UPM sync: ${errorText(syncError)}`;
+    }
+    const releaseWarnings = [...matchingWarnings, ...actualRateWarnings, ...(upmWarning ? [upmWarning] : [])];
+    const nextStage = valid.decision?.noPrintRequired ? "OPEN FOR STICKER / KR / OV ASSIGNMENT" : "RELEASED TO PRINTER";
+    const successText = releaseWarnings.length
+      ? `LOT ${releasedNos.join(" · ")} RELEASED · ${nextStage} · Follow-up warning: ${releaseWarnings.join(" | ")}`
+      : `LOT ${releasedNos.join(" · ")} RELEASED · Cutting completed · ${nextStage}.`;
+    say(successText, releaseWarnings.length ? "info" : "success");
+    setLotReleaseFeedback(successText, releaseWarnings.length ? "info" : "success");
   } catch (error) {
+    if (!releaseCommitted && matchingReservations.length) {
+      await cancelMatchingReservations(client, matchingReservations, "Lot release failed");
+    }
     console.error("Lot release failed:", error);
     const messageText = releaseErrorText(error);
     say(messageText, "error");
@@ -3717,7 +3610,7 @@ async function saveCostSettings(event) {
       ...(result.data || payload)
     };
 
-    setInputValue("baseCost", costSettings.default_base_cost || 0);
+    setInputValue("baseCost", Number(costSettings.default_base_cost || 0) > 0 ? costSettings.default_base_cost : "");
     updateCostPreview();
     closeSheet(costSheet);
     say("Cutting cost settings saved.", "success");
@@ -3748,18 +3641,29 @@ async function loadCostSettings(client) {
 
   setInputValue(
     "baseCost",
-    costSettings.default_base_cost
+    Number(costSettings.default_base_cost || 0) > 0 ? costSettings.default_base_cost : ""
   );
 
   if ($("customAdjustment")) {
     $("customAdjustment").disabled =
       costSettings.allow_custom_adjustment === false;
   }
-      }
-                                
-   async function loadMatchingStockSource(client) {
-  // The existing release RPC is the primary source because it returns the
-  // exact matching_item_id expected by the release transaction.
+}
+
+async function loadMatchingStockSource(client) {
+  // V720.36: stable fabric-name pool IDs are the primary Matching identity.
+  const v2Result = await client.rpc("rr_get_matching_cloth_stock_v2");
+  if (!v2Result.error) {
+    // V2 is authoritative even when it returns zero rows.
+    // Falling back on an empty V2 result would revive old purchase/card IDs
+    // and can cause "Matching Cloth stock item not found" during release.
+    return (v2Result.data || [])
+      .map(normalizeMatchingStockRow)
+      .filter(row => row.matching_item_id);
+  } else {
+    console.warn("Matching Fabric V2 stock RPC unavailable; trying legacy source.",v2Result.error);
+  }
+
   const rpcResult = await client.rpc("rr_get_matching_cloth_stock_v1");
 
   if (!rpcResult.error) {
@@ -3770,7 +3674,7 @@ async function loadCostSettings(client) {
     if (rows.length) return rows;
   } else {
     console.warn(
-      "Matching stock RPC unavailable; trying V719 stock-card view.",
+      "Legacy matching stock RPC unavailable; trying V719 stock-card view.",
       rpcResult.error
     );
   }
@@ -3812,6 +3716,20 @@ async function loadCostSettings(client) {
   return [];
 }
 
+async function loadMatchingLotSource(client) {
+  const rpcResult = await client.rpc("rr_get_mc1_lot_matchings_v2");
+  if (!rpcResult.error) return rpcResult.data || [];
+
+  if (!isMissingRpcError(rpcResult.error)) {
+    console.warn("Matching lot ledger RPC unavailable; trying legacy read view.", rpcResult.error);
+  }
+
+  return optionalRows(client, "rr_mc1_lot_matching_details_v2", {
+    order: "created_at",
+    ascending: false
+  });
+}
+
 async function loadMultiLotSource(client) {
   const result = await client.rpc("rr_list_multi_lots_v3");
 
@@ -3836,6 +3754,9 @@ async function loadAllData() {
     );
   }
 
+  await loadCuttingRole(client);
+  await loadCuttingMasters(client);
+
   if (gallery) {
     gallery.setAttribute("aria-busy", "true");
 
@@ -3857,6 +3778,11 @@ async function loadAllData() {
     "info"
   );
 
+  try {
+    const recovery = await client.rpc("rr_recover_lot_matching_v2");
+    if (recovery.error && !isMissingRpcError(recovery.error)) console.warn("Matching recovery warning",recovery.error);
+  } catch (_) {}
+
   const [
     loadedGalleryRows,
     purchaseResult,
@@ -3870,7 +3796,8 @@ async function loadAllData() {
     lotResult,
     loadedMultiLotRows,
     breakupResult,
-    matchingStockResult
+    matchingStockResult,
+    matchingLotResult
   ] = await Promise.all([
     withTimeout(
       loadGallerySource(client),
@@ -3925,7 +3852,9 @@ async function loadAllData() {
       ascending: false
     }),
 
-    loadMatchingStockSource(client)
+    loadMatchingStockSource(client),
+
+loadMatchingLotSource(client)
   ]);
 
   purchaseRows = requiredData(purchaseResult, "Purchase rows");
@@ -3953,12 +3882,13 @@ async function loadAllData() {
     );
   breakupRows = requiredData(breakupResult, "Cutting breakup");
   matchingStockRows = (matchingStockResult || []).map(normalizeMatchingStockRow);
+  matchingLotRows = matchingLotResult || [];
 
   await loadCostSettings(client);
   refreshMatchingStockControls();
   renderGallery();
 
-  console.info("REAL FACTORY Cutting Master PM Core V719.1 loaded", {
+  console.info("REAL FACTORY Cutting Master PM Core V889 loaded", {
     galleryRows: galleryRows.length,
     purchaseRows: purchaseRows.length,
     matchingPurchaseRows: matchingPurchaseRows.length,
@@ -3972,7 +3902,8 @@ async function loadAllData() {
     multiLotRows: multiLotRows.length,
     lotRows: lotRows.length,
     breakupRows: breakupRows.length,
-    matchingStockRows: matchingStockRows.length
+    matchingStockRows: matchingStockRows.length,
+    matchingLotRows: matchingLotRows.length
   });
 }
 
@@ -3988,6 +3919,7 @@ function bindEvents() {
   if (bindEvents.bound) return;
   bindEvents.bound = true;
 
+  ensureDuplicateLotStyle();
   $("lotForm")?.addEventListener("submit", createLot);
 
   gallery?.addEventListener("click", event => {
@@ -4009,7 +3941,7 @@ function bindEvents() {
     ).trim();
 
     if (!divisionId) {
-      say("Child ID missing.", "error");
+      say("D ID missing.", "error");
       return;
     }
 
@@ -4104,7 +4036,6 @@ function bindEvents() {
 async function start() {
   try {
     injectStyles();
-    ensureDuplicateLotStyle();
     bindEvents();
     await loadAllData();
   } catch (error) {
@@ -4113,7 +4044,7 @@ async function start() {
 }
 
 window.RRCuttingMasterPM = {
-  version: "pm-core-v719.3-matching-only-hard-block",
+  version: "pm-core-v720.36.2-mc-ledger-rate-foundation",
 
   state() {
     return {

@@ -1,0 +1,22 @@
+REAL_FACTORY_V889_CUTTING_BACKEND_TO_FRONTEND_CONVERSION
+
+This is Cutting-only backend-to-frontend conversion package.
+It is NOT only latest frontend copy. It applies backend-approved resolved contracts into Cutting frontend.
+
+Backend resolved contracts applied in frontend:
+- Duplicate Lot No: frontend live check + release hard block against backend tables.
+- Checks rr_cutting_lots_v3 and rr_production_lots.
+- Multi-lot same sheet duplicate blocked.
+- Mapped Cutting Master: operator field now loads backend worker mapping list from rr_upm_worker_list_v8_4 / v8_3.
+- Release blocks unknown free-text Cutting Master if backend mapped list is available.
+- Backend-approved release/matching/actual-rate/UPM sync retained:
+  rr_reserve_lot_matching_v2
+  rr_confirm_lot_matching_v2
+  rr_upsert_lot_process_actual_v1
+  rr_upm_sync_cutting_lots_v2
+  rr_release_single_lot_v4
+  rr_release_multi_lots_v4
+
+Upload/replace these files in GitHub Pages root.
+Open:
+https://skbhati1977-a11y.github.io/redzed-store/real-cutting-master.html?v=889
