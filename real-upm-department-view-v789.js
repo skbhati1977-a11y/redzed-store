@@ -146,8 +146,17 @@
   async function renderQueue() {
     const api = window.RealFactoryUPM;
     const host = document.getElementById("rfDepartmentQueue");
-    if (!api || !host) return;
+    if (!host) return;
+    if (!api?.snapshot) {
+      host.innerHTML = `<div class="msg">UPM engine loading. Queue 1 second me retry hogi.</div>`;
+      setTimeout(sync, 1000);
+      return;
+    }
     const snap = api.snapshot();
+    if (!snap.lots?.length) {
+      host.innerHTML = `<div class="msg">No UPM lots loaded. TEST source me released/running/open lot rows verify karein.</div>`;
+      return;
+    }
     const cards = [];
     for (const lot of snap.lots) {
       const meta = await statusFor(lot.canonical_lot_id);
@@ -160,7 +169,7 @@
       if (!targets.length) continue;
       cards.push(`<article class="rf-queue-card"><div><b>${esc(lot.lot_no)}</b><span>CB ${esc(meta.identity?.cb_no || lot.cb_no || "—")} · ART ${esc(meta.identity?.art_no || lot.art_no || "—")}</span></div><p class="rf-worker-rule">एक या multiple Colours select · हर Colour की सभी Sizes एक Worker</p><div class="rf-route-chart">${targets.map(t => `<button type="button" data-lot="${esc(lot.canonical_lot_id)}" data-dept="${esc(t.department_code)}" class="${route.indexOf(t.canonical) >= route.indexOf(requested) ? "rf-direct" : "rf-warning"}">${esc(t.department_name || t.canonical)}<small>${route.indexOf(t.canonical) >= route.indexOf(requested) ? "ASSIGN SELECTED COLOURS" : "⚠ WARNING ASSIGN"}</small></button>`).join("")}</div></article>`);
     }
-    host.innerHTML = cards.join("") || `<div class="msg">No OPEN RANDOM QUEUE lots available for ${esc(label)}.</div>`;
+    host.innerHTML = cards.join("") || `<div class="msg">No OPEN RANDOM QUEUE lots available for ${esc(label)}. Agar Universal page me lots dikh rahe hain to current department/last submitted mapping verify karein.</div>`;
     host.querySelectorAll("[data-lot][data-dept]").forEach(button => button.onclick = () => {
       const department = snap.departments.find(d => upper(d.department_code) === upper(button.dataset.dept));
       if (department) chooseTarget(button.dataset.lot, { ...department, canonical: canonical(department.department_code) });
@@ -189,12 +198,21 @@
     lockDepartment();
     enhanceRunningCards();
     clearTimeout(timer);
-    timer = setTimeout(async () => { await filterRunningCards(); await renderQueue(); }, 80);
+    timer = setTimeout(async () => {
+      try {
+        await filterRunningCards();
+        await renderQueue();
+      } catch (error) {
+        const host = document.getElementById("rfDepartmentQueue");
+        if (host) host.innerHTML = `<div class="msg">OPEN RANDOM QUEUE load failed: ${esc(error?.message || error)}</div>`;
+      }
+    }, 80);
   };
   new MutationObserver(mutations => {
     if (mutations.every(mutation => mutation.target.closest?.("#rfDepartmentQueue"))) return;
     sync();
   }).observe(document.body, { childList: true, subtree: true });
   sync();
-  console.info("REAL FACTORY V797.2 · CURRENT DEPARTMENT DIRECT ASSIGN · ONLY TRUE UPSTREAM WARNING");
+  setTimeout(sync, 1000);
+  console.info("REAL FACTORY V860 · UPM ALL DEPARTMENT QUEUE BRIDGE");
 })();

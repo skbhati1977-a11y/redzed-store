@@ -188,6 +188,46 @@ function renderBoard() {
   wireImages();
 }
 
+function exposeUPMBridge() {
+  window.RealFactoryUPM = {
+    snapshot() {
+      return {
+        lots: arr(state.lots),
+        departments: arr(state.departments),
+        selectedDepartment: $("homeDept")?.value || "",
+        currentLotId: state.lot?.canonical_lot_id || ""
+      };
+    },
+    async openLotAtDepartment(lotId, departmentCode) {
+      openLot(lotId);
+      let tries = 0;
+      const pick = () => {
+        const select = $("dept");
+        if (!select) return false;
+        const wanted = upper(departmentCode);
+        const option = [...select.options].find(item => upper(item.value) === wanted || upper(item.textContent) === wanted);
+        if (option) {
+          select.value = option.value;
+          select.dispatchEvent(new Event("change", { bubbles: true }));
+          return true;
+        }
+        return false;
+      };
+      if (pick()) return true;
+      await new Promise(resolve => {
+        const timer = setInterval(() => {
+          if (pick() || ++tries > 40) {
+            clearInterval(timer);
+            resolve();
+          }
+        }, 100);
+      });
+      return true;
+    },
+    refresh: load
+  };
+}
+
 function wireImages(scope = document) {
   scope.querySelectorAll("[data-lot-img]").forEach(button => button.onclick = event => {
     event.stopPropagation();
@@ -868,7 +908,7 @@ async function boot() {
     document.querySelectorAll("[data-link]").forEach(button => button.onclick = () => location.href = button.dataset.link);
     $("packingTab").onclick = () => setMessage("Existing Smart Packing remains unchanged.");
     $("costingTab").onclick = () => setMessage("Costing uses existing ledgers.");
-    $("reportsTab").onclick = () => location.href = "real-reports-ai-v857.html?v=859";
+    $("reportsTab").onclick = () => location.href = "real-reports-ai-v857.html?v=860";
     $("selectAllBtn").onclick = selectAllOpenColours;
     $("applyBulkWorkerBtn").onclick = applyBulkWorker;
     $("assignBtn").onclick = assignWork;
@@ -903,6 +943,7 @@ async function boot() {
       closeActionConfirmation(true);
     };
     bindGallery();
+    exposeUPMBridge();
     await load();
   } catch (error) {
     console.error(error);
