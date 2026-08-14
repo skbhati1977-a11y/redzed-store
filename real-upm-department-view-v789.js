@@ -258,5 +258,5 @@
   sync();
   setTimeout(sync, 1000);
   setMode("submit");
-  console.info("REAL FACTORY V876 · LEGACY DEPT ALIAS DUE FIX");
+  console.info("REAL FACTORY V878 · FRONTEND NORMALIZED DUE BACKEND");
 })();

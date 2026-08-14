@@ -239,7 +239,7 @@ async function assignDueContextInfo(lot, departmentCode) {
   try {
     let context = null;
     for (const code of departmentCandidates(departmentCode)) {
-      context = await rpc("rr_upm_universal_form_v741", {
+      context = await rpc("rr_upm_universal_form_normalized_v878", {
         p_canonical_lot_id: lot.canonical_lot_id,
         p_department_code: code
       });
@@ -270,7 +270,7 @@ async function submitDueContextInfo(lot, departmentCode) {
   try {
     let context = null;
     for (const code of departmentCandidates(departmentCode)) {
-      context = await rpc("rr_upm_universal_form_v741", {
+      context = await rpc("rr_upm_universal_form_normalized_v878", {
         p_canonical_lot_id: lot.canonical_lot_id,
         p_department_code: code
       });
@@ -324,11 +324,24 @@ function selectedDueRows() {
   });
 }
 
-function updateDueToolbarCounts(rows = null) {
+async function updateDueToolbarCounts(rows = null) {
   const department = $("homeDept")?.value || "";
-  const source = rows || state.lots;
-  const assignCount = department && state.dueFilter === "assign" ? source.length : (department ? state.lots.filter(lot => lotHasAssignDue(lot, department)).length : state.lots.length);
-  const submitCount = department && state.dueFilter === "submit" ? source.length : (department ? state.lots.filter(lot => lotHasSubmitDue(lot, department)).length : state.lots.length);
+  let assignCount = 0;
+  let submitCount = 0;
+  if (department) {
+    try {
+      const summary = await rpc("rr_upm_due_lot_summary_v878", { p_department_code: department });
+      assignCount = arr(summary).filter(row => num(row.assign_due_count) > 0).length;
+      submitCount = arr(summary).filter(row => num(row.submit_due_count) > 0).length;
+    } catch (error) {
+      const source = rows || state.lots;
+      assignCount = department && state.dueFilter === "assign" ? source.length : state.lots.filter(lot => lotHasAssignDue(lot, department)).length;
+      submitCount = department && state.dueFilter === "submit" ? source.length : state.lots.filter(lot => lotHasSubmitDue(lot, department)).length;
+    }
+  } else {
+    assignCount = state.lots.length;
+    submitCount = state.lots.length;
+  }
   $("rfUniversalAssignDueCount")?.replaceChildren(document.createTextNode(String(assignCount)));
   $("rfUniversalSubmitDueCount")?.replaceChildren(document.createTextNode(String(submitCount)));
 }
@@ -387,7 +400,7 @@ async function renderBoard() {
   } else {
     rows = selectedDueRows();
   }
-  updateDueToolbarCounts(rows);
+  await updateDueToolbarCounts(rows);
   $("board").innerHTML = rows.map(lotCard).join("") || '<div class="msg">No lots found.</div>';
   document.querySelectorAll("[data-open-lot]").forEach(button => button.onclick = event => {
     event.stopPropagation();
@@ -510,7 +523,7 @@ async function loadContext() {
   if (!state.lot || !$("dept").value) return;
   try {
     setFormMessage("Verified Single/Multi Cutting mapping and workflow balances loading…");
-    state.context = await rpc("rr_upm_universal_form_v741", {
+    state.context = await rpc("rr_upm_universal_form_normalized_v878", {
       p_canonical_lot_id: state.lot.canonical_lot_id,
       p_department_code: $("dept").value
     });
@@ -1154,7 +1167,7 @@ async function boot() {
     document.querySelectorAll("[data-link]").forEach(button => button.onclick = () => location.href = button.dataset.link);
     $("packingTab").onclick = () => setMessage("Existing Smart Packing remains unchanged.");
     $("costingTab").onclick = () => setMessage("Costing uses existing ledgers.");
-    $("reportsTab").onclick = () => location.href = "real-reports-ai-v857.html?v=876";
+    $("reportsTab").onclick = () => location.href = "real-reports-ai-v857.html?v=878";
     $("selectAllBtn").onclick = selectAllOpenColours;
     $("applyBulkWorkerBtn").onclick = applyBulkWorker;
     $("assignBtn").onclick = assignWork;
