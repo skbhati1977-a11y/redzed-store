@@ -904,6 +904,23 @@ async function boot() {
     };
     bindGallery();
     await load();
+    const routeParams = new URLSearchParams(location.search);
+    const requestedLot = routeParams.get("e2e");
+    const requestedDept = routeParams.get("dept");
+    if (requestedLot) {
+      const targetLot = state.lots.find(row => row.canonical_lot_id === requestedLot || row.lot_no === requestedLot);
+      if (targetLot) {
+        state.lot = targetLot;
+        if (requestedDept) {
+          const match = [...$("dept").options].find(option => String(option.value).toUpperCase() === String(requestedDept).toUpperCase())
+            || [...$("dept").options].find(option => String(option.textContent).toUpperCase().includes(String(requestedDept).toUpperCase()));
+          if (match) $("dept").value = match.value;
+        }
+        $("traveller").classList.remove("hidden");
+        renderIdentity();
+        await loadContext();
+      }
+    }
   } catch (error) {
     console.error(error);
     setMessage(errorText(error), "error");

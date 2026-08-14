@@ -158,7 +158,15 @@
       if (!ok) return;
     }
     try {
-      await window.RealFactoryUPM.openLotAtDepartment(lotId, target.department_code);
+      if (window.RealFactoryUPM?.openLotAtDepartment) {
+        await window.RealFactoryUPM.openLotAtDepartment(lotId, target.department_code);
+      } else {
+        const next = new URL("real-universal-production-v770.html", location.href);
+        next.searchParams.set("dept", target.department_code);
+        next.searchParams.set("label", target.department_name || target.department_code);
+        next.searchParams.set("e2e", lotId);
+        location.href = next.href;
+      }
       document.getElementById("selectAllBtn")?.scrollIntoFilter({ behavior: "smooth", block: "center" });
     } catch (error) { alert(error?.message || error); }
   }
@@ -258,5 +266,5 @@
   sync();
   setTimeout(sync, 1000);
   setMode("submit");
-  console.info("REAL FACTORY V887 · CUTTING DUPLICATE FAST SAVE GUARD");
+  console.info("REAL FACTORY V884 · CUTTING DUPLICATE FAST SAVE GUARD");
 })();
