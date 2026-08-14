@@ -1,10 +1,7 @@
-REDZED REAL/TEST Selection Fix V779.2.4
+Replace these two GitHub Pages files together:
+1. real-product-master-v720.html
+2. real-product-master-v720.js
 
-GitHub root me in 4 files ko upload karke existing files replace karein:
-1. real-attendance-salary-v778.html
-2. real-attendance-salary-v778.js
-3. real-pcs-rate-payroll-v779.html
-4. real-pcs-rate-payroll-v779.js
-
-config.js, real-common.js aur payroll-calc-v778.js ko replace na karein.
-Commit ke baad deployment complete hone dein aur Ctrl+Shift+R karein.
+This frontend uses rr_save_cb_decoration_assignment_v9042.
+Flow is Art -> Print/N.A. -> Sticker/N.A. -> Metal ID/N.A. -> final Save.
+Blank steps cannot continue. Deploy both files together and open with ?v=9042.
