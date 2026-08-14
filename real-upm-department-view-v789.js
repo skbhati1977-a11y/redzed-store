@@ -27,28 +27,44 @@
   const matchesCurrent = code => accepted.includes(upper(code)) || canonical(code) === requested;
   const client = () => window.supabaseClient || window.supabaseDb || window.redzedSupabase || window.sb || null;
 
-  async function statusFor(lotId) {
+  async function statusFor(lot) {
+    const lotId = typeof lot === "string" ? lot : lot?.canonical_lot_id;
+    const fallback = typeof lot === "object" ? (lot.__boardMeta || {}) : {};
     const old = cache.get(lotId);
     if (old && Date.now() - old.at < 2500) return old.data;
     const sb = client();
-    if (!sb) throw new Error("Production client unavailable.");
+    if (!sb) return fallback;
     const { data, error } = await sb.rpc("rr_upm_board_lot_status_v743", { p_canonical_lot_id: lotId });
-    if (error) throw error;
+    if (error) {
+      console.warn("Queue live status fallback", lotId, error);
+      cache.set(lotId, { data: fallback, at: Date.now() });
+      return fallback;
+    }
     cache.set(lotId, { data: data || {}, at: Date.now() });
     return data || {};
   }
 
-  async function lastSubmittedDepartment(lotId) {
+  async function lastSubmittedDepartment(lot) {
+    const lotId = typeof lot === "string" ? lot : lot?.canonical_lot_id;
+    const fallbackStatuses = (typeof lot === "object" ? lot.__boardMeta?.department_statuses : []) || [];
+    const fallbackLast = fallbackStatuses
+      .filter(row => row.submitted_at || row.last_submitted_at || row.status === "SUBMITTED")
+      .sort((a, b) => String(b.submitted_at || b.last_submitted_at || "").localeCompare(String(a.submitted_at || a.last_submitted_at || "")))[0];
     const old = lastSubmitCache.get(lotId);
     if (old && Date.now() - old.at < 2500) return old.code;
     const sb = client();
-    if (!sb) throw new Error("Production client unavailable.");
+    if (!sb) return canonical(fallbackLast?.department_code || "");
     const { data, error } = await sb.from("rr_upm_dynamic_submit_history_v741")
       .select("department_code,submitted_at")
       .eq("canonical_lot_id", lotId)
       .order("submitted_at", { ascending: false })
       .limit(1);
-    if (error) throw error;
+    if (error) {
+      console.warn("Queue last-submitted fallback", lotId, error);
+      const code = canonical(fallbackLast?.department_code || "");
+      lastSubmitCache.set(lotId, { code, at: Date.now() });
+      return code;
+    }
     const code = canonical(data?.[0]?.department_code || "");
     lastSubmitCache.set(lotId, { code, at: Date.now() });
     return code;
@@ -159,12 +175,12 @@
     }
     const cards = [];
     for (const lot of snap.lots) {
-      const meta = await statusFor(lot.canonical_lot_id);
+      const meta = await statusFor(lot);
       const statuses = meta.department_statuses || [];
       const active = new Set(statuses.flatMap(s => [...(s.assigned_codes || []), ...(s.running_codes || [])]));
       const total = Math.max(0, ...statuses.map(s => Number(s.total_colours || 0)), Array.isArray(lot.colours) ? lot.colours.length : 0);
       if (total > 0 && active.size >= total) continue;
-      const lastSubmitted = await lastSubmittedDepartment(lot.canonical_lot_id);
+      const lastSubmitted = await lastSubmittedDepartment(lot);
       const targets = eligibleTargets(snap.departments, meta.identity || {}, lastSubmitted);
       if (!targets.length) continue;
       cards.push(`<article class="rf-queue-card"><div><b>${esc(lot.lot_no)}</b><span>CB ${esc(meta.identity?.cb_no || lot.cb_no || "—")} · ART ${esc(meta.identity?.art_no || lot.art_no || "—")}</span></div><p class="rf-worker-rule">एक या multiple Colours select · हर Colour की सभी Sizes एक Worker</p><div class="rf-route-chart">${targets.map(t => `<button type="button" data-lot="${esc(lot.canonical_lot_id)}" data-dept="${esc(t.department_code)}" class="${route.indexOf(t.canonical) >= route.indexOf(requested) ? "rf-direct" : "rf-warning"}">${esc(t.department_name || t.canonical)}<small>${route.indexOf(t.canonical) >= route.indexOf(requested) ? "ASSIGN SELECTED COLOURS" : "⚠ WARNING ASSIGN"}</small></button>`).join("")}</div></article>`);
@@ -214,5 +230,5 @@
   }).observe(document.body, { childList: true, subtree: true });
   sync();
   setTimeout(sync, 1000);
-  console.info("REAL FACTORY V860 · UPM ALL DEPARTMENT QUEUE BRIDGE");
+  console.info("REAL FACTORY V861 · UPM ALL DEPARTMENT QUEUE BRIDGE");
 })();

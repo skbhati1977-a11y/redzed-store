@@ -192,7 +192,7 @@ function exposeUPMBridge() {
   window.RealFactoryUPM = {
     snapshot() {
       return {
-        lots: arr(state.lots),
+        lots: arr(state.lots).map(lot => ({ ...lot, __boardMeta: boardMeta(lot) || {} })),
         departments: arr(state.departments),
         selectedDepartment: $("homeDept")?.value || "",
         currentLotId: state.lot?.canonical_lot_id || ""
@@ -908,7 +908,7 @@ async function boot() {
     document.querySelectorAll("[data-link]").forEach(button => button.onclick = () => location.href = button.dataset.link);
     $("packingTab").onclick = () => setMessage("Existing Smart Packing remains unchanged.");
     $("costingTab").onclick = () => setMessage("Costing uses existing ledgers.");
-    $("reportsTab").onclick = () => location.href = "real-reports-ai-v857.html?v=860";
+    $("reportsTab").onclick = () => location.href = "real-reports-ai-v857.html?v=861";
     $("selectAllBtn").onclick = selectAllOpenColours;
     $("applyBulkWorkerBtn").onclick = applyBulkWorker;
     $("assignBtn").onclick = assignWork;
