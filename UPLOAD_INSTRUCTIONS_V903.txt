@@ -1,0 +1,28 @@
+REAL FACTORY V903 FRONTEND IDENTIFIER FIX
+
+First blocker found in the V884 frontend package:
+JavaScript identifiers contained spaces (for example window.REAL FACTORY_*),
+which caused browser parse errors and stopped the frontend from loading.
+
+Replace only these 12 files in the current GitHub frontend, then redeploy:
+
+real-attendance-salary-v778.js
+real-common.js
+real-cutting-master-pm.V719.3.js
+real-mobile-compat-v774.js
+real-monthly-payroll-v779.js
+real-product-master-v720.js
+real-role-permission-v777-4-final.js
+real-table-freeze-v773.js
+real-universal-production-v765-independent-alter.js
+real-universal-production-v769-worker-claim-warning-fix.js
+redzed-cutting-cb-actions-v72035.js
+redzed-product-cb-ledger-v72035.js
+
+Validation completed:
+- node --check passed for every JavaScript file in the full V884 package after this fix.
+- Only the 12 files listed above differ from V884.
+- No backend or business-flow changes are included.
+
+After deployment, rerun the frontend test. Backend flow testing remains stopped
+until this first frontend blocker is cleared in the deployed build.

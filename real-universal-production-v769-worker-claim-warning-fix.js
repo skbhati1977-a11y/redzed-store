@@ -451,7 +451,7 @@
         const text = error?.message || String(error);
         setGateNote(panel, text, "error");
         alert(
-          `${text}\n\nV769 SQL install न होने पर REAL FACTORY_V769_WORKER_CLAIM_WARNING_GATE.sql Run करें.`
+          `${text}\n\nV769 SQL install न होने पर REAL_FACTORY_V769_WORKER_CLAIM_WARNING_GATE.sql Run करें.`
         );
       })
       .finally(() => {
