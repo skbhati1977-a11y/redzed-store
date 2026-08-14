@@ -3520,7 +3520,6 @@ async function createLot(event = {}) {
 
     if (valid.lotMode === "multi") {
       const payload = multiRpcPayload(valid);
-      const hasMatching = valid.lots.some(row => Boolean(row.matching_item_id));
       if (matchingReservations.length) {
         payload.p_lots.forEach(row => {
           const matchingCost = Number(row.matching_total_cost || 0);
@@ -3538,31 +3537,11 @@ async function createLot(event = {}) {
           }
         });
       }
-      if (hasMatching) {
-        result = await withTimeout(
-          client.rpc("rr_release_multi_lots_v4", payload),
-          25000,
-          "Multi Lot release"
-        );
-      } else {
-        result = await withTimeout(
-          client.rpc("rr_release_multi_lots_v3", payload),
-          25000,
-          "Multi Lot release"
-        );
-      }
-
-      if (result.error && isMissingRpcError(result.error) && !hasMatching) {
-        console.warn(
-          "rr_release_multi_lots_v4 unavailable; using V3 only because no Matching Cloth is selected.",
-          result.error
-        );
-        result = await withTimeout(
-          client.rpc("rr_release_multi_lots_v3", payload),
-          25000,
-          "Multi Lot release fallback"
-        );
-      }
+      result = await withTimeout(
+        client.rpc("rr_release_multi_lots_v3", payload),
+        25000,
+        "Multi Lot release"
+      );
     } else {
       const payload = singleRpcPayload(valid);
       if (matchingReservations.length) {
@@ -3571,7 +3550,7 @@ async function createLot(event = {}) {
       }
       result = await withTimeout(
         client.rpc(
-          matchingReservations.length ? "rr_release_single_lot_v4" : "rr_release_single_lot_v3",
+          "rr_release_single_lot_v3",
           payload
         ),
         25000,
@@ -4032,7 +4011,7 @@ loadMatchingLotSource(client)
   refreshMatchingStockControls();
   renderGallery();
 
-  console.info("REAL FACTORY Cutting Master PM Core V895 loaded", {
+  console.info("REAL FACTORY Cutting Master PM Core V896 loaded", {
     galleryRows: galleryRows.length,
     purchaseRows: purchaseRows.length,
     matchingPurchaseRows: matchingPurchaseRows.length,
