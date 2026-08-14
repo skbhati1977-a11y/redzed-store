@@ -1,0 +1,20 @@
+REAL FACTORY V903.2 PRODUCT MASTER DEPLOY FIX
+
+The V903.1 JavaScript fix is present on GitHub, but the deployed HTML still
+loaded the old cached script URL (?v=884 / ?v=887). The browser therefore kept
+running the old submit wiring.
+
+Replace both matching files:
+
+real-product-master-v720.html
+real-product-master-v720.js
+
+The HTML now loads:
+real-product-master-v720.js?v=9031
+
+This forces the deployed page to execute the corrected Create CB submit wiring.
+No backend, schema, vendor/fabric accounting rule, or business rule changed.
+
+Verified mapping from live Product Master ledger:
+Vendor, Fabric, Bill, Roll/Colour/D, D allocation, Current Qty, Current Value,
+and Status remain linked in the permanent CB purchase ledger.
