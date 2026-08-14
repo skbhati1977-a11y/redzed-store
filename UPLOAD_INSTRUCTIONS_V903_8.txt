@@ -1,0 +1,21 @@
+REAL FACTORY V903.8 — Cutting no-print release compatibility fix
+
+Replace these three files in the GitHub Pages root:
+1. real-cutting-master.html
+2. real-cutting-master-pm.V719.3.js
+3. redzed-cutting-cb-actions-v72035.js
+
+Deploy all three together. The HTML loads the scripts with ?v=9038.
+
+Live E2E evidence:
+- V903.7 duplicate hidden-lot alias fix: PASS.
+- Cutting rate ₹2.50: PASS.
+- Current no-print flow reaches rr_release_single_lot_v4, then backend returns “Sticker Bharna Zaroori — Code: P0001”.
+- The frontend’s intended next stage for No Print is “OPEN FOR STICKER / KR / OV ASSIGNMENT”, so V4 is inconsistent with the current flow.
+
+Fix:
+- Only when No Print is selected and V4 returns the sticker-required error, try the existing rr_release_single_lot_v3 compatibility RPC.
+- All other errors remain unchanged.
+- V7 hidden legacy lot alias fix is included.
+
+No schema, trigger, accounting, damage, GR, or REAL-data logic changed.
