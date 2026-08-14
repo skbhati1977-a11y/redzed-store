@@ -8,17 +8,6 @@ const num = value => Number(value || 0);
 const upper = value => String(value || "").trim().toUpperCase();
 const rowKey = row => String(row.colour_id || row.colour_code || "");
 const requestId = () => globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`;
-const UPM_ALIASES = {
-  CUTTING: ["CUTTING", "CUT"], PRINTING: ["PRINTING", "PRINT"],
-  STICKER: ["STICKER", "STICKER_WORK"], ID: ["ID", "ID_WORK", "IDENTITY", "METAL_ID", "METAL ID"],
-  KR: ["STITCHING", "KARIGAR", "KR"], OVERLOCK: ["OVERLOCK", "OV"],
-  FOLDING: ["FOLDING", "FLD", "FLATLOCK"], KAAJ_BUTTON: ["KAAJ_BUTTON", "KAAJ", "KAJ", "BUTTON", "BTN"],
-  TEAK_TANKI: ["TEAK_TANKI", "TEAK", "TACK", "TANKI"], THREAD_CUT: ["THREAD_CUT", "THREAD_CUTTING", "TH_CUT"],
-  QC: ["QC", "CHECKING", "QUALITY_CHECK"], PRESS: ["PRESS", "FINISHING"],
-  PACKING: ["PACKING", "PACK"], DESPATCH: ["DESPATCH", "DISPATCH"]
-};
-const UPM_ROUTE = ["CUTTING", "PRINTING", "STICKER", "ID", "KR", "OVERLOCK", "FOLDING", "KAAJ_BUTTON", "TEAK_TANKI", "THREAD_CUT", "QC", "PRESS", "PACKING", "DESPATCH"];
-const canonicalDept = code => UPM_ROUTE.find(key => (UPM_ALIASES[key] || [key]).includes(upper(code))) || upper(code);
 
 const state = {
   sb: null,
@@ -31,7 +20,7 @@ const state = {
   imageIndex: 0,
   scale: 1,
   startX: 0,
-  busy: false, pendingSubmitRows: null, cameraStream: null, cameraBlobs: [], mapping: null, boardMeta: new Map(), confirmResolve: null, dueFilter: "submit"
+  busy: false, pendingSubmitRows: null, cameraStream: null, cameraBlobs: [], mapping: null, boardMeta: new Map(), confirmResolve: null
 };
 
 function errorText(error) {
@@ -159,98 +148,6 @@ function lotMatchesDepartment(lot, departmentCode) {
   return arr(lot.colours).some(colour => upper(colour.current_department_code) === upper(departmentCode));
 }
 
-function statusMatchesDepartment(row, departmentCode) {
-  if (!departmentCode) return true;
-  const wanted = canonicalDept(departmentCode);
-  return canonicalDept(row?.department_code || row?.department_name) === wanted;
-}
-
-function lotHasSubmitDue(lot, departmentCode) {
-  const statuses = arr(boardMeta(lot)?.department_statuses);
-  if (!statuses.length) return lotMatchesDepartment(lot, departmentCode);
-  return statuses.some(row => statusMatchesDepartment(row, departmentCode)
-    && (arr(row.assigned_codes).length || arr(row.running_codes).length));
-}
-
-function specialChoice(identity) {
-  const text = upper([identity?.work_type, identity?.print_work_type, identity?.decoration_type, identity?.selected_department_code, identity?.print_department_code].filter(Boolean).join(" "));
-  if (text.includes("STICKER")) return "STICKER";
-  if (/\bID\b|IDENTITY|METAL/.test(text)) return "ID";
-  if (text.includes("PRINT")) return "PRINTING";
-  return "";
-}
-
-function lotAssignDueTargets(lot, departmentCode) {
-  const selected = canonicalDept(departmentCode);
-  if (!selected) return [];
-  const meta = boardMeta(lot) || {};
-  const statuses = arr(meta.department_statuses);
-  const special = specialChoice(meta.identity || {});
-  const selectedStatus = statuses.find(row => canonicalDept(row.department_code || row.department_name) === selected);
-  if (selected !== "CUTTING" && statuses.length && !selectedStatus) return [];
-  if (selectedStatus) {
-    const openCodes = assignDueOpenCodes(lot, departmentCode);
-    if (!openCodes.length) return [];
-  }
-  return arr(state.departments)
-    .map(department => ({ ...department, canonical: canonicalDept(department.department_code) }))
-    .filter(department => {
-      if (department.is_active === false || upper(department.department_type || "PRODUCTION") !== "PRODUCTION") return false;
-      if (!UPM_ROUTE.includes(department.canonical) || department.canonical === "CUTTING") return false;
-      if (selected === "CUTTING") {
-        const cuttingTargets = special ? [special] : ["PRINTING", "STICKER", "ID"];
-        return cuttingTargets.includes(department.canonical);
-      }
-      return department.canonical === selected;
-    });
-}
-
-function lotHasAssignDue(lot, departmentCode) {
-  return lotAssignDueTargets(lot, departmentCode).length > 0;
-}
-
-function assignDueOpenCodes(lot, departmentCode) {
-  const selected = canonicalDept(departmentCode);
-  const meta = boardMeta(lot) || {};
-  const statuses = arr(meta.department_statuses);
-  const selectedStatus = statuses.find(row => canonicalDept(row.department_code || row.department_name) === selected);
-  const explicitOpen = [
-    ...arr(selectedStatus?.open_codes),
-    ...arr(selectedStatus?.assignable_codes),
-    ...arr(selectedStatus?.pending_codes)
-  ].map(upper).filter(Boolean);
-  if (explicitOpen.length) return [...new Set(explicitOpen)];
-  const baseCodes = arr(lot.colours).map(row => upper(row.colour_code || row.colour_id || row.colour_name)).filter(Boolean);
-  const total = Number(selectedStatus?.total_colours || selectedStatus?.total_codes || selectedStatus?.colour_count || baseCodes.length || 0);
-  const closed = new Set([
-    ...arr(selectedStatus?.assigned_codes), ...arr(selectedStatus?.running_codes),
-    ...arr(selectedStatus?.submitted_codes), ...arr(selectedStatus?.completed_codes),
-    ...arr(selectedStatus?.done_codes), ...arr(selectedStatus?.locked_codes)
-  ].map(upper).filter(Boolean));
-  if (baseCodes.length) return baseCodes.filter(code => !closed.has(code));
-  if (total > 0 && closed.size < total) return [`${total - closed.size} COLOUR PENDING`];
-  return [];
-}
-
-function selectedDueRows() {
-  const query = $("search").value.toLowerCase().trim();
-  const department = $("homeDept").value;
-  return state.lots.filter(lot => {
-    const text = `${lot.lot_no} ${cbNo(lot)} ${lot.art_no || ""} ${lot.item_name || ""}`.toLowerCase();
-    if (query && !text.includes(query)) return false;
-    if (!department) return true;
-    return state.dueFilter === "assign" ? lotHasAssignDue(lot, department) : lotHasSubmitDue(lot, department);
-  });
-}
-
-function updateDueToolbarCounts() {
-  const department = $("homeDept")?.value || "";
-  const assignCount = department ? state.lots.filter(lot => lotHasAssignDue(lot, department)).length : state.lots.length;
-  const submitCount = department ? state.lots.filter(lot => lotHasSubmitDue(lot, department)).length : state.lots.length;
-  $("rfUniversalAssignDueCount")?.replaceChildren(document.createTextNode(String(assignCount)));
-  $("rfUniversalSubmitDueCount")?.replaceChildren(document.createTextNode(String(submitCount)));
-}
-
 function boardStatusRows(lot) {
   const rows = arr(boardMeta(lot)?.department_statuses);
   if (!rows.length) return '<div class="lot-live-status base"><b>OPEN QUEUE</b><span>Colour assignment available</span></div>';
@@ -264,100 +161,31 @@ function lotCard(lot) {
   const meta = boardMeta(lot);
   const identity = meta?.identity || {};
   const artNo = validMappedValue(identity.art_no) ? identity.art_no : (lot.art_no || "—");
-  const department = $("homeDept")?.value || "";
-  const assignTargets = state.dueFilter === "assign" && department ? lotAssignDueTargets(lot, department) : [];
-  const openAssignCodes = state.dueFilter === "assign" && department ? assignDueOpenCodes(lot, department) : [];
-  const assignNote = state.dueFilter === "assign" && openAssignCodes.length
-    ? `<div class="rf-assign-open-codes">Assignable colours: ${esc(openAssignCodes.join(", "))}</div>`
-    : "";
-  const actionHtml = state.dueFilter === "assign" && assignTargets.length
-    ? `<div class="rf-universal-assign-actions">${assignTargets.map(target => `<button class="primary" data-assign-lot="${esc(lot.canonical_lot_id)}" data-assign-dept="${esc(target.department_code)}" type="button">ASSIGN DUE · ${esc(target.department_name || target.department_code)}</button>`).join("")}</div>`
-    : `<button class="primary checkin" data-open-lot="${esc(lot.canonical_lot_id)}" type="button">${state.dueFilter === "submit" ? "SUBMIT DUE" : "CHECK IN"}</button>`;
   return `<article class="lot-card" data-lot="${esc(lot.canonical_lot_id)}">
     <div class="lot-head">
       <div><div class="lot-no">${esc(lot.lot_no)}</div><div class="cb-no">CB NO · ${esc(cbNo(lot))}</div><div class="art-no">ART ${esc(artNo)}</div></div>
       <div style="text-align:right"><small class="muted">TOTAL CUT</small><div class="cut">${num(lot.total_qty)} PCS</div></div>
     </div>
     <div class="lot-live-list">${boardStatusRows(lot)}</div>
-    ${assignNote}
     <div class="thumbs">${thumbnails(lot, 5)}</div>
-    ${actionHtml}
+    <button class="primary checkin" data-open-lot="${esc(lot.canonical_lot_id)}" type="button">CHECK IN</button>
   </article>`;
 }
 
 function renderBoard() {
-  const rows = selectedDueRows();
-  updateDueToolbarCounts();
+  const query = $("search").value.toLowerCase().trim();
+  const department = $("homeDept").value;
+  const rows = state.lots.filter(lot => {
+    const text = `${lot.lot_no} ${cbNo(lot)} ${lot.art_no || ""} ${lot.item_name || ""}`.toLowerCase();
+    return (!query || text.includes(query)) && lotMatchesDepartment(lot, department);
+  });
   $("board").innerHTML = rows.map(lotCard).join("") || '<div class="msg">No lots found.</div>';
   document.querySelectorAll("[data-open-lot]").forEach(button => button.onclick = event => {
     event.stopPropagation();
     openLot(button.dataset.openLot);
   });
-  document.querySelectorAll("[data-assign-lot][data-assign-dept]").forEach(button => button.onclick = async event => {
-    event.stopPropagation();
-    await window.RealFactoryUPM?.openLotAtDepartment?.(button.dataset.assignLot, button.dataset.assignDept);
-  });
   document.querySelectorAll(".lot-card").forEach(card => card.onclick = () => openLot(card.dataset.lot));
   wireImages();
-}
-
-function attachUniversalDueToolbar() {
-  if ($("rfUniversalDueToolbar")) return;
-  const board = $("board");
-  const toolbar = document.createElement("section");
-  toolbar.id = "rfUniversalDueToolbar";
-  toolbar.innerHTML = `<button type="button" data-due-filter="submit" class="active">SUBMIT DUE <b id="rfUniversalSubmitDueCount">0</b></button><button type="button" data-due-filter="assign">ASSIGN DUE <b id="rfUniversalAssignDueCount">0</b></button>`;
-  board?.insertAdjacentElement("beforebegin", toolbar);
-  toolbar.querySelectorAll("[data-due-filter]").forEach(button => {
-    button.onclick = () => {
-      state.dueFilter = button.dataset.dueFilter === "assign" ? "assign" : "submit";
-      toolbar.querySelectorAll("[data-due-filter]").forEach(item => item.classList.toggle("active", item === button));
-      renderBoard();
-    };
-  });
-  const style = document.createElement("style");
-  style.textContent = `#rfUniversalDueToolbar{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 16px}#rfUniversalDueToolbar button{min-height:48px;border:1px solid #303641;background:#202635;color:#fff;border-radius:10px;font-weight:950}#rfUniversalDueToolbar button.active{background:#d43d5e;border-color:#ff6b8a}#rfUniversalDueToolbar b{margin-left:6px;color:#2bf6a2}.rf-assign-open-codes{margin:8px 0;color:#2bf6a2;font-size:12px;font-weight:900}.rf-universal-assign-actions{display:grid;gap:8px;margin-top:auto}.rf-universal-assign-actions button{width:100%;min-height:46px;background:#174936;border-color:#318b65}@media(max-width:520px){#rfUniversalDueToolbar{grid-template-columns:1fr}}`;
-  document.head.append(style);
-}
-
-function exposeUPMBridge() {
-  window.RealFactoryUPM = {
-    snapshot() {
-      return {
-        lots: arr(state.lots).map(lot => ({ ...lot, __boardMeta: boardMeta(lot) || {} })),
-        departments: arr(state.departments),
-        selectedDepartment: $("homeDept")?.value || "",
-        currentLotId: state.lot?.canonical_lot_id || ""
-      };
-    },
-    async openLotAtDepartment(lotId, departmentCode) {
-      openLot(lotId);
-      let tries = 0;
-      const pick = () => {
-        const select = $("dept");
-        if (!select) return false;
-        const wanted = upper(departmentCode);
-        const option = [...select.options].find(item => upper(item.value) === wanted || upper(item.textContent) === wanted);
-        if (option) {
-          select.value = option.value;
-          select.dispatchEvent(new Event("change", { bubbles: true }));
-          return true;
-        }
-        return false;
-      };
-      if (pick()) return true;
-      await new Promise(resolve => {
-        const timer = setInterval(() => {
-          if (pick() || ++tries > 40) {
-            clearInterval(timer);
-            resolve();
-          }
-        }, 100);
-      });
-      return true;
-    },
-    refresh: load
-  };
 }
 
 function wireImages(scope = document) {
@@ -417,7 +245,7 @@ async function loadContext() {
     $("actualRate").value = state.context.actual_rate ?? 0;
     $("standardRate").value = state.context.standard_rate ?? "";
     $("ownerMargin").value = state.context.owner_margin ?? "";
-    const showOwner = Boolean(state.context.can_filter_standard);
+    const showOwner = Boolean(state.context.can_view_standard);
     $("stdWrap").classList.toggle("hidden", !showOwner);
     $("marginWrap").classList.toggle("hidden", !showOwner);
     fillBulkWorker();
@@ -427,7 +255,7 @@ async function loadContext() {
     const runningCount=arr(state.context.rows).filter(r=>r.is_locked).reduce((m,r)=>m.add(upper(r.colour_code)),new Set()).size;
     $("routeNote").textContent = runningCount
       ? `Current Owner: ${upper($("dept").value)} · ${runningCount} Colour running · Submit के बाद फिर Random Open Queue.`
-      : `ASSIGN DUE · First Assignment Wins · ${openCount} Colour इस Department में claim किए जा सकते हैं.`;
+      : `OPEN RANDOM QUEUE · First Assignment Wins · ${openCount} Colour इस Department में claim किए जा सकते हैं.`;
     renderColours();
     const source = arr(state.context.rows)[0]?.source_type || "NO SOURCE";
     setFormMessage(`${state.context.department_code} · ${source} Cutting source · Full-colour assignment · Transaction-safe work actions.`, "success");
@@ -460,12 +288,7 @@ function filterDepartmentDropdown(){
   const statuses=arr(state.context?.department_statuses);
   if(!statuses.length)return false;
   const icon={BASE:"",ORANGE:"🟧 ",GREEN:"🟩 ",RED:"🟥 "};
-  const filtered = statuses.filter(d => {
-    const label = upper([d.status_colour, d.status, d.display_label, d.board_detail].join(" "));
-    if (label.includes("GREEN") || label.includes("COMPLETED") || label.includes("SUBMITTED") || label.includes("DONE")) return false;
-    return true;
-  });
-  select.innerHTML=(filtered.length ? filtered : statuses).map(d=>{
+  select.innerHTML=statuses.map(d=>{
     const code=upper(d.department_code);
     const status=upper(d.status_colour||"BASE");
     const cls=`dept-${status.toLowerCase()}`;
@@ -854,10 +677,10 @@ async function submitSelectedColours(){
     p_canonical_lot_id:state.lot.canonical_lot_id,
     p_department_code:$("dept").value,
     p_rows:rows,
-    p_remarks:`Universal Lot Form Dynamic Colour Submit · Next filter ${nextDepartment}`
+    p_remarks:`Universal Lot Form Dynamic Colour Submit · Next view ${nextDepartment}`
   }));
   if(result){
-    setFormMessage(`${result.colours_submitted||0} Colour(s) submitted · ${num(result.qty_submitted)} PCS · ${nextDepartment} filter खोला गया.`,"success");
+    setFormMessage(`${result.colours_submitted||0} Colour(s) submitted · ${num(result.qty_submitted)} PCS · ${nextDepartment} view खोला गया.`,"success");
     $("dept").value=nextDepartment;
     await loadContext();
   }
@@ -983,7 +806,7 @@ function openAlterEvidenceModal() {
   state.cameraBlobs=[];
   $("alterEvidenceFiles").value = "";
   $("physicalEvidenceSubmitted").checked = false;
-  $("alterEvidencePrefilter").innerHTML = "";
+  $("alterEvidencePreview").innerHTML = "";
   $("alterEvidenceMsg").textContent = "";
   $("alterEvidenceModal").classList.remove("hidden");
 }
@@ -1045,7 +868,7 @@ async function boot() {
     document.querySelectorAll("[data-link]").forEach(button => button.onclick = () => location.href = button.dataset.link);
     $("packingTab").onclick = () => setMessage("Existing Smart Packing remains unchanged.");
     $("costingTab").onclick = () => setMessage("Costing uses existing ledgers.");
-    $("reportsTab").onclick = () => location.href = "real-reports-ai-v857.html?v=887";
+    $("reportsTab").onclick = () => location.href = "real-reports-ai-v857.html?v=857";
     $("selectAllBtn").onclick = selectAllOpenColours;
     $("applyBulkWorkerBtn").onclick = applyBulkWorker;
     $("assignBtn").onclick = assignWork;
@@ -1061,7 +884,7 @@ async function boot() {
     $("debugBtn").onclick = runDebug;
     $("closeAlterEvidence").onclick = () => $("alterEvidenceModal").classList.add("hidden");
     $("saveAlterEvidence").onclick = async () => { try { await saveAlterEvidence(); } catch (error) { $("alterEvidenceMsg").textContent = errorText(error); } };
-    $("alterEvidenceFiles").onchange = () => { const files=[...($("alterEvidenceFiles").files||[])].slice(0,3); $("alterEvidencePrefilter").innerHTML=files.map(file=>`<span class="badge">${esc(file.name)}</span>`).join(""); };
+    $("alterEvidenceFiles").onchange = () => { const files=[...($("alterEvidenceFiles").files||[])].slice(0,3); $("alterEvidencePreview").innerHTML=files.map(file=>`<span class="badge">${esc(file.name)}</span>`).join(""); };
     $("changeLmBtn").onclick=()=>{const c=lmCandidates(),cur=state.mapping?.line_man_enrolment;$("newLmSelect").innerHTML=c.filter(x=>String(x.worker_id)!==String(cur?.person_id||"")).map(x=>`<option value="${esc(x.worker_id)}">${esc(x.worker_name)} · ${esc(x.worker_code||"")}</option>`).join("");$("lmModal").classList.remove("hidden")};
     $("closeLmModal").onclick=()=>$("lmModal").classList.add("hidden");
     $("saveLmTransfer").onclick=async()=>{try{await rpc("rr_upm_transfer_lm_v740",{p_canonical_lot_id:state.lot.canonical_lot_id,p_department_code:$("dept").value,p_new_line_man_id:$("newLmSelect").value,p_mode:$("lmTransferMode").value,p_reason:$("lmTransferReason").value,p_physical_handover:$("lmPhysicalHandover").checked});$("lmModal").classList.add("hidden");await loadContext();}catch(e){$("lmModalMsg").textContent=errorText(e)}};
@@ -1069,7 +892,7 @@ async function boot() {
     $("ownerApprovalBtn").onclick=async()=>{const {data,error}=await state.sb.from("rr_upm_untraceable_request_v740").select("*").eq("status","OWNER_PENDING").order("created_at",{ascending:false});if(error){setFormMessage(errorText(error),"error");return;}$("approvalList").innerHTML=arr(data).map(r=>`<div class="box"><b>${esc(r.lot_no)} · ${num(r.total_qty)} PCS</b><p>${esc(r.manager_name)}: ${esc(r.manager_remark)}</p><button data-decide="APPROVE" data-id="${r.id}">APPROVE COMPANY LOSS</button><button data-decide="DENY" data-id="${r.id}">DENY · MANAGER DEBIT</button><button data-decide="RECHECK" data-id="${r.id}">RETURN RECHECK</button></div>`).join("")||"No pending approvals.";$("approvalModal").classList.remove("hidden");$("approvalList").querySelectorAll("[data-decide]").forEach(b=>b.onclick=async()=>{const remark=prompt("Owner remark")||"";await rpc("rr_upm_decide_untraceable_v740",{p_request_id:b.dataset.id,p_decision:b.dataset.decide,p_owner_remark:remark});b.closest(".box").remove();await loadContext();});};
     $("closeApprovalModal").onclick=()=>$("approvalModal").classList.add("hidden");
     $("startCamera").onclick=async()=>{try{state.cameraStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:"environment"}},audio:false});$("liveCamera").srcObject=state.cameraStream;$("liveCamera").classList.remove("hidden");$("captureCamera").disabled=false;$("stopCamera").disabled=false;}catch(e){$("alterEvidenceMsg").textContent="Live camera unavailable: "+errorText(e)}};
-    $("captureCamera").onclick=()=>{if(state.cameraBlobs.length>=3){$("alterEvidenceMsg").textContent="Maximum 3 photos.";return;}const v=$("liveCamera"),c=$("cameraCanvas");c.width=v.videoWidth;c.height=v.videoHeight;c.getContext("2d").drawImage(v,0,0);c.toBlob(blob=>{blob.name=`alter-${Date.now()}.jpg`;state.cameraBlobs.push(blob);const url=URL.createObjectURL(blob);$("alterEvidencePrefilter").insertAdjacentHTML("beforeend",`<img src="${url}" class="thumb" alt="Evidence">`);},"image/jpeg",.85)};
+    $("captureCamera").onclick=()=>{if(state.cameraBlobs.length>=3){$("alterEvidenceMsg").textContent="Maximum 3 photos.";return;}const v=$("liveCamera"),c=$("cameraCanvas");c.width=v.videoWidth;c.height=v.videoHeight;c.getContext("2d").drawImage(v,0,0);c.toBlob(blob=>{blob.name=`alter-${Date.now()}.jpg`;state.cameraBlobs.push(blob);const url=URL.createObjectURL(blob);$("alterEvidencePreview").insertAdjacentHTML("beforeend",`<img src="${url}" class="thumb" alt="Evidence">`);},"image/jpeg",.85)};
     $("stopCamera").onclick=()=>{state.cameraStream?.getTracks().forEach(t=>t.stop());state.cameraStream=null;$("liveCamera").classList.add("hidden");$("captureCamera").disabled=true;$("stopCamera").disabled=true;};
     $("actionConfirmCancel").onclick = () => closeActionConfirmation(false);
     $("actionConfirmYes").onclick = () => {
@@ -1080,8 +903,6 @@ async function boot() {
       closeActionConfirmation(true);
     };
     bindGallery();
-    attachUniversalDueToolbar();
-    exposeUPMBridge();
     await load();
   } catch (error) {
     console.error(error);
@@ -1089,7 +910,26 @@ async function boot() {
   }
 }
 
-console.info("REAL FACTORY UPM V744_ACTION_CONFIRM_EASY");
+// V9059 bridge: Open Random Queue requires a public engine surface.
+// Keep the existing engine state as the single source; do not duplicate it.
+window.RealFactoryUPM = {
+  snapshot: () => ({ lots: state.lots || [], departments: state.departments || [] }),
+  refresh: () => load(),
+  openLotAtDepartment: async (lotId, departmentCode) => {
+    state.lot = (state.lots || []).find(row => row.canonical_lot_id === lotId);
+    if (!state.lot) throw new Error("Lot not found in TEST board.");
+    const dept = String(departmentCode || "").toUpperCase();
+    const options = [...$("dept").options];
+    const match = options.find(option => String(option.value).toUpperCase() === dept)
+      || options.find(option => String(option.textContent).toUpperCase().includes(dept));
+    if (match) $("dept").value = match.value;
+    $("traveller").classList.remove("hidden");
+    renderIdentity();
+    await loadContext();
+  }
+};
+
+console.info("REDZED UPM V9059_ENGINE_BRIDGE");
 
 document.readyState === "loading" ? document.addEventListener("DOMContentLoaded", boot) : boot();
 })();
