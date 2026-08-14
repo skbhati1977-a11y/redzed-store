@@ -912,8 +912,22 @@ async function boot() {
       if (targetLot) {
         state.lot = targetLot;
         if (requestedDept) {
-          const match = [...$("dept").options].find(option => String(option.value).toUpperCase() === String(requestedDept).toUpperCase())
-            || [...$("dept").options].find(option => String(option.textContent).toUpperCase().includes(String(requestedDept).toUpperCase()));
+          const aliases = {
+            KR: ["STITCHING", "KARIGAR", "KR"],
+            OV: ["OVERLOCK", "OV"],
+            FLD: ["FOLDING", "FLD"],
+            KAAJ: ["KAAJ", "KAAJ_BUTTON", "BUTTON", "BTN"],
+            BTN: ["KAAJ", "KAAJ_BUTTON", "BUTTON", "BTN"],
+            TANKI: ["TEAK_TANKI", "TANKI", "TEAK", "TACK"],
+            TEAK_TANKI: ["TEAK_TANKI", "TANKI", "TEAK", "TACK"],
+            TH_CUT: ["THREAD_CUT", "THREAD CUT", "TH_CUT"],
+            PRINT: ["PRINT", "PRINTING"],
+            ID: ["METAL_ID", "ID", "METAL ID"]
+          };
+          const wanted = String(requestedDept).toUpperCase().replace(/[^A-Z0-9_ ]/g, "");
+          const accepted = aliases[wanted] || [wanted];
+          const match = [...$("dept").options].find(option => accepted.includes(String(option.value).toUpperCase()))
+            || [...$("dept").options].find(option => accepted.some(alias => String(option.textContent).toUpperCase().includes(alias)));
           if (match) $("dept").value = match.value;
         }
         $("traveller").classList.remove("hidden");
