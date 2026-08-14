@@ -31,7 +31,7 @@ const state = {
   imageIndex: 0,
   scale: 1,
   startX: 0,
-  busy: false, pendingSubmitRows: null, cameraStream: null, cameraBlobs: [], mapping: null, boardMeta: new Map(), confirmResolve: null, dueFilter: "submit"
+  busy: false, pendingSubmitRows: null, cameraStream: null, cameraBlobs: [], mapping: null, boardMeta: new Map(), confirmResolve: null, dueFilter: "submit", assignDueInfo: new Map(), dueRenderSeq: 0
 };
 
 function errorText(error) {
@@ -206,10 +206,47 @@ function lotAssignDueTargets(lot, departmentCode) {
 }
 
 function lotHasAssignDue(lot, departmentCode) {
-  return lotAssignDueTargets(lot, departmentCode).length > 0;
+  const info = state.assignDueInfo.get(`${lot.canonical_lot_id}::${canonicalDept(departmentCode)}`);
+  return info ? info.openCodes.length > 0 : lotAssignDueTargets(lot, departmentCode).length > 0;
+}
+
+function contextUnfinishedDepartments(context) {
+  return arr(context?.department_statuses).filter(d => {
+    const label = upper([d.status_colour, d.status, d.display_label, d.board_detail].join(" "));
+    return !(label.includes("GREEN") || label.includes("COMPLETED") || label.includes("SUBMITTED") || label.includes("DONE"));
+  });
+}
+
+async function assignDueContextInfo(lot, departmentCode) {
+  const selected = canonicalDept(departmentCode);
+  const key = `${lot.canonical_lot_id}::${selected}`;
+  const cached = state.assignDueInfo.get(key);
+  if (cached && Date.now() - cached.at < 20000) return cached;
+  let info = { at: Date.now(), openCodes: [], target: null };
+  try {
+    const context = await rpc("rr_upm_universal_form_v741", {
+      p_canonical_lot_id: lot.canonical_lot_id,
+      p_department_code: departmentCode
+    });
+    const unfinished = contextUnfinishedDepartments(context);
+    const target = unfinished.find(d => canonicalDept(d.department_code || d.department_name) === selected);
+    if (target || selected === "CUTTING") {
+      const openCodes = [...new Set(arr(context?.rows)
+        .filter(row => Boolean(row.can_assign) && !Boolean(row.is_locked) && !Boolean(row.is_completed_here))
+        .map(row => upper(row.colour_code || row.colour_id || row.colour_name))
+        .filter(Boolean))];
+      info = { at: Date.now(), openCodes, target };
+    }
+  } catch (error) {
+    console.warn("Assign Due context unavailable", lot.lot_no, departmentCode, error);
+  }
+  state.assignDueInfo.set(key, info);
+  return info;
 }
 
 function assignDueOpenCodes(lot, departmentCode) {
+  const contextInfo = state.assignDueInfo.get(`${lot.canonical_lot_id}::${canonicalDept(departmentCode)}`);
+  if (contextInfo) return contextInfo.openCodes;
   const selected = canonicalDept(departmentCode);
   const meta = boardMeta(lot) || {};
   const statuses = arr(meta.department_statuses);
@@ -243,9 +280,10 @@ function selectedDueRows() {
   });
 }
 
-function updateDueToolbarCounts() {
+function updateDueToolbarCounts(rows = null) {
   const department = $("homeDept")?.value || "";
-  const assignCount = department ? state.lots.filter(lot => lotHasAssignDue(lot, department)).length : state.lots.length;
+  const source = rows || state.lots;
+  const assignCount = department ? source.filter(lot => lotHasAssignDue(lot, department)).length : source.length;
   const submitCount = department ? state.lots.filter(lot => lotHasSubmitDue(lot, department)).length : state.lots.length;
   $("rfUniversalAssignDueCount")?.replaceChildren(document.createTextNode(String(assignCount)));
   $("rfUniversalSubmitDueCount")?.replaceChildren(document.createTextNode(String(submitCount)));
@@ -285,9 +323,25 @@ function lotCard(lot) {
   </article>`;
 }
 
-function renderBoard() {
-  const rows = selectedDueRows();
-  updateDueToolbarCounts();
+async function renderBoard() {
+  const seq = ++state.dueRenderSeq;
+  const query = $("search").value.toLowerCase().trim();
+  const department = $("homeDept").value;
+  const textRows = state.lots.filter(lot => {
+    const text = `${lot.lot_no} ${cbNo(lot)} ${lot.art_no || ""} ${lot.item_name || ""}`.toLowerCase();
+    return !query || text.includes(query);
+  });
+  let rows = [];
+  if (state.dueFilter === "assign" && department) {
+    setMessage("Assign Due filter checking exact department/colour mapping…");
+    const infos = await Promise.all(textRows.map(lot => assignDueContextInfo(lot, department)));
+    if (seq !== state.dueRenderSeq) return;
+    rows = textRows.filter((lot, index) => infos[index]?.openCodes?.length);
+    setMessage();
+  } else {
+    rows = selectedDueRows();
+  }
+  updateDueToolbarCounts(rows);
   $("board").innerHTML = rows.map(lotCard).join("") || '<div class="msg">No lots found.</div>';
   document.querySelectorAll("[data-open-lot]").forEach(button => button.onclick = event => {
     event.stopPropagation();
@@ -295,6 +349,15 @@ function renderBoard() {
   });
   document.querySelectorAll("[data-assign-lot][data-assign-dept]").forEach(button => button.onclick = async event => {
     event.stopPropagation();
+    const lot = state.lots.find(item => String(item.canonical_lot_id) === String(button.dataset.assignLot));
+    if (lot) {
+      const info = await assignDueContextInfo(lot, button.dataset.assignDept);
+      if (!info.openCodes.length) {
+        setMessage("Selected department ke liye koi assignable colour open nahi hai.", "error");
+        await renderBoard();
+        return;
+      }
+    }
     await window.RealFactoryUPM?.openLotAtDepartment?.(button.dataset.assignLot, button.dataset.assignDept);
   });
   document.querySelectorAll(".lot-card").forEach(card => card.onclick = () => openLot(card.dataset.lot));
@@ -1045,7 +1108,7 @@ async function boot() {
     document.querySelectorAll("[data-link]").forEach(button => button.onclick = () => location.href = button.dataset.link);
     $("packingTab").onclick = () => setMessage("Existing Smart Packing remains unchanged.");
     $("costingTab").onclick = () => setMessage("Costing uses existing ledgers.");
-    $("reportsTab").onclick = () => location.href = "real-reports-ai-v857.html?v=874";
+    $("reportsTab").onclick = () => location.href = "real-reports-ai-v857.html?v=875";
     $("selectAllBtn").onclick = selectAllOpenColours;
     $("applyBulkWorkerBtn").onclick = applyBulkWorker;
     $("assignBtn").onclick = assignWork;
