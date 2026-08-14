@@ -868,7 +868,7 @@ async function boot() {
     document.querySelectorAll("[data-link]").forEach(button => button.onclick = () => location.href = button.dataset.link);
     $("packingTab").onclick = () => setMessage("Existing Smart Packing remains unchanged.");
     $("costingTab").onclick = () => setMessage("Costing uses existing ledgers.");
-    $("reportsTab").onclick = () => location.href = "real-reports-ai-v857.html?v=857";
+    $("reportsTab").onclick = () => location.href = "real-reports-ai-v857.html?v=859";
     $("selectAllBtn").onclick = selectAllOpenColours;
     $("applyBulkWorkerBtn").onclick = applyBulkWorker;
     $("assignBtn").onclick = assignWork;
@@ -910,7 +910,7 @@ async function boot() {
   }
 }
 
-console.info("REDZED UPM V744_ACTION_CONFIRM_EASY");
+console.info("REAL FACTORY UPM V744_ACTION_CONFIRM_EASY");
 
 document.readyState === "loading" ? document.addEventListener("DOMContentLoaded", boot) : boot();
 })();
