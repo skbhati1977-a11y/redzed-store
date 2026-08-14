@@ -143,8 +143,10 @@ async function loadCuttingMasters(client) {
   const attempts = [
     () => client.rpc("rr_upm_worker_list_v8_4", { p_department_code: "CUTTING_MASTER" }),
     () => client.rpc("rr_upm_worker_list_v8_4", { p_department_code: "CUTTING" }),
+    () => client.rpc("rr_upm_worker_list_v8_4", { p_department_code: null }),
     () => client.rpc("rr_upm_worker_list_v8_3", { p_department_code: "CUTTING_MASTER" }),
-    () => client.rpc("rr_upm_worker_list_v8_3", { p_department_code: "CUTTING" })
+    () => client.rpc("rr_upm_worker_list_v8_3", { p_department_code: "CUTTING" }),
+    () => client.rpc("rr_upm_worker_list_v8_3", { p_department_code: null })
   ];
 
   for (const attempt of attempts) {
@@ -170,7 +172,7 @@ async function loadCuttingMasters(client) {
         .limit(500);
 
       if (!result.error && Array.isArray(result.data)) {
-        result.data.filter(isCuttingMasterWorker).forEach(row => candidates.push(row));
+        result.data.forEach(row => candidates.push(row));
       }
     } catch (error) {
       console.warn("rr_workers cutting master fallback warning:", error);
@@ -422,7 +424,8 @@ function ensureDuplicateLotStyle() {
   style.id = "cmDuplicateLotStyle";
   style.textContent = `.cm-lot-duplicate{border-color:#ff3b5f!important;box-shadow:0 0 0 2px rgba(255,59,95,.35)!important;background:#32131b!important;color:#fff!important}
 #lotForm[data-release-busy="1"] [data-release-lot-submit],#lotForm[data-release-busy="1"] button[type="submit"],button.cm-release-locked{background:#4b5563!important;border-color:#4b5563!important;color:#cbd5e1!important;cursor:not-allowed!important;pointer-events:none!important;opacity:.72!important}
-#lotForm[data-release-busy="1"] input,#lotForm[data-release-busy="1"] select,#lotForm[data-release-busy="1"] textarea,#lotForm[data-release-busy="1"] button{pointer-events:none!important}
+#lotForm[data-release-busy="1"] input,#lotForm[data-release-busy="1"] select,#lotForm[data-release-busy="1"] textarea,#lotForm[data-release-busy="1"] button:not([data-close-lot]){pointer-events:none!important}
+#lotForm[data-release-busy="1"] [data-close-lot]{pointer-events:auto!important;cursor:pointer!important;opacity:1!important}
 #lotForm[data-release-busy="1"]{cursor:progress!important}`;
   document.head.append(style);
 }
@@ -3517,6 +3520,7 @@ async function createLot(event = {}) {
 
     if (valid.lotMode === "multi") {
       const payload = multiRpcPayload(valid);
+      const hasMatching = valid.lots.some(row => Boolean(row.matching_item_id));
       if (matchingReservations.length) {
         payload.p_lots.forEach(row => {
           const matchingCost = Number(row.matching_total_cost || 0);
@@ -3534,13 +3538,19 @@ async function createLot(event = {}) {
           }
         });
       }
-      result = await withTimeout(
-        client.rpc("rr_release_multi_lots_v4", payload),
-        25000,
-        "Multi Lot release"
-      );
-
-      const hasMatching = valid.lots.some(row => Boolean(row.matching_item_id));
+      if (hasMatching) {
+        result = await withTimeout(
+          client.rpc("rr_release_multi_lots_v4", payload),
+          25000,
+          "Multi Lot release"
+        );
+      } else {
+        result = await withTimeout(
+          client.rpc("rr_release_multi_lots_v3", payload),
+          25000,
+          "Multi Lot release"
+        );
+      }
 
       if (result.error && isMissingRpcError(result.error) && !hasMatching) {
         console.warn(
@@ -3561,7 +3571,7 @@ async function createLot(event = {}) {
       }
       result = await withTimeout(
         client.rpc(
-          "rr_release_single_lot_v4",
+          matchingReservations.length ? "rr_release_single_lot_v4" : "rr_release_single_lot_v3",
           payload
         ),
         25000,
@@ -3935,7 +3945,7 @@ async function loadAllData() {
   ] = await Promise.all([
     withTimeout(
       loadGallerySource(client),
-      15000,
+      35000,
       "Product gallery"
     ),
 
@@ -4022,7 +4032,7 @@ loadMatchingLotSource(client)
   refreshMatchingStockControls();
   renderGallery();
 
-  console.info("REAL FACTORY Cutting Master PM Core V894 loaded", {
+  console.info("REAL FACTORY Cutting Master PM Core V895 loaded", {
     galleryRows: galleryRows.length,
     purchaseRows: purchaseRows.length,
     matchingPurchaseRows: matchingPurchaseRows.length,
