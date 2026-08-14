@@ -258,5 +258,5 @@
   sync();
   setTimeout(sync, 1000);
   setMode("submit");
-  console.info("REAL FACTORY V875 · ASSIGN DUE MODAL CONTEXT SOURCE");
+  console.info("REAL FACTORY V876 · LEGACY DEPT ALIAS DUE FIX");
 })();

@@ -31,7 +31,7 @@ const state = {
   imageIndex: 0,
   scale: 1,
   startX: 0,
-  busy: false, pendingSubmitRows: null, cameraStream: null, cameraBlobs: [], mapping: null, boardMeta: new Map(), confirmResolve: null, dueFilter: "submit", assignDueInfo: new Map(), dueRenderSeq: 0
+  busy: false, pendingSubmitRows: null, cameraStream: null, cameraBlobs: [], mapping: null, boardMeta: new Map(), confirmResolve: null, dueFilter: "submit", assignDueInfo: new Map(), submitDueInfo: new Map(), dueRenderSeq: 0
 };
 
 function errorText(error) {
@@ -165,7 +165,20 @@ function statusMatchesDepartment(row, departmentCode) {
   return canonicalDept(row?.department_code || row?.department_name) === wanted;
 }
 
+function departmentCandidates(departmentCode) {
+  const selected = canonicalDept(departmentCode);
+  const values = new Set([departmentCode, selected, ...(UPM_ALIASES[selected] || [])].map(upper).filter(Boolean));
+  arr(state.departments).forEach(department => {
+    const code = upper(department.department_code);
+    const name = upper(department.department_name);
+    if (canonicalDept(code) === selected || canonicalDept(name) === selected) values.add(department.department_code);
+  });
+  return [...values].filter(Boolean);
+}
+
 function lotHasSubmitDue(lot, departmentCode) {
+  const info = state.submitDueInfo.get(`${lot.canonical_lot_id}::${canonicalDept(departmentCode)}`);
+  if (info) return info.openCodes.length > 0;
   const statuses = arr(boardMeta(lot)?.department_statuses);
   if (!statuses.length) return lotMatchesDepartment(lot, departmentCode);
   return statuses.some(row => statusMatchesDepartment(row, departmentCode)
@@ -224,10 +237,14 @@ async function assignDueContextInfo(lot, departmentCode) {
   if (cached && Date.now() - cached.at < 20000) return cached;
   let info = { at: Date.now(), openCodes: [], target: null };
   try {
-    const context = await rpc("rr_upm_universal_form_v741", {
-      p_canonical_lot_id: lot.canonical_lot_id,
-      p_department_code: departmentCode
-    });
+    let context = null;
+    for (const code of departmentCandidates(departmentCode)) {
+      context = await rpc("rr_upm_universal_form_v741", {
+        p_canonical_lot_id: lot.canonical_lot_id,
+        p_department_code: code
+      });
+      if (arr(context?.rows).some(row => Boolean(row.can_assign) && !Boolean(row.is_locked) && !Boolean(row.is_completed_here))) break;
+    }
     const unfinished = contextUnfinishedDepartments(context);
     const target = unfinished.find(d => canonicalDept(d.department_code || d.department_name) === selected);
     if (target || selected === "CUTTING") {
@@ -241,6 +258,33 @@ async function assignDueContextInfo(lot, departmentCode) {
     console.warn("Assign Due context unavailable", lot.lot_no, departmentCode, error);
   }
   state.assignDueInfo.set(key, info);
+  return info;
+}
+
+async function submitDueContextInfo(lot, departmentCode) {
+  const selected = canonicalDept(departmentCode);
+  const key = `${lot.canonical_lot_id}::${selected}`;
+  const cached = state.submitDueInfo.get(key);
+  if (cached && Date.now() - cached.at < 20000) return cached;
+  let info = { at: Date.now(), openCodes: [] };
+  try {
+    let context = null;
+    for (const code of departmentCandidates(departmentCode)) {
+      context = await rpc("rr_upm_universal_form_v741", {
+        p_canonical_lot_id: lot.canonical_lot_id,
+        p_department_code: code
+      });
+      if (arr(context?.rows).some(row => Boolean(row.is_locked) && !Boolean(row.is_completed_here))) break;
+    }
+    const openCodes = [...new Set(arr(context?.rows)
+      .filter(row => Boolean(row.is_locked) && !Boolean(row.is_completed_here))
+      .map(row => upper(row.colour_code || row.colour_id || row.colour_name))
+      .filter(Boolean))];
+    info = { at: Date.now(), openCodes };
+  } catch (error) {
+    console.warn("Submit Due context unavailable", lot.lot_no, departmentCode, error);
+  }
+  state.submitDueInfo.set(key, info);
   return info;
 }
 
@@ -283,8 +327,8 @@ function selectedDueRows() {
 function updateDueToolbarCounts(rows = null) {
   const department = $("homeDept")?.value || "";
   const source = rows || state.lots;
-  const assignCount = department ? source.filter(lot => lotHasAssignDue(lot, department)).length : source.length;
-  const submitCount = department ? state.lots.filter(lot => lotHasSubmitDue(lot, department)).length : state.lots.length;
+  const assignCount = department && state.dueFilter === "assign" ? source.length : (department ? state.lots.filter(lot => lotHasAssignDue(lot, department)).length : state.lots.length);
+  const submitCount = department && state.dueFilter === "submit" ? source.length : (department ? state.lots.filter(lot => lotHasSubmitDue(lot, department)).length : state.lots.length);
   $("rfUniversalAssignDueCount")?.replaceChildren(document.createTextNode(String(assignCount)));
   $("rfUniversalSubmitDueCount")?.replaceChildren(document.createTextNode(String(submitCount)));
 }
@@ -332,9 +376,11 @@ async function renderBoard() {
     return !query || text.includes(query);
   });
   let rows = [];
-  if (state.dueFilter === "assign" && department) {
-    setMessage("Assign Due filter checking exact department/colour mapping…");
-    const infos = await Promise.all(textRows.map(lot => assignDueContextInfo(lot, department)));
+  if (department) {
+    setMessage(`${state.dueFilter === "assign" ? "Assign" : "Submit"} Due filter checking exact department/colour mapping…`);
+    const infos = await Promise.all(textRows.map(lot => state.dueFilter === "assign"
+      ? assignDueContextInfo(lot, department)
+      : submitDueContextInfo(lot, department)));
     if (seq !== state.dueRenderSeq) return;
     rows = textRows.filter((lot, index) => infos[index]?.openCodes?.length);
     setMessage();
@@ -1108,7 +1154,7 @@ async function boot() {
     document.querySelectorAll("[data-link]").forEach(button => button.onclick = () => location.href = button.dataset.link);
     $("packingTab").onclick = () => setMessage("Existing Smart Packing remains unchanged.");
     $("costingTab").onclick = () => setMessage("Costing uses existing ledgers.");
-    $("reportsTab").onclick = () => location.href = "real-reports-ai-v857.html?v=875";
+    $("reportsTab").onclick = () => location.href = "real-reports-ai-v857.html?v=876";
     $("selectAllBtn").onclick = selectAllOpenColours;
     $("applyBulkWorkerBtn").onclick = applyBulkWorker;
     $("assignBtn").onclick = assignWork;
