@@ -1,0 +1,16 @@
+REAL FACTORY V9040 - Cutting no-print legacy release compatibility
+
+Replace these three GitHub Pages files together:
+1. real-cutting-master.html
+2. real-cutting-master-pm.V719.3.js
+3. redzed-cutting-cb-actions-v72035.js
+
+Reason for V10:
+- V8 reached the real backend fallback rr_release_single_lot_v3.
+- The backend confirmed that this legacy RPC exists, but its deployed signature does not contain p_matching_item_id or p_matching_qty.
+- V10 removes only those two optional matching-cloth keys from the V3 fallback payload. The current V4 path remains unchanged.
+
+Scope:
+- Frontend compatibility only for the existing TEST no-print cutting release flow.
+- No Supabase schema, accounting, lot rules, or REAL data changes.
+- Deploy all three files together and verify the HTML loads both scripts with ?v=9040.

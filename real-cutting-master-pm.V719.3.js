@@ -3248,7 +3248,10 @@ async function createLot(event = {}) {
         /sticker.*(bharna|required|zaroori)|sticker.*p0001/i.test(errorText(result.error))
       ){
         console.warn("rr_release_single_lot_v4 blocked the planned post-release Sticker stage; trying compatible V3 release RPC.",result.error);
-        result = await client.rpc("rr_release_single_lot_v3",payload);
+        const v3Payload={...payload};
+        delete v3Payload.p_matching_item_id;
+        delete v3Payload.p_matching_qty;
+        result = await client.rpc("rr_release_single_lot_v3",v3Payload);
       }
     }
 
