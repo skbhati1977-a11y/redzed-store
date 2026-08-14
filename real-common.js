@@ -295,7 +295,7 @@
   });
 
   const dataModeLoader=load(
-    'real-data-mode-controller-v786-1-1.js?v=898',
+    'real-data-mode-controller-v786-1-1.js?v=900',
     'rr-data-mode-controller-v786-1-1'
   );
 
@@ -303,11 +303,11 @@
 
   dataModeLoader
   .then(()=>load(
-    'real-mobile-compat-v775.js?v=898',
+    'real-mobile-compat-v775.js?v=900',
     'rr-mobile-compat-v775'
   ))
   .then(()=>load(
-    'real-google-sheet-table-v775.js?v=898',
+    'real-google-sheet-table-v775.js?v=900',
     'rr-google-sheet-table-v775'
   ))
   .catch(error=>console.error(error));

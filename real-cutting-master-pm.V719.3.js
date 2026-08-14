@@ -1671,17 +1671,49 @@ function filterMatches(card) {
   return true;
 }
 
+function pendingReleaseCard(card) {
+  return (
+    lotsForDivision(card.division.division_id).length === 0 &&
+    (
+      cardState(card) === "ready" ||
+      galleryLooksReady(card.division)
+    )
+  );
+}
+
 function releaseFilterCounts(cards = []) {
   return {
     all: cards.length,
-    ready: cards.filter(card => cardState(card) === "ready").length,
+    ready: cards.filter(pendingReleaseCard).length,
     single_released: cards.filter(card => lotsForDivision(card.division.division_id).length === 1).length,
     multi_released: cards.filter(card => lotsForDivision(card.division.division_id).length > 1).length
   };
 }
 
+function syncActiveFilter(counts = null) {
+  const filterBox = $("cmFilters");
+  if (!filterBox) return;
+
+  const availableCounts = counts || releaseFilterCounts(divisionCards());
+  const activeKey = currentFilter || "all";
+
+  if (activeKey !== "all" && (availableCounts[activeKey] || 0) === 0) {
+    currentFilter = "all";
+  }
+
+  filterBox
+    .querySelectorAll("[data-filter]")
+    .forEach(button => {
+      button.classList.toggle(
+        "is-active",
+        (button.dataset.filter || "all") === currentFilter
+      );
+    });
+}
+
 function updateFilterCounts(cards = []) {
   const counts = releaseFilterCounts(cards);
+  syncActiveFilter(counts);
   $("cmFilters")?.querySelectorAll("[data-filter]").forEach(button => {
     const key = button.dataset.filter || "all";
     const count = counts[key] ?? 0;
@@ -1867,6 +1899,7 @@ function renderGallery() {
     .toLowerCase();
 
   const allCards = divisionCards();
+  syncActiveFilter(releaseFilterCounts(allCards));
 
   const cards = allCards.filter(card => {
     return (
@@ -3945,6 +3978,40 @@ async function loadMultiLotSource(client) {
   }));
 }
 
+async function loadReleasedLotSource(client) {
+  const result = await client.rpc("rr_cutting_lot_frontend_source_v900");
+
+  if (!result.error && Array.isArray(result.data)) {
+    return result.data.map(row => ({
+      ...row,
+      lot_mode: row.lot_mode || "single",
+      lot_source: row.lot_source || "rr_cutting_lot_frontend_source_v900"
+    }));
+  }
+
+  console.warn(
+    "Unified cutting lot source unavailable; using legacy table reads.",
+    result.error
+  );
+
+  const [singleResult, multiRows] = await Promise.all([
+    selectRows(client, "rr_cutting_lots_v3", {
+      order: "created_at",
+      ascending: false
+    }),
+    loadMultiLotSource(client)
+  ]);
+
+  const singles = requiredData(singleResult, "Cutting lots")
+    .map(row => ({
+      ...row,
+      lot_mode: "single",
+      lot_source: "rr_cutting_lots_v3"
+    }));
+
+  return [...singles, ...(multiRows || [])];
+}
+
 async function loadAllData() {
   const client = getClient();
 
@@ -3993,8 +4060,7 @@ async function loadAllData() {
     assignmentResult,
     printAssignmentResult,
     loadedMediaRows,
-    lotResult,
-    loadedMultiLotRows,
+    loadedLotRows,
     breakupResult,
     matchingStockResult,
     matchingLotResult
@@ -4040,12 +4106,7 @@ async function loadAllData() {
 
     optionalRows(client, "rr_media"),
 
-    selectRows(client, "rr_cutting_lots_v3", {
-      order: "created_at",
-      ascending: false
-    }),
-
-    loadMultiLotSource(client),
+    loadReleasedLotSource(client),
 
     selectRows(client, "rr_cutting_breakup_v3", {
       order: "created_at",
@@ -4069,17 +4130,12 @@ loadMatchingLotSource(client)
     "Print assignments"
   );
   mediaRows = loadedMediaRows || [];
-  singleLotRows = requiredData(lotResult, "Cutting lots")
-    .map(row => ({
-      ...row,
-      lot_mode: "single",
-      lot_source: "rr_cutting_lots_v3"
-    }));
-  multiLotRows = loadedMultiLotRows || [];
-  lotRows = [...singleLotRows, ...multiLotRows]
+  lotRows = (loadedLotRows || [])
     .sort((a, b) =>
       String(b.created_at || "").localeCompare(String(a.created_at || ""))
     );
+  singleLotRows = lotRows.filter(row => String(row.lot_mode || "").toLowerCase() === "single");
+  multiLotRows = lotRows.filter(row => String(row.lot_mode || "").toLowerCase() !== "single");
   breakupRows = requiredData(breakupResult, "Cutting breakup");
   matchingStockRows = (matchingStockResult || []).map(normalizeMatchingStockRow);
   matchingLotRows = matchingLotResult || [];
@@ -4088,7 +4144,7 @@ loadMatchingLotSource(client)
   refreshMatchingStockControls();
   renderGallery();
 
-  console.info("REAL FACTORY Cutting Master PM Core V898 loaded", {
+  console.info("REAL FACTORY Cutting Master PM Core V900 loaded", {
     galleryRows: galleryRows.length,
     purchaseRows: purchaseRows.length,
     matchingPurchaseRows: matchingPurchaseRows.length,
