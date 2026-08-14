@@ -443,6 +443,13 @@ function setReleaseUiLocked(locked, text = "") {
     : (button.dataset.originalText || "Release Lot No");
 }
 
+function resetReleaseLock(messageText = "") {
+  createLot.busy = false;
+  releaseInFlightKey = "";
+  setReleaseUiLocked(false);
+  if (messageText) setLotReleaseFeedback(messageText, "info");
+}
+
 function money(value) {
   return new Intl.NumberFormat("en-IN", {
     style: "currency",
@@ -761,6 +768,7 @@ function selectValue(id) {
 function closeSheet(sheet) {
   if (!sheet) return;
 
+  if (sheet === lotSheet) resetReleaseLock();
   sheet.classList.add("cm-hidden");
   sheet.setAttribute("aria-hidden", "true");
 
@@ -2099,6 +2107,7 @@ function nextLotNumber() {
 function openLotByDivision(divisionId, requestedMode = "single") {
   if (releaseLock) return;
   releaseLock = true;
+  resetReleaseLock();
 
   try {
     const card = divisionCards().find(
@@ -4013,7 +4022,7 @@ loadMatchingLotSource(client)
   refreshMatchingStockControls();
   renderGallery();
 
-  console.info("REAL FACTORY Cutting Master PM Core V893 loaded", {
+  console.info("REAL FACTORY Cutting Master PM Core V894 loaded", {
     galleryRows: galleryRows.length,
     purchaseRows: purchaseRows.length,
     matchingPurchaseRows: matchingPurchaseRows.length,
@@ -4034,6 +4043,7 @@ loadMatchingLotSource(client)
 
 async function refreshCuttingMaster() {
   try {
+    resetReleaseLock("Refresh started. Stuck release lock clear ho gaya.");
     await loadAllData();
   } catch (error) {
     showFatal(error);
@@ -4046,6 +4056,12 @@ function bindEvents() {
 
   ensureDuplicateLotStyle();
   bindEnterNextFlow();
+  window.addEventListener("pagehide", () => resetReleaseLock());
+  document.addEventListener("visibilitychange", () => {
+    if (!document.hidden && lotSheet && !lotSheet.classList.contains("cm-hidden")) {
+      resetReleaseLock();
+    }
+  });
   $("lotForm")?.addEventListener("submit", createLot);
 
   gallery?.addEventListener("click", event => {

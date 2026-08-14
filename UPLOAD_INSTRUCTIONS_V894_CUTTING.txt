@@ -1,0 +1,12 @@
+REAL_FACTORY_V894_CUTTING_STUCK_WINDOW_RESET_RETRY_FIX
+
+Fix over V893:
+- Close Lot window clears stuck release lock.
+- Refresh clears stuck release lock before reload.
+- Reopen Lot window resets old release busy state.
+- pagehide/visibility return clears local in-flight lock.
+- Button/form lock and timeouts from V893 retained.
+- Filter counts and Enter next-field flow retained.
+
+Open:
+https://skbhati1977-a11y.github.io/redzed-store/real-cutting-master.html?v=894
