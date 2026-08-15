@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#07090d">
+<title>REAL FACTORY — Department</title>
+<style>
+:root{--bg:#07090d;--panel:#12151c;--line:#303641;--mut:#98a2b3;--accent:#cc3d55}*{box-sizing:border-box}html,body{margin:0;min-height:100%;background:var(--bg);color:#fff;font:14px system-ui,-apple-system,"Segoe UI",Arial,sans-serif}button,input,a{font:inherit;background:#242934;color:#fff;border:1px solid var(--line);border-radius:9px;padding:10px;text-decoration:none;font-weight:800}.page{padding:10px;max-width:1200px;margin:auto}.top{display:flex;gap:8px;align-items:center;justify-content:space-between}.top h1{margin:2px 0;font-size:24px}.brand{color:#ffc857;font-weight:900}.actions{display:flex;gap:6px}.modulebar{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin:12px 0}.modulebar button{min-height:44px}.modulebar .primary{background:linear-gradient(#d84a62,#b72f48)}.toolbar{margin:10px 0}.toolbar input{width:100%;min-height:48px;font-size:16px}.board{display:block}.status{font-size:12px;color:var(--mut);margin-top:4px}.hidden{display:none!important}@media(max-width:700px){.modulebar{grid-template-columns:1fr 1fr}.modulebar button:nth-child(3){grid-column:1/-1}.top h1{font-size:22px}.actions a{display:none}}
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="top">
+    <div><div class="brand">REAL FACTORY · PRODUCTION</div><h1 id="deptHeader">Department</h1><div class="status">TEST DEFAULT · REAL PROTECTED</div></div>
+    <div class="actions"><a href="real-dashboard.html">Dashboard</a><button id="refresh" type="button">Refresh</button></div>
+  </div>
+  <div class="modulebar">
+    <button class="primary" type="button">PRODUCTION</button>
+    <button type="button" onclick="location.href='real-cutting-master.html'">CUTTING MODULE</button>
+    <button type="button">PACKING &amp; DISPATCH</button>
+    <button type="button">COSTING</button>
+    <button type="button">REPORTS</button>
+  </div>
+  <div class="toolbar"><input id="search" placeholder="Lot No / CB No / Art No" autocomplete="off"></div>
+  <select id="homeDept" class="hidden" aria-hidden="true"></select>
+  <div id="message"></div>
+  <main id="board" class="board"></main>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+<script src="real-common.js"></script>
+<script>
+(() => {
+ const q=new URLSearchParams(location.search),raw=(q.get('dept')||'').trim().toUpperCase();
+ const A={KR:'STITCHING',KARIGAR:'STITCHING',STITCH:'STITCHING',STITCHING:'STITCHING',OV:'OVERLOCK',OVERLOCK:'OVERLOCK',FLD:'FOLDING',FOLDING:'FOLDING',KAAJ:'KAAJ',KAJ:'KAAJ',BUTTON:'BUTTON',BTN:'BUTTON',KAAJ_BUTTON:'KAAJ_BUTTON',TEAK:'TEAK_TANKI',TANKI:'TEAK_TANKI',TEAK_TANKI:'TEAK_TANKI',THREAD_CUT:'THREAD_CUT',TH_CUT:'THREAD_CUT',QC:'QC',PRESS:'PRESS',PRINT:'PRINTING',PRINTING:'PRINTING',STICKER:'STICKER',ID:'METAL_ID',METAL_ID:'METAL_ID',PACK:'PACKING',PACKING:'PACKING',DESPATCH:'DESPATCH',DISPATCH:'DESPATCH',CUT:'CUTTING',CUTTING:'CUTTING'};
+ const L={STITCHING:'Karigar / Stitching',OVERLOCK:'Overlock',FOLDING:'Folding',KAAJ:'Kaaj',BUTTON:'Button',KAAJ_BUTTON:'Kaaj / Button',TEAK_TANKI:'Teak / Tanki',THREAD_CUT:'Thread Cutting',QC:'QC',PRESS:'Press',PRINTING:'Printing',STICKER:'Sticker',METAL_ID:'Metal ID',PACKING:'Packing',DESPATCH:'Despatch',CUTTING:'Cutting'};
+ const dept=A[raw]||raw,label=(q.get('label')||L[dept]||dept||'Department').trim();
+ if(!dept){location.replace('real-universal-production-v770-v9059.html?v=9127');return;}
+ document.title='REAL FACTORY — '+label;document.getElementById('deptHeader').textContent=label;
+ const hd=document.getElementById('homeDept');hd.innerHTML='<option value="'+dept+'" selected>'+label+'</option>';hd.value=dept;
+ document.getElementById('search').addEventListener('input',e=>{const s=String(e.target.value||'').trim().toLowerCase();document.querySelectorAll('.rfcard').forEach(c=>{c.style.display=!s||c.textContent.toLowerCase().includes(s)?'':'none'})});
+})();
+</script>
+<script src="real-upm-department-view-v789.js?v=9127-lite"></script>
+</body>
+</html>
