@@ -33,12 +33,13 @@ document.head.appendChild(style);
 
 function titleFix(){
   const h1 = document.querySelector('.top h1');
-  if (h1 && raw) h1.textContent = label;
+  if (h1 && raw && h1.textContent !== label) h1.textContent = label;
   const select = document.getElementById('homeDept');
   if (!select) return;
   let badge = document.getElementById('rfTerritoryBadge9119');
   if (!badge) { badge=document.createElement('div'); badge.id='rfTerritoryBadge9119'; select.after(badge); }
-  badge.textContent = raw ? `${label} ONLY` : 'ALL DEPARTMENTS';
+  const txt = raw ? `${label} ONLY` : 'ALL DEPARTMENTS';
+  if (badge.textContent !== txt) badge.textContent = txt;
   if (raw) document.documentElement.classList.add('rf-territory');
 }
 
@@ -46,9 +47,16 @@ function enforceTerritory(){
   titleFix();
   if (!raw) return;
   const select=document.getElementById('homeDept');
-  if (select) { select.value=dept; select.disabled=true; select.setAttribute('aria-hidden','true'); }
+  if (select) {
+    if (select.value !== dept) select.value=dept;
+    if (!select.disabled) select.disabled=true;
+    if (select.getAttribute('aria-hidden')!=='true') select.setAttribute('aria-hidden','true');
+  }
   const inner=document.getElementById('dept');
-  if (inner && [...inner.options].some(o=>up(o.value)===dept)) { inner.value=dept; inner.disabled=true; }
+  if (inner && [...inner.options].some(o=>up(o.value)===dept)) {
+    if (inner.value !== dept) inner.value=dept;
+    if (!inner.disabled) inner.disabled=true;
+  }
 }
 
 async function rpc(name,args={}){ const c=sb(); if(!c) throw new Error('Supabase client not ready.'); const {data,error}=await c.rpc(name,args); if(error) throw error; return data; }
@@ -89,7 +97,12 @@ function renderAll(){
   root.querySelectorAll('[data-go-dept]').forEach(r=>r.onclick=()=>{const u=new URL(location.href);u.searchParams.set('dept',r.dataset.goDept);u.searchParams.set('label',LABEL[r.dataset.goDept]||r.dataset.goDept);u.searchParams.set('view',r.dataset.goMode);u.searchParams.set('focus_lot',r.dataset.goLot);u.searchParams.set('v','9119');location.href=u.toString()});
 }
 
-const mo=new MutationObserver(()=>enforceTerritory());
+let scheduled=false;
+const mo=new MutationObserver(()=>{
+  if(scheduled)return;
+  scheduled=true;
+  requestAnimationFrame(()=>{scheduled=false;enforceTerritory()});
+});
 mo.observe(document.documentElement,{childList:true,subtree:true});
 document.addEventListener('DOMContentLoaded',()=>{enforceTerritory(); if(!raw) setTimeout(loadAll,50)});
 window.addEventListener('load',()=>{enforceTerritory(); if(!raw) loadAll()});
