@@ -6,139 +6,94 @@
 <meta name="theme-color" content="#0b0d11">
 <title>REAL FACTORY — Main Dashboard</title>
 <style>
-:root{--bg:#0b0d11;--panel:#12161d;--panel2:#171c25;--line:#2a313d;--text:#f7f8fb;--mut:#98a2b3;--accent:#d83f5d;--ok:#56efb2;--warn:#ffc857;--blue:#9ec5ff}
-*{box-sizing:border-box}html,body{margin:0;min-height:100%;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}a{color:inherit;text-decoration:none}button,input{font:inherit}.hidden{display:none!important}
-.rf-shell{min-height:100vh}.rf-top{position:sticky;top:0;z-index:60;height:62px;display:flex;align-items:center;gap:12px;padding:10px 14px;background:#0b0d11eF;border-bottom:1px solid var(--line);backdrop-filter:blur(14px)}
-.rf-menu-btn{width:42px;height:42px;border:1px solid var(--line);border-radius:12px;background:var(--panel2);color:#fff;font-size:22px;font-weight:900}.rf-brand{min-width:0;flex:1}.rf-brand small{display:block;color:var(--warn);font-weight:900;letter-spacing:.05em}.rf-brand strong{display:block;font-size:18px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.rf-top-right{display:flex;align-items:center;gap:8px}.rf-version{font-size:11px;color:var(--blue);border:1px solid #40506b;border-radius:999px;padding:6px 8px}.rf-owner{font-size:12px;color:#dfe5ef;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.rf-logout{border:1px solid var(--line);background:var(--panel2);color:#fff;border-radius:10px;padding:8px 10px;font-weight:800}
-.rf-sidebar{position:fixed;inset:62px auto 0 0;width:min(330px,88vw);z-index:55;background:#0f1319;border-right:1px solid var(--line);transform:translateX(-102%);transition:transform .2s ease;display:flex;flex-direction:column;box-shadow:16px 0 40px #0008}.rf-sidebar.open{transform:translateX(0)}.rf-backdrop{position:fixed;inset:62px 0 0 0;z-index:54;background:#0009;display:none}.rf-backdrop.open{display:block}
-.rf-side-search{padding:12px;border-bottom:1px solid var(--line)}.rf-side-search input{width:100%;min-height:46px;border:1px solid var(--line);border-radius:12px;background:#171c25;color:#fff;padding:0 13px;font-size:16px}.rf-side-list{overflow:auto;padding:10px 8px 24px}.rf-group{margin:4px 0 14px}.rf-group-title{padding:8px 10px;color:#7f8a9d;font-size:11px;font-weight:950;letter-spacing:.08em;text-transform:uppercase}.rf-side-item{display:flex;align-items:center;gap:11px;padding:10px 11px;border-radius:10px;margin:2px 0;color:#edf1f7}.rf-side-item:hover,.rf-side-item:active{background:#1b2230}.rf-icon{width:28px;height:28px;display:grid;place-items:center;flex:0 0 28px;border-radius:8px;background:#202735;font-size:15px}.rf-side-item span:last-child{font-weight:750}.rf-side-sub{padding-left:17px;border-left:1px solid #283140;margin-left:24px}.rf-side-sub .rf-side-item{font-size:13px;padding:8px 9px}.rf-no-result{padding:16px;color:var(--mut);text-align:center}
-.rf-main{padding:16px;max-width:1350px;margin:auto}.rf-hero{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;padding:18px;border:1px solid var(--line);border-radius:18px;background:linear-gradient(145deg,#171c25,#10141b);margin-bottom:14px}.rf-hero h1{margin:2px 0 5px;font-size:26px}.rf-hero p{margin:0;color:var(--mut);line-height:1.5}.rf-mode{white-space:nowrap;border:1px solid #745719;background:#3a2a08;color:#ffd67a;padding:8px 10px;border-radius:999px;font-size:11px;font-weight:950}
-.rf-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:14px 0}.rf-stat{padding:14px;border:1px solid var(--line);border-radius:14px;background:var(--panel)}.rf-stat span{display:block;color:var(--mut);font-size:12px}.rf-stat strong{display:block;margin-top:4px;font-size:23px;color:var(--ok)}
-.rf-section{margin:20px 0}.rf-section-head{display:flex;justify-content:space-between;align-items:flex-end;gap:10px;margin-bottom:10px}.rf-section-head h2{margin:0;font-size:19px}.rf-section-head p{margin:3px 0 0;color:var(--mut);font-size:13px}.rf-quick{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.rf-card{display:block;min-height:128px;padding:15px;border:1px solid var(--line);border-radius:15px;background:var(--panel);transition:.15s}.rf-card:active{transform:scale(.99)}.rf-card-top{display:flex;align-items:center;justify-content:space-between;gap:8px}.rf-card-icon{font-size:22px}.rf-card-tag{font-size:10px;font-weight:950;color:var(--blue);border:1px solid #40506b;padding:4px 7px;border-radius:999px}.rf-card h3{margin:10px 0 5px;font-size:16px}.rf-card p{margin:0;color:var(--mut);font-size:12px;line-height:1.45}.rf-card.primary{border-color:#7b3140;background:linear-gradient(145deg,#23151a,#151920)}
-.rf-lot-panel{border:1px solid var(--line);border-radius:16px;background:var(--panel);padding:14px}.rf-lot-head{display:flex;align-items:center;justify-content:space-between;gap:10px}.rf-lot-head h2{margin:0;font-size:18px}.rf-refresh{border:1px solid var(--line);background:#202735;color:#fff;border-radius:10px;padding:8px 11px;font-weight:800}.rr-list{margin-top:10px}.rr-message{color:#ffb4be}
-@media(min-width:1100px){.rf-shell.sidebar-pinned .rf-sidebar{transform:none}.rf-shell.sidebar-pinned .rf-main{margin-left:330px;max-width:none}.rf-shell.sidebar-pinned .rf-backdrop{display:none!important}}
-@media(max-width:820px){.rf-owner{display:none}.rf-main{padding:10px}.rf-hero{flex-direction:column}.rf-stats{grid-template-columns:1fr 1fr}.rf-quick{grid-template-columns:1fr 1fr}.rf-mode{white-space:normal}}
-@media(max-width:520px){.rf-version{display:none}.rf-top{padding:9px}.rf-brand strong{font-size:16px}.rf-main{padding:8px}.rf-hero{padding:14px}.rf-hero h1{font-size:22px}.rf-stats{gap:7px}.rf-stat{padding:11px}.rf-stat strong{font-size:20px}.rf-quick{grid-template-columns:1fr}.rf-card{min-height:112px}.rf-section{margin:16px 0}}
+:root{--bg:#0b0d11;--panel:#12161d;--panel2:#171c25;--line:#2a313d;--text:#f7f8fb;--mut:#98a2b3;--accent:#d83f5d;--ok:#56efb2;--warn:#ffc857;--blue:#9ec5ff}*{box-sizing:border-box}html,body{margin:0;min-height:100%;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}a{color:inherit;text-decoration:none}button,input{font:inherit}.hidden{display:none!important}.rf-shell{min-height:100vh}.rf-top{position:sticky;top:0;z-index:60;height:62px;display:flex;align-items:center;gap:12px;padding:10px 14px;background:#0b0d11ef;border-bottom:1px solid var(--line);backdrop-filter:blur(14px)}.rf-menu-btn{width:42px;height:42px;border:1px solid var(--line);border-radius:12px;background:var(--panel2);color:#fff;font-size:22px;font-weight:900}.rf-brand{min-width:0;flex:1}.rf-brand small{display:block;color:var(--warn);font-weight:900}.rf-brand strong{font-size:18px}.rf-top-right{display:flex;align-items:center;gap:8px}.rf-version{font-size:11px;color:var(--blue);border:1px solid #40506b;border-radius:999px;padding:6px 8px}.rf-owner{font-size:12px}.rf-logout{border:1px solid var(--line);background:var(--panel2);color:#fff;border-radius:10px;padding:8px 10px;font-weight:800}.rf-sidebar{position:fixed;inset:62px auto 0 0;width:min(345px,90vw);z-index:55;background:#0f1319;border-right:1px solid var(--line);transform:translateX(-102%);transition:transform .2s ease;display:flex;flex-direction:column;box-shadow:16px 0 40px #0008}.rf-sidebar.open{transform:translateX(0)}.rf-backdrop{position:fixed;inset:62px 0 0;z-index:54;background:#0009;display:none}.rf-backdrop.open{display:block}.rf-side-search{padding:12px;border-bottom:1px solid var(--line)}.rf-side-search input{width:100%;min-height:46px;border:1px solid var(--line);border-radius:12px;background:#171c25;color:#fff;padding:0 13px;font-size:16px}.rf-side-list{overflow:auto;padding:10px 8px 24px}.rf-acc{margin:5px 0;border:1px solid #232b37;border-radius:12px;background:#11161d;overflow:hidden}.rf-acc-btn{width:100%;min-height:50px;border:0;background:#151b24;color:#fff;display:flex;align-items:center;gap:10px;padding:11px 12px;text-align:left;font-weight:900}.rf-acc-btn .chev{margin-left:auto;transition:.18s}.rf-acc.open .chev{transform:rotate(90deg)}.rf-acc-body{display:none;padding:6px}.rf-acc.open .rf-acc-body{display:block}.rf-side-item{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:9px;margin:2px 0;color:#edf1f7}.rf-side-item:active{background:#1b2230}.rf-icon{width:28px;height:28px;display:grid;place-items:center;flex:0 0 28px;border-radius:8px;background:#202735;font-size:13px}.rf-subtle{font-size:11px;color:#8d98aa;padding:4px 10px 3px}.rf-main{padding:16px;max-width:1350px;margin:auto}.rf-hero{display:flex;justify-content:space-between;gap:14px;padding:18px;border:1px solid var(--line);border-radius:18px;background:linear-gradient(145deg,#171c25,#10141b);margin-bottom:14px}.rf-hero h1{margin:2px 0 5px;font-size:26px}.rf-hero p{margin:0;color:var(--mut)}.rf-mode{white-space:nowrap;border:1px solid #745719;background:#3a2a08;color:#ffd67a;padding:8px 10px;border-radius:999px;font-size:11px;font-weight:950}.rf-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:14px 0}.rf-stat{padding:14px;border:1px solid var(--line);border-radius:14px;background:var(--panel)}.rf-stat span{display:block;color:var(--mut);font-size:12px}.rf-stat strong{display:block;margin-top:4px;font-size:23px;color:var(--ok)}.rf-section{margin:20px 0}.rf-section h2{font-size:19px}.rf-quick{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.rf-card{display:block;min-height:128px;padding:15px;border:1px solid var(--line);border-radius:15px;background:var(--panel)}.rf-card.primary{border-color:#7b3140;background:linear-gradient(145deg,#23151a,#151920)}.rf-card-top{display:flex;justify-content:space-between}.rf-card-tag{font-size:10px;color:var(--blue);border:1px solid #40506b;padding:4px 7px;border-radius:999px}.rf-card p{color:var(--mut);font-size:12px}.rf-lot-panel{border:1px solid var(--line);border-radius:16px;background:var(--panel);padding:14px}.rf-lot-head{display:flex;justify-content:space-between;align-items:center}.rf-refresh{border:1px solid var(--line);background:#202735;color:#fff;border-radius:10px;padding:8px 11px;font-weight:800}.rr-list{margin-top:10px}.rr-list-row{display:flex;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid #242c37}.rr-list-row span{display:block;color:var(--mut);font-size:12px}.rr-list-meta{text-align:right}.rr-message{color:#ffb4be}@media(max-width:820px){.rf-owner{display:none}.rf-main{padding:10px}.rf-hero{flex-direction:column}.rf-stats{grid-template-columns:1fr 1fr}.rf-quick{grid-template-columns:1fr 1fr}}@media(max-width:520px){.rf-version{display:none}.rf-main{padding:8px}.rf-quick{grid-template-columns:1fr}.rf-card{min-height:112px}}
 </style>
 </head>
 <body>
-<div id="shell" class="rf-shell">
-<header class="rf-top">
-  <button id="menuBtn" class="rf-menu-btn" type="button" aria-label="Open modules">☰</button>
-  <div class="rf-brand"><small>REAL FACTORY</small><strong>Main Dashboard</strong></div>
-  <div class="rf-top-right"><span class="rf-version">V9129</span><span id="ownerName" class="rf-owner">Loading...</span><button id="logoutBtn" class="rf-logout" type="button">Logout</button></div>
-</header>
+<div class="rf-shell">
+<header class="rf-top"><button id="menuBtn" class="rf-menu-btn" type="button">☰</button><div class="rf-brand"><small>REAL FACTORY</small><strong>Main Dashboard</strong></div><div class="rf-top-right"><span class="rf-version">V9130</span><span id="ownerName" class="rf-owner">Loading...</span><button id="logoutBtn" class="rf-logout" type="button">Logout</button></div></header>
 <div id="backdrop" class="rf-backdrop"></div>
-<aside id="sidebar" class="rf-sidebar" aria-label="Main modules">
-  <div class="rf-side-search"><input id="moduleSearch" type="search" placeholder="Search module…" autocomplete="off"></div>
-  <div id="sideList" class="rf-side-list">
-    <div class="rf-group" data-group><div class="rf-group-title">Core Production</div>
-      <a class="rf-side-item" data-module href="real-universal-production-v770-v9059.html?v=9129"><span class="rf-icon">◉</span><span>Universal Production</span></a>
-      <a class="rf-side-item" data-module href="real-cutting-master.html?v=9129"><span class="rf-icon">✂</span><span>Cutting & Lots</span></a>
-      <div class="rf-side-sub">
-        <a class="rf-side-item" data-module href="real-department-lite-v9127.html?dept=PRINTING&v=9129"><span class="rf-icon">PR</span><span>Printing</span></a>
-        <a class="rf-side-item" data-module href="real-department-lite-v9127.html?dept=STICKER&v=9129"><span class="rf-icon">ST</span><span>Sticker</span></a>
-        <a class="rf-side-item" data-module href="real-department-lite-v9127.html?dept=METAL_ID&v=9129"><span class="rf-icon">ID</span><span>Metal ID</span></a>
-        <a class="rf-side-item" data-module href="real-department-lite-v9127.html?dept=KR&v=9129"><span class="rf-icon">KR</span><span>Karigar / Stitching</span></a>
-        <a class="rf-side-item" data-module href="real-department-lite-v9127.html?dept=OV&v=9129"><span class="rf-icon">OV</span><span>Overlock</span></a>
-        <a class="rf-side-item" data-module href="real-department-lite-v9127.html?dept=FLD&v=9129"><span class="rf-icon">FL</span><span>Folding</span></a>
-        <a class="rf-side-item" data-module href="real-department-lite-v9127.html?dept=KAAJ&v=9129"><span class="rf-icon">KJ</span><span>Kaaj</span></a>
-        <a class="rf-side-item" data-module href="real-department-lite-v9127.html?dept=BUTTON&v=9129"><span class="rf-icon">BT</span><span>Button</span></a>
-        <a class="rf-side-item" data-module href="real-department-lite-v9127.html?dept=TEAK_TANKI&v=9129"><span class="rf-icon">TT</span><span>Teak / Tanki</span></a>
-        <a class="rf-side-item" data-module href="real-department-lite-v9127.html?dept=THREAD_CUT&v=9129"><span class="rf-icon">TC</span><span>Thread Cut</span></a>
-        <a class="rf-side-item" data-module href="real-department-lite-v9127.html?dept=QC&v=9129"><span class="rf-icon">QC</span><span>QC</span></a>
-        <a class="rf-side-item" data-module href="real-department-lite-v9127.html?dept=PRESS&v=9129"><span class="rf-icon">PS</span><span>Press</span></a>
-        <a class="rf-side-item" data-module href="real-department-lite-v9127.html?dept=PACKING&v=9129"><span class="rf-icon">PK</span><span>Packing</span></a>
-        <a class="rf-side-item" data-module href="real-department-lite-v9127.html?dept=DESPATCH&v=9129"><span class="rf-icon">DP</span><span>Despatch</span></a>
-      </div>
-    </div>
-    <div class="rf-group" data-group><div class="rf-group-title">Product & Masters</div>
-      <a class="rf-side-item" data-module href="real-art-master.html?v=9129"><span class="rf-icon">🎨</span><span>Art Master</span></a>
-      <a class="rf-side-item" data-module href="real-print-master.html?v=9129"><span class="rf-icon">▦</span><span>Print Master</span></a>
-      <a class="rf-side-item" data-module href="real-product-master-v720.html?v=9129"><span class="rf-icon">▣</span><span>Product Master</span></a>
-      <a class="rf-side-item" data-module href="real-lot-media-ai-v808.html?v=9129"><span class="rf-icon">▧</span><span>Lot Media & AI</span></a>
-    </div>
-    <div class="rf-group" data-group><div class="rf-group-title">Stock & Sales</div>
-      <a class="rf-side-item" data-module href="real-finished-goods-v787.html?view=receive&v=9129"><span class="rf-icon">↓</span><span>Store Receive</span></a>
-      <a class="rf-side-item" data-module href="real-finished-goods-v787.html?view=stock&v=9129"><span class="rf-icon">▤</span><span>Store / Webstore Stock</span></a>
-      <a class="rf-side-item" data-module href="real-finished-goods-v787.html?view=sale&v=9129"><span class="rf-icon">₹</span><span>Sales · PI / CPI</span></a>
-      <a class="rf-side-item" data-module href="real-finished-goods-v787.html?view=returns&v=9129"><span class="rf-icon">↩</span><span>Sales Return</span></a>
-      <a class="rf-side-item" data-module href="real-commerce-v849.html?v=9129"><span class="rf-icon">🛒</span><span>Webstore & Sales</span></a>
-    </div>
-    <div class="rf-group" data-group><div class="rf-group-title">Salary & Workers</div>
-      <a class="rf-side-item" data-module href="real-salary-home-v786.html?v=9129"><span class="rf-icon">₹</span><span>Salary Home</span></a>
-      <a class="rf-side-item" data-module href="real-salary-payment-v785.html?mode=TEST&v=9129"><span class="rf-icon">✓</span><span>Salary Payment</span></a>
-      <a class="rf-side-item" data-module href="real-attendance-salary-v778.html?v=9129"><span class="rf-icon">◷</span><span>Attendance & Monthly Salary</span></a>
-      <a class="rf-side-item" data-module href="real-pcs-rate-payroll-v779.html?v=9129"><span class="rf-icon">PC</span><span>PCS Salary Work</span></a>
-      <a class="rf-side-item" data-module href="real-worker-payroll-setup-v786.html?v=9129"><span class="rf-icon">⚙</span><span>Worker Salary Setup</span></a>
-      <a class="rf-side-item" data-module href="real-advance-worker-payment-v785.html?v=9129"><span class="rf-icon">＋</span><span>Advance Payment</span></a>
-    </div>
-    <div class="rf-group" data-group><div class="rf-group-title">Accounts & Reports</div>
-      <a class="rf-side-item" data-module href="real-accounts-suite-v857.html?v=9129"><span class="rf-icon">▥</span><span>Accounts Suite</span></a>
-      <a class="rf-side-item" data-module href="real-accounts-costing-v850.html?v=9129"><span class="rf-icon">∑</span><span>Accounts & Costing</span></a>
-      <a class="rf-side-item" data-module href="real-reports-ai-v857.html?v=9129"><span class="rf-icon">⌕</span><span>Reports & AI Query</span></a>
-      <a class="rf-side-item" data-module href="real-flow-audit-v857.html?v=9129"><span class="rf-icon">✓</span><span>Full Flow Audit</span></a>
-    </div>
-    <div class="rf-group" data-group><div class="rf-group-title">Admin & Communication</div>
-      <a class="rf-side-item" data-module href="real-communications-v853.html?v=9129"><span class="rf-icon">WA</span><span>WhatsApp Messages</span></a>
-      <a class="rf-side-item" data-module href="real-role-permission-v777-4-final.html?v=9129"><span class="rf-icon">🔐</span><span>Roles & Permissions</span></a>
-      <a class="rf-side-item" data-module href="real-data-mode-control-v786.html?v=9129"><span class="rf-icon">T/R</span><span>Data Mode Control</span></a>
-    </div>
-    <div id="noResult" class="rf-no-result hidden">No module found</div>
-  </div>
-</aside>
+<aside id="sidebar" class="rf-sidebar">
+<div class="rf-side-search"><input id="moduleSearch" type="search" placeholder="Search module…" autocomplete="off"></div>
+<div id="sideList" class="rf-side-list">
+  <section class="rf-acc open" data-acc><button class="rf-acc-btn" type="button"><span class="rf-icon">▣</span>Product Master<span class="chev">›</span></button><div class="rf-acc-body">
+    <div class="rf-subtle">PURCHASE & MASTERS</div>
+    <a class="rf-side-item" data-module href="real-product-master-v804.html?view=cb_new&v=9130"><span class="rf-icon">CB</span><span>CB New</span></a>
+    <a class="rf-side-item" data-module href="real-product-master-v804.html?view=matching_cloth&v=9130"><span class="rf-icon">MC</span><span>Matching Cloth</span></a>
+    <a class="rf-side-item" data-module href="real-art-master.html?v=9130"><span class="rf-icon">AR</span><span>Art Master</span></a>
+    <a class="rf-side-item" data-module href="real-print-master.html?v=9130"><span class="rf-icon">PR</span><span>Print Master</span></a>
+    <a class="rf-side-item" data-module href="real-sticker-master-v804.html?v=9130"><span class="rf-icon">ST</span><span>Sticker Master</span></a>
+    <a class="rf-side-item" data-module href="real-metal-id-master-v804.html?v=9130"><span class="rf-icon">ID</span><span>Metal ID Master</span></a>
+  </div></section>
 
+  <section class="rf-acc" data-acc><button class="rf-acc-btn" type="button"><span class="rf-icon">✂</span>Cutting Master<span class="chev">›</span></button><div class="rf-acc-body">
+    <a class="rf-side-item" data-module href="real-cutting-master.html?view=ready&v=9130"><span class="rf-icon">RD</span><span>Ready Lot</span></a>
+    <a class="rf-side-item" data-module href="real-cutting-master.html?view=release&v=9130"><span class="rf-icon">RL</span><span>Release Lot</span></a>
+    <a class="rf-side-item" data-module href="real-cutting-master.html?view=all&v=9130"><span class="rf-icon">AL</span><span>All Lot</span></a>
+    <a class="rf-side-item" data-module href="real-cutting-master.html?v=9130"><span class="rf-icon">≡</span><span>Cutting Filters / Full Module</span></a>
+  </div></section>
+
+  <section class="rf-acc" data-acc><button class="rf-acc-btn" type="button"><span class="rf-icon">UP</span>Universal Product Master<span class="chev">›</span></button><div class="rf-acc-body">
+    <a class="rf-side-item" data-module href="real-universal-production-v770-v9059.html?v=9130"><span class="rf-icon">ALL</span><span>UPM Master · All Departments</span></a>
+    <a class="rf-side-item" data-module href="real-department-lite-v9127.html?dept=PRINTING&v=9130"><span class="rf-icon">PR</span><span>Printing</span></a>
+    <a class="rf-side-item" data-module href="real-department-lite-v9127.html?dept=STICKER&v=9130"><span class="rf-icon">ST</span><span>Sticker</span></a>
+    <a class="rf-side-item" data-module href="real-department-lite-v9127.html?dept=METAL_ID&v=9130"><span class="rf-icon">ID</span><span>Metal ID</span></a>
+    <a class="rf-side-item" data-module href="real-department-lite-v9127.html?dept=KR&v=9130"><span class="rf-icon">KR</span><span>Karigar / Stitching</span></a>
+    <a class="rf-side-item" data-module href="real-department-lite-v9127.html?dept=OV&v=9130"><span class="rf-icon">OV</span><span>Overlock</span></a>
+    <a class="rf-side-item" data-module href="real-department-lite-v9127.html?dept=FLD&v=9130"><span class="rf-icon">FL</span><span>Folding</span></a>
+    <a class="rf-side-item" data-module href="real-department-lite-v9127.html?dept=KAAJ&v=9130"><span class="rf-icon">KJ</span><span>Kaaj</span></a>
+    <a class="rf-side-item" data-module href="real-department-lite-v9127.html?dept=BUTTON&v=9130"><span class="rf-icon">BT</span><span>Button</span></a>
+    <a class="rf-side-item" data-module href="real-department-lite-v9127.html?dept=TEAK_TANKI&v=9130"><span class="rf-icon">TT</span><span>Teak / Tanki</span></a>
+    <a class="rf-side-item" data-module href="real-department-lite-v9127.html?dept=THREAD_CUT&v=9130"><span class="rf-icon">TC</span><span>Thread Cut</span></a>
+    <a class="rf-side-item" data-module href="real-department-lite-v9127.html?dept=QC&v=9130"><span class="rf-icon">QC</span><span>QC</span></a>
+    <a class="rf-side-item" data-module href="real-department-lite-v9127.html?dept=PRESS&v=9130"><span class="rf-icon">PS</span><span>Press</span></a>
+    <a class="rf-side-item" data-module href="real-department-lite-v9127.html?dept=PACKING&v=9130"><span class="rf-icon">PK</span><span>Packing</span></a>
+  </div></section>
+
+  <section class="rf-acc" data-acc><button class="rf-acc-btn" type="button"><span class="rf-icon">DP</span>Despatch<span class="chev">›</span></button><div class="rf-acc-body">
+    <a class="rf-side-item" data-module href="real-department-lite-v9127.html?dept=DESPATCH&v=9130"><span class="rf-icon">DP</span><span>Despatch Department</span></a>
+    <a class="rf-side-item" data-module href="real-finished-goods-v787.html?view=despatch&v=9130"><span class="rf-icon">DC</span><span>Despatch Challan / Boxes</span></a>
+  </div></section>
+
+  <section class="rf-acc" data-acc><button class="rf-acc-btn" type="button"><span class="rf-icon">WS</span>Web Store<span class="chev">›</span></button><div class="rf-acc-body">
+    <a class="rf-side-item" data-module href="real-finished-goods-v787.html?view=receive&v=9130"><span class="rf-icon">RC</span><span>Store Receive</span></a>
+    <a class="rf-side-item" data-module href="real-finished-goods-v787.html?view=stock&v=9130"><span class="rf-icon">ST</span><span>Webstore / Store Stock</span></a>
+    <a class="rf-side-item" data-module href="real-commerce-v849.html?v=9130"><span class="rf-icon">MW</span><span>Market Window</span></a>
+  </div></section>
+
+  <section class="rf-acc" data-acc><button class="rf-acc-btn" type="button"><span class="rf-icon">₹</span>Sales<span class="chev">›</span></button><div class="rf-acc-body">
+    <a class="rf-side-item" data-module href="real-finished-goods-v787.html?view=sale&v=9130"><span class="rf-icon">PI</span><span>Sales · PI / CPI</span></a>
+    <a class="rf-side-item" data-module href="real-finished-goods-v787.html?view=verify&v=9130"><span class="rf-icon">✓</span><span>Sales Qty Verify</span></a>
+    <a class="rf-side-item" data-module href="real-finished-goods-v787.html?view=returns&v=9130"><span class="rf-icon">↩</span><span>Sales Return</span></a>
+  </div></section>
+
+  <section class="rf-acc" data-acc><button class="rf-acc-btn" type="button"><span class="rf-icon">AC</span>Accounts<span class="chev">›</span></button><div class="rf-acc-body">
+    <a class="rf-side-item" data-module href="real-accounts-suite-v857.html?v=9130"><span class="rf-icon">AS</span><span>Accounts Suite</span></a>
+    <a class="rf-side-item" data-module href="real-accounts-costing-v850.html?v=9130"><span class="rf-icon">∑</span><span>Accounts & Costing</span></a>
+    <a class="rf-side-item" data-module href="real-reports-ai-v857.html?v=9130"><span class="rf-icon">RP</span><span>Reports & AI Query</span></a>
+  </div></section>
+
+  <section class="rf-acc" data-acc><button class="rf-acc-btn" type="button"><span class="rf-icon">₹</span>Salary & Workers<span class="chev">›</span></button><div class="rf-acc-body">
+    <a class="rf-side-item" data-module href="real-salary-home-v786.html?v=9130"><span class="rf-icon">SH</span><span>Salary Home</span></a>
+    <a class="rf-side-item" data-module href="real-salary-payment-v785.html?mode=TEST&v=9130"><span class="rf-icon">SP</span><span>Salary Payment</span></a>
+    <a class="rf-side-item" data-module href="real-attendance-salary-v778.html?v=9130"><span class="rf-icon">AT</span><span>Attendance & Monthly Salary</span></a>
+  </div></section>
+</div></aside>
 <main class="rf-main">
-  <section class="rf-hero">
-    <div><small style="color:var(--warn);font-weight:900">CONTROL CENTER</small><h1 id="welcomeText">Welcome</h1><p>Daily work सामने रखा है. बाकी सारे modules ☰ side panel में sorted हैं.</p></div>
-    <div id="securityStatus" class="rf-mode">TEST DEFAULT · REAL PROTECTED</div>
-  </section>
-
-  <section class="rf-stats">
-    <article class="rf-stat"><span>Active Arts</span><strong id="artCount">—</strong></article>
-    <article class="rf-stat"><span>Live Lots</span><strong id="lotCount">—</strong></article>
-    <article class="rf-stat"><span>Open Remakes</span><strong id="remakeCount">—</strong></article>
-    <article class="rf-stat"><span>Available Stock PCS</span><strong id="stockCount">—</strong></article>
-  </section>
-
-  <section class="rf-section">
-    <div class="rf-section-head"><div><h2>Quick Access</h2><p>सबसे ज़्यादा रोज़ इस्तेमाल होने वाले काम</p></div></div>
-    <div class="rf-quick">
-      <a class="rf-card primary" href="real-universal-production-v770-v9059.html?v=9129"><div class="rf-card-top"><span class="rf-card-icon">◉</span><span class="rf-card-tag">MAIN FLOW</span></div><h3>Universal Production</h3><p>All departments, Ready to Assign, Ready to Submit और production flow.</p></a>
-      <a class="rf-card" href="real-cutting-master.html?v=9129"><div class="rf-card-top"><span class="rf-card-icon">✂</span><span class="rf-card-tag">CUTTING</span></div><h3>Cutting & Lots</h3><p>Lot release, CB allocation, colours, sizes और costing.</p></a>
-      <a class="rf-card" href="real-finished-goods-v787.html?view=stock&v=9129"><div class="rf-card-top"><span class="rf-card-icon">▤</span><span class="rf-card-tag">STOCK</span></div><h3>Store / Webstore Stock</h3><p>Physical और saleable finished-goods stock.</p></a>
-      <a class="rf-card" href="real-finished-goods-v787.html?view=sale&v=9129"><div class="rf-card-top"><span class="rf-card-icon">₹</span><span class="rf-card-tag">SALES</span></div><h3>Sales · PI / CPI</h3><p>Buyer sale, PI और final CPI flow.</p></a>
-      <a class="rf-card" href="real-salary-payment-v785.html?mode=TEST&v=9129"><div class="rf-card-top"><span class="rf-card-icon">✓</span><span class="rf-card-tag">PAYMENT</span></div><h3>Salary Payment</h3><p>PCS और Monthly worker payment.</p></a>
-      <a class="rf-card" href="real-accounts-suite-v857.html?v=9129"><div class="rf-card-top"><span class="rf-card-icon">▥</span><span class="rf-card-tag">ACCOUNTS</span></div><h3>Accounts Suite</h3><p>P&amp;L, receivable, payment, purchase और sales.</p></a>
-    </div>
-  </section>
-
-  <section class="rf-section rf-lot-panel">
-    <div class="rf-lot-head"><h2>Live Lot Status</h2><button id="refreshBtn" class="rf-refresh" type="button">Refresh</button></div>
-    <div id="lotList" class="rr-list"><p style="color:var(--mut)">Loading...</p></div>
-  </section>
-  <p id="dashboardMessage" class="rr-message" role="status"></p>
-  <span id="moduleCount" class="hidden"></span>
-</main>
-</div>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="config.js?v=9129"></script>
-<script src="real-dashboard.js?v=887"></script>
+<section class="rf-hero"><div><small style="color:#ffc857;font-weight:900">CONTROL CENTER</small><h1 id="welcomeText">Welcome</h1><p>Daily work सामने, बाकी modules organized side panel में.</p></div><div class="rf-mode">TEST DEFAULT · REAL PROTECTED</div></section>
+<section class="rf-stats"><article class="rf-stat"><span>Active Arts</span><strong id="artCount">—</strong></article><article class="rf-stat"><span>Live Lots</span><strong id="lotCount">—</strong></article><article class="rf-stat"><span>Open Remakes</span><strong id="remakeCount">—</strong></article><article class="rf-stat"><span>Available Stock PCS</span><strong id="stockCount">—</strong></article></section>
+<section class="rf-section"><h2>Quick Access</h2><div class="rf-quick">
+<a class="rf-card primary" href="real-universal-production-v770-v9059.html?v=9130"><div class="rf-card-top"><b>Universal Production</b><span class="rf-card-tag">UPM</span></div><p>All departments production control.</p></a>
+<a class="rf-card" href="real-cutting-master.html?v=9130"><div class="rf-card-top"><b>Cutting & Lots</b><span class="rf-card-tag">CUT</span></div><p>Ready, release and lot control.</p></a>
+<a class="rf-card" href="real-finished-goods-v787.html?view=stock&v=9130"><div class="rf-card-top"><b>Webstore / Store Stock</b><span class="rf-card-tag">STOCK</span></div><p>Saleable physical and web stock.</p></a>
+<a class="rf-card" href="real-finished-goods-v787.html?view=sale&v=9130"><div class="rf-card-top"><b>Sales · PI / CPI</b><span class="rf-card-tag">SALE</span></div><p>Buyer sale and CPI flow.</p></a>
+<a class="rf-card" href="real-salary-payment-v785.html?mode=TEST&v=9130"><div class="rf-card-top"><b>Salary Payment</b><span class="rf-card-tag">PAY</span></div><p>PCS and monthly salary payment.</p></a>
+<a class="rf-card" href="real-accounts-suite-v857.html?v=9130"><div class="rf-card-top"><b>Accounts Suite</b><span class="rf-card-tag">ACC</span></div><p>Accounts, receivable, purchase and reports.</p></a>
+</div></section>
+<section class="rf-lot-panel"><div class="rf-lot-head"><h2>Live Lot Status</h2><button id="refreshBtn" class="rf-refresh">Refresh</button></div><div id="lotList" class="rr-list"><p style="color:#98a2b3">Loading...</p></div></section><p id="dashboardMessage" class="rr-message"></p>
+</main></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="config.js?v=9130"></script><script src="real-dashboard.js?v=9130"></script>
 <script>
-(() => {
-  const shell=document.getElementById('shell'),side=document.getElementById('sidebar'),back=document.getElementById('backdrop'),menu=document.getElementById('menuBtn'),search=document.getElementById('moduleSearch');
-  const close=()=>{side.classList.remove('open');back.classList.remove('open')};
-  const toggle=()=>{side.classList.toggle('open');back.classList.toggle('open',side.classList.contains('open'))};
-  menu.addEventListener('click',toggle);back.addEventListener('click',close);
-  document.addEventListener('keydown',e=>{if(e.key==='Escape')close()});
-  if(innerWidth>=1100)shell.classList.add('sidebar-pinned');
-  search.addEventListener('input',()=>{
-    const q=search.value.trim().toLowerCase();let visible=0;
-    document.querySelectorAll('[data-group]').forEach(g=>{let gv=0;g.querySelectorAll('[data-module]').forEach(a=>{const ok=!q||a.textContent.toLowerCase().includes(q);a.classList.toggle('hidden',!ok);if(ok){gv++;visible++}});g.classList.toggle('hidden',gv===0)});
-    document.getElementById('noResult').classList.toggle('hidden',visible!==0);
-  });
-  side.addEventListener('click',e=>{if(e.target.closest('a')&&innerWidth<1100)close()});
-})();
+(()=>{const menu=document.getElementById('menuBtn'),side=document.getElementById('sidebar'),back=document.getElementById('backdrop'),search=document.getElementById('moduleSearch');const open=v=>{side.classList.toggle('open',v);back.classList.toggle('open',v)};menu.onclick=()=>open(!side.classList.contains('open'));back.onclick=()=>open(false);document.querySelectorAll('[data-acc]>.rf-acc-btn').forEach(b=>b.onclick=()=>b.parentElement.classList.toggle('open'));document.querySelectorAll('.rf-side-item').forEach(a=>a.addEventListener('click',()=>open(false)));search.addEventListener('input',()=>{const q=search.value.trim().toLowerCase();document.querySelectorAll('[data-acc]').forEach(g=>{let hit=false;g.querySelectorAll('[data-module]').forEach(a=>{const m=!q||a.textContent.toLowerCase().includes(q);a.style.display=m?'flex':'none';if(m)hit=true});g.style.display=hit?'block':'none';if(q&&hit)g.classList.add('open')})})})();
 </script>
-</body>
-</html>
+</body></html>
