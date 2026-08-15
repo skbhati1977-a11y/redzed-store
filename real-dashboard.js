@@ -8,21 +8,6 @@
   const moduleSearch = document.getElementById("moduleSearch");
   const moduleCount = document.getElementById("moduleCount");
 
-  // V9122: Universal Production Control must always open as a clean ALL-DEPARTMENTS view.
-  // Never carry a previous department territory through browser/history/query state.
-  document.addEventListener("click", (event) => {
-    const link = event.target?.closest?.('a[data-module][href*="real-universal-production-v770.html"]');
-    if (!link) return;
-    const title = String(link.querySelector("h3")?.textContent || "").trim().toUpperCase();
-    if (title !== "UNIVERSAL PRODUCTION CONTROL") return;
-    event.preventDefault();
-    event.stopImmediatePropagation();
-    const clean = new URL("real-universal-production-v770.html", location.href);
-    clean.searchParams.set("all", "1");
-    clean.searchParams.set("v", "9122");
-    location.assign(clean.href);
-  }, true);
-
   function setMessage(text, type = "") {
     message.textContent = text || "";
     message.className = `rr-message ${type}`.trim();
