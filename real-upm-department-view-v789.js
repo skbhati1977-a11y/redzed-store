@@ -2,269 +2,213 @@
   "use strict";
 
   const params = new URLSearchParams(location.search);
-  const requested = String(params.get("dept") || "").trim().toUpperCase();
-  const label = String(params.get("label") || requested || "UNIVERSAL PRODUCTION").trim();
-  if (!requested) return;
+  const requestedRaw = String(params.get("dept") || "").trim().toUpperCase();
+  if (!requestedRaw) return;
 
-  const aliases = {
-    CUTTING: ["CUTTING", "CUT"], PRINTING: ["PRINTING", "PRINT"],
-    STICKER: ["STICKER", "STICKER_WORK"], ID: ["ID", "ID_WORK", "IDENTITY"],
-    KR: ["STITCHING", "KARIGAR", "KR"], OVERLOCK: ["OVERLOCK", "OV"],
-    FOLDING: ["FOLDING", "FLD", "FLATLOCK"],
-    KAAJ_BUTTON: ["KAAJ_BUTTON", "KAAJ", "KAJ", "BUTTON", "BTN"],
-    TEAK_TANKI: ["TEAK_TANKI", "TEAK", "TACK", "TANKI"],
-    THREAD_CUT: ["THREAD_CUT", "THREAD_CUTTING", "TH_CUT"],
-    QC: ["QC", "CHECKING", "QUALITY_CHECK"], PRESS: ["PRESS", "FINISHING"],
-    PACKING: ["PACKING", "PACK"], DESPATCH: ["DESPATCH", "DISPATCH"]
+  const alias = {
+    KR:"STITCHING", KARIGAR:"STITCHING", STITCH:"STITCHING", STITCHING:"STITCHING",
+    OV:"OVERLOCK", OVERLOCK:"OVERLOCK",
+    FLD:"FOLDING", FLATLOCK:"FOLDING", FOLDING:"FOLDING",
+    KAAJ:"KAAJ", KAJ:"KAAJ", BUTTON:"BUTTON", BTN:"BUTTON", KAAJ_BUTTON:"KAAJ_BUTTON",
+    TEAK:"TEAK_TANKI", TANKI:"TEAK_TANKI", TEAK_TANKI:"TEAK_TANKI",
+    THREAD_CUT:"THREAD_CUT", THREAD_CUTTING:"THREAD_CUT", TH_CUT:"THREAD_CUT",
+    QC:"QC", CHECKING:"QC", PRESS:"PRESS", FINISHING:"PRESS",
+    PRINT:"PRINTING", PRINTING:"PRINTING", STICKER:"STICKER",
+    ID:"METAL_ID", ID_WORK:"METAL_ID", METAL_ID:"METAL_ID",
+    PACK:"PACKING", PACKING:"PACKING", DISPATCH:"DESPATCH", DESPATCH:"DESPATCH",
+    CUT:"CUTTING", CUTTING:"CUTTING"
   };
-  const route = ["CUTTING", "PRINTING", "STICKER", "ID", "KR", "OVERLOCK", "FOLDING", "KAAJ_BUTTON", "TEAK_TANKI", "THREAD_CUT", "QC", "PRESS", "PACKING", "DESPATCH"];
-  const accepted = aliases[requested] || [requested];
-  const cache = new Map();
-  const lastSubmitCache = new Map();
-  let filterMode = "submit";
-  const upper = value => String(value || "").trim().toUpperCase();
-  const esc = value => String(value ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-  const canonical = code => route.find(key => (aliases[key] || [key]).includes(upper(code))) || upper(code);
-  const matchesCurrent = code => accepted.includes(upper(code)) || canonical(code) === requested;
+  const requested = alias[requestedRaw] || requestedRaw;
+  const label = String(params.get("label") || requestedRaw).trim();
+  const up = v => String(v || "").trim().toUpperCase();
+  const esc = v => String(v ?? "").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
   const client = () => window.supabaseClient || window.supabaseDb || window.redzedSupabase || window.sb || null;
 
-  async function statusFor(lot) {
-    const lotId = typeof lot === "string" ? lot : lot?.canonical_lot_id;
-    const fallback = typeof lot === "object" ? (lot.__boardMeta || {}) : {};
-    const old = cache.get(lotId);
-    if (old && Date.now() - old.at < 2500) return old.data;
-    const sb = client();
-    if (!sb) return fallback;
-    const { data, error } = await sb.rpc("rr_upm_board_lot_status_v743", { p_canonical_lot_id: lotId });
-    if (error) {
-      console.warn("Queue live status fallback", lotId, error);
-      cache.set(lotId, { data: fallback, at: Date.now() });
-      return fallback;
-    }
-    cache.set(lotId, { data: data || {}, at: Date.now() });
-    return data || {};
-  }
-
-  async function lastSubmittedDepartment(lot) {
-    const lotId = typeof lot === "string" ? lot : lot?.canonical_lot_id;
-    const fallbackStatuses = (typeof lot === "object" ? lot.__boardMeta?.department_statuses : []) || [];
-    const fallbackLast = fallbackStatuses
-      .filter(row => row.submitted_at || row.last_submitted_at || row.status === "SUBMITTED")
-      .sort((a, b) => String(b.submitted_at || b.last_submitted_at || "").localeCompare(String(a.submitted_at || a.last_submitted_at || "")))[0];
-    const old = lastSubmitCache.get(lotId);
-    if (old && Date.now() - old.at < 2500) return old.code;
-    const sb = client();
-    if (!sb) return canonical(fallbackLast?.department_code || "");
-    const { data, error } = await sb.from("rr_upm_dynamic_submit_history_v741")
-      .select("department_code,submitted_at")
-      .eq("canonical_lot_id", lotId)
-      .order("submitted_at", { ascending: false })
-      .limit(1);
-    if (error) {
-      console.warn("Queue last-submitted fallback", lotId, error);
-      const code = canonical(fallbackLast?.department_code || "");
-      lastSubmitCache.set(lotId, { code, at: Date.now() });
-      return code;
-    }
-    const code = canonical(data?.[0]?.department_code || "");
-    lastSubmitCache.set(lotId, { code, at: Date.now() });
-    return code;
-  }
-
-  function activeInCurrent(statuses) {
-    const row = statuses.find(s => matchesCurrent(s.department_code));
-    return (row?.assigned_codes?.length || 0) + (row?.running_codes?.length || 0) > 0;
-  }
-
-  function lockDepartment() {
-    const select = document.getElementById("homeDept");
-    if (!select?.options?.length) return;
-    const option = [...select.options].find(o => matchesCurrent(o.value) || matchesCurrent(o.textContent));
-    if (!option) return;
-    if (select.value !== option.value) {
-      select.value = option.value;
-      select.dispatchEvent(new Event("change", { bubbles: true }));
-    }
-    select.disabled = true;
-  }
-
-  function openAction(card, targetId) {
-    card.querySelector("[data-open-lot]")?.click();
-    let tries = 0;
-    const timer = setInterval(() => {
-      const target = document.getElementById(targetId);
-      const traveller = document.getElementById("traveller");
-      if (target && traveller && !traveller.classList.contains("hidden")) {
-        clearInterval(timer);
-        target.scrollIntoFilter({ behavior: "smooth", block: "center" });
-      } else if (++tries > 40) clearInterval(timer);
-    }, 100);
-  }
-
-  function enhanceRunningCards() {
-    document.querySelectorAll(".lot-card").forEach(card => {
-      if (card.querySelector(".rf-card-actions")) return;
-      const old = card.querySelector(".checkin");
-      if (old) old.hidden = true;
-      const actions = document.createElement("div");
-      actions.className = "rf-card-actions";
-      actions.innerHTML = '<button type="button" data-rf-action="alter">RECTIFICATION</button><button type="button" data-rf-action="submit">SUBMIT DUE</button>';
-      actions.onclick = event => {
-        event.stopPropagation();
-        const action = event.target.closest("[data-rf-action]")?.dataset.rfAction;
-        if (action) openAction(card, action === "submit" ? "submitBtn" : "alterBtn");
-      };
-      card.append(actions);
-    });
-  }
-
-  async function filterRunningCards() {
-    const cards = [...document.querySelectorAll(".lot-card[data-lot]")];
-    await Promise.all(cards.map(async card => {
-      card.classList.add("rf-running-hidden");
-      try {
-        const meta = await statusFor(card.dataset.lot);
-        if (!activeInCurrent(meta.department_statuses || [])) return card.remove();
-        card.classList.remove("rf-running-hidden");
-      } catch (error) { card.remove(); }
-    }));
-    const count = String(document.querySelectorAll(".lot-card[data-lot]:not(.rf-running-hidden)").length);
-    document.getElementById("rfSubmitDueCount")?.replaceChildren(document.createTextNode(count));
-    document.getElementById("rfSubmitDueCountTop")?.replaceChildren(document.createTextNode(count));
-  }
-
-  function specialChoice(identity) {
-    const text = upper([identity?.work_type, identity?.print_work_type, identity?.decoration_type, identity?.selected_department_code, identity?.print_department_code].filter(Boolean).join(" "));
-    if (text.includes("STICKER")) return "STICKER";
-    if (/\bID\b|IDENTITY/.test(text)) return "ID";
-    if (text.includes("PRINT")) return "PRINTING";
-    return "";
-  }
-
-  function eligibleTargets(departments, identity, lastSubmitted) {
-    const special = specialChoice(identity);
-    return departments.map(d => ({ ...d, canonical: canonical(d.department_code) })).filter(d => {
-      if (!route.includes(d.canonical) || d.canonical === "CUTTING" || d.canonical === lastSubmitted) return false;
-      if (["PRINTING", "STICKER", "ID"].includes(d.canonical) && special && d.canonical !== special) return false;
-      return d.is_active !== false && upper(d.department_type || "PRODUCTION") === "PRODUCTION";
-    }).sort((a, b) => route.indexOf(a.canonical) - route.indexOf(b.canonical));
-  }
-
-  async function chooseTarget(lotId, target) {
-    const currentRank = route.indexOf(requested);
-    const targetRank = route.indexOf(target.canonical);
-    if (targetRank < currentRank) {
-      const ok = confirm(`WARNING: ${target.department_name || target.department_code} production order में ${label} से ऊपर है. क्या आप फिर भी इस Lot को वहाँ Assign करने के लिए खोलना चाहते हैं?`);
-      if (!ok) return;
-    }
-    try {
-      if (window.RealFactoryUPM?.openLotAtDepartment) {
-        await window.RealFactoryUPM.openLotAtDepartment(lotId, target.department_code);
-      } else {
-        const next = new URL("real-universal-production-v770.html", location.href);
-        next.searchParams.set("dept", target.department_code);
-        next.searchParams.set("label", target.department_name || target.department_code);
-        next.searchParams.set("e2e", lotId);
-        location.href = next.href;
-      }
-      document.getElementById("selectAllBtn")?.scrollIntoFilter({ behavior: "smooth", block: "center" });
-    } catch (error) { alert(error?.message || error); }
-  }
-
-  async function renderQueue() {
-    const api = window.RealFactoryUPM;
-    const host = document.getElementById("rfDepartmentQueue");
-    if (!host) return;
-    if (!api?.snapshot) {
-      host.innerHTML = `<div class="msg">UPM engine loading. Queue 1 second me retry hogi.</div>`;
-      setTimeout(sync, 1000);
-      return;
-    }
-    const snap = api.snapshot();
-    if (!snap.lots?.length) {
-      host.innerHTML = `<div class="msg">No UPM lots loaded. TEST source me released/running/open lot rows verify karein.</div>`;
-      return;
-    }
-    const cards = [];
-    let dueTargets = 0;
-    for (const lot of snap.lots) {
-      const meta = await statusFor(lot);
-      const statuses = meta.department_statuses || [];
-      const active = new Set(statuses.flatMap(s => [...(s.assigned_codes || []), ...(s.running_codes || [])]));
-      const total = Math.max(0, ...statuses.map(s => Number(s.total_colours || 0)), Array.isArray(lot.colours) ? lot.colours.length : 0);
-      if (total > 0 && active.size >= total) continue;
-      const lastSubmitted = await lastSubmittedDepartment(lot);
-      const targets = eligibleTargets(snap.departments, meta.identity || {}, lastSubmitted)
-        .filter(target => target.canonical === requested || matchesCurrent(target.department_code) || matchesCurrent(target.department_name));
-      if (!targets.length) continue;
-      dueTargets += targets.length;
-      cards.push(`<article class="rf-queue-card"><div><b>${esc(lot.lot_no)}</b><span>CB ${esc(meta.identity?.cb_no || lot.cb_no || "—")} · ART ${esc(meta.identity?.art_no || lot.art_no || "—")}</span></div><p class="rf-worker-rule">ASSIGN DUE · एक या multiple Colours select · हर Colour की सभी Sizes एक Worker</p><div class="rf-due-column-head"><span>Department</span><span>Assign Due</span><span>Submit Due</span></div><div class="rf-route-chart">${targets.map(t => `<button type="button" data-lot="${esc(lot.canonical_lot_id)}" data-dept="${esc(t.department_code)}" class="${route.indexOf(t.canonical) >= route.indexOf(requested) ? "rf-direct" : "rf-warning"}"><b>${esc(t.department_name || t.canonical)}</b><small>${route.indexOf(t.canonical) >= route.indexOf(requested) ? "ASSIGN DUE · SELECT COLOURS" : "⚠ WARNING ASSIGN DUE"}</small><em>Submit Due after worker ready</em></button>`).join("")}</div></article>`);
-    }
-    document.getElementById("rfAssignDueCount")?.replaceChildren(document.createTextNode(String(dueTargets)));
-    document.getElementById("rfAssignDueCountTop")?.replaceChildren(document.createTextNode(String(dueTargets)));
-    host.innerHTML = cards.join("") || `<div class="msg">No ASSIGN DUE lots available for ${esc(label)}. Agar Universal page me lots dikh rahe hain to current department/last submitted mapping verify karein.</div>`;
-    host.querySelectorAll("[data-lot][data-dept]").forEach(button => button.onclick = () => {
-      const department = snap.departments.find(d => upper(d.department_code) === upper(button.dataset.dept));
-      if (department) chooseTarget(button.dataset.lot, { ...department, canonical: canonical(department.department_code) });
-    });
-  }
-
-  function setMode(mode) {
-    filterMode = mode === "submit" ? "submit" : "assign";
-    document.querySelectorAll("[data-rf-due-mode]").forEach(button => {
-      button.classList.toggle("active", button.dataset.rfDueMode === filterMode);
-    });
-    const board = document.getElementById("board");
-    const queue = document.querySelector(".rf-queue-section");
-    if (board) board.classList.toggle("hidden", filterMode !== "submit");
-    if (queue) queue.classList.toggle("hidden", filterMode !== "assign" || requested === "CUTTING");
-    if (filterMode === "assign") document.getElementById("rfDepartmentQueue")?.scrollIntoFilter({ behavior: "smooth", block: "start" });
-  }
-
-  function applyShell() {
-    document.title = `REAL FACTORY — ${label} Dashboard`;
-    document.querySelector(".top small.art-no").textContent = "REAL FACTORY · UPM";
-    document.querySelector(".top h1").textContent = `${label} Dashboard`;
-    const board = document.getElementById("board");
-    const toolbar = document.createElement("section");
-    toolbar.className = "rf-due-toolbar";
-    toolbar.innerHTML = `<button type="button" data-rf-due-mode="submit" class="active">SUBMIT DUE <b id="rfSubmitDueCountTop">0</b></button><button type="button" data-rf-due-mode="assign">ASSIGN DUE <b id="rfAssignDueCountTop">0</b></button>`;
-    board?.insertAdjacentElement("beforebegin", toolbar);
-    const section = document.createElement("section");
-    section.className = "rf-queue-section";
-    section.innerHTML = `<div class="rf-queue-title"><div><h2>ASSIGN DUE</h2><p>Assign due work list.</p></div><span>Assign Due <b id="rfAssignDueCount">0</b> · Submit Due running cards/header से</span></div><div id="rfDepartmentQueue"></div>`;
-    if (requested === "CUTTING") section.classList.add("hidden");
-    board?.insertAdjacentElement("afterend", section);
-    toolbar.querySelectorAll("[data-rf-due-mode]").forEach(button => button.onclick = () => setMode(button.dataset.rfDueMode));
-  }
+  let mode = "SUBMIT";
+  let payload = null;
+  let refreshToken = 0;
+  let applyTimer = null;
+  let observer = null;
 
   const style = document.createElement("style");
-  style.textContent = `.rf-running-hidden{display:none!important}.rf-due-toolbar{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 16px}.rf-due-toolbar button{min-height:48px;border:1px solid #303641;background:#202635;color:#fff;border-radius:10px;font-weight:950}.rf-due-toolbar button.active{background:#d43d5e;border-color:#ff6b8a}.rf-due-toolbar b{margin-left:6px;color:#2bf6a2}.rf-card-actions{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px;margin-top:auto}.rf-card-actions button{width:100%;min-height:46px}.rf-card-actions button:first-child{background:#174936;border-color:#318b65}.rf-card-actions button:last-child{background:#493915;border-color:#8a6b2b}.rf-queue-section{margin-top:18px;border-top:2px solid #303641;padding:14px 16px 0}.rf-queue-title{display:flex;gap:10px;align-items:center;justify-content:space-between}.rf-queue-title h2{margin:0;color:#ffc857}.rf-queue-title p{margin:4px 0 0;color:#9ec5ff;font-weight:750}.rf-queue-title span{color:#98a2b3}.rf-queue-title b{color:#2bf6a2}.rf-queue-card{background:#12151c;border:1px solid #303641;border-radius:14px;padding:12px;margin-top:10px}.rf-queue-card>div:first-child{display:flex;justify-content:space-between;gap:10px}.rf-queue-card>div:first-child span{color:#98a2b3}.rf-worker-rule{margin:8px 0 0;color:#9ec5ff;font-weight:750}.rf-due-column-head{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;margin-top:10px;color:#ffc857;font-size:11px;font-weight:900;text-transform:uppercase}.rf-due-column-head span{background:#080a0f;border:1px solid #303641;border-radius:8px;padding:7px;text-align:center}.rf-route-chart{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:7px;margin-top:7px}.rf-route-chart button{width:100%;min-height:68px}.rf-route-chart b{display:block}.rf-route-chart small{display:block;margin-top:4px;font-size:9px}.rf-route-chart em{display:block;margin-top:3px;color:#cbd5e1;font-size:9px;font-style:normal}.rf-direct{border-color:#318b65;background:#174936}.rf-warning{border-color:#8a6b2b;background:#493915}@media(max-width:700px){.rf-queue-title,.rf-queue-card>div:first-child{align-items:flex-start;flex-direction:column}.rf-route-chart{grid-template-columns:1fr 1fr}}@media(max-width:520px){.rf-due-toolbar,.rf-route-chart{grid-template-columns:1fr}.rf-due-column-head{grid-template-columns:1fr}}`;
-  document.head.append(style);
-  applyShell();
+  style.id = "rf-v9095-style";
+  style.textContent = `
+    .rf-v9095-toolbar{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0}
+    .rf-v9095-toolbar button{min-height:54px;border:1px solid #394252;border-radius:12px;background:#202635;color:#fff;font-size:15px;font-weight:950}
+    .rf-v9095-toolbar button.active{background:#d63b5a;border-color:#ef6b83}
+    .rf-v9095-count{color:#55efad;margin-left:5px}
+    .rf-v9095-hidden{display:none!important}
+    .rf-v9095-colours{display:grid;gap:6px;margin:8px 0}
+    .rf-v9095-row{display:grid;grid-template-columns:minmax(42px,.65fr) minmax(72px,.9fr) minmax(110px,1.35fr);gap:7px;align-items:center;padding:8px 10px;border:1px solid #7c5a17;border-radius:9px;background:#4d3708;color:#fff;font-size:12px;font-weight:900}
+    .rf-v9095-row .c{font-size:14px}.rf-v9095-row .q{color:#ffe39a}.rf-v9095-row .w{text-align:right}
+    .rf-v9095-row.assign{border-color:#2877b4;background:#0f3556;cursor:pointer}
+    .rf-v9095-row.assign .q{color:#9ed3ff}.rf-v9095-empty{padding:12px;border:1px dashed #3c4655;border-radius:10px;color:#98a2b3;font-weight:800}
+    .rf-v9095-queue{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:12px}
+    .rf-v9095-qcard{background:#12151c;border:1px solid #303641;border-radius:14px;padding:12px}
+    .rf-v9095-qhead{display:flex;justify-content:space-between;gap:8px;margin-bottom:8px}.rf-v9095-qhead b{font-size:18px}.rf-v9095-qhead span{color:#98a2b3;font-size:11px}
+    .rf-v9095-assign-section{margin-top:12px}
+    .rf-v9095-assign-section h2{margin:4px 0}.rf-v9095-note{color:#98a2b3;margin:0 0 8px}
+    .rf-v9095-loading #board{visibility:hidden}
+    .lot-card .lot-live-list.rf-v9095-owned{min-height:0}
+    @media(max-width:700px){.rf-v9095-queue{grid-template-columns:1fr}.rf-v9095-toolbar{position:sticky;top:0;z-index:20;background:#07090d;padding:6px 0}.rf-v9095-row{grid-template-columns:48px 72px 1fr}}
+  `;
+  document.head.appendChild(style);
 
-  let timer;
-  const sync = () => {
-    lockDepartment();
-    enhanceRunningCards();
-    clearTimeout(timer);
-    timer = setTimeout(async () => {
-      try {
-        await filterRunningCards();
-        await renderQueue();
-        setMode(filterMode);
-      } catch (error) {
-        const host = document.getElementById("rfDepartmentQueue");
-        if (host) host.innerHTML = `<div class="msg">ASSIGN DUE load failed: ${esc(error?.message || error)}</div>`;
+  function lotNoFromCard(card){
+    return up(card.querySelector(".lot-no")?.textContent || "");
+  }
+  function lotIndex(){
+    return new Map((payload?.lots || []).map(x => [up(x.lot_no), x]));
+  }
+  function fmtQty(v){
+    const n=Number(v||0); return Number.isInteger(n)?String(n):n.toFixed(1).replace(/\.0$/,"");
+  }
+  function rowHtml(r, kind){
+    const worker = r.worker_first_name ? `${r.worker_first_name}/${r.dept_short || ""}` : `OPEN/${r.dept_short || ""}`;
+    return `<div class="rf-v9095-row ${kind==="ASSIGN"?"assign":""}" data-rf-colour="${esc(r.colour_code)}">
+      <span class="c">${esc(r.colour_code)}</span>
+      <span class="q">${esc(fmtQty(r.qty))} PCS</span>
+      <span class="w">${esc(worker)}</span>
+    </div>`;
+  }
+
+  function ensureShell(){
+    const board=document.getElementById("board");
+    if(!board) return false;
+    let bar=document.getElementById("rfV9095Toolbar");
+    if(!bar){
+      bar=document.createElement("section");
+      bar.id="rfV9095Toolbar";
+      bar.className="rf-v9095-toolbar";
+      bar.innerHTML=`<button type="button" data-rf-mode="SUBMIT">SUBMIT DUE <b class="rf-v9095-count" id="rfV9095Submit">0</b></button>
+                     <button type="button" data-rf-mode="ASSIGN">ASSIGN DUE <b class="rf-v9095-count" id="rfV9095Assign">0</b></button>`;
+      board.insertAdjacentElement("beforebegin",bar);
+      bar.querySelectorAll("[data-rf-mode]").forEach(b=>b.onclick=()=>{mode=b.dataset.rfMode; apply();});
+    }
+    let assign=document.getElementById("rfV9095AssignSection");
+    if(!assign){
+      assign=document.createElement("section");
+      assign.id="rfV9095AssignSection";
+      assign.className="rf-v9095-assign-section rf-v9095-hidden";
+      assign.innerHTML=`<h2>OPEN RANDOM QUEUE</h2><p class="rf-v9095-note">Only ${esc(label)} ASSIGN DUE colours · one separate row per colour.</p><div id="rfV9095Queue" class="rf-v9095-queue"></div>`;
+      board.insertAdjacentElement("afterend",assign);
+    }
+    return true;
+  }
+
+  function decorateSubmit(){
+    const map=lotIndex();
+    const cards=[...document.querySelectorAll("#board .lot-card[data-lot]")];
+    cards.forEach(card=>{
+      const row=map.get(lotNoFromCard(card));
+      const submit=row?.submit_rows || [];
+      card.classList.toggle("rf-v9095-hidden",submit.length===0);
+      let host=card.querySelector(".lot-live-list");
+      if(!host){
+        host=document.createElement("div");host.className="lot-live-list";
+        card.querySelector(".lot-head")?.insertAdjacentElement("afterend",host);
       }
-    }, 80);
-  };
-  new MutationObserver(mutations => {
-    if (mutations.every(mutation => mutation.target.closest?.("#rfDepartmentQueue"))) return;
-    sync();
-  }).observe(document.body, { childList: true, subtree: true });
-  sync();
-  setTimeout(sync, 1000);
-  setMode("submit");
-  console.info("REAL FACTORY V884 · CUTTING DUPLICATE FAST SAVE GUARD");
+      host.classList.add("rf-v9095-owned");
+      host.innerHTML=submit.length ? `<div class="rf-v9095-colours">${submit.map(r=>rowHtml(r,"SUBMIT")).join("")}</div>` : "";
+      const old=card.querySelector(".checkin"); if(old) old.hidden=true;
+      let acts=card.querySelector(".rf-card-actions");
+      if(!acts){
+        acts=document.createElement("div");acts.className="rf-card-actions";
+        acts.innerHTML='<button type="button" data-rf-act="rect">RECTIFICATION</button><button type="button" data-rf-act="submit">SUBMIT DUE</button>';
+        card.append(acts);
+        acts.onclick=e=>{
+          e.stopPropagation();
+          const a=e.target.closest("[data-rf-act]")?.dataset.rfAct;if(!a)return;
+          card.querySelector("[data-open-lot]")?.click();
+          const id=a==="submit"?"submitBtn":"alterBtn";
+          let t=0;const iv=setInterval(()=>{const el=document.getElementById(id);if(el){clearInterval(iv);el.scrollIntoView({block:"center"});}else if(++t>30)clearInterval(iv);},100);
+        };
+      }
+    });
+  }
+
+  function lotMetaFromCore(lotNo){
+    const snap=window.RealFactoryUPM?.snapshot?.();
+    return (snap?.lots || []).find(x=>up(x.lot_no)===up(lotNo));
+  }
+  async function openAssign(lotNo, colour){
+    const lot=lotMetaFromCore(lotNo);
+    if(!lot) return;
+    try{
+      if(window.RealFactoryUPM?.openLotAtDepartment){
+        await window.RealFactoryUPM.openLotAtDepartment(lot.canonical_lot_id, requestedRaw);
+      }else{
+        const card=[...document.querySelectorAll("#board .lot-card[data-lot]")].find(c=>lotNoFromCard(c)===up(lotNo));
+        card?.querySelector("[data-open-lot]")?.click();
+      }
+      setTimeout(()=>{
+        const colourCard=[...document.querySelectorAll("#colours .colour-card")].find(c=>up(c.querySelector("h3")?.textContent).includes(up(colour)));
+        colourCard?.scrollIntoView({behavior:"smooth",block:"center"});
+      },450);
+    }catch(e){console.warn("V9095 open assign",e);}
+  }
+
+  function renderAssign(){
+    const q=document.getElementById("rfV9095Queue"); if(!q)return;
+    const lots=(payload?.lots||[]).filter(x=>(x.assign_rows||[]).length);
+    q.innerHTML=lots.length?lots.map(x=>`<article class="rf-v9095-qcard">
+      <div class="rf-v9095-qhead"><b>${esc(x.lot_no)}</b><span>${(x.assign_rows||[]).length} COLOUR DUE</span></div>
+      <div class="rf-v9095-colours">${(x.assign_rows||[]).map(r=>rowHtml(r,"ASSIGN")).join("")}</div>
+    </article>`).join(""):`<div class="rf-v9095-empty">No ASSIGN DUE colours for ${esc(label)}.</div>`;
+    q.querySelectorAll(".rf-v9095-qcard").forEach(card=>{
+      const lotNo=card.querySelector(".rf-v9095-qhead b")?.textContent;
+      card.querySelectorAll(".rf-v9095-row.assign").forEach(r=>r.onclick=()=>openAssign(lotNo,r.dataset.rfColour));
+    });
+  }
+
+  function apply(){
+    if(!payload || !ensureShell()) return;
+    document.getElementById("rfV9095Submit").textContent=String(payload.submit_count||0);
+    document.getElementById("rfV9095Assign").textContent=String(payload.assign_count||0);
+    document.querySelectorAll("[data-rf-mode]").forEach(b=>b.classList.toggle("active",b.dataset.rfMode===mode));
+    const board=document.getElementById("board"), assign=document.getElementById("rfV9095AssignSection");
+    if(mode==="SUBMIT"){
+      board?.classList.remove("rf-v9095-hidden");assign?.classList.add("rf-v9095-hidden");
+      decorateSubmit();
+    }else{
+      board?.classList.add("rf-v9095-hidden");assign?.classList.remove("rf-v9095-hidden");
+      renderAssign();
+    }
+    document.documentElement.classList.remove("rf-v9095-loading");
+  }
+
+  async function refresh(){
+    const sb=client(); if(!sb)return;
+    const token=++refreshToken;
+    document.documentElement.classList.add("rf-v9095-loading");
+    const {data,error}=await sb.rpc("rr_upm_department_colour_due_card_v9095",{p_department_code:requested});
+    if(token!==refreshToken)return;
+    if(error){console.warn("V9095 due RPC",error);document.documentElement.classList.remove("rf-v9095-loading");return;}
+    payload=data||{};
+    apply();
+  }
+
+  function lockDept(){
+    const s=document.getElementById("homeDept");if(!s)return;
+    const wanted=[...s.options].find(o=>(alias[up(o.value)]||up(o.value))===requested);
+    if(wanted && s.value!==wanted.value){s.value=wanted.value;s.dispatchEvent(new Event("change",{bubbles:true}));}
+    if(wanted)s.disabled=true;
+  }
+
+  function boot(){
+    ensureShell(); lockDept();
+    clearTimeout(applyTimer); applyTimer=setTimeout(refresh,120);
+    observer?.disconnect();
+    const board=document.getElementById("board");
+    if(board){
+      observer=new MutationObserver(()=>{clearTimeout(applyTimer);applyTimer=setTimeout(()=>{lockDept();apply();},80);});
+      observer.observe(board,{childList:true});
+    }
+    document.getElementById("refresh")?.addEventListener("click",()=>setTimeout(refresh,250));
+  }
+
+  document.documentElement.classList.add("rf-v9095-loading");
+  if(document.readyState==="loading") document.addEventListener("DOMContentLoaded",()=>setTimeout(boot,0));
+  else setTimeout(boot,0);
+  setTimeout(boot,800);
 })();
