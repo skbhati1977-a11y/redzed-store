@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#07090d">
+<title>REAL FACTORY — Department</title>
+<style>html,body{margin:0;width:100%;height:100%;background:#07090d;overflow:hidden}iframe{display:block;width:100%;height:100dvh;border:0;background:#07090d}</style>
+</head>
+<body>
+<iframe id="app" title="REAL FACTORY Department"></iframe>
+<script>
+(() => {
+  const q=new URLSearchParams(location.search);
+  const raw=(q.get('dept')||'').trim().toUpperCase();
+  const ALIAS={KR:'STITCHING',KARIGAR:'STITCHING',STITCHING:'STITCHING',OV:'OVERLOCK',OVERLOCK:'OVERLOCK',FLD:'FOLDING',FOLDING:'FOLDING',KAAJ:'KAAJ',KAJ:'KAAJ',BUTTON:'BUTTON',BTN:'BUTTON',KAAJ_BUTTON:'KAAJ_BUTTON',TEAK:'TEAK_TANKI',TANKI:'TEAK_TANKI',TEAK_TANKI:'TEAK_TANKI',THREAD_CUT:'THREAD_CUT',TH_CUT:'THREAD_CUT',QC:'QC',PRESS:'PRESS',PRINT:'PRINTING',PRINTING:'PRINTING',STICKER:'STICKER',ID:'METAL_ID',METAL_ID:'METAL_ID',PACK:'PACKING',PACKING:'PACKING',DESPATCH:'DESPATCH',DISPATCH:'DESPATCH',CUT:'CUTTING',CUTTING:'CUTTING'};
+  const LABEL={STITCHING:'Karigar / Stitching',OVERLOCK:'Overlock',FOLDING:'Folding',KAAJ:'Kaaj',BUTTON:'Button',KAAJ_BUTTON:'Kaaj / Button',TEAK_TANKI:'Teak / Tanki',THREAD_CUT:'Thread Cutting',QC:'QC',PRESS:'Press',PRINTING:'Printing',STICKER:'Sticker',METAL_ID:'Metal ID',PACKING:'Packing',DESPATCH:'Despatch',CUTTING:'Cutting'};
+  const dept=ALIAS[raw]||raw;
+  const label=(q.get('label')||LABEL[dept]||dept||'Department').trim();
+  const frame=document.getElementById('app');
+  if(!dept){location.replace('real-universal-production-v770-v9059.html?v=9125');return;}
+  document.title='REAL FACTORY — '+label;frame.title=label;
+  frame.src='real-universal-production-v770-v9059.html?dept='+encodeURIComponent(raw)+'&label='+encodeURIComponent(label)+'&v=9125';
+  const lock=()=>{
+    try{
+      const d=frame.contentDocument;if(!d)return;
+      const h1=d.querySelector('.top h1');if(h1)h1.textContent=label;
+      d.title='REAL FACTORY — '+label;
+      const sel=d.getElementById('homeDept');if(sel){sel.style.display='none';sel.setAttribute('aria-hidden','true');}
+      const toolbar=d.querySelector('.toolbar');if(toolbar){toolbar.style.display='block';const search=d.getElementById('search');if(search){search.style.width='100%';search.style.display='block';}}
+      d.querySelectorAll('.rftitle h2').forEach(x=>{x.textContent=x.textContent.replace(/^.*?·/,label+' ·');});
+    }catch(e){console.warn('Department view lock',e)}
+  };
+  frame.addEventListener('load',()=>{lock();const d=frame.contentDocument;if(d)new MutationObserver(lock).observe(d.documentElement,{childList:true,subtree:true});setInterval(lock,1000);});
+})();
+</script>
+</body>
+</html>
