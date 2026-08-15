@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#07090d">
+<title>REAL FACTORY — Karigar / Stitching</title>
+<style>
+html,body{margin:0;width:100%;height:100%;background:#07090d;overflow:hidden}iframe{display:block;width:100%;height:100dvh;border:0;background:#07090d}
+</style>
+</head>
+<body>
+<iframe id="app" title="Karigar / Stitching" src="real-universal-production-v770-v9059.html?dept=KR&label=Karigar%20%2F%20Stitching&v=9124"></iframe>
+<script>
+(() => {
+  const frame=document.getElementById('app');
+  const lock=()=>{
+    try{
+      const d=frame.contentDocument,w=frame.contentWindow;if(!d||!w)return;
+      const h1=d.querySelector('.top h1');if(h1)h1.textContent='Karigar / Stitching';
+      const sel=d.getElementById('homeDept');
+      if(sel){
+        const options=[...sel.options];
+        const target=options.find(o=>/^(KR|STITCHING|KARIGAR)$/i.test(String(o.value||'').trim())||/karigar|stitch/i.test(String(o.textContent||'')));
+        if(target){sel.value=target.value;target.selected=true;}
+        sel.disabled=true;
+        sel.style.pointerEvents='none';
+        sel.setAttribute('aria-label','Karigar / Stitching locked department');
+        const shown=target?.textContent?.trim()||'Karigar / Stitching';
+        if(!target){sel.innerHTML='<option value="STITCHING" selected>Karigar / Stitching</option>';}
+        else if(/all departments/i.test(sel.selectedOptions?.[0]?.textContent||'')){target.selected=true;sel.value=target.value;}
+      }
+      const titles=d.querySelectorAll('.rftitle h2');titles.forEach(x=>{x.textContent=x.textContent.replace(/^.*?·/,'Karigar / Stitching ·');});
+    }catch(e){console.warn('Karigar department lock',e)}
+  };
+  frame.addEventListener('load',()=>{lock();const d=frame.contentDocument;if(d){new MutationObserver(lock).observe(d.documentElement,{childList:true,subtree:true});}setInterval(lock,1000);});
+})();
+</script>
+</body>
+</html>
