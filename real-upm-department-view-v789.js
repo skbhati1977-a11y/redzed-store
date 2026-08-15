@@ -34,9 +34,10 @@
   style.id = "rf-v9095-style";
   style.textContent = `
     .rf-v9095-toolbar{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0}
-    .rf-v9095-toolbar button{min-height:54px;border:1px solid #394252;border-radius:12px;background:#202635;color:#fff;font-size:15px;font-weight:950}
+    .rf-v9095-toolbar button{min-height:58px;border:1px solid #394252;border-radius:12px;background:#202635;color:#fff;font-size:15px;font-weight:950;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px}
     .rf-v9095-toolbar button.active{background:#d63b5a;border-color:#ef6b83}
-    .rf-v9095-count{color:#55efad;margin-left:5px}
+    .rf-v9095-countline{display:flex;gap:9px;align-items:center;justify-content:center;font-size:12px;font-weight:900}
+    .rf-v9095-count{color:#55efad}.rf-v9095-lotcount{color:#9ed3ff}
     .rf-v9095-hidden{display:none!important}
     .rf-v9095-colours{display:grid;gap:6px;margin:8px 0}
     .rf-v9095-row{display:grid;grid-template-columns:minmax(42px,.65fr) minmax(72px,.9fr) minmax(110px,1.35fr);gap:7px;align-items:center;padding:8px 10px;border:1px solid #7c5a17;border-radius:9px;background:#4d3708;color:#fff;font-size:12px;font-weight:900}
@@ -72,6 +73,16 @@
     </div>`;
   }
 
+  function dueCounts(){
+    const lots = payload?.lots || [];
+    return {
+      submitLots: lots.filter(x => (x.submit_rows || []).length > 0).length,
+      submitCols: Number(payload?.submit_count || 0),
+      assignLots: lots.filter(x => (x.assign_rows || []).length > 0).length,
+      assignCols: Number(payload?.assign_count || 0)
+    };
+  }
+
   function ensureShell(){
     const board=document.getElementById("board");
     if(!board) return false;
@@ -80,8 +91,8 @@
       bar=document.createElement("section");
       bar.id="rfV9095Toolbar";
       bar.className="rf-v9095-toolbar";
-      bar.innerHTML=`<button type="button" data-rf-mode="SUBMIT">SUBMIT DUE <b class="rf-v9095-count" id="rfV9095Submit">0</b></button>
-                     <button type="button" data-rf-mode="ASSIGN">ASSIGN DUE <b class="rf-v9095-count" id="rfV9095Assign">0</b></button>`;
+      bar.innerHTML=`<button type="button" data-rf-mode="SUBMIT"><span>SUBMIT DUE</span><span class="rf-v9095-countline"><span class="rf-v9095-lotcount">LOT <b id="rfV9095SubmitLots">0</b></span><span class="rf-v9095-count">COL <b id="rfV9095Submit">0</b></span></span></button>
+                     <button type="button" data-rf-mode="ASSIGN"><span>ASSIGN DUE</span><span class="rf-v9095-countline"><span class="rf-v9095-lotcount">LOT <b id="rfV9095AssignLots">0</b></span><span class="rf-v9095-count">COL <b id="rfV9095Assign">0</b></span></span></button>`;
       board.insertAdjacentElement("beforebegin",bar);
       bar.querySelectorAll("[data-rf-mode]").forEach(b=>b.onclick=()=>{mode=b.dataset.rfMode; apply();});
     }
@@ -163,8 +174,11 @@
 
   function apply(){
     if(!payload || !ensureShell()) return;
-    document.getElementById("rfV9095Submit").textContent=String(payload.submit_count||0);
-    document.getElementById("rfV9095Assign").textContent=String(payload.assign_count||0);
+    const c=dueCounts();
+    document.getElementById("rfV9095Submit").textContent=String(c.submitCols);
+    document.getElementById("rfV9095SubmitLots").textContent=String(c.submitLots);
+    document.getElementById("rfV9095Assign").textContent=String(c.assignCols);
+    document.getElementById("rfV9095AssignLots").textContent=String(c.assignLots);
     document.querySelectorAll("[data-rf-mode]").forEach(b=>b.classList.toggle("active",b.dataset.rfMode===mode));
     const board=document.getElementById("board"), assign=document.getElementById("rfV9095AssignSection");
     if(mode==="SUBMIT"){
