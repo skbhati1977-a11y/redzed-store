@@ -5,20 +5,19 @@
   const DEPT_LABEL = {PRINTING:"Printing",STICKER:"Sticker",METAL_ID:"Metal ID",STITCHING:"Karigar / Stitching",OVERLOCK:"Overlock",FOLDING:"Folding",KAAJ:"Kaaj",BUTTON:"Button",TEAK_TANKI:"Teak / Tanki",THREAD_CUT:"Thread Cut",QC:"QC",PRESS:"Press",PACKING:"Packing",DESPATCH:"Despatch"};
 
   const templates = [
-    {id:"daily_control",title:"Daily Factory Control",hint:"आज कहाँ काम stuck है, क्या priority है",question:"आज REAL FACTORY में production, open queue, submit due, packing/despatch और stock में सबसे जरूरी pending काम और priority बताओ।",source:"upm_summary"},
-    {id:"stuck_wip",title:"Stuck WIP",hint:"Department/worker पर रुका काम",question:"कौन से production lots या colours सबसे ज्यादा समय से stuck हैं? Department-wise priority और next action बताओ।",source:"upm_summary"},
-    {id:"production_due",title:"Print / Sticker / ID Due",hint:"Cutting के बाद explicit due",question:"Print, Sticker और Metal ID में क्या pending है? Lot-wise important due और action बताओ।",table:"rr_print_due_activation_v839"},
-    {id:"upm_flow",title:"UPM Open Queue",hint:"Assign due + Submit due current state",question:"UPM में department-wise assign due और submit due बताओ। किस department पर सबसे ज्यादा load है?",source:"upm_summary"},
-    {id:"packing",title:"Packing Ready",hint:"Press-ready / packing pending",question:"Packing ready lots, pending packing और despatch readiness का summary बताओ।",rpc:"rr_fg_ready_packing_cards_v788",rpcArgs:{p_data_mode:"TEST"}},
-    {id:"webstore",title:"Webstore Stock",hint:"Saleable और low stock",question:"Webstore saleable stock, low stock और sales attention वाले lots बताओ।",table:"rr_universal_sale_lot_v849"},
-    {id:"sales_return",title:"Sales / Return",hint:"CPI, stock-out और return",question:"Latest sales CPI, sales return और stock impact का business summary बताओ।",table:"rr_fg_final_cpi_v787"},
-    {id:"attendance",title:"Salary / Attendance",hint:"Payable, pending, attendance",question:"Workers की attendance, salary payable, outstanding और payment attention का summary बताओ।",table:"rr_monthly_payroll_management_v779_5"},
-    {id:"accounts",title:"Accounts / Costing",hint:"Costing और financial attention",question:"Accounts और costing में important pending, unusual cost या management attention वाली चीजें बताओ।",table:"rr_costing_effective_result_v850"}
+    {id:"daily_control",title:"Daily Factory Control",hint:"आज कहाँ काम stuck है, क्या priority है",question:"आज REAL FACTORY में production, open queue, submit due, packing/despatch और stock में सबसे जरूरी pending काम और priority बताओ।",source:"upm_summary",aiAction:"PRODUCTION_FLOW_SUGGEST",context:"production_context"},
+    {id:"stuck_wip",title:"Stuck WIP",hint:"Department/worker पर रुका काम",question:"कौन से production lots या colours सबसे ज्यादा समय से stuck हैं? Department-wise priority और next action बताओ।",source:"upm_summary",aiAction:"PRODUCTION_FLOW_SUGGEST",context:"production_context"},
+    {id:"production_due",title:"Print / Sticker / ID Due",hint:"Cutting के बाद explicit due",question:"Print, Sticker और Metal ID में क्या pending है? Lot-wise important due और action बताओ।",table:"rr_print_due_activation_v839",aiAction:"PRODUCTION_FLOW_SUGGEST",context:"production_context"},
+    {id:"upm_flow",title:"UPM Open Queue",hint:"Assign due + Submit due current state",question:"UPM में department-wise assign due और submit due बताओ। किस department पर सबसे ज्यादा load है?",source:"upm_summary",aiAction:"PRODUCTION_FLOW_SUGGEST",context:"production_context"},
+    {id:"packing",title:"Packing Ready",hint:"Press-ready / packing pending",question:"Packing ready lots, pending packing और despatch readiness का summary बताओ।",rpc:"rr_fg_ready_packing_cards_v788",rpcArgs:{p_data_mode:"TEST"},aiAction:"PRODUCTION_FLOW_SUGGEST",context:"production_context"},
+    {id:"webstore",title:"Webstore Stock",hint:"Saleable और low stock",question:"Webstore saleable stock, low stock और sales attention वाले lots बताओ।",table:"rr_universal_sale_lot_v849",aiAction:"BUSINESS_SUGGEST",context:"sales_context"},
+    {id:"sales_return",title:"Sales / Return",hint:"CPI, stock-out और return",question:"Latest sales CPI, sales return और stock impact का business summary बताओ।",table:"rr_fg_final_cpi_v787",aiAction:"BUSINESS_SUGGEST",context:"sales_context"},
+    {id:"attendance",title:"Salary / Attendance",hint:"Payable, pending, attendance",question:"Workers की attendance, salary payable, outstanding और payment attention का summary बताओ।",table:"rr_monthly_payroll_management_v779_5",aiAction:"BUSINESS_SUGGEST",context:"extra_context"},
+    {id:"accounts",title:"Accounts / Costing",hint:"Costing और financial attention",question:"Accounts और costing में important pending, unusual cost या management attention वाली चीजें बताओ।",table:"rr_costing_effective_result_v850",aiAction:"REPORT_ASK",context:"extra_context"}
   ];
 
   let active = templates[0];
   let lastRows = [];
-  let aiReady = false;
   const safe = (v) => String(v ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));
   const msg = (text, type="") => { $("pageMessage").textContent = text || ""; $("pageMessage").className = `rf-msg ${type}`.trim(); };
   const compactValue = (v) => {
@@ -26,6 +25,11 @@
     if (typeof v === "object") { try { const s = JSON.stringify(v); return s.length > 120 ? s.slice(0,117)+"…" : s; } catch { return String(v); } }
     const s = String(v); return s.length > 140 ? s.slice(0,137)+"…" : s;
   };
+  const compactRowsForAi = (rows) => (rows || []).slice(0,80).map(row => {
+    const out = {};
+    Object.entries(row || {}).slice(0,18).forEach(([k,v]) => out[k] = typeof v === "object" ? compactValue(v) : v);
+    return out;
+  });
 
   async function requireAccess(){
     const {data,error}=await supabaseClient.auth.getSession();
@@ -54,7 +58,7 @@
   }
 
   function pickKeys(row){
-    const preferred=["lot_no","cb_no","art_no","department","department_code","worker_name","colour_code","colour","status","assign_due","submit_due","pending_qty","qty","pcs","available_pcs","sale_rate","amount","payable","outstanding","created_at","updated_at"];
+    const preferred=["lot_no","cb_no","art_no","department","department_code","worker_name","colour_code","colour","status","assign_due","submit_due","total_due","oldest_working_hours","pending_qty","qty","pcs","available_pcs","sale_rate","amount","payable","outstanding","created_at","updated_at"];
     const all=Object.keys(row||{});
     const found=preferred.filter(k=>all.includes(k));
     return [...found,...all.filter(k=>!found.includes(k))].slice(0,7);
@@ -75,7 +79,7 @@
   async function loadUpmSummary(){
     const calls=DEPTS.map(async dept=>{
       const {data,error}=await supabaseClient.rpc("rr_upm_department_colour_due_card_v9109",{p_department_code:dept});
-      if(error) return {department:DEPT_LABEL[dept]||dept,department_code:dept,error:error.message,assign_due:0,submit_due:0,lot_count:0};
+      if(error) return {department:DEPT_LABEL[dept]||dept,department_code:dept,error:error.message,assign_due:0,submit_due:0,lot_count:0,total_due:0,oldest_working_hours:0};
       const lots=Array.isArray(data?.lots)?data.lots:[];
       const assign=Number(data?.assign_col_count ?? lots.reduce((s,l)=>s+(Array.isArray(l.assign_rows)?l.assign_rows.length:0),0));
       const submit=Number(data?.submit_col_count ?? lots.reduce((s,l)=>s+(Array.isArray(l.submit_rows)?l.submit_rows.length:0),0));
@@ -103,10 +107,19 @@
     try{
       const {data,error}=await supabaseClient.functions.invoke("real-factory-ai",{body:{action:"HEALTH_CHECK"}});
       if(error)throw error;
-      aiReady=Boolean(data?.ok&&data?.openai_configured);
-      el.textContent=aiReady?`● AI connected · ${data?.version||"ready"}`:"● AI service connected · OpenAI not configured";
-      el.className=`rf-ai-health ${aiReady?"ok":"bad"}`;
-    }catch(e){aiReady=false;el.textContent="● AI connection unavailable";el.className="rf-ai-health bad";}
+      const ready=Boolean(data?.ok&&data?.openai_configured);
+      el.textContent=ready?`● AI connected · ${data?.version||"ready"}`:"● AI service connected · OpenAI not configured";
+      el.className=`rf-ai-health ${ready?"ok":"bad"}`;
+    }catch(e){el.textContent="● AI connection unavailable";el.className="rf-ai-health bad";}
+  }
+
+  function buildAiBody(question){
+    const action=active.aiAction||"BUSINESS_SUGGEST";
+    const body={action,question,data_mode:"TEST",source:"REPORTS_V9132",report_type:active.id,from_date:$("fromDate").value||null,to_date:$("toDate").value||null};
+    if(action==="REPORT_ASK") return body;
+    const context={report:active.title,period:{from:body.from_date,to:body.to_date},rows:compactRowsForAi(lastRows)};
+    body[active.context||"extra_context"]=context;
+    return body;
   }
 
   async function askAi(){
@@ -114,7 +127,7 @@
     if(!question){msg("Question type karein.","error");return;}
     $("askAiBtn").disabled=true;$("askAiBtn").textContent="ANALYSING…";$("reportResult").textContent="";msg("");
     try{
-      const body={action:"REPORT_ASK",question,report_type:active.id,data_mode:"TEST",source:"REPORTS_V9131",from_date:$("fromDate").value||null,to_date:$("toDate").value||null};
+      const body=buildAiBody(question);
       const {data,error}=await supabaseClient.functions.invoke("real-factory-ai",{body});
       if(error)throw error;
       if(!data?.ok) throw new Error(data?.error||"AI report failed.");
@@ -123,7 +136,7 @@
       $("reportResult").textContent=answer;
       const tier=data?.ai?.router?.tier||"AI"; const model=data?.ai?.model||"";
       $("sourceMeta").textContent=`${lastRows.length} source rows · ${tier}${model?" · "+model:""}`;
-      msg("AI report generated from connected REAL FACTORY data.","success");
+      msg(`AI used ${active.aiAction||"BUSINESS_SUGGEST"} with the current ${active.title} source.`,"success");
     }catch(e){console.warn(e);$("reportResult").textContent="AI answer नहीं मिला। नीचे source data सुरक्षित है; data देखकर manual decision लिया जा सकता है.";msg(e.message||"AI function unavailable.","error");}
     finally{$("askAiBtn").disabled=false;$("askAiBtn").textContent="ASK AI";}
   }
