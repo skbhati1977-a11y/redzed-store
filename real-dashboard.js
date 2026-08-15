@@ -8,6 +8,21 @@
   const moduleSearch = document.getElementById("moduleSearch");
   const moduleCount = document.getElementById("moduleCount");
 
+  // V9122: Universal Production Control must always open as a clean ALL-DEPARTMENTS view.
+  // Never carry a previous department territory through browser/history/query state.
+  document.addEventListener("click", (event) => {
+    const link = event.target?.closest?.('a[data-module][href*="real-universal-production-v770.html"]');
+    if (!link) return;
+    const title = String(link.querySelector("h3")?.textContent || "").trim().toUpperCase();
+    if (title !== "UNIVERSAL PRODUCTION CONTROL") return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    const clean = new URL("real-universal-production-v770.html", location.href);
+    clean.searchParams.set("all", "1");
+    clean.searchParams.set("v", "9122");
+    location.assign(clean.href);
+  }, true);
+
   function setMessage(text, type = "") {
     message.textContent = text || "";
     message.className = `rr-message ${type}`.trim();
@@ -22,7 +37,6 @@
         '"': "&quot;",
         "'": "&#039;"
       };
-
       return map[char];
     });
   }
@@ -30,55 +44,37 @@
   function filterModules() {
     const query = String(moduleSearch?.value || "").trim().toLowerCase();
     const cards = [...document.querySelectorAll("[data-module]")];
-
     let visible = 0;
     cards.forEach((card) => {
       const match = !query || card.textContent.toLowerCase().includes(query);
       card.hidden = !match;
       if (match) visible += 1;
     });
-
     document.querySelectorAll("[data-module-section]").forEach((section) => {
       section.hidden = !section.querySelector("[data-module]:not([hidden])");
     });
-
     if (moduleCount) {
-      moduleCount.textContent = query
-        ? `${visible} of ${cards.length} modules`
-        : `${cards.length} latest modules`;
+      moduleCount.textContent = query ? `${visible} of ${cards.length} modules` : `${cards.length} latest modules`;
     }
   }
 
   async function requireOwner() {
     const { data, error } = await supabaseClient.auth.getSession();
-
     if (error || !data.session) {
       window.location.replace("real-login.html");
       throw new Error("Login required.");
     }
-
     const user = data.session.user;
-
-    const {
-      data: profile,
-      error: profileError
-    } = await supabaseClient
+    const { data: profile, error: profileError } = await supabaseClient
       .from("rr_user_profiles")
       .select("full_name, role_code, is_active")
       .eq("auth_user_id", user.id)
       .single();
-
-    if (
-      profileError ||
-      !profile?.is_active ||
-      !["owner", "admin"].includes(profile.role_code)
-    ) {
+    if (profileError || !profile?.is_active || !["owner", "admin"].includes(profile.role_code)) {
       await supabaseClient.auth.signOut();
       window.location.replace("real-login.html");
       throw new Error("Owner/Admin access required.");
     }
-
-    // Public dashboard must show the access designation, never a personal name.
     const publicRoleLabel = ["owner", "admin"].includes(profile.role_code)
       ? "SUPER ADMIN"
       : String(profile.role_code || "USER").replaceAll("_", " ").toUpperCase();
@@ -87,79 +83,21 @@
   }
 
   async function countRows(table, filterCallback) {
-    let query = supabaseClient
-      .from(table)
-      .select("*", {
-        count: "exact",
-        head: true
-      });
-
-    if (typeof filterCallback === "function") {
-      query = filterCallback(query);
-    }
-
+    let query = supabaseClient.from(table).select("*", { count: "exact", head: true });
+    if (typeof filterCallback === "function") query = filterCallback(query);
     const { count, error } = await query;
-
-    if (error) {
-      throw error;
-    }
-
+    if (error) throw error;
     return count || 0;
   }
 
   async function loadStats() {
-    const artPromise = countRows(
-      "rr_art_master",
-      (query) => query.eq("is_active", true)
-    );
-
-    const lotPromise = countRows(
-      "rr_lots",
-      (query) =>
-        query.not(
-          "status",
-          "in",
-          '("closed","cancelled")'
-        )
-    );
-
-    const remakePromise = countRows(
-      "rr_remakes",
-      (query) =>
-        query.not(
-          "status",
-          "in",
-          '("merged","closed","cancelled")'
-        )
-    );
-
-    const inventoryPromise = supabaseClient
-      .from("rr_lot_inventory_summary")
-      .select("available_pcs");
-
-    const [
-      arts,
-      lots,
-      remakes,
-      inventory
-    ] = await Promise.all([
-      artPromise,
-      lotPromise,
-      remakePromise,
-      inventoryPromise
-    ]);
-
-    if (inventory.error) {
-      throw inventory.error;
-    }
-
-    const stock = (inventory.data || []).reduce(
-      (sum, row) => {
-        return sum + Number(row.available_pcs || 0);
-      },
-      0
-    );
-
+    const artPromise = countRows("rr_art_master", (query) => query.eq("is_active", true));
+    const lotPromise = countRows("rr_lots", (query) => query.not("status", "in", '("closed","cancelled")'));
+    const remakePromise = countRows("rr_remakes", (query) => query.not("status", "in", '("merged","closed","cancelled")'));
+    const inventoryPromise = supabaseClient.from("rr_lot_inventory_summary").select("available_pcs");
+    const [arts, lots, remakes, inventory] = await Promise.all([artPromise, lotPromise, remakePromise, inventoryPromise]);
+    if (inventory.error) throw inventory.error;
+    const stock = (inventory.data || []).reduce((sum, row) => sum + Number(row.available_pcs || 0), 0);
     document.getElementById("artCount").textContent = arts;
     document.getElementById("lotCount").textContent = lots;
     document.getElementById("remakeCount").textContent = remakes;
@@ -167,137 +105,33 @@
   }
 
   async function loadLots() {
-    const { data, error } = await supabaseClient
-      .from("rr_live_lot_status")
-      .select("*")
-      .order("updated_at", {
-        ascending: false
-      })
-      .limit(12);
-
-    if (error) {
-      throw error;
-    }
-
+    const { data, error } = await supabaseClient.from("rr_live_lot_status").select("*").order("updated_at", { ascending: false }).limit(12);
+    if (error) throw error;
     if (!data || data.length === 0) {
-      lotList.innerHTML = `
-        <p class="rr-muted">
-          No production lots yet.
-        </p>
-      `;
-
+      lotList.innerHTML = `<p class="rr-muted">No production lots yet.</p>`;
       return;
     }
-
-    lotList.innerHTML = data
-      .map((lot) => {
-        const itemName =
-          lot.item_name ||
-          lot.product_name ||
-          "";
-
-        const department =
-          lot.current_department ||
-          lot.current_department_code ||
-          "";
-
-        return `
-          <article class="rr-list-row">
-
-            <div>
-              <strong>
-                ${safeText(lot.lot_no)}
-              </strong>
-
-              <span>
-                Art ${safeText(lot.art_no)}
-                ·
-                ${safeText(itemName)}
-              </span>
-            </div>
-
-            <div class="rr-list-meta">
-              <span>
-                ${safeText(department)}
-              </span>
-
-              <b>
-                ${safeText(lot.status)}
-              </b>
-            </div>
-
-          </article>
-        `;
-      })
-      .join("");
+    lotList.innerHTML = data.map((lot) => {
+      const itemName = lot.item_name || lot.product_name || "";
+      const department = lot.current_department || lot.current_department_code || "";
+      return `<article class="rr-list-row"><div><strong>${safeText(lot.lot_no)}</strong><span>Art ${safeText(lot.art_no)} · ${safeText(itemName)}</span></div><div class="rr-list-meta"><span>${safeText(department)}</span><b>${safeText(lot.status)}</b></div></article>`;
+    }).join("");
   }
 
   async function refreshDashboard() {
     setMessage("");
-
-    if (refreshBtn) {
-      refreshBtn.disabled = true;
-      refreshBtn.textContent = "Loading...";
-    }
-
-    try {
-      await Promise.all([
-        loadStats(),
-        loadLots()
-      ]);
-    } catch (error) {
-      console.error(error);
-
-      setMessage(
-        error.message ||
-        "Dashboard data could not load.",
-        "error"
-      );
-    } finally {
-      if (refreshBtn) {
-        refreshBtn.disabled = false;
-        refreshBtn.textContent = "Refresh";
-      }
-    }
+    if (refreshBtn) { refreshBtn.disabled = true; refreshBtn.textContent = "Loading..."; }
+    try { await Promise.all([loadStats(), loadLots()]); }
+    catch (error) { console.error(error); setMessage(error.message || "Dashboard data could not load.", "error"); }
+    finally { if (refreshBtn) { refreshBtn.disabled = false; refreshBtn.textContent = "Refresh"; } }
   }
 
-  if (logoutBtn) {
-    logoutBtn.addEventListener(
-      "click",
-      async () => {
-        await supabaseClient.auth.signOut();
-
-        window.location.replace(
-          "real-login.html"
-        );
-      }
-    );
-  }
-
-  if (refreshBtn) {
-    refreshBtn.addEventListener(
-      "click",
-      refreshDashboard
-    );
-  }
-
-  if (moduleSearch) {
-    moduleSearch.addEventListener("input", filterModules);
-    filterModules();
-  }
+  if (logoutBtn) logoutBtn.addEventListener("click", async () => { await supabaseClient.auth.signOut(); window.location.replace("real-login.html"); });
+  if (refreshBtn) refreshBtn.addEventListener("click", refreshDashboard);
+  if (moduleSearch) { moduleSearch.addEventListener("input", filterModules); filterModules(); }
 
   (async () => {
-    try {
-      await requireOwner();
-      await refreshDashboard();
-    } catch (error) {
-      console.error(error);
-
-      setMessage(
-        error.message ||
-        "Access failed.",
-        "error"
-      );
-    }
+    try { await requireOwner(); await refreshDashboard(); }
+    catch (error) { console.error(error); setMessage(error.message || "Access failed.", "error"); }
   })();
 })();
