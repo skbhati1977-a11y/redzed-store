@@ -8,23 +8,31 @@
 <style>html,body{margin:0;width:100%;height:100%;background:#07090d;overflow:hidden}iframe{display:block;width:100%;height:100dvh;border:0;background:#07090d}</style>
 </head>
 <body>
-<iframe id="app" title="Karigar / Stitching" src="real-universal-production-v770-v9059.html?dept=KR&label=Karigar%20%2F%20Stitching&v=9125"></iframe>
+<iframe id="app" title="Karigar / Stitching" src="real-universal-production-v770-v9059.html?dept=KR&label=Karigar%20%2F%20Stitching&v=9126"></iframe>
 <script>
 (() => {
+  'use strict';
   const frame=document.getElementById('app');
-  const lock=()=>{
-    try{
-      const d=frame.contentDocument;if(!d)return;
-      const h1=d.querySelector('.top h1');if(h1)h1.textContent='Karigar / Stitching';
-      d.title='REAL FACTORY — Karigar / Stitching';
-      const sel=d.getElementById('homeDept');
-      if(sel){sel.style.display='none';sel.setAttribute('aria-hidden','true');}
-      const toolbar=d.querySelector('.toolbar');
-      if(toolbar){toolbar.style.display='block';const search=d.getElementById('search');if(search){search.style.width='100%';search.style.display='block';}}
-      d.querySelectorAll('.rftitle h2').forEach(x=>{x.textContent=x.textContent.replace(/^.*?·/,'Karigar / Stitching ·');});
-    }catch(e){console.warn('Karigar department lock',e)}
-  };
-  frame.addEventListener('load',()=>{lock();const d=frame.contentDocument;if(d)new MutationObserver(lock).observe(d.documentElement,{childList:true,subtree:true});setInterval(lock,1000);});
+  function apply(){
+    const d=frame.contentDocument;
+    if(!d||!d.documentElement)return false;
+    const h1=d.querySelector('.top h1');if(h1)h1.textContent='Karigar / Stitching';
+    d.title='REAL FACTORY — Karigar / Stitching';
+    const sel=d.getElementById('homeDept');
+    if(!sel||!sel.options||!sel.options.length)return false;
+    const target=[...sel.options].find(o=>/^(KR|STITCHING|KARIGAR)$/i.test(String(o.value||'').trim())||/karigar|stitch/i.test(String(o.textContent||'')));
+    if(!target)return false;
+    if(sel.value!==target.value){sel.value=target.value;target.selected=true;sel.dispatchEvent(new Event('change',{bubbles:true}));}
+    sel.disabled=true;sel.style.display='none';sel.setAttribute('aria-hidden','true');
+    const toolbar=d.querySelector('.toolbar');if(toolbar){toolbar.style.display='block';const search=d.getElementById('search');if(search){search.style.display='block';search.style.width='100%';}}
+    d.querySelectorAll('.rftitle h2').forEach(x=>{x.textContent=x.textContent.replace(/^.*?·/,'Karigar / Stitching ·');});
+    return true;
+  }
+  frame.addEventListener('load',()=>{
+    let tries=0;
+    const settle=()=>{tries++;let done=false;try{done=apply();}catch(e){console.warn('Karigar context init',e)}if(!done&&tries<30)setTimeout(settle,150)};
+    settle();
+  },{once:true});
 })();
 </script>
 </body>
