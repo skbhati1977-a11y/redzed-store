@@ -6,6 +6,7 @@
   const FABRIC_LIST_ID = "cbRegularPurchaseFabricHistoryV9133";
   let options = { vendors: [], fabrics: [] };
   let observer = null;
+  let rollSyncScheduled = false;
 
   function client() {
     try {
@@ -66,6 +67,36 @@
     input.insertAdjacentElement("afterend", button);
   }
 
+  function wantedDefaultRollCount() {
+    const division = document.getElementById("divisionCount");
+    return Math.max(1, Number(division?.value || 1));
+  }
+
+  function syncOneMissingDefaultRoll() {
+    rollSyncScheduled = false;
+    const host = document.getElementById("materialList");
+    if (!host) return;
+    const wanted = wantedDefaultRollCount();
+
+    for (const set of host.querySelectorAll(".roll-set")) {
+      const current = set.querySelectorAll("[data-roll]").length;
+      if (current < wanted) {
+        const add = set.querySelector(".add-roll");
+        if (add) {
+          add.click();
+          scheduleRollSync();
+        }
+        return;
+      }
+    }
+  }
+
+  function scheduleRollSync() {
+    if (rollSyncScheduled) return;
+    rollSyncScheduled = true;
+    requestAnimationFrame(syncOneMissingDefaultRoll);
+  }
+
   function enhanceMaterialRows() {
     const host = document.getElementById("materialList");
     if (!host) return;
@@ -87,6 +118,8 @@
         addNewButton(fabric, "fabric");
       }
     });
+
+    scheduleRollSync();
   }
 
   async function loadOptions() {
@@ -103,11 +136,23 @@
     enhanceMaterialRows();
   }
 
+  function bindDivisionRollSync() {
+    const division = document.getElementById("divisionCount");
+    if (!division || division.dataset.rollSyncV9133 === "1") return;
+    division.dataset.rollSyncV9133 = "1";
+    division.addEventListener("input", scheduleRollSync);
+    division.addEventListener("change", scheduleRollSync);
+  }
+
   function boot() {
+    bindDivisionRollSync();
     enhanceMaterialRows();
     const host = document.getElementById("materialList");
     if (host && !observer) {
-      observer = new MutationObserver(enhanceMaterialRows);
+      observer = new MutationObserver(() => {
+        bindDivisionRollSync();
+        enhanceMaterialRows();
+      });
       observer.observe(host, { childList: true, subtree: true });
     }
     loadOptions();
