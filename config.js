@@ -43,9 +43,9 @@ if (/real-product-master-v720\.html$/i.test(window.location.pathname)) {
   document.head.appendChild(rrMcSearchableMapping);
 }
 
-/* V9141 GLOBAL MOBILE FILL UX: hide sheet descriptions and active form headers. */
+/* V9142 GLOBAL MOBILE FILL UX: hide descriptions and active form headers. */
 const rrGlobalMobileFill = document.createElement("script");
-rrGlobalMobileFill.src = "real-global-mobile-fill-v9141.js?v=9141";
+rrGlobalMobileFill.src = "real-global-mobile-fill-v9142.js?v=9142";
 rrGlobalMobileFill.async = false;
 document.head.appendChild(rrGlobalMobileFill);
 
