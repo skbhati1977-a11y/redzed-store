@@ -35,10 +35,10 @@ window.supabaseDb = supabaseClient;
 window.redzedSupabase = supabaseClient;
 window.sb = supabaseClient;
 
-/* V9139 dictionary style MC fabric/vendor search for Product Master V720 only. */
+/* V9140 MC search plus fill-focus header hide for Product Master V720 only. */
 if (/real-product-master-v720\.html$/i.test(window.location.pathname)) {
   const rrMcSearchableMapping = document.createElement("script");
-  rrMcSearchableMapping.src = "real-mc-searchable-mapping-v9139.js?v=9139";
+  rrMcSearchableMapping.src = "real-mc-searchable-mapping-v9140.js?v=9140";
   rrMcSearchableMapping.async = false;
   document.head.appendChild(rrMcSearchableMapping);
 }
