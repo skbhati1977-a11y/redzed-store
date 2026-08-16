@@ -1,0 +1,41 @@
+name: Apply CB New Purchase Mapping V9133
+
+on:
+  push:
+    paths:
+      - '.github/workflows/apply-cb-map-v9133.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Add CB mapping script include
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('real-product-master-v804.html')
+          s = p.read_text(encoding='utf-8')
+          tag = '<script src="real-product-master-v804-cb-purchase-map-v9133.js?v=9133"></script>'
+          if tag not in s:
+              s = s.replace('</body>', f'{tag}\n</body>')
+              p.write_text(s, encoding='utf-8')
+          PY
+      - name: Commit live include
+        shell: bash
+        run: |
+          if git diff --quiet -- real-product-master-v804.html; then
+            echo 'Already applied.'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add real-product-master-v804.html
+          git commit -m 'Wire CB New regular purchase vendor fabric mapping V9133'
+          git push origin HEAD:main
