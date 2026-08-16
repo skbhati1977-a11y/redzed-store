@@ -7,30 +7,47 @@
 <style>html,body{margin:0;width:100%;height:100%;background:#09090c}#cbApp{border:0;width:100%;height:100vh;display:block}</style>
 </head>
 <body>
-<iframe id="cbApp" src="real-product-master-v804.html?view=cb_new&v=9130&fresh=20260816e"></iframe>
+<iframe id="cbApp" src="real-product-master-v804.html?view=cb_new&v=9130&fresh=20260816f"></iframe>
 <script>
 (()=>{
   const frame=document.getElementById('cbApp');
+  let initialized=false;
   function install(){
     const w=frame.contentWindow,d=frame.contentDocument;
     if(!w||!d)return;
-    if(!d.getElementById('cbRouteFix20260816e')){
+
+    const sheet=d.getElementById('cbSheet');
+    if(sheet){
+      sheet.classList.remove('hidden');
+      sheet.setAttribute('aria-hidden','false');
+      d.body.style.overflow='hidden';
+    }
+
+    if(!d.getElementById('cbRouteFix20260816f')){
       const map=d.createElement('script');
-      map.id='cbRouteFix20260816e';
-      map.src='real-product-master-v804-cb-purchase-map-v9133.js?v=9133&fix=20260816e';
+      map.id='cbRouteFix20260816f';
+      map.src='real-product-master-v804-cb-purchase-map-v9133.js?v=9133&fix=20260816f';
       d.body.appendChild(map);
     }
+
     let tries=0;
     const open=()=>{
-      const sheet=d.getElementById('cbSheet');
-      if(sheet&&!sheet.classList.contains('hidden'))return;
+      if(initialized)return;
       const btn=d.getElementById('openCbNew');
-      if(btn&&typeof btn.onclick==='function'){btn.click();return;}
-      if(++tries<100)setTimeout(open,200);
+      if(btn&&typeof btn.onclick==='function'){
+        initialized=true;
+        btn.click();
+        return;
+      }
+      if(++tries<150)setTimeout(open,200);
     };
     open();
   }
-  frame.addEventListener('load',()=>{setTimeout(install,100);setTimeout(install,1000);});
+  frame.addEventListener('load',()=>{
+    setTimeout(install,50);
+    setTimeout(install,500);
+    setTimeout(install,1500);
+  });
 })();
 </script>
 </body>
