@@ -169,10 +169,79 @@ function updateViewport(){
   );
 }
 
+function installCbRemarksVoice(){
+  if(!location.pathname.includes('real-cb-new-v9130-fix2.html'))return;
+  const box=document.getElementById('remarks');
+  if(!box||document.getElementById('rrCbRemarksVoice'))return;
+
+  const Recognition=window.SpeechRecognition||window.webkitSpeechRecognition;
+  const wrap=document.createElement('div');
+  wrap.style.cssText='display:flex;gap:8px;align-items:stretch;margin-top:6px';
+  const btn=document.createElement('button');
+  btn.id='rrCbRemarksVoice';
+  btn.type='button';
+  btn.textContent='🎤 Voice Typing';
+  btn.style.cssText='border:1px solid #4b4b58;background:#1c1c23;color:#fff;border-radius:11px;padding:10px 13px;font-weight:850;min-height:44px';
+  const status=document.createElement('span');
+  status.style.cssText='align-self:center;color:#a3a3ad;font-size:12px';
+  status.textContent='Tap mic to speak';
+  wrap.append(btn,status);
+  box.insertAdjacentElement('afterend',wrap);
+
+  if(!Recognition){
+    btn.disabled=true;
+    status.textContent='Voice typing not supported in this browser';
+    return;
+  }
+
+  const rec=new Recognition();
+  rec.lang='hi-IN';
+  rec.continuous=true;
+  rec.interimResults=true;
+  let listening=false;
+  let base='';
+
+  rec.onstart=()=>{
+    listening=true;
+    base=box.value.trim();
+    btn.textContent='⏹ Stop Voice';
+    btn.style.borderColor='#e25869';
+    status.textContent='Listening…';
+  };
+  rec.onresult=(event)=>{
+    let finalText='';
+    let interim='';
+    for(let i=event.resultIndex;i<event.results.length;i++){
+      const text=event.results[i][0]?.transcript||'';
+      if(event.results[i].isFinal)finalText+=text+' ';
+      else interim+=text;
+    }
+    const spoken=(finalText+interim).trim();
+    box.value=[base,spoken].filter(Boolean).join(base&&spoken?' ':'');
+    box.dispatchEvent(new Event('input',{bubbles:true}));
+  };
+  rec.onerror=(event)=>{
+    status.textContent=event.error==='not-allowed'?'Microphone permission required':`Voice error: ${event.error}`;
+  };
+  rec.onend=()=>{
+    listening=false;
+    btn.textContent='🎤 Voice Typing';
+    btn.style.borderColor='#4b4b58';
+    status.textContent='Tap mic to speak';
+  };
+  btn.addEventListener('click',()=>{
+    try{
+      if(listening)rec.stop();
+      else rec.start();
+    }catch(_){ }
+  });
+}
+
 function boot(){
   installMeta();
   installStyle();
   updateViewport();
+  installCbRemarksVoice();
 
   window.addEventListener('resize',updateViewport,{passive:true});
   window.addEventListener('orientationchange',()=>{
