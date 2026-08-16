@@ -79,7 +79,7 @@
   const group=(id,icon,title,body,open=false)=>`<div class="rf-acc${open?' open':''}" data-acc="${id}"><button class="rf-acc-head" type="button"><span class="rf-acc-icon">${icon}</span><span class="rf-acc-title">${title}</span><span class="rf-acc-arrow">›</span></button><div class="rf-acc-body">${body}</div></div>`;
   side.innerHTML =
     group('product','▣','Product Master',
-      A(`real-cb-new-v9130-loader.html?v=${V}&fix=20260816d`,'CB','CB New')+
+      A(`real-cb-new-v9130-fix2.html?v=${V}&fix=20260816e`,'CB','CB New')+
       A(`real-product-master-v720.html?view=matching-cloth&v=${V}`,'MC','Matching Cloth')+
       A(`real-art-master.html?v=${V}`,'AR','Art Master')+
       A(`real-print-master.html?v=${V}`,'PR','Print Master')+
