@@ -149,7 +149,7 @@
 
   side.innerHTML =
     group('product','▣','Product Master',
-      A(`real-product-master-v720.html?view=cb-new&v=${V}`,'CB','CB New')+
+      A(`real-product-master-v804.html?view=cb_new&v=${V}&cbfix=20260816a`,'CB','CB New')+
       A(`real-product-master-v720.html?view=matching-cloth&v=${V}`,'MC','Matching Cloth')+
       A(`real-art-master.html?v=${V}`,'AR','Art Master')+
       A(`real-print-master.html?v=${V}`,'PR','Print Master')+
