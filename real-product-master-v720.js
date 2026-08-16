@@ -6,9 +6,9 @@ const $ = id => document.getElementById(id);
 const state = {
   client:null, filter:"all", mode:"create", activeCbId:null, activeUnitId:null,
   categories:[], galleryRows:[], purchases:[], rolls:[], colours:[], allocations:[],
-  arts:[], prints:[], stickerMasters:[], metalMasters:[], assignments:[], printAssignments:[], stickerAssignments:[], metalAssignments:[], media:[], lots:[],
+  arts:[], prints:[], assignments:[], printAssignments:[], media:[], lots:[],
   mc:{card:null,fabrics:[],purchases:[],ledger:[],lotMatchings:[],canViewFinancials:false}, cbLedger:[], colourDrafts:[], materialEntries:[],
-  selectedArtId:null, selectedPrintIds:[], selectedStickerMasterIds:[], selectedMetalMasterIds:[], assignmentTab:"art", mcPricingDriver:"value",
+  selectedArtId:null, selectedPrintIds:[], mcPricingDriver:"value",
   role:null, grEntries:[], exchangeEntries:[], damageClaims:[], damageMedia:[],
   lotCostAdjustments:[], activeDetail:null, operation:null
 };
@@ -18,7 +18,7 @@ const TABLES = {
   colours:"rr_cb_colours", purchases:"rr_cb_purchase_entries", rolls:"rr_cb_purchase_rolls",
   arts:"rr_art_master", prints:"rr_print_master",
   printView:"rr_print_library_view", assignments:"rr_cb_art_assignments",
-  printAssignments:"rr_cb_print_assignments", stickerMasters:"rr_sticker_master_v803", metalMasters:"rr_metal_id_master_v803", stickerAssignments:"rr_cb_sticker_assignments", metalAssignments:"rr_cb_metal_id_assignments_v801", media:"rr_media", lots:"rr_cutting_lots_v3",
+  printAssignments:"rr_cb_print_assignments", media:"rr_media", lots:"rr_cutting_lots_v3",
   allocations:"rr_cb_material_allocations", gr:"rr_product_gr_entries",
   exchanges:"rr_product_exchange_entries", damage:"rr_product_damage_claim_details_v1",
   damageMedia:"rr_product_damage_media", lotAdjustments:"rr_product_lot_cost_adjustments",
@@ -67,9 +67,8 @@ async function waitForRuntime(){
   }
   return null;
 }
-function setGlobalModeBadgeInteractive(enabled){const badge=$("rr-global-data-mode-badge-v786-1-1");if(badge)badge.style.pointerEvents=enabled?"auto":"none";}
-function openSheet(id){const el=$(id);el.classList.remove("hidden");el.setAttribute("aria-hidden","false");document.body.style.overflow="hidden";setGlobalModeBadgeInteractive(false);}
-function closeSheet(id){const el=$(id);el.classList.add("hidden");el.setAttribute("aria-hidden","true");if(!document.querySelector(".sheet:not(.hidden)")){document.body.style.overflow="";setGlobalModeBadgeInteractive(true);}}
+function openSheet(id){const el=$(id);el.classList.remove("hidden");el.setAttribute("aria-hidden","false");document.body.style.overflow="hidden";}
+function closeSheet(id){const el=$(id);el.classList.add("hidden");el.setAttribute("aria-hidden","true");if(!document.querySelector(".sheet:not(.hidden)"))document.body.style.overflow="";}
 function setBusy(button,busy,text){if(!button)return;if(busy){button.dataset.old=button.textContent;button.disabled=true;button.textContent=text}else{button.disabled=false;button.textContent=button.dataset.old||button.textContent}}
 function categoryByCode(code){return state.categories.find(x=>String(x.category_code||"").toLowerCase()===String(code).toLowerCase())||null;}
 function categoryById(id){return state.categories.find(x=>String(x.id)===String(id))||null;}
@@ -139,10 +138,10 @@ async function loadMc(){
 async function loadData(){
   const btn=$("refresh");setBusy(btn,true,"Loading…");$("gallery").setAttribute("aria-busy","true");
   try{
-    const [categories,gallery,purchases,rolls,colours,allocations,arts,prints,stickerMasters,metalMasters,assignments,printAssignments,stickerAssignments,metalAssignments,media,lots,_mcLoaded,grEntries,exchangeEntries,damageClaims,damageMedia,lotCostAdjustments,cbLedger]=await Promise.all([
-      requiredTable(TABLES.categories),loadGalleryRows(),requiredTable(TABLES.purchases,"*","created_at"),optionalTable(TABLES.rolls),requiredTable(TABLES.colours,"*","colour_order"),optionalTable(TABLES.allocations),requiredTable(TABLES.arts,"*","updated_at"),loadPrints(),optionalTable(TABLES.stickerMasters,"*","updated_at"),optionalTable(TABLES.metalMasters,"*","updated_at"),requiredTable(TABLES.assignments,"*","updated_at"),requiredTable(TABLES.printAssignments,"*","sequence_no"),optionalTable(TABLES.stickerAssignments,"*","sequence_no"),optionalTable(TABLES.metalAssignments,"*","sequence_no"),optionalTable(TABLES.media),optionalTable(TABLES.lots,"*","created_at"),loadMc(),optionalTable(TABLES.gr,"*","created_at"),optionalTable(TABLES.exchanges,"*","created_at"),optionalTable(TABLES.damage,"*","created_at"),optionalTable(TABLES.damageMedia,"*","created_at"),optionalTable(TABLES.lotAdjustments,"*","created_at"),optionalTable(TABLES.cbLedgerView,"*","bill_date")
+    const [categories,gallery,purchases,rolls,colours,allocations,arts,prints,assignments,printAssignments,media,lots,_mcLoaded,grEntries,exchangeEntries,damageClaims,damageMedia,lotCostAdjustments,cbLedger]=await Promise.all([
+      requiredTable(TABLES.categories),loadGalleryRows(),requiredTable(TABLES.purchases,"*","created_at"),optionalTable(TABLES.rolls),requiredTable(TABLES.colours,"*","colour_order"),optionalTable(TABLES.allocations),requiredTable(TABLES.arts,"*","updated_at"),loadPrints(),requiredTable(TABLES.assignments,"*","updated_at"),requiredTable(TABLES.printAssignments,"*","sequence_no"),optionalTable(TABLES.media),optionalTable(TABLES.lots,"*","created_at"),loadMc(),optionalTable(TABLES.gr,"*","created_at"),optionalTable(TABLES.exchanges,"*","created_at"),optionalTable(TABLES.damage,"*","created_at"),optionalTable(TABLES.damageMedia,"*","created_at"),optionalTable(TABLES.lotAdjustments,"*","created_at"),optionalTable(TABLES.cbLedgerView,"*","bill_date")
     ]);
-    Object.assign(state,{categories,galleryRows:gallery,purchases,rolls,colours,allocations,arts,prints,stickerMasters,metalMasters,assignments,printAssignments,stickerAssignments,metalAssignments,media,lots,grEntries,exchangeEntries,damageClaims,damageMedia,lotCostAdjustments,cbLedger});
+    Object.assign(state,{categories,galleryRows:gallery,purchases,rolls,colours,allocations,arts,prints,assignments,printAssignments,media,lots,grEntries,exchangeEntries,damageClaims,damageMedia,lotCostAdjustments,cbLedger});
     renderAll();say("Product Master loaded.","success");
   }catch(e){console.error(e);$("gallery").innerHTML=`<article class="empty"><h3>Product Master could not load</h3><p>${safe(errorText(e))}</p></article>`;say(errorText(e),"error")}
   finally{setBusy(btn,false);$("gallery").setAttribute("aria-busy","false")}
@@ -162,8 +161,6 @@ function coloursFor(cbId){return state.colours.filter(x=>String(x.cb_id)===Strin
 function purchasesFor(cbId){return state.purchases.filter(x=>String(x.cb_id)===String(cbId));}
 function assignmentFor(unitId){return state.assignments.find(x=>String(x.cb_id)===String(unitId))||null;}
 function printsForAssignment(a){if(!a)return[];const ids=state.printAssignments.filter(x=>String(x.assignment_id)===String(a.id)).sort((x,y)=>Number(x.sequence_no)-Number(y.sequence_no)).map(x=>String(x.print_id));return ids.map(id=>state.prints.find(p=>String(p.id)===id)).filter(Boolean);}
-function stickerMasterIdsForAssignment(a){if(!a)return[];const ids=state.stickerAssignments.filter(x=>String(x.assignment_id)===String(a.id)).map(x=>String(x.sticker_instruction_id));return ids;}
-function metalMasterIdsForAssignment(a){if(!a)return[];const ids=state.metalAssignments.filter(x=>String(x.assignment_id)===String(a.id)).map(x=>String(x.metal_id_instruction_id));return ids;}
 function artFor(a){return a?state.arts.find(x=>String(x.id)===String(a.art_id))||null:null;}
 function lotsForUnit(unitId){return state.lots.filter(x=>String(x.cb_unit_id||x.division_id)===String(unitId));}
 function artImage(art){if(!art)return"";return art.hero_image_url||art.image_url||art.artwork_url||state.media.find(m=>String(m.entity_id)===String(art.id))?.file_url||"";}
@@ -345,7 +342,7 @@ async function saveCbForm(ev){ev.preventDefault();if(!roleCanOperate()){formSay(
     const cbNo=$("cbNo").value.trim().toUpperCase();const divisionCount=Math.max(1,Number($("divisionCount").value||0));if(!cbNo)throw new Error("CB No. required.");if(state.colourDrafts.some(c=>!c.name.trim()))throw new Error("हर Colour का नाम required है.");const regular=state.materialEntries[0];const rq=entryQty(regular),rv=entryValue(regular);
     const rpc=await state.client.rpc("rr_create_cb_v713",{p_cb_no:cbNo,p_division_count:divisionCount,p_colour_count:state.colourDrafts.length,p_regular_qty:Number(rq.toFixed(3)),p_regular_amount:Number(rv.toFixed(2)),p_total_rolls:regular.rolls.flat().filter(x=>Number(x.qty)>0).length,p_fabric_name:regular.fabric.trim()||cbNo,p_regular_division_indexes:divisionChoices(),p_remarks:$("cbRemarks").value.trim()||null});if(rpc.error)throw rpc.error;const raw=Array.isArray(rpc.data)?rpc.data[0]:rpc.data;createdCbId=typeof raw==="string"?raw:raw?.id||raw?.cb_id||raw?.result;if(!createdCbId)throw new Error("CB created but ID not returned.");
     const du=await state.client.from(TABLES.units).select("*").eq("purchase_id",createdCbId).order("division_index");if(du.error)throw du.error;
-    const colourPayload=[];for(let i=0;i<state.colourDrafts.length;i++){const c=state.colourDrafts[i];const media=await uploadColour(createdCbId,c,i);colourPayload.push({cb_id:createdCbId,col_no:i+1,colour_order:i+1,colour_name:c.name.trim(),image_url:media.url,media_id:media.mediaId,is_confirmed:true})}
+    const colourPayload=[];for(let i=0;i<state.colourDrafts.length;i++){const c=state.colourDrafts[i];const media=await uploadColour(createdCbId,c,i);colourPayload.push({cb_id:createdCbId,colour_order:i+1,colour_name:c.name.trim(),image_url:media.url,media_id:media.mediaId,is_confirmed:true})}
     const cr=await state.client.from(TABLES.colours).insert(colourPayload).select("*").order("colour_order");if(cr.error)throw cr.error;
     for(const e of state.materialEntries)await insertPurchase(createdCbId,e,du.data||[],cr.data||[]);
     closeSheet("cbSheet");await loadData();say(`${cbNo} created with ${divisionCount} D cards.`,"success");
@@ -373,6 +370,7 @@ function openMcNew(){
   state.mcPricingDriver="value";updateMcSummary();formSay("mcSaveMessage","");openSheet("mcSheet");setTimeout(()=>$("mcFabricSelect").focus(),80)
 }
 function syncMcPricing(source){if(source==="rate"&&String($("mcBillRate")?.value||"").trim()!=="")state.mcPricingDriver="rate";if(source==="value"&&String($("mcBillValue")?.value||"").trim()!=="")state.mcPricingDriver="value";updateMcSummary();}
+function cleanText(id){return String($(id)?.value||"").trim();}
 async function saveMcForm(ev){
   ev.preventDefault();const btn=$("saveMc");setBusy(btn,true,"Saving…");formSay("mcSaveMessage","Posting fabric-wise MC1 purchase…","info");
   try{
@@ -380,9 +378,20 @@ async function saveMcForm(ev){
     const existing=mcFabricById(selected);
     const fabricName=selected==="__new__"?$("mcNewFabric").value.trim():existing?.fabric_name||"";
     if(!fabricName)throw new Error("Matching Fabric Name required.");
+    const fabricId=selected&&selected!=="__new__"&&existing?String(existing.id||existing.matching_item_id||selected):null;
+    const vendorName=cleanText("mcVendor"),billNo=cleanText("mcBillNo").toUpperCase();
+    if(!vendorName)throw new Error("Vendor Name required.");
+    if(!billNo)throw new Error("Bill No required.");
     const qty=Number($("mcBillQty").value||0),rate=Number($("mcBillRate").value||0),typedValue=Number($("mcBillValue").value||0),value=typedValue>0?typedValue:qty*rate;
-    const payload={p_fabric_name:fabricName,p_vendor_name:$("mcVendor").value.trim(),p_bill_no:$("mcBillNo").value.trim().toUpperCase(),p_bill_qty:qty,p_bill_value:value,p_bill_date:$("mcBillDate").value||today(),p_remarks:$("mcRemarks").value.trim()||null};
-    const r=await state.client.rpc("rr_post_mc_fabric_purchase_v2",payload);if(r.error)throw r.error;
+    if(qty<=0)throw new Error("Bill Qty must be greater than zero.");
+    if(value<=0)throw new Error("Bill Rate या Bill Value required.");
+    const payload={p_fabric_id:fabricId,p_fabric_name:fabricName,p_vendor_name:vendorName,p_bill_no:billNo,p_bill_qty:qty,p_bill_value:value,p_bill_date:$("mcBillDate").value||today(),p_remarks:$("mcRemarks").value.trim()||null};
+    let r=await state.client.rpc("rr_post_mc_fabric_purchase_v3",payload);
+    if(r.error&&/function|schema cache|PGRST202/i.test(`${r.error.code||""} ${r.error.message||""}`)){
+      const {p_fabric_id,...legacyPayload}=payload;
+      r=await state.client.rpc("rr_post_mc_fabric_purchase_v2",legacyPayload);
+    }
+    if(r.error)throw r.error;
     closeSheet("mcSheet");await loadData();say(`${fabricName} · ${kg(qty)} added to MC1.`,"success")
   }catch(e){console.error(e);formSay("mcSaveMessage",errorText(e),"error")}finally{setBusy(btn,false)}
 }
@@ -563,24 +572,12 @@ async function adminClaimAction(id,action){const note=prompt(`${action} note / r
 
 function pickerImage(row,type){return type==="art"?artImage(row):printImage(row)}
 function pickerNo(row,type){return type==="art"?artNo(row):printNo(row)}
-function renderAssignmentPickers(){const q=$("assignSearch").value.trim().toLowerCase();const cards=(rows,kind,na,label,noFn,nameFn,selected)=>`<button class="pick ${selected.includes("__NA__")?"selected":""}" data-${kind}="__NA__"><strong>N/A</strong><small>${label}</small></button>`+rows.filter(x=>JSON.stringify(x).toLowerCase().includes(q)).map(x=>`<button class="pick ${selected.includes(String(x.id))?"selected":""}" data-${kind}="${safe(x.id)}"><strong>${safe(noFn(x))}</strong><small>${safe(nameFn(x)||"")}</small></button>`).join("");$("artPicker").innerHTML=state.arts.filter(x=>JSON.stringify(x).toLowerCase().includes(q)).map(a=>`<button class="pick ${String(a.id)===String(state.selectedArtId)?"selected":""}" data-art="${safe(a.id)}">${pickerImage(a,"art")?`<img src="${safe(pickerImage(a,"art"))}">`:""}<strong>${safe(artNo(a))}</strong><small>${safe(a.product_name||a.item_name||a.category||"")}</small></button>`).join("");$("printPicker").innerHTML=cards(state.prints,"print",true,"No Print Required",printNo,p=>p.print_name||p.short_note,state.selectedPrintIds);$("stickerPicker").innerHTML=cards(state.stickerMasters,"sticker",true,"No Sticker Required",x=>x.sticker_no,x=>x.sticker_name,state.selectedStickerMasterIds);$("metalPicker").innerHTML=cards(state.metalMasters,"metal",true,"No Metal ID Required",x=>x.metal_id_no,x=>x.metal_id_name,state.selectedMetalMasterIds);$("artPicker").querySelectorAll("[data-art]").forEach(b=>b.onclick=()=>{state.selectedArtId=b.dataset.art;renderAssignmentPickers()});[...$("printPicker").querySelectorAll("[data-print]"),...$("stickerPicker").querySelectorAll("[data-sticker]"),...$("metalPicker").querySelectorAll("[data-metal]")].forEach(b=>b.onclick=()=>{const kind=b.dataset.print!==undefined?"print":b.dataset.sticker!==undefined?"sticker":"metal",id=b.dataset[kind],key=kind==="print"?"selectedPrintIds":kind==="sticker"?"selectedStickerMasterIds":"selectedMetalMasterIds";if(id==="__NA__")state[key]=["__NA__"];else{state[key]=state[key].filter(x=>x!=="__NA__");state[key]=state[key].includes(id)?state[key].filter(x=>x!==id):[...state[key],id]}renderAssignmentPickers()})}
-function choiceDone(tab){return tab==="art"?Boolean(state.selectedArtId):tab==="print"?state.selectedPrintIds.length>0:tab==="sticker"?state.selectedStickerMasterIds.length>0:state.selectedMetalMasterIds.length>0}
-function openAssignment(unitId){if(!roleCanOperate()){say("Art assignment requires Owner/Admin permission.","error");return}const card=groups().flatMap(g=>g.divisions.map(d=>({g,d}))).find(x=>String(x.d.division_id)===String(unitId));if(!card)return;state.activeUnitId=unitId;const a=assignmentFor(unitId);state.selectedArtId=a?.art_id||null;state.selectedPrintIds=a?.print_not_applicable?["__NA__"]:printsForAssignment(a).map(x=>String(x.id));state.selectedStickerMasterIds=a?.sticker_not_applicable?["__NA__"]:[];state.selectedMetalMasterIds=a?.metal_id_not_applicable?["__NA__"]:[];state.assignmentTab="art";$("assignTitle").textContent=canonicalD(card.d);$("assignContext").textContent=card.g.cbNo;$("assignSearch").value="";formSay("assignMessage","");showAssignTab("art");renderAssignmentPickers();openSheet("assignSheet")}
-function showAssignTab(tab){
-  state.assignmentTab=tab;
-  const tabs=["art","print","sticker","metal"],i=tabs.indexOf(tab);
-  ["artPicker","printPicker","stickerPicker","metalPicker"].forEach((id,n)=>$(id).classList.toggle("hidden",n!==i));
-  tabs.forEach((x,n)=>{
-    $(`${x}Tab`).classList.toggle("active",x===tab);
-    if(x!=="art") $(`${x}Tab`).disabled=n>0&&!choiceDone(tabs[n-1]);
-  });
-  $("assignBack").disabled=i===0;
-  $("assignContinue").classList.toggle("hidden",i===tabs.length-1);
-  $("saveAssignment").classList.toggle("hidden",i!==tabs.length-1);
-  $("assignFlowNote").textContent=choiceDone(tab)?`${tab.toUpperCase()} selected. Continue Forward.`:`${tab.toUpperCase()} blank hai. Value ya N/A select karein.`;
-}
-function continueAssignment(){const tabs=["art","print","sticker","metal"],i=tabs.indexOf(state.assignmentTab);if(!choiceDone(state.assignmentTab)){formSay("assignMessage",`Pehle ${state.assignmentTab} bharein ya N/A select karein.`,`error`);return}showAssignTab(tabs[i+1])}
-async function saveAssignment(){if(!roleCanOperate()){formSay("assignMessage","Owner/Admin permission required.","error");return}if(!state.selectedArtId||!choiceDone("print")||!choiceDone("sticker")||!choiceDone("metal")){formSay("assignMessage","Har step me value ya N/A select karein.","error");return}const btn=$("saveAssignment");setBusy(btn,true,"Saving…");try{const r=await state.client.rpc("rr_save_cb_decoration_assignment_v9042",{p_cb_unit_id:state.activeUnitId,p_art_id:state.selectedArtId,p_print_ids:state.selectedPrintIds.filter(x=>x!=="__NA__"),p_print_not_applicable:state.selectedPrintIds.includes("__NA__"),p_sticker_master_ids:state.selectedStickerMasterIds.filter(x=>x!=="__NA__"),p_sticker_not_applicable:state.selectedStickerMasterIds.includes("__NA__"),p_metal_id_master_ids:state.selectedMetalMasterIds.filter(x=>x!=="__NA__"),p_metal_id_not_applicable:state.selectedMetalMasterIds.includes("__NA__")});if(r.error)throw r.error;closeSheet("assignSheet");await loadData();say("Decoration flow saved.","success")}catch(e){console.error(e);formSay("assignMessage",errorText(e),"error")}finally{setBusy(btn,false)}}
+function renderAssignmentPickers(){const q=$("assignSearch").value.trim().toLowerCase();$("artPicker").innerHTML=state.arts.filter(x=>JSON.stringify(x).toLowerCase().includes(q)).map(a=>`<button class="pick ${String(a.id)===String(state.selectedArtId)?"selected":""}" data-art="${safe(a.id)}">${pickerImage(a,"art")?`<img src="${safe(pickerImage(a,"art"))}">`:""}<strong>${safe(artNo(a))}</strong><small>${safe(a.product_name||a.item_name||a.category||"")}</small></button>`).join("");$("printPicker").innerHTML=`<button class="pick ${state.selectedPrintIds.includes("__NA__")?"selected":""}" data-print="__NA__"><strong>N/A</strong><small>No Print Required</small></button>`+state.prints.filter(x=>JSON.stringify(x).toLowerCase().includes(q)).map(p=>`<button class="pick ${state.selectedPrintIds.includes(String(p.id))?"selected":""}" data-print="${safe(p.id)}">${pickerImage(p,"print")?`<img src="${safe(pickerImage(p,"print"))}">`:""}<strong>${safe(printNo(p))}</strong><small>${safe(p.print_name||p.short_note||"")}</small></button>`).join("");$("artPicker").querySelectorAll("[data-art]").forEach(b=>b.onclick=()=>{state.selectedArtId=b.dataset.art;renderAssignmentPickers()});$("printPicker").querySelectorAll("[data-print]").forEach(b=>b.onclick=()=>{const id=b.dataset.print;if(id==="__NA__")state.selectedPrintIds=["__NA__"];else{state.selectedPrintIds=state.selectedPrintIds.filter(x=>x!=="__NA__");state.selectedPrintIds=state.selectedPrintIds.includes(id)?state.selectedPrintIds.filter(x=>x!==id):[...state.selectedPrintIds,id]}renderAssignmentPickers()})}
+function openAssignment(unitId){if(!roleCanOperate()){say("Art / Print assignment requires Owner/Admin permission.","error");return}const card=groups().flatMap(g=>g.divisions.map(d=>({g,d}))).find(x=>String(x.d.division_id)===String(unitId));if(!card)return;state.activeUnitId=unitId;const a=assignmentFor(unitId);state.selectedArtId=a?.art_id||null;state.selectedPrintIds=a?.print_not_applicable?["__NA__"]:printsForAssignment(a).map(x=>String(x.id));$("assignTitle").textContent=canonicalD(card.d);$("assignContext").textContent=card.g.cbNo;$("assignSearch").value="";formSay("assignMessage","");showAssignTab("art");renderAssignmentPickers();openSheet("assignSheet")}
+function showAssignTab(tab){const art=tab==="art";$("artPicker").classList.toggle("hidden",!art);$("printPicker").classList.toggle("hidden",art);$("artTab").classList.toggle("active",art);$("printTab").classList.toggle("active",!art)}
+async function saveAssignment(){if(!roleCanOperate()){formSay("assignMessage","Owner/Admin permission required.","error");return}if(!state.selectedArtId){formSay("assignMessage","Art select करें.","error");return}const btn=$("saveAssignment");setBusy(btn,true,"Saving…");try{const na=state.selectedPrintIds.includes("__NA__");const clean=state.selectedPrintIds.filter(x=>x!=="__NA__");if(!na){const rpc=await state.client.rpc("rr_save_cb_art_print_assignment",{p_cb_unit_id:state.activeUnitId,p_art_id:state.selectedArtId,p_print_ids:clean});if(!rpc.error){closeSheet("assignSheet");await loadData();say("Art / Print decision saved.","success");return}if(!/function|schema cache|PGRST202/i.test(`${rpc.error.code} ${rpc.error.message}`))throw rpc.error}
+    const existing=assignmentFor(state.activeUnitId);const payload={art_id:state.selectedArtId,print_not_applicable:na,status:"material_check",bypass_reason:null,bypassed_by:null,bypassed_at:null};const r=existing?await state.client.from(TABLES.assignments).update(payload).eq("id",existing.id).select().single():await state.client.from(TABLES.assignments).insert({cb_id:state.activeUnitId,...payload}).select().single();if(r.error)throw r.error;const del=await state.client.from(TABLES.printAssignments).delete().eq("assignment_id",r.data.id);if(del.error)throw del.error;if(clean.length){const ins=await state.client.from(TABLES.printAssignments).insert(clean.map((id,i)=>({assignment_id:r.data.id,print_id:id,sequence_no:i+1})));if(ins.error)throw ins.error}await state.client.from(TABLES.units).update({status:"art_assigned"}).eq("id",state.activeUnitId);closeSheet("assignSheet");await loadData();say("Art / Print decision saved.","success")
+  }catch(e){console.error(e);formSay("assignMessage",errorText(e),"error")}finally{setBusy(btn,false)}}
 
 
 async function loadRole(){
@@ -598,18 +595,7 @@ function bindStatic(){
   $("colourCount").oninput=()=>{const n=Math.max(1,Math.min(20,Number($("colourCount").value||1)));while(state.colourDrafts.length<n)state.colourDrafts.push(newColour(state.colourDrafts.length));while(state.colourDrafts.length>n){const c=state.colourDrafts.pop();if(c.objectUrl)URL.revokeObjectURL(c.objectUrl)}state.materialEntries.forEach(ensureEntryRolls);renderCbForm()};
   $("addMaterial").onclick=()=>{state.materialEntries.push(newMaterial("material"));renderMaterialList();updateCbSummary()};
   $("cbForm").onsubmit=saveCbForm;$("mcForm").onsubmit=saveMcForm;$("mcBillQty").oninput=()=>syncMcPricing("qty");$("mcBillRate").oninput=()=>syncMcPricing("rate");$("mcBillValue").oninput=()=>syncMcPricing("value");
-  const saveCbButton=$("saveCb");
-  saveCbButton.type="button";
-  if(!saveCbButton.dataset.asyncBound){
-    saveCbButton.dataset.asyncBound="1";
-    saveCbButton.addEventListener("click",ev=>{
-      ev.preventDefault();
-      ev.stopPropagation();
-      ev.stopImmediatePropagation();
-      void saveCbForm(ev);
-    },true);
-  }
-  $("artTab").onclick=()=>showAssignTab("art");$("printTab").onclick=()=>showAssignTab("print");$("stickerTab").onclick=()=>showAssignTab("sticker");$("metalTab").onclick=()=>showAssignTab("metal");$("assignBack").onclick=()=>{const tabs=["art","print","sticker","metal"],i=tabs.indexOf(state.assignmentTab);if(i>0)showAssignTab(tabs[i-1])};$("assignContinue").onclick=continueAssignment;$("assignSearch").oninput=renderAssignmentPickers;$("saveAssignment").onclick=saveAssignment;
+  $("artTab").onclick=()=>showAssignTab("art");$("printTab").onclick=()=>showAssignTab("print");$("assignSearch").oninput=renderAssignmentPickers;$("saveAssignment").onclick=saveAssignment;
   $("opsForm").onsubmit=submitOperation;
   document.addEventListener("keydown",e=>{if(e.key==="Escape"){const open=document.querySelector(".sheet:not(.hidden)");if(open)closeSheet(open.id)}});
 }
