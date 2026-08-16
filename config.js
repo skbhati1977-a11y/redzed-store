@@ -43,6 +43,12 @@ if (/real-product-master-v720\.html$/i.test(window.location.pathname)) {
   document.head.appendChild(rrMcSearchableMapping);
 }
 
+/* V9141 GLOBAL MOBILE FILL UX: hide sheet descriptions and active form headers. */
+const rrGlobalMobileFill = document.createElement("script");
+rrGlobalMobileFill.src = "real-global-mobile-fill-v9141.js?v=9141";
+rrGlobalMobileFill.async = false;
+document.head.appendChild(rrGlobalMobileFill);
+
 /* V9096 MOBILE SESSION RECOVERY
  * Mobile browsers throttle background timers. When the app resumes after
  * the access token expired, proactively refresh the persisted session before
