@@ -103,7 +103,7 @@ Dashboard public version stays V9130.
 </div></section>
 <section class="rf-lot-panel"><div class="rf-lot-head"><h2>Live Lot Status</h2><button id="refreshBtn" class="rf-refresh">Refresh</button></div><div id="lotList" class="rr-list"><p style="color:#98a2b3">Loading...</p></div></section><p id="dashboardMessage" class="rr-message"></p>
 </main></div>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="config.js?v=9130"></script><script src="real-dashboard.js?v=9130"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="config.js?v=9130"></script><script src="real-dashboard.js?v=9130&fix=20260816b"></script>
 <script>
 (()=>{const menu=document.getElementById('menuBtn'),side=document.getElementById('sidebar'),back=document.getElementById('backdrop'),search=document.getElementById('moduleSearch');const open=v=>{side.classList.toggle('open',v);back.classList.toggle('open',v)};menu.onclick=()=>open(!side.classList.contains('open'));back.onclick=()=>open(false);document.querySelectorAll('[data-acc]>.rf-acc-btn').forEach(b=>b.onclick=()=>b.parentElement.classList.toggle('open'));document.querySelectorAll('.rf-side-item').forEach(a=>a.addEventListener('click',()=>open(false)));search.addEventListener('input',()=>{const q=search.value.trim().toLowerCase();document.querySelectorAll('[data-acc]').forEach(g=>{let hit=false;g.querySelectorAll('[data-module]').forEach(a=>{const m=!q||a.textContent.toLowerCase().includes(q);a.style.display=m?'flex':'none';if(m)hit=true});g.style.display=hit?'block':'none';if(q&&hit)g.classList.add('open')})})})();
 </script>
