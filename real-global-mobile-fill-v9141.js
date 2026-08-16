@@ -61,6 +61,25 @@ function installStyles() {
     .drawer-head [id$="Context"]{
       display:none!important;
     }
+    .rf-hero p,
+    .rf-card p,
+    .rr-hero p,
+    .rr-module-card p,
+    .rf-section-head p,
+    .hero p:not(.kicker),
+    .card-body > p.note,
+    .card-body > p.muted,
+    .form-card > p.note,
+    .section-row p.muted,
+    .panel > p.note,
+    .panel > p.muted,
+    .module-description,
+    .module-desc,
+    .description-text,
+    .subtext,
+    .subtitle{
+      display:none!important;
+    }
     .rf-fill-hidden-head-v9141{
       display:none!important;
     }
