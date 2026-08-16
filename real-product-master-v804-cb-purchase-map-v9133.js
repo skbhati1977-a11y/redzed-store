@@ -8,12 +8,31 @@
   let options = { vendors: [], fabrics: [] };
   let observer = null;
   let rollSyncScheduled = false;
+  let routeOpenAttempts = 0;
 
   function client() {
     try {
       if (window.RR?.getClient) return RR.getClient();
     } catch (_) {}
     return window.supabaseClient || window.supabaseDb || window.redzedSupabase || window.sb || null;
+  }
+
+  function requestedCbNew() {
+    const view = String(new URLSearchParams(location.search).get("view") || "").toLowerCase().replaceAll("-", "_");
+    return view === "cb_new";
+  }
+
+  function autoOpenRequestedCb() {
+    if (!requestedCbNew()) return;
+    const sheet = document.getElementById("cbSheet");
+    if (sheet && !sheet.classList.contains("hidden")) return;
+    const button = document.getElementById("openCbNew");
+    if (button && typeof button.onclick === "function") {
+      button.click();
+      return;
+    }
+    routeOpenAttempts += 1;
+    if (routeOpenAttempts < 80) window.setTimeout(autoOpenRequestedCb, 250);
   }
 
   function recoverCoreIfNeeded() {
@@ -30,6 +49,7 @@
       window.setTimeout(() => {
         boot();
         loadOptions();
+        autoOpenRequestedCb();
       }, 100);
     };
     script.onerror = () => console.error("CB V804 core recovery load failed");
@@ -168,6 +188,7 @@
   function boot() {
     bindDivisionRollSync();
     enhanceMaterialRows();
+    autoOpenRequestedCb();
     const host = document.getElementById("materialList");
     if (host && !observer) {
       observer = new MutationObserver(() => {
