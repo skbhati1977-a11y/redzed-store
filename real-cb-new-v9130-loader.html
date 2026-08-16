@@ -3,37 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>REAL FACTORY · CB New</title>
-<style>html,body{margin:0;width:100%;height:100%;background:#09090c}#cbApp{border:0;width:100%;height:100vh;display:block}</style>
-</head>
-<body>
-<iframe id="cbApp" src="real-product-master-v804.html?view=cb_new&v=9130&shell=20260816d"></iframe>
+<title>REAL FACTORY · CB New · V9130</title>
 <script>
-(()=>{
-  const frame=document.getElementById('cbApp');
-  let injected=false;
-  function injectFresh(){
-    if(injected)return;
-    const w=frame.contentWindow,d=frame.contentDocument;
-    if(!w||!d)return;
-    const gallery=d.getElementById('gallery');
-    const stuck=!w.REAL_FACTORY_PRODUCT_MASTER_VERSION || /Loading Product Master/i.test(gallery?.textContent||'');
-    if(!stuck)return;
-    injected=true;
-    const core=d.createElement('script');
-    core.src='real-product-master-v804.js?v=804&fix=20260816d';
-    core.onload=()=>{
-      const map=d.createElement('script');
-      map.src='real-product-master-v804-cb-purchase-map-v9133.js?v=9133&fix=20260816d';
-      d.body.appendChild(map);
-    };
-    d.body.appendChild(core);
-  }
-  frame.addEventListener('load',()=>{
-    setTimeout(injectFresh,1200);
-    setTimeout(injectFresh,3500);
-  });
+(function(){
+  var target='real-cb-new-v9130-fix2.html?v=9130&fresh=20260816j';
+  window.location.replace(target);
 })();
 </script>
-</body>
+</head>
+<body style="margin:0;background:#09090c;color:#fff;font-family:system-ui"></body>
 </html>
