@@ -4,6 +4,7 @@
   const VIEW = "rr_cb_new_regular_purchase_options_v1";
   const VENDOR_LIST_ID = "cbRegularPurchaseVendorHistoryV9133";
   const FABRIC_LIST_ID = "cbRegularPurchaseFabricHistoryV9133";
+  const CORE_RECOVERY_ID = "cbV804CoreRecovery20260816c";
   let options = { vendors: [], fabrics: [] };
   let observer = null;
   let rollSyncScheduled = false;
@@ -13,6 +14,26 @@
       if (window.RR?.getClient) return RR.getClient();
     } catch (_) {}
     return window.supabaseClient || window.supabaseDb || window.redzedSupabase || window.sb || null;
+  }
+
+  function recoverCoreIfNeeded() {
+    if (window.REAL_FACTORY_PRODUCT_MASTER_VERSION) return;
+    const gallery = document.getElementById("gallery");
+    const stuck = gallery && /Loading Product Master/i.test(gallery.textContent || "");
+    if (!stuck || document.getElementById(CORE_RECOVERY_ID)) return;
+
+    const script = document.createElement("script");
+    script.id = CORE_RECOVERY_ID;
+    script.src = "real-product-master-v804.js?v=804&fix=20260816c";
+    script.async = false;
+    script.onload = () => {
+      window.setTimeout(() => {
+        boot();
+        loadOptions();
+      }, 100);
+    };
+    script.onerror = () => console.error("CB V804 core recovery load failed");
+    document.body.appendChild(script);
   }
 
   function uniq(rows, type) {
@@ -158,6 +179,13 @@
     loadOptions();
   }
 
-  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot, { once: true });
-  else boot();
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", () => {
+      boot();
+      window.setTimeout(recoverCoreIfNeeded, 1200);
+    }, { once: true });
+  } else {
+    boot();
+    window.setTimeout(recoverCoreIfNeeded, 1200);
+  }
 })();
