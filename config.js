@@ -35,12 +35,12 @@ window.supabaseDb = supabaseClient;
 window.redzedSupabase = supabaseClient;
 window.sb = supabaseClient;
 
-/* V9134 MC dropdown refresh for Product Master V720 only. */
+/* V9135 MC mapped fabric/vendor dropdown refresh for Product Master V720 only. */
 if (/real-product-master-v720\.html$/i.test(window.location.pathname)) {
-  const rrMcFabricDropdown = document.createElement("script");
-  rrMcFabricDropdown.src = "real-mc-fabric-dropdown-v9134.js?v=9134";
-  rrMcFabricDropdown.async = false;
-  document.head.appendChild(rrMcFabricDropdown);
+  const rrMcMappedDropdowns = document.createElement("script");
+  rrMcMappedDropdowns.src = "real-mc-mapped-dropdowns-v9135.js?v=9135";
+  rrMcMappedDropdowns.async = false;
+  document.head.appendChild(rrMcMappedDropdowns);
 }
 
 /* V9096 MOBILE SESSION RECOVERY
