@@ -4,56 +4,16 @@
   const VIEW = "rr_cb_new_regular_purchase_options_v1";
   const VENDOR_LIST_ID = "cbRegularPurchaseVendorHistoryV9133";
   const FABRIC_LIST_ID = "cbRegularPurchaseFabricHistoryV9133";
-  const CORE_RECOVERY_ID = "cbV804CoreRecovery20260816c";
   let options = { vendors: [], fabrics: [] };
   let observer = null;
   let rollSyncScheduled = false;
-  let routeOpenAttempts = 0;
+  let loadStarted = false;
 
   function client() {
     try {
       if (window.RR?.getClient) return RR.getClient();
     } catch (_) {}
     return window.supabaseClient || window.supabaseDb || window.redzedSupabase || window.sb || null;
-  }
-
-  function requestedCbNew() {
-    const view = String(new URLSearchParams(location.search).get("view") || "").toLowerCase().replaceAll("-", "_");
-    return view === "cb_new";
-  }
-
-  function autoOpenRequestedCb() {
-    if (!requestedCbNew()) return;
-    const sheet = document.getElementById("cbSheet");
-    if (sheet && !sheet.classList.contains("hidden")) return;
-    const button = document.getElementById("openCbNew");
-    if (button && typeof button.onclick === "function") {
-      button.click();
-      return;
-    }
-    routeOpenAttempts += 1;
-    if (routeOpenAttempts < 80) window.setTimeout(autoOpenRequestedCb, 250);
-  }
-
-  function recoverCoreIfNeeded() {
-    if (window.REAL_FACTORY_PRODUCT_MASTER_VERSION) return;
-    const gallery = document.getElementById("gallery");
-    const stuck = gallery && /Loading Product Master/i.test(gallery.textContent || "");
-    if (!stuck || document.getElementById(CORE_RECOVERY_ID)) return;
-
-    const script = document.createElement("script");
-    script.id = CORE_RECOVERY_ID;
-    script.src = "real-product-master-v804.js?v=804&fix=20260816c";
-    script.async = false;
-    script.onload = () => {
-      window.setTimeout(() => {
-        boot();
-        loadOptions();
-        autoOpenRequestedCb();
-      }, 100);
-    };
-    script.onerror = () => console.error("CB V804 core recovery load failed");
-    document.body.appendChild(script);
   }
 
   function uniq(rows, type) {
@@ -78,7 +38,8 @@
       list.id = id;
       document.body.appendChild(list);
     }
-    list.innerHTML = values.map(v => `<option value="${String(v).replaceAll("&", "&amp;").replaceAll('"', "&quot;")}"></option>`).join("");
+    const html = values.map(v => `<option value="${String(v).replaceAll("&", "&amp;").replaceAll('"', "&quot;")}"></option>`).join("");
+    if (list.innerHTML !== html) list.innerHTML = html;
   }
 
   function dispatchInput(input, value) {
@@ -163,9 +124,14 @@
     scheduleRollSync();
   }
 
-  async function loadOptions() {
+  async function loadOptionsOnce() {
+    if (loadStarted) return;
     const c = client();
-    if (!c?.from) return;
+    if (!c?.from) {
+      setTimeout(loadOptionsOnce, 300);
+      return;
+    }
+    loadStarted = true;
     const { data, error } = await c.from(VIEW).select("option_type,option_value,last_used_at");
     if (error) {
       console.warn("CB regular purchase mapping unavailable", error);
@@ -188,25 +154,24 @@
   function boot() {
     bindDivisionRollSync();
     enhanceMaterialRows();
-    autoOpenRequestedCb();
+
     const host = document.getElementById("materialList");
     if (host && !observer) {
-      observer = new MutationObserver(() => {
+      observer = new MutationObserver(mutations => {
+        const relevant = mutations.some(m => [...m.addedNodes].some(n => n.nodeType === 1 && (n.matches?.(".material-row,.roll-set,[data-roll]") || n.querySelector?.(".material-row,.roll-set,[data-roll]"))));
+        if (!relevant) return;
         bindDivisionRollSync();
         enhanceMaterialRows();
       });
       observer.observe(host, { childList: true, subtree: true });
     }
-    loadOptions();
+
+    loadOptionsOnce();
   }
 
   if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", () => {
-      boot();
-      window.setTimeout(recoverCoreIfNeeded, 1200);
-    }, { once: true });
+    document.addEventListener("DOMContentLoaded", boot, { once: true });
   } else {
     boot();
-    window.setTimeout(recoverCoreIfNeeded, 1200);
   }
 })();
