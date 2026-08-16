@@ -7,68 +7,21 @@
 <style>html,body{margin:0;width:100%;height:100%;background:#09090c}#cbApp{border:0;width:100%;height:100vh;display:block}</style>
 </head>
 <body>
-<iframe id="cbApp" src="real-product-master-v804.html?view=cb_new&v=9130&fresh=20260816g"></iframe>
+<iframe id="cbApp" src="real-product-master-v804.html?v=9130&fresh=20260816h"></iframe>
 <script>
 (()=>{
   const frame=document.getElementById('cbApp');
-  let initialized=false;
-  let mapInstalled=false;
-
-  function installMap(d){
-    if(mapInstalled||d.getElementById('cbRouteFix20260816g'))return;
-    mapInstalled=true;
-    const map=d.createElement('script');
-    map.id='cbRouteFix20260816g';
-    map.src='real-product-master-v804-cb-purchase-map-v9133.js?v=9133&fix=20260816g';
-    d.body.appendChild(map);
-  }
-
-  function waitAndOpen(){
+  function openWhenReady(){
     const d=frame.contentDocument;
-    if(!d||initialized)return;
-    installMap(d);
-
-    let tries=0;
-    const open=()=>{
-      if(initialized)return;
-      const btn=d.getElementById('openCbNew');
-      const gallery=d.getElementById('gallery');
-      const busy=gallery?.getAttribute('aria-busy')==='true';
-      const loading=/Loading Product Master/i.test(gallery?.textContent||'');
-      const coreReady=btn&&typeof btn.onclick==='function';
-
-      // IMPORTANT: never force cbSheet visible here.
-      // V804 openCbNew() must run resetCbCreate() first; that creates colours/material rows.
-      if(coreReady&&!busy&&!loading){
-        btn.click();
-        const colourList=d.getElementById('colourList');
-        const materialList=d.getElementById('materialList');
-        if((colourList?.children?.length||0)>0&&(materialList?.children?.length||0)>0){
-          initialized=true;
-          return;
-        }
-      }
-
-      // Fallback after 15s: run the real V804 handler even if gallery data load is slow.
-      if(coreReady&&tries===75){
-        btn.click();
-        const colourList=d.getElementById('colourList');
-        const materialList=d.getElementById('materialList');
-        if((colourList?.children?.length||0)>0&&(materialList?.children?.length||0)>0){
-          initialized=true;
-          return;
-        }
-      }
-
-      if(++tries<180)setTimeout(open,200);
-    };
-    open();
+    if(!d)return setTimeout(openWhenReady,100);
+    const btn=d.getElementById('openCbNew');
+    if(btn && typeof btn.onclick==='function'){
+      btn.click();
+      return;
+    }
+    setTimeout(openWhenReady,100);
   }
-
-  frame.addEventListener('load',()=>{
-    setTimeout(waitAndOpen,50);
-    setTimeout(waitAndOpen,600);
-  });
+  frame.addEventListener('load',openWhenReady);
 })();
 </script>
 </body>
