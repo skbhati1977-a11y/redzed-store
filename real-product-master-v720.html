@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>REAL FACTORY - Product Master V720.36.2 FINAL</title>
+<title>REDZED REAL · Product Master V720.36.2 FINAL</title>
 <style>
 :root{
   --bg:#09090c;--panel:#141419;--panel2:#1b1b22;--line:#30303a;--text:#f5f5f7;
@@ -25,7 +25,7 @@
 <body>
 <main class="pm-page">
   <header class="topbar">
-    <div><p class="kicker">REAL FACTORY</p><h1>Product Master</h1></div>
+    <div><p class="kicker">REDZED REAL</p><h1>Product Master</h1></div>
     <nav class="links"><a href="real-dashboard.html">Dashboard</a><a href="real-art-master.html">Art Master</a><a href="real-print-master.html">Print Master</a><a href="real-cutting-master.html">Cutting Master</a></nav>
   </header>
 
@@ -132,27 +132,25 @@
   </div>
 </section>
 
-<!-- ART / PRINT / STICKER / METAL ID ASSIGNMENT -->
+<!-- ART / PRINT ASSIGNMENT -->
 <section id="assignSheet" class="sheet hidden" aria-hidden="true">
   <div class="backdrop" data-close="assignSheet"></div>
   <div class="sheet-panel" role="dialog" aria-modal="true">
-    <header class="sheet-head"><div><p class="kicker">DECORATION FLOW</p><h2 id="assignTitle">D1</h2><p id="assignContext" style="margin:4px 0;color:var(--muted)"></p></div><button class="close" data-close="assignSheet">×</button></header>
-    <div class="tabs"><button id="artTab" class="active">Art</button><button id="printTab" disabled>Print</button><button id="stickerTab" disabled>Sticker</button><button id="metalTab" disabled>Metal ID</button></div>
+    <header class="sheet-head"><div><p class="kicker">ART / PRINT DECISION</p><h2 id="assignTitle">D1</h2><p id="assignContext" style="margin:4px 0;color:var(--muted)"></p></div><button class="close" data-close="assignSheet">×</button></header>
+    <div class="tabs"><button id="artTab" class="active">Art</button><button id="printTab">Print</button></div>
     <label><span>Search</span><input id="assignSearch" type="search"></label>
     <section id="artPicker" class="picker-grid" style="margin-top:10px"></section>
     <section id="printPicker" class="picker-grid hidden" style="margin-top:10px"></section>
-    <section id="stickerPicker" class="picker-grid hidden" style="margin-top:10px"></section>
-    <section id="metalPicker" class="picker-grid hidden" style="margin-top:10px"></section>
-    <p id="assignFlowNote" class="note" style="margin-top:12px">पहले Art चुनें।</p>
+    <p class="note" style="margin-top:12px">Art required है। Print चुनें, या “N/A — No Print Required” चुनें।</p>
     <p id="assignMessage" class="message"></p>
-    <div class="sticky"><button class="secondary" data-close="assignSheet">Cancel</button><button id="assignBack" class="secondary" type="button" disabled>Back</button><button id="assignContinue" class="primary" type="button">Continue Forward</button><button id="saveAssignment" class="primary hidden" type="button">Save Decoration</button></div>
+    <div class="sticky"><button class="secondary" data-close="assignSheet">Cancel</button><button id="saveAssignment" class="primary" type="button">Save Art &amp; Print</button></div>
   </div>
 </section>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="config.js?v=72035"></script>
 <script src="real-common.js?v=720362"></script>
-<script src="real-product-master-v720.js?v=9042"></script>
+<script src="real-product-master-v720.js?v=9076"></script>
 <script src="redzed-product-cb-ledger-v72035.js?v=720362"></script>
 </body>
 </html>
