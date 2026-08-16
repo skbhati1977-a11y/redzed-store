@@ -35,6 +35,14 @@ window.supabaseDb = supabaseClient;
 window.redzedSupabase = supabaseClient;
 window.sb = supabaseClient;
 
+/* V9134 MC dropdown refresh for Product Master V720 only. */
+if (/real-product-master-v720\.html$/i.test(window.location.pathname)) {
+  const rrMcFabricDropdown = document.createElement("script");
+  rrMcFabricDropdown.src = "real-mc-fabric-dropdown-v9134.js?v=9134";
+  rrMcFabricDropdown.async = false;
+  document.head.appendChild(rrMcFabricDropdown);
+}
+
 /* V9096 MOBILE SESSION RECOVERY
  * Mobile browsers throttle background timers. When the app resumes after
  * the access token expired, proactively refresh the persisted session before
