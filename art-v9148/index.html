@@ -10,17 +10,13 @@
   <link rel="stylesheet" href="../real-art-master-final.css?v=9148">
   <style>
     .art-work-tabs{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 16px;padding:6px;background:var(--rr-panel-2,#f4f6f8);border:1px solid var(--rr-border,#dfe3e8);border-radius:14px;position:sticky;top:8px;z-index:20}
-    .art-work-tab{appearance:none;border:0;background:transparent;padding:11px 16px;border-radius:10px;font:inherit;font-weight:700;cursor:pointer;color:inherit}
+    .art-work-tab{appearance:none;border:0;background:transparent;padding:11px 16px;border-radius:10px;font:inherit;font-weight:700;cursor:pointer;color:inherit;flex:1;min-width:140px}
     .art-work-tab[aria-selected="true"]{background:#111;color:#fff;box-shadow:0 4px 14px rgba(0,0,0,.12)}
     .art-tab-panel{display:none}
     .art-tab-panel.is-active{display:block}
     .art-tab-note{margin:-4px 0 16px;color:#667085;font-size:13px}
-    .art-costing-shell{display:grid;gap:14px}
-    .art-costing-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap}
-    .art-costing-head h3{margin:0 0 4px}
-    .art-costing-head p{margin:0;color:#667085}
-    .art-costing-badge{font-size:12px;font-weight:800;letter-spacing:.04em;padding:7px 10px;border-radius:999px;background:#111;color:#fff}
-    @media(max-width:640px){.art-work-tabs{display:grid;grid-template-columns:repeat(3,1fr)}.art-work-tab{padding:10px 8px;font-size:13px}.art-costing-head{display:block}.art-costing-badge{display:inline-block;margin-top:8px}}
+    .art-legacy-costing{display:none!important}
+    @media(max-width:640px){.art-work-tabs{display:grid;grid-template-columns:1fr 1fr}.art-work-tab{padding:10px 8px;font-size:13px}}
   </style>
 </head>
 <body>
@@ -39,8 +35,8 @@
 <section class="rr-hero art-master-hero">
   <div>
     <small class="rr-kicker">ART SETUP</small>
-    <h2>Artwork setup ko clear workspaces mein manage karo.</h2>
-    <p>Setup, Craft & Material aur Costing ab separate hain. Saved Art ka latest cost future Products mein use hoga.</p>
+    <h2>Artwork, construction aur material setup ek clean workflow mein.</h2>
+    <p>Actual costing aur weighted cost system ke alag workflow mein manage hote hain; Art form mein manual costing nahi dikhayi jaati.</p>
   </div>
   <div class="art-hero-stats">
     <span><small>Total Arts</small><strong id="artStatTotal">0</strong></span>
@@ -53,7 +49,7 @@
   <div class="rr-panel-head">
     <div>
       <h2 id="formTitle">Add New Art</h2>
-      <p>Ek-ek workspace complete karo. Costing ko kisi aur section ke saath merge nahi kiya gaya hai.</p>
+      <p>Art identity, artwork, Craft Features aur Material Requirements ko simple steps mein manage karo.</p>
     </div>
     <button id="cancelEdit" class="rr-btn rr-btn-secondary rr-hidden" type="button">Cancel Edit</button>
   </div>
@@ -64,7 +60,6 @@
     <nav class="art-work-tabs" aria-label="Art setup workspaces">
       <button class="art-work-tab" type="button" data-art-tab="setup" aria-selected="true">1. Setup</button>
       <button class="art-work-tab" type="button" data-art-tab="craft" aria-selected="false">2. Craft & Material</button>
-      <button class="art-work-tab" type="button" data-art-tab="costing" aria-selected="false">3. Costing</button>
     </nav>
 
     <div class="art-tab-panel is-active" data-art-panel="setup">
@@ -85,7 +80,7 @@
       </section>
 
       <section class="rr-subpanel">
-        <div class="art-section-title"><span>2</span><div><h3>Art Details</h3><p>Core identity simple aur easy-to-understand form mein.</p></div></div>
+        <div class="art-section-title"><span>2</span><div><h3>Art Details</h3><p>Art ki core identity clean aur easy-to-understand form mein.</p></div></div>
         <div class="art-grid-2">
           <label>Art No *<input id="artNo" required placeholder="RA60"></label>
           <label>Art Category *<div class="art-category-row"><select id="artCategory" required><option value="">Select category</option></select><button id="addCategoryBtn" type="button" class="rr-btn rr-btn-secondary">+ Add</button></div></label>
@@ -98,50 +93,90 @@
     <div class="art-tab-panel" data-art-panel="craft">
       <p class="art-tab-note">Construction features choose karo; Material Requirements Category aur selected Craft Features se auto update honge.</p>
       <section class="rr-subpanel">
-        <div class="art-section-title"><span>3</span><div><h3>Craft Features & Material</h3><p>Craft selection aur material requirement ek dedicated workspace mein.</p></div></div>
-        <div id="artCaptionBuilder" class="rr-caption-builder"></div><input id="description" type="hidden">
+        <div class="art-section-title"><span>3</span><div><h3>Craft Features & Material</h3><p>Craft selection aur material requirement ke liye dedicated workspace.</p></div></div>
+        <div id="artCaptionBuilder" class="rr-caption-builder"></div>
+        <input id="description" type="hidden">
         <div class="art-material-compact">
-          <div class="art-material-title"><div><strong>Material Requirements</strong><small>Category aur selected Craft Features se auto</small></div><button id="addCustomMaterialBtn" class="rr-btn rr-btn-secondary" type="button">+ Add Material</button></div>
+          <div class="art-material-title">
+            <div><strong>Material Requirements</strong><small>Category aur selected Craft Features se auto</small></div>
+            <button id="addCustomMaterialBtn" class="rr-btn rr-btn-secondary" type="button">+ Add Material</button>
+          </div>
           <div id="artMaterialRequirements" class="art-material-chips"></div>
-          <div id="customMaterialEditor" class="art-material-editor rr-hidden"><input id="customMaterialInput" placeholder="Custom material name"><button id="saveCustomMaterialBtn" class="rr-btn" type="button">Add</button><button id="cancelCustomMaterialBtn" class="rr-btn rr-btn-secondary" type="button">Cancel</button></div>
+          <div id="customMaterialEditor" class="art-material-editor rr-hidden">
+            <input id="customMaterialInput" placeholder="Custom material name">
+            <button id="saveCustomMaterialBtn" class="rr-btn" type="button">Add</button>
+            <button id="cancelCustomMaterialBtn" class="rr-btn rr-btn-secondary" type="button">Cancel</button>
+          </div>
         </div>
       </section>
     </div>
 
-    <div class="art-tab-panel" data-art-panel="costing">
-      <p class="art-tab-note">Ye dedicated owner costing workspace hai. Craft ya Material ke saath merge nahi hai.</p>
-      <section class="rr-subpanel art-costing-shell">
-        <div class="art-costing-head">
-          <div><h3>Art Costing</h3><p>Category Basic + Art Extra = Process Total. Sab process totals + Other Margin = Final Art Cost.</p></div>
-          <span class="art-costing-badge">OWNER / ADMIN</span>
-        </div>
-
-        <div id="firstCategoryNotice" class="art-first-cost rr-hidden">This Category has no Basic rates yet. The first Basic values saved here will become its default Basic rates.</div>
-        <div class="art-cost-table-wrap"><table class="art-cost-table"><thead><tr><th>Process</th><th>Basic <button id="basicLockToggle" type="button" title="Unlock Category Basic Rates" style="background:none;border:0;padding:0 0 0 4px;font-size:16px;cursor:pointer">🔒</button></th><th>Extra</th><th>Total</th></tr></thead><tbody id="costRows"></tbody></table></div>
-        <div class="art-total-box"><div><small>CURRENT PROCESS COST</small><strong id="makingTotal">₹0.00</strong></div><span>Basic + Extra of all processes</span></div>
-
-        <div class="art-margin-section">
-          <div class="art-section-title"><span>₹</span><div><h3>Other Margin</h3><p>Final Art Cost = Process Cost + Other Margin.</p></div></div>
-          <label>Other Margin / Piece (₹)<input id="defaultMargin" type="number" step="0.01" value="22"></label>
-          <div class="art-final-cost-box"><div><small>PROCESS COST</small><strong id="finalProcessCost">₹0.00</strong></div><span class="art-plus">+</span><div><small>OTHER MARGIN</small><strong id="finalMargin">₹22.00</strong></div><span class="art-equals">=</span><div class="art-final-highlight"><small>FINAL ART COST</small><strong id="finalArtCost">₹22.00</strong></div></div>
-        </div>
-      </section>
+    <!-- Legacy v9148 costing compatibility only. Hidden permanently from Art form UI.
+         Existing controller still reads these IDs while saving/editing, so keeping them
+         prevents regression until costing persistence is decoupled from Art Master. -->
+    <div class="art-legacy-costing" hidden aria-hidden="true">
+      <div id="firstCategoryNotice" class="rr-hidden"></div>
+      <button id="basicLockToggle" type="button" tabindex="-1">Lock</button>
+      <table><tbody id="costRows"></tbody></table>
+      <strong id="makingTotal">₹0.00</strong>
+      <input id="defaultMargin" type="number" step="0.01" value="22" tabindex="-1">
+      <strong id="finalProcessCost">₹0.00</strong>
+      <strong id="finalMargin">₹22.00</strong>
+      <strong id="finalArtCost">₹22.00</strong>
     </div>
 
-    <div class="art-save-strip"><p id="artMessage" class="rr-message"></p><button id="saveArtBtn" class="rr-btn rr-btn-primary art-save-btn" type="submit">Save Art</button></div>
+    <div class="art-save-strip">
+      <p id="artMessage" class="rr-message"></p>
+      <button id="saveArtBtn" class="rr-btn rr-btn-primary art-save-btn" type="submit">Save Art</button>
+    </div>
   </form>
 </section>
 
 <section class="rr-panel art-saved-panel">
-  <div class="rr-panel-head"><div><h2>Saved Arts</h2><p>Search, filter, preview aur edit. Latest saved cost future Products me use hoga.</p></div><button id="reloadArts" class="rr-btn rr-btn-secondary" type="button">Refresh</button></div>
-  <div class="art-list-tools"><label>Search Art<input id="artSearch" type="search" placeholder="Art No, Design, Category..."></label><label>Category Filter<select id="artCategoryFilter"><option value="">All Categories</option></select></label><button id="clearArtFilters" class="rr-btn rr-btn-secondary" type="button">Clear</button></div>
+  <div class="rr-panel-head">
+    <div><h2>Saved Arts</h2><p>Search, filter, preview aur edit.</p></div>
+    <button id="reloadArts" class="rr-btn rr-btn-secondary" type="button">Refresh</button>
+  </div>
+  <div class="art-list-tools">
+    <label>Search Art<input id="artSearch" type="search" placeholder="Art No, Design, Category..."></label>
+    <label>Category Filter<select id="artCategoryFilter"><option value="">All Categories</option></select></label>
+    <button id="clearArtFilters" class="rr-btn rr-btn-secondary" type="button">Clear</button>
+  </div>
   <div id="artCards" class="art-card-grid">Loading...</div>
 </section>
 </main>
 
-<div id="categoryDialog" class="art-dialog-backdrop rr-hidden"><form id="categoryForm" class="art-dialog"><h3>Add Art Category</h3><label>Category Name *<input id="newCategoryName" required placeholder="Example: Oversized Polo"></label><label>Default Design Name<input id="newDefaultDesignName" placeholder="Example: Oversized Polo T-Shirt"></label><p>The first Basic cost entered for this Category will become its default.</p><div class="art-dialog-actions"><button id="cancelCategory" class="rr-btn rr-btn-secondary" type="button">Cancel</button><button class="rr-btn" type="submit">Save Category</button></div></form></div>
-<div id="imageActionSheet" class="art-action-sheet rr-hidden"><div class="art-action-dialog"><h3>Artwork Options</h3><p id="actionImageLabel"></p><button id="actionSetIcon" type="button">★ Set as Art Icon</button><button id="actionView" type="button">🔍 View Full Screen</button><button id="actionRemove" class="danger" type="button">🗑 Remove Reference</button><button id="actionCancel" class="secondary" type="button">Cancel</button></div></div>
-<div id="mediaViewer" class="rz-viewer rr-hidden"><button id="viewerClose" class="rz-viewer-close" type="button">×</button><div class="rz-viewer-toolbar"><button id="viewerPrev" type="button">‹</button><button id="viewerZoomOut" type="button">−</button><button id="viewerReset" type="button">Reset</button><button id="viewerZoomIn" type="button">+</button><button id="viewerNext" type="button">›</button></div><div id="viewerStage" class="rz-viewer-stage"><img id="viewerImage" alt="Artwork preview"></div><div class="rz-viewer-caption"><h3 id="viewerTitle"></h3><p id="viewerText"></p></div></div>
+<div id="categoryDialog" class="art-dialog-backdrop rr-hidden">
+  <form id="categoryForm" class="art-dialog">
+    <h3>Add Art Category</h3>
+    <label>Category Name *<input id="newCategoryName" required placeholder="Example: Oversized Polo"></label>
+    <label>Default Design Name<input id="newDefaultDesignName" placeholder="Example: Oversized Polo T-Shirt"></label>
+    <p>Category ka naam aur default design name save karo.</p>
+    <div class="art-dialog-actions">
+      <button id="cancelCategory" class="rr-btn rr-btn-secondary" type="button">Cancel</button>
+      <button class="rr-btn" type="submit">Save Category</button>
+    </div>
+  </form>
+</div>
+
+<div id="imageActionSheet" class="art-action-sheet rr-hidden">
+  <div class="art-action-dialog">
+    <h3>Artwork Options</h3><p id="actionImageLabel"></p>
+    <button id="actionSetIcon" type="button">★ Set as Art Icon</button>
+    <button id="actionView" type="button">🔍 View Full Screen</button>
+    <button id="actionRemove" class="danger" type="button">🗑 Remove Reference</button>
+    <button id="actionCancel" class="secondary" type="button">Cancel</button>
+  </div>
+</div>
+
+<div id="mediaViewer" class="rz-viewer rr-hidden">
+  <button id="viewerClose" class="rz-viewer-close" type="button">×</button>
+  <div class="rz-viewer-toolbar">
+    <button id="viewerPrev" type="button">‹</button><button id="viewerZoomOut" type="button">−</button><button id="viewerReset" type="button">Reset</button><button id="viewerZoomIn" type="button">+</button><button id="viewerNext" type="button">›</button>
+  </div>
+  <div id="viewerStage" class="rz-viewer-stage"><img id="viewerImage" alt="Artwork preview"></div>
+  <div class="rz-viewer-caption"><h3 id="viewerTitle"></h3><p id="viewerText"></p></div>
+</div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="../config.js"></script>
