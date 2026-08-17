@@ -69,6 +69,11 @@ if (/\/art-v9148\/?$/i.test(window.location.pathname)) {
   setTimeout(rrApplyArtUiHide, 0);
   setTimeout(rrApplyArtUiHide, 500);
   setTimeout(rrApplyArtUiHide, 1500);
+
+  const rrArtFactoryCraft = document.createElement("script");
+  rrArtFactoryCraft.src = "factory-craft-layout.js?v=14792";
+  rrArtFactoryCraft.async = false;
+  document.head.appendChild(rrArtFactoryCraft);
 }
 
 /* V9148 MC search: typed fabric/vendor search syncs to original save fields. */
