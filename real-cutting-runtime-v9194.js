@@ -8,6 +8,23 @@ window.__RR_CUTTING_UI_LOADER_9190__=true;
 window.__RR_CUTTING_LOAD_GUARD_9191__=true;
 window.__RR_CUTTING_LOADING_GUARD_9191__=true;
 
+/*
+  Cutting Master must own the full mobile viewport while its lot sheet/keyboard is active.
+  The global Slice Bar reserves a fixed 64px strip at the top; Android then repeatedly
+  tries to keep the focused input below that fixed rail when the keyboard changes the
+  visual viewport. Remove the Slice Bar only on this page and clear its reserved space.
+  A MutationObserver catches the rail even when the global menu script loads slightly later.
+*/
+function disableCuttingSliceBar(){
+  document.body?.classList.remove('rrSliceReserved');
+  document.documentElement?.style.setProperty('--rr-slice-rail','0px');
+  ['rrSliceRail','rrSlicePanel','rrSliceBack'].forEach(id=>document.getElementById(id)?.remove());
+}
+disableCuttingSliceBar();
+const sliceObserver=new MutationObserver(disableCuttingSliceBar);
+sliceObserver.observe(document.documentElement,{childList:true,subtree:true,attributes:true,attributeFilter:['class']});
+window.addEventListener('load',()=>setTimeout(disableCuttingSliceBar,0),{once:true});
+
 const client=window.supabaseClient||window.supabaseDb||window.redzedSupabase||window.sb;
 if(!client)return;
 
@@ -116,6 +133,7 @@ function stopPermanentSpinner(){
 }
 
 window.addEventListener('load',()=>{
+  setTimeout(disableCuttingSliceBar,0);
   setTimeout(reconcile,1400);
   setTimeout(reconcile,4500);
   setTimeout(stopPermanentSpinner,12000);
