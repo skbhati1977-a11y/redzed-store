@@ -74,6 +74,11 @@ if (/\/art-v9148\/?$/i.test(window.location.pathname)) {
   rrArtFactoryCraft.src = "factory-craft-layout.js?v=14792";
   rrArtFactoryCraft.async = false;
   document.head.appendChild(rrArtFactoryCraft);
+
+  const rrCraftUpmUi = document.createElement("script");
+  rrCraftUpmUi.src = "craft-upm-ui.js?v=9150";
+  rrCraftUpmUi.async = false;
+  document.head.appendChild(rrCraftUpmUi);
 }
 
 /* V9148 MC search: typed fabric/vendor search syncs to original save fields. */
