@@ -1,7 +1,7 @@
 .rr-hidden{display:none!important}
 .print-image-first{border-color:#55323a;background:#171114}
 .print-upload-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:14px}
-.print-icon-status{display:flex;align-items:center;gap:12px;margin-top:14px;padding:12px;border:1px solid #62404a;border-radius:14px;background:#27161b}
+.print-icon-status{display:none!important}
 .print-icon-status img{width:62px;height:62px;object-fit:cover;border-radius:11px}
 .print-icon-status small{display:block;color:#ff7b86;font-weight:900}
 .print-icon-star{font-size:28px;color:#ffca4b}
@@ -121,4 +121,48 @@
     border:1px solid #292930;
     border-radius:12px;
   }
+}
+
+/* PRINT MASTER PROFESSIONAL POLISH V9158 */
+.print-page{max-width:1180px;margin:0 auto;padding-left:18px;padding-right:18px}
+.print-topbar{min-height:64px;padding:4px 0 2px}
+.print-topbar h1,.print-library-head h2,.rr-panel h2{margin-top:2px;margin-bottom:2px}
+.print-dashboard-link{min-width:112px;min-height:42px}
+.rr-hero,.rr-panel{border-radius:16px}
+.rr-panel{padding:18px}
+.print-image-first,.print-form-grid,.print-note-label,.print-frame-rows{width:100%}
+.print-upload-row{display:grid;grid-template-columns:repeat(2,minmax(120px,180px)) minmax(180px,1fr);gap:10px;align-items:center}
+.print-upload-row .rr-btn{width:100%;min-height:44px;display:flex;align-items:center;justify-content:center}
+#selectedFiles{min-height:44px;display:flex;align-items:center;padding:0 4px}
+.print-form-grid{grid-template-columns:repeat(3,minmax(0,1fr));align-items:end}
+.print-form-grid label,.print-note-label{font-weight:700;color:#e7e7eb}
+.print-form-grid input,.print-note-label textarea,.print-search,.print-frame-row input,.print-frame-row select{min-height:44px;border-radius:11px}
+.print-note-label textarea{min-height:94px;resize:vertical}
+.rr-panel-head.compact,.print-library-head{min-height:52px}
+.print-frame-row{grid-template-columns:minmax(150px,1fr) minmax(130px,160px) minmax(220px,1.4fr) 44px;gap:10px}
+.frame-remove{width:44px;min-width:44px}
+.print-form-actions{max-width:760px;margin:18px auto 0}
+.print-form-actions .rr-btn{min-height:46px}
+.print-card-grid{grid-template-columns:repeat(auto-fit,minmax(270px,1fr));align-items:stretch}
+.print-master-card{display:flex;flex-direction:column;min-width:0}
+.print-card-body{display:flex;flex-direction:column;flex:1;padding:16px}
+.print-card-body .rr-btn{margin-top:auto}
+.print-card-image{height:230px}
+@media(max-width:800px){
+ .print-page{padding-left:12px;padding-right:12px}
+ .print-upload-row{grid-template-columns:1fr 1fr}
+ #selectedFiles{grid-column:1/-1}
+ .print-form-grid{grid-template-columns:1fr 1fr}
+ .print-form-grid label:last-child{grid-column:1/-1}
+ .print-frame-row{grid-template-columns:1fr 1fr}
+ .frame-note{grid-column:1/2}
+ .frame-remove{grid-column:2/3;justify-self:end}
+}
+@media(max-width:520px){
+ .print-topbar{align-items:center;gap:10px}
+ .print-dashboard-link{min-width:auto;padding:10px 12px}
+ .rr-panel{padding:14px}
+ .print-upload-row,.print-form-grid{grid-template-columns:1fr}
+ #selectedFiles,.print-form-grid label:last-child{grid-column:auto}
+ .print-media-thumb{height:230px}
 }
