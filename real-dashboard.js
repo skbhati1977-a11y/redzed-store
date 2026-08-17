@@ -65,10 +65,10 @@
   (async () => { try { await requireOwner(); await refreshDashboard(); } catch (error) { console.error(error); setMessage(error.message || "Access failed.", "error"); } })();
 })();
 
-/* V9130: Sidebar-only business hierarchy. */
+/* V9157: one latest travel token for the complete REAL FACTORY hierarchy. */
 (() => {
   'use strict';
-  const V='9130';
+  const V='9157';
   const side=document.getElementById('sideList');
   const search=document.getElementById('moduleSearch');
   if(!side)return;
@@ -79,16 +79,17 @@
   const group=(id,icon,title,body,open=false)=>`<div class="rf-acc${open?' open':''}" data-acc="${id}"><button class="rf-acc-head" type="button"><span class="rf-acc-icon">${icon}</span><span class="rf-acc-title">${title}</span><span class="rf-acc-arrow">›</span></button><div class="rf-acc-body">${body}</div></div>`;
   side.innerHTML =
     group('product','▣','Product Master',
-      A(`real-cb-new-v9130-fix2.html?v=${V}&fix=20260816e`,'CB','CB New')+
+      A(`real-cb-new-v9130-loader.html?v=${V}&fix=20260817`,'CB','CB New')+
       A(`real-product-master-v720.html?view=matching-cloth&v=${V}`,'MC','Matching Cloth')+
-      A(`real-art-master.html?v=${V}`,'AR','Art Master')+
+      A(`art-v9148/?v=${V}`,'AR','Art Master')+
       A(`real-print-master.html?v=${V}`,'PR','Print Master')+
-      A(`real-product-master-v720.html?view=sticker-master&v=${V}`,'ST','Sticker Master')+
-      A(`real-product-master-v720.html?view=metal-id-master&v=${V}`,'ID','Metal ID Master'),true)+
+      A(`real-sticker-master-v804.html?v=${V}`,'ST','Sticker Master')+
+      A(`real-metal-id-master-v804.html?v=${V}`,'ID','Metal ID Master')+
+      A(`real-material-master-v853.html?v=${V}`,'MT','Material Master'),true)+
     group('cutting','✂','Cutting Master',A(`real-cutting-master.html?view=ready-lot&v=${V}`,'RD','Ready Lot')+A(`real-cutting-master.html?view=release-lot&v=${V}`,'RL','Release Lot')+A(`real-cutting-master.html?view=all-lot&v=${V}`,'AL','All Lot')+A(`real-cutting-master.html?view=filters&v=${V}`,'⌕','Cutting Filters'))+
     group('upm','◉','Universal Product Master',A(`real-universal-production-v770-v9059.html?v=${V}`,'UPM','UPM Master · All Departments')+A(`real-department-lite-v9127.html?dept=PRINTING&v=${V}`,'PR','Printing')+A(`real-department-lite-v9127.html?dept=STICKER&v=${V}`,'ST','Sticker')+A(`real-department-lite-v9127.html?dept=METAL_ID&v=${V}`,'ID','Metal ID')+A(`real-department-lite-v9127.html?dept=KR&v=${V}`,'KR','Karigar / Stitching')+A(`real-department-lite-v9127.html?dept=OV&v=${V}`,'OV','Overlock')+A(`real-department-lite-v9127.html?dept=FLD&v=${V}`,'FL','Folding')+A(`real-department-lite-v9127.html?dept=KAAJ&v=${V}`,'KJ','Kaaj')+A(`real-department-lite-v9127.html?dept=BUTTON&v=${V}`,'BT','Button')+A(`real-department-lite-v9127.html?dept=TEAK_TANKI&v=${V}`,'TT','Teak / Tanki')+A(`real-department-lite-v9127.html?dept=THREAD_CUT&v=${V}`,'TC','Thread Cut')+A(`real-department-lite-v9127.html?dept=QC&v=${V}`,'QC','QC')+A(`real-department-lite-v9127.html?dept=PRESS&v=${V}`,'PS','Press')+A(`real-department-lite-v9127.html?dept=PACKING&v=${V}`,'PK','Packing'))+
     group('despatch','⇢','Despatch',A(`real-department-lite-v9127.html?dept=DESPATCH&v=${V}`,'DP','Despatch Department')+A(`real-finished-goods-v787.html?view=despatch&v=${V}`,'DC','Despatch Challan'))+
-    group('webstore','▦','Web Store',A(`real-finished-goods-v787.html?view=stock&v=${V}`,'WS','Webstore / Store Stock')+A(`real-commerce-v849.html?v=${V}`,'MW','Market Window')+A(`real-finished-goods-v787.html?view=receive&v=${V}`,'SR','Store Receive'))+
+    group('webstore','▦','Web Store',A(`real-finished-goods-v787.html?view=stock&v=${V}`,'WS','Webstore / Store Stock')+A(`real-commerce-v853.html?v=${V}`,'MW','Market Window')+A(`real-finished-goods-v787.html?view=receive&v=${V}`,'SR','Store Receive'))+
     group('sales','₹','Sales',A(`real-finished-goods-v787.html?view=sale&v=${V}`,'PI','Sales · PI / CPI')+A(`real-finished-goods-v787.html?view=verify&v=${V}`,'QV','Sales Qty Verify')+A(`real-finished-goods-v787.html?view=returns&v=${V}`,'RT','Sales Return'))+
     group('accounts','▤','Accounts',A(`real-accounts-suite-v857.html?v=${V}`,'AC','Accounts Suite')+A(`real-accounts-costing-v850.html?v=${V}`,'CO','Accounts & Costing')+A(`real-reports-ai-v857.html?v=${V}`,'RP','Reports & AI Query'))+
     group('salary','₹','Salary & Workers',A(`real-salary-home-v786.html?v=${V}`,'SH','Salary Home')+A(`real-salary-payment-v785.html?mode=TEST&v=${V}`,'SP','Salary Payment')+A(`real-attendance-salary-v778.html?v=${V}`,'AT','Attendance & Monthly Salary')+A(`real-worker-payroll-setup-v786.html?v=${V}`,'WK','Worker Salary Setup'))+
