@@ -7,10 +7,10 @@ function apply(){
   const input=document.getElementById('rr9160ChemicalCost');
   if(!input)return false;
   input.placeholder='KG';
-  input.setAttribute('aria-label','KG');
+  input.setAttribute('aria-label','Actual Chemical Cost in KG');
   const field=input.closest('.rr9160-field');
   const label=field?.querySelector('label');
-  if(label)label.textContent='KG';
+  if(label)label.textContent='Actual Chemical Cost * (consumption/weighing based)';
   return true;
 }
 new MutationObserver(apply).observe(document.body,{childList:true,subtree:true});
