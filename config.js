@@ -41,6 +41,22 @@ if (/real-product-master-v720\.html$/i.test(window.location.pathname)) {
   rrMcSearchableMapping.src = "real-mc-searchable-mapping-v9140.js?v=9148";
   rrMcSearchableMapping.async = false;
   document.head.appendChild(rrMcSearchableMapping);
+
+  document.addEventListener("submit", event => {
+    if (event.target?.id !== "mcForm") return;
+    const search = document.getElementById("mcFabricSearch");
+    const select = document.getElementById("mcFabricSelect");
+    const newInput = document.getElementById("mcNewFabric");
+    const wrap = document.getElementById("mcNewFabricWrap");
+    const typed = String(search?.value || "").trim();
+    if (!typed || !select || !newInput) return;
+    if (!select.value) {
+      select.value = "__new__";
+      newInput.value = typed;
+      wrap?.classList.remove("hidden");
+      select.dispatchEvent(new Event("change", { bubbles: true }));
+    }
+  }, true);
 }
 
 /* V9144 GLOBAL MOBILE FILL UX: hide descriptions, mode badge, and active form headers. */
