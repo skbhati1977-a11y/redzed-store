@@ -1,7 +1,7 @@
 (() => {
 "use strict";
 
-const VERSION = "9140";
+const VERSION = "9148";
 const FABRIC_RPC = "rr_get_mc1_fabric_options_v9134";
 const VENDOR_RPC = "rr_get_mc_vendor_options_v9135";
 let fabricRows = [];
@@ -44,9 +44,9 @@ function labelForVendor(row) {
 }
 
 function installStyles() {
-  if (byId("mcSearchableMappingStyle9140")) return;
+  if (byId("mcSearchableMappingStyle9148")) return;
   const style = document.createElement("style");
-  style.id = "mcSearchableMappingStyle9140";
+  style.id = "mcSearchableMappingStyle9148";
   style.textContent = `
     .mc-search-wrap-9140{position:relative}
     .mc-suggest-9140{position:absolute;left:0;right:0;top:calc(100% + 4px);z-index:3000;display:none;max-height:260px;overflow:auto;border:1px solid #5b3b3f;border-radius:12px;background:#35241e;box-shadow:0 18px 42px rgba(0,0,0,.45)}
@@ -153,10 +153,26 @@ function ensureFabricSearch() {
   const pick = row => {
     input.value = row.fabric_name || labelForFabric(row);
     select.value = String(row.id || row.matching_item_id || row.fabric_id || "");
+    const wrap = byId("mcNewFabricWrap");
+    const newInput = byId("mcNewFabric");
+    if (wrap) wrap.classList.add("hidden");
+    if (newInput) newInput.value = "";
     select.dispatchEvent(new Event("change", { bubbles: true }));
   };
   input.oninput = () => {
-    select.value = "";
+    const typed = String(input.value || "").trim();
+    const exact = fabricRows.find(row => normalize(row.fabric_name) === normalize(typed));
+    const newInput = byId("mcNewFabric");
+    const wrap = byId("mcNewFabricWrap");
+    if (exact) {
+      select.value = String(exact.id || exact.matching_item_id || exact.fabric_id || "");
+      if (newInput) newInput.value = "";
+      if (wrap) wrap.classList.add("hidden");
+    } else {
+      select.value = typed ? "__new__" : "";
+      if (newInput) newInput.value = typed;
+      if (wrap) wrap.classList.toggle("hidden", !typed);
+    }
     select.dispatchEvent(new Event("change", { bubbles: true }));
     renderSuggestions(input, parts.list, fabricRows, labelForFabric, pick, "No matching fabric");
   };
@@ -167,8 +183,10 @@ function ensureFabricSearch() {
     select.value = "__new__";
     select.dispatchEvent(new Event("change", { bubbles: true }));
     const wrap = byId("mcNewFabricWrap");
+    const newInput = byId("mcNewFabric");
     if (wrap) wrap.classList.remove("hidden");
-    setTimeout(() => byId("mcNewFabric")?.focus(), 50);
+    if (newInput && input.value.trim()) newInput.value = input.value.trim();
+    setTimeout(() => newInput?.focus(), 50);
   });
   return input;
 }
@@ -230,7 +248,7 @@ async function refreshFabricSearch() {
     if (result.error) throw result.error;
     renderFabricSearch(Array.isArray(result.data) ? result.data : []);
   } catch (error) {
-    console.warn("MC fabric searchable mapping v9140 failed", error);
+    console.warn("MC fabric searchable mapping v9148 failed", error);
   }
 }
 
@@ -242,7 +260,7 @@ async function refreshVendorSearch() {
     if (result.error) throw result.error;
     renderVendorSearch(Array.isArray(result.data) ? result.data : []);
   } catch (error) {
-    console.warn("MC vendor searchable mapping v9140 failed", error);
+    console.warn("MC vendor searchable mapping v9148 failed", error);
   }
 }
 
