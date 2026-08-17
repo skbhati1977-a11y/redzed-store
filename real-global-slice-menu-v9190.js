@@ -2,6 +2,7 @@
 'use strict';
 if(window.__RR_SLICE_MENU_9190__)return;window.__RR_SLICE_MENU_9190__=true;
 const V='9190',BASE='/redzed-store/',RAIL=64;
+if(/\/real-cutting-master\.html$/i.test(location.pathname)&&!window.__RR_CUTTING_UI_LOADER_9190__){window.__RR_CUTTING_UI_LOADER_9190__=true;const s=document.createElement('script');s.src=`${BASE}real-cutting-ui-v9190.js?v=${V}`;s.async=false;(document.head||document.documentElement).appendChild(s)}
 const links=[
  {title:'Product Master',icon:'▣',items:[['CB New','CB',`real-cb-new-v9130-loader.html?v=${V}&fix=20260817`],['Matching Cloth','MC',`real-product-master-v720.html?view=matching-cloth&v=${V}`],['Art Master','AR',`art-v9148/?v=${V}`],['Print Master','PR',`real-print-master.html?v=${V}`],['Sticker Master','ST',`real-sticker-master-v804.html?v=${V}`],['Metal ID Master','ID',`real-metal-id-master-v804.html?v=${V}`],['Material Master','MT',`real-material-master-v853.html?v=${V}`]]},
  {title:'Cutting Master',icon:'✂',href:`real-cutting-master.html?v=${V}`},
