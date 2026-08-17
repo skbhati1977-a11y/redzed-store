@@ -4,10 +4,17 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0b0d11">
-<title>REAL FACTORY — Main Dashboard</title>
+<title>REAL FACTORY — Main Dashboard V9156</title>
+<script>
+(function(){
+  var p=new URLSearchParams(location.search);
+  if(p.get('v')!=='9156') location.replace('real-dashboard.html?v=9156');
+})();
+</script>
 <!--
-REAL FACTORY DASHBOARD LOCK
-Dashboard public version stays V9130.
+REAL FACTORY DASHBOARD CANONICAL
+Current dashboard version: V9156.
+All old/no-version dashboard entry URLs redirect to ?v=9156.
 2026-08-17 stable module routes:
 - CB New -> latest loader / V9147 fix2.
 - Matching Cloth -> Product Master V720 with current MC mapping overlay.
@@ -20,7 +27,7 @@ Dashboard public version stays V9130.
 </head>
 <body>
 <div class="rf-shell">
-<header class="rf-top"><button id="menuBtn" class="rf-menu-btn" type="button">☰</button><div class="rf-brand"><small>REAL FACTORY</small><strong>Main Dashboard</strong></div><div class="rf-top-right"><span class="rf-version">V9130</span><span id="ownerName" class="rf-owner">Loading...</span><button id="logoutBtn" class="rf-logout" type="button">Logout</button></div></header>
+<header class="rf-top"><button id="menuBtn" class="rf-menu-btn" type="button">☰</button><div class="rf-brand"><small>REAL FACTORY</small><strong>Main Dashboard</strong></div><div class="rf-top-right"><span class="rf-version">V9156</span><span id="ownerName" class="rf-owner">Loading...</span><button id="logoutBtn" class="rf-logout" type="button">Logout</button></div></header>
 <div id="backdrop" class="rf-backdrop"></div>
 <aside id="sidebar" class="rf-sidebar">
 <div class="rf-side-search"><input id="moduleSearch" type="search" placeholder="Search module…" autocomplete="off"></div>
@@ -47,7 +54,7 @@ Dashboard public version stays V9130.
 </div></section>
 <section class="rf-lot-panel"><div class="rf-lot-head"><h2>Live Lot Status</h2><button id="refreshBtn" class="rf-refresh">Refresh</button></div><div id="lotList" class="rr-list"><p style="color:#98a2b3">Loading...</p></div></section><p id="dashboardMessage" class="rr-message"></p>
 </main></div>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="config.js?v=9156"></script><script src="real-dashboard.js?v=9130&fix=20260816d"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="config.js?v=9156"></script><script src="real-dashboard.js?v=9156"></script>
 <script>
 (()=>{const menu=document.getElementById('menuBtn'),side=document.getElementById('sidebar'),back=document.getElementById('backdrop'),search=document.getElementById('moduleSearch');const open=v=>{side.classList.toggle('open',v);back.classList.toggle('open',v)};menu.onclick=()=>open(!side.classList.contains('open'));back.onclick=()=>open(false);document.querySelectorAll('[data-acc]>.rf-acc-btn').forEach(b=>b.onclick=()=>b.parentElement.classList.toggle('open'));document.querySelectorAll('.rf-side-item').forEach(a=>a.addEventListener('click',()=>open(false)));search.addEventListener('input',()=>{const q=search.value.trim().toLowerCase();document.querySelectorAll('[data-acc]').forEach(g=>{let hit=false;g.querySelectorAll('[data-module]').forEach(a=>{const m=!q||a.textContent.toLowerCase().includes(q);a.style.display=m?'flex':'none';if(m)hit=true});g.style.display=hit?'block':'none';if(q&&hit)g.classList.add('open')})})})();
 </script>
