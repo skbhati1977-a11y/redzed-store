@@ -9,13 +9,15 @@ const SUPABASE_ANON_KEY="sb_publishable_uo3dcrFuRvGsvRzPcdTV0A_5ZVwgzga";
 const CFG=Object.seal({SETTINGS:{},WHATSAPP:[],DEFAULT_WHATSAPP:null});
 const supabaseClient=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});window.supabaseClient=supabaseClient;window.supabaseDb=supabaseClient;window.redzedSupabase=supabaseClient;window.sb=supabaseClient;
 const RR_REPO_BASE="/redzed-store/";
-const RR_LATEST_DASHBOARD_URL=`${RR_REPO_BASE}real-dashboard.html?v=9156`;
-if(!/\/real-dashboard\.html$/i.test(window.location.pathname)){
+const RR_TRAVEL_VERSION="9157";
+const RR_LATEST_DASHBOARD_URL=`${RR_REPO_BASE}real-dashboard-v9157.html?v=${RR_TRAVEL_VERSION}`;
+const rrIsDashboardPath=path=>/\/real-dashboard(?:-v9157)?\.html$/i.test(path||"");
+if(!rrIsDashboardPath(window.location.pathname)){
  const pinDashboardReturn=()=>{
   document.querySelectorAll('a[href]').forEach(a=>{
    try{
     const u=new URL(a.getAttribute('href'),window.location.href);
-    if(/\/real-dashboard\.html$/i.test(u.pathname))a.href=RR_LATEST_DASHBOARD_URL;
+    if(rrIsDashboardPath(u.pathname))a.href=RR_LATEST_DASHBOARD_URL;
    }catch(_e){}
   });
  };
@@ -38,13 +40,13 @@ if(/\/art-v9148\/?$/i.test(window.location.pathname)){
  const craftLayout=document.createElement("script");craftLayout.src="factory-craft-layout.js?v=9155";craftLayout.async=false;document.head.appendChild(craftLayout);
  const categoryCraft=document.createElement("script");categoryCraft.src="category-craft-library.js?v=9155";categoryCraft.async=false;document.head.appendChild(categoryCraft);
 }
-if(/\/real-dashboard\.html$/i.test(window.location.pathname)){
+if(rrIsDashboardPath(window.location.pathname)){
  const pinLatestDashboardRoutes=()=>{
   document.querySelectorAll('a[href]').forEach(a=>{
    const text=String(a.textContent||'').replace(/\s+/g,' ').trim().toLowerCase();
-   if(text==='cb new'||text.startsWith('cb new · regular cloth'))a.href=`${RR_REPO_BASE}real-cb-new-v9130-loader.html?v=9147&fix=20260817`;
-   else if(text==='matching cloth')a.href=`${RR_REPO_BASE}real-product-master-v720.html?v=9148`;
-   else if(text==='art master')a.href=`${RR_REPO_BASE}art-v9148/?v=9155`;
+   if(text==='cb new'||text.startsWith('cb new · regular cloth'))a.href=`${RR_REPO_BASE}real-cb-new-v9130-loader.html?v=${RR_TRAVEL_VERSION}&fix=20260817`;
+   else if(text==='matching cloth')a.href=`${RR_REPO_BASE}real-product-master-v720.html?view=matching-cloth&v=${RR_TRAVEL_VERSION}`;
+   else if(text==='art master')a.href=`${RR_REPO_BASE}art-v9148/?v=${RR_TRAVEL_VERSION}`;
   });
  };
  document.addEventListener('DOMContentLoaded',pinLatestDashboardRoutes,{once:true});setTimeout(pinLatestDashboardRoutes,0);
