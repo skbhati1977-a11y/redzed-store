@@ -14,7 +14,7 @@ html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#07090d;col
 <body>
 <div id="boot">Loading Universal Production…</div>
 <iframe id="upmFrame" title="Universal Production Overview"></iframe>
-<script src="real-upm-department-router-v9173.js?v=9157"></script>
+<script src="real-upm-department-router-v9173.js?v=9175"></script>
 <script>
 (()=>{
 'use strict';
@@ -22,9 +22,9 @@ const qp=new URLSearchParams(location.search);
 const mode=String(qp.get('mode')||'TEST').trim().toUpperCase()==='REAL'?'REAL':'TEST';
 function goDepartment(raw,label){return window.RRRouteDepartment?.(raw,label,{mode,from:'UPM'})===true;}
 const direct=qp.get('dept');
-if(direct&&goDepartment(direct,qp.get('label')||window.RRCanonicalDepartment?.(direct)||direct))return;
+if(direct&&goDepartment(direct,window.RRCanonicalDepartmentName?.(direct)||qp.get('label')||direct))return;
 const frame=document.getElementById('upmFrame');
-frame.src=`real-universal-production-v770.html?mode=${encodeURIComponent(mode)}&embedded=UPM_OVERVIEW&v=9157`;
+frame.src=`real-universal-production-v770.html?mode=${encodeURIComponent(mode)}&embedded=UPM_OVERVIEW&v=9175`;
 frame.addEventListener('load',()=>{
   document.getElementById('boot').style.display='none';
   const d=frame.contentWindow.document;
@@ -44,8 +44,9 @@ frame.addEventListener('load',()=>{
     });
     select.addEventListener('change',e=>{
       if(!select.value)return;
-      const opt=select.options[select.selectedIndex];
-      if(goDepartment(select.value,opt?.textContent||select.value)){
+      const dept=window.RRCanonicalDepartment?.(select.value)||select.value;
+      const label=window.RRCanonicalDepartmentName?.(dept)||dept;
+      if(goDepartment(dept,label)){
         e.preventDefault();e.stopImmediatePropagation();
       }
     },true);
