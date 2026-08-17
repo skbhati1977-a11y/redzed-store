@@ -40,9 +40,35 @@ if (/\/art-v9148\/?$/i.test(window.location.pathname)) {
   const rrArtUiHide = document.createElement("style");
   rrArtUiHide.textContent = `
     #iconStatus { display:none !important; }
-    .art-field-card:has(#designNotes) { display:none !important; }
+    #designNotes { display:none !important; }
   `;
   document.head.appendChild(rrArtUiHide);
+
+  const rrApplyArtUiHide = () => {
+    const iconStatus = document.getElementById("iconStatus");
+    if (iconStatus) {
+      iconStatus.hidden = true;
+      iconStatus.style.setProperty("display", "none", "important");
+    }
+
+    const designNotes = document.getElementById("designNotes");
+    if (designNotes) {
+      designNotes.hidden = true;
+      designNotes.style.setProperty("display", "none", "important");
+      const card = designNotes.closest(".art-field-card") || designNotes.parentElement;
+      if (card) {
+        card.hidden = true;
+        card.style.setProperty("display", "none", "important");
+      }
+    }
+  };
+
+  document.addEventListener("DOMContentLoaded", rrApplyArtUiHide, { once: true });
+  const rrArtHideObserver = new MutationObserver(rrApplyArtUiHide);
+  rrArtHideObserver.observe(document.documentElement, { childList: true, subtree: true });
+  setTimeout(rrApplyArtUiHide, 0);
+  setTimeout(rrApplyArtUiHide, 500);
+  setTimeout(rrApplyArtUiHide, 1500);
 }
 
 /* V9148 MC search: typed fabric/vendor search syncs to original save fields. */
