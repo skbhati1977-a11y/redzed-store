@@ -33,4 +33,34 @@ function clean(){
 }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',clean,{once:true});else clean();
 const obs=new MutationObserver(()=>clean());obs.observe(document.documentElement,{childList:true,subtree:true});
+
+/* V9191 loading guard: never leave Cutting Master in an endless spinner. */
+if(!window.__RR_CUTTING_LOAD_GUARD_9191__){
+ window.__RR_CUTTING_LOAD_GUARD_9191__=true;
+ let retried=false;
+ const getGallery=()=>document.getElementById('divisionGallery');
+ const isBusy=()=>getGallery()?.getAttribute('aria-busy')==='true';
+ const fail=(text)=>{
+  const g=getGallery();if(!g)return;
+  g.setAttribute('aria-busy','false');
+  g.innerHTML=`<article class="cm-empty" style="min-height:180px;gap:12px"><strong style="font-size:16px">Cutting data loading stopped</strong><span style="color:#98a2b3;font-size:13px">${text}</span><button id="cmRetryLoad9191" class="cm-primary" type="button" style="min-height:44px;padding:0 18px;border:0;border-radius:12px;font-weight:900">Retry</button></article>`;
+  document.getElementById('cmRetryLoad9191')?.addEventListener('click',()=>{location.reload();},{once:true});
+ };
+ const watch=()=>{
+  const start=Date.now();
+  const t=setInterval(async()=>{
+   if(!isBusy()){clearInterval(t);return;}
+   if(Date.now()-start<18000)return;
+   clearInterval(t);
+   if(!retried&&window.RRCuttingMasterPM?.refresh){
+    retried=true;
+    try{
+     await Promise.race([Promise.resolve(window.RRCuttingMasterPM.refresh()),new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),18000))]);
+     if(isBusy())fail('Data request did not complete after retry.');
+    }catch(e){console.error('Cutting retry guard',e);fail('Data request timed out. Tap Retry to reconnect.');}
+   }else fail('Data request timed out. Tap Retry to reconnect.');
+  },750);
+ };
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(watch,300),{once:true});else setTimeout(watch,300);
+}
 })();
