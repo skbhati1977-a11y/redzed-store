@@ -8,6 +8,29 @@ const SUPABASE_URL="https://hruartsemierwhtzonei.supabase.co";
 const SUPABASE_ANON_KEY="sb_publishable_uo3dcrFuRvGsvRzPcdTV0A_5ZVwgzga";
 const CFG=Object.seal({SETTINGS:{},WHATSAPP:[],DEFAULT_WHATSAPP:null});
 const supabaseClient=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});window.supabaseClient=supabaseClient;window.supabaseDb=supabaseClient;window.redzedSupabase=supabaseClient;window.sb=supabaseClient;
+const RR_LATEST_DASHBOARD_URL="real-dashboard.html?v=9156";
+if(!/\/real-dashboard\.html$/i.test(window.location.pathname)){
+ const pinDashboardReturn=()=>{
+  document.querySelectorAll('a[href]').forEach(a=>{
+   try{
+    const u=new URL(a.getAttribute('href'),window.location.href);
+    if(/\/real-dashboard\.html$/i.test(u.pathname))a.href=RR_LATEST_DASHBOARD_URL;
+   }catch(_e){}
+  });
+ };
+ document.addEventListener('DOMContentLoaded',pinDashboardReturn,{once:true});
+ new MutationObserver(pinDashboardReturn).observe(document.documentElement,{childList:true,subtree:true});
+ setTimeout(pinDashboardReturn,0);
+ if(/\/real-cb-new-v9130-fix2\.html$/i.test(window.location.pathname)){
+  document.addEventListener('click',e=>{
+   const btn=e.target.closest('button');
+   const inline=String(btn?.getAttribute('onclick')||'');
+   if(btn&&/history\.back\s*\(/i.test(inline)){
+    e.preventDefault();e.stopImmediatePropagation();window.location.href=RR_LATEST_DASHBOARD_URL;
+   }
+  },true);
+ }
+}
 if(/\/art-v9148\/?$/i.test(window.location.pathname)){
  const style=document.createElement("style");style.textContent=`#iconStatus{display:none!important}#designNotes{display:none!important}#artCraftMapCard{display:none!important}`;document.head.appendChild(style);
  const hide=()=>{const icon=document.getElementById("iconStatus");if(icon){icon.hidden=true;icon.style.setProperty("display","none","important")}const notes=document.getElementById("designNotes");if(notes){notes.hidden=true;const card=notes.closest(".art-field-card")||notes.parentElement;if(card){card.hidden=true;card.style.setProperty("display","none","important")}}const old=document.getElementById("artCraftMapCard");if(old){old.hidden=true;old.style.setProperty("display","none","important")}};document.addEventListener("DOMContentLoaded",hide,{once:true});new MutationObserver(hide).observe(document.documentElement,{childList:true,subtree:true});setTimeout(hide,0);setTimeout(hide,500);
