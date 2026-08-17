@@ -19,24 +19,44 @@ style.textContent=`
 @media(max-width:600px){#cards.cards{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:9px!important}#cards .rr-accessory-library-caption{padding:9px}#cards .rr-accessory-library-no{font-size:15px}#cards .rr-accessory-library-actions{gap:5px}#cards .rr-accessory-library-actions button{padding:7px 5px;font-size:12px}}
 `;
 document.head.appendChild(style);
-const safe=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
+const cleanHead=v=>String(v||'').replace(/[▲▼↕⇅]/g,'').replace(/\s+/g,' ').trim().toLowerCase();
 function transform(){
  const root=document.getElementById('cards'); if(!root)return;
  const table=root.querySelector('table'); if(!table)return;
- const heads=[...table.querySelectorAll('thead th')].map(x=>x.textContent.trim());
- const idx=n=>heads.findIndex(h=>h.toLowerCase()===n.toLowerCase());
- const iImg=idx('Image'),iNo=idx('No.'),iName=idx('Name'),iAttr=heads.findIndex(h=>/quality|size|type/i.test(h)),iActive=idx('Active'),iActions=idx('Actions');
- const cards=[...table.querySelectorAll('tbody tr')].map(tr=>{
-  const td=[...tr.children]; if(td.length<3)return'';
-  const no=td[iNo]?.textContent.trim()||'',name=td[iName]?.textContent.trim()||'—',attr=iAttr>=0?(td[iAttr]?.textContent.trim()||'—'):'—',active=iActive>=0?(td[iActive]?.textContent.trim()||''):'',img=td[iImg]?.querySelector('img');
-  const edit=td[iActions]?.querySelector('[data-edit]'),view=td[iActions]?.querySelector('[data-image]');
-  const id=edit?.dataset.edit||view?.dataset.image||'';
-  const media=img?`<button class="rr-accessory-library-image" data-image="${safe(id)}" title="View image"><img src="${safe(img.src)}" alt=""></button>`:`<div class="rr-accessory-library-image"><span class="rr-accessory-library-placeholder">NO IMAGE</span></div>`;
-  return `<article class="rr-accessory-library-card">${media}<div class="rr-accessory-library-caption"><h3 class="rr-accessory-library-no">${safe(no)}</h3><p class="rr-accessory-library-name">${safe(name)}</p><div class="rr-accessory-library-meta"><span class="rr-accessory-library-tag">${safe(attr)}</span><span class="${/yes/i.test(active)?'status-ok':'status-off'}">${safe(active||'')}</span></div><div class="rr-accessory-library-actions"><button data-edit="${safe(id)}">Edit</button>${img?`<button data-image="${safe(id)}">View</button>`:''}</div></div></article>`;
- }).join('');
- if(cards)root.innerHTML=cards;
+ const heads=[...table.querySelectorAll('thead th')].map(x=>cleanHead(x.textContent));
+ const idx=(...names)=>heads.findIndex(h=>names.some(n=>h===cleanHead(n)||h.startsWith(cleanHead(n))));
+ const iImg=idx('Image'),iNo=idx('No.','No'),iName=idx('Name'),iAttr=heads.findIndex(h=>/quality|size|type/.test(h)),iActive=idx('Active'),iActions=idx('Actions');
+ const frag=document.createDocumentFragment();
+ [...table.querySelectorAll('tbody tr')].forEach(tr=>{
+  const td=[...tr.children]; if(td.length<3)return;
+  const no=(iNo>=0?td[iNo]?.textContent:'')?.trim()||'—';
+  const name=(iName>=0?td[iName]?.textContent:'')?.trim()||'—';
+  const attr=iAttr>=0?(td[iAttr]?.textContent.trim()||'—'):'—';
+  const active=iActive>=0?(td[iActive]?.textContent.trim()||''):'';
+  const oldImage=iImg>=0?td[iImg]?.querySelector('[data-image]'):null;
+  const img=iImg>=0?td[iImg]?.querySelector('img'):null;
+  const oldEdit=iActions>=0?td[iActions]?.querySelector('[data-edit]'):null;
+  const oldView=iActions>=0?td[iActions]?.querySelector('[data-image]'):null;
+  const article=document.createElement('article');article.className='rr-accessory-library-card';
+  let media;
+  if(img){media=oldImage||document.createElement('button');media.classList.add('rr-accessory-library-image');media.title='View image';media.style.cssText='';if(!media.querySelector('img'))media.appendChild(img);}
+  else{media=document.createElement('div');media.className='rr-accessory-library-image';media.innerHTML='<span class="rr-accessory-library-placeholder">NO IMAGE</span>';}
+  const cap=document.createElement('div');cap.className='rr-accessory-library-caption';
+  const h=document.createElement('h3');h.className='rr-accessory-library-no';h.textContent=no;
+  const p=document.createElement('p');p.className='rr-accessory-library-name';p.textContent=name;
+  const meta=document.createElement('div');meta.className='rr-accessory-library-meta';
+  const tag=document.createElement('span');tag.className='rr-accessory-library-tag';tag.textContent=attr;
+  const status=document.createElement('span');status.className=/yes/i.test(active)?'status-ok':'status-off';status.textContent=active;
+  meta.append(tag,status);cap.append(h,p,meta);
+  const actions=document.createElement('div');actions.className='rr-accessory-library-actions';
+  if(oldEdit){oldEdit.style.cssText='';actions.appendChild(oldEdit)}
+  if(oldView&&oldView!==oldImage){oldView.style.cssText='';oldView.textContent='View';actions.appendChild(oldView)}
+  if(actions.children.length)cap.appendChild(actions);
+  article.append(media,cap);frag.appendChild(article);
+ });
+ if(frag.childNodes.length){root.replaceChildren(frag);root.dataset.rrLibraryCards='1'}
 }
 const root=document.getElementById('cards'); if(!root)return;
-let busy=false;new MutationObserver(()=>{if(busy)return;busy=true;requestAnimationFrame(()=>{transform();busy=false})}).observe(root,{childList:true,subtree:true});
+let busy=false;new MutationObserver(()=>{if(busy||root.dataset.rrLibraryCards==='1')return;busy=true;requestAnimationFrame(()=>{transform();busy=false})}).observe(root,{childList:true,subtree:true});
 setTimeout(transform,0);
 })();
