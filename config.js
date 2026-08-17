@@ -81,6 +81,14 @@ if (/\/art-v9148\/?$/i.test(window.location.pathname)) {
   document.head.appendChild(rrCraftUpmUi);
 }
 
+/* UPM V9151: show Craft + Sticker + Metal ID on every Universal Production lot card. */
+if (/\/real-universal-production-v729\.html$/i.test(window.location.pathname)) {
+  const rrUpmMappedDetails = document.createElement("script");
+  rrUpmMappedDetails.src = "real-upm-lot-mapped-details-v9151.js?v=9151";
+  rrUpmMappedDetails.async = false;
+  document.head.appendChild(rrUpmMappedDetails);
+}
+
 /* V9148 MC search: typed fabric/vendor search syncs to original save fields. */
 if (/real-product-master-v720\.html$/i.test(window.location.pathname)) {
   const rrMcSearchableMapping = document.createElement("script");
