@@ -12,26 +12,59 @@
   </style>
 </head>
 <body>
-  <div class="boot" id="rrCuttingBoot"><div><div class="spin"></div><b>Starting Cutting Master…</b><p>Loading fresh v9204 runtime.</p></div></div>
+  <div class="boot" id="rrCuttingBoot"><div><div class="spin"></div><b>Starting Cutting Master…</b><p>Loading stable v9205 bootstrap.</p></div></div>
   <script>
   (()=>{
-    const templateUrl='real-cutting-master-v9203.html?template=9204';
+    const templateUrl='real-cutting-master-v9203.html?template=9205';
     const fail=message=>{
-      const box=document.getElementById('rrCuttingBoot');
-      if(box)box.innerHTML='<div><b>Cutting Master startup failed</b><p>'+String(message||'Template load failed')+'</p><button onclick="location.reload()" style="min-height:46px;padding:0 18px;border:0;border-radius:12px;background:#ef3340;color:#fff;font-weight:900">Retry</button></div>';
+      const target=document.getElementById('divisionGallery')||document.getElementById('rrCuttingBoot');
+      if(target){
+        target.setAttribute?.('aria-busy','false');
+        target.innerHTML='<article class="cm-empty" style="min-height:260px;display:grid;place-items:center;text-align:center;padding:24px"><div><h3>Cutting Master startup failed</h3><p>'+String(message||'Startup failed')+'</p><button onclick="location.reload()" style="min-height:46px;padding:0 18px;border:0;border-radius:12px;background:#ef3340;color:#fff;font-weight:900">Retry</button></div></article>';
+      }
+    };
+    const loadScript=(src,ms=6500)=>new Promise((resolve,reject)=>{
+      const s=document.createElement('script');
+      let done=false;
+      const timer=setTimeout(()=>{if(done)return;done=true;s.remove();reject(new Error(src+' timeout'))},ms);
+      s.src=src;s.async=false;
+      s.onload=()=>{if(done)return;done=true;clearTimeout(timer);resolve(src)};
+      s.onerror=()=>{if(done)return;done=true;clearTimeout(timer);s.remove();reject(new Error(src+' failed'))};
+      document.head.appendChild(s);
+    });
+    const loadSupabase=async()=>{
+      if(window.supabase?.createClient)return;
+      const sources=[
+        'https://unpkg.com/@supabase/supabase-js@2',
+        'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2'
+      ];
+      let lastError=null;
+      for(const src of sources){
+        try{await loadScript(src,5000);if(window.supabase?.createClient)return}catch(error){lastError=error}
+      }
+      throw lastError||new Error('Supabase library unavailable');
     };
     fetch(templateUrl,{cache:'no-store'})
       .then(response=>{if(!response.ok)throw new Error('Template HTTP '+response.status);return response.text()})
-      .then(html=>{
-        html=html
-          .replaceAll('config.js?v=9203','config.js?v=9204')
-          .replaceAll('real-common.js?v=9203','real-common.js?v=9204')
-          .replaceAll('real-cutting-runtime-v9203.js?v=9203','real-cutting-runtime-v9204.js?v=9204')
-          .replaceAll('real-cutting-master-pm.V719.3.js?v=9203','real-cutting-master-pm.V719.3.js?v=9204')
-          .replaceAll('redzed-cutting-cb-actions-v72035.js?v=9203','redzed-cutting-cb-actions-v72035.js?v=9204');
-        document.open();
-        document.write(html);
-        document.close();
+      .then(async html=>{
+        const marker='<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>';
+        const cut=html.indexOf(marker);
+        if(cut<0)throw new Error('Cutting template script marker missing');
+        const shell=html.slice(0,cut)+'</body></html>';
+        document.open();document.write(shell);document.close();
+        const status=document.getElementById('cmMessage');
+        const stage=text=>{if(status){status.textContent=text;status.className='rr-message info'}};
+        stage('Starting Cutting Master…');
+        await loadSupabase();
+        stage('Connecting factory configuration…');
+        await loadScript('config.js?v=9205',6500);
+        await loadScript('real-common.js?v=9205',6500);
+        await loadScript('real-cutting-runtime-v9204.js?v=9205',6500);
+        window.onerror=function(message,source,line,column){const text='CUTTING JS ERROR: '+message+' | line '+line+':'+column;const box=document.getElementById('cmMessage');if(box){box.textContent=text;box.className='rr-message error'};return false};
+        window.onunhandledrejection=function(event){const reason=event.reason||{};const text='CUTTING PROMISE ERROR: '+(reason.message||String(reason));const box=document.getElementById('cmMessage');if(box){box.textContent=text;box.className='rr-message error'}};
+        stage('Loading Cutting cards…');
+        await loadScript('real-cutting-master-pm.V719.3.js?v=9205',6500);
+        await loadScript('redzed-cutting-cb-actions-v72035.js?v=9205',6500);
       })
       .catch(error=>fail(error?.message||error));
   })();
