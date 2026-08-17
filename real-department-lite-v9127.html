@@ -6,14 +6,18 @@
 <meta name="theme-color" content="#07090d">
 <title>REAL FACTORY — Department</title>
 <style>
-:root{--bg:#07090d;--panel:#12151c;--line:#303641;--mut:#98a2b3;--accent:#cc3d55}*{box-sizing:border-box}html,body{margin:0;min-height:100%;background:var(--bg);color:#fff;font:14px system-ui,-apple-system,"Segoe UI",Arial,sans-serif}button,input,a{font:inherit;background:#242934;color:#fff;border:1px solid var(--line);border-radius:9px;padding:10px;text-decoration:none;font-weight:800}.page{padding:10px;max-width:1200px;margin:auto}.top{display:flex;gap:8px;align-items:center;justify-content:space-between}.top h1{margin:2px 0;font-size:24px}.brand{color:#ffc857;font-weight:900}.actions{display:flex;gap:6px}.modulebar{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin:12px 0}.modulebar button{min-height:44px}.modulebar .primary{background:linear-gradient(#d84a62,#b72f48)}.toolbar{margin:10px 0}.toolbar input{width:100%;min-height:48px;font-size:16px}.board{display:block}.status{font-size:12px;color:var(--mut);margin-top:4px}.hidden{display:none!important}#homeDept,.all-departments-field,[data-all-departments]{display:none!important;visibility:hidden!important;width:0!important;height:0!important;margin:0!important;padding:0!important;border:0!important;position:absolute!important;pointer-events:none!important}@media(max-width:700px){.modulebar{grid-template-columns:1fr 1fr}.modulebar button:nth-child(3){grid-column:1/-1}.top h1{font-size:22px}.actions a{display:none}}
+:root{--bg:#07090d;--panel:#12151c;--panel2:#171b23;--line:#303641;--mut:#98a2b3;--accent:#cc3d55;--accent2:#e04c67;--gold:#ffc857;--blue:#9ec5ff}*{box-sizing:border-box}html,body{margin:0;min-height:100%;background:var(--bg);color:#fff;font:14px system-ui,-apple-system,"Segoe UI",Arial,sans-serif}body{padding-bottom:max(10px,env(safe-area-inset-bottom))}button,input,a{font:inherit;background:#242934;color:#fff;border:1px solid var(--line);border-radius:11px;padding:10px;text-decoration:none;font-weight:800}.page{padding:12px;max-width:1180px;margin:auto}.top{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:14px;align-items:center;padding:14px 14px 13px;border:1px solid #252b35;border-radius:16px;background:linear-gradient(180deg,#101319,#0d1015);box-shadow:0 10px 28px #0004}.identity{min-width:0}.brand{color:var(--gold);font-size:12px;font-weight:950;letter-spacing:.08em}.dept-line{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-top:3px}.top h1{margin:0;font-size:27px;line-height:1.12;letter-spacing:-.02em}.dept-code{display:inline-flex;align-items:center;min-height:26px;padding:4px 8px;border:1px solid #3c4655;border-radius:999px;background:#171c25;color:var(--blue);font-size:10px;font-weight:950;letter-spacing:.06em}.status{font-size:11px;color:var(--mut);margin-top:6px;font-weight:750}.actions{display:flex;gap:7px;align-items:center}.actions a,.actions button{min-height:42px;display:inline-flex;align-items:center;justify-content:center;white-space:nowrap}.actions .upm{border-color:#4a5670;background:#18202d;color:#cfe3ff}.actions #refresh{background:#202633}.modulebar{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin:12px 0}.modulebar button{min-height:48px;border-radius:12px;background:#222733}.modulebar .primary{background:linear-gradient(180deg,var(--accent2),#b72f48);border-color:#dc536a;box-shadow:inset 0 1px 0 #ffffff20}.toolbar{margin:10px 0 12px}.toolbar input{width:100%;min-height:50px;font-size:16px;background:#202632;border-color:#343c49;padding-inline:14px}.toolbar input:focus{outline:2px solid #ffffffcc;outline-offset:1px}.board{display:block}.hidden{display:none!important}#homeDept,.all-departments-field,[data-all-departments]{display:none!important;visibility:hidden!important;width:0!important;height:0!important;margin:0!important;padding:0!important;border:0!important;position:absolute!important;pointer-events:none!important}.rfbar{margin-top:12px!important}.rfsec{margin-top:12px}.rfcard{box-shadow:0 8px 22px #0002}.rftitle{padding:0 2px}.rftitle h2{font-size:22px;letter-spacing:-.01em}.rftitle p{line-height:1.35}.rfrow,.rfpick{border-radius:10px!important}.rfsubmitassign{border-radius:12px!important}@media(max-width:760px){.page{padding:9px}.top{grid-template-columns:1fr;padding:12px}.actions{width:100%}.actions a,.actions button{flex:1}.modulebar{grid-template-columns:1fr 1fr}.modulebar button:nth-child(3){grid-column:1/-1}.top h1{font-size:25px}}@media(max-width:430px){.top h1{font-size:23px}.brand{font-size:11px}.actions a,.actions button{padding:9px 8px}.modulebar{gap:7px}.modulebar button{min-height:46px;font-size:13px}}
 </style>
 </head>
 <body>
 <div class="page">
   <div class="top">
-    <div><div class="brand">REAL FACTORY · PRODUCTION</div><h1 id="deptHeader">Department</h1><div class="status">TEST DEFAULT · REAL PROTECTED</div></div>
-    <div class="actions"><a href="real-dashboard.html">Dashboard</a><button id="refresh" type="button">Refresh</button></div>
+    <div class="identity">
+      <div class="brand">REAL FACTORY · PRODUCTION</div>
+      <div class="dept-line"><h1 id="deptHeader">Department</h1><span id="deptCode" class="dept-code">DEPARTMENT</span></div>
+      <div id="deptStatus" class="status">TEST DEFAULT · REAL PROTECTED · CANONICAL UPM DEPARTMENT</div>
+    </div>
+    <div class="actions"><a class="upm" href="real-universal-production-v770-v9059.html?mode=TEST&v=9175">UPM</a><a href="real-dashboard.html">Dashboard</a><button id="refresh" type="button">Refresh</button></div>
   </div>
   <div class="modulebar">
     <button class="primary" type="button">PRODUCTION</button>
@@ -33,21 +37,26 @@
 <script>
 (() => {
  const q=new URLSearchParams(location.search),raw=(q.get('dept')||'').trim().toUpperCase();
- const A={KR:'STITCHING',KARIGAR:'STITCHING',STITCH:'STITCHING',STITCHING:'STITCHING',OV:'OVERLOCK',OVERLOCK:'OVERLOCK',FLD:'FOLDING',FOLDING:'FOLDING',KAAJ:'KAAJ',KAJ:'KAAJ',BUTTON:'BUTTON',BTN:'BUTTON',KAAJ_BUTTON:'KAAJ_BUTTON',TEAK:'TEAK_TANKI',TANKI:'TEAK_TANKI',TEAK_TANKI:'TEAK_TANKI',THREAD_CUT:'THREAD_CUT',TH_CUT:'THREAD_CUT',QC:'QC',PRESS:'PRESS',PRINT:'PRINTING',PRINTING:'PRINTING',STICKER:'STICKER',ID:'METAL_ID',METAL_ID:'METAL_ID',PACK:'PACKING',PACKING:'PACKING',DESPATCH:'DESPATCH',DISPATCH:'DESPATCH',CUT:'CUTTING',CUTTING:'CUTTING'};
- const L={STITCHING:'Karigar / Stitching',OVERLOCK:'Overlock',FOLDING:'Folding',KAAJ:'Kaaj',BUTTON:'Button',KAAJ_BUTTON:'Kaaj / Button',TEAK_TANKI:'Teak / Tanki',THREAD_CUT:'Thread Cutting',QC:'QC',PRESS:'Press',PRINTING:'Printing',STICKER:'Sticker',METAL_ID:'Metal ID',PACKING:'Packing',DESPATCH:'Despatch',CUTTING:'Cutting'};
+ const A={KR:'STITCHING',KARIGAR:'STITCHING',STITCH:'STITCHING',STITCHING:'STITCHING',OV:'OVERLOCK',OVERLOCK:'OVERLOCK',FLD:'FOLDING',FLATLOCK:'FOLDING',FOLDING:'FOLDING',KAAJ:'KAAJ',KAJ:'KAAJ',BUTTON:'BUTTON',BTN:'BUTTON',KAAJ_BUTTON:'KAAJ_BUTTON',TEAK:'TEAK_TANKI',TANKI:'TEAK_TANKI',TEAK_TANKI:'TEAK_TANKI',THREAD_CUT:'THREAD_CUT',THREAD_CUTTING:'THREAD_CUT',TH_CUT:'THREAD_CUT',QC:'QC',CHECKING:'QC',PRESS:'PRESS',FINISHING:'PRESS',PRINT:'PRINTING',PRINTING:'PRINTING',STICKER:'STICKER',ID:'METAL_ID',ID_WORK:'METAL_ID',METAL_ID:'METAL_ID',PACK:'PACKING',PACKING:'PACKING',DESPATCH:'DESPATCH',DISPATCH:'DESPATCH',CUT:'CUTTING',CUTTING:'CUTTING'};
+ const L={STITCHING:'Karigar / Stitching',OVERLOCK:'Overlock',FOLDING:'Folding',KAAJ:'Kaaj',BUTTON:'Button',KAAJ_BUTTON:'Kaaj / Button',TEAK_TANKI:'Teak / Tanki',THREAD_CUT:'Thread Cutting',QC:'QC',PRESS:'Press',PRINTING:'Print',STICKER:'Sticker',METAL_ID:'Metal ID',PACKING:'Packing',DESPATCH:'Despatch',CUTTING:'Cutting'};
  const dept=A[raw]||raw,label=(q.get('label')||L[dept]||dept||'Department').trim();
- if(!dept){location.replace('real-universal-production-v770-v9059.html?v=9128');return;}
- document.title='REAL FACTORY — '+label;document.getElementById('deptHeader').textContent=label;
+ if(!dept){location.replace('real-universal-production-v770-v9059.html?v=9175');return;}
+ document.title='REAL FACTORY — '+label;
+ document.getElementById('deptHeader').textContent=label;
+ document.getElementById('deptCode').textContent=dept.replaceAll('_',' ');
+ const mode=String(q.get('mode')||'TEST').trim().toUpperCase()==='REAL'?'REAL':'TEST';
+ document.getElementById('deptStatus').textContent=`${mode} DEFAULT · REAL PROTECTED · CANONICAL UPM DEPARTMENT`;
+ const upm=document.querySelector('.actions .upm');if(upm)upm.href=`real-universal-production-v770-v9059.html?mode=${encodeURIComponent(mode)}&v=9175`;
  const hd=document.getElementById('homeDept');hd.innerHTML='<option value="'+dept+'" selected>'+label+'</option>';hd.value=dept;hd.hidden=true;hd.setAttribute('aria-hidden','true');
  document.getElementById('search').addEventListener('input',e=>{const s=String(e.target.value||'').trim().toLowerCase();document.querySelectorAll('.rfcard').forEach(c=>{c.style.display=!s||c.textContent.toLowerCase().includes(s)?'':'none'})});
 })();
 </script>
-<script src="real-department-due-v9168-bridge.js?v=9172"></script>
-<script src="real-upm-department-view-v789.js?v=9172"></script>
-<script src="real-sticker-metal-print-flow-v9160.js?v=9172"></script>
-<script src="real-sticker-metal-print-guard-v9160.js?v=9172"></script>
-<script src="real-accessory-purchase-authorizer-v9161.js?v=9172"></script>
-<script src="real-accessory-ready-direct-v9170.js?v=9172"></script>
-<script src="real-accessory-partial-visual-v9172.js?v=9172"></script>
+<script src="real-department-due-v9168-bridge.js?v=9175"></script>
+<script src="real-upm-department-view-v789.js?v=9175"></script>
+<script src="real-sticker-metal-print-flow-v9160.js?v=9175"></script>
+<script src="real-sticker-metal-print-guard-v9160.js?v=9175"></script>
+<script src="real-accessory-purchase-authorizer-v9161.js?v=9175"></script>
+<script src="real-accessory-ready-direct-v9170.js?v=9175"></script>
+<script src="real-accessory-partial-visual-v9172.js?v=9175"></script>
 </body>
 </html>
