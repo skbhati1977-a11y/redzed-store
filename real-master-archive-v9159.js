@@ -1,0 +1,64 @@
+(()=>{
+'use strict';
+const path=location.pathname;
+let C=null;
+if(/\/art-v9148\/?$/i.test(path))C={table:'rr_art_master',label:'Art',card:'.art-master-card',edit:'[data-edit]'};
+else if(/\/real-print-master\.html$/i.test(path))C={table:'rr_print_master',label:'Print',card:'.print-master-card',edit:'[data-edit]'};
+else if(/\/real-sticker-master-v804\.html$/i.test(path))C={table:'rr_sticker_master_v803',label:'Sticker',card:'tr',edit:'[data-edit]',accessory:true};
+else if(/\/real-metal-id-master-v804\.html$/i.test(path))C={table:'rr_metal_id_master_v803',label:'Metal ID',card:'tr',edit:'[data-edit]',accessory:true};
+if(!C)return;
+
+const archived=new Set();
+let busy=false;
+const style=document.createElement('style');
+style.textContent=`
+.rr-archive-btn{border:1px solid #8a3340!important;background:#35171c!important;color:#ff9eaa!important;border-radius:10px!important;padding:9px 12px!important;font-weight:850!important;cursor:pointer!important}
+.rr-archive-btn:disabled{opacity:.55!important;cursor:wait!important}
+.art-card-body>.rr-archive-btn,.print-card-body>.rr-archive-btn{width:100%;margin-top:8px}
+.mini-actions .rr-archive-btn{padding:7px 9px!important;white-space:nowrap}
+`;
+document.head.appendChild(style);
+
+function client(){return window.supabaseClient||window.supabaseDb||window.redzedSupabase||window.sb||null}
+function idOf(node){const e=node.querySelector(C.edit);return String(e?.dataset?.edit||'').trim()}
+function hideArchived(){
+ document.querySelectorAll(C.card).forEach(node=>{
+  const id=idOf(node);if(!id)return;
+  const inactiveDom=C.accessory&&!!node.querySelector('.status-off');
+  if(inactiveDom||archived.has(id)){node.style.setProperty('display','none','important');return}
+  if(node.querySelector('.rr-archive-btn'))return;
+  const edit=node.querySelector(C.edit);if(!edit)return;
+  const btn=document.createElement('button');btn.type='button';btn.className='rr-archive-btn';btn.dataset.archiveId=id;btn.textContent='Archive';
+  if(C.accessory){(edit.closest('.mini-actions')||edit.parentElement).appendChild(btn)}else{edit.insertAdjacentElement('afterend',btn)}
+ });
+}
+async function loadArchived(){
+ const db=client();if(!db)return;
+ const r=await db.from(C.table).select('id').eq('is_active',false);
+ if(r.error){console.warn(`${C.label} archive list`,r.error);return}
+ (r.data||[]).forEach(x=>archived.add(String(x.id)));
+ hideArchived();
+}
+async function archive(id,btn){
+ if(busy||!id)return;
+ if(!confirm(`Archive this ${C.label}?\n\nIt will be removed from the active list, but its history/data will stay saved.`))return;
+ const db=client();if(!db){alert('Database connection unavailable.');return}
+ busy=true;btn.disabled=true;const old=btn.textContent;btn.textContent='Archiving...';
+ try{
+  const r=await db.from(C.table).update({is_active:false}).eq('id',id).select('id');
+  if(r.error)throw r.error;
+  if(!r.data?.length)throw new Error('Archive permission/update failed.');
+  archived.add(String(id));
+  const node=btn.closest(C.card);if(node)node.style.setProperty('display','none','important');
+  const msg=document.getElementById('message')||document.getElementById('printMessage')||document.getElementById('artMessage');
+  if(msg){msg.textContent=`${C.label} archived successfully.`;msg.classList?.add('success')}
+ }catch(e){console.error(e);alert(e.message||`${C.label} archive nahi hua.`);btn.disabled=false;btn.textContent=old}
+ finally{busy=false}
+}
+function boot(){
+ document.addEventListener('click',e=>{const b=e.target.closest('.rr-archive-btn[data-archive-id]');if(b)archive(b.dataset.archiveId,b)},true);
+ new MutationObserver(()=>hideArchived()).observe(document.body,{childList:true,subtree:true});
+ hideArchived();loadArchived();
+}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
+})();
