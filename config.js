@@ -35,6 +35,16 @@ window.supabaseDb = supabaseClient;
 window.redzedSupabase = supabaseClient;
 window.sb = supabaseClient;
 
+/* ART V9148 TEST UI: keep controller fields intact but hide non-user-facing UI. */
+if (/\/art-v9148\/?$/i.test(window.location.pathname)) {
+  const rrArtUiHide = document.createElement("style");
+  rrArtUiHide.textContent = `
+    #iconStatus { display:none !important; }
+    .art-field-card:has(#designNotes) { display:none !important; }
+  `;
+  document.head.appendChild(rrArtUiHide);
+}
+
 /* V9148 MC search: typed fabric/vendor search syncs to original save fields. */
 if (/real-product-master-v720\.html$/i.test(window.location.pathname)) {
   const rrMcSearchableMapping = document.createElement("script");
