@@ -8,7 +8,8 @@ const SUPABASE_URL="https://hruartsemierwhtzonei.supabase.co";
 const SUPABASE_ANON_KEY="sb_publishable_uo3dcrFuRvGsvRzPcdTV0A_5ZVwgzga";
 const CFG=Object.seal({SETTINGS:{},WHATSAPP:[],DEFAULT_WHATSAPP:null});
 const supabaseClient=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});window.supabaseClient=supabaseClient;window.supabaseDb=supabaseClient;window.redzedSupabase=supabaseClient;window.sb=supabaseClient;
-const RR_LATEST_DASHBOARD_URL="real-dashboard.html?v=9156";
+const RR_REPO_BASE="/redzed-store/";
+const RR_LATEST_DASHBOARD_URL=`${RR_REPO_BASE}real-dashboard.html?v=9156`;
 if(!/\/real-dashboard\.html$/i.test(window.location.pathname)){
  const pinDashboardReturn=()=>{
   document.querySelectorAll('a[href]').forEach(a=>{
@@ -41,9 +42,9 @@ if(/\/real-dashboard\.html$/i.test(window.location.pathname)){
  const pinLatestDashboardRoutes=()=>{
   document.querySelectorAll('a[href]').forEach(a=>{
    const text=String(a.textContent||'').replace(/\s+/g,' ').trim().toLowerCase();
-   if(text==='cb new'||text.startsWith('cb new · regular cloth'))a.href='real-cb-new-v9130-loader.html?v=9147&fix=20260817';
-   else if(text==='matching cloth')a.href='real-product-master-v720.html?v=9148';
-   else if(text==='art master')a.href='art-v9148/?v=9155';
+   if(text==='cb new'||text.startsWith('cb new · regular cloth'))a.href=`${RR_REPO_BASE}real-cb-new-v9130-loader.html?v=9147&fix=20260817`;
+   else if(text==='matching cloth')a.href=`${RR_REPO_BASE}real-product-master-v720.html?v=9148`;
+   else if(text==='art master')a.href=`${RR_REPO_BASE}art-v9148/?v=9155`;
   });
  };
  document.addEventListener('DOMContentLoaded',pinLatestDashboardRoutes,{once:true});setTimeout(pinLatestDashboardRoutes,0);
