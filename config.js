@@ -47,6 +47,9 @@ if(rrIsDashboardPath(window.location.pathname)){
  document.addEventListener('DOMContentLoaded',pinLatestDashboardRoutes,{once:true});setTimeout(pinLatestDashboardRoutes,0);
 }
 if(/\/real-cutting-master\.html$/i.test(window.location.pathname)){
+ window.__RR_CUTTING_UI_LOADER_9190__=true;
+ window.__RR_CUTTING_LOAD_GUARD_9191__=true;
+ window.__RR_CUTTING_LOADING_GUARD_9191__=true;
  const rrApplyCuttingView=()=>{
   const view=String(new URLSearchParams(window.location.search).get('view')||'all').toLowerCase();
   const filter=view==='ready-lot'?'ready':view==='release-lot'?'released':'all';
