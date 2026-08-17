@@ -1,0 +1,51 @@
+REAL FACTORY V9157 MODULE VERSION MAP
+Date: 2026-08-17
+
+CANONICAL DASHBOARD
+- real-dashboard-v9157.html?v=9157
+- real-dashboard.html is legacy bridge only and redirects to V9157.
+
+GLOBAL TRAVEL RULE
+- All Dashboard-generated internal routes use travel/cache token v=9157.
+- config.js RR_LATEST_DASHBOARD_URL points to /redzed-store/real-dashboard-v9157.html?v=9157.
+- Canonical module filenames are preserved where later fixes were layered on an older filename; filename number alone is not treated as deployment freshness.
+
+PRODUCT / MASTERS
+- CB New: real-cb-new-v9130-loader.html?v=9157&fix=20260817 (loader opens current V9147 fix2 implementation)
+- Matching Cloth: real-product-master-v720.html?view=matching-cloth&v=9157 (verified current MC overlay remains attached by config.js)
+- Art Master: art-v9148/?v=9157
+- Print Master: real-print-master.html?v=9157
+- Sticker Master: real-sticker-master-v804.html?v=9157
+- Metal ID Master: real-metal-id-master-v804.html?v=9157
+- Material Master: real-material-master-v853.html?v=9157
+
+CUTTING
+- real-cutting-master.html?...&v=9157
+
+UNIVERSAL PRODUCT MASTER / DEPARTMENTS
+- real-universal-production-v770-v9059.html?v=9157
+- real-department-lite-v9127.html?dept=<DEPARTMENT>&v=9157
+
+FINISHED GOODS / SALES / STORE
+- real-finished-goods-v787.html?view=<view>&v=9157
+- Market Window: real-commerce-v853.html?v=9157
+
+ACCOUNTS / REPORTS
+- real-accounts-suite-v857.html?v=9157
+- real-accounts-costing-v850.html?v=9157
+- real-reports-ai-v857.html?v=9157
+
+SALARY / WORKERS
+- real-salary-home-v786.html?v=9157
+- real-salary-payment-v785.html?mode=TEST&v=9157
+- real-attendance-salary-v778.html?v=9157
+- real-worker-payroll-setup-v786.html?v=9157
+
+ADMIN / CONTROL
+- real-role-permission-v777-4-final.html?v=9157
+- real-data-mode-control-v786.html?v=9157
+- real-communications-v853.html?v=9157
+- real-flow-audit-v857.html?v=9157
+
+IMPORTANT
+Do not reintroduce a hard-coded dashboard travel constant such as const V='9130' inside real-dashboard.js. The current travel token is 9157. Dashboard returns must target the canonical V9157 HTML, preferably through config.js RR_LATEST_DASHBOARD_URL.
