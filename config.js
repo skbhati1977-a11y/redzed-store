@@ -14,6 +14,17 @@ if(/\/art-v9148\/?$/i.test(window.location.pathname)){
  const craftLayout=document.createElement("script");craftLayout.src="factory-craft-layout.js?v=9155";craftLayout.async=false;document.head.appendChild(craftLayout);
  const categoryCraft=document.createElement("script");categoryCraft.src="category-craft-library.js?v=9155";categoryCraft.async=false;document.head.appendChild(categoryCraft);
 }
+if(/\/real-dashboard\.html$/i.test(window.location.pathname)){
+ const pinLatestDashboardRoutes=()=>{
+  document.querySelectorAll('a[href]').forEach(a=>{
+   const text=String(a.textContent||'').replace(/\s+/g,' ').trim().toLowerCase();
+   if(text==='cb new'||text.startsWith('cb new · regular cloth'))a.href='real-cb-new-v9130-loader.html?v=9147&fix=20260817';
+   else if(text==='matching cloth')a.href='real-product-master-v720.html?v=9148';
+   else if(text==='art master')a.href='art-v9148/?v=9155';
+  });
+ };
+ document.addEventListener('DOMContentLoaded',pinLatestDashboardRoutes,{once:true});setTimeout(pinLatestDashboardRoutes,0);
+}
 if(/\/real-universal-production-v729\.html$/i.test(window.location.pathname)){const s=document.createElement("script");s.src="real-upm-lot-mapped-details-v9151.js?v=9151";s.async=false;document.head.appendChild(s)}
 if(/real-product-master-v720\.html$/i.test(window.location.pathname)){const s=document.createElement("script");s.src="real-mc-searchable-mapping-v9140.js?v=9148";s.async=false;document.head.appendChild(s);document.addEventListener("submit",event=>{if(event.target?.id!=="mcForm")return;const search=document.getElementById("mcFabricSearch"),select=document.getElementById("mcFabricSelect"),newInput=document.getElementById("mcNewFabric"),wrap=document.getElementById("mcNewFabricWrap"),typed=String(search?.value||"").trim();if(!typed||!select||!newInput)return;if(!select.value){select.value="__new__";newInput.value=typed;wrap?.classList.remove("hidden");select.dispatchEvent(new Event("change",{bubbles:true}))}},true)}
 const mobile=document.createElement("script");mobile.src="real-global-mobile-fill-v9144.js?v=9144";mobile.async=false;document.head.appendChild(mobile);
