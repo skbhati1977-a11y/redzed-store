@@ -50,7 +50,7 @@ if(rrIsDashboardPath(window.location.pathname)){
    else if(text==='print master')a.href=`${RR_REPO_BASE}real-print-master.html?v=9160`;
    else if(text==='sticker master')a.href=`${RR_REPO_BASE}real-sticker-master-v804.html?v=9166`;
    else if(text==='metal id master')a.href=`${RR_REPO_BASE}real-metal-id-master-v804.html?v=9166`;
-   else{try{const u=new URL(a.getAttribute('href'),window.location.href),d=String(u.searchParams.get('dept')||'').toUpperCase();if(/\/real-department-lite-v9127\.html$/i.test(u.pathname)&&['PRINTING','STICKER','METAL_ID'].includes(d)){u.searchParams.set('v','9160');a.href=u.pathname+u.search}}catch(_e){}}
+   else{try{const u=new URL(a.getAttribute('href'),window.location.href),d=String(u.searchParams.get('dept')||'').toUpperCase();if(/\/real-department-lite-v9127\.html$/i.test(u.pathname)&&d==='PRINTING'){u.searchParams.set('v','9160');a.href=u.pathname+u.search}else if(/\/real-department-lite-v9127\.html$/i.test(u.pathname)&&['STICKER','METAL_ID'].includes(d)){u.searchParams.set('v','9171');a.href=u.pathname+u.search}}catch(_e){}}
   });
  };
  document.addEventListener('DOMContentLoaded',pinLatestDashboardRoutes,{once:true});setTimeout(pinLatestDashboardRoutes,0);
