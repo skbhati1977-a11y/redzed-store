@@ -8,6 +8,20 @@
   <link rel="stylesheet" href="../real-caption-builder.css?v=884">
   <link rel="stylesheet" href="../real-master-viewer.css?v=884">
   <link rel="stylesheet" href="../real-art-master-final.css?v=9148">
+  <style>
+    .art-work-tabs{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 16px;padding:6px;background:var(--rr-panel-2,#f4f6f8);border:1px solid var(--rr-border,#dfe3e8);border-radius:14px;position:sticky;top:8px;z-index:20}
+    .art-work-tab{appearance:none;border:0;background:transparent;padding:11px 16px;border-radius:10px;font:inherit;font-weight:700;cursor:pointer;color:inherit}
+    .art-work-tab[aria-selected="true"]{background:#111;color:#fff;box-shadow:0 4px 14px rgba(0,0,0,.12)}
+    .art-tab-panel{display:none}
+    .art-tab-panel.is-active{display:block}
+    .art-tab-note{margin:-4px 0 16px;color:#667085;font-size:13px}
+    .art-costing-shell{display:grid;gap:14px}
+    .art-costing-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap}
+    .art-costing-head h3{margin:0 0 4px}
+    .art-costing-head p{margin:0;color:#667085}
+    .art-costing-badge{font-size:12px;font-weight:800;letter-spacing:.04em;padding:7px 10px;border-radius:999px;background:#111;color:#fff}
+    @media(max-width:640px){.art-work-tabs{display:grid;grid-template-columns:repeat(3,1fr)}.art-work-tab{padding:10px 8px;font-size:13px}.art-costing-head{display:block}.art-costing-badge{display:inline-block;margin-top:8px}}
+  </style>
 </head>
 <body>
 <header class="rr-topbar art-topbar">
@@ -25,8 +39,8 @@
 <section class="rr-hero art-master-hero">
   <div>
     <small class="rr-kicker">ART SETUP</small>
-    <h2>Artwork, process cost, margin aur material ek jagah.</h2>
-    <p>New product banate time latest saved Art cost use hoga. Existing products unchanged rahenge.</p>
+    <h2>Artwork setup ko clear workspaces mein manage karo.</h2>
+    <p>Setup, Craft & Material aur Costing ab separate hain. Saved Art ka latest cost future Products mein use hoga.</p>
   </div>
   <div class="art-hero-stats">
     <span><small>Total Arts</small><strong id="artStatTotal">0</strong></span>
@@ -39,7 +53,7 @@
   <div class="rr-panel-head">
     <div>
       <h2 id="formTitle">Add New Art</h2>
-      <p>Step wise fill karo: Images, Basic Details, Craft Features, Costing, Margin.</p>
+      <p>Ek-ek workspace complete karo. Costing ko kisi aur section ke saath merge nahi kiya gaya hai.</p>
     </div>
     <button id="cancelEdit" class="rr-btn rr-btn-secondary rr-hidden" type="button">Cancel Edit</button>
   </div>
@@ -47,51 +61,72 @@
   <form id="artForm" class="rr-form">
     <input id="artId" type="hidden">
 
-    <section class="rr-subpanel art-image-first">
-      <div class="art-section-title">
-        <span>1</span>
-        <div><h3>Artwork Images *</h3><p>Image tap se preview. Hold se Icon, View ya Remove. New Art me minimum one image required.</p></div>
-      </div>
-      <div class="art-upload-row">
-        <label class="rr-btn rr-btn-secondary">Camera<input id="cameraFiles" type="file" accept="image/*" capture="environment" multiple hidden></label>
-        <label class="rr-btn rr-btn-secondary">Gallery<input id="galleryFiles" type="file" accept="image/*" multiple hidden></label>
-        <span id="selectedFiles">No new images selected</span>
-      </div>
-      <div id="iconStatus" class="art-icon-status"><span class="art-icon-star">★</span><div><small>ART ICON</small><strong>No icon selected</strong></div></div>
-      <div id="imagePreview" class="art-media-grid"></div>
-    </section>
+    <nav class="art-work-tabs" aria-label="Art setup workspaces">
+      <button class="art-work-tab" type="button" data-art-tab="setup" aria-selected="true">1. Setup</button>
+      <button class="art-work-tab" type="button" data-art-tab="craft" aria-selected="false">2. Craft & Material</button>
+      <button class="art-work-tab" type="button" data-art-tab="costing" aria-selected="false">3. Costing</button>
+    </nav>
 
-    <section class="rr-subpanel">
-      <div class="art-section-title"><span>2</span><div><h3>Art Details</h3><p>Art number, category aur design name yahan lock honge.</p></div></div>
-      <div class="art-grid-2">
-        <label>Art No *<input id="artNo" required placeholder="RA60"></label>
-        <label>Art Category *<div class="art-category-row"><select id="artCategory" required><option value="">Select category</option></select><button id="addCategoryBtn" type="button" class="rr-btn rr-btn-secondary">+ Add</button></div></label>
-        <label>Design Name *<input id="itemName" required placeholder="Self Collar Polo"></label>
-      </div>
-      <label>Factory Instructions (Internal Only)<textarea id="designNotes" rows="3" placeholder="Example: Placket sewing line 4 mm, neck tape black, side label left."></textarea></label>
-    </section>
+    <div class="art-tab-panel is-active" data-art-panel="setup">
+      <p class="art-tab-note">Artwork images, Art number, Category, Design name aur factory instructions.</p>
 
-    <section class="rr-subpanel">
-      <div class="art-section-title"><span>3</span><div><h3>Craft Features & Material</h3><p>Construction detail select karte hi material requirement auto update hogi.</p></div></div>
-      <div id="artCaptionBuilder" class="rr-caption-builder"></div><input id="description" type="hidden">
-      <div class="art-material-compact">
-        <div class="art-material-title"><div><strong>Material Requirements</strong><small>Category aur selected Craft Features se auto</small></div><button id="addCustomMaterialBtn" class="rr-btn rr-btn-secondary" type="button">+ Add</button></div>
-        <div id="artMaterialRequirements" class="art-material-chips"></div>
-        <div id="customMaterialEditor" class="art-material-editor rr-hidden"><input id="customMaterialInput" placeholder="Custom material name"><button id="saveCustomMaterialBtn" class="rr-btn" type="button">Add</button><button id="cancelCustomMaterialBtn" class="rr-btn rr-btn-secondary" type="button">Cancel</button></div>
-      </div>
-    </section>
+      <section class="rr-subpanel art-image-first">
+        <div class="art-section-title">
+          <span>1</span>
+          <div><h3>Artwork Images *</h3><p>Image tap se preview. Hold se Icon, View ya Remove. New Art me minimum one image required.</p></div>
+        </div>
+        <div class="art-upload-row">
+          <label class="rr-btn rr-btn-secondary">Camera<input id="cameraFiles" type="file" accept="image/*" capture="environment" multiple hidden></label>
+          <label class="rr-btn rr-btn-secondary">Gallery<input id="galleryFiles" type="file" accept="image/*" multiple hidden></label>
+          <span id="selectedFiles">No new images selected</span>
+        </div>
+        <div id="iconStatus" class="art-icon-status"><span class="art-icon-star">★</span><div><small>ART ICON</small><strong>No icon selected</strong></div></div>
+        <div id="imagePreview" class="art-media-grid"></div>
+      </section>
 
-    <section class="rr-subpanel"><details open><summary class="art-cost-summary"><span>4. Current Art Process Cost</span><small>Category Basic + is Art ka Extra cost</small></summary>
-      <div id="firstCategoryNotice" class="art-first-cost rr-hidden">This Category has no Basic rates yet. The first Basic values saved here will become its default Basic rates.</div>
-      <div class="art-cost-table-wrap"><table class="art-cost-table"><thead><tr><th>Process</th><th>Basic <button id="basicLockToggle" type="button" title="Unlock Category Basic Rates" style="background:none;border:0;padding:0 0 0 4px;font-size:16px;cursor:pointer">🔒</button></th><th>Extra</th><th>Total</th></tr></thead><tbody id="costRows"></tbody></table></div>
-      <div class="art-total-box"><div><small>CURRENT PROCESS COST</small><strong id="makingTotal">₹0.00</strong></div><span>Owner/Admin only</span></div>
-    </details></section>
+      <section class="rr-subpanel">
+        <div class="art-section-title"><span>2</span><div><h3>Art Details</h3><p>Core identity simple aur easy-to-understand form mein.</p></div></div>
+        <div class="art-grid-2">
+          <label>Art No *<input id="artNo" required placeholder="RA60"></label>
+          <label>Art Category *<div class="art-category-row"><select id="artCategory" required><option value="">Select category</option></select><button id="addCategoryBtn" type="button" class="rr-btn rr-btn-secondary">+ Add</button></div></label>
+          <label>Design Name *<input id="itemName" required placeholder="Self Collar Polo"></label>
+        </div>
+        <label>Factory Instructions (Internal Only)<textarea id="designNotes" rows="3" placeholder="Example: Placket sewing line 4 mm, neck tape black, side label left."></textarea></label>
+      </section>
+    </div>
 
-    <section class="rr-subpanel art-margin-section">
-      <div class="art-section-title"><span>5</span><div><h3>Other Margin</h3><p>Final Art Cost = Process Cost + Other Margin.</p></div></div>
-      <label>Other Margin / Piece (₹)<input id="defaultMargin" type="number" step="0.01" value="22"></label>
-      <div class="art-final-cost-box"><div><small>PROCESS COST</small><strong id="finalProcessCost">₹0.00</strong></div><span class="art-plus">+</span><div><small>OTHER MARGIN</small><strong id="finalMargin">₹22.00</strong></div><span class="art-equals">=</span><div class="art-final-highlight"><small>FINAL ART COST</small><strong id="finalArtCost">₹22.00</strong></div></div>
-    </section>
+    <div class="art-tab-panel" data-art-panel="craft">
+      <p class="art-tab-note">Construction features choose karo; Material Requirements Category aur selected Craft Features se auto update honge.</p>
+      <section class="rr-subpanel">
+        <div class="art-section-title"><span>3</span><div><h3>Craft Features & Material</h3><p>Craft selection aur material requirement ek dedicated workspace mein.</p></div></div>
+        <div id="artCaptionBuilder" class="rr-caption-builder"></div><input id="description" type="hidden">
+        <div class="art-material-compact">
+          <div class="art-material-title"><div><strong>Material Requirements</strong><small>Category aur selected Craft Features se auto</small></div><button id="addCustomMaterialBtn" class="rr-btn rr-btn-secondary" type="button">+ Add Material</button></div>
+          <div id="artMaterialRequirements" class="art-material-chips"></div>
+          <div id="customMaterialEditor" class="art-material-editor rr-hidden"><input id="customMaterialInput" placeholder="Custom material name"><button id="saveCustomMaterialBtn" class="rr-btn" type="button">Add</button><button id="cancelCustomMaterialBtn" class="rr-btn rr-btn-secondary" type="button">Cancel</button></div>
+        </div>
+      </section>
+    </div>
+
+    <div class="art-tab-panel" data-art-panel="costing">
+      <p class="art-tab-note">Ye dedicated owner costing workspace hai. Craft ya Material ke saath merge nahi hai.</p>
+      <section class="rr-subpanel art-costing-shell">
+        <div class="art-costing-head">
+          <div><h3>Art Costing</h3><p>Category Basic + Art Extra = Process Total. Sab process totals + Other Margin = Final Art Cost.</p></div>
+          <span class="art-costing-badge">OWNER / ADMIN</span>
+        </div>
+
+        <div id="firstCategoryNotice" class="art-first-cost rr-hidden">This Category has no Basic rates yet. The first Basic values saved here will become its default Basic rates.</div>
+        <div class="art-cost-table-wrap"><table class="art-cost-table"><thead><tr><th>Process</th><th>Basic <button id="basicLockToggle" type="button" title="Unlock Category Basic Rates" style="background:none;border:0;padding:0 0 0 4px;font-size:16px;cursor:pointer">🔒</button></th><th>Extra</th><th>Total</th></tr></thead><tbody id="costRows"></tbody></table></div>
+        <div class="art-total-box"><div><small>CURRENT PROCESS COST</small><strong id="makingTotal">₹0.00</strong></div><span>Basic + Extra of all processes</span></div>
+
+        <div class="art-margin-section">
+          <div class="art-section-title"><span>₹</span><div><h3>Other Margin</h3><p>Final Art Cost = Process Cost + Other Margin.</p></div></div>
+          <label>Other Margin / Piece (₹)<input id="defaultMargin" type="number" step="0.01" value="22"></label>
+          <div class="art-final-cost-box"><div><small>PROCESS COST</small><strong id="finalProcessCost">₹0.00</strong></div><span class="art-plus">+</span><div><small>OTHER MARGIN</small><strong id="finalMargin">₹22.00</strong></div><span class="art-equals">=</span><div class="art-final-highlight"><small>FINAL ART COST</small><strong id="finalArtCost">₹22.00</strong></div></div>
+        </div>
+      </section>
+    </div>
 
     <div class="art-save-strip"><p id="artMessage" class="rr-message"></p><button id="saveArtBtn" class="rr-btn rr-btn-primary art-save-btn" type="submit">Save Art</button></div>
   </form>
@@ -113,5 +148,20 @@
 <script src="../real-common.js?v=884"></script>
 <script src="../real-caption-builder.js?v=884"></script>
 <script src="../real-art-master.js?v=9148"></script>
+<script>
+(() => {
+  const tabs=[...document.querySelectorAll('[data-art-tab]')];
+  const panels=[...document.querySelectorAll('[data-art-panel]')];
+  const activate=name=>{
+    tabs.forEach(btn=>btn.setAttribute('aria-selected',String(btn.dataset.artTab===name)));
+    panels.forEach(panel=>panel.classList.toggle('is-active',panel.dataset.artPanel===name));
+  };
+  tabs.forEach(btn=>btn.addEventListener('click',()=>activate(btn.dataset.artTab)));
+  document.getElementById('artForm')?.addEventListener('invalid',event=>{
+    const panel=event.target.closest('[data-art-panel]');
+    if(panel) activate(panel.dataset.artPanel);
+  },true);
+})();
+</script>
 </body>
 </html>
