@@ -14,37 +14,40 @@ html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#07090d;col
 <body>
 <div id="boot">Loading Universal Production…</div>
 <iframe id="upmFrame" title="Universal Production Overview"></iframe>
+<script src="real-upm-department-router-v9173.js?v=9157"></script>
 <script>
 (()=>{
 'use strict';
-const ALIAS={KR:'STITCHING',KARIGAR:'STITCHING',STITCH:'STITCHING',STITCHING:'STITCHING',OV:'OVERLOCK',OVERLOCK:'OVERLOCK',FLD:'FOLDING',FLATLOCK:'FOLDING',FOLDING:'FOLDING',KAAJ:'KAAJ',KAJ:'KAAJ',BUTTON:'BUTTON',BTN:'BUTTON',KAAJ_BUTTON:'KAAJ_BUTTON',TEAK:'TEAK_TANKI',TANKI:'TEAK_TANKI',TEAK_TANKI:'TEAK_TANKI',THREAD_CUT:'THREAD_CUT',THREAD_CUTTING:'THREAD_CUT',TH_CUT:'THREAD_CUT',QC:'QC',CHECKING:'QC',PRESS:'PRESS',FINISHING:'PRESS',PRINT:'PRINTING',PRINTING:'PRINTING',STICKER:'STICKER',ID:'METAL_ID',ID_WORK:'METAL_ID',METAL_ID:'METAL_ID',PACK:'PACKING',PACKING:'PACKING',DISPATCH:'DESPATCH',DESPATCH:'DESPATCH',CUT:'CUTTING',CUTTING:'CUTTING'};
 const qp=new URLSearchParams(location.search);
 const mode=String(qp.get('mode')||'TEST').trim().toUpperCase()==='REAL'?'REAL':'TEST';
-const canonical=v=>{v=String(v||'').trim().toUpperCase();return ALIAS[v]||v};
-function goDepartment(raw,label){const dept=canonical(raw);if(!dept)return;location.href=`real-department-lite-v9127.html?dept=${encodeURIComponent(dept)}&label=${encodeURIComponent(String(label||dept).trim())}&mode=${encodeURIComponent(mode)}&from=UPM&v=9174`;}
-const direct=canonical(qp.get('dept'));
-if(direct){goDepartment(direct,qp.get('label')||direct);return;}
+function goDepartment(raw,label){return window.RRRouteDepartment?.(raw,label,{mode,from:'UPM'})===true;}
+const direct=qp.get('dept');
+if(direct&&goDepartment(direct,qp.get('label')||window.RRCanonicalDepartment?.(direct)||direct))return;
 const frame=document.getElementById('upmFrame');
-frame.src=`real-universal-production-v770.html?mode=${encodeURIComponent(mode)}&embedded=UPM_OVERVIEW&v=9174`;
+frame.src=`real-universal-production-v770.html?mode=${encodeURIComponent(mode)}&embedded=UPM_OVERVIEW&v=9157`;
 frame.addEventListener('load',()=>{
   document.getElementById('boot').style.display='none';
-  const w=frame.contentWindow,d=w.document;
+  const d=frame.contentWindow.document;
   const style=d.createElement('style');
   style.textContent=`
     .checkin{display:none!important}
     #traveller{display:none!important}
     .lot-card{cursor:default!important}
-    .toolbar:after{content:'OVERVIEW ONLY · Select a department to open its live module';display:block;color:#98a2b3;font-size:11px;font-weight:800;margin-left:8px}
+    .toolbar:after{content:'OVERVIEW ONLY · Select a current department to open its live module';display:block;color:#98a2b3;font-size:11px;font-weight:800;margin-left:8px}
     @media(max-width:700px){.toolbar{flex-wrap:wrap}.toolbar:after{width:100%;margin:4px 0 0}}
   `;
   d.head.appendChild(style);
   const select=d.getElementById('homeDept');
   if(select){
+    [...select.options].forEach(o=>{
+      if(o.value&&!window.RRIsActiveDepartment?.(o.value)){o.disabled=true;o.hidden=true;}
+    });
     select.addEventListener('change',e=>{
       if(!select.value)return;
-      e.preventDefault();e.stopImmediatePropagation();
       const opt=select.options[select.selectedIndex];
-      goDepartment(select.value,opt?.textContent||select.value);
+      if(goDepartment(select.value,opt?.textContent||select.value)){
+        e.preventDefault();e.stopImmediatePropagation();
+      }
     },true);
   }
   d.addEventListener('click',e=>{
