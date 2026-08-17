@@ -9,193 +9,160 @@
   <link rel="stylesheet" href="../real-master-viewer.css?v=884">
   <link rel="stylesheet" href="../real-art-master-final.css?v=9148">
   <style>
-    .art-work-tabs{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 16px;padding:6px;background:var(--rr-panel-2,#f4f6f8);border:1px solid var(--rr-border,#dfe3e8);border-radius:14px;position:sticky;top:8px;z-index:20}
-    .art-work-tab{appearance:none;border:0;background:transparent;padding:11px 16px;border-radius:10px;font:inherit;font-weight:700;cursor:pointer;color:inherit;flex:1;min-width:140px}
+    .art-work-tabs{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 18px;padding:6px;background:var(--rr-panel-2,#f4f6f8);border:1px solid var(--rr-border,#dfe3e8);border-radius:14px;position:sticky;top:8px;z-index:20}
+    .art-work-tab{appearance:none;border:0;background:transparent;padding:11px 16px;border-radius:10px;font:inherit;font-weight:800;cursor:pointer;color:inherit;flex:1;min-width:140px}
     .art-work-tab[aria-selected="true"]{background:#111;color:#fff;box-shadow:0 4px 14px rgba(0,0,0,.12)}
-    .art-tab-panel{display:none}
-    .art-tab-panel.is-active{display:block}
-    .art-tab-note{margin:-4px 0 16px;color:#667085;font-size:13px}
-    .art-legacy-costing{display:none!important}
-    @media(max-width:640px){.art-work-tabs{display:grid;grid-template-columns:1fr 1fr}.art-work-tab{padding:10px 8px;font-size:13px}}
+    .art-tab-panel{display:none}.art-tab-panel.is-active{display:block}.art-tab-note{margin:-4px 0 16px;color:#667085;font-size:13px}.art-legacy-costing{display:none!important}
+
+    .art-section-kicker{display:inline-flex;align-items:center;gap:7px;margin-bottom:8px;font-size:11px;font-weight:900;letter-spacing:.08em;text-transform:uppercase;color:#667085}
+    .art-section-kicker::before{content:"";width:7px;height:7px;border-radius:50%;background:#e32636}
+
+    .art-identity-grid{display:grid;grid-template-columns:minmax(180px,.7fr) minmax(280px,1.3fr);gap:16px;align-items:start}
+    .art-field-card{border:1px solid #dfe3e8;border-radius:16px;background:#fff;padding:15px;box-shadow:0 5px 18px rgba(16,24,40,.04)}
+    .art-field-card>label,.art-field-card .art-field-label{display:block;margin:0 0 8px;font-weight:800;color:#20242a}
+    .art-field-help{display:block;margin-top:7px;color:#697386;font-size:12px;line-height:1.45}
+    .art-field-card input,.art-field-card select{width:100%}
+
+    .art-category-card{border:1px solid #d8dde5;border-radius:16px;background:linear-gradient(180deg,#fff,#fafbfc);padding:15px}
+    .art-category-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;margin-bottom:12px}
+    .art-category-head strong{display:block;font-size:14px}.art-category-head small{display:block;margin-top:3px;color:#697386;line-height:1.4}
+    .art-category-row-polished{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:9px;align-items:stretch}
+    .art-category-row-polished select{min-height:46px;font-weight:700;background:#fff}
+    .art-category-add{min-width:116px;white-space:nowrap}
+    .art-category-status{display:flex;align-items:center;gap:9px;margin-top:11px;padding:10px 12px;border-radius:12px;background:#f4f6f8;color:#475467;font-size:12px}
+    .art-category-status-dot{width:8px;height:8px;border-radius:50%;background:#98a2b3;flex:none}
+    .art-category-status.has-value{background:#eefbf3;color:#166534}.art-category-status.has-value .art-category-status-dot{background:#22c55e}
+
+    .art-craft-shell{display:grid;gap:16px}
+    .art-craft-intro{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+    .art-craft-tip{border:1px solid #dfe3e8;border-radius:14px;background:#fff;padding:12px 13px}
+    .art-craft-tip strong{display:block;margin-bottom:3px;font-size:13px}.art-craft-tip small{color:#697386;line-height:1.4}
+    .art-builder-frame{border:1px solid #dfe3e8;border-radius:18px;background:#f7f8fa;padding:12px}
+    .art-builder-frame .rr-caption-builder{margin-top:0}
+    .art-builder-caption{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:10px;padding:0 3px}
+    .art-builder-caption strong{font-size:14px}.art-builder-caption small{color:#697386}
+    .art-builder-badge{font-size:10px;font-weight:900;letter-spacing:.06em;padding:6px 8px;border-radius:999px;background:#111;color:#fff;white-space:nowrap}
+
+    .art-material-professional{border:1px solid #dfe3e8;border-radius:18px;background:#fff;padding:16px;box-shadow:0 6px 20px rgba(16,24,40,.04)}
+    .art-material-professional .art-material-title{margin-bottom:12px}
+    .art-material-professional .art-material-title strong{font-size:15px}
+    .art-material-professional .art-material-title small{display:block;margin-top:3px;color:#697386}
+    .art-material-guide{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+    .art-material-guide span{display:flex;align-items:center;gap:7px;padding:9px 10px;border-radius:11px;background:#f7f8fa;font-size:12px;color:#475467}
+    .art-material-guide b{font-size:10px;border-radius:999px;padding:3px 6px;background:#e8f5ec;color:#166534}.art-material-guide span:last-child b{background:#fff1f2;color:#9f1239}
+    .art-material-chips{min-height:48px;padding:8px;border:1px dashed #cfd5dd;border-radius:13px;background:#fafbfc}
+    .art-material-chip{box-shadow:0 1px 2px rgba(16,24,40,.05)}
+    .art-material-editor{margin-top:10px;padding:11px;border:1px solid #dfe3e8;border-radius:12px;background:#f7f8fa}
+
+    .art-dialog .art-dialog-subtitle{margin:-3px 0 14px;color:#697386;font-size:13px;line-height:1.45}
+
+    @media(max-width:760px){
+      .art-identity-grid,.art-craft-intro,.art-material-guide{grid-template-columns:1fr}
+      .art-category-row-polished{grid-template-columns:1fr}.art-category-add{width:100%}
+    }
+    @media(max-width:640px){.art-work-tabs{display:grid;grid-template-columns:1fr 1fr}.art-work-tab{padding:10px 8px;font-size:13px}.art-field-card,.art-category-card,.art-material-professional{padding:13px}}
   </style>
 </head>
 <body>
 <header class="rr-topbar art-topbar">
-  <div>
-    <small class="rr-kicker">REAL FACTORY</small>
-    <h1>Art Master</h1>
-  </div>
-  <div class="rr-top-actions">
-    <span class="art-mode-pill">OWNER CONTROL</span>
-    <a class="rr-btn rr-btn-secondary" href="../real-dashboard.html?v=9148">Dashboard</a>
-  </div>
+  <div><small class="rr-kicker">REAL FACTORY</small><h1>Art Master</h1></div>
+  <div class="rr-top-actions"><span class="art-mode-pill">OWNER CONTROL</span><a class="rr-btn rr-btn-secondary" href="../real-dashboard.html?v=9148">Dashboard</a></div>
 </header>
 
 <main class="rr-page art-master-page">
 <section class="rr-hero art-master-hero">
-  <div>
-    <small class="rr-kicker">ART SETUP</small>
-    <h2>Artwork, construction aur material setup ek clean workflow mein.</h2>
-    <p>Actual costing aur weighted cost system ke alag workflow mein manage hote hain; Art form mein manual costing nahi dikhayi jaati.</p>
-  </div>
-  <div class="art-hero-stats">
-    <span><small>Total Arts</small><strong id="artStatTotal">0</strong></span>
-    <span><small>Categories</small><strong id="artStatCategories">0</strong></span>
-    <span><small>Images</small><strong id="artStatImages">0</strong></span>
-  </div>
+  <div><small class="rr-kicker">ART SETUP</small><h2>Artwork, construction aur material setup ek clean workflow mein.</h2><p>Actual costing aur weighted cost system ke alag workflow mein manage hote hain; Art form mein manual costing nahi dikhayi jaati.</p></div>
+  <div class="art-hero-stats"><span><small>Total Arts</small><strong id="artStatTotal">0</strong></span><span><small>Categories</small><strong id="artStatCategories">0</strong></span><span><small>Images</small><strong id="artStatImages">0</strong></span></div>
 </section>
 
 <section class="rr-panel art-workbench">
-  <div class="rr-panel-head">
-    <div>
-      <h2 id="formTitle">Add New Art</h2>
-      <p>Art identity, artwork, Craft Features aur Material Requirements ko simple steps mein manage karo.</p>
-    </div>
-    <button id="cancelEdit" class="rr-btn rr-btn-secondary rr-hidden" type="button">Cancel Edit</button>
-  </div>
+  <div class="rr-panel-head"><div><h2 id="formTitle">Add New Art</h2><p>Art identity, artwork, Craft Features aur Material Requirements ko simple steps mein manage karo.</p></div><button id="cancelEdit" class="rr-btn rr-btn-secondary rr-hidden" type="button">Cancel Edit</button></div>
 
   <form id="artForm" class="rr-form">
     <input id="artId" type="hidden">
-
-    <nav class="art-work-tabs" aria-label="Art setup workspaces">
-      <button class="art-work-tab" type="button" data-art-tab="setup" aria-selected="true">1. Setup</button>
-      <button class="art-work-tab" type="button" data-art-tab="craft" aria-selected="false">2. Craft & Material</button>
-    </nav>
+    <nav class="art-work-tabs" aria-label="Art setup workspaces"><button class="art-work-tab" type="button" data-art-tab="setup" aria-selected="true">1. Setup</button><button class="art-work-tab" type="button" data-art-tab="craft" aria-selected="false">2. Craft & Material</button></nav>
 
     <div class="art-tab-panel is-active" data-art-panel="setup">
       <p class="art-tab-note">Artwork images, Art number, Category, Design name aur factory instructions.</p>
-
       <section class="rr-subpanel art-image-first">
-        <div class="art-section-title">
-          <span>1</span>
-          <div><h3>Artwork Images *</h3><p>Image tap se preview. Hold se Icon, View ya Remove. New Art me minimum one image required.</p></div>
-        </div>
-        <div class="art-upload-row">
-          <label class="rr-btn rr-btn-secondary">Camera<input id="cameraFiles" type="file" accept="image/*" capture="environment" multiple hidden></label>
-          <label class="rr-btn rr-btn-secondary">Gallery<input id="galleryFiles" type="file" accept="image/*" multiple hidden></label>
-          <span id="selectedFiles">No new images selected</span>
-        </div>
-        <div id="iconStatus" class="art-icon-status"><span class="art-icon-star">★</span><div><small>ART ICON</small><strong>No icon selected</strong></div></div>
-        <div id="imagePreview" class="art-media-grid"></div>
+        <div class="art-section-title"><span>1</span><div><h3>Artwork Images *</h3><p>Image tap se preview. Hold se Icon, View ya Remove. New Art me minimum one image required.</p></div></div>
+        <div class="art-upload-row"><label class="rr-btn rr-btn-secondary">Camera<input id="cameraFiles" type="file" accept="image/*" capture="environment" multiple hidden></label><label class="rr-btn rr-btn-secondary">Gallery<input id="galleryFiles" type="file" accept="image/*" multiple hidden></label><span id="selectedFiles">No new images selected</span></div>
+        <div id="iconStatus" class="art-icon-status"><span class="art-icon-star">★</span><div><small>ART ICON</small><strong>No icon selected</strong></div></div><div id="imagePreview" class="art-media-grid"></div>
       </section>
 
       <section class="rr-subpanel">
-        <div class="art-section-title"><span>2</span><div><h3>Art Details</h3><p>Art ki core identity clean aur easy-to-understand form mein.</p></div></div>
-        <div class="art-grid-2">
-          <label>Art No *<input id="artNo" required placeholder="RA60"></label>
-          <label>Art Category *<div class="art-category-row"><select id="artCategory" required><option value="">Select category</option></select><button id="addCategoryBtn" type="button" class="rr-btn rr-btn-secondary">+ Add</button></div></label>
-          <label>Design Name *<input id="itemName" required placeholder="Self Collar Polo"></label>
+        <div class="art-section-title"><span>2</span><div><h3>Art Details</h3><p>Art ki core identity clean aur factory-friendly form mein.</p></div></div>
+        <span class="art-section-kicker">Identity & Classification</span>
+        <div class="art-identity-grid">
+          <div class="art-field-card">
+            <label for="artNo">Art No *</label><input id="artNo" required placeholder="RA60" autocomplete="off">
+            <small class="art-field-help">Unique factory reference. Example: RA60.</small>
+          </div>
+          <div class="art-category-card">
+            <div class="art-category-head"><div><strong>Art Category *</strong><small>Existing category choose karo, ya zarurat ho to nayi category add karo.</small></div></div>
+            <div class="art-category-row-polished"><select id="artCategory" required aria-label="Art Category"><option value="">Choose Art Category</option></select><button id="addCategoryBtn" type="button" class="rr-btn rr-btn-secondary art-category-add">+ New Category</button></div>
+            <div id="categorySelectionStatus" class="art-category-status"><span class="art-category-status-dot"></span><span>Pehle category select karo</span></div>
+          </div>
         </div>
-        <label>Factory Instructions (Internal Only)<textarea id="designNotes" rows="3" placeholder="Example: Placket sewing line 4 mm, neck tape black, side label left."></textarea></label>
+        <div class="art-field-card" style="margin-top:16px"><label for="itemName">Design Name *</label><input id="itemName" required placeholder="Self Collar Polo"><small class="art-field-help">Shop/factory mein easily pehchan aane wala design name.</small></div>
+        <div class="art-field-card" style="margin-top:16px"><label for="designNotes">Factory Instructions <small style="font-weight:500;color:#697386">(Internal Only)</small></label><textarea id="designNotes" rows="3" placeholder="Example: Placket sewing line 4 mm, neck tape black, side label left."></textarea><small class="art-field-help">Sirf production team ke liye special sewing, placement ya finishing notes.</small></div>
       </section>
     </div>
 
     <div class="art-tab-panel" data-art-panel="craft">
-      <p class="art-tab-note">Construction features choose karo; Material Requirements Category aur selected Craft Features se auto update honge.</p>
-      <section class="rr-subpanel">
-        <div class="art-section-title"><span>3</span><div><h3>Craft Features & Material</h3><p>Craft selection aur material requirement ke liye dedicated workspace.</p></div></div>
-        <div id="artCaptionBuilder" class="rr-caption-builder"></div>
-        <input id="description" type="hidden">
-        <div class="art-material-compact">
-          <div class="art-material-title">
-            <div><strong>Material Requirements</strong><small>Category aur selected Craft Features se auto</small></div>
-            <button id="addCustomMaterialBtn" class="rr-btn rr-btn-secondary" type="button">+ Add Material</button>
-          </div>
+      <p class="art-tab-note">Construction features choose karo; Material Requirements Category aur selected Craft Features se automatically update honge.</p>
+      <section class="rr-subpanel art-craft-shell">
+        <div class="art-section-title"><span>3</span><div><h3>Craft Features & Material</h3><p>Construction details ko select karo; system relevant material requirement suggest karega.</p></div></div>
+        <div class="art-craft-intro">
+          <div class="art-craft-tip"><strong>1 · Select Features</strong><small>Collar, neck, sleeve, panel, piping jaise construction features choose karo.</small></div>
+          <div class="art-craft-tip"><strong>2 · Check Materials</strong><small>Selected category + features ke basis par required materials AUTO show honge.</small></div>
+          <div class="art-craft-tip"><strong>3 · Add Exception</strong><small>Koi special material ho to manually add karo; wo CUSTOM ke naam se clearly dikhega.</small></div>
+        </div>
+        <div class="art-builder-frame">
+          <div class="art-builder-caption"><div><strong>Construction Features</strong><small>Tap options to select / deselect</small></div><span class="art-builder-badge">FACTORY SETUP</span></div>
+          <div id="artCaptionBuilder" class="rr-caption-builder"></div><input id="description" type="hidden">
+        </div>
+        <div class="art-material-compact art-material-professional">
+          <div class="art-material-title"><div><strong>Material Requirements</strong><small>System suggestions aur manually added special materials ek jagah.</small></div><button id="addCustomMaterialBtn" class="rr-btn rr-btn-secondary" type="button">+ Add Special Material</button></div>
+          <div class="art-material-guide"><span><b>AUTO</b> Category / Craft Feature se system-added</span><span><b>CUSTOM</b> Factory user ne manually add kiya</span></div>
           <div id="artMaterialRequirements" class="art-material-chips"></div>
-          <div id="customMaterialEditor" class="art-material-editor rr-hidden">
-            <input id="customMaterialInput" placeholder="Custom material name">
-            <button id="saveCustomMaterialBtn" class="rr-btn" type="button">Add</button>
-            <button id="cancelCustomMaterialBtn" class="rr-btn rr-btn-secondary" type="button">Cancel</button>
-          </div>
+          <div id="customMaterialEditor" class="art-material-editor rr-hidden"><input id="customMaterialInput" placeholder="Special material name, e.g. Reflective Tape"><button id="saveCustomMaterialBtn" class="rr-btn" type="button">Add Material</button><button id="cancelCustomMaterialBtn" class="rr-btn rr-btn-secondary" type="button">Cancel</button></div>
         </div>
       </section>
     </div>
 
-    <!-- Legacy v9148 costing compatibility only. Hidden permanently from Art form UI.
-         Existing controller still reads these IDs while saving/editing, so keeping them
-         prevents regression until costing persistence is decoupled from Art Master. -->
-    <div class="art-legacy-costing" hidden aria-hidden="true">
-      <div id="firstCategoryNotice" class="rr-hidden"></div>
-      <button id="basicLockToggle" type="button" tabindex="-1">Lock</button>
-      <table><tbody id="costRows"></tbody></table>
-      <strong id="makingTotal">₹0.00</strong>
-      <input id="defaultMargin" type="number" step="0.01" value="22" tabindex="-1">
-      <strong id="finalProcessCost">₹0.00</strong>
-      <strong id="finalMargin">₹22.00</strong>
-      <strong id="finalArtCost">₹22.00</strong>
-    </div>
+    <div class="art-legacy-costing" hidden aria-hidden="true"><div id="firstCategoryNotice" class="rr-hidden"></div><button id="basicLockToggle" type="button" tabindex="-1">Lock</button><table><tbody id="costRows"></tbody></table><strong id="makingTotal">₹0.00</strong><input id="defaultMargin" type="number" step="0.01" value="22" tabindex="-1"><strong id="finalProcessCost">₹0.00</strong><strong id="finalMargin">₹22.00</strong><strong id="finalArtCost">₹22.00</strong></div>
 
-    <div class="art-save-strip">
-      <p id="artMessage" class="rr-message"></p>
-      <button id="saveArtBtn" class="rr-btn rr-btn-primary art-save-btn" type="submit">Save Art</button>
-    </div>
+    <div class="art-save-strip"><p id="artMessage" class="rr-message"></p><button id="saveArtBtn" class="rr-btn rr-btn-primary art-save-btn" type="submit">Save Art</button></div>
   </form>
 </section>
 
-<section class="rr-panel art-saved-panel">
-  <div class="rr-panel-head">
-    <div><h2>Saved Arts</h2><p>Search, filter, preview aur edit.</p></div>
-    <button id="reloadArts" class="rr-btn rr-btn-secondary" type="button">Refresh</button>
-  </div>
-  <div class="art-list-tools">
-    <label>Search Art<input id="artSearch" type="search" placeholder="Art No, Design, Category..."></label>
-    <label>Category Filter<select id="artCategoryFilter"><option value="">All Categories</option></select></label>
-    <button id="clearArtFilters" class="rr-btn rr-btn-secondary" type="button">Clear</button>
-  </div>
-  <div id="artCards" class="art-card-grid">Loading...</div>
-</section>
+<section class="rr-panel art-saved-panel"><div class="rr-panel-head"><div><h2>Saved Arts</h2><p>Search, filter, preview aur edit.</p></div><button id="reloadArts" class="rr-btn rr-btn-secondary" type="button">Refresh</button></div><div class="art-list-tools"><label>Search Art<input id="artSearch" type="search" placeholder="Art No, Design, Category..."></label><label>Category Filter<select id="artCategoryFilter"><option value="">All Categories</option></select></label><button id="clearArtFilters" class="rr-btn rr-btn-secondary" type="button">Clear</button></div><div id="artCards" class="art-card-grid">Loading...</div></section>
 </main>
 
-<div id="categoryDialog" class="art-dialog-backdrop rr-hidden">
-  <form id="categoryForm" class="art-dialog">
-    <h3>Add Art Category</h3>
-    <label>Category Name *<input id="newCategoryName" required placeholder="Example: Oversized Polo"></label>
-    <label>Default Design Name<input id="newDefaultDesignName" placeholder="Example: Oversized Polo T-Shirt"></label>
-    <p>Category ka naam aur default design name save karo.</p>
-    <div class="art-dialog-actions">
-      <button id="cancelCategory" class="rr-btn rr-btn-secondary" type="button">Cancel</button>
-      <button class="rr-btn" type="submit">Save Category</button>
-    </div>
-  </form>
-</div>
-
-<div id="imageActionSheet" class="art-action-sheet rr-hidden">
-  <div class="art-action-dialog">
-    <h3>Artwork Options</h3><p id="actionImageLabel"></p>
-    <button id="actionSetIcon" type="button">★ Set as Art Icon</button>
-    <button id="actionView" type="button">🔍 View Full Screen</button>
-    <button id="actionRemove" class="danger" type="button">🗑 Remove Reference</button>
-    <button id="actionCancel" class="secondary" type="button">Cancel</button>
-  </div>
-</div>
-
-<div id="mediaViewer" class="rz-viewer rr-hidden">
-  <button id="viewerClose" class="rz-viewer-close" type="button">×</button>
-  <div class="rz-viewer-toolbar">
-    <button id="viewerPrev" type="button">‹</button><button id="viewerZoomOut" type="button">−</button><button id="viewerReset" type="button">Reset</button><button id="viewerZoomIn" type="button">+</button><button id="viewerNext" type="button">›</button>
-  </div>
-  <div id="viewerStage" class="rz-viewer-stage"><img id="viewerImage" alt="Artwork preview"></div>
-  <div class="rz-viewer-caption"><h3 id="viewerTitle"></h3><p id="viewerText"></p></div>
-</div>
+<div id="categoryDialog" class="art-dialog-backdrop rr-hidden"><form id="categoryForm" class="art-dialog"><h3>Create Art Category</h3><p class="art-dialog-subtitle">Category sirf tab add karo jab required type list mein available na ho.</p><label>Category Name *<input id="newCategoryName" required placeholder="Example: Oversized Polo"></label><label>Default Design Name<input id="newDefaultDesignName" placeholder="Example: Oversized Polo T-Shirt"></label><p>Default Design Name optional hai; category choose karte hi ye Design Name ko prefill kar sakta hai.</p><div class="art-dialog-actions"><button id="cancelCategory" class="rr-btn rr-btn-secondary" type="button">Cancel</button><button class="rr-btn" type="submit">Create Category</button></div></form></div>
+<div id="imageActionSheet" class="art-action-sheet rr-hidden"><div class="art-action-dialog"><h3>Artwork Options</h3><p id="actionImageLabel"></p><button id="actionSetIcon" type="button">★ Set as Art Icon</button><button id="actionView" type="button">🔍 View Full Screen</button><button id="actionRemove" class="danger" type="button">🗑 Remove Reference</button><button id="actionCancel" class="secondary" type="button">Cancel</button></div></div>
+<div id="mediaViewer" class="rz-viewer rr-hidden"><button id="viewerClose" class="rz-viewer-close" type="button">×</button><div class="rz-viewer-toolbar"><button id="viewerPrev" type="button">‹</button><button id="viewerZoomOut" type="button">−</button><button id="viewerReset" type="button">Reset</button><button id="viewerZoomIn" type="button">+</button><button id="viewerNext" type="button">›</button></div><div id="viewerStage" class="rz-viewer-stage"><img id="viewerImage" alt="Artwork preview"></div><div class="rz-viewer-caption"><h3 id="viewerTitle"></h3><p id="viewerText"></p></div></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="../config.js"></script>
-<script src="../real-common.js?v=884"></script>
-<script src="../real-caption-builder.js?v=884"></script>
-<script src="../real-art-master.js?v=9148"></script>
+<script src="../config.js"></script><script src="../real-common.js?v=884"></script><script src="../real-caption-builder.js?v=884"></script><script src="../real-art-master.js?v=9148"></script>
 <script>
 (() => {
-  const tabs=[...document.querySelectorAll('[data-art-tab]')];
-  const panels=[...document.querySelectorAll('[data-art-panel]')];
-  const activate=name=>{
-    tabs.forEach(btn=>btn.setAttribute('aria-selected',String(btn.dataset.artTab===name)));
-    panels.forEach(panel=>panel.classList.toggle('is-active',panel.dataset.artPanel===name));
-  };
+  const tabs=[...document.querySelectorAll('[data-art-tab]')],panels=[...document.querySelectorAll('[data-art-panel]')];
+  const activate=name=>{tabs.forEach(btn=>btn.setAttribute('aria-selected',String(btn.dataset.artTab===name)));panels.forEach(panel=>panel.classList.toggle('is-active',panel.dataset.artPanel===name));};
   tabs.forEach(btn=>btn.addEventListener('click',()=>activate(btn.dataset.artTab)));
-  document.getElementById('artForm')?.addEventListener('invalid',event=>{
-    const panel=event.target.closest('[data-art-panel]');
-    if(panel) activate(panel.dataset.artPanel);
-  },true);
+  document.getElementById('artForm')?.addEventListener('invalid',event=>{const panel=event.target.closest('[data-art-panel]');if(panel)activate(panel.dataset.artPanel);},true);
+
+  const category=document.getElementById('artCategory'),status=document.getElementById('categorySelectionStatus');
+  const syncCategoryStatus=()=>{
+    if(!category||!status)return;
+    const option=category.options[category.selectedIndex];
+    const selected=Boolean(category.value);
+    status.classList.toggle('has-value',selected);
+    status.querySelector('span:last-child').textContent=selected?`Selected: ${option?.textContent||'Category'}`:'Pehle category select karo';
+  };
+  category?.addEventListener('change',()=>setTimeout(syncCategoryStatus,0));
+  if(category){new MutationObserver(syncCategoryStatus).observe(category,{childList:true,subtree:true});setTimeout(syncCategoryStatus,300);}
 })();
 </script>
 </body>
