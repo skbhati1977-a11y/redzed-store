@@ -4,6 +4,7 @@ const C=window.ACCESSORY_MASTER_CONFIG||{};
 if(!['STICKER','METAL_ID'].includes(String(C.itemType||'').toUpperCase()))return;
 const style=document.createElement('style');
 style.textContent=`
+#cards>.tablewrap{display:none!important}
 #cards.cards{display:grid!important;grid-template-columns:repeat(auto-fill,minmax(220px,1fr))!important;gap:14px!important}
 #cards .rr-accessory-library-card{overflow:hidden;border:1px solid var(--line);background:var(--panel);border-radius:15px;padding:0;min-width:0}
 #cards .rr-accessory-library-image{width:100%;aspect-ratio:4/3;background:#0d0d11;display:grid;place-items:center;overflow:hidden;border:0;border-radius:0;padding:0;cursor:pointer}
