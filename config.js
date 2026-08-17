@@ -47,6 +47,10 @@ if(rrIsDashboardPath(window.location.pathname)){
    if(text==='cb new'||text.startsWith('cb new · regular cloth'))a.href=`${RR_REPO_BASE}real-cb-new-v9130-loader.html?v=${RR_TRAVEL_VERSION}&fix=20260817`;
    else if(text==='matching cloth')a.href=`${RR_REPO_BASE}real-product-master-v720.html?view=matching-cloth&v=${RR_TRAVEL_VERSION}`;
    else if(text==='art master')a.href=`${RR_REPO_BASE}art-v9148/?v=${RR_TRAVEL_VERSION}`;
+   else if(text==='print master')a.href=`${RR_REPO_BASE}real-print-master.html?v=9160`;
+   else if(text==='sticker master')a.href=`${RR_REPO_BASE}real-sticker-master-v804.html?v=9160`;
+   else if(text==='metal id master')a.href=`${RR_REPO_BASE}real-metal-id-master-v804.html?v=9160`;
+   else{try{const u=new URL(a.getAttribute('href'),window.location.href),d=String(u.searchParams.get('dept')||'').toUpperCase();if(/\/real-department-lite-v9127\.html$/i.test(u.pathname)&&['PRINTING','STICKER','METAL_ID'].includes(d)){u.searchParams.set('v','9160');a.href=u.pathname+u.search}}catch(_e){}}
   });
  };
  document.addEventListener('DOMContentLoaded',pinLatestDashboardRoutes,{once:true});setTimeout(pinLatestDashboardRoutes,0);
