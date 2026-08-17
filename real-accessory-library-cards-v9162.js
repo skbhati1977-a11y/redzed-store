@@ -24,8 +24,8 @@ function transform(){
  const root=document.getElementById('cards'); if(!root)return;
  const table=root.querySelector('table'); if(!table)return;
  const heads=[...table.querySelectorAll('thead th')].map(x=>cleanHead(x.textContent));
- const idx=(...names)=>heads.findIndex(h=>names.some(n=>h===cleanHead(n)||h.startsWith(cleanHead(n))));
- const iImg=idx('Image'),iNo=idx('No.','No'),iName=idx('Name'),iAttr=heads.findIndex(h=>/quality|size|type/.test(h)),iActive=idx('Active'),iActions=idx('Actions');
+ const exact=(...names)=>heads.findIndex(h=>names.some(n=>h===cleanHead(n)));
+ const iImg=exact('Image'),iNo=exact('No.','No'),iName=exact('Name'),iAttr=heads.findIndex(h=>/quality|size|type/.test(h)),iActive=exact('Active'),iActions=exact('Actions');
  const frag=document.createDocumentFragment();
  [...table.querySelectorAll('tbody tr')].forEach(tr=>{
   const td=[...tr.children]; if(td.length<3)return;
