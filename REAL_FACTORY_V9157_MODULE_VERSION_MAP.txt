@@ -23,8 +23,14 @@ CUTTING
 - real-cutting-master.html?...&v=9157
 
 UNIVERSAL PRODUCT MASTER / DEPARTMENTS
-- real-universal-production-v770-v9059.html?v=9157
-- real-department-lite-v9127.html?dept=<DEPARTMENT>&v=9157
+- Canonical UPM entry: real-universal-production-v770-v9059.html?v=9157
+- Canonical individual department entry: real-department-lite-v9127.html?dept=<DEPARTMENT>&v=9157
+- Canonical frontend department router: real-upm-department-router-v9173.js (travel token remains v=9157).
+- Current UPM department codes: PRINTING, STICKER, METAL_ID, STITCHING, KAAJ, BUTTON, OVERLOCK, FOLDING, THREAD_CUT, QC, PRESS, PACKING.
+- Legacy aliases KR/KARIGAR/STITCH -> STITCHING; OV -> OVERLOCK; FLD/FLATLOCK -> FOLDING; ID/ID_WORK -> METAL_ID; CHECKING -> QC; FINISHING -> PRESS; BTN -> BUTTON; KAJ -> KAAJ.
+- Retired combined/non-current department routes such as KAAJ_BUTTON and TEAK_TANKI are not canonical UPM destinations.
+- real-upm-home-v805.html and real-upm-v853.html are legacy bridge-only entry points and must not execute their historical department iframe routing.
+- Department due bridge redirects historical V9109 caller to deployed rr_upm_department_colour_due_card_v9167, whose payload identifies the V9168 legacy-accessory-ready implementation.
 
 FINISHED GOODS / SALES / STORE
 - real-finished-goods-v787.html?view=<view>&v=9157
