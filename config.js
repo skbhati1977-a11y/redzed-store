@@ -2,14 +2,14 @@
  * REDZED Dealer Catalog
  * File        : config.js
  * Recovery ID : RR-005
- * Status      : RECOVERED · V9188 CANONICAL TRAVEL
+ * Status      : RECOVERED · V9190 CANONICAL TRAVEL
  ******************************************************************/
 const SUPABASE_URL="https://hruartsemierwhtzonei.supabase.co";
 const SUPABASE_ANON_KEY="sb_publishable_uo3dcrFuRvGsvRzPcdTV0A_5ZVwgzga";
 const CFG=Object.seal({SETTINGS:{},WHATSAPP:[],DEFAULT_WHATSAPP:null});
 const supabaseClient=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});window.supabaseClient=supabaseClient;window.supabaseDb=supabaseClient;window.redzedSupabase=supabaseClient;window.sb=supabaseClient;
 const RR_REPO_BASE="/redzed-store/";
-const RR_TRAVEL_VERSION="9188";
+const RR_TRAVEL_VERSION="9190";
 const RR_LATEST_DASHBOARD_URL=`${RR_REPO_BASE}real-dashboard-v9182.html?v=${RR_TRAVEL_VERSION}`;
 const rrIsDashboardPath=path=>/\/real-dashboard(?:-v9182)?\.html$/i.test(path||"");
 if(!rrIsDashboardPath(window.location.pathname)){
@@ -40,12 +40,12 @@ if(rrIsDashboardPath(window.location.pathname)){
    else if(text==='print master')a.href=`${RR_REPO_BASE}real-print-master.html?v=${RR_TRAVEL_VERSION}`;
    else if(text==='sticker master')a.href=`${RR_REPO_BASE}real-sticker-master-v804.html?v=${RR_TRAVEL_VERSION}`;
    else if(text==='metal id master')a.href=`${RR_REPO_BASE}real-metal-id-master-v804.html?v=${RR_TRAVEL_VERSION}`;
+   else if(text==='cutting master')a.href=`${RR_REPO_BASE}real-cutting-master.html?v=${RR_TRAVEL_VERSION}`;
    else{try{const u=new URL(a.getAttribute('href'),window.location.href),d=String(u.searchParams.get('dept')||'').toUpperCase();if(/\/real-department-lite-v9127\.html$/i.test(u.pathname)&&['PRINTING','STICKER','METAL_ID','STITCHING','OVERLOCK','FOLDING','KAAJ','BUTTON','THREAD_CUT','QC','PRESS','PACKING','DESPATCH'].includes(d)){u.searchParams.set('v',RR_TRAVEL_VERSION);a.href=u.pathname+u.search}}catch(_e){}}
   });
  };
  document.addEventListener('DOMContentLoaded',pinLatestDashboardRoutes,{once:true});setTimeout(pinLatestDashboardRoutes,0);
 }
-/* Cutting Master dashboard route contract: Ready=ready only, Release=released only, All=all. */
 if(/\/real-cutting-master\.html$/i.test(window.location.pathname)){
  const rrApplyCuttingView=()=>{
   const view=String(new URLSearchParams(window.location.search).get('view')||'all').toLowerCase();
@@ -54,12 +54,11 @@ if(/\/real-cutting-master\.html$/i.test(window.location.pathname)){
   if(btn&&!btn.classList.contains('is-active'))btn.click();
  };
  document.addEventListener('DOMContentLoaded',()=>{setTimeout(rrApplyCuttingView,0);setTimeout(rrApplyCuttingView,350);setTimeout(rrApplyCuttingView,900)},{once:true});
- if(!window.__RR_CUTTING_ROOT_UI_9188__){window.__RR_CUTTING_ROOT_UI_9188__=true;const cu=document.createElement('script');cu.src=`${RR_REPO_BASE}real-cutting-ui-v9188.js?v=9188`;cu.async=false;(document.head||document.documentElement).appendChild(cu)}
 }
 if(/\/real-universal-production-v729\.html$/i.test(window.location.pathname)){const s=document.createElement("script");s.src="real-upm-lot-mapped-details-v9151.js?v=9151";s.async=false;document.head.appendChild(s)}
 if(/real-product-master-v720\.html$/i.test(window.location.pathname)){const s=document.createElement("script");s.src="real-mc-searchable-mapping-v9140.js?v=9148";s.async=false;document.head.appendChild(s);document.addEventListener("submit",event=>{if(event.target?.id!=="mcForm")return;const search=document.getElementById("mcFabricSearch"),select=document.getElementById("mcFabricSelect"),newInput=document.getElementById("mcNewFabric"),wrap=document.getElementById("mcNewFabricWrap"),typed=String(search?.value||"").trim();if(!typed||!select||!newInput)return;if(!select.value){select.value="__new__";newInput.value=typed;wrap?.classList.remove("hidden");select.dispatchEvent(new Event("change",{bubbles:true}))}},true)}
 if(/\/art-v9148\/?$/i.test(window.location.pathname)||/\/real-print-master\.html$/i.test(window.location.pathname)||/\/real-sticker-master-v804\.html$/i.test(window.location.pathname)||/\/real-metal-id-master-v804\.html$/i.test(window.location.pathname)){const a=document.createElement("script");a.src=`${RR_REPO_BASE}real-master-archive-v9159.js?v=9166`;a.async=false;document.head.appendChild(a)}
 if(/\/real-department-lite-v9127\.html$/i.test(window.location.pathname)||/\/real-sticker-master-v804\.html$/i.test(window.location.pathname)||/\/real-metal-id-master-v804\.html$/i.test(window.location.pathname)){const g=document.createElement("script");g.src=`${RR_REPO_BASE}real-sticker-metal-print-guard-v9160.js?v=9160`;g.async=false;document.head.appendChild(g)}
 const mobile=document.createElement("script");mobile.src="real-global-mobile-fill-v9144.js?v=9144";mobile.async=false;document.head.appendChild(mobile);
-if(!rrIsDashboardPath(window.location.pathname)&&!window.__RR_SLICE_MENU_LOADER_9188__){window.__RR_SLICE_MENU_LOADER_9188__=true;const nav=document.createElement('script');nav.src=`${RR_REPO_BASE}real-global-slice-menu-v9182.js?v=${RR_TRAVEL_VERSION}`;nav.async=false;(document.head||document.documentElement).appendChild(nav)}
+if(!rrIsDashboardPath(window.location.pathname)&&!window.__RR_SLICE_MENU_LOADER_9190__){window.__RR_SLICE_MENU_LOADER_9190__=true;const nav=document.createElement('script');nav.src=`${RR_REPO_BASE}real-global-slice-menu-v9190.js?v=9190`;nav.async=false;(document.head||document.documentElement).appendChild(nav)}
 let rrAuthRefreshPromise=null;window.RRRefreshSupabaseSession=async function(force=false){if(rrAuthRefreshPromise)return rrAuthRefreshPromise;rrAuthRefreshPromise=(async()=>{try{const{data,error}=await supabaseClient.auth.getSession();if(error)throw error;const session=data?.session||null;if(!session)return null;const expiresAt=Number(session.expires_at||0)*1000,nearExpiry=!expiresAt||expiresAt<=Date.now()+90000;if(force||nearExpiry){const refreshed=await supabaseClient.auth.refreshSession();if(refreshed.error)throw refreshed.error;return refreshed.data?.session||session}return session}catch(error){console.warn("REAL FACTORY auth refresh",error);return null}finally{rrAuthRefreshPromise=null}})();return rrAuthRefreshPromise};const recover=()=>window.RRRefreshSupabaseSession?.(false);window.addEventListener("focus",recover,{passive:true});window.addEventListener("online",recover,{passive:true});document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")recover()});setTimeout(recover,0);window.dispatchEvent(new CustomEvent("redzed:supabase-ready"));
