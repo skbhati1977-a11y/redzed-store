@@ -6,8 +6,8 @@
   <meta name="theme-color" content="#0b0b0e">
   <title>REAL FACTORY — Print Master</title>
 
-  <link rel="stylesheet" href="real-style.css?v=887">
-  <link rel="stylesheet" href="real-print-master.css?v=887">
+  <link rel="stylesheet" href="real-style.css?v=9158">
+  <link rel="stylesheet" href="real-print-master.css?v=9158">
 
   <style>
     .print-page{padding-bottom:40px}
@@ -42,7 +42,7 @@
         <p class="rr-kicker">REAL FACTORY</p>
         <h1>Print Master</h1>
       </div>
-      <a class="print-dashboard-link" href="real-dashboard.html?v=887">Dashboard</a>
+      <a class="print-dashboard-link" href="real-dashboard-v9157.html?v=9157">Dashboard</a>
     </header>
 
     <section class="rr-hero">
@@ -78,7 +78,7 @@
           <span id="selectedFiles" class="rr-muted">No new images selected</span>
         </div>
 
-        <div id="iconStatus" class="print-icon-status">
+        <div id="iconStatus" class="print-icon-status" aria-hidden="true">
           <span class="print-icon-star">★</span>
           <div><small>PRINT ICON</small><strong>No icon selected</strong></div>
         </div>
@@ -161,16 +161,10 @@
 
   <section id="mediaViewer" class="print-viewer rr-hidden" aria-hidden="true">
     <header class="print-viewer-head">
-      <div>
-        <strong id="viewerTitle">Print</strong>
-      </div>
+      <div><strong id="viewerTitle">Print</strong></div>
       <button id="viewerClose" type="button" aria-label="Close viewer">Close</button>
     </header>
-
-    <div class="print-viewer-stage">
-      <img id="viewerImage" alt="Print preview">
-    </div>
-
+    <div class="print-viewer-stage"><img id="viewerImage" alt="Print preview"></div>
     <div>
       <p id="viewerText" class="print-viewer-caption"></p>
       <div class="print-viewer-tools">
@@ -184,12 +178,12 @@
   </section>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="config.js?v=887"></script>
-  <script src="real-common.js?v=887"></script>
-  <script src="real-print-master.js?v=887"></script>
+  <script src="config.js?v=9158"></script>
+  <script src="real-common.js?v=9158"></script>
+  <script src="real-print-master.js?v=9158"></script>
 <script>
 (function(){
-  var V='887';
+  var V='9158';
   function localHtml(h){try{var u=new URL(h,location.href);return u.origin===location.origin&&/\.html$/i.test(u.pathname)}catch(e){return false}}
   document.addEventListener('click',function(e){var a=e.target&&e.target.closest?e.target.closest('a[href]'):null;if(!a||a.target||a.hasAttribute('download'))return;var h=a.getAttribute('href')||'';if(!h||h[0]==='#'||/^(mailto:|tel:|javascript:)/i.test(h)||!localHtml(h))return;var u=new URL(h,location.href);if(u.searchParams.get('v')!==V){u.searchParams.set('v',V);e.preventDefault();location.href=u.href;}},true);
 })();
