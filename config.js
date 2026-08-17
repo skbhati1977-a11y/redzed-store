@@ -45,6 +45,16 @@ if(rrIsDashboardPath(window.location.pathname)){
  };
  document.addEventListener('DOMContentLoaded',pinLatestDashboardRoutes,{once:true});setTimeout(pinLatestDashboardRoutes,0);
 }
+/* Cutting Master dashboard route contract: Ready=ready only, Release=released only, All=all. */
+if(/\/real-cutting-master\.html$/i.test(window.location.pathname)){
+ const rrApplyCuttingView=()=>{
+  const view=String(new URLSearchParams(window.location.search).get('view')||'all').toLowerCase();
+  const filter=view==='ready-lot'?'ready':view==='release-lot'?'released':'all';
+  const btn=document.querySelector(`#cmFilters button[data-filter="${filter}"]`);
+  if(btn&&!btn.classList.contains('is-active'))btn.click();
+ };
+ document.addEventListener('DOMContentLoaded',()=>{setTimeout(rrApplyCuttingView,0);setTimeout(rrApplyCuttingView,350);setTimeout(rrApplyCuttingView,900)},{once:true});
+}
 if(/\/real-universal-production-v729\.html$/i.test(window.location.pathname)){const s=document.createElement("script");s.src="real-upm-lot-mapped-details-v9151.js?v=9151";s.async=false;document.head.appendChild(s)}
 if(/real-product-master-v720\.html$/i.test(window.location.pathname)){const s=document.createElement("script");s.src="real-mc-searchable-mapping-v9140.js?v=9148";s.async=false;document.head.appendChild(s);document.addEventListener("submit",event=>{if(event.target?.id!=="mcForm")return;const search=document.getElementById("mcFabricSearch"),select=document.getElementById("mcFabricSelect"),newInput=document.getElementById("mcNewFabric"),wrap=document.getElementById("mcNewFabricWrap"),typed=String(search?.value||"").trim();if(!typed||!select||!newInput)return;if(!select.value){select.value="__new__";newInput.value=typed;wrap?.classList.remove("hidden");select.dispatchEvent(new Event("change",{bubbles:true}))}},true)}
 if(/\/art-v9148\/?$/i.test(window.location.pathname)||/\/real-print-master\.html$/i.test(window.location.pathname)||/\/real-sticker-master-v804\.html$/i.test(window.location.pathname)||/\/real-metal-id-master-v804\.html$/i.test(window.location.pathname)){const a=document.createElement("script");a.src=`${RR_REPO_BASE}real-master-archive-v9159.js?v=9166`;a.async=false;document.head.appendChild(a)}
