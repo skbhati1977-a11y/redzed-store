@@ -254,9 +254,69 @@ function bindReleaseLotButton(){
   },true);
 }
 
+/*
+  Historical V892 Damage/GR action module is still the source of truth.
+  It exposes REAL_FACTORY_CUTTING_CB_ACTIONS and refreshes source rows before
+  opening the report sheet. On current mobile runtime that extra read can stall.
+  For exactly one Report click, feed that original module its already-loaded
+  source snapshot (even when empty) so its own openReport/render/save flow fires.
+*/
+function bindDamageGrSourceBridge(){
+  if(document.documentElement.dataset.rrDamageGrSourceBridge==='1')return;
+  document.documentElement.dataset.rrDamageGrSourceBridge='1';
+
+  document.addEventListener('click',event=>{
+    const button=event.target?.closest?.('[data-cba-report]');
+    if(!button)return;
+
+    const api=window.REAL_FACTORY_CUTTING_CB_ACTIONS;
+    const snapshot=api?.state?.()||{};
+    const actionClient=snapshot.client;
+    if(!actionClient||typeof actionClient.from!=='function')return;
+
+    const cached=Array.isArray(snapshot.sources)?snapshot.sources.slice():[];
+    const originalFrom=actionClient.from.bind(actionClient);
+    const fastTables=new Set([
+      'rr_cutting_regular_purchase_sources_v1',
+      'rr_cb_purchase_entries',
+      'rr_cb_material_allocations',
+      'rr_cb_colours',
+      'rr_material_categories',
+      'rr_cb_purchase_rolls'
+    ]);
+    let active=true;
+
+    actionClient.from=function(table){
+      const tableName=String(table||'');
+      if(active&&fastTables.has(tableName)){
+        const data=tableName==='rr_cutting_regular_purchase_sources_v1'?cached:[];
+        const result={data,error:null};
+        const chain={
+          select(){return chain;},
+          eq(){return chain;},
+          in(){return chain;},
+          order(){return chain;},
+          limit(){return chain;},
+          then(resolve,reject){return Promise.resolve(result).then(resolve,reject);}
+        };
+        return chain;
+      }
+      return originalFrom(table);
+    };
+
+    window.setTimeout(()=>{
+      if(!active)return;
+      active=false;
+      actionClient.from=originalFrom;
+    },1500);
+  },true);
+}
+
 bindReleaseLotButton();
+bindDamageGrSourceBridge();
 window.addEventListener('load',()=>{
   bindReleaseLotButton();
+  bindDamageGrSourceBridge();
   setTimeout(reconcile,1400);
   setTimeout(reconcile,4500);
   setTimeout(stopPermanentSpinner,12000);
