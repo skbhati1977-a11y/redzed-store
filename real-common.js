@@ -20,11 +20,11 @@
 })();
 
 (()=>{
+  if(/\/real-cutting-master\.html$/i.test(location.pathname))return;
   if(window.__REAL_FACTORY_GLOBAL_UI_LOADER_V775__)return;
   window.__REAL_FACTORY_GLOBAL_UI_LOADER_V775__=true;
   const current=document.currentScript?.src||location.href,base=new URL('.',current);
   const load=(file,id)=>new Promise((resolve,reject)=>{if(document.getElementById(id)){resolve();return;}const script=document.createElement('script');script.id=id;script.src=new URL(file,base).href;script.async=false;script.onload=resolve;script.onerror=()=>reject(new Error(`REAL FACTORY global utility failed to load: ${file}`));document.head.appendChild(script);});
-  /* v9200 cache bust is required so old mobile clients cannot keep the floating TEST/REAL badge. */
   const dataModeLoader=load('real-data-mode-controller-v786-1-1.js?v=9200','rr-data-mode-controller-v786-1-1');
   window.RRDataModeLoaderPromise=dataModeLoader;
   dataModeLoader.then(()=>load('real-mobile-compat-v775.js?v=884','rr-mobile-compat-v775')).then(()=>load('real-google-sheet-table-v775.js?v=884','rr-google-sheet-table-v775')).catch(error=>console.error(error));
