@@ -589,10 +589,12 @@ async function openReport(type){
   if(!lotNo){say("पहले Manual Lot No भरें, फिर Damage / GR report करें।","error");return}
   state.current = {type,cbId:activeCbId(),divisionId:activeDivisionId(),lotNo};
 
-  // Source bills can change after Product Master purchase/allocation updates.
-  // Refresh the existing source view before opening the existing report form.
-  await loadSourceData({ensureActive:true});
   renderReportSheet();
+  loadSourceData({ensureActive:true}).then(() => {
+    if($("rrCbActionSheet")?.classList.contains("cm-hidden")) return;
+    if(state.current?.type !== type) return;
+    renderReportSheet();
+  }).catch(error => console.warn("Damage / GR source refresh warning",error));
 }
 
 function ensureReportSheet(){
@@ -904,7 +906,7 @@ function renderLotActionPanel(){
     blocked,
     rows: rows.map(x => [x.id,x.status,x.effect_posted,x.qty,x.value_snapshot,(x.media||[]).length])
   });
-  if(panel.dataset.signature === signature) return;
+  if(panel.dataset.signature === signature){bindPanelActions(panel);return}
   panel.dataset.signature = signature;
   panel.innerHTML = `
     <div class="rr-cba-head"><div><h3>Damage / GR Decision</h3><p>Entry Cutting Master से होगी। Product Master CB card में permanent ledger reflect होगा।</p></div><span class="rr-cba-status">${safe(state.role || "user")}</span></div>
