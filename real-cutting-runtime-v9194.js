@@ -254,9 +254,62 @@ function bindReleaseLotButton(){
   },true);
 }
 
+/*
+  Damage / GR buttons use the existing action module. That module expects the
+  current lot identity in the lot form. On a reopened/released D-card the lot
+  can exist in runtime state while the input is empty, so sync it immediately
+  before the original report click handler runs.
+*/
+function currentDamageGrLotNo(){
+  const state=window.RRCuttingMasterPM?.state?.()||{};
+  const active=state.activeCard||{};
+  const division=active.division||{};
+  const divisionId=String(division.division_id||division.id||'');
+  const galleryRow=(Array.isArray(state.galleryRows)?state.galleryRows:[])
+    .find(row=>String(row.division_id||row.unit_id||row.id||'')===divisionId)||{};
+  const lotCandidates=[
+    document.getElementById('cmManualLotNo')?.value,
+    document.getElementById('lotNo')?.value,
+    division.lot_no,
+    division.latest_lot_no,
+    division.released_lot_no,
+    active.latestLot?.lot_no,
+    active.lot?.lot_no,
+    state.activeLot?.lot_no,
+    state.currentLot?.lot_no,
+    galleryRow.lot_no,
+    galleryRow.latest_lot_no,
+    galleryRow.released_lot_no
+  ];
+  return lotCandidates
+    .map(value=>String(value||'').trim().toUpperCase())
+    .find(Boolean)||'';
+}
+
+function bindDamageGrLotContext(){
+  if(document.documentElement.dataset.rrDamageGrLotContext9194==='1')return;
+  document.documentElement.dataset.rrDamageGrLotContext9194='1';
+  document.addEventListener('click',event=>{
+    const button=event.target?.closest?.('[data-cba-report]');
+    if(!button)return;
+    const lotNo=currentDamageGrLotNo();
+    if(!lotNo)return;
+    const manual=document.getElementById('cmManualLotNo');
+    const legacy=document.getElementById('lotNo');
+    if(manual&&!String(manual.value||'').trim()){
+      manual.value=lotNo;
+      manual.dispatchEvent(new Event('input',{bubbles:true}));
+      manual.dispatchEvent(new Event('change',{bubbles:true}));
+    }
+    if(legacy&&!String(legacy.value||'').trim())legacy.value=lotNo;
+  },true);
+}
+
 bindReleaseLotButton();
+bindDamageGrLotContext();
 window.addEventListener('load',()=>{
   bindReleaseLotButton();
+  bindDamageGrLotContext();
   setTimeout(reconcile,1400);
   setTimeout(reconcile,4500);
   setTimeout(stopPermanentSpinner,12000);
