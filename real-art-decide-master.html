@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#09090c">
+<title>REAL FACTORY · Art Decide Master</title>
+<style>
+:root{--bg:#09090c;--panel:#15151b;--panel2:#101015;--line:#30303a;--text:#f5f5f7;--muted:#a7a7b1;--red:#c94355;--gold:#e3bd62;--green:#45bc76;--blue:#4c8df0}*{box-sizing:border-box}html{color-scheme:dark}body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,sans-serif}button,input{font:inherit}.hidden{display:none!important}.page{max-width:1250px;margin:auto;padding:18px}.hero{padding:20px;border:1px solid var(--line);border-radius:22px;background:linear-gradient(135deg,#25171b,#141419);margin-bottom:14px}.kicker{margin:0;color:var(--gold);font-size:11px;font-weight:900;letter-spacing:.13em}.hero h1{margin:5px 0 8px;font-size:clamp(28px,6vw,46px)}.hero p{margin:0;color:#c9c0c3;line-height:1.5}.stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:12px 0}.stat{padding:13px;border:1px solid var(--line);border-radius:15px;background:var(--panel)}.stat small{display:block;color:var(--muted)}.stat strong{display:block;margin-top:4px;font-size:22px}.toolbar{display:flex;gap:10px;align-items:end;padding:12px;border:1px solid var(--line);border-radius:16px;background:var(--panel);margin-bottom:14px}.toolbar label{flex:1}.toolbar span{display:block;margin-bottom:6px;color:#c8c8d0;font-size:12px;font-weight:800}input{width:100%;min-height:46px;border:1px solid #3b3b46;border-radius:12px;background:#0d0d12;color:#fff;padding:10px 12px;outline:none}input:focus{border-color:#a94b59;box-shadow:0 0 0 3px #c9435524}.btn{min-height:46px;border-radius:12px;padding:10px 14px;border:1px solid var(--line);font-weight:900;color:#fff;background:#202027;cursor:pointer}.btn.primary{border-color:#dc596a;background:linear-gradient(180deg,#c94355,#9f3040)}.btn.secondary{background:#202027}.btn:disabled{opacity:.55;cursor:wait}.message{min-height:24px;margin:8px 2px;color:var(--muted)}.message.error{color:#ff8f9d}.message.success{color:#7ce0a0}.section-head{display:flex;align-items:end;justify-content:space-between;gap:10px;margin:18px 0 10px}.section-head h2{margin:2px 0 0}.gallery{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.card{border:1px solid var(--line);border-radius:19px;background:var(--panel);overflow:hidden}.card-body{padding:15px}.card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}.chip{display:inline-flex;padding:5px 8px;border-radius:999px;background:#4b1d25;color:#ffb5bf;font-size:10px;font-weight:900;letter-spacing:.06em}.card h3{margin:6px 0 0;font-size:25px}.dno{font-weight:900;color:var(--gold)}.metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:12px 0}.metric{padding:9px;border:1px solid #2f2f38;border-radius:11px;background:#0e0e13}.metric small{display:block;color:var(--muted);font-size:10px}.metric strong{display:block;margin-top:4px;overflow:hidden;text-overflow:ellipsis}.empty{grid-column:1/-1;padding:34px;border:1px dashed #3b3b46;border-radius:18px;text-align:center;color:var(--muted)}.empty h3{color:#fff}.sheet{position:fixed;inset:0;z-index:2147482000}.backdrop{position:absolute;inset:0;background:#000b}.panel{position:absolute;right:0;top:0;bottom:0;width:min(880px,100%);overflow:auto;background:#0d0d11;border-left:1px solid #3b3b44;padding:16px}.sheet-head{position:sticky;top:-16px;z-index:4;margin:-16px -16px 12px;padding:16px;display:flex;align-items:center;justify-content:space-between;gap:10px;background:#0d0d11f5;border-bottom:1px solid var(--line)}.sheet-head h2{margin:3px 0}.close{width:44px;height:44px;border:1px solid #65313a;border-radius:12px;background:#35191f;color:#ffc0c8;font-size:25px}.tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px;margin-bottom:12px}.tabs button{min-height:44px;border:1px solid var(--line);border-radius:11px;background:#1b1b21;color:#ddd;font-weight:900}.tabs button.active{border-color:#cf5263;background:#4a2028;color:#fff}.picker{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin-top:10px}.pick,.mode{border:1px solid #363640;border-radius:13px;background:#111116;color:#fff;padding:11px;text-align:left}.pick.selected,.mode.selected{border-color:#dc596a;box-shadow:0 0 0 2px #dc596a22}.pick strong,.pick small{display:block}.pick small{margin-top:5px;color:var(--muted)}.mode-row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:10px 0}.note{margin:12px 0;padding:11px;border-left:3px solid var(--gold);border-radius:9px;background:#221e13;color:#e3d5a7;line-height:1.45}.sticky{position:sticky;bottom:-16px;margin:14px -16px -16px;padding:13px 16px;display:flex;justify-content:space-between;gap:10px;border-top:1px solid var(--line);background:#0d0d11f5}.sticky .btn{flex:1}.spinner{width:38px;height:38px;margin:0 auto 12px;border:5px solid #34343b;border-top-color:#d84356;border-radius:50%;animation:spin .8s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}@media(max-width:900px){.gallery{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:680px){.page{padding:11px}.toolbar{align-items:stretch;flex-direction:column}.gallery{grid-template-columns:1fr}.tabs{grid-template-columns:repeat(2,minmax(0,1fr))}.picker{grid-template-columns:1fr}.panel{padding:12px}.sheet-head{top:-12px;margin:-12px -12px 12px;padding:12px}.sticky{bottom:-12px;margin:14px -12px -12px;padding:12px}.mode-row{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<main class="page">
+  <section class="hero">
+    <p class="kicker">PRODUCT MASTER · CHILD MASTER</p>
+    <h1>Art Decide Master</h1>
+    <p>Cutting se pehle CB child ki crafting decide karein: <strong>Art → Print → Sticker → Metal ID → Save & Exit</strong>. Yahan sirf Art Due CB-child cards aayenge.</p>
+  </section>
+  <section class="stats"><article class="stat"><small>Art Due Children</small><strong id="dueCount">—</strong></article><article class="stat"><small>Workflow</small><strong>4 Steps</strong></article></section>
+  <section class="toolbar"><label><span>Search CB / D No.</span><input id="search" type="search" autocomplete="off" placeholder="CB No. or D1 / D2"></label><button id="refresh" class="btn secondary" type="button">Refresh</button></section>
+  <p id="message" class="message" role="status" aria-live="polite"></p>
+  <div class="section-head"><div><p class="kicker">ART DUE</p><h2>CB Child Cards</h2></div></div>
+  <section id="gallery" class="gallery" aria-busy="true"><article class="empty"><div class="spinner"></div><h3>Loading Art Due cards…</h3></article></section>
+</main>
+
+<section id="decisionSheet" class="sheet hidden" aria-hidden="true">
+  <div class="backdrop" data-close></div>
+  <div class="panel" role="dialog" aria-modal="true" aria-labelledby="decisionTitle">
+    <header class="sheet-head"><div><p class="kicker">ART DECIDE MASTER</p><h2 id="decisionTitle">CB · D1</h2><p id="decisionContext" class="message"></p></div><button class="close" type="button" data-close aria-label="Close">×</button></header>
+    <div id="decisionTabs" class="tabs"><button class="active" data-step="art" type="button">ART</button><button data-step="print" type="button">PRINT</button><button data-step="sticker" type="button">STICKER</button><button data-step="metal" type="button">METAL ID</button></div>
+    <label><span style="display:block;margin-bottom:6px;color:#c8c8d0;font-size:12px;font-weight:800">Search current master</span><input id="pickerSearch" type="search" placeholder="Search Art / Print / Sticker / Metal ID"></label>
+    <div id="modeRow" class="mode-row hidden"></div>
+    <section id="picker" class="picker"></section>
+    <p id="decisionNote" class="note"></p>
+    <p id="decisionMessage" class="message" role="status" aria-live="polite"></p>
+    <div class="sticky"><button class="btn secondary" type="button" data-close>Cancel</button><button id="decisionNext" class="btn primary" type="button">SUBMIT & CONTINUE</button></div>
+  </div>
+</section>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js?v=9231"></script>
+<script src="real-common.js?v=9231"></script>
+<script src="real-art-decide-master-v9231.js?v=9231"></script>
+</body>
+</html>
