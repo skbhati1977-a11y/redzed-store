@@ -7,7 +7,7 @@
 <title>REAL FACTORY · Matching Cloth Master</title>
 <style>
 :root{--bg:#0b0d11;--panel:#14171d;--panel2:#0f1217;--line:#303641;--text:#f5f7fa;--muted:#9aa4b2;--gold:#e0bd63;--red:#c84456;--green:#54c982}
-*{box-sizing:border-box}html{color-scheme:dark}body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,sans-serif}button,input,select,textarea{font:inherit}.page{max-width:1180px;margin:auto;padding:18px}.hero,.form-card,.stock-card{border:1px solid var(--line);border-radius:18px;background:var(--panel)}.hero{padding:20px;margin-bottom:14px;background:linear-gradient(135deg,#211d13,#14171d)}.kicker{margin:0;color:var(--gold);font-size:11px;font-weight:900;letter-spacing:.12em}.hero h1{margin:5px 0 7px;font-size:clamp(28px,6vw,42px)}.hero p{margin:0;color:#c6cbd2;line-height:1.5}.form-card,.stock-card{padding:16px;margin-bottom:14px}.section-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-end;margin-bottom:12px}.section-head h2{margin:3px 0 0}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px}.full{grid-column:1/-1}label span{display:block;margin-bottom:6px;color:#c6ccd5;font-size:12px;font-weight:800}input,select,textarea{width:100%;min-height:46px;border:1px solid #3a414d;border-radius:11px;background:#0d1015;color:#fff;padding:10px 12px;outline:none}textarea{min-height:86px;resize:vertical}input:focus,select:focus,textarea:focus{border-color:#917942;box-shadow:0 0 0 3px #e0bd6318}.summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin:12px 0}.summary div{padding:10px;border:1px solid #2f3540;border-radius:11px;background:var(--panel2)}.summary small{display:block;color:var(--muted);font-size:10px}.summary strong{display:block;margin-top:4px}.actions{display:flex;gap:9px;justify-content:flex-end}.btn{min-height:46px;border:1px solid var(--line);border-radius:11px;padding:10px 14px;background:#20252d;color:#fff;font-weight:900}.btn.primary{border-color:#d35767;background:linear-gradient(180deg,#c84456,#9d3040)}.btn:disabled{opacity:.55}.message{min-height:23px;margin:9px 0 0;color:var(--muted)}.message.success{color:#76df9d}.message.error{color:#ff91a0}.table-wrap{overflow:auto;border:1px solid #2f3540;border-radius:13px}.stock-table{width:100%;border-collapse:collapse;min-width:760px}.stock-table th,.stock-table td{padding:11px;border-bottom:1px solid #2b313b;text-align:left;white-space:nowrap;font-size:12px}.stock-table th{background:#191d24;color:#b9c1cc;position:sticky;top:0}.stock-table tbody tr:last-child td{border-bottom:0}.stock-table strong{font-size:13px}.available{color:#85e6a8;font-weight:900}.empty{padding:25px;text-align:center;color:var(--muted)}.stock-meta{color:var(--muted);font-size:12px}.hidden{display:none!important}@media(max-width:680px){.page{padding:11px}.hero,.form-card,.stock-card{padding:13px}.grid{grid-template-columns:1fr}.full{grid-column:auto}.summary{grid-template-columns:1fr 1fr}.actions{display:grid;grid-template-columns:1fr}.actions .btn{width:100%}}
+*{box-sizing:border-box}html{color-scheme:dark}body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,sans-serif}button,input,select,textarea{font:inherit}.page{max-width:1180px;margin:auto;padding:18px}.hero,.form-card,.stock-card{border:1px solid var(--line);border-radius:18px;background:var(--panel)}.hero{padding:20px;margin-bottom:14px;background:linear-gradient(135deg,#211d13,#14171d)}.kicker{margin:0;color:var(--gold);font-size:11px;font-weight:900;letter-spacing:.12em}.hero h1{margin:5px 0 7px;font-size:clamp(28px,6vw,42px)}.hero p{margin:0;color:#c6cbd2;line-height:1.5}.form-card,.stock-card{padding:16px;margin-bottom:14px}.section-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-end;margin-bottom:12px}.section-head h2{margin:3px 0 0}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px}.full{grid-column:1/-1}label>span,.field-label{display:block;margin-bottom:6px;color:#c6ccd5;font-size:12px;font-weight:800}input,select,textarea{width:100%;min-height:46px;border:1px solid #3a414d;border-radius:11px;background:#0d1015;color:#fff;padding:10px 12px;outline:none}textarea{min-height:86px;resize:vertical}input:focus,select:focus,textarea:focus{border-color:#917942;box-shadow:0 0 0 3px #e0bd6318}.mapped-field{min-width:0}.mapped-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:start}.search-wrap{position:relative;min-width:0}.add-red{min-height:46px;border:1px solid #e06473;border-radius:11px;padding:9px 12px;background:linear-gradient(180deg,#c84456,#942c3a);color:#fff;font-weight:900;white-space:nowrap}.suggest{position:absolute;left:0;right:0;top:calc(100% + 4px);z-index:50;display:none;max-height:260px;overflow:auto;border:1px solid #5b3b3f;border-radius:12px;background:#35241e;box-shadow:0 18px 42px rgba(0,0,0,.45)}.suggest.open{display:block}.suggest button{width:100%;display:block;text-align:left;border:0;border-bottom:1px solid rgba(255,255,255,.12);border-radius:0;background:transparent;color:#fff;padding:11px 12px;font-weight:800}.suggest button:last-child{border-bottom:0}.suggest button:disabled{color:#bdb3af}.suggest small{display:block;margin-top:3px;color:#d0c3bd;font-weight:600}.map-note{display:block;margin-top:5px;color:#7f8996;font-size:10px}.summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin:12px 0}.summary div{padding:10px;border:1px solid #2f3540;border-radius:11px;background:var(--panel2)}.summary small{display:block;color:var(--muted);font-size:10px}.summary strong{display:block;margin-top:4px}.actions{display:flex;gap:9px;justify-content:flex-end}.btn{min-height:46px;border:1px solid var(--line);border-radius:11px;padding:10px 14px;background:#20252d;color:#fff;font-weight:900}.btn.primary{border-color:#d35767;background:linear-gradient(180deg,#c84456,#9d3040)}.btn:disabled,.add-red:disabled{opacity:.55}.message{min-height:23px;margin:9px 0 0;color:var(--muted)}.message.success{color:#76df9d}.message.error{color:#ff91a0}.table-wrap{overflow:auto;border:1px solid #2f3540;border-radius:13px}.stock-table{width:100%;border-collapse:collapse;min-width:760px}.stock-table th,.stock-table td{padding:11px;border-bottom:1px solid #2b313b;text-align:left;white-space:nowrap;font-size:12px}.stock-table th{background:#191d24;color:#b9c1cc;position:sticky;top:0}.stock-table tbody tr:last-child td{border-bottom:0}.stock-table strong{font-size:13px}.available{color:#85e6a8;font-weight:900}.empty{padding:25px;text-align:center;color:var(--muted)}.stock-meta{color:var(--muted);font-size:12px}.hidden{display:none!important}@media(max-width:680px){.page{padding:11px}.hero,.form-card,.stock-card{padding:13px}.grid{grid-template-columns:1fr}.full{grid-column:auto}.summary{grid-template-columns:1fr 1fr}.actions{display:grid;grid-template-columns:1fr}.actions .btn{width:100%}.mapped-row{grid-template-columns:minmax(0,1fr) auto}.add-red{padding-inline:10px;font-size:12px}}
 </style>
 </head>
 <body>
@@ -22,9 +22,30 @@
     <div class="section-head"><div><p class="kicker">ENTRY FORM</p><h2>Matching Cloth Entry</h2></div></div>
     <form id="mcForm" autocomplete="off">
       <div class="grid">
-        <label><span>Matching Fabric Name *</span><select id="mcFabricSelect"><option value="">Select Matching Fabric</option></select></label>
+        <div class="mapped-field">
+          <span class="field-label">Matching Fabric Name *</span>
+          <div class="mapped-row">
+            <div class="search-wrap">
+              <input id="mcFabricSearch" placeholder="Search Matching Fabric" autocomplete="off">
+              <div id="mcFabricSuggest" class="suggest"></div>
+              <select id="mcFabricSelect" class="hidden" aria-hidden="true"><option value="">Select Matching Fabric</option></select>
+            </div>
+            <button id="mcAddFabric" class="add-red" type="button">+ Add New</button>
+          </div>
+          <small class="map-note">Mapped from MC1 Fabric Master · available stock / avg rate source</small>
+        </div>
         <label id="mcNewFabricWrap" class="hidden"><span>New Matching Fabric Name *</span><input id="mcNewFabric" placeholder="Matching fabric name"></label>
-        <label><span>Vendor Name *</span><input id="mcVendor" placeholder="Vendor name"></label>
+        <div class="mapped-field">
+          <span class="field-label">Vendor Name *</span>
+          <div class="mapped-row">
+            <div class="search-wrap">
+              <input id="mcVendor" placeholder="Search Vendor" autocomplete="off">
+              <div id="mcVendorSuggest" class="suggest"></div>
+            </div>
+            <button id="mcAddVendor" class="add-red" type="button">+ Add New</button>
+          </div>
+          <small id="mcVendorMapNote" class="map-note">Mapped Vendor · supplier ledger mapping preserved</small>
+        </div>
         <label><span>Bill No. *</span><input id="mcBillNo" placeholder="Bill no."></label>
         <label><span>Bill Date *</span><input id="mcBillDate" type="date"></label>
         <label><span>Bill Qty (kg) *</span><input id="mcBillQty" type="number" min="0" step="0.001" inputmode="decimal" placeholder="0.000"></label>
@@ -45,8 +66,8 @@
   </section>
 </main>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="config.js?v=9235"></script>
-<script src="real-common.js?v=9235"></script>
-<script src="real-matching-cloth-master-v9235.js?v=9235"></script>
+<script src="config.js?v=9236"></script>
+<script src="real-common.js?v=9236"></script>
+<script src="real-matching-cloth-master-v9235.js?v=9236"></script>
 </body>
 </html>
