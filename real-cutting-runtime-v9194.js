@@ -98,7 +98,7 @@ function reconcile(){
 
 function stopPermanentSpinner(){
   const gallery=document.getElementById('divisionGallery');
-  if(!gallery||gallery.getAttribute('aria-busy')!=='true'||gallery.querySelector('.cm-card'))return;
+  if(!gallery||gallery.getAttribute('aria-busy')!=='true')return;
   const loading=gallery.querySelector('.cm-empty');
   if(!loading||!/Loading Cutting Master|Connecting CB Divisions|Connecting Product Master|Starting Cutting Master|Preparing factory screen|Connecting data engine|Opening factory config|Starting nonblocking guard/i.test(loading.textContent||''))return;
   gallery.setAttribute('aria-busy','false');
