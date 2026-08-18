@@ -390,7 +390,7 @@ window.addEventListener('unhandledrejection',event=>{
 });
 const watchdog=setTimeout(()=>{
   const box=gallery();
-  if(!box||box.getAttribute('aria-busy')!=='true'||box.querySelector('.cm-card'))return;
+  if(!box||box.getAttribute('aria-busy')!=='true')return;
   fail('Cutting Master connection delayed','The factory screen loaded, but a startup dependency did not finish. Tap Retry.');
 },30000);
 async function boot(){
