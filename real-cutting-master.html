@@ -4,7 +4,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#0b0b0e">
-  <title>REAL FACTORY - Cutting Master V9220</title>
+  <title>REAL FACTORY - Cutting Master V720.36.2 FINAL</title>
+  <link rel="stylesheet" href="real-style.css?v=716">
 <style>
 :root{
   color-scheme:dark;
@@ -51,7 +52,6 @@ button:disabled{cursor:not-allowed;opacity:.48}
 .cm-filters{display:flex;gap:8px;overflow-x:auto;margin-top:11px;padding-bottom:2px}
 .cm-filters button{flex:0 0 auto;padding:9px 13px;border:1px solid #393942;border-radius:999px;background:#111115;color:#b9b9c2;font-weight:850}
 .cm-filters button.is-active{border-color:#ef3340;background:#32191e;color:#fff}
-#cmMessage{min-height:22px;margin:14px 0 0}
 #cmMessage:not(:empty){margin:0 0 14px;padding:12px 14px;border-radius:12px;background:#15151a}
 #cmMessage.success{background:#14331f;color:#b9efc8}
 #cmMessage.error{background:#3c1b20;color:#ffc3c8}
@@ -162,7 +162,7 @@ button:disabled{cursor:not-allowed;opacity:.48}
 
   <section class="cm-hero">
     <div>
-      <small>CUTTING MASTER V9220 · COLOUR-WISE ACTUAL CUTTING</small>
+      <small>CUTTING MASTER V720.35 V4 · COLOUR-WISE ACTUAL CUTTING</small>
       <h2>Art / Print Ready → Damage / GR Decision → Cutting Pieces → Release</h2>
       <p>Cutting Master actual Damage, Partial GR या Full GR proof के साथ report करेगा। Admin verification और Owner approval के बाद CB quantity/cost Product Master ledger में reflect होगी।</p>
     </div>
@@ -185,7 +185,7 @@ button:disabled{cursor:not-allowed;opacity:.48}
   <p id="cmMessage" class="rr-message" role="status" aria-live="polite"></p>
   <section class="cm-section-head"><small>CUTTING GALLERY</small><h2>CB Divisions & Lots</h2></section>
   <section id="divisionGallery" class="cm-gallery" aria-busy="true">
-    <article class="cm-empty"><div class="cm-spinner"></div><h3>Loading Cutting Master V9220</h3><p>Preparing factory screen…</p></article>
+    <article class="cm-empty"><div class="cm-spinner"></div><h3>Loading Cutting Master V720.36.2</h3><p>Connecting CB Divisions…</p></article>
   </section>
 </main>
 
@@ -334,104 +334,25 @@ button:disabled{cursor:not-allowed;opacity:.48}
     </form>
   </div>
 </section>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js?v=72035"></script>
+<script src="real-common.js?v=720362"></script>
+<script src="real-cutting-runtime-v9194.js?v=9194"></script>
 <script>
-(()=>{
-'use strict';
-if(window.__RR_CUTTING_INLINE_BOOT_9220__)return;
-window.__RR_CUTTING_INLINE_BOOT_9220__=true;
-const BUILD='9220';
-const gallery=()=>document.getElementById('divisionGallery');
-const message=()=>document.getElementById('cmMessage');
-function say(text,type='info'){
-  const box=message();
-  if(!box)return;
-  box.textContent=text||'';
-  box.className='rr-message'+(text?' '+type:'');
-}
-function stage(text){
-  const box=gallery();
-  const p=box?.querySelector('.cm-empty p');
-  if(p)p.textContent=text;
-}
-function fail(title,detail){
-  const box=gallery();
-  if(!box)return;
-  box.setAttribute('aria-busy','false');
-  box.innerHTML=`<article class="cm-empty"><h3>${title}</h3><p>${detail}</p><button type="button" class="cm-primary" id="rrCuttingRetry9220">Retry</button></article>`;
-  document.getElementById('rrCuttingRetry9220')?.addEventListener('click',()=>location.reload(),{once:true});
-}
-function load(src,timeoutMs=8000){
-  return new Promise((resolve,reject)=>{
-    const script=document.createElement('script');
-    let done=false;
-    const timer=setTimeout(()=>finish(new Error(`Script timeout: ${src}`)),timeoutMs);
-    function finish(error){
-      if(done)return;
-      done=true;
-      clearTimeout(timer);
-      script.onload=null;
-      script.onerror=null;
-      if(error){try{script.remove()}catch(_){};reject(error);return}
-      resolve();
-    }
-    script.async=false;
-    script.src=src;
-    script.onload=()=>finish();
-    script.onerror=()=>finish(new Error(`Script failed: ${src}`));
-    document.head.appendChild(script);
-  });
-}
-window.addEventListener('error',event=>{
-  if(event?.message)say(`CUTTING JS ERROR: ${event.message}`,'error');
-});
-window.addEventListener('unhandledrejection',event=>{
-  const reason=event?.reason;
-  say(`CUTTING PROMISE ERROR: ${reason?.message||String(reason||'Unknown error')}`,'error');
-});
-const watchdog=setTimeout(()=>{
-  const box=gallery();
-  if(!box||box.getAttribute('aria-busy')!=='true')return;
-  fail('Cutting Master connection delayed','The factory screen loaded, but a startup dependency did not finish. Tap Retry.');
-},30000);
-async function boot(){
-  try{
-    await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
-    stage('Connecting data engine…');
-    if(!(window.supabase&&typeof window.supabase.createClient==='function')){
-      const sources=[
-        'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.2/dist/umd/supabase.js',
-        'https://unpkg.com/@supabase/supabase-js@2.112.2/dist/umd/supabase.js'
-      ];
-      let loaded=false,lastError=null;
-      for(const src of sources){
-        try{
-          await load(src,10000);
-          if(window.supabase&&typeof window.supabase.createClient==='function'){loaded=true;break}
-          lastError=new Error('Supabase global unavailable after load');
-        }catch(error){lastError=error}
-      }
-      if(!loaded)throw lastError||new Error('Supabase library unavailable');
-    }
-    stage('Opening factory config…');
-    await load(`config.js?v=${BUILD}`,8000);
-    if(!window.supabaseClient&&!window.supabaseDb&&!window.redzedSupabase&&!window.sb)throw new Error('Factory data client was not created');
-    stage('Starting nonblocking guard…');
-    await load(`real-cutting-boot-guard-v9208.js?v=9209`,5000);
-    await load(`real-common.js?v=${BUILD}`,8000);
-    await load(`real-cutting-runtime-v9194.js?v=${BUILD}`,5000);
-    stage('Starting Cutting Master…');
-    await load(`real-cutting-master-pm.V719.3.js?v=${BUILD}`,8000);
-    await load(`redzed-cutting-cb-actions-v72035.js?v=${BUILD}`,8000);
-    clearTimeout(watchdog);
-  }catch(error){
-    console.error('[Cutting inline boot v9220]',error);
-    clearTimeout(watchdog);
-    say(`CUTTING BOOT ERROR: ${error?.message||String(error)}`,'error');
-    fail('Cutting Master could not start','Startup dependency failed. Tap Retry.');
-  }
-}
-setTimeout(boot,50);
-})();
+window.onerror = function(message, source, line, column) {
+  const text = "CUTTING JS ERROR: " + message + " | line " + line + ":" + column;
+  const box = document.getElementById("cmMessage");
+  if (box) { box.textContent = text; box.className = "rr-message error"; }
+  return false;
+};
+window.onunhandledrejection = function(event) {
+  const reason = event.reason || {};
+  const text = "CUTTING PROMISE ERROR: " + (reason.message || String(reason));
+  const box = document.getElementById("cmMessage");
+  if (box) { box.textContent = text; box.className = "rr-message error"; }
+};
 </script>
+<script src="real-cutting-master-pm.V719.3.js?v=9040"></script>
+<script src="redzed-cutting-cb-actions-v72035.js?v=9040"></script>
 </body>
 </html>
