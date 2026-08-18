@@ -6,14 +6,17 @@ window.__RR_CUTTING_UI_LOADER_9190__=true;
 window.__RR_CUTTING_LOAD_GUARD_9191__=true;
 window.__RR_CUTTING_LOADING_GUARD_9191__=true;
 
-function disableCuttingSliceBar(){
-  document.body?.classList.remove('rrSliceReserved');
-  document.documentElement?.style.setProperty('--rr-slice-rail','0px');
-  ['rrSliceRail','rrSlicePanel','rrSliceBack'].forEach(id=>document.getElementById(id)?.remove());
+/* Cutting keeps the Slice Menu, but does not opt back into data-mode/mobile-fill globals. */
+function ensureCuttingSliceMenu(){
+  if(window.__RR_SLICE_MENU_9190__||document.getElementById('rrSliceRail'))return;
+  if(document.getElementById('rrCuttingSliceMenu9222'))return;
+  const script=document.createElement('script');
+  script.id='rrCuttingSliceMenu9222';
+  script.src='/redzed-store/real-global-slice-menu-v9190.js?v=9222';
+  script.async=false;
+  (document.head||document.documentElement).appendChild(script);
 }
-disableCuttingSliceBar();
-const sliceObserver=new MutationObserver(disableCuttingSliceBar);
-sliceObserver.observe(document.documentElement,{childList:true,subtree:true,attributes:true,attributeFilter:['class']});
+ensureCuttingSliceMenu();
 
 const stageNode=document.querySelector('#divisionGallery .cm-empty p');
 if(stageNode)stageNode.textContent='Cutting runtime ready · opening factory data…';
@@ -98,5 +101,4 @@ function stopPermanentSpinner(){
 setTimeout(reconcile,1800);
 setTimeout(reconcile,7000);
 setTimeout(stopPermanentSpinner,11000);
-if(document.readyState!=='complete')window.addEventListener('load',()=>setTimeout(disableCuttingSliceBar,0),{once:true});else setTimeout(disableCuttingSliceBar,0);
 })();
