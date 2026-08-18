@@ -1,7 +1,7 @@
 (() => {
 "use strict";
 
-window.REDZED_CUTTING_CB_ACTIONS_VERSION = "720.36.2-SAVE-LOCK-FINAL";
+window.REAL_FACTORY_CUTTING_CB_ACTIONS_VERSION = "720.36.2-SAVE-LOCK-FINAL";
 
 const state = {
   client: null,
@@ -1004,11 +1004,6 @@ function scheduleDecorate(){
 
 function bindReleaseGuard(){
   $("lotForm")?.addEventListener("submit",event => {
-    // The current single-lot UI uses cmManualLotNo as the canonical identity.
-    // lotNo is a hidden legacy alias; do not let duplicate validation count it
-    // as a second lot in the same release sheet.
-    const manualLot=$("cmManualLotNo"),legacyLot=$("lotNo");
-    if(manualLot?.value.trim()&&legacyLot)legacyLot.value="";
     const divisionId = activeDivisionId();
     if(!divisionId) return;
     if(hasBlockingPending(divisionId)){
@@ -1034,7 +1029,7 @@ async function boot(){
   const observer = new MutationObserver(scheduleDecorate);
   observer.observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:["class","aria-hidden"]});
   scheduleDecorate();
-  window.REDZED_CUTTING_CB_ACTIONS = {refresh:loadAddonData,state:() => ({...state})};
+  window.REAL_FACTORY_CUTTING_CB_ACTIONS = {refresh:loadAddonData,state:() => ({...state})};
 }
 
 if(document.readyState === "loading") document.addEventListener("DOMContentLoaded",boot);

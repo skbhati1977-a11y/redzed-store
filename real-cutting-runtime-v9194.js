@@ -162,14 +162,6 @@ if(typeof client.rpc==='function'&&!client.__rrCuttingRpc9194){
 /* Cost settings are optional for gallery rendering. Preserve writes; bound read chains only. */
 if(typeof client.from==='function'&&!client.__rrCuttingFrom9194){
   const originalFrom=client.from.bind(client);
-  const reportReadTables=new Set([
-    'rr_cutting_regular_purchase_sources_v1',
-    'rr_cb_purchase_entries',
-    'rr_cb_material_allocations',
-    'rr_cb_colours',
-    'rr_material_categories',
-    'rr_cb_purchase_rolls'
-  ]);
 
   function wrapCostBuilder(builder,state){
     if(!builder||typeof builder!=='object')return builder;
@@ -197,34 +189,10 @@ if(typeof client.from==='function'&&!client.__rrCuttingFrom9194){
     });
   }
 
-  function wrapReportReadBuilder(builder,label){
-    if(!builder||typeof builder!=='object')return builder;
-    return new Proxy(builder,{
-      get(target,prop,receiver){
-        if(prop==='then'){
-          return (onFulfilled,onRejected)=>Promise.race([
-            Promise.resolve(target),
-            new Promise(resolve=>setTimeout(()=>resolve({data:[],error:null}),1200))
-          ]).then(onFulfilled,onRejected);
-        }
-        const value=Reflect.get(target,prop,receiver);
-        if(typeof value!=='function')return value;
-        return (...args)=>{
-          const result=value.apply(target,args);
-          return result&&typeof result==='object'
-            ? wrapReportReadBuilder(result,label)
-            : result;
-        };
-      }
-    });
-  }
-
   client.from=function(table){
     const builder=originalFrom(table);
-    const tableName=String(table);
-    if(tableName==='rr_cutting_cost_settings_v3')return wrapCostBuilder(builder,{mutating:false});
-    if(reportReadTables.has(tableName))return wrapReportReadBuilder(builder,tableName);
-    return builder;
+    if(String(table)!=='rr_cutting_cost_settings_v3')return builder;
+    return wrapCostBuilder(builder,{mutating:false});
   };
   client.__rrCuttingFrom9194=true;
 }
@@ -286,151 +254,9 @@ function bindReleaseLotButton(){
   },true);
 }
 
-/*
-  Damage / GR buttons use the existing action module. That module expects the
-  current lot identity in the lot form. On a reopened/released D-card the lot
-  can exist in runtime state while the input is empty, so sync it immediately
-  before the original report click handler runs.
-*/
-function currentDamageGrLotNo(){
-  const state=window.RRCuttingMasterPM?.state?.()||{};
-  const active=state.activeCard||{};
-  const division=active.division||{};
-  const divisionId=String(division.division_id||division.id||'');
-  const galleryRow=(Array.isArray(state.galleryRows)?state.galleryRows:[])
-    .find(row=>String(row.division_id||row.unit_id||row.id||'')===divisionId)||{};
-  const lotCandidates=[
-    document.getElementById('cmManualLotNo')?.value,
-    document.getElementById('lotNo')?.value,
-    division.lot_no,
-    division.latest_lot_no,
-    division.released_lot_no,
-    active.latestLot?.lot_no,
-    active.lot?.lot_no,
-    state.activeLot?.lot_no,
-    state.currentLot?.lot_no,
-    galleryRow.lot_no,
-    galleryRow.latest_lot_no,
-    galleryRow.released_lot_no
-  ];
-  return lotCandidates
-    .map(value=>String(value||'').trim().toUpperCase())
-    .find(Boolean)||'';
-}
-
-function bindDamageGrLotContext(){
-  if(document.documentElement.dataset.rrDamageGrLotContext9194==='1')return;
-  document.documentElement.dataset.rrDamageGrLotContext9194='1';
-  document.addEventListener('click',event=>{
-    const button=event.target?.closest?.('[data-cba-report]');
-    if(!button)return;
-    const lotNo=currentDamageGrLotNo();
-    if(!lotNo)return;
-    const manual=document.getElementById('cmManualLotNo');
-    const legacy=document.getElementById('lotNo');
-    if(manual&&!String(manual.value||'').trim()){
-      manual.value=lotNo;
-      manual.dispatchEvent(new Event('input',{bubbles:true}));
-      manual.dispatchEvent(new Event('change',{bubbles:true}));
-    }
-    if(legacy&&!String(legacy.value||'').trim())legacy.value=lotNo;
-  },true);
-}
-
-/*
-  The action module already loads Regular Cloth source rows during boot. A report
-  button should not be held hostage by a second network refresh before its sheet
-  can open. For exactly the next report-source read, reuse the already-loaded
-  snapshot; the original action module, form and save RPC remain unchanged.
-*/
-function bindDamageGrCachedSourceOpen(){
-  if(document.documentElement.dataset.rrDamageGrCachedSource9194==='1')return;
-  document.documentElement.dataset.rrDamageGrCachedSource9194='1';
-  document.addEventListener('click',event=>{
-    const button=event.target?.closest?.('[data-cba-report]');
-    if(!button)return;
-
-    const api=window.REDZED_CUTTING_CB_ACTIONS;
-    const snapshot=api?.state?.()||{};
-    const actionClient=snapshot.client;
-    const cached=Array.isArray(snapshot.sources)?snapshot.sources.slice():[];
-    if(!actionClient||typeof actionClient.from!=='function'||!cached.length)return;
-
-    const originalFrom=actionClient.from.bind(actionClient);
-    let armed=true;
-    actionClient.from=function(table){
-      if(armed&&String(table)==='rr_cutting_regular_purchase_sources_v1'){
-        armed=false;
-        actionClient.from=originalFrom;
-        return {
-          select(){
-            return Promise.resolve({data:cached,error:null});
-          }
-        };
-      }
-      return originalFrom(table);
-    };
-
-    queueMicrotask(()=>{
-      if(armed){
-        armed=false;
-        actionClient.from=originalFrom;
-      }
-    });
-  },true);
-}
-
-/*
-  Some global/mobile UI passes can rebuild the visible Damage / GR panel while
-  preserving its data-signature. The markup survives but DOM onclick handlers do
-  not. If a report button has lost its handler, force the existing action module
-  to repaint/rebind the panel, then replay the same report click once.
-*/
-function bindDamageGrHandlerRecovery(){
-  if(document.documentElement.dataset.rrDamageGrHandlerRecovery9194==='1')return;
-  document.documentElement.dataset.rrDamageGrHandlerRecovery9194='1';
-  document.addEventListener('click',event=>{
-    const button=event.target?.closest?.('[data-cba-report]');
-    if(!button||typeof button.onclick==='function'||button.dataset.rrRecoveryPending==='1')return;
-
-    event.preventDefault();
-    const type=String(button.dataset.cbaReport||'');
-    if(!type)return;
-    button.dataset.rrRecoveryPending='1';
-
-    const panel=document.getElementById('rrCuttingCbActionPanel');
-    if(panel)panel.dataset.signature='';
-
-    const api=window.REDZED_CUTTING_CB_ACTIONS;
-    Promise.resolve(api?.refresh?.()).catch(error=>{
-      console.warn('Damage / GR handler refresh warning',error);
-    }).finally(()=>{
-      requestAnimationFrame(()=>{
-        const fresh=[...document.querySelectorAll('[data-cba-report]')]
-          .find(node=>String(node.dataset.cbaReport||'')===type);
-        if(fresh&&typeof fresh.onclick==='function'){
-          fresh.onclick();
-          return;
-        }
-        const box=document.getElementById('cmMessage');
-        if(box){
-          box.textContent='Damage / GR action handler reconnect failed. Refresh this page once.';
-          box.className='rr-message error';
-        }
-      });
-    });
-  },true);
-}
-
 bindReleaseLotButton();
-bindDamageGrLotContext();
-bindDamageGrCachedSourceOpen();
-bindDamageGrHandlerRecovery();
 window.addEventListener('load',()=>{
   bindReleaseLotButton();
-  bindDamageGrLotContext();
-  bindDamageGrCachedSourceOpen();
-  bindDamageGrHandlerRecovery();
   setTimeout(reconcile,1400);
   setTimeout(reconcile,4500);
   setTimeout(stopPermanentSpinner,12000);
