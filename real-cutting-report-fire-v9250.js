@@ -1,49 +1,64 @@
 (()=>{
 'use strict';
-if(window.__RR_CUTTING_REPORT_FIRE_9250__)return;
-window.__RR_CUTTING_REPORT_FIRE_9250__=true;
+if(window.__RR_CUTTING_REPORT_FIRE_9251__)return;
+window.__RR_CUTTING_REPORT_FIRE_9251__=true;
 
-let lastPointerFire=0;
+let lastFireAt=0;
+let lastType='';
 
-function reportButton(event){
-  return event?.target?.closest?.('[data-cba-report]')||null;
+function directReportButton(target){
+  return target?.closest?.('[data-cba-report]')||null;
 }
 
-function fireOriginal(button,event){
+function pointReportButton(x,y){
+  if(!Number.isFinite(x)||!Number.isFinite(y))return null;
+  const stack=document.elementsFromPoint?.(x,y)||[];
+  for(const node of stack){
+    const button=node?.closest?.('[data-cba-report]');
+    if(button)return button;
+  }
+  for(const button of document.querySelectorAll('[data-cba-report]')){
+    const r=button.getBoundingClientRect();
+    if(x>=r.left&&x<=r.right&&y>=r.top&&y<=r.bottom)return button;
+  }
+  return null;
+}
+
+function buttonForEvent(event){
+  const direct=directReportButton(event?.target);
+  if(direct)return direct;
+  const touch=event?.changedTouches?.[0]||event?.touches?.[0];
+  const x=touch?.clientX??event?.clientX;
+  const y=touch?.clientY??event?.clientY;
+  return pointReportButton(Number(x),Number(y));
+}
+
+function fire(button,event){
   if(!button)return false;
+  const type=String(button.dataset.cbaReport||'');
+  const now=Date.now();
+  if(type&&type===lastType&&now-lastFireAt<900){
+    event?.preventDefault?.();
+    event?.stopImmediatePropagation?.();
+    return true;
+  }
+
   const handler=button.onclick;
   if(typeof handler!=='function')return false;
+
   event?.preventDefault?.();
   event?.stopImmediatePropagation?.();
+  lastType=type;
+  lastFireAt=now;
   handler.call(button,event);
   return true;
 }
 
-window.addEventListener('pointerup',event=>{
-  const button=reportButton(event);
-  if(!button)return;
-  if(fireOriginal(button,event)){
-    lastPointerFire=Date.now();
-  }
-},true);
+function capture(event){
+  fire(buttonForEvent(event),event);
+}
 
-window.addEventListener('click',event=>{
-  const button=reportButton(event);
-  if(!button)return;
-  if(Date.now()-lastPointerFire<800){
-    event.preventDefault();
-    event.stopImmediatePropagation();
-    return;
-  }
-  if(fireOriginal(button,event))return;
-
-  const type=button.dataset.cbaReport;
-  Promise.resolve(window.REAL_FACTORY_CUTTING_CB_ACTIONS?.refresh?.()).finally(()=>{
-    requestAnimationFrame(()=>{
-      const fresh=[...document.querySelectorAll('[data-cba-report]')]
-        .find(node=>node.dataset.cbaReport===type);
-      if(typeof fresh?.onclick==='function')fresh.onclick();
-    });
-  });
-},true);
+window.addEventListener('pointerdown',capture,true);
+window.addEventListener('touchstart',capture,{capture:true,passive:false});
+window.addEventListener('click',capture,true);
 })();
