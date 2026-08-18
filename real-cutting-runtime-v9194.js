@@ -16,7 +16,6 @@ function disableCuttingSliceBar(){
 disableCuttingSliceBar();
 const sliceObserver=new MutationObserver(disableCuttingSliceBar);
 sliceObserver.observe(document.documentElement,{childList:true,subtree:true,attributes:true,attributeFilter:['class']});
-window.addEventListener('load',()=>setTimeout(disableCuttingSliceBar,0),{once:true});
 
 const client=window.supabaseClient||window.supabaseDb||window.redzedSupabase||window.sb;
 if(!client)return;
@@ -101,16 +100,19 @@ function stopPermanentSpinner(){
   const gallery=document.getElementById('divisionGallery');
   if(!gallery||gallery.getAttribute('aria-busy')!=='true'||gallery.querySelector('.cm-card'))return;
   const loading=gallery.querySelector('.cm-empty');
-  if(!loading||!/Loading Cutting Master|Connecting CB Divisions|Connecting Product Master|Starting Cutting Master/i.test(loading.textContent||''))return;
+  if(!loading||!/Loading Cutting Master|Connecting CB Divisions|Connecting Product Master|Starting Cutting Master|Preparing factory screen|Connecting data engine|Opening factory config|Starting nonblocking guard/i.test(loading.textContent||''))return;
   gallery.setAttribute('aria-busy','false');
   loading.innerHTML='<h3>Cutting Master connection delayed</h3><p>A data read did not finish. Tap Retry; the page will not remain on a permanent spinner.</p><button type="button" class="cm-primary" id="rrCuttingRetry9194">Retry</button>';
   document.getElementById('rrCuttingRetry9194')?.addEventListener('click',()=>window.RRCuttingMasterPM?.refresh?.(),{once:true});
 }
 
-window.addEventListener('load',()=>{
+/* Dynamic v9220 boot may execute after window.load. Schedule guards immediately. */
+setTimeout(reconcile,1800);
+setTimeout(reconcile,7000);
+setTimeout(stopPermanentSpinner,11000);
+if(document.readyState!=='complete'){
+  window.addEventListener('load',()=>setTimeout(disableCuttingSliceBar,0),{once:true});
+}else{
   setTimeout(disableCuttingSliceBar,0);
-  setTimeout(reconcile,1800);
-  setTimeout(reconcile,7000);
-  setTimeout(stopPermanentSpinner,11000);
-},{once:true});
+}
 })();
