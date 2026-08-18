@@ -8,14 +8,16 @@ This note records the verified, already-existing Matching Cloth behavior so futu
 - Final destination HTML: `real-matching-cloth-master.html`
 - Final destination JS: `real-matching-cloth-master-v9235.js`
 - Slice Menu link source/wiring file: `real-global-slice-menu-v9190.js`
-- Product Master -> Matching Cloth child menu must point to `real-matching-cloth-master.html`.
+- Product Master -> Matching Cloth child menu points to `real-matching-cloth-master.html`.
 - Future Matching Cloth UI/mapping work should normally be implemented only in the destination HTML/JS above unless an existing shared backend rule genuinely requires a different file.
 
 ### Approved behavior source files / historical references
-- Primary searchable Fabric + Vendor UI source: `real-mc-searchable-mapping-v9136.js`
-  - Historical commit: `4771689a97c80c030fda00f2717fdf8681aa2dfd`
+- PRIMARY latest refined searchable Fabric + Vendor UI source: `real-mc-searchable-mapping-v9140.js` (internal VERSION 9148 behavior).
   - Fabric RPC: `rr_get_mc1_fabric_options_v9134`
   - Vendor RPC: `rr_get_mc_vendor_options_v9135`
+  - Search overlay, real Fabric id mapping, Vendor `supplier_ledger_id`, stock/rate context, and Add New behavior are sourced from this file.
+- Earlier searchable source: `real-mc-searchable-mapping-v9136.js`
+  - Historical commit: `4771689a97c80c030fda00f2717fdf8681aa2dfd`
 - Earlier mapped dropdown source: `real-mc-mapped-dropdowns-v9135.js`
   - Historical commit: `abf4cbafac2d20f9e515401317bac6243662af5c`
   - Confirms vendor option -> `supplier_ledger_id` mapping.
@@ -28,15 +30,14 @@ This note records the verified, already-existing Matching Cloth behavior so futu
 
 ### Verified Fabric mapping
 - Existing Matching Fabric options come from RPC `rr_get_mc1_fabric_options_v9134`.
-- UI behavior was implemented in approved mapping layers v9135/v9136.
 - Fabric selection is tied to the real MC1 fabric record/id, not just free text.
 - Existing option labels can include Fabric Name + Available Qty + Avg Rate.
 - New fabric must reuse the existing MC1 fabric create/upsert flow; do not create a parallel fabric store.
 
 ### Verified Vendor mapping
 - Existing Vendor options come from RPC `rr_get_mc_vendor_options_v9135`.
-- Approved v9135 mapping includes `supplier_ledger_id` on vendor options.
-- Approved v9136 made Vendor selection searchable and can show purchase history context such as bill count, total qty and total value.
+- Approved mapping includes `supplier_ledger_id` on vendor options.
+- Searchable Vendor selection can show purchase history context such as bill count, total qty and total value.
 - Therefore Vendor mapping already exists and must be reused. Do not replace it with an unrelated free-text-only system.
 
 ### Verified Purchase / Accounts mapping
@@ -48,8 +49,8 @@ This note records the verified, already-existing Matching Cloth behavior so futu
 - Dedicated Matching Cloth child page remains: Header -> Entry Form -> Available Matching Cloth Stock.
 - CB / Art Due / Art Decide cards must not appear on this page.
 - Fabric and Vendor selection must reuse the approved mapped/searchable behavior above.
-- `+ Add New Fabric` and `+ Add New Vendor` should be separate red buttons outside the selection fields.
+- `+ Add New Fabric` and `+ Add New Vendor` are separate red buttons outside the selection fields.
 - Do not change unrelated modules, database schema, or existing approved save/account behavior unless explicitly required.
 
 ### Implementation rule
-Before changing Matching Cloth code, read this memory note first. Source behavior from the approved files/RPCs listed above, then apply only the required UI/integration changes to the destination files. Do not re-create mappings from scratch when these verified sources already exist.
+Before changing Matching Cloth code, read this memory note and `REAL_FACTORY_RULE_BOOK.md` first. Source behavior from the approved files/RPCs listed above, then apply only the required UI/integration changes to the destination files. Do not re-create mappings from scratch when these verified sources already exist.
