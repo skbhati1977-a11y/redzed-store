@@ -306,6 +306,49 @@ function bindDamageGrLotContext(){
 }
 
 /*
+  The action module already loads Regular Cloth source rows during boot. A report
+  button should not be held hostage by a second network refresh before its sheet
+  can open. For exactly the next report-source read, reuse the already-loaded
+  snapshot; the original action module, form and save RPC remain unchanged.
+*/
+function bindDamageGrCachedSourceOpen(){
+  if(document.documentElement.dataset.rrDamageGrCachedSource9194==='1')return;
+  document.documentElement.dataset.rrDamageGrCachedSource9194='1';
+  document.addEventListener('click',event=>{
+    const button=event.target?.closest?.('[data-cba-report]');
+    if(!button)return;
+
+    const api=window.REDZED_CUTTING_CB_ACTIONS;
+    const snapshot=api?.state?.()||{};
+    const actionClient=snapshot.client;
+    const cached=Array.isArray(snapshot.sources)?snapshot.sources.slice():[];
+    if(!actionClient||typeof actionClient.from!=='function'||!cached.length)return;
+
+    const originalFrom=actionClient.from.bind(actionClient);
+    let armed=true;
+    actionClient.from=function(table){
+      if(armed&&String(table)==='rr_cutting_regular_purchase_sources_v1'){
+        armed=false;
+        actionClient.from=originalFrom;
+        return {
+          select(){
+            return Promise.resolve({data:cached,error:null});
+          }
+        };
+      }
+      return originalFrom(table);
+    };
+
+    queueMicrotask(()=>{
+      if(armed){
+        armed=false;
+        actionClient.from=originalFrom;
+      }
+    });
+  },true);
+}
+
+/*
   Some global/mobile UI passes can rebuild the visible Damage / GR panel while
   preserving its data-signature. The markup survives but DOM onclick handlers do
   not. If a report button has lost its handler, force the existing action module
@@ -349,10 +392,12 @@ function bindDamageGrHandlerRecovery(){
 
 bindReleaseLotButton();
 bindDamageGrLotContext();
+bindDamageGrCachedSourceOpen();
 bindDamageGrHandlerRecovery();
 window.addEventListener('load',()=>{
   bindReleaseLotButton();
   bindDamageGrLotContext();
+  bindDamageGrCachedSourceOpen();
   bindDamageGrHandlerRecovery();
   setTimeout(reconcile,1400);
   setTimeout(reconcile,4500);
