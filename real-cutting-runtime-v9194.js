@@ -162,6 +162,14 @@ if(typeof client.rpc==='function'&&!client.__rrCuttingRpc9194){
 /* Cost settings are optional for gallery rendering. Preserve writes; bound read chains only. */
 if(typeof client.from==='function'&&!client.__rrCuttingFrom9194){
   const originalFrom=client.from.bind(client);
+  const reportReadTables=new Set([
+    'rr_cutting_regular_purchase_sources_v1',
+    'rr_cb_purchase_entries',
+    'rr_cb_material_allocations',
+    'rr_cb_colours',
+    'rr_material_categories',
+    'rr_cb_purchase_rolls'
+  ]);
 
   function wrapCostBuilder(builder,state){
     if(!builder||typeof builder!=='object')return builder;
@@ -189,10 +197,34 @@ if(typeof client.from==='function'&&!client.__rrCuttingFrom9194){
     });
   }
 
+  function wrapReportReadBuilder(builder,label){
+    if(!builder||typeof builder!=='object')return builder;
+    return new Proxy(builder,{
+      get(target,prop,receiver){
+        if(prop==='then'){
+          return (onFulfilled,onRejected)=>Promise.race([
+            Promise.resolve(target),
+            new Promise(resolve=>setTimeout(()=>resolve({data:[],error:null}),1200))
+          ]).then(onFulfilled,onRejected);
+        }
+        const value=Reflect.get(target,prop,receiver);
+        if(typeof value!=='function')return value;
+        return (...args)=>{
+          const result=value.apply(target,args);
+          return result&&typeof result==='object'
+            ? wrapReportReadBuilder(result,label)
+            : result;
+        };
+      }
+    });
+  }
+
   client.from=function(table){
     const builder=originalFrom(table);
-    if(String(table)!=='rr_cutting_cost_settings_v3')return builder;
-    return wrapCostBuilder(builder,{mutating:false});
+    const tableName=String(table);
+    if(tableName==='rr_cutting_cost_settings_v3')return wrapCostBuilder(builder,{mutating:false});
+    if(reportReadTables.has(tableName))return wrapReportReadBuilder(builder,tableName);
+    return builder;
   };
   client.__rrCuttingFrom9194=true;
 }
