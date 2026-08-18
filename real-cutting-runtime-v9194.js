@@ -115,7 +115,29 @@ function stopPermanentSpinner(){
   },{once:true});
 }
 
+/* Release Lot button only: bypass the lost form-submit event on mobile and call the existing release function directly. */
+function bindReleaseLotButton(){
+  const button=document.getElementById('releaseLotBtn');
+  if(!button||button.dataset.rrDirectRelease9194==='1')return;
+
+  button.dataset.rrDirectRelease9194='1';
+  button.addEventListener('click',event=>{
+    event.preventDefault();
+    event.stopImmediatePropagation();
+
+    const api=window.RRCuttingMasterPM;
+    if(typeof api?.createLot!=='function')return;
+
+    api.createLot({
+      preventDefault(){},
+      submitter:button
+    });
+  },true);
+}
+
+bindReleaseLotButton();
 window.addEventListener('load',()=>{
+  bindReleaseLotButton();
   setTimeout(reconcile,1400);
   setTimeout(reconcile,4500);
   setTimeout(stopPermanentSpinner,12000);
