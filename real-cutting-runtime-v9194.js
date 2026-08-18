@@ -305,11 +305,55 @@ function bindDamageGrLotContext(){
   },true);
 }
 
+/*
+  Some global/mobile UI passes can rebuild the visible Damage / GR panel while
+  preserving its data-signature. The markup survives but DOM onclick handlers do
+  not. If a report button has lost its handler, force the existing action module
+  to repaint/rebind the panel, then replay the same report click once.
+*/
+function bindDamageGrHandlerRecovery(){
+  if(document.documentElement.dataset.rrDamageGrHandlerRecovery9194==='1')return;
+  document.documentElement.dataset.rrDamageGrHandlerRecovery9194='1';
+  document.addEventListener('click',event=>{
+    const button=event.target?.closest?.('[data-cba-report]');
+    if(!button||typeof button.onclick==='function'||button.dataset.rrRecoveryPending==='1')return;
+
+    event.preventDefault();
+    const type=String(button.dataset.cbaReport||'');
+    if(!type)return;
+    button.dataset.rrRecoveryPending='1';
+
+    const panel=document.getElementById('rrCuttingCbActionPanel');
+    if(panel)panel.dataset.signature='';
+
+    const api=window.REDZED_CUTTING_CB_ACTIONS;
+    Promise.resolve(api?.refresh?.()).catch(error=>{
+      console.warn('Damage / GR handler refresh warning',error);
+    }).finally(()=>{
+      requestAnimationFrame(()=>{
+        const fresh=[...document.querySelectorAll('[data-cba-report]')]
+          .find(node=>String(node.dataset.cbaReport||'')===type);
+        if(fresh&&typeof fresh.onclick==='function'){
+          fresh.onclick();
+          return;
+        }
+        const box=document.getElementById('cmMessage');
+        if(box){
+          box.textContent='Damage / GR action handler reconnect failed. Refresh this page once.';
+          box.className='rr-message error';
+        }
+      });
+    });
+  },true);
+}
+
 bindReleaseLotButton();
 bindDamageGrLotContext();
+bindDamageGrHandlerRecovery();
 window.addEventListener('load',()=>{
   bindReleaseLotButton();
   bindDamageGrLotContext();
+  bindDamageGrHandlerRecovery();
   setTimeout(reconcile,1400);
   setTimeout(reconcile,4500);
   setTimeout(stopPermanentSpinner,12000);
