@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>REAL FACTORY · Product Master V804</title>
+<title>REAL FACTORY · Product Master V720.35</title>
 <style>
 :root{
   --bg:#09090c;--panel:#141419;--panel2:#1b1b22;--line:#30303a;--text:#f5f5f7;
@@ -35,7 +35,7 @@
   </header>
 
   <section class="hero">
-    <div><p class="kicker">PRODUCT MASTER V804 · CHILD ART DECISION MASTER · ART → PRINT → STICKER → METAL ID</p><h2>CB New अलग · MC New अलग</h2><p>हर CB child का Art Decision Master अलग रहेगा। Complete decision flow Art → Print → Sticker → Metal ID → Save & Exit है। Matching Cloth MC1 इस decision module से completely separate है.</p></div>
+    <div><p class="kicker">PRODUCT MASTER V804 · ART → PRINT → STICKER → METAL ID · INVENTORY LINKED</p><h2>CB New अलग · MC New अलग</h2><p>CB purchase ledger पूरा रहेगा। CB Damage / Partial GR / Full GR Cutting Master से report होगा; Owner approval के बाद quantity और costing यहाँ reflect होगी। MC1 का GR अपने MC1 Details में रहेगा।</p></div>
     <div class="hero-actions"><button id="openCbNew" class="primary" type="button">+ CB New</button><button id="openMcNew" class="primary" type="button">+ MC New</button><button id="refresh" class="secondary" type="button">Refresh</button></div>
   </section>
 
@@ -116,6 +116,7 @@
   </div>
 </section>
 
+
 <!-- GR / EXCHANGE / DAMAGE OPERATIONS -->
 <section id="opsSheet" class="sheet hidden" aria-hidden="true">
   <div class="backdrop" data-close="opsSheet"></div>
@@ -129,11 +130,11 @@
   </div>
 </section>
 
-<!-- CHILD ART DECISION MASTER -->
+<!-- ART / PRINT / STICKER / METAL ID DECISION -->
 <section id="assignSheet" class="sheet hidden" aria-hidden="true">
   <div class="backdrop" data-close="assignSheet"></div>
   <div class="sheet-panel" role="dialog" aria-modal="true">
-    <header class="sheet-head"><div><p class="kicker">ART DECISION MASTER · CHILD WORKFLOW</p><h2 id="assignTitle">D1</h2><p id="assignContext" style="margin:4px 0;color:var(--muted)"></p></div><button class="close" data-close="assignSheet">×</button></header>
+    <header class="sheet-head"><div><p class="kicker">ART / PRINT / STICKER / METAL ID DECISION</p><h2 id="assignTitle">D1</h2><p id="assignContext" style="margin:4px 0;color:var(--muted)"></p></div><button class="close" data-close="assignSheet">×</button></header>
     <div class="tabs" id="decisionTabs">
       <button id="artTab" class="active" type="button">ART</button>
       <button id="printTab" type="button">PRINT</button>
@@ -149,7 +150,7 @@
     <p id="assignMessage" class="message"></p>
     <div class="sticky">
       <button class="secondary" data-close="assignSheet">Cancel</button>
-      <button id="decisionNext" class="primary" type="button">SUBMIT & CONTINUE</button>
+      <button id="decisionNext" class="primary" type="button">Art Submit → Print</button>
     </div>
   </div>
 </section>
@@ -157,9 +158,8 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="config.js?v=72035"></script>
 <script src="real-common.js?v=72035"></script>
-<script src="real-product-master-v804.js?v=9230"></script>
+<script src="real-product-master-v804.js?v=804"></script>
 <script src="redzed-product-cb-ledger-v72035.js?v=72035"></script>
-<script src="real-product-master-v804-cb-purchase-map-v9133.js?v=9230"></script>
-<script src="real-product-art-decision-master-v9230.js?v=9230"></script>
+<script src="real-product-master-v804-cb-purchase-map-v9133.js?v=9133"></script>
 </body>
 </html>
