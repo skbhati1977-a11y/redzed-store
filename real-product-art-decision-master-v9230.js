@@ -4,6 +4,7 @@ if(window.__RR_PM_ART_DECISION_MASTER_9230__)return;
 window.__RR_PM_ART_DECISION_MASTER_9230__=true;
 
 const $=id=>document.getElementById(id);
+const MASTER_LABEL="ART DECISION MASTER · CHILD WORKFLOW";
 
 function text(el){return String(el?.textContent||"").trim();}
 function esc(value){return String(value??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));}
@@ -28,12 +29,15 @@ function enhanceGallery(){
   const gallery=$("gallery");
   if(!gallery)return;
 
+  /* Matching Cloth must never surface Art Decision controls. */
   gallery.querySelectorAll(".mc-card [data-assign]").forEach(node=>node.remove());
 
   gallery.querySelectorAll("[data-assign]").forEach(button=>{
     if(button.closest(".mc-card"))return;
-    button.textContent="Art Decision Master";
-    button.setAttribute("aria-label","Open child Art Decision Master");
+    if(text(button)!=="Art Decision Master")button.textContent="Art Decision Master";
+    if(button.getAttribute("aria-label")!=="Open child Art Decision Master"){
+      button.setAttribute("aria-label","Open child Art Decision Master");
+    }
   });
 }
 
@@ -46,7 +50,9 @@ function closeDetailSheet(){
 }
 
 function openChildDecision(unitId){
-  const source=document.querySelector(`#gallery [data-assign="${CSS.escape(String(unitId))}"]`);
+  const wanted=String(unitId||"");
+  const source=[...document.querySelectorAll("#gallery [data-assign]")]
+    .find(node=>String(node.dataset.assign||"")===wanted&&!node.closest(".mc-card"));
   if(!source)return;
   closeDetailSheet();
   source.click();
@@ -71,6 +77,12 @@ function enhanceCbDetail(){
 
   if(!childCards.length)return;
 
+  const children=childCards.map(card=>({
+    card,
+    button:card.querySelector("[data-assign]"),
+    status:childStatus(card)
+  }));
+
   const section=document.createElement("section");
   section.id="rrChildArtDecisionMaster9230";
   section.className="form-card spaced";
@@ -82,21 +94,20 @@ function enhanceCbDetail(){
         <p class="muted">Har child ka complete workflow: Art → Print → Sticker → Metal ID → Save & Exit.</p>
       </div>
     </div>
+    <div class="tabs" id="rrChildDecisionTabs9230" style="margin-top:12px;flex-wrap:wrap">
+      ${children.map(({button,status})=>`<button type="button" data-child-art-master="${esc(button.dataset.assign)}">${esc(status.d||"Child")} · ${esc(status.state)}</button>`).join("")}
+    </div>
     <div class="history-list" style="margin-top:12px">
-      ${childCards.map(card=>{
-        const button=card.querySelector("[data-assign]");
-        const s=childStatus(card);
-        return `<article class="history">
-          <div class="section-row">
-            <div>
-              <span class="status-chip ${/DECIDED/i.test(s.state)?"good":"bad"}">${esc(s.state)}</span>
-              <h4 style="margin:8px 0 4px">${esc(s.d||"Child")}</h4>
-              <small>Art ${esc(s.art)} · Print ${esc(s.print)} · Sticker ${esc(s.sticker)} · Metal ID ${esc(s.metal)}</small>
-            </div>
-            <button class="primary" type="button" data-child-art-master="${esc(button.dataset.assign)}">Open Art Decision</button>
+      ${children.map(({button,status:s})=>`<article class="history">
+        <div class="section-row">
+          <div>
+            <span class="status-chip ${/DECIDED/i.test(s.state)?"good":"bad"}">${esc(s.state)}</span>
+            <h4 style="margin:8px 0 4px">${esc(s.d||"Child")}</h4>
+            <small>Art ${esc(s.art)} · Print ${esc(s.print)} · Sticker ${esc(s.sticker)} · Metal ID ${esc(s.metal)}</small>
           </div>
-        </article>`;
-      }).join("")}
+          <button class="primary" type="button" data-child-art-master="${esc(button.dataset.assign)}">Open Art Decision</button>
+        </div>
+      </article>`).join("")}
     </div>`;
 
   const first=body.firstElementChild;
@@ -110,11 +121,7 @@ function enhanceAssignSheet(){
   const sheet=$("assignSheet");
   if(!sheet)return;
   const kicker=sheet.querySelector(".sheet-head .kicker");
-  if(kicker)kicker.textContent="ART DECISION MASTER · CHILD WORKFLOW";
-  const context=$("assignContext");
-  if(context&&!context.dataset.masterContext9230){
-    context.dataset.masterContext9230="1";
-  }
+  if(kicker&&text(kicker)!==MASTER_LABEL)kicker.textContent=MASTER_LABEL;
 }
 
 function enhance(){
@@ -123,13 +130,23 @@ function enhance(){
   enhanceAssignSheet();
 }
 
-const observer=new MutationObserver(()=>enhance());
+let scheduled=false;
+function scheduleEnhance(){
+  if(scheduled)return;
+  scheduled=true;
+  requestAnimationFrame(()=>{
+    scheduled=false;
+    enhance();
+  });
+}
+
+const observer=new MutationObserver(scheduleEnhance);
 observer.observe(document.documentElement,{childList:true,subtree:true});
 
 document.addEventListener("click",event=>{
-  if(event.target.closest("[data-cb-detail], [data-assign], [data-mc-detail]"))setTimeout(enhance,0);
+  if(event.target.closest("[data-cb-detail], [data-assign], [data-mc-detail]"))setTimeout(scheduleEnhance,0);
 },true);
 
-if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",enhance,{once:true});
-else enhance();
+if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",scheduleEnhance,{once:true});
+else scheduleEnhance();
 })();
