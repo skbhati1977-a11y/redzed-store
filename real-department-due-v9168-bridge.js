@@ -17,7 +17,7 @@ function loadScript(src,key){
  const s=document.createElement('script');s.src=src;s.setAttribute(`data-${key}`,'1');document.head.appendChild(s);
 }
 function loadApprovedAlter(){
- loadScript('real-upm-alter-flow-v9114.js?v=9293','rr-alter-approved-9116');
+ loadScript('real-upm-alter-flow-v9114.js?v=9294','rr-alter-approved-9116');
  loadScript('real-upm-alter-camera-patch-v9116.js?v=9290','rr-alter-camera-9116');
 }
 loadApprovedAlter();
