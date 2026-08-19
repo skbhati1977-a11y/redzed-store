@@ -944,7 +944,7 @@ async function boot() {
 // V9059 bridge: Open Random Queue requires a public engine surface.
 // Keep the existing engine state as the single source; do not duplicate it.
 window.RealFactoryUPM = {
-  snapshot: () => ({ lots: state.lots || [], departments: state.departments || [] }),
+  snapshot: () => ({ lots: state.lots || [], departments: state.departments || [], currentLot: state.lot || null, currentDepartment: $("dept")?.value || "" }),
   refresh: () => load(),
   openLotAtDepartment: async (lotId, departmentCode) => {
     state.lot = (state.lots || []).find(row => row.canonical_lot_id === lotId);
