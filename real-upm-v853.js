@@ -1,6 +1,7 @@
 (() => {
-  const V="9255";
+  const V="9269";
   const JOURNEY_SCRIPT=`real-upm-journey-track-v9254.js?v=${V}`;
+  const TRAVELLER_SCRIPT=`real-upm-alter-traveller-grid-v9268.js?v=${V}`;
   const tabs = [
     {key:"CUTTING", label:"Cutting", url:`real-cutting-master.html?v=${V}`},
     {key:"PRINTING", label:"Printing", url:`real-universal-production-v770.html?dept=PRINTING&label=Printing&v=${V}`},
@@ -29,22 +30,27 @@
   const direct = $("openDirect");
   let activeTab = null;
 
-  function injectJourneyTracker(tab) {
+  function injectScript(tab, src, attr) {
     try {
       const d = frame.contentDocument;
       if (!d?.head) return;
       frame.dataset.upmDept = tab?.key || "";
       d.documentElement.dataset.upmDepartment = tab?.key || "";
       d.body && (d.body.dataset.department = tab?.key || "");
-      if (d.querySelector('script[data-upm-journey-9255]')) return;
+      if (d.querySelector(`script[data-${attr}]`)) return;
       const s = d.createElement('script');
-      s.src = JOURNEY_SCRIPT;
+      s.src = src;
       s.async = true;
-      s.dataset.upmJourney9255 = '1';
+      s.setAttribute(`data-${attr}`, '1');
       d.head.appendChild(s);
     } catch (e) {
-      console.warn('UPM journey tracker injection skipped:', e?.message || e);
+      console.warn('UPM child helper injection skipped:', e?.message || e);
     }
+  }
+
+  function injectHelpers(tab) {
+    injectScript(tab, JOURNEY_SCRIPT, 'upm-journey-9269');
+    injectScript(tab, TRAVELLER_SCRIPT, 'upm-traveller-9269');
   }
 
   function selectTab(tab, push=true) {
@@ -77,8 +83,8 @@
     loading.hidden = true;
     if (activeTab) {
       frame.dataset.upmDept = activeTab.key;
-      setTimeout(() => injectJourneyTracker(activeTab), 60);
-      setTimeout(() => injectJourneyTracker(activeTab), 500);
+      setTimeout(() => injectHelpers(activeTab), 60);
+      setTimeout(() => injectHelpers(activeTab), 500);
     }
   });
   $("reloadTab").addEventListener("click", () => {
