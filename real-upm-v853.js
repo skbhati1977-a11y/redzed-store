@@ -1,5 +1,5 @@
 (() => {
-  const V="9275";
+  const V="9276";
   const JOURNEY_SCRIPT=`real-upm-journey-track-v9254.js?v=${V}`;
   const TRAVELLER_SCRIPT=`real-upm-alter-traveller-grid-v9268.js?v=${V}`;
   const tabs = [
@@ -49,8 +49,8 @@
   }
 
   function injectHelpers(tab) {
-    injectScript(tab, JOURNEY_SCRIPT, 'upm-journey-9275');
-    injectScript(tab, TRAVELLER_SCRIPT, 'upm-traveller-9275');
+    injectScript(tab, JOURNEY_SCRIPT, 'upm-journey-9276');
+    injectScript(tab, TRAVELLER_SCRIPT, 'upm-traveller-9276');
   }
 
   function selectTab(tab, push=true) {
