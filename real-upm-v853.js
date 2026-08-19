@@ -1,5 +1,5 @@
 (() => {
-  const V="9254";
+  const V="9255";
   const JOURNEY_SCRIPT=`real-upm-journey-track-v9254.js?v=${V}`;
   const tabs = [
     {key:"CUTTING", label:"Cutting", url:`real-cutting-master.html?v=${V}`},
@@ -36,11 +36,11 @@
       frame.dataset.upmDept = tab?.key || "";
       d.documentElement.dataset.upmDepartment = tab?.key || "";
       d.body && (d.body.dataset.department = tab?.key || "");
-      if (d.querySelector('script[data-upm-journey-9254]')) return;
+      if (d.querySelector('script[data-upm-journey-9255]')) return;
       const s = d.createElement('script');
       s.src = JOURNEY_SCRIPT;
       s.async = true;
-      s.dataset.upmJourney9254 = '1';
+      s.dataset.upmJourney9255 = '1';
       d.head.appendChild(s);
     } catch (e) {
       console.warn('UPM journey tracker injection skipped:', e?.message || e);
