@@ -14,12 +14,13 @@ function install(){
  c.__rr9168DueBridge=true;
  return true;
 }
+function loadScript(src,key){
+ if(document.querySelector(`script[data-${key}]`))return;
+ const s=document.createElement('script');s.src=src;s.setAttribute(`data-${key}`,'1');document.head.appendChild(s);
+}
 function loadAlterForm(){
- if(window.__RR_UPM_ALTER_FORM_9253__||document.querySelector('script[data-rr-alter-9253]'))return;
- const s=document.createElement('script');
- s.src='real-upm-alter-form-v9253.js?v=9253';
- s.dataset.rrAlter9253='1';
- document.head.appendChild(s);
+ if(!window.__RR_UPM_ALTER_FORM_9253__)loadScript('real-upm-alter-form-v9253.js?v=9253','rr-alter-9253');
+ loadScript('real-upm-alter-queue-compact-v9264.js?v=9264','rr-alter-queue-9264');
 }
 loadAlterForm();
 if(!install()){
