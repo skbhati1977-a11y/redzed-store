@@ -16,12 +16,11 @@ function loadScript(src,key){
  if(document.querySelector(`script[data-${key}]`))return;
  const s=document.createElement('script');s.src=src;s.setAttribute(`data-${key}`,'1');document.head.appendChild(s);
 }
-function loadAlterForm(){
- if(!window.__RR_UPM_ALTER_FORM_9253__)loadScript('real-upm-alter-form-v9253.js?v=9253','rr-alter-9253');
- loadScript('real-upm-alter-queue-compact-v9264.js?v=9267','rr-alter-queue-9267');
- loadScript('real-upm-alter-traveller-grid-v9268.js?v=9276','rr-alter-traveller-9276');
+function loadApprovedAlter(){
+ loadScript('real-upm-alter-flow-v9114.js?v=9116','rr-alter-approved-9116');
+ loadScript('real-upm-alter-camera-patch-v9116.js?v=9116','rr-alter-camera-9116');
 }
-loadAlterForm();
+loadApprovedAlter();
 if(!install()){
  let n=0;const t=setInterval(()=>{if(install()||++n>40)clearInterval(t)},50);
 }
