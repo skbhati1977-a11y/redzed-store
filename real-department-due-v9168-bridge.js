@@ -14,6 +14,14 @@ function install(){
  c.__rr9168DueBridge=true;
  return true;
 }
+function loadAlterForm(){
+ if(window.__RR_UPM_ALTER_FORM_9253__||document.querySelector('script[data-rr-alter-9253]'))return;
+ const s=document.createElement('script');
+ s.src='real-upm-alter-form-v9253.js?v=9253';
+ s.dataset.rrAlter9253='1';
+ document.head.appendChild(s);
+}
+loadAlterForm();
 if(!install()){
  let n=0;const t=setInterval(()=>{if(install()||++n>40)clearInterval(t)},50);
 }
