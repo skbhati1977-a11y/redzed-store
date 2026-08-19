@@ -10,6 +10,54 @@
   let scheduled = false;
   let patching = false;
 
+  function ensureAlterForm() {
+    if (document.getElementById("alterEvidenceModal")) return;
+
+    const modal = document.createElement("div");
+    modal.id = "alterEvidenceModal";
+    modal.className = "modal hidden";
+    modal.innerHTML = `
+      <section class="sheet" style="height:auto;max-height:95vh">
+        <div class="top">
+          <h2>Alter Fill Evidence</h2>
+          <button id="closeAlterEvidence" type="button">Close</button>
+        </div>
+        <p class="msg">Live camera evidence 1–3 images mandatory. Physical piece submission must be confirmed.</p>
+        <label class="field">
+          <span>Camera Evidence</span>
+          <input id="alterEvidenceFiles" type="file" accept="image/*" capture="environment" multiple>
+        </label>
+        <label class="field">
+          <span>Lot Line Man</span>
+          <select id="alterLineManSelect" required>
+            <option value="">Select Lot Line Man (mandatory)</option>
+          </select>
+        </label>
+        <video id="liveCamera" autoplay playsinline class="camera-video hidden"></video>
+        <canvas id="cameraCanvas" class="hidden"></canvas>
+        <div class="actions">
+          <button id="startCamera" type="button">OPEN LIVE CAMERA</button>
+          <button id="captureCamera" type="button" class="warning" disabled>CAPTURE PHOTO</button>
+          <button id="stopCamera" type="button" disabled>STOP CAMERA</button>
+        </div>
+        <div id="alterEvidencePreview" class="entry-images"></div>
+        <label style="display:flex;gap:10px;align-items:center;margin:12px 0">
+          <input id="physicalEvidenceSubmitted" type="checkbox" style="width:20px;height:20px">
+          <span>Physical Alter Piece मेरे पास है</span>
+        </label>
+        <div class="actions">
+          <button id="saveAlterEvidence" class="warning" type="button">SAVE ALTER FILL</button>
+        </div>
+        <p id="alterEvidenceMsg" class="msg"></p>
+      </section>`;
+    document.body.appendChild(modal);
+  }
+
+  // V769 page lost the ALTER modal markup while the existing ALTER JS handlers
+  // remained active. Restore only that missing form before DOMContentLoaded so
+  // the original production/ALTER handlers bind normally.
+  ensureAlterForm();
+
   function findEngineRow(index) {
     if (index == null || index === "") return null;
     const safe = globalThis.CSS?.escape ? CSS.escape(String(index)) : String(index).replace(/"/g, '\\"');
@@ -156,6 +204,7 @@
   }
 
   function boot() {
+    ensureAlterForm();
     document.addEventListener("click", validateDamageSave, true);
 
     const observer = new MutationObserver(mutations => {
