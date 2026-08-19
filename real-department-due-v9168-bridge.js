@@ -20,7 +20,7 @@ function loadScript(src,key){
 }
 function loadAlterForm(){
  if(!window.__RR_UPM_ALTER_FORM_9253__)loadScript('real-upm-alter-form-v9253.js?v=9253','rr-alter-9253');
- loadScript('real-upm-alter-queue-compact-v9264.js?v=9266','rr-alter-queue-9266');
+ loadScript('real-upm-alter-queue-compact-v9264.js?v=9267','rr-alter-queue-9267');
 }
 loadAlterForm();
 if(!install()){
