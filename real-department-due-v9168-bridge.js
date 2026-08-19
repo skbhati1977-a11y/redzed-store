@@ -6,8 +6,6 @@ function install(){
  if(!c||c.__rr9168DueBridge)return false;
  const original=c.rpc.bind(c);
  c.rpc=function(name,args,options){
-  // V9168 payload is deployed by the database function named V9167.
-  // Keep old department-view callers on the current canonical due-card implementation.
   if(name==='rr_upm_department_colour_due_card_v9109') name='rr_upm_department_colour_due_card_v9167';
   return original(name,args,options);
  };
@@ -21,7 +19,7 @@ function loadScript(src,key){
 function loadAlterForm(){
  if(!window.__RR_UPM_ALTER_FORM_9253__)loadScript('real-upm-alter-form-v9253.js?v=9253','rr-alter-9253');
  loadScript('real-upm-alter-queue-compact-v9264.js?v=9267','rr-alter-queue-9267');
- loadScript('real-upm-alter-traveller-grid-v9268.js?v=9268','rr-alter-traveller-9268');
+ loadScript('real-upm-alter-traveller-grid-v9268.js?v=9270','rr-alter-traveller-9270');
 }
 loadAlterForm();
 if(!install()){
