@@ -370,7 +370,6 @@ begin
     'rows',v_rows
   );
 end
-$function$
-
+$function$;
 
 commit;
