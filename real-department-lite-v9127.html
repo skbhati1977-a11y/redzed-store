@@ -38,7 +38,7 @@
 (() => {
  const q=new URLSearchParams(location.search),raw=(q.get('dept')||'').trim().toUpperCase();
  const A={KR:'STITCHING',KARIGAR:'STITCHING',STITCH:'STITCHING',STITCHING:'STITCHING',OV:'OVERLOCK',OVERLOCK:'OVERLOCK',FLD:'FOLDING',FLATLOCK:'FOLDING',FOLDING:'FOLDING',KAAJ:'KAAJ_BUTTON',KAJ:'KAAJ_BUTTON',BUTTON:'KAAJ_BUTTON',BTN:'KAAJ_BUTTON',KAAJ_BUTTON:'KAAJ_BUTTON',TEAK:'TEAK_TANKI',TANKI:'TEAK_TANKI',TEAK_TANKI:'TEAK_TANKI',THREAD_CUT:'THREAD_CUT',THREAD_CUTTING:'THREAD_CUT',TH_CUT:'THREAD_CUT',QC:'QC',CHECKING:'QC',PRESS:'PRESS',FINISHING:'PRESS',PRINT:'PRINTING',PRINTING:'PRINTING',STICKER:'STICKER',ID:'METAL_ID',ID_WORK:'METAL_ID',METAL_ID:'METAL_ID',PACK:'PACKING',PACKING:'PACKING',DESPATCH:'DESPATCH',DISPATCH:'DESPATCH',CUT:'CUTTING',CUTTING:'CUTTING'};
- const L={STITCHING:'Karigar / Stitching',OVERLOCK:'Overlock',FOLDING:'Folding',KAAJ_BUTTON:'Kaaj / Btn',KAAJ_BUTTON:'Kaaj / Button',TEAK_TANKI:'Teak / Tanki',THREAD_CUT:'Thread Cutting',QC:'QC',PRESS:'Press',PRINTING:'Print',STICKER:'Sticker',METAL_ID:'Metal ID',PACKING:'Packing',DESPATCH:'Despatch',CUTTING:'Cutting'};
+ const L={STITCHING:'Karigar / Stitching',OVERLOCK:'Overlock',FOLDING:'Folding',KAAJ_BUTTON:'Kaaj / Btn',TEAK_TANKI:'Teak / Tanki',THREAD_CUT:'Thread Cutting',QC:'QC',PRESS:'Press',PRINTING:'Print',STICKER:'Sticker',METAL_ID:'Metal ID',PACKING:'Packing',DESPATCH:'Despatch',CUTTING:'Cutting'};
  const dept=A[raw]||raw,label=(q.get('label')||L[dept]||dept||'Department').trim();
  if(!dept){location.replace('real-universal-production-v770-v9059.html?v=9175');return;}
  document.title='REAL FACTORY — '+label;
