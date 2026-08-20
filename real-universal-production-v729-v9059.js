@@ -7,7 +7,10 @@ const arr = value => Array.isArray(value) ? value : [];
 const num = value => Number(value || 0);
 const upper = value => String(value || "").trim().toUpperCase();
 const rowKey = row => String(row.colour_id || row.colour_code || "");
-const canonicalDepartment = value => { const v = upper(value); return ["KAAJ","KAJ","BUTTON","BTN","KAAJ_BUTTON"].includes(v) ? "KAAJ_BUTTON" : v; };\nconst backendDepartmentCode = value => canonicalDepartment(value) === "KAAJ_BUTTON" ? "KAAJ" : canonicalDepartment(value);\nconst departmentLabel = (code, fallback = "") => canonicalDepartment(code) === "KAAJ_BUTTON" ? "Kaaj / Btn" : (fallback || canonicalDepartment(code));\nconst requestId = () => globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+const canonicalDepartment = value => { const v = upper(value); return ["KAAJ","KAJ","BUTTON","BTN","KAAJ_BUTTON"].includes(v) ? "KAAJ_BUTTON" : v; };
+const backendDepartmentCode = value => canonicalDepartment(value) === "KAAJ_BUTTON" ? "KAAJ" : canonicalDepartment(value);
+const departmentLabel = (code, fallback = "") => canonicalDepartment(code) === "KAAJ_BUTTON" ? "Kaaj / Btn" : (fallback || canonicalDepartment(code));
+const requestId = () => globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 
 const state = {
   sb: null,
