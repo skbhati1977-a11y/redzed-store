@@ -7,7 +7,7 @@ const arr = value => Array.isArray(value) ? value : [];
 const num = value => Number(value || 0);
 const upper = value => String(value || "").trim().toUpperCase();
 const rowKey = row => String(row.colour_id || row.colour_code || "");
-const requestId = () => globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+const canonicalDepartment = value => { const v = upper(value); return ["KAAJ","KAJ","BUTTON","BTN","KAAJ_BUTTON"].includes(v) ? "KAAJ_BUTTON" : v; };\nconst backendDepartmentCode = value => canonicalDepartment(value) === "KAAJ_BUTTON" ? "KAAJ" : canonicalDepartment(value);\nconst departmentLabel = (code, fallback = "") => canonicalDepartment(code) === "KAAJ_BUTTON" ? "Kaaj / Btn" : (fallback || canonicalDepartment(code));\nconst requestId = () => globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 
 const state = {
   sb: null,
@@ -136,7 +136,16 @@ async function load() {
 }
 
 function fillDepartments() {
-  const options = state.departments.map(department => `<option value="${esc(department.department_code)}">${esc(department.department_name)}</option>`).join("");
+  const merged = new Map();
+  state.departments.forEach(department => {
+    const code = canonicalDepartment(department.department_code);
+    if (!merged.has(code)) merged.set(code, {...department, department_code: code, department_name: departmentLabel(code, department.department_name)});
+  });
+  state.departments = [...merged.values()];
+  const options = state.departments.map(department => {
+    const code = canonicalDepartment(department.department_code);
+    return '<option value="' + esc(code) + '">' + esc(departmentLabel(code, department.department_name)) + '</option>';
+  }).join("");
   $("homeDept").innerHTML = '<option value="">All departments</option>' + options;
   $("dept").innerHTML = options;
 }
@@ -144,7 +153,7 @@ function fillDepartments() {
 function lotMatchesDepartment(lot, departmentCode) {
   if (!departmentCode) return true;
   const statuses = arr(boardMeta(lot)?.department_statuses);
-  if (statuses.length) return statuses.some(row => upper(row.department_code) === upper(departmentCode));
+  if (statuses.length) return statuses.some(row => canonicalDepartment(row.department_code) === canonicalDepartment(departmentCode));
   return arr(lot.colours).some(colour => upper(colour.current_department_code) === upper(departmentCode));
 }
 
@@ -153,7 +162,7 @@ function boardStatusRows(lot) {
   if (!rows.length) return '<div class="lot-live-status base"><b>OPEN QUEUE</b><span>Colour assignment available</span></div>';
   return rows.slice(0,4).map(row => {
     const colour = upper(row.status_colour || "BASE").toLowerCase();
-    return `<div class="lot-live-status ${esc(colour)}"><b>${esc(row.department_name || row.department_code)}</b><span>${esc(row.board_detail || row.display_label || "")}</span></div>`;
+    return `<div class="lot-live-status ${esc(colour)}"><b>${esc(departmentLabel(row.department_code, row.department_name || row.department_code))}</b><span>${esc(row.board_detail || row.display_label || "")}</span></div>`;
   }).join("") + (rows.length > 4 ? `<div class="lot-live-more">+${rows.length - 4} MORE</div>` : "");
 }
 
@@ -231,7 +240,7 @@ async function loadContext() {
     setFormMessage("Verified Single/Multi Cutting mapping and workflow balances loading…");
     state.context = await rpc("rr_upm_universal_form_v741", {
       p_canonical_lot_id: state.lot.canonical_lot_id,
-      p_department_code: $("dept").value
+      p_department_code: backendDepartmentCode($("dept").value)
     });
     if (state.context?.lot) {
       const identity = state.context.lot;
@@ -289,10 +298,10 @@ function filterDepartmentDropdown(){
   if(!statuses.length)return false;
   const icon={BASE:"",ORANGE:"🟧 ",GREEN:"🟩 ",RED:"🟥 "};
   select.innerHTML=statuses.map(d=>{
-    const code=upper(d.department_code);
+    const code=canonicalDepartment(d.department_code);
     const status=upper(d.status_colour||"BASE");
     const cls=`dept-${status.toLowerCase()}`;
-    return `<option value="${esc(code)}" class="${cls}" data-status-colour="${esc(status)}">${icon[status]||""}${esc(d.display_label||d.department_name||code)}</option>`;
+    return `<option value="${esc(code)}" class="${cls}" data-status-colour="${esc(status)}">${icon[status]||""}${esc(departmentLabel(code, d.display_label||d.department_name||code))}</option>`;
   }).join("");
   if([...select.options].some(o=>upper(o.value)===current))select.value=current;
   else if(select.options.length)select.value=select.options[0].value;
@@ -545,7 +554,7 @@ async function assignWork() {
     await rpc("rr_upm_claim_colours_v741", {
       p_canonical_lot_id: state.lot.canonical_lot_id,
       p_lot_no: state.lot.lot_no,
-      p_department_code: $("dept").value,
+      p_department_code: backendDepartmentCode($("dept").value),
       p_rows: rows,
       p_remarks: full ? "Universal Lot Form FULL available colour assignment" : "Universal Lot Form selected colour assignment"
     });
@@ -593,7 +602,7 @@ async function applyAction(actionType, inputClass, successText) {
     if (actionType === "DAMAGE") {
       await rpc("rr_upm_save_damage_v731", {
         p_canonical_lot_id: state.lot.canonical_lot_id,
-        p_department_code: $("dept").value,
+        p_department_code: backendDepartmentCode($("dept").value),
         p_rows: actions,
         p_rate: num($("actualRate").value),
         p_remarks: "Universal Lot Form bucket-wise Damage"
@@ -602,7 +611,7 @@ async function applyAction(actionType, inputClass, successText) {
     }
     await rpc("rr_upm_apply_actions_batch_v726", {
       p_canonical_lot_id: state.lot.canonical_lot_id,
-      p_department_code: $("dept").value,
+      p_department_code: backendDepartmentCode($("dept").value),
       p_actions: actions,
       p_rate: num($("actualRate").value),
       p_remarks: "Universal Lot Form"
@@ -623,7 +632,7 @@ async function reassignPending() {
     });
     await rpc("rr_upm_reassign_colours_v726", {
       p_canonical_lot_id: state.lot.canonical_lot_id,
-      p_department_code: $("dept").value,
+      p_department_code: backendDepartmentCode($("dept").value),
       p_rows: rows,
       p_remarks: "Pending work reassignment from Universal Lot Form"
     });
@@ -675,7 +684,7 @@ async function submitSelectedColours(){
   const rows=valid.map(({group})=>({colour_id:group.colour_id,colour_code:group.colour_code}));
   const result=await runBusy(()=>rpc("rr_upm_submit_colours_v741",{
     p_canonical_lot_id:state.lot.canonical_lot_id,
-    p_department_code:$("dept").value,
+    p_department_code: backendDepartmentCode($("dept").value),
     p_rows:rows,
     p_remarks:`Universal Lot Form Dynamic Colour Submit · Next view ${nextDepartment}`
   }));
@@ -690,13 +699,13 @@ async function saveRates() {
   await runBusy(async () => {
     await rpc("rr_upm_set_department_rate_v2", {
       p_canonical_lot_id: state.lot.canonical_lot_id,
-      p_department_code: $("dept").value,
+      p_department_code: backendDepartmentCode($("dept").value),
       p_actual_rate: num($("actualRate").value)
     });
     if (state.context.can_change_standard && $("standardRate").value !== "") {
       await rpc("rr_upm_set_standard_rate_v723", {
         p_canonical_lot_id: state.lot.canonical_lot_id,
-        p_department_code: $("dept").value,
+        p_department_code: backendDepartmentCode($("dept").value),
         p_standard_rate: num($("standardRate").value),
         p_reason: "Universal Lot Form"
       });
@@ -716,7 +725,7 @@ async function runDebug() {
     $("debugOutput").textContent = "Running server checks…";
     const output = await rpc("rr_upm_debug_v740", {
       p_canonical_lot_id: state.lot.canonical_lot_id,
-      p_department_code: $("dept").value
+      p_department_code: backendDepartmentCode($("dept").value)
     });
     $("debugOutput").textContent = JSON.stringify(output, null, 2);
     setFormMessage(output?.ok ? "Flow debug passed." : "Flow debug found issues. Open Technical flow debug.", output?.ok ? "success" : "error");
@@ -819,7 +828,7 @@ async function saveAlterEvidence() {
   const result = await rpc("rr_upm_alter_stage_v740", {
     p_stage: "ALTER_FILL",
     p_canonical_lot_id: state.lot.canonical_lot_id,
-    p_department_code: $("dept").value,
+    p_department_code: backendDepartmentCode($("dept").value),
     p_rows: state.pendingAlterRows || [],
     p_evidence_urls: paths,
     p_physical_confirmed: true,
@@ -838,7 +847,7 @@ async function runRemakeStage(stage, inputClass, successText) {
     return rpc("rr_upm_alter_stage_v740", {
       p_stage: stage,
       p_canonical_lot_id: state.lot.canonical_lot_id,
-      p_department_code: $("dept").value,
+      p_department_code: backendDepartmentCode($("dept").value),
       p_rows: rows,
       p_evidence_urls: [],
       p_physical_confirmed: false,
@@ -887,7 +896,7 @@ async function boot() {
     $("alterEvidenceFiles").onchange = () => { const files=[...($("alterEvidenceFiles").files||[])].slice(0,3); $("alterEvidencePreview").innerHTML=files.map(file=>`<span class="badge">${esc(file.name)}</span>`).join(""); };
     $("changeLmBtn").onclick=()=>{const c=lmCandidates(),cur=state.mapping?.line_man_enrolment;$("newLmSelect").innerHTML=c.filter(x=>String(x.worker_id)!==String(cur?.person_id||"")).map(x=>`<option value="${esc(x.worker_id)}">${esc(x.worker_name)} · ${esc(x.worker_code||"")}</option>`).join("");$("lmModal").classList.remove("hidden")};
     $("closeLmModal").onclick=()=>$("lmModal").classList.add("hidden");
-    $("saveLmTransfer").onclick=async()=>{try{await rpc("rr_upm_transfer_lm_v740",{p_canonical_lot_id:state.lot.canonical_lot_id,p_department_code:$("dept").value,p_new_line_man_id:$("newLmSelect").value,p_mode:$("lmTransferMode").value,p_reason:$("lmTransferReason").value,p_physical_handover:$("lmPhysicalHandover").checked});$("lmModal").classList.add("hidden");await loadContext();}catch(e){$("lmModalMsg").textContent=errorText(e)}};
+    $("saveLmTransfer").onclick=async()=>{try{await rpc("rr_upm_transfer_lm_v740",{p_canonical_lot_id:state.lot.canonical_lot_id,p_department_code: backendDepartmentCode($("dept").value),p_new_line_man_id:$("newLmSelect").value,p_mode:$("lmTransferMode").value,p_reason:$("lmTransferReason").value,p_physical_handover:$("lmPhysicalHandover").checked});$("lmModal").classList.add("hidden");await loadContext();}catch(e){$("lmModalMsg").textContent=errorText(e)}};
     $("untraceableBtn").onclick=async()=>{try{const ids=[...document.querySelectorAll(".journey-pick:checked")].map(x=>x.value);if(!ids.length)throw new Error("Select Alter summary rows.");const remark=prompt("Manager investigation / search remark");if(!remark)return;const r=await rpc("rr_upm_request_untraceable_v740",{p_canonical_lot_id:state.lot.canonical_lot_id,p_journey_ids:ids,p_manager_remark:remark});openWhatsApp(r);await loadContext();}catch(e){setFormMessage(errorText(e),"error")}};
     $("ownerApprovalBtn").onclick=async()=>{const {data,error}=await state.sb.from("rr_upm_untraceable_request_v740").select("*").eq("status","OWNER_PENDING").order("created_at",{ascending:false});if(error){setFormMessage(errorText(error),"error");return;}$("approvalList").innerHTML=arr(data).map(r=>`<div class="box"><b>${esc(r.lot_no)} · ${num(r.total_qty)} PCS</b><p>${esc(r.manager_name)}: ${esc(r.manager_remark)}</p><button data-decide="APPROVE" data-id="${r.id}">APPROVE COMPANY LOSS</button><button data-decide="DENY" data-id="${r.id}">DENY · MANAGER DEBIT</button><button data-decide="RECHECK" data-id="${r.id}">RETURN RECHECK</button></div>`).join("")||"No pending approvals.";$("approvalModal").classList.remove("hidden");$("approvalList").querySelectorAll("[data-decide]").forEach(b=>b.onclick=async()=>{const remark=prompt("Owner remark")||"";await rpc("rr_upm_decide_untraceable_v740",{p_request_id:b.dataset.id,p_decision:b.dataset.decide,p_owner_remark:remark});b.closest(".box").remove();await loadContext();});};
     $("closeApprovalModal").onclick=()=>$("approvalModal").classList.add("hidden");
@@ -949,9 +958,9 @@ window.RealFactoryUPM = {
   openLotAtDepartment: async (lotId, departmentCode) => {
     state.lot = (state.lots || []).find(row => row.canonical_lot_id === lotId);
     if (!state.lot) throw new Error("Lot not found in TEST board.");
-    const dept = String(departmentCode || "").toUpperCase();
+    const dept = canonicalDepartment(departmentCode);
     const options = [...$("dept").options];
-    const match = options.find(option => String(option.value).toUpperCase() === dept)
+    const match = options.find(option => canonicalDepartment(option.value) === dept)
       || options.find(option => String(option.textContent).toUpperCase().includes(dept));
     if (match) $("dept").value = match.value;
     $("traveller").classList.remove("hidden");
