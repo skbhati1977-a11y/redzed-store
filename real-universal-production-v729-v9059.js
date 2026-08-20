@@ -680,17 +680,30 @@ async function submitSelectedColours(){
   const allRunning=groups().filter(g=>g.is_locked && !g.completedHere);
   const codes=valid.map(({group})=>group.colour_code);
   const full=allRunning.length>0 && valid.length===allRunning.length;
+  const actualRate=Number($("actualRate")?.value);
+  if(!Number.isFinite(actualRate)||actualRate<=0){
+    setFormMessage("Is Lot ka Actual Rate fill kiye bina Submit nahi hoga.","error");
+    $("actualRate")?.focus();
+    return;
+  }
   const answer=await askActionConfirmation({mode:"SUBMIT",codes,full,department:$("dept").options[$("dept").selectedIndex]?.textContent||$("dept").value});
   if(!answer)return;
   const nextDepartment=$("actionConfirmNextDept").value;
   if(!nextDepartment){setFormMessage("Next Department select करें या Cancel दबाएँ.","error");return;}
   const rows=valid.map(({group})=>({colour_id:group.colour_id,colour_code:group.colour_code}));
-  const result=await runBusy(()=>rpc("rr_upm_submit_colours_v741",{
-    p_canonical_lot_id:state.lot.canonical_lot_id,
-    p_department_code: backendDepartmentCode($("dept").value),
-    p_rows:rows,
-    p_remarks:`Universal Lot Form Dynamic Colour Submit · Next view ${nextDepartment}`
-  }));
+  const result=await runBusy(async()=>{
+    await rpc("rr_upm_set_department_rate_v2",{
+      p_canonical_lot_id:state.lot.canonical_lot_id,
+      p_department_code:backendDepartmentCode($("dept").value),
+      p_actual_rate:actualRate
+    });
+    return rpc("rr_upm_submit_colours_v741",{
+      p_canonical_lot_id:state.lot.canonical_lot_id,
+      p_department_code: backendDepartmentCode($("dept").value),
+      p_rows:rows,
+      p_remarks:`Universal Lot Form Dynamic Colour Submit · Next view ${nextDepartment}`
+    });
+  });
   if(result){
     setFormMessage(`${result.colours_submitted||0} Colour(s) submitted · ${num(result.qty_submitted)} PCS · ${nextDepartment} view खोला गया.`,"success");
     $("dept").value=nextDepartment;
