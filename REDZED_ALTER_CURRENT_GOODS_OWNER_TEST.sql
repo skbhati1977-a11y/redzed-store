@@ -107,36 +107,24 @@ begin
       v_expected_stage:='KARIGAR_REMAKE_PENDING';
       v_to_stage:='CLOSED_GOOD';
 
-      -- ALTER follows the goods' current department, not its origin department.
-      select coalesce(c.current_department_code,l.current_department_code)
-        into v_current_department
-      from public.rr_lots l
-      left join public.rr_lot_colours c
-        on c.lot_id=l.id
-       and (upper(c.colour_name)=upper(v_j.colour_name)
-         or upper(c.colour_name)=upper(v_j.colour_code))
-      where (l.id::text=v_j.canonical_lot_id or upper(l.lot_no)=upper(v_j.lot_no))
-      order by c.updated_at desc nulls last
+      -- Active goods assignment is the source of truth for current department/owner.
+      select a.department_code,a.worker_id,a.worker_name_snapshot,a.worker_code
+        into v_current_department,v_current_worker_id,v_current_worker_name,v_current_worker_code
+      from public.rr_upm_work_assignments_v8 a
+      where a.canonical_lot_id=v_j.canonical_lot_id
+        and (upper(a.colour_code)=upper(v_j.colour_code)
+          or upper(a.colour_name)=upper(v_j.colour_name))
+        and a.status in ('ASSIGNED','IN_PROGRESS')
+        and exists (
+          select 1 from jsonb_array_elements(coalesce(a.size_breakup,'[]'::jsonb)) s
+          where upper(s->>'size_code')=upper(v_j.size_code)
+            and coalesce(nullif(s->>'qty','')::numeric,0)>0
+        )
+      order by a.assigned_at desc
       limit 1;
 
       if nullif(trim(v_current_department),'') is not null
          and upper(v_current_department)<>upper(v_j.origin_department_code) then
-        select a.worker_id,a.worker_name_snapshot,a.worker_code
-          into v_current_worker_id,v_current_worker_name,v_current_worker_code
-        from public.rr_upm_work_assignments_v8 a
-        where a.canonical_lot_id=v_j.canonical_lot_id
-          and upper(a.department_code)=upper(v_current_department)
-          and (upper(a.colour_code)=upper(v_j.colour_code)
-            or upper(a.colour_name)=upper(v_j.colour_name))
-          and a.status in ('ASSIGNED','IN_PROGRESS')
-          and exists (
-            select 1 from jsonb_array_elements(coalesce(a.size_breakup,'[]'::jsonb)) s
-            where upper(s->>'size_code')=upper(v_j.size_code)
-              and coalesce(nullif(s->>'qty','')::numeric,0)>0
-          )
-        order by a.assigned_at desc
-        limit 1;
-
         if v_current_worker_id is null then
           raise exception 'Current goods department % has no mapped active worker for % / %.',
             upper(v_current_department),v_j.colour_code,v_j.size_code;
