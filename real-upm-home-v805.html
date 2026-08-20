@@ -9,14 +9,14 @@
 (()=>{
   const q=new URLSearchParams(location.search);
   const raw=String(q.get('dept')||q.get('tab')||'').trim().toUpperCase();
-  const alias={KR:'STITCHING',KARIGAR:'STITCHING',STITCH:'STITCHING',OV:'OVERLOCK',FLD:'FOLDING',FLATLOCK:'FOLDING',PRINT:'PRINTING',ID:'METAL_ID',ID_WORK:'METAL_ID',CHECKING:'QC',FINISHING:'PRESS',BTN:'BUTTON',KAJ:'KAAJ'};
-  const allowed=new Set(['PRINTING','STICKER','METAL_ID','STITCHING','KAAJ','BUTTON','OVERLOCK','FOLDING','THREAD_CUT','QC','PRESS','PACKING']);
+  const alias={KR:'STITCHING',KARIGAR:'STITCHING',STITCH:'STITCHING',OV:'OVERLOCK',FLD:'FOLDING',FLATLOCK:'FOLDING',PRINT:'PRINTING',ID:'METAL_ID',ID_WORK:'METAL_ID',CHECKING:'QC',FINISHING:'PRESS',BTN:'KAAJ_BUTTON',BUTTON:'KAAJ_BUTTON',KAJ:'KAAJ_BUTTON',TEAK:'TEAK_TANKI',TANKI:'TEAK_TANKI'};
+  const allowed=new Set(['PRINTING','STICKER','METAL_ID','STITCHING','OVERLOCK','FOLDING','TEAK_TANKI','KAAJ_BUTTON','THREAD_CUT','QC','PRESS','PACKING','DESPATCH']);
   const dept=alias[raw]||raw;
   const out=new URLSearchParams();
   out.set('mode',String(q.get('mode')||'TEST').toUpperCase()==='REAL'?'REAL':'TEST');
   if(allowed.has(dept)) out.set('dept',dept);
   out.set('from','LEGACY_UPM_V805');
-  out.set('v','9157');
+  out.set('v','9284');
   location.replace('real-universal-production-v770-v9059.html?'+out.toString());
 })();
 </script>
