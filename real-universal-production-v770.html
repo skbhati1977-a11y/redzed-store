@@ -104,5 +104,34 @@
 <script src="real-upm-submit-confirm-v796.js?v=857"></script>
 <script src="real-upm-department-view-v789.js?v=9278-kaaj-btn"></script>
 <script src="REAL_FACTORY_QUEUE_SCROLL_FIX_V9058.js?v=9058"></script>
+<script>
+(function(){
+  const normalizeKaajBtn=()=>{
+    ["homeDept","dept","actionConfirmNextDept"].forEach(id=>{
+      const select=document.getElementById(id);
+      if(!select)return;
+      const opts=[...select.options];
+      const matches=opts.filter(o=>["KAAJ","KAJ","BUTTON","BTN","KAAJ_BUTTON"].includes(String(o.value||"").trim().toUpperCase())||/^(KAAJ|BUTTON|BTN)$/i.test(String(o.textContent||"").trim()));
+      if(!matches.length)return;
+      const keep=matches[0];
+      keep.value="KAAJ_BUTTON";
+      keep.textContent="Kaaj / Btn";
+      matches.slice(1).forEach(o=>o.remove());
+    });
+  };
+  const start=()=>{
+    normalizeKaajBtn();
+    ["homeDept","dept","actionConfirmNextDept"].forEach(id=>{
+      const select=document.getElementById(id);
+      if(select&&!select.dataset.kaajBtnGuard){
+        select.dataset.kaajBtnGuard="1";
+        new MutationObserver(normalizeKaajBtn).observe(select,{childList:true});
+      }
+    });
+  };
+  start();
+  setInterval(normalizeKaajBtn,1000);
+})();
+</script>
 </body>
 </html>
