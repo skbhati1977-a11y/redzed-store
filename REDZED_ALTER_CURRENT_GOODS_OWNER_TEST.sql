@@ -263,8 +263,7 @@ begin
       else 'Exact journey custody transferred successfully.' end
   );
 end
-$function$
-
+$function$;
 
 CREATE OR REPLACE FUNCTION public.rr_upm_alter_custody_v771(p_canonical_lot_id text, p_colour_code text DEFAULT NULL::text)
  RETURNS jsonb
