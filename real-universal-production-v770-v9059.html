@@ -14,7 +14,7 @@ html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#07090d;col
 <body>
 <div id="boot">Loading Universal Production…</div>
 <iframe id="upmFrame" title="Universal Production Overview"></iframe>
-<script src="real-upm-department-router-v9173.js?v=9175"></script>
+<script src="real-upm-department-router-v9173.js?v=9278"></script>
 <script>
 (()=>{
 'use strict';
@@ -24,7 +24,7 @@ function goDepartment(raw,label){return window.RRRouteDepartment?.(raw,label,{mo
 const direct=qp.get('dept');
 if(direct&&goDepartment(direct,window.RRCanonicalDepartmentName?.(direct)||qp.get('label')||direct))return;
 const frame=document.getElementById('upmFrame');
-frame.src=`real-universal-production-v770.html?mode=${encodeURIComponent(mode)}&embedded=UPM_OVERVIEW&v=9175`;
+frame.src=`real-universal-production-v770.html?mode=${encodeURIComponent(mode)}&embedded=UPM_OVERVIEW&v=9278`;
 frame.addEventListener('load',()=>{
   document.getElementById('boot').style.display='none';
   const d=frame.contentWindow.document;
