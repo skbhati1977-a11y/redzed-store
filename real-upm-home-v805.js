@@ -7,7 +7,7 @@
     {key:"KR", label:"Karigar / Stitching", url:"real-universal-production-v770.html?dept=KR&label=Karigar&v=805"},
     {key:"OVERLOCK", label:"Overlock", url:"real-universal-production-v770.html?dept=OVERLOCK&label=Overlock&v=805"},
     {key:"FOLDING", label:"Folding", url:"real-universal-production-v770.html?dept=FOLDING&label=Folding&v=805"},
-    {key:"KAAJ_BUTTON", label:"Kaaj / Button", url:"real-universal-production-v770.html?dept=KAAJ_BUTTON&label=Kaaj+Button&v=805"},
+    {key:"KAAJ_BUTTON", label:"Kaaj / Btn", url:"real-universal-production-v770.html?dept=KAAJ_BUTTON&label=Kaaj+Button&v=805"},
     {key:"TEAK_TANKI", label:"Teak / Tanki", url:"real-universal-production-v770.html?dept=TEAK_TANKI&label=Teak+Tanki&v=805"},
     {key:"THREAD_CUT", label:"Thread Cutting", url:"real-universal-production-v770.html?dept=THREAD_CUT&label=Thread+Cutting&v=805"},
     {key:"QC", label:"QC", url:"real-universal-production-v770.html?dept=QC&label=QC&v=805"},
