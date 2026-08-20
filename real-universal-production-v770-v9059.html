@@ -24,7 +24,7 @@ function goDepartment(raw,label){return window.RRRouteDepartment?.(raw,label,{mo
 const direct=qp.get('dept');
 if(direct&&goDepartment(direct,window.RRCanonicalDepartmentName?.(direct)||qp.get('label')||direct))return;
 const frame=document.getElementById('upmFrame');
-frame.src=`real-universal-production-v770.html?mode=${encodeURIComponent(mode)}&embedded=UPM_OVERVIEW&v=9278`;
+frame.src=`real-universal-production-v770.html?mode=${encodeURIComponent(mode)}&embedded=UPM_OVERVIEW&v=9291`;
 frame.addEventListener('load',()=>{
   document.getElementById('boot').style.display='none';
   const d=frame.contentWindow.document;
