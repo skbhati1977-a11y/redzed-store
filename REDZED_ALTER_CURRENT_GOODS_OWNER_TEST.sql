@@ -1,7 +1,4 @@
--- TEST ONLY: ALTER follows current goods department/worker before Good merge.
--- Do not apply to production until the test branch is approved.
-begin;
-
+-- TEST/FINAL: dynamic ALTER destination follows latest active goods owner.
 CREATE OR REPLACE FUNCTION public.rr_upm_alter_transition_v771(p_action text, p_rows jsonb, p_remarks text DEFAULT NULL::text)
  RETURNS jsonb
  LANGUAGE plpgsql
@@ -107,7 +104,7 @@ begin
       v_expected_stage:='KARIGAR_REMAKE_PENDING';
       v_to_stage:='CLOSED_GOOD';
 
-      -- Active goods assignment is the source of truth for current department/owner.
+      -- Re-evaluate destination on every submit/forward event.
       select a.department_code,a.worker_id,a.worker_name_snapshot,a.worker_code
         into v_current_department,v_current_worker_id,v_current_worker_name,v_current_worker_code
       from public.rr_upm_work_assignments_v8 a
@@ -130,10 +127,20 @@ begin
             upper(v_current_department),v_j.colour_code,v_j.size_code;
         end if;
 
-        v_already_current_goods_route := coalesce(v_j.route_version,'')='V771_CURRENT_GOODS_OWNER';
-
-        if not v_already_current_goods_route then
-          v_current_goods_route := true;
+        if v_current_worker_id is distinct from v_j.responsible_id
+           or upper(coalesce(v_current_department,''))<>upper(coalesce(v_j.responsible_department_code,'')) then
+          -- Goods moved again: current holder forwards to the new destination owner.
+          if not v_privileged and v_actor_role<>'MANAGER'
+             and coalesce(v_actor_worker_id,auth.uid()) is distinct from v_j.responsible_id
+             and coalesce(v_actor_worker_id,auth.uid()) is distinct from v_j.karigar_id
+             and coalesce(v_actor_worker_id,auth.uid()) is distinct from v_j.enrolled_lm_id
+             and auth.uid() is distinct from v_j.responsible_id
+             and auth.uid() is distinct from v_j.karigar_id
+             and auth.uid() is distinct from v_j.enrolled_lm_id then
+            raise exception 'Only current Alter holder can forward to destination owner %.',
+              coalesce(v_current_worker_name,'mapped worker');
+          end if;
+          v_current_goods_route:=true;
           v_to_stage:='KARIGAR_REMAKE_PENDING';
           v_resp_id:=v_current_worker_id;
           v_resp_name:=v_current_worker_name;
@@ -141,6 +148,7 @@ begin
           v_resp_role:='WORKER';
           v_resp_dept:=v_current_department;
         else
+          -- Destination has not changed: current destination owner can merge Good.
           if not v_privileged and v_actor_role<>'MANAGER'
              and coalesce(v_actor_worker_id,auth.uid()) is distinct from v_current_worker_id
              and auth.uid() is distinct from v_current_worker_id then
@@ -158,8 +166,7 @@ begin
           raise exception 'Only the responsible Karigar or this journey''s Line Man can submit/receive Good.';
         end if;
         v_resp_id:=null; v_resp_name:=null; v_resp_code:=null; v_resp_role:='NONE'; v_resp_dept:=null;
-      end if;
-    end if;
+      end if;    end if;
 
     if v_j.stage<>v_expected_stage then
       raise exception 'Journey % is currently %; expected % for action %.',
@@ -263,116 +270,8 @@ begin
       else 'Exact journey custody transferred successfully.' end
   );
 end
-$function$;
-
-CREATE OR REPLACE FUNCTION public.rr_upm_alter_custody_v771(p_canonical_lot_id text, p_colour_code text DEFAULT NULL::text)
- RETURNS jsonb
- LANGUAGE plpgsql
- STABLE SECURITY DEFINER
- SET search_path TO 'public'
-AS $function$
-declare
-  v_rows jsonb := '[]'::jsonb;
-  v_count integer := 0;
-begin
-  if auth.uid() is null then raise exception 'Login required.'; end if;
-  if nullif(trim(coalesce(p_canonical_lot_id,'')),'') is null then
-    raise exception 'Lot reference is required.';
-  end if;
-
-  select coalesce(jsonb_agg(x.payload order by x.colour_code,x.size_code,x.created_at,x.journey_id),'[]'::jsonb),
-         count(*)
-  into v_rows,v_count
-  from (
-    select
-      j.colour_code,
-      j.size_code,
-      j.created_at,
-      j.id as journey_id,
-      jsonb_build_object(
-        'journey_id',j.id,
-        'journey_group_id',coalesce(j.journey_group_id,j.id),
-        'parent_journey_id',j.parent_journey_id,
-        'journey_code','ALT-'||upper(substr(replace(j.id::text,'-',''),1,8)),
-        'canonical_lot_id',j.canonical_lot_id,
-        'lot_no',j.lot_no,
-        'origin_department_code',j.origin_department_code,
-        'colour_id',j.colour_id,
-        'colour_code',j.colour_code,
-        'colour_name',j.colour_name,
-        'size_code',j.size_code,
-        'open_qty',j.open_qty,
-        'stage',j.stage,
-        'stage_label',case j.stage
-          when 'LM_ALTER_PENDING' then 'ALTER WITH LINE MAN'
-          when 'CM_REMAKE_READY' then 'REMAKE WITH CUTTING MASTER'
-          when 'LM_DELIVERY_PENDING' then 'REMAKE WITH LINE MAN'
-          when 'KARIGAR_REMAKE_PENDING' then 'REMAKE WITH KARIGAR'
-          else replace(j.stage,'_',' ')
-        end,
-        'responsible_id',j.responsible_id,
-        'responsible_name',j.responsible_name,
-        'responsible_worker_code',j.responsible_worker_code,
-        'responsible_role_code',j.responsible_role_code,
-        'responsible_department_code',j.responsible_department_code,
-        'line_man_id',j.enrolled_lm_id,
-        'line_man_name',j.enrolled_lm_name,
-        'line_man_worker_code',j.enrolled_lm_worker_code,
-        'cutting_master_id',j.cutting_master_id,
-        'cutting_master_name',j.cutting_master_name,
-        'cutting_master_worker_code',j.cutting_master_worker_code,
-        'karigar_id',j.karigar_id,
-        'karigar_name',j.karigar_name,
-        'karigar_worker_code',j.karigar_worker_code,
-        'holder_since',j.holder_since,
-        'route_version',j.route_version,
-        'current_goods_department_code',case when j.route_version='V771_CURRENT_GOODS_OWNER' then j.responsible_department_code else null end,
-        'current_goods_owner_name',case when j.route_version='V771_CURRENT_GOODS_OWNER' then j.responsible_name else null end,
-        'custody_chain',case j.stage
-          when 'LM_ALTER_PENDING' then format('%s (Line Man)',coalesce(j.enrolled_lm_name,'Line Man'))
-          when 'CM_REMAKE_READY' then format('%s (LM) â†’ %s (Cutting Master)',coalesce(j.enrolled_lm_name,'Line Man'),coalesce(j.cutting_master_name,'Cutting Master'))
-          when 'LM_DELIVERY_PENDING' then format('%s (LM) â†’ %s (CM) â†’ %s (LM)',coalesce(j.enrolled_lm_name,'Line Man'),coalesce(j.cutting_master_name,'Cutting Master'),coalesce(j.enrolled_lm_name,'Line Man'))
-          when 'KARIGAR_REMAKE_PENDING' then case when j.route_version='V771_CURRENT_GOODS_OWNER'
-            then format('%s (LM) â†’ %s (CM) â†’ %s (LM) â†’ %s (Current Goods Worker)',coalesce(j.enrolled_lm_name,'Line Man'),coalesce(j.cutting_master_name,'Cutting Master'),coalesce(j.enrolled_lm_name,'Line Man'),coalesce(j.responsible_name,'Current Goods Worker'))
-            else format('%s (LM) â†’ %s (CM) â†’ %s (LM) â†’ %s (Karigar)',coalesce(j.enrolled_lm_name,'Line Man'),coalesce(j.cutting_master_name,'Cutting Master'),coalesce(j.enrolled_lm_name,'Line Man'),coalesce(j.karigar_name,'Karigar')) end
-          else coalesce(j.responsible_name,'No active holder')
-        end,
-        'next_action',case j.stage
-          when 'LM_ALTER_PENDING' then 'REMAKE_ISSUE'
-          when 'CM_REMAKE_READY' then 'RECEIVE_FROM_MASTER'
-          when 'LM_DELIVERY_PENDING' then 'DELIVER_TO_KARIGAR'
-          when 'KARIGAR_REMAKE_PENDING' then 'KARIGAR_SUBMIT_GOOD'
-          else null
-        end,
-        'next_action_label',case j.stage
-          when 'LM_ALTER_PENDING' then 'LM â†’ CUTTING MASTER Â· CM RESPONSIBLE'
-          when 'CM_REMAKE_READY' then 'CUTTING MASTER â†’ LINE MAN Â· LM RESPONSIBLE'
-          when 'LM_DELIVERY_PENDING' then 'LINE MAN â†’ KARIGAR Â· KARIGAR RESPONSIBLE'
-          when 'KARIGAR_REMAKE_PENDING' then case when j.route_version='V771_CURRENT_GOODS_OWNER'
-            then 'CURRENT GOODS WORKER SUBMIT GOOD Â· MERGE IN CURRENT DEPARTMENT'
-            else 'KARIGAR SUBMIT GOOD Â· RESPONSIBILITY CLEAR' end
-          else null
-        end
-      ) as payload
-    from public.rr_upm_alter_journey_v740 j
-    where j.canonical_lot_id=p_canonical_lot_id
-      and j.stage not like 'CLOSED%'
-      and j.open_qty>0
-      and (nullif(trim(coalesce(p_colour_code,'')),'') is null
-           or upper(j.colour_code)=upper(trim(p_colour_code)))
-  ) x;
-
-  return jsonb_build_object(
-    'ok',true,
-    'version','V771_EXACT_JOURNEY_CUSTODY',
-    'canonical_lot_id',p_canonical_lot_id,
-    'active_count',v_count,
-    'rows',v_rows
-  );
-end
-$function$;
-
-
+$function$
+;
 CREATE OR REPLACE FUNCTION public.rr_upm_alter_custody_v9114(p_canonical_lot_id text, p_colour_code text DEFAULT NULL::text)
  RETURNS jsonb
  LANGUAGE plpgsql
@@ -422,13 +321,16 @@ begin
        when r->>'stage'='ALTER_LM_ACCEPT_PENDING' then 'LINE MAN ACCEPT · TAKE CUSTODY'
        when r->>'stage'='KARIGAR_REMAKE_PENDING'
         and nullif(d_name,'') is not null
-        and upper(coalesce(d_department,''))<>upper(coalesce(r->>'origin_department_code',''))
-        and coalesce(r->>'route_version','')<>'V771_CURRENT_GOODS_OWNER'
+        and upper(coalesce(d_department,''))<>upper(coalesce(r->>'responsible_department_code',''))
+        and upper(coalesce(d_name,''))<>upper(coalesce(r->>'responsible_name',''))
        then format('FORWARD TO %s · %s · THEN MERGE',d_name,upper(d_department))
+       when r->>'stage'='KARIGAR_REMAKE_PENDING'
+        and coalesce(r->>'route_version','')='V771_CURRENT_GOODS_OWNER'
+       then 'CURRENT GOODS WORKER SUBMIT GOOD · MERGE IN CURRENT DEPARTMENT'
        else r->>'next_action_label'
      end));
  end loop;
  return (b-'rows'-'version')||jsonb_build_object('version','V9114_CURRENT_GOODS_DESTINATION','rows',arr);
 end
-$function$;
-commit;
+$function$
+;
