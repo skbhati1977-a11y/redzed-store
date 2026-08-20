@@ -1,21 +1,21 @@
 (() => {
   const tabs = [
-    {key:"CUTTING", label:"Cutting", url:"real-cutting-master.html?v=805"},
-    {key:"PRINTING", label:"Printing", url:"real-universal-production-v770.html?dept=PRINTING&label=Printing&v=805"},
-    {key:"STICKER", label:"Sticker", url:"real-universal-production-v770.html?dept=STICKER&label=Sticker&v=805"},
-    {key:"METAL_ID", label:"Metal ID", url:"real-universal-production-v770.html?dept=METAL_ID&label=Metal+ID&v=805"},
-    {key:"KR", label:"Karigar / Stitching", url:"real-universal-production-v770.html?dept=KR&label=Karigar&v=805"},
-    {key:"OVERLOCK", label:"Overlock", url:"real-universal-production-v770.html?dept=OVERLOCK&label=Overlock&v=805"},
-    {key:"FOLDING", label:"Folding", url:"real-universal-production-v770.html?dept=FOLDING&label=Folding&v=805"},
-    {key:"KAAJ_BUTTON", label:"Kaaj / Btn", url:"real-universal-production-v770.html?dept=KAAJ_BUTTON&label=Kaaj+Button&v=805"},
-    {key:"TEAK_TANKI", label:"Teak / Tanki", url:"real-universal-production-v770.html?dept=TEAK_TANKI&label=Teak+Tanki&v=805"},
-    {key:"THREAD_CUT", label:"Thread Cutting", url:"real-universal-production-v770.html?dept=THREAD_CUT&label=Thread+Cutting&v=805"},
-    {key:"QC", label:"QC", url:"real-universal-production-v770.html?dept=QC&label=QC&v=805"},
-    {key:"PRESS", label:"Press", url:"real-universal-production-v770.html?dept=PRESS&label=Press&v=805"},
-    {key:"PACKING", label:"Packing", kind:"finish", url:"real-finished-goods-v787.html?view=packing&v=805"},
-    {key:"DESPATCH", label:"Despatch", kind:"finish", url:"real-finished-goods-v787.html?view=despatch&v=805"},
-    {key:"SUBMITTED", label:"Submitted Work", kind:"finish", url:"real-upm-submitted-work-v772.html?v=805"},
-    {key:"CONTROL", label:"All / Open Random Queue", kind:"finish", url:"real-universal-production-v770.html?v=805"}
+    {key:"CUTTING", label:"Cutting", url:"real-cutting-master.html?v=9283"},
+    {key:"PRINTING", label:"Printing", url:"real-universal-production-v770.html?dept=PRINTING&label=Printing&v=9283"},
+    {key:"STICKER", label:"Sticker", url:"real-universal-production-v770.html?dept=STICKER&label=Sticker&v=9283"},
+    {key:"METAL_ID", label:"Metal ID", url:"real-universal-production-v770.html?dept=METAL_ID&label=Metal+ID&v=9283"},
+    {key:"KR", label:"Karigar / Stitching", url:"real-universal-production-v770.html?dept=KR&label=Karigar&v=9283"},
+    {key:"OVERLOCK", label:"Overlock", url:"real-universal-production-v770.html?dept=OVERLOCK&label=Overlock&v=9283"},
+    {key:"FOLDING", label:"Folding", url:"real-universal-production-v770.html?dept=FOLDING&label=Folding&v=9283"},
+    {key:"KAAJ_BUTTON", label:"Kaaj / Btn", url:"real-universal-production-v770.html?dept=KAAJ_BUTTON&label=Kaaj+Button&v=9283"},
+    {key:"TEAK_TANKI", label:"Teak / Tanki", url:"real-universal-production-v770.html?dept=TEAK_TANKI&label=Teak+Tanki&v=9283"},
+    {key:"THREAD_CUT", label:"Thread Cutting", url:"real-universal-production-v770.html?dept=THREAD_CUT&label=Thread+Cutting&v=9283"},
+    {key:"QC", label:"QC", url:"real-universal-production-v770.html?dept=QC&label=QC&v=9283"},
+    {key:"PRESS", label:"Press", url:"real-universal-production-v770.html?dept=PRESS&label=Press&v=9283"},
+    {key:"PACKING", label:"Packing", kind:"finish", url:"real-finished-goods-v787.html?view=packing&v=9283"},
+    {key:"DESPATCH", label:"Despatch", kind:"finish", url:"real-finished-goods-v787.html?view=despatch&v=9283"},
+    {key:"SUBMITTED", label:"Submitted Work", kind:"finish", url:"real-upm-submitted-work-v772.html?v=9283"},
+    {key:"CONTROL", label:"All / Open Random Queue", kind:"finish", url:"real-universal-production-v770.html?v=9283"}
   ];
 
   const $ = id => document.getElementById(id);
