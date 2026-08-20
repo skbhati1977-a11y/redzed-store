@@ -1,5 +1,5 @@
 (() => {
-  const V="9277";
+  const V="9283";
   const tabs = [
     {key:"CUTTING", label:"Cutting", url:`real-cutting-master.html?v=${V}`},
     {key:"PRINTING", label:"Printing", url:`real-universal-production-v770.html?dept=PRINTING&label=Printing&v=${V}`},
