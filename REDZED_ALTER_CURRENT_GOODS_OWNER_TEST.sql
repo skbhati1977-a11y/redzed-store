@@ -372,4 +372,63 @@ begin
 end
 $function$;
 
+
+CREATE OR REPLACE FUNCTION public.rr_upm_alter_custody_v9114(p_canonical_lot_id text, p_colour_code text DEFAULT NULL::text)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+declare
+  b jsonb:=public.rr_upm_alter_custody_v771(p_canonical_lot_id,p_colour_code);
+  arr jsonb:='[]'::jsonb;
+  r jsonb;
+  d_department text;
+  d_name text;
+  d_code text;
+begin
+ for r in select value from jsonb_array_elements(coalesce(b->'rows','[]'::jsonb)) loop
+   d_department:=null; d_name:=null; d_code:=null;
+   select a.department_code,a.worker_name_snapshot,a.worker_code
+     into d_department,d_name,d_code
+   from public.rr_upm_work_assignments_v8 a
+   where a.canonical_lot_id=r->>'canonical_lot_id'
+     and (upper(a.colour_code)=upper(r->>'colour_code')
+       or upper(a.colour_name)=upper(r->>'colour_name'))
+     and a.status in ('ASSIGNED','IN_PROGRESS')
+     and exists (
+       select 1 from jsonb_array_elements(coalesce(a.size_breakup,'[]'::jsonb)) s
+       where upper(s->>'size_code')=upper(r->>'size_code')
+         and coalesce(nullif(s->>'qty','')::numeric,0)>0
+     )
+   order by a.assigned_at desc
+   limit 1;
+
+   arr:=arr||jsonb_build_array(r||jsonb_build_object(
+     'origin',coalesce(r->>'origin_department_code','—'),
+     'destination',coalesce(r->>'responsible_department_code',r->>'stage','—'),
+     'destination_owner_name',coalesce(d_name,r->>'responsible_name','—'),
+     'destination_owner_code',coalesce(d_code,r->>'responsible_worker_code','—'),
+     'destination_department_code',coalesce(d_department,r->>'responsible_department_code',r->>'stage','—'),
+     'current_goods_owner_name',coalesce(d_name,r->>'responsible_name','—'),
+     'current_goods_department_code',coalesce(d_department,r->>'responsible_department_code',r->>'stage','—'),
+     'ownership_name',coalesce(r->>'responsible_name','—'),
+     'ownership_role',coalesce(r->>'responsible_role_code','—'),
+     'next_owner_name',case when nullif(d_name,'') is not null and upper(coalesce(d_department,''))<>upper(coalesce(r->>'origin_department_code','')) then d_name else null end,
+     'forward_to_name',case when nullif(d_name,'') is not null and upper(coalesce(d_department,''))<>upper(coalesce(r->>'origin_department_code','')) then d_name else null end,
+     'accept_pending',(r->>'stage'='ALTER_LM_ACCEPT_PENDING'),
+     'next_action',case when r->>'stage'='ALTER_LM_ACCEPT_PENDING' then 'LM_ACCEPT' else r->>'next_action' end,
+     'next_action_label',case
+       when r->>'stage'='ALTER_LM_ACCEPT_PENDING' then 'LINE MAN ACCEPT · TAKE CUSTODY'
+       when r->>'stage'='KARIGAR_REMAKE_PENDING'
+        and nullif(d_name,'') is not null
+        and upper(coalesce(d_department,''))<>upper(coalesce(r->>'origin_department_code',''))
+        and coalesce(r->>'route_version','')<>'V771_CURRENT_GOODS_OWNER'
+       then format('FORWARD TO %s · %s · THEN MERGE',d_name,upper(d_department))
+       else r->>'next_action_label'
+     end));
+ end loop;
+ return (b-'rows'-'version')||jsonb_build_object('version','V9114_CURRENT_GOODS_DESTINATION','rows',arr);
+end
+$function$;
 commit;
