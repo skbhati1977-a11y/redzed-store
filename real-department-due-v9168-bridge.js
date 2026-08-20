@@ -19,6 +19,7 @@ function loadScript(src,key){
 function loadApprovedAlter(){
  loadScript('real-upm-alter-flow-v9114.js?v=9296','rr-alter-approved-9116');
  loadScript('real-upm-alter-camera-patch-v9116.js?v=9290','rr-alter-camera-9116');
+ loadScript('real-upm-alter-queue-compact-v9264.js?v=9266','rr-alter-queue-9264');
 }
 loadApprovedAlter();
 if(!install()){
