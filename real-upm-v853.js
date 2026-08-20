@@ -1,5 +1,5 @@
 (() => {
-  const V="9283";
+  const V="9285";
   const tabs = [
     {key:"CUTTING", label:"Cutting", url:`real-cutting-master.html?v=${V}`},
     {key:"PRINTING", label:"Printing", url:`real-universal-production-v770.html?dept=PRINTING&label=Printing&v=${V}`},
@@ -18,6 +18,7 @@
     {key:"SUBMITTED", label:"Submitted Work", kind:"finish", url:`real-upm-submitted-work-v772.html?v=${V}`},
     {key:"CONTROL", label:"All / Open Random Queue", kind:"finish", url:`real-universal-production-v770.html?v=${V}`}
   ];
+  const menuTabs = tabs.filter(tab => !["BUTTON","BTN"].includes(String(tab.key||"").toUpperCase()));
   const $ = id => document.getElementById(id);
   const frame = $("upmFrame"), holder = $("upmTabs"), loading = $("loadingBadge"), current = $("currentView"), direct = $("openDirect");
   let activeTab = null;
@@ -28,9 +29,9 @@
     loading.hidden = false; current.textContent = tab.label; direct.href = tab.url; frame.src = tab.url;
     if (push) { const u = new URL(location.href); u.searchParams.set("tab", tab.key); history.replaceState(null, "", u); }
   }
-  tabs.forEach(tab => { const b=document.createElement("button"); b.type="button"; b.className="upm-tab"; if(tab.kind)b.dataset.kind=tab.kind; b.dataset.key=tab.key; b.textContent=tab.label; b.addEventListener("click",()=>selectTab(tab)); holder.appendChild(b); });
+  menuTabs.forEach(tab => { const b=document.createElement("button"); b.type="button"; b.className="upm-tab"; if(tab.kind)b.dataset.kind=tab.kind; b.dataset.key=tab.key; b.textContent=tab.label; b.addEventListener("click",()=>selectTab(tab)); holder.appendChild(b); });
   frame.addEventListener("load",()=>{ loading.hidden=true; if(activeTab)frame.dataset.upmDept=activeTab.key; });
   $("reloadTab").addEventListener("click",()=>{ loading.hidden=false; try{frame.contentWindow.location.reload()}catch{frame.src=frame.src} });
   const requested=new URL(location.href).searchParams.get("tab");
-  selectTab(tabs.find(t=>t.key===requested)||tabs.find(t=>t.key==="CONTROL")||tabs[0],false);
+  selectTab(menuTabs.find(t=>t.key===requested)||menuTabs.find(t=>t.key==="CONTROL")||menuTabs[0],false);
 })();
