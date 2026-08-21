@@ -17,13 +17,13 @@
       <div class="dept-line"><h1 id="deptHeader">Department</h1><span id="deptCode" class="dept-code">DEPARTMENT</span></div>
       <div id="deptStatus" class="status">TEST DEFAULT · REAL PROTECTED · CANONICAL UPM DEPARTMENT</div>
     </div>
-    <div class="actions"><a class="upm" href="real-universal-production-v770-v9059.html?mode=TEST&v=9175">UPM</a><a href="real-dashboard-v9182.html?v=9290">Dashboard</a><button id="refresh" type="button">Refresh</button></div>
+    <div class="actions"><a class="upm" href="real-universal-production-v770-v9059.html?mode=TEST&v=9302">UPM</a><a href="real-dashboard-v9182.html?v=9302">Dashboard</a><button id="refresh" type="button">Refresh</button></div>
   </div>
   <div class="modulebar">
     <button class="primary" type="button">PRODUCTION</button>
     <button type="button" onclick="location.href='real-cutting-master.html'">CUTTING MODULE</button>
     <button type="button">PACKING &amp; DISPATCH</button>
-    <button type="button" onclick="location.href='real-upm-costing-v9300.html?v=9300'">COSTING</button>
+    <button type="button" onclick="location.href='real-upm-costing-v9300.html?v=9302'">COSTING</button>
     <button type="button">REPORTS</button>
   </div>
   <div class="toolbar"><input id="search" placeholder="Lot No / CB No / Art No" autocomplete="off"></div>
@@ -36,17 +36,18 @@
 <script src="real-common.js"></script>
 <script>
 (() => {
- const q=new URLSearchParams(location.search),raw=(q.get('dept')||'').trim().toUpperCase();
- const A={KR:'STITCHING',KARIGAR:'STITCHING',STITCH:'STITCHING',STITCHING:'STITCHING',OV:'OVERLOCK',OVERLOCK:'OVERLOCK',FLD:'FOLDING',FLATLOCK:'FOLDING',FOLDING:'FOLDING',KAAJ:'KAAJ_BUTTON',KAJ:'KAAJ_BUTTON',BUTTON:'KAAJ_BUTTON',BTN:'KAAJ_BUTTON',KAAJ_BUTTON:'KAAJ_BUTTON',TEAK:'TEAK_TANKI',TANKI:'TEAK_TANKI',TEAK_TANKI:'TEAK_TANKI',THREAD_CUT:'THREAD_CUT',THREAD_CUTTING:'THREAD_CUT',TH_CUT:'THREAD_CUT',QC:'QC',CHECKING:'QC',PRESS:'PRESS',FINISHING:'PRESS',PRINT:'PRINTING',PRINTING:'PRINTING',STICKER:'STICKER',ID:'METAL_ID',ID_WORK:'METAL_ID',METAL_ID:'METAL_ID',PACK:'PACKING',PACKING:'PACKING',DESPATCH:'DESPATCH',DISPATCH:'DESPATCH',CUT:'CUTTING',CUTTING:'CUTTING'};
+ const q=new URLSearchParams(location.search),raw=(q.get('dept')||'').trim().toUpperCase(),key=raw.replace(/[^A-Z0-9]+/g,'');
+ const isKaajBtn=v=>['KAAJ','KAJ','KASJ','BUTTON','BTN','BT','BATTAN','BATAN','KAAJBUTTON','KAJBUTTON','KASJBUTTON','KAAJBTN','KAJBTN','KASJBTN','KAAJBATTAN','KAJBATTAN','KASJBATTAN','BUTTONKAAJ','BUTTONKAJ','BUTTONKASJ','BTNKAAJ','BTNKAJ','BTNKASJ'].includes(v);
+ const A={KR:'STITCHING',KARIGAR:'STITCHING',STITCH:'STITCHING',STITCHING:'STITCHING',OV:'OVERLOCK',OVERLOCK:'OVERLOCK',FLD:'FOLDING',FLATLOCK:'FOLDING',FOLDING:'FOLDING',KAAJ:'KAAJ_BUTTON',KAJ:'KAAJ_BUTTON',KASJ:'KAAJ_BUTTON',BUTTON:'KAAJ_BUTTON',BTN:'KAAJ_BUTTON',BT:'KAAJ_BUTTON',BATTAN:'KAAJ_BUTTON',BATAN:'KAAJ_BUTTON',KAAJ_BUTTON:'KAAJ_BUTTON',TEAK:'TEAK_TANKI',TANKI:'TEAK_TANKI',TEAK_TANKI:'TEAK_TANKI',THREAD_CUT:'THREAD_CUT',THREAD_CUTTING:'THREAD_CUT',TH_CUT:'THREAD_CUT',QC:'QC',CHECKING:'QC',PRESS:'PRESS',FINISHING:'PRESS',PRINT:'PRINTING',PRINTING:'PRINTING',STICKER:'STICKER',ID:'METAL_ID',ID_WORK:'METAL_ID',METAL_ID:'METAL_ID',PACK:'PACKING',PACKING:'PACKING',DESPATCH:'DESPATCH',DISPATCH:'DESPATCH',CUT:'CUTTING',CUTTING:'CUTTING'};
  const L={STITCHING:'Karigar / Stitching',OVERLOCK:'Overlock',FOLDING:'Folding',KAAJ_BUTTON:'Kaaj / Btn',TEAK_TANKI:'Teak / Tanki',THREAD_CUT:'Thread Cutting',QC:'QC',PRESS:'Press',PRINTING:'Print',STICKER:'Sticker',METAL_ID:'Metal ID',PACKING:'Packing',DESPATCH:'Despatch',CUTTING:'Cutting'};
- const dept=A[raw]||raw,label=(q.get('label')||L[dept]||dept||'Department').trim();
- if(!dept){location.replace('real-universal-production-v770-v9059.html?v=9175');return;}
+ const dept=isKaajBtn(key)?'KAAJ_BUTTON':(A[raw]||A[key]||raw),label=(q.get('label')||L[dept]||dept||'Department').trim();
+ if(!dept){location.replace('real-universal-production-v770-v9059.html?v=9302');return;}
  document.title='REAL FACTORY — '+label;
  document.getElementById('deptHeader').textContent=label;
  document.getElementById('deptCode').textContent=dept.replaceAll('_',' ');
  const mode=String(q.get('mode')||'TEST').trim().toUpperCase()==='REAL'?'REAL':'TEST';
  document.getElementById('deptStatus').textContent=`${mode} DEFAULT · REAL PROTECTED · CANONICAL UPM DEPARTMENT`;
- const upm=document.querySelector('.actions .upm');if(upm)upm.href=`real-universal-production-v770-v9059.html?mode=${encodeURIComponent(mode)}&v=9175`;
+ const upm=document.querySelector('.actions .upm');if(upm)upm.href=`real-universal-production-v770-v9059.html?mode=${encodeURIComponent(mode)}&v=9302`;
  const hd=document.getElementById('homeDept');hd.innerHTML='<option value="'+dept+'" selected>'+label+'</option>';hd.value=dept;hd.hidden=true;hd.setAttribute('aria-hidden','true');
  document.getElementById('search').addEventListener('input',e=>{const s=String(e.target.value||'').trim().toLowerCase();document.querySelectorAll('.rfcard').forEach(c=>{c.style.display=!s||c.textContent.toLowerCase().includes(s)?'':'none'})});
 })();
@@ -59,7 +60,6 @@
 <script src="real-accessory-purchase-authorizer-v9161.js?v=9175"></script>
 <script src="real-accessory-ready-direct-v9170.js?v=9278"></script>
 <script src="real-accessory-partial-visual-v9172.js?v=9175"></script>
-<script src="real-upm-actual-cost-gate-v9300.js?v=9300"></script>
+<script src="real-upm-actual-cost-gate-v9300.js?v=9302"></script>
 </body>
 </html>
-

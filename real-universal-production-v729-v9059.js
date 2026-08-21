@@ -7,7 +7,11 @@ const arr = value => Array.isArray(value) ? value : [];
 const num = value => Number(value || 0);
 const upper = value => String(value || "").trim().toUpperCase();
 const rowKey = row => String(row.colour_id || row.colour_code || "");
-const canonicalDepartment = value => { const v = upper(value); return ["KAAJ","KAJ","BUTTON","BTN","KAAJ_BUTTON"].includes(v) ? "KAAJ_BUTTON" : v; };
+const kaajButtonAlias = value => {
+  const v = upper(value).replace(/[^A-Z0-9]+/g, "");
+  return ["KAAJ","KAJ","KASJ","BUTTON","BTN","BT","BATTAN","BATAN","KAAJBUTTON","KAJBUTTON","KASJBUTTON","KAAJBTN","KAJBTN","KASJBTN","KAAJBATTAN","KAJBATTAN","KASJBATTAN","BUTTONKAAJ","BUTTONKAJ","BUTTONKASJ","BTNKAAJ","BTNKAJ","BTNKASJ"].includes(v);
+};
+const canonicalDepartment = value => kaajButtonAlias(value) ? "KAAJ_BUTTON" : upper(value);
 const backendDepartmentCode = value => canonicalDepartment(value) === "KAAJ_BUTTON" ? "KAAJ" : canonicalDepartment(value);
 const departmentLabel = (code, fallback = "") => canonicalDepartment(code) === "KAAJ_BUTTON" ? "Kaaj / Btn" : (fallback || canonicalDepartment(code));
 const requestId = () => globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`;
