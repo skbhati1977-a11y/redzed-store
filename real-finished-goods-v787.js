@@ -28,7 +28,32 @@
   function compositionTable(cells){
     const m = packMatrix(cells);
     if(!m.colours.length||!m.sizes.length)return '';
+    const mark = String((cells||[]).find(x=>x?.pack_mark)?.pack_mark||'').toUpperCase();
+    if(mark&&mark!=='FRESH')return adjustedCompositionTable(cells, m);
     return `<div class="fg-pack-matrix-wrap"><table class="fg-pack-matrix"><thead><tr><th>Colour</th>${m.sizes.map(s=>`<th>${esc(s)}</th>`).join('')}</tr></thead><tbody>${m.colours.map(c=>`<tr><th>${esc(c)}</th>${m.sizes.map(s=>`<td>${Number(m.rows[c][s]||0)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
+  }
+  function adjustedCompositionTable(cells, matrix){
+    const m = matrix || packMatrix(cells);
+    const main = {}, adj = {};
+    m.colours.forEach(c=>{main[c]={};adj[c]={};m.sizes.forEach(s=>{main[c][s]=0;adj[c][s]=[];});});
+    m.sizes.forEach(size=>{
+      const extras = m.colours.map(c=>({colour:c, extra:Math.max(0, Number(m.rows[c][size]||0)-1)}));
+      m.colours.forEach(c=>{
+        const qty = Number(m.rows[c][size]||0);
+        if(qty>0)main[c][size]=1;
+      });
+      m.colours.filter(c=>Number(m.rows[c][size]||0)===0).forEach(missing=>{
+        const donor = extras.filter(x=>x.extra>0&&x.colour!==missing).sort((a,b)=>b.extra-a.extra||a.colour.localeCompare(b.colour,undefined,{numeric:true}))[0];
+        if(!donor)return;
+        main[missing][size]=1;
+        adj[missing][size].push(`${donor.colour} 1`);
+        donor.extra-=1;
+      });
+      extras.forEach(x=>{
+        if(x.extra>0)main[x.colour][size]+=x.extra;
+      });
+    });
+    return `<div class="fg-pack-matrix-wrap"><table class="fg-pack-matrix fg-pack-adj-matrix"><thead><tr><th>Colour</th>${m.sizes.map(s=>`<th>${esc(s)}</th><th>${esc(s)} Adj Col</th>`).join('')}</tr></thead><tbody>${m.colours.map(c=>`<tr><th>${esc(c)}</th>${m.sizes.map(s=>`<td>${Number(main[c][s]||0)}</td><td>${adj[c][s].length?esc(adj[c][s].join(', ')):'-'}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
   }
   function packBoxCode(code){const m=String(code||'').match(/-BOX-(\d+)$/);return m?`BOX ${m[1]}`:String(code||'');}
   function packBoxNo(code){const m=String(code||'').match(/-BOX-(\d+)$/);return m?Number(m[1]):null;}
@@ -48,19 +73,33 @@
       .sort((a,b)=>a.localeCompare(b,undefined,{numeric:true})).join('~');
   }
   function packBoxGroups(boxes){
-    const groups = [];
+    const groups = [], byKey = new Map();
     (boxes||[]).forEach(box=>{
       const type = packBoxType(box), key = `${type}|${Number(box.qty||0)}|${packCellsKey(box.cells)}`;
-      const no = packBoxNo(box.box_code), last = groups[groups.length-1];
-      if(last&&last.key===key&&no&&last.lastNo&&no===last.lastNo+1){
-        last.boxes.push(box); last.lastNo = no; last.totalQty += Number(box.qty||0); return;
+      const no = packBoxNo(box.box_code);
+      let group = byKey.get(key);
+      if(!group){
+        group = {key,type,boxes:[],boxNos:[],totalQty:0,sample:box};
+        byKey.set(key, group);
+        groups.push(group);
       }
-      groups.push({key,type,boxes:[box],firstNo:no,lastNo:no,totalQty:Number(box.qty||0),sample:box});
+      group.boxes.push(box);
+      if(no)group.boxNos.push(no);
+      group.totalQty += Number(box.qty||0);
     });
     return groups;
   }
+  function packNoRanges(nums){
+    const list = [...new Set(nums)].sort((a,b)=>a-b), ranges = [];
+    for(let i=0;i<list.length;i++){
+      const start = list[i]; let end = start;
+      while(i+1<list.length&&list[i+1]===end+1){end=list[++i];}
+      ranges.push(start===end?String(start):`${start}-${end}`);
+    }
+    return ranges.join(', ');
+  }
   function packGroupBoxLabel(group){
-    if(group.firstNo&&group.lastNo&&group.firstNo!==group.lastNo)return `BOX ${group.firstNo}-${group.lastNo}`;
+    if(group.boxNos.length)return `BOX ${packNoRanges(group.boxNos)}`;
     return packBoxCode(group.sample.box_code);
   }
   function packGroupQty(group){
