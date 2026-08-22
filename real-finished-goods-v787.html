@@ -59,6 +59,20 @@
       if(td.dataset.matrixDone==='1')return;
       var raw=td.textContent||'';
       var next=matrixText(raw);
+      var tr=td.closest('tr');
+      var boxTd=tr&&tr.querySelector('td[data-label="Box"]');
+      var typeTd=tr&&tr.querySelector('td[data-label="Type"]');
+      var pcsTd=tr&&tr.querySelector('td[data-label="PCS"]');
+      if(boxTd){
+        var bm=(boxTd.textContent||'').match(/-BOX-(\d+)$/);
+        if(bm)boxTd.textContent='BOX '+bm[1];
+      }
+      if(typeTd&&pcsTd&&next!==raw){
+        var pcs=Number(pcsTd.textContent||0);
+        var nonZero=(raw.match(/[×x]\d+/g)||[]).length;
+        var allOne=!/[×x]([2-9]|\d{2,})/.test(raw);
+        typeTd.textContent=pcs>18?'MIX':(pcs===18&&nonZero===18&&allOne?'FRESH':'ASST');
+      }
       if(next!==raw){td.textContent=next;td.style.whiteSpace='pre-line';td.dataset.matrixDone='1';}
     });
   }
