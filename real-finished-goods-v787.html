@@ -19,6 +19,23 @@
 <p id="message" class="fg-msg" role="status"></p><datalist id="saleLotSuggestions"></datalist><datalist id="buyerSuggestions"></datalist></main>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="config.js?v=9318"></script><script src="real-common.js?v=9318"></script><script src="real-finished-goods-v787.js?v=9318"></script><script>
 (function(){
+  document.addEventListener('click',function(e){
+    var btn=e.target&&e.target.closest?e.target.closest('#runPackAlgo'):null;
+    if(!btn)return;
+    var input=document.getElementById('packPcsPerBox');
+    var title=document.getElementById('selectedPackLot');
+    if(!input||!title)return;
+    var lot=(title.textContent||'').replace(/^Lot\s+/i,'').trim();
+    var card=[].slice.call(document.querySelectorAll('[data-pack-lot]')).find(function(x){return String(x.dataset.packLot||'')===lot});
+    var text=card?card.textContent:'';
+    var m=text.match(/Colours\s*\/\s*Sizes\s*(\d+)\s*\/\s*(\d+)/i);
+    var min=m?Number(m[1])*Number(m[2]):0;
+    var pcs=Number(input.value||0);
+    if(min>0&&pcs>0&&pcs<min)input.value=min;
+  },true);
+})();
+</script><script>
+(function(){
   var V='9318';
   function localHtml(h){try{var u=new URL(h,location.href);return u.origin===location.origin&&/\.html$/i.test(u.pathname)}catch(e){return false}}
   document.addEventListener('click',function(e){var a=e.target&&e.target.closest?e.target.closest('a[href]'):null;if(!a||a.target||a.hasAttribute('download'))return;var h=a.getAttribute('href')||'';if(!h||h[0]==='#'||/^(mailto:|tel:|javascript:)/i.test(h)||!localHtml(h))return;var u=new URL(h,location.href);if(u.searchParams.get('v')!==V){u.searchParams.set('v',V);e.preventDefault();location.href=u.href;}},true);
