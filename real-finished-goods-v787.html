@@ -33,23 +33,6 @@
 })();
 </script><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="config.js?v=9324"></script><script src="real-common.js?v=9324"></script><script src="real-finished-goods-v787.js?v=9324"></script><script>
 (function(){
-  document.addEventListener('click',function(e){
-    var btn=e.target&&e.target.closest?e.target.closest('#runPackAlgo'):null;
-    if(!btn)return;
-    var input=document.getElementById('packPcsPerBox');
-    var title=document.getElementById('selectedPackLot');
-    if(!input||!title)return;
-    var lot=(title.textContent||'').replace(/^Lot\s+/i,'').trim();
-    var card=[].slice.call(document.querySelectorAll('[data-pack-lot]')).find(function(x){return String(x.dataset.packLot||'')===lot});
-    var text=card?card.textContent:'';
-    var m=text.match(/Colours\s*\/\s*Sizes\s*(\d+)\s*\/\s*(\d+)/i);
-    var min=m?Number(m[1])*Number(m[2]):0;
-    var pcs=Number(input.value||0);
-    if(min>0&&pcs>0&&pcs<min)input.value=min;
-  },true);
-})();
-</script><script>
-(function(){
   function matrixText(text){
     var rows={};
     String(text||'').split(/\s*,\s*/).forEach(function(part){
