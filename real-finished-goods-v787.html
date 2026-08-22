@@ -20,16 +20,39 @@
 <script>
 (function(){
   function guardPackMatrixTables(){
-    document.querySelectorAll('.fg-pack-matrix').forEach(function(table){
+    document.querySelectorAll('.fg-pack-matrix,.fg-pack-table').forEach(function(table){
       table.dataset.rrNoGsheet='1';
       table.dataset.rrGoogleSheetReady='1';
     });
-    document.querySelectorAll('.fg-pack-matrix-wrap > .rr-gsheet-toolbar,.fg-pack-matrix .rr-gsheet-filter-btn').forEach(function(node){
+    document.querySelectorAll('.fg-pack-matrix-wrap > .rr-gsheet-toolbar,.fg-table-wrap > .rr-gsheet-toolbar,.fg-pack-matrix .rr-gsheet-filter-btn,.fg-pack-table .rr-gsheet-filter-btn').forEach(function(node){
       node.remove();
     });
   }
+  function guardIncompletePackingMatrix(){
+    var workspace=document.getElementById('packWorkspace');
+    if(!workspace||workspace.hidden)return;
+    var title=document.getElementById('selectedPackLot');
+    var lot=(title&&title.textContent||'').replace(/^Lot\s+/i,'').trim();
+    if(!lot)return;
+    var card=document.querySelector('[data-pack-lot="'+CSS.escape(lot)+'"]');
+    var m=(card&&card.textContent||'').match(/Colours\s*\/\s*Sizes\s*(\d+)\s*\/\s*(\d+)/i);
+    if(!m)return;
+    var colours=Number(m[1]||0), sizes=Number(m[2]||0);
+    if(colours*sizes===18)return;
+    var block=document.getElementById('packAlgoBlock');
+    var rows=document.getElementById('packRows');
+    var summary=document.getElementById('packSummary');
+    var submit=document.getElementById('submitPack');
+    if(block)block.hidden=true;
+    if(rows)rows.innerHTML='';
+    if(submit)submit.disabled=true;
+    if(summary)summary.innerHTML='<span class="fg-chip">Matrix <b>'+colours+' / '+sizes+'</b></span><span class="fg-warning">Packing algorithm sirf approved all colours x all sizes = 18 cell matrix par chalega.</span>';
+  }
   new MutationObserver(guardPackMatrixTables).observe(document.documentElement,{childList:true,subtree:true});
+  new MutationObserver(guardIncompletePackingMatrix).observe(document.documentElement,{childList:true,subtree:true,characterData:true});
+  document.addEventListener('click',function(){setTimeout(guardIncompletePackingMatrix,80);},true);
   guardPackMatrixTables();
+  guardIncompletePackingMatrix();
 })();
 </script><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="config.js?v=9324"></script><script src="real-common.js?v=9324"></script><script src="real-finished-goods-v787.js?v=9324"></script><script>
 (function(){
