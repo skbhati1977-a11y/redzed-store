@@ -31,6 +31,7 @@
     return `<div class="fg-pack-matrix-wrap"><table class="fg-pack-matrix"><thead><tr><th>Colour</th>${m.sizes.map(s=>`<th>${esc(s)}</th>`).join('')}</tr></thead><tbody>${m.colours.map(c=>`<tr><th>${esc(c)}</th>${m.sizes.map(s=>`<td>${Number(m.rows[c][s]||0)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
   }
   function packBoxCode(code){const m=String(code||'').match(/-BOX-(\d+)$/);return m?`BOX ${m[1]}`:String(code||'');}
+  function packBoxNo(code){const m=String(code||'').match(/-BOX-(\d+)$/);return m?Number(m[1]):null;}
   function packBoxType(box){
     const type = String(box.box_type||'').toUpperCase();
     const cells = box.cells||[];
@@ -41,6 +42,30 @@
     const allOne = cells.length===expected && cells.every(x=>Number(x.qty)===1);
     if(qty===18&&expected===18&&allOne)return 'FRESH';
     return type==='REGULAR'?'FRESH':(type||'ASST');
+  }
+  function packCellsKey(cells){
+    return (cells||[]).map(x=>`${x.colour_code}|${x.size_code}|${Number(x.qty||0)}|${String(x.pack_mark||'')}`)
+      .sort((a,b)=>a.localeCompare(b,undefined,{numeric:true})).join('~');
+  }
+  function packBoxGroups(boxes){
+    const groups = [];
+    (boxes||[]).forEach(box=>{
+      const type = packBoxType(box), key = `${type}|${Number(box.qty||0)}|${packCellsKey(box.cells)}`;
+      const no = packBoxNo(box.box_code), last = groups[groups.length-1];
+      if(last&&last.key===key&&no&&last.lastNo&&no===last.lastNo+1){
+        last.boxes.push(box); last.lastNo = no; last.totalQty += Number(box.qty||0); return;
+      }
+      groups.push({key,type,boxes:[box],firstNo:no,lastNo:no,totalQty:Number(box.qty||0),sample:box});
+    });
+    return groups;
+  }
+  function packGroupBoxLabel(group){
+    if(group.firstNo&&group.lastNo&&group.firstNo!==group.lastNo)return `BOX ${group.firstNo}-${group.lastNo}`;
+    return packBoxCode(group.sample.box_code);
+  }
+  function packGroupQty(group){
+    const q = Number(group.sample.qty||0), count = group.boxes.length;
+    return count>1?`${q} x ${count} = ${group.totalQty}`:String(q);
   }
 
   async function boot(){
@@ -68,8 +93,11 @@
   function closePackLot(){$('packWorkspace').hidden=true;state.selectedPack=null;state.packPlan=null;}
   async function assignPack(){try{if(!state.selectedPack)throw Error('Lot card select karein.');const worker=$('packWorker').value;if(!worker)throw Error('Packing Worker select karein.');await rpc('rr_fg_assign_packing_v788',{p_lot_no:state.selectedPack.lot_no,p_worker_user_id:worker,p_data_mode:'TEST'});msg(`Lot ${state.selectedPack.lot_no} packing worker ko assigned.`,'ok');closePackLot();await loadPackLots();}catch(e){msg(e.message,'error');}}
   async function acceptPack(){try{if(!state.selectedPack?.assignment_id)throw Error('Assigned Lot required.');await rpc('rr_fg_accept_packing_v788',{p_assignment_id:state.selectedPack.assignment_id});state.selectedPack.assignment_status='ACCEPTED';$('workerPackBlock').hidden=true;$('packAlgoBlock').hidden=false;msg('Work accepted. PCS per box fill karke algorithm run karein.','ok');}catch(e){msg(e.message,'error');}}
-  async function generatePack(){try{const x=state.selectedPack;if(!x)throw Error('Lot card select karein.');let pcs=Number($('packPcsPerBox').value||0);if(!Number.isInteger(pcs)||pcs<=0)throw Error('PCS per box mandatory hai.');const minCells=Number(x.colours||0)*Number(x.sizes||0);if(minCells>0&&pcs<minCells){pcs=minCells;$('packPcsPerBox').value=pcs;msg(`PCS per box ${minCells} set kiya: all colour-size equal ke liye minimum ${minCells} chahiye.`,'error');}msg('Equal packing algorithm chal raha hai…');state.packPlan=await rpc(x.pack_plan_id?'rr_fg_reset_equal_pack_plan_v9317':'rr_fg_generate_assigned_pack_v788',{p_assignment_id:x.assignment_id,p_pcs_per_box:pcs});x.pack_plan_id=state.packPlan.plan_id;const detail=await rpc('rr_fg_pack_plan_detail_v787',{p_plan_id:state.packPlan.plan_id});$('packRows').innerHTML=(detail.boxes||[]).map(v=>`<tr><td data-label="Box">${esc(packBoxCode(v.box_code))}</td><td data-label="Type">${esc(packBoxType(v))}</td><td data-label="PCS">${v.qty}</td><td data-label="Composition">${compositionTable(v.cells)}</td></tr>`).join('');$('packSummary').innerHTML=`<span class="fg-chip">Boxes <b>${detail.boxes.length}</b></span><span class="fg-chip">PCS <b>${detail.total_qty}</b></span><span class="fg-chip">PCS/Box <b>${pcs}</b></span>`;$('packAlgoBlock').hidden=false;$('submitPack').disabled=false;msg('Equal algorithm ready; physical boxes verify karke Submit Packing karein.','ok');}catch(e){msg(e.message,'error');}}
-  async function renderPackPlan(planId,status='ACCEPTED'){try{const detail=await rpc('rr_fg_pack_plan_detail_v787',{p_plan_id:planId});state.packPlan={plan_id:planId};$('packRows').innerHTML=(detail.boxes||[]).map(v=>`<tr><td data-label="Box">${esc(packBoxCode(v.box_code))}</td><td data-label="Type">${esc(packBoxType(v))}</td><td data-label="PCS">${v.qty}</td><td data-label="Composition">${compositionTable(v.cells)}</td></tr>`).join('');$('packSummary').innerHTML=`<span class="fg-chip">Boxes <b>${detail.boxes.length}</b></span><span class="fg-chip">PCS <b>${detail.total_qty}</b></span><span class="fg-chip">View <b>${esc(status||'READY')}</b></span>`;$('packAlgoBlock').hidden=!(state.selectedPack?.is_mine||canAssign());$('submitPack').disabled=status==='SUBMITTED';msg(status==='SUBMITTED'?'Packed algorithm view loaded. Reset allowed.':'Existing algorithm table loaded. Re-run allowed before submit.','ok');}catch(e){msg(e.message,'error');}}
+  function renderPackBoxes(boxes){
+    $('packRows').innerHTML=packBoxGroups(boxes).map(g=>`<tr><td data-label="Box">${esc(packGroupBoxLabel(g))}</td><td data-label="Type">${esc(g.type)}</td><td data-label="PCS">${esc(packGroupQty(g))}</td><td data-label="Composition">${compositionTable(g.sample.cells)}</td></tr>`).join('');
+  }
+  async function generatePack(){try{const x=state.selectedPack;if(!x)throw Error('Lot card select karein.');let pcs=Number($('packPcsPerBox').value||0);if(!Number.isInteger(pcs)||pcs<=0)throw Error('PCS per box mandatory hai.');const minCells=Number(x.colours||0)*Number(x.sizes||0);if(minCells>0&&pcs<minCells){pcs=minCells;$('packPcsPerBox').value=pcs;msg(`PCS per box ${minCells} set kiya: all colour-size equal ke liye minimum ${minCells} chahiye.`,'error');}msg('Equal packing algorithm chal raha hai…');state.packPlan=await rpc(x.pack_plan_id?'rr_fg_reset_equal_pack_plan_v9317':'rr_fg_generate_assigned_pack_v788',{p_assignment_id:x.assignment_id,p_pcs_per_box:pcs});x.pack_plan_id=state.packPlan.plan_id;const detail=await rpc('rr_fg_pack_plan_detail_v787',{p_plan_id:state.packPlan.plan_id});renderPackBoxes(detail.boxes||[]);$('packSummary').innerHTML=`<span class="fg-chip">Boxes <b>${detail.boxes.length}</b></span><span class="fg-chip">PCS <b>${detail.total_qty}</b></span><span class="fg-chip">PCS/Box <b>${pcs}</b></span>`;$('packAlgoBlock').hidden=false;$('submitPack').disabled=false;msg('Equal algorithm ready; physical boxes verify karke Submit Packing karein.','ok');}catch(e){msg(e.message,'error');}}
+  async function renderPackPlan(planId,status='ACCEPTED'){try{const detail=await rpc('rr_fg_pack_plan_detail_v787',{p_plan_id:planId});state.packPlan={plan_id:planId};renderPackBoxes(detail.boxes||[]);$('packSummary').innerHTML=`<span class="fg-chip">Boxes <b>${detail.boxes.length}</b></span><span class="fg-chip">PCS <b>${detail.total_qty}</b></span><span class="fg-chip">View <b>${esc(status||'READY')}</b></span>`;$('packAlgoBlock').hidden=!(state.selectedPack?.is_mine||canAssign());$('submitPack').disabled=status==='SUBMITTED';msg(status==='SUBMITTED'?'Packed algorithm view loaded. Reset allowed.':'Existing algorithm table loaded. Re-run allowed before submit.','ok');}catch(e){msg(e.message,'error');}}
   async function submitPack(){try{if(!state.packPlan)throw Error('Packing plan required.');const r=await rpc('rr_fg_submit_assigned_pack_v788',{p_assignment_id:state.selectedPack.assignment_id,p_plan_id:state.packPlan.plan_id});msg(`${r.total_boxes} boxes / ${r.total_qty} PCS Ready for Despatch.`, 'ok');$('submitPack').disabled=true;closePackLot();await Promise.all([loadPackLots(),loadReadyBoxes()]);}catch(e){msg(e.message,'error');}}
   function dispatchEntries(){return [...$('dispatchBoxRows').querySelectorAll('tr')].filter(r=>r.querySelector('[data-dispatch-check]')?.checked).map(r=>({box_id:r.dataset.boxId,qty:Number(r.querySelector('[data-dispatch-qty]').value)}));}
   function updateDispatchSummary(){const entries=dispatchEntries(),qty=entries.reduce((n,x)=>n+(Number.isInteger(x.qty)&&x.qty>0?x.qty:0),0);$('dispatchSummary').innerHTML=`<span class="fg-chip">Selected Boxes <b>${entries.length}</b></span><span class="fg-chip">Send PCS <b>${qty}</b></span>`;}
