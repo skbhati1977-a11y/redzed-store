@@ -36,6 +36,38 @@
 })();
 </script><script>
 (function(){
+  function matrixText(text){
+    var rows={};
+    String(text||'').split(/\s*,\s*/).forEach(function(part){
+      var m=part.match(/^([^-]+)-([^×x]+)[×x](\d+)$/i);
+      if(!m)return;
+      var colour=m[1].trim(), size=m[2].trim(), qty=Number(m[3]||0);
+      if(!rows[colour])rows[colour]={};
+      rows[colour][size]=(rows[colour][size]||0)+qty;
+    });
+    var colours=Object.keys(rows).sort(function(a,b){return a.localeCompare(b,undefined,{numeric:true})});
+    var sizes=[];
+    colours.forEach(function(c){Object.keys(rows[c]).forEach(function(s){if(sizes.indexOf(s)<0)sizes.push(s)})});
+    sizes.sort(function(a,b){return ['L','XL','XXL'].indexOf(a)-['L','XL','XXL'].indexOf(b)||a.localeCompare(b,undefined,{numeric:true})});
+    if(!colours.length||!sizes.length)return text;
+    return colours.map(function(c){
+      return c+'  '+sizes.map(function(s){return s+'_'+(rows[c][s]||0)}).join('  ');
+    }).join('\n');
+  }
+  function applyMatrix(){
+    document.querySelectorAll('td[data-label="Composition"]').forEach(function(td){
+      if(td.dataset.matrixDone==='1')return;
+      var raw=td.textContent||'';
+      var next=matrixText(raw);
+      if(next!==raw){td.textContent=next;td.style.whiteSpace='pre-line';td.dataset.matrixDone='1';}
+    });
+  }
+  new MutationObserver(applyMatrix).observe(document.documentElement,{childList:true,subtree:true});
+  document.addEventListener('DOMContentLoaded',applyMatrix);
+  document.addEventListener('click',function(){setTimeout(applyMatrix,250);},true);
+})();
+</script><script>
+(function(){
   var V='9318';
   function localHtml(h){try{var u=new URL(h,location.href);return u.origin===location.origin&&/\.html$/i.test(u.pathname)}catch(e){return false}}
   document.addEventListener('click',function(e){var a=e.target&&e.target.closest?e.target.closest('a[href]'):null;if(!a||a.target||a.hasAttribute('download'))return;var h=a.getAttribute('href')||'';if(!h||h[0]==='#'||/^(mailto:|tel:|javascript:)/i.test(h)||!localHtml(h))return;var u=new URL(h,location.href);if(u.searchParams.get('v')!==V){u.searchParams.set('v',V);e.preventDefault();location.href=u.href;}},true);
