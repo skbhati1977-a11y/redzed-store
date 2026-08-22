@@ -278,7 +278,7 @@
     'rr-mobile-compat-v775'
   ))
   .then(()=>load(
-    'real-google-sheet-table-v775.js?v=884',
+      'real-google-sheet-table-v775.js?v=9324',
     'rr-google-sheet-table-v775'
   ))
   .catch(error=>console.error(error));
