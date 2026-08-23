@@ -1,17 +1,21 @@
 (()=>{
   'use strict';
-  if(window.__RR_PACK_RRQ_WA_V9346__)return;
-  window.__RR_PACK_RRQ_WA_V9346__=true;
-  const MODE='TEST';
-  const db=()=>window.supabaseClient||window.supabaseDb||window.redzedSupabase||window.sb;
-  const lot=()=>String(document.getElementById('selectedPackLot')?.textContent||'').replace(/^Lot\s+/i,'').trim();
-  const show=(t,cls='')=>{const m=document.getElementById('message');if(m){m.textContent=t;m.className='fg-msg '+cls}const x=document.getElementById('rrPicLocalMsg');if(x){x.textContent=t;x.className='fg-msg '+cls}};
-  async function rpc(name,args={}){const c=db();if(!c?.rpc)throw Error('Supabase client unavailable');const {data,error}=await c.rpc(name,args);if(error)throw error;return data;}
-  function phone(v){const d=String(v||'').replace(/\D/g,'');if(!d)return'';return d.length===10?'91'+d:d;}
-  function waUrl(item){const p=phone(item?.mobile),t=String(item?.message_text||'').trim();if(!t)return'';return p?`https://wa.me/${p}?text=${encodeURIComponent(t)}`:`https://wa.me/?text=${encodeURIComponent(t)}`;}
-  function ensurePanel(){let p=document.getElementById('rrWaQueue');if(p)return p;const anchor=document.getElementById('rrPicLocalMsg')||document.getElementById('message');p=document.createElement('div');p.id='rrWaQueue';p.style.cssText='margin:10px 0;padding:10px;border:1px solid #31445c;border-radius:12px;background:#0d1724';anchor?.parentNode?.insertBefore(p,anchor);return p;}
-  async function openItem(item){const url=waUrl(item);if(!url)throw Error('WhatsApp message missing');try{await rpc('rr_comm_mark_whatsapp_opened_v853',{p_message_id:item.message_id});}catch(_){}const w=window.open(url,'_blank','noopener,noreferrer');if(!w)window.location.href=url;}
-  function render(items){const p=ensurePanel();p.innerHTML=`<div style="font-weight:900;margin-bottom:7px">WhatsApp Rate Review Messages</div><div style="font-size:12px;opacity:.75;margin-bottom:8px">Har recipient ka message alag hai. Test me Super Admin 9654 aur baki roles 8368 par route honge.</div>`+items.map((x,i)=>`<button type="button" data-rr-wa="${i}" style="display:block;width:100%;text-align:left;margin:6px 0;padding:11px;border-radius:10px;border:1px solid #3d526c;background:#142238;color:#fff;font-weight:800">OPEN · ${String(x.recipient_name||'Recipient').replace(/[<>]/g,'')} · ${String(x.recipient_role||'').toUpperCase()}</button>`).join('');p.querySelectorAll('[data-rr-wa]').forEach(b=>b.onclick=()=>openItem(items[Number(b.dataset.rrWa)]).catch(e=>show('WhatsApp open: '+(e.message||e),'error')));}
-  async function loadQueue(l){for(let attempt=0;attempt<8;attempt++){await new Promise(r=>setTimeout(r,attempt?500:300));const q=await rpc('rr_pack_rrq_wa_pending_v9343',{p_lot_no:l,p_data_mode:MODE});const items=Array.isArray(q?.items)?q.items:[];if(!items.length)continue;render(items);show(`${items.length} WhatsApp rate-review message ready. Neeche role-wise OPEN karein.`,'ok');return;}show('Rate request save ho gayi, lekin WhatsApp messages ready nahi mile. Refresh karke retry karein.','error');}
-  document.addEventListener('click',e=>{const b=e.target?.closest?.('#rrRequestRate');if(!b)return;const l=lot();if(!l)return;setTimeout(()=>loadQueue(l).catch(err=>show('WhatsApp queue: '+String(err?.message||err),'error')),50);},true);
+  if(window.__RR_PACK_RRQ_WA_V9347__)return;
+  window.__RR_PACK_RRQ_WA_V9347__=true;
+  function init(){
+    const MODE='TEST';
+    const db=()=>window.supabaseClient||window.supabaseDb||window.redzedSupabase||window.sb;
+    const lot=()=>String(document.getElementById('selectedPackLot')?.textContent||'').replace(/^Lot\s+/i,'').trim();
+    const show=(t,cls='')=>{const m=document.getElementById('message');if(m){m.textContent=t;m.className='fg-msg '+cls}const x=document.getElementById('rrPicLocalMsg');if(x){x.textContent=t;x.className='fg-msg '+cls}};
+    async function rpc(name,args={}){const c=db();if(!c?.rpc)throw Error('Supabase client unavailable');const {data,error}=await c.rpc(name,args);if(error)throw error;return data;}
+    function phone(v){const d=String(v||'').replace(/\D/g,'');if(!d)return'';return d.length===10?'91'+d:d;}
+    function waUrl(item){const p=phone(item?.mobile),t=String(item?.message_text||'').trim();if(!t)return'';return p?`https://wa.me/${p}?text=${encodeURIComponent(t)}`:`https://wa.me/?text=${encodeURIComponent(t)}`;}
+    function ensurePanel(){let p=document.getElementById('rrWaQueue');if(p)return p;const anchor=document.getElementById('rrPicLocalMsg')||document.getElementById('message');p=document.createElement('div');p.id='rrWaQueue';p.style.cssText='margin:10px 0;padding:10px;border:1px solid #31445c;border-radius:12px;background:#0d1724';anchor?.parentNode?.insertBefore(p,anchor);return p;}
+    async function openItem(item){const url=waUrl(item);if(!url)throw Error('WhatsApp message missing');try{await rpc('rr_comm_mark_whatsapp_opened_v853',{p_message_id:item.message_id});}catch(_){}const w=window.open(url,'_blank','noopener,noreferrer');if(!w)window.location.href=url;}
+    function render(items){const p=ensurePanel();p.innerHTML=`<div style="font-weight:900;margin-bottom:7px">WhatsApp Rate Review Messages</div><div style="font-size:12px;opacity:.75;margin-bottom:8px">Har recipient ka message alag hai. Test me Super Admin 9654 aur baki roles 8368 par route honge.</div>`+items.map((x,i)=>`<button type="button" data-rr-wa="${i}" style="display:block;width:100%;text-align:left;margin:6px 0;padding:11px;border-radius:10px;border:1px solid #3d526c;background:#142238;color:#fff;font-weight:800">OPEN · ${String(x.recipient_name||'Recipient').replace(/[<>]/g,'')} · ${String(x.recipient_role||'').toUpperCase()}</button>`).join('');p.querySelectorAll('[data-rr-wa]').forEach(b=>b.onclick=()=>openItem(items[Number(b.dataset.rrWa)]).catch(e=>show('WhatsApp open: '+(e.message||e),'error')));}
+    async function loadQueue(l){for(let attempt=0;attempt<8;attempt++){await new Promise(r=>setTimeout(r,attempt?500:300));const q=await rpc('rr_pack_rrq_wa_pending_v9343',{p_lot_no:l,p_data_mode:MODE});const items=Array.isArray(q?.items)?q.items:[];if(!items.length)continue;render(items);show(`${items.length} WhatsApp rate-review message ready. Neeche role-wise OPEN karein.`,'ok');return;}show('Rate request save ho gayi, lekin WhatsApp messages ready nahi mile. Refresh karke retry karein.','error');}
+    document.addEventListener('click',e=>{const b=e.target?.closest?.('#rrRequestRate');if(!b)return;const l=lot();if(!l)return;setTimeout(()=>loadQueue(l).catch(err=>show('WhatsApp queue: '+String(err?.message||err),'error')),50);},true);
+  }
+  if(window.__RR_PACK_PRE_RATE_PHOTOS_V9347__){init();return;}
+  const s=document.createElement('script');s.src='real-packing-pre-rate-photos-v9347.js?v=9347';s.onload=init;s.onerror=init;document.head.appendChild(s);
 })();
