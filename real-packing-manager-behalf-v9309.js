@@ -1,4 +1,4 @@
-/* V9309/V9327 — allow Owner/Admin/Manager to run FG Packing accept/algorithm/submit on behalf of assigned worker; keep focus on Accept after assignment. */
+/* V9309/V9328 — locked FG Packing algorithm: manager behalf, assign→accept focus, submitted reset locked. */
 (()=>{
   'use strict';
   const canManage=()=>['owner','admin','manager'].includes(String(window.__rrProfile?.role_code||window.RR_CURRENT_PROFILE?.role_code||'').toLowerCase());
@@ -13,6 +13,11 @@
     btn.scrollIntoView({behavior:'smooth',block:'center'});
     setTimeout(()=>btn.focus({preventScroll:true}),80);
     return true;
+  }
+  function addChip(id,label){
+    const meta=document.getElementById('selectedPackMeta');
+    if(!meta||document.getElementById(id))return;
+    const chip=document.createElement('span');chip.id=id;chip.className='fg-chip';chip.textContent=label;meta.appendChild(chip);
   }
   function reopenAssignedLot(){
     if(!pendingAssignedLot)return;
@@ -37,23 +42,29 @@
   },true);
   function patch(){
     if(!/real-finished-goods-v787\.html/i.test(location.pathname))return;
-    if(!isManager())return;
     const workspace=document.getElementById('packWorkspace');
     const block=document.getElementById('workerPackBlock');
-    const btn=document.getElementById('acceptPack');
-    if(!workspace||!block||!btn)return;
+    const accept=document.getElementById('acceptPack');
+    const run=document.getElementById('runPackAlgo');
+    const pcs=document.getElementById('packPcsPerBox');
+    if(!workspace)return;
     const meta=text(document.getElementById('selectedPackMeta'));
-    if(/ASSIGNED/i.test(meta)&&!/ACCEPTED|SUBMITTED/i.test(meta)){
+    if(isManager()&&block&&accept&&/ASSIGNED/i.test(meta)&&!/ACCEPTED|SUBMITTED/i.test(meta)){
       block.hidden=false;
-      btn.textContent='ACCEPT WORK & RUN ALGORITHM';
-      if(!document.getElementById('rr9309BehalfChip')){
-        const chip=document.createElement('span');chip.id='rr9309BehalfChip';chip.className='fg-chip';chip.textContent='Admin/Manager behalf';
-        document.getElementById('selectedPackMeta')?.appendChild(chip);
-      }
+      accept.textContent='ACCEPT WORK & RUN ALGORITHM';
+      addChip('rr9309BehalfChip','Admin/Manager behalf');
       if(pendingAssignedLot&&selectedLot()===pendingAssignedLot)focusAccept();
+    }
+    if(/ACCEPTED|SUBMITTED|ALGORITHM READY/i.test(meta))addChip('rr9328AlgoLockChip','Algorithm rule locked');
+    if(/SUBMITTED/i.test(meta)){
+      if(run){run.disabled=true;run.textContent='PACKING SUBMITTED · ALGORITHM LOCKED';}
+      if(pcs)pcs.readOnly=true;
+    }else if(run&&run.textContent==='PACKING SUBMITTED · ALGORITHM LOCKED'){
+      run.disabled=false;run.textContent='RESET / RUN EQUAL PACKING ALGORITHM';
+      if(pcs)pcs.readOnly=false;
     }
     reopenAssignedLot();
   }
   const obs=new MutationObserver(()=>setTimeout(patch,0));
-  document.addEventListener('DOMContentLoaded',()=>{obs.observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['hidden']});patch();setInterval(patch,1000);},{once:true});
+  document.addEventListener('DOMContentLoaded',()=>{obs.observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['hidden','disabled']});patch();setInterval(patch,1000);},{once:true});
 })();
