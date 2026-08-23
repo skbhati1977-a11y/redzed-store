@@ -5,7 +5,7 @@
   const BUCKET="redzed-media",MODE="TEST",AI_FN="rr-ai-garment-images-v9330";
   const $=id=>document.getElementById(id);
   const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));
-  let lastLot="",gateBypass=false,selectedFiles=[];
+  let lastLot="",gateBypass=false,selectedFiles=[],aiRunning=false,uploadRunning=false;
   function db(){return window.supabaseClient||window.supabaseDb||window.redzedSupabase||window.sb}
   function msg(t,cls){const m=$("message");if(m){m.textContent=t||"";m.className="fg-msg "+(cls||"")}else console.log(t)}
   function lot(){return String($("selectedPackLot")?.textContent||"").replace(/^Lot\s+/i,"").trim()}
@@ -37,6 +37,16 @@
     if(ref&&!ref.dataset.rrBound){ref.dataset.rrBound="1";ref.addEventListener("click",e=>{e.preventDefault();loadSummary(true)})}
   }
   function localMsg(t,cls){const x=$("rrPicLocalMsg");if(x){x.textContent=t||"";x.className="fg-msg "+(cls||"")}msg(t,cls)}
+  function cleanErr(e){
+    const raw=String(e?.message||e?.context?.msg||e?.details||e||"");
+    if(/OPENAI_API_KEY|Supabase secret missing|openai.*configured/i.test(raw)){
+      return "AI service ready nahi hai: Supabase Edge Function secrets me OPENAI_API_KEY set karein, phir GENERATE 3 AI PICS retry karein.";
+    }
+    if(/FunctionsFetchError|Failed to send a request|NetworkError|fetch/i.test(raw)){
+      return "AI service connect nahi ho pa raha. Internet/Supabase Function deploy status check karke retry karein.";
+    }
+    return raw||"Unknown error";
+  }
   function collectFiles(){
     selectedFiles=[...($("rrCameraPics")?.files||[]),...($("rrGalleryPics")?.files||[])].filter(f=>/^image\//i.test(f.type||""));
     const p=$("rrPicPreview"); if(!p)return;
@@ -68,6 +78,9 @@
     return {path,image_url:pub.data.publicUrl};
   }
   async function uploadSelected(){
+    if(uploadRunning)return;
+    uploadRunning=true;
+    const up=$("rrUploadPics"); if(up){up.disabled=true;up.textContent="UPLOADING…";}
     try{
       const l=lot(); if(!l)throw Error("Lot select karein");
       if(!selectedFiles.length)throw Error("Camera/Gallery se pics select karein");
@@ -85,7 +98,8 @@
       const s=await rpc("rr_pack_save_media_v9332",{p_lot_no:l,p_items:items,p_data_mode:MODE});
       selectedFiles=[];$("rrCameraPics").value="";$("rrGalleryPics").value="";
       renderSummary(s); localMsg("Final pics saved. Ab AI Generate chalayein.","ok");
-    }catch(e){localMsg(e.message||String(e),"error")}
+    }catch(e){localMsg(cleanErr(e),"error")}
+    finally{uploadRunning=false;if(up){up.disabled=false;up.textContent="UPLOAD SELECTED FINAL PICS";}}
   }
   function b64File(b64,name){
     const bin=atob(b64),arr=new Uint8Array(bin.length);
@@ -93,6 +107,9 @@
     return new File([arr],name,{type:"image/png"});
   }
   async function generateAi(){
+    if(aiRunning)return;
+    aiRunning=true;
+    const aiBtn=$("rrGenerateAiPics"); if(aiBtn){aiBtn.disabled=true;aiBtn.textContent="GENERATING…";}
     try{
       const l=lot(); if(!l)throw Error("Lot select karein");
       const s=await rpc("rr_pack_media_summary_v9330",{p_lot_no:l,p_data_mode:MODE});
@@ -103,6 +120,7 @@
       const {data,error}=await c.functions.invoke(AI_FN,{body:{lot_no:l,image_urls:cams.map(x=>x.image_url),prompt:$("rrAiPrompt").value}});
       if(error)throw error;
       if(!data?.ok)throw Error(data?.error||"AI generation failed");
+      if(!Array.isArray(data.images_b64)||!data.images_b64.length)throw Error("AI function ne image return nahi ki.");
       const start=100+Number(s.ai_count||0),items=[];
       for(let i=0;i<(data.images_b64||[]).length;i++){
         const file=b64File(data.images_b64[i],`ai-${i+1}.png`);
@@ -112,7 +130,8 @@
       }
       const next=await rpc("rr_pack_save_media_v9332",{p_lot_no:l,p_items:items,p_data_mode:MODE});
       renderSummary(next); localMsg("AI pics generated and saved.","ok");
-    }catch(e){localMsg(e.message||String(e),"error")}
+    }catch(e){localMsg(cleanErr(e),"error")}
+    finally{aiRunning=false;if(aiBtn){aiBtn.disabled=false;aiBtn.textContent="GENERATE 3 AI PICS";}}
   }
   async function ensureGate(){
     const s=await loadSummary(true);
