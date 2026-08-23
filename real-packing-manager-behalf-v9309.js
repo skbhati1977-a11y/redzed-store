@@ -1,4 +1,4 @@
-/* V9309/V9328 — locked FG Packing algorithm: manager behalf, assign→accept focus, submitted reset locked. */
+/* V9309/V9330 — locked FG Packing algorithm + manager behalf + packing final pic AI engine loader. */
 (()=>{
   'use strict';
   const canManage=()=>['owner','admin','manager'].includes(String(window.__rrProfile?.role_code||window.RR_CURRENT_PROFILE?.role_code||'').toLowerCase());
@@ -18,6 +18,11 @@
     const meta=document.getElementById('selectedPackMeta');
     if(!meta||document.getElementById(id))return;
     const chip=document.createElement('span');chip.id=id;chip.className='fg-chip';chip.textContent=label;meta.appendChild(chip);
+  }
+  function loadPicEngine(){
+    if(window.__RR_PACKING_PIC_ENGINE_V9330__||document.getElementById('rrPackingPicEngineV9330'))return;
+    if(!/real-finished-goods-v787\.html/i.test(location.pathname))return;
+    const s=document.createElement('script');s.id='rrPackingPicEngineV9330';s.src='/redzed-store/real-packing-pic-engine-v9330.js?v=9330';s.async=false;(document.head||document.documentElement).appendChild(s);
   }
   function reopenAssignedLot(){
     if(!pendingAssignedLot)return;
@@ -42,6 +47,7 @@
   },true);
   function patch(){
     if(!/real-finished-goods-v787\.html/i.test(location.pathname))return;
+    loadPicEngine();
     const workspace=document.getElementById('packWorkspace');
     const block=document.getElementById('workerPackBlock');
     const accept=document.getElementById('acceptPack');
@@ -66,5 +72,6 @@
     reopenAssignedLot();
   }
   const obs=new MutationObserver(()=>setTimeout(patch,0));
-  document.addEventListener('DOMContentLoaded',()=>{obs.observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['hidden','disabled']});patch();setInterval(patch,1000);},{once:true});
+  document.addEventListener('DOMContentLoaded',()=>{loadPicEngine();obs.observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['hidden','disabled']});patch();setInterval(patch,1000);},{once:true});
+  loadPicEngine();
 })();
