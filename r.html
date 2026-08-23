@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>REAL FACTORY · Final Rate Review</title>
+<style>
+:root{color-scheme:dark;--bg:#0d0f13;--card:#171a20;--line:#303540;--muted:#aeb4c0;--ok:#24c875;--danger:#ed2738;--blue:#3d82f6}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:#f5f7fa;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}.page{max-width:760px;margin:auto;padding:18px 14px 40px}.top{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:16px}.brand{font-weight:900;letter-spacing:.04em}.muted{color:var(--muted)}.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:16px;margin:12px 0}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.kv{padding:11px;border:1px solid var(--line);border-radius:12px}.kv small{display:block;color:var(--muted);margin-bottom:4px}.kv b{font-size:17px}.pics{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}.pics img{width:100%;aspect-ratio:3/4;object-fit:cover;border-radius:12px;border:1px solid var(--line);background:#0b0c10}.field{display:grid;gap:7px;margin-top:12px}.field label{font-weight:800}.field input{width:100%;min-height:50px;border-radius:12px;border:1px solid var(--line);background:#0e1116;color:#fff;padding:0 14px;font-size:18px}.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}.btn{border:0;border-radius:12px;min-height:50px;padding:0 16px;font-weight:900;font-size:15px;color:#fff;background:#252a33}.btn.primary{background:var(--blue)}.btn.ok{background:var(--ok);color:#07140c}.btn.danger{background:var(--danger)}.status{padding:12px;border-radius:12px;background:#0e1116;border:1px solid var(--line);font-weight:800}.msg{margin-top:12px;padding:12px;border-radius:12px}.msg.ok{background:#0e2a1c;color:#9ef1c2}.msg.err{background:#341319;color:#ff9fa9}.hidden{display:none!important}@media(max-width:560px){.grid{grid-template-columns:1fr}.pics{grid-template-columns:repeat(3,minmax(0,1fr))}.page{padding:12px 10px 30px}}
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="top"><div><div class="brand">REAL FACTORY</div><div class="muted">Final Rate Review</div></div><a class="btn" href="real-dashboard.html">Dashboard</a></div>
+  <div id="loading" class="card">Rate request loading…</div>
+  <div id="login" class="card hidden"><b>Login required</b><p class="muted">Is approval link ko usi browser mein open karein jahan authorized REAL FACTORY login active hai.</p><a class="btn primary" href="real-dashboard.html">OPEN LOGIN / DASHBOARD</a></div>
+  <main id="app" class="hidden">
+    <section class="card"><div id="status" class="status"></div><div class="grid" style="margin-top:12px"><div class="kv"><small>Lot</small><b id="lot">—</b></div><div class="kv"><small>Qty</small><b id="qty">—</b></div><div class="kv"><small>Item</small><b id="item">—</b></div><div class="kv"><small>Size</small><b id="size">—</b></div></div><div id="pics" class="pics"></div></section>
+    <section class="card"><h3 style="margin-top:0">Rate Review</h3><div class="grid"><div class="kv"><small>Mapped Costing / Source Rate</small><b id="sourceRate">—</b></div><div class="kv"><small>Sales Suggested</small><b id="salesRate">—</b></div><div class="kv"><small>Admin Suggested</small><b id="adminRate">—</b></div><div class="kv"><small>Final Rate</small><b id="finalRate">—</b></div></div><div class="field"><label id="rateLabel">Rate</label><input id="rateInput" type="number" min="1" step="1" inputmode="numeric" placeholder="Whole rupee rate"></div><div class="actions"><button id="suggest" class="btn primary hidden" type="button">SUBMIT SUGGESTION</button><button id="approve" class="btn ok hidden" type="button">APPROVE FINAL RATE</button><button id="refresh" class="btn" type="button">REFRESH</button></div><div id="message"></div></section>
+  </main>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js?v=9358"></script>
+<script>
+(()=>{
+'use strict';
+const $=id=>document.getElementById(id),sb=()=>window.supabaseClient||window.sb;
+const token=String(location.hash||'').replace(/^#/,'').trim().toLowerCase();
+let ctx=null,busy=false;
+const money=v=>Number(v||0)>0?'₹'+Number(v).toLocaleString('en-IN',{maximumFractionDigits:0}):'—';
+function msg(t,type=''){const n=$('message');n.className=t?'msg '+(type==='ok'?'ok':'err'):'';n.textContent=t||''}
+async function rpc(name,args){const {data,error}=await sb().rpc(name,args);if(error)throw error;return data}
+function render(c){ctx=c;$('loading').classList.add('hidden');$('login').classList.add('hidden');$('app').classList.remove('hidden');$('status').textContent=`${String(c.status||'').replaceAll('_',' ')} · ${String(c.recipient_name||'Authorized User')} · ${String(c.current_role||c.recipient_role||'').toUpperCase()}`;$('lot').textContent=c.lot_no||'—';$('qty').textContent=Number(c.qty||0).toLocaleString('en-IN')+' PCS';$('item').textContent=c.item_name||'—';$('size').textContent=c.size_text||'—';$('sourceRate').textContent=money(c.source_rate);$('salesRate').textContent=money(c.sales_suggested_rate);$('adminRate').textContent=money(c.admin_suggested_rate);$('finalRate').textContent=money(c.final_rate);const imgs=Array.isArray(c.image_urls)?c.image_urls.filter(Boolean):[];$('pics').innerHTML=(imgs.length?imgs.slice(0,3):[c.image_url].filter(Boolean)).map(u=>`<img src="${String(u).replace(/"/g,'&quot;')}" alt="Final garment">`).join('');$('suggest').classList.toggle('hidden',!c.can_suggest);$('approve').classList.toggle('hidden',!c.can_approve);$('rateLabel').textContent=c.can_approve?'Final Rate (whole ₹)':c.can_suggest?'Suggested Rate (whole ₹)':'Rate';$('rateInput').disabled=!(c.can_approve||c.can_suggest);if(c.can_approve&&Number(c.admin_suggested_rate||c.sales_suggested_rate||c.source_rate)>0)$('rateInput').value=Math.round(Number(c.admin_suggested_rate||c.sales_suggested_rate||c.source_rate));}
+async function load(){if(!token){$('loading').textContent='Approval token missing.';return}try{const {data}=await sb().auth.getSession();if(!data?.session){$('loading').classList.add('hidden');$('login').classList.remove('hidden');return}render(await rpc('rr_pack_rate_token_context_v9346',{p_token:token}));msg('')}catch(e){$('loading').classList.add('hidden');$('app').classList.remove('hidden');msg(String(e?.message||e),'err')}}
+async function act(kind){if(busy)return;const rate=Number($('rateInput').value||0);if(!Number.isInteger(rate)||rate<=0){msg('Whole rupee rate enter karein.','err');return}busy=true;try{msg(kind==='approve'?'Final rate approve ho rahi hai…':'Suggestion save ho rahi hai…','');if(kind==='approve')await rpc('rr_pack_rate_token_approve_v9346',{p_token:token,p_final_rate:rate});else await rpc('rr_pack_rate_token_suggest_v9346',{p_token:token,p_suggested_rate:rate});msg(kind==='approve'?'Final rate approved successfully.':'Rate suggestion submitted successfully.','ok');$('suggest').disabled=true;$('approve').disabled=true;setTimeout(load,600)}catch(e){msg(String(e?.message||e),'err')}finally{busy=false}}
+$('suggest').onclick=()=>act('suggest');$('approve').onclick=()=>act('approve');$('refresh').onclick=load;load();
+})();
+</script>
+</body></html>
