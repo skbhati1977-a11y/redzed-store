@@ -11,14 +11,15 @@
     for(let attempt=0;attempt<8;attempt++){
       await new Promise(r=>setTimeout(r,attempt?650:350));
       const q=await rpc('rr_pack_rrq_wa_pending_v9343',{p_lot_no:l,p_data_mode:MODE});
-      const ids=Array.isArray(q?.message_ids)?q.message_ids:[];
+      const items=Array.isArray(q?.items)?q.items:[];
+      const ids=items.map(x=>x?.message_id).filter(Boolean);
       if(!ids.length)continue;
       const c=db();
       const {data,error}=await c.functions.invoke('rr-wa-operational-send-v9343',{body:{message_ids:ids}});
       if(error)throw error;
       const sent=Number(data?.sent||0);
       const failed=(data?.results||[]).filter(x=>!x.ok);
-      if(sent>0){show(`Request Admin/Super Admin ko bhej di gayi · WhatsApp ${sent} sent.`,'ok');return;}
+      if(sent>0){show(`Request messages ready · WhatsApp ${sent} sent.`,'ok');return;}
       if(failed.length)throw Error(failed[0]?.error||failed[0]?.reason||'WhatsApp send failed');
       return;
     }
