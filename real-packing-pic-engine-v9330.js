@@ -20,7 +20,11 @@
       <div class="fg-grid">
         <div class="fg-field"><label>Camera Pic</label><input id="rrCameraPics" type="file" accept="image/*" capture="environment" multiple></div>
         <div class="fg-field"><label>Gallery Pic</label><input id="rrGalleryPics" type="file" accept="image/*" multiple></div>
-        <div class="fg-field"><label>AI Prompt</label><textarea id="rrAiPrompt">Create a clean branded e-commerce garment catalog image from this factory camera photo. Keep garment design, colour, print/artwork, fabric feel and proportions accurate. Remove messy background, improve lighting, make it suitable for webstore sale card, no fake logos, no text unless already on garment.</textarea></div>
+        <div class="fg-field"><label>AI Prompt</label><textarea id="rrAiPrompt">Generate exactly 3 separate AI product images from the uploaded factory garment photos:
+1) MEN MODEL WEAR: realistic adult male model wearing the same garment, clean premium studio ecommerce look.
+2) DARK ACCESSORY FLAT LAY: same garment arranged on dark wood, charcoal grey, black or graphite base with tasteful menswear accessories laid around it.
+3) HANGING STYLE: same garment on hanger/rack/wall hook, front visible, soft clean showroom lighting like pastel pink/sky hanging samples.
+Strict product truth: keep garment colour, design, print/artwork, collar, sleeve, fabric feel, tags and proportions accurate. Remove messy background and improve lighting. No fake logos or new readable text; keep only text/logos already on the garment.</textarea></div>
       </div>
       <div class="fg-actions"><button class="fg-btn ok" id="rrUploadPics" type="button">UPLOAD SELECTED FINAL PICS</button><button class="fg-btn primary" id="rrGenerateAiPics" type="button">GENERATE 3 AI PICS</button></div><div id="rrPicLocalMsg" class="fg-msg"></div>
       <div id="rrPicStatus" class="fg-summary"></div><div id="rrPicPreview" class="rr-pic-preview"></div>`;
@@ -126,7 +130,8 @@
         const file=b64File(data.images_b64[i],`ai-${i+1}.png`);
         const path=`packing-ai/${MODE}/${encodeURIComponent(l)}/${Date.now()}-${crypto.randomUUID()}.png`;
         const u=await uploadFile(file,path);
-        items.push({media_role:"AI",variant_no:start+i,image_url:u.image_url,storage_path:u.path,caption:"[AI] Generated garment image",customer_caption:"AI generated garment image"});
+        const style=data.styles?.[i]?.caption||`AI Style ${i+1}`;
+        items.push({media_role:"AI",variant_no:start+i,image_url:u.image_url,storage_path:u.path,caption:`[AI] ${style}`,customer_caption:style});
       }
       const next=await rpc("rr_pack_save_media_v9332",{p_lot_no:l,p_items:items,p_data_mode:MODE});
       renderSummary(next); localMsg("AI pics generated and saved.","ok");
