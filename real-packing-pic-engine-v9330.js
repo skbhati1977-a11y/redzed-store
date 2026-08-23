@@ -1,169 +1,75 @@
 (()=>{
   "use strict";
-  if(window.__RR_PACKING_PIC_ENGINE_V9330__)return;
-  window.__RR_PACKING_PIC_ENGINE_V9330__=true;
+  if(window.__RR_PACKING_PIC_ENGINE_V9340__)return;
+  window.__RR_PACKING_PIC_ENGINE_V9340__=true;
   const BUCKET="redzed-media",MODE="TEST",AI_FN="rr-ai-garment-images-v9330";
-  const $=id=>document.getElementById(id);
+  const $=id=>document.getElementById(id),db=()=>window.supabaseClient||window.supabaseDb||window.redzedSupabase||window.sb;
   const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));
-  let lastLot="",gateBypass=false,selectedFiles=[],aiRunning=false,uploadRunning=false;
-  function db(){return window.supabaseClient||window.supabaseDb||window.redzedSupabase||window.sb}
-  function msg(t,cls){const m=$("message");if(m){m.textContent=t||"";m.className="fg-msg "+(cls||"")}else console.log(t)}
+  let lastLot="",gateBypass=false,selectedFiles=[],uploadRunning=false,role="",refs=[],aiState={1:0,2:0,3:0},aiRunning={1:false,2:false,3:false};
+  const prompts={
+    1:"Professional model/catalog presentation. Reference thumbnails are style-only. Keep exact uploaded garment truth. Show only factual lot/art data supplied by system; never show numeric sale rate or copied reference branding/offers.",
+    2:"Premium flat-lay catalog. Use wood or black/charcoal/grey base, tasteful neutral menswear accessories, and only actual uploaded garment colours. Arrange 2/4/6 garments when source images support it. Keep exact garment texture/design.",
+    3:"Premium hanging/product-display catalog. Use one locked hanging reference composition, and on regenerate rotate to another reference. Keep exact uploaded garment colours, cloth texture and construction; no fake additions."
+  };
   function lot(){return String($("selectedPackLot")?.textContent||"").replace(/^Lot\s+/i,"").trim()}
-  function mediaBlock(){
-    if($("rrPackPicBlock")){bindPicButtons();return $("rrPackPicBlock");}
-    const host=$("packSummary")||$("packWorkspace");
-    if(!host)return null;
-    const div=document.createElement("div");
-    div.id="rrPackPicBlock";
-    div.className="fg-panel rr-pack-pics";
-    div.innerHTML=`<div class="fg-title-row"><div><h3>Final Pics + AI Generated Pics</h3><p class="fg-muted">Submit se pehle 3 final camera/gallery pics aur 3 AI generated pics mandatory.</p></div><button class="fg-btn" id="rrPicRefresh" type="button">Refresh Pics</button></div>
-      <div class="fg-grid">
-        <div class="fg-field"><label>Camera Pic</label><input id="rrCameraPics" type="file" accept="image/*" capture="environment" multiple></div>
-        <div class="fg-field"><label>Gallery Pic</label><input id="rrGalleryPics" type="file" accept="image/*" multiple></div>
-        <div class="fg-field"><label>AI Prompt</label><textarea id="rrAiPrompt">Generate exactly 3 separate AI product images from the uploaded factory garment photos:
-1) MEN MODEL WEAR: realistic adult male model wearing the same garment, clean premium studio ecommerce look.
-2) DARK ACCESSORY FLAT LAY: same garment arranged on dark wood, charcoal grey, black or graphite base with tasteful menswear accessories laid around it.
-3) HANGING STYLE: same garment on hanger/rack/wall hook, front visible, soft clean showroom lighting like pastel pink/sky hanging samples.
-Strict product truth: keep garment colour, design, print/artwork, collar, sleeve, fabric feel, tags and proportions accurate. Remove messy background and improve lighting. No fake logos or new readable text; keep only text/logos already on the garment.</textarea></div>
-      </div>
-      <div class="fg-actions"><button class="fg-btn ok" id="rrUploadPics" type="button">UPLOAD SELECTED FINAL PICS</button><button class="fg-btn primary" id="rrGenerateAiPics" type="button">GENERATE 3 AI PICS</button></div><div id="rrPicLocalMsg" class="fg-msg"></div>
-      <div id="rrPicStatus" class="fg-summary"></div><div id="rrPicPreview" class="rr-pic-preview"></div>`;
-    host.insertAdjacentElement("afterend",div);
-    bindPicButtons();
-    return div;
-  }
-  function bindPicButtons(){
-    const cam=$("rrCameraPics"),gal=$("rrGalleryPics"),up=$("rrUploadPics"),ai=$("rrGenerateAiPics"),ref=$("rrPicRefresh");
-    if(cam&&!cam.dataset.rrBound){cam.dataset.rrBound="1";cam.addEventListener("change",collectFiles)}
-    if(gal&&!gal.dataset.rrBound){gal.dataset.rrBound="1";gal.addEventListener("change",collectFiles)}
-    if(up&&!up.dataset.rrBound){up.dataset.rrBound="1";up.addEventListener("click",e=>{e.preventDefault();e.stopPropagation();uploadSelected()})}
-    if(ai&&!ai.dataset.rrBound){ai.dataset.rrBound="1";ai.addEventListener("click",e=>{e.preventDefault();e.stopPropagation();localMsg("AI button clicked. Camera pics check ho rahe hain…");generateAi()})}
-    if(ref&&!ref.dataset.rrBound){ref.dataset.rrBound="1";ref.addEventListener("click",e=>{e.preventDefault();loadSummary(true)})}
-  }
+  function msg(t,cls){const m=$("message");if(m){m.textContent=t||"";m.className="fg-msg "+(cls||"")}console.log(t||"")}
   function localMsg(t,cls){const x=$("rrPicLocalMsg");if(x){x.textContent=t||"";x.className="fg-msg "+(cls||"")}msg(t,cls)}
-  function cleanErr(e){
-    const raw=String(e?.message||e?.context?.msg||e?.details||e||"");
-    if(/OPENAI_API_KEY|Supabase secret missing|openai.*configured/i.test(raw)){
-      return "AI service ready nahi hai: Supabase Edge Function secrets me OPENAI_API_KEY set karein, phir GENERATE 3 AI PICS retry karein.";
-    }
-    if(/FunctionsFetchError|Failed to send a request|NetworkError|fetch/i.test(raw)){
-      return "AI service connect nahi ho pa raha. Internet/Supabase Function deploy status check karke retry karein.";
-    }
-    return raw||"Unknown error";
+  async function rpc(name,args={}){const c=db();if(!c?.rpc)throw Error("Supabase client unavailable");const {data,error}=await c.rpc(name,args);if(error)throw error;return data}
+  async function currentRole(){if(role)return role;try{role=String(await rpc("rr_current_role")||"").toLowerCase()}catch(_){role=""}return role}
+  function cleanErr(e){const raw=String(e?.message||e?.context?.msg||e?.details||e||"");if(/OPENAI_API_KEY|openai.*configured/i.test(raw))return "AI service ready nahi hai. Supabase AI secret check karein.";if(/FunctionsFetchError|Failed to send a request|NetworkError|fetch/i.test(raw))return "AI service connect nahi ho pa raha. Internet/Supabase Function status check karke retry karein.";return raw||"Unknown error"}
+  function algoReady(){return !!document.querySelector("#packRows tr")}
+  function block(){
+    if($("rrCatalogEngine"))return $("rrCatalogEngine");
+    const table=$("packRows")?.closest(".fg-table-wrap")||$("packSummary");if(!table)return null;
+    const root=document.createElement("section");root.id="rrCatalogEngine";root.className="rr-catalog-engine";
+    root.innerHTML=`
+      <section class="fg-panel rr-rate-gate"><div class="fg-title-row"><div><h3>Final Rate Approval · RRQ</h3><p class="fg-muted">Packing algorithm ke baad final approval mandatory. Packing operator ko sale rate visible nahi hoga.</p></div><button class="fg-btn" id="rrRateRefresh" type="button">Refresh</button></div><div id="rrRateStatus" class="fg-summary"></div><div class="fg-actions"><button class="fg-btn primary" id="rrRequestRate" type="button">REQUEST FINAL RATE APPROVAL</button></div></section>
+      <section class="fg-panel" id="rrSourcePics" hidden><div class="fg-title-row"><div><h3>3 Final Garment Photos</h3><p class="fg-muted">Final rate approve hone ke baad Camera/Gallery se exactly product-truth photos. Specific photo delete karke replace ki ja sakti hai.</p></div><button class="fg-btn" id="rrPicRefresh" type="button">Refresh Pics</button></div><div class="fg-grid two"><div class="fg-field"><label>Camera</label><input id="rrCameraPics" type="file" accept="image/*" capture="environment" multiple></div><div class="fg-field"><label>Gallery</label><input id="rrGalleryPics" type="file" accept="image/*" multiple></div></div><div class="fg-actions"><button class="fg-btn ok" id="rrUploadPics" type="button">UPLOAD SELECTED FINAL PICS</button></div><div id="rrCameraPreview" class="rr-pic-preview"></div></section>
+      <section class="fg-panel" id="rrAiStyles" hidden><div class="fg-title-row"><div><h3>AI Catalog Images · 3 Independent Styles</h3><p class="fg-muted">Har style me ek active preview area. Regenerate history Prev/Next se browse hogi; Select Final par us style ki baki candidates permanent delete.</p></div></div><div id="rrStylePanels"></div></section>
+      <div id="rrPicLocalMsg" class="fg-msg"></div>`;
+    table.insertAdjacentElement("afterend",root);bind();return root;
   }
-  function collectFiles(){
-    selectedFiles=[...($("rrCameraPics")?.files||[]),...($("rrGalleryPics")?.files||[])].filter(f=>/^image\//i.test(f.type||""));
-    const p=$("rrPicPreview"); if(!p)return;
-    p.innerHTML=selectedFiles.map((f,i)=>`<div class="rr-thumb"><span>${i+1}</span><img src="${URL.createObjectURL(f)}" alt=""></div>`).join("");
+  function bind(){
+    const once=(id,ev,fn)=>{const n=$(id);if(n&&!n.dataset.rrBound){n.dataset.rrBound="1";n.addEventListener(ev,fn)}};
+    once("rrRateRefresh","click",()=>loadAll());once("rrRequestRate","click",requestRate);once("rrPicRefresh","click",()=>loadAll());
+    once("rrCameraPics","change",collectFiles);once("rrGalleryPics","change",collectFiles);once("rrUploadPics","click",uploadSelected);
   }
-  async function rpc(name,args){
-    const c=db(); if(!c?.rpc)throw Error("Supabase client unavailable");
-    const {data,error}=await c.rpc(name,args); if(error)throw error; return data;
+  function collectFiles(){selectedFiles=[...($("rrCameraPics")?.files||[]),...($("rrGalleryPics")?.files||[])].filter(f=>/^image\//i.test(f.type||""));localMsg(`${selectedFiles.length} image selected.`)}
+  async function uploadFile(file,path){const c=db();const up=await c.storage.from(BUCKET).upload(path,file,{contentType:file.type||"image/jpeg",upsert:false});if(up.error)throw up.error;return{path,image_url:c.storage.from(BUCKET).getPublicUrl(path).data.publicUrl}}
+  async function removePaths(paths){const clean=(paths||[]).filter(Boolean);if(!clean.length)return;const r=await db().storage.from(BUCKET).remove(clean);if(r.error)console.warn(r.error)}
+  async function requestRate(){try{if(!algoReady())throw Error("Pehle Packing Algorithm/Table complete karein.");const l=lot();if(!l)throw Error("Lot select karein");const b=$("rrRequestRate");b.disabled=true;localMsg("Final rate approval request bheji ja rahi hai…");await rpc("rr_pack_request_rate_v9340",{p_lot_no:l,p_data_mode:MODE});localMsg("Request Admin/Super Admin ko bhej di gayi.","ok");await loadAll()}catch(e){localMsg(cleanErr(e),"error")}finally{if($("rrRequestRate"))$("rrRequestRate").disabled=false}}
+  async function loadRate(){const l=lot();if(!l)return{approved:false,status:"NOT_REQUESTED"};const s=await rpc("rr_pack_rate_status_v9340",{p_lot_no:l,p_data_mode:MODE});const st=$("rrRateStatus"),req=$("rrRequestRate");if(st){const text=s.approved?`APPROVED · ${esc(s.art_code||"")}`:s.status==="NOT_REQUESTED"?"Approval not requested":`${esc(s.status)} · Admin action pending`;st.innerHTML=`<span class="fg-chip"><b>${text}</b></span>${s.approved?"":"<span class='fg-muted'>AI section locked</span>"}`}
+    if(req){req.hidden=!!s.approved;req.disabled=!algoReady()}
+    $("rrSourcePics").hidden=!s.approved;if(!s.approved)$("rrAiStyles").hidden=true;return s}
+  async function mediaSummary(){const l=lot();if(!l)return null;const s=await rpc("rr_pack_media_summary_v9330",{p_lot_no:l,p_data_mode:MODE});const cams=(s?.media||[]).filter(x=>x.media_role==="CAMERA");const p=$("rrCameraPreview");if(p)p.innerHTML=cams.map((m,i)=>`<div class="rr-thumb"><span>FINAL ${i+1}</span><img src="${esc(m.image_url||m.storage_path||"")}" alt=""><button class="rr-del" data-cam-del="${esc(m.media_id)}" data-path="${esc(m.storage_path||"")}" type="button">×</button></div>`).join("")||"<p class='fg-muted'>Abhi final garment pics nahi hain.</p>";return s}
+  async function uploadSelected(e){e?.preventDefault();if(uploadRunning)return;uploadRunning=true;const b=$("rrUploadPics");try{const rate=await loadRate();if(!rate.approved)throw Error("Final rate approval required");const l=lot(),cur=await mediaSummary(),have=Number(cur?.camera_count||0);if(!selectedFiles.length)throw Error("Camera/Gallery images select karein");if(have+selectedFiles.length>3)throw Error(`Total final garment photos 3 hi rahengi. Current ${have}/3.`);b.disabled=true;b.textContent="UPLOADING…";const items=[];for(let i=0;i<selectedFiles.length;i++){const f=selectedFiles[i],ext=(f.name.split(".").pop()||"jpg").replace(/[^a-z0-9]/gi,"").toLowerCase()||"jpg",path=`packing-final/${MODE}/${encodeURIComponent(l)}/${Date.now()}-${crypto.randomUUID()}.${ext}`,u=await uploadFile(f,path);items.push({media_role:"CAMERA",variant_no:have+i+1,image_url:u.image_url,storage_path:u.path,caption:"[CAMERA] Final packing image",customer_caption:"Final packing image"})}await rpc("rr_pack_save_media_v9332",{p_lot_no:l,p_items:items,p_data_mode:MODE});selectedFiles=[];if($("rrCameraPics"))$("rrCameraPics").value="";if($("rrGalleryPics"))$("rrGalleryPics").value="";localMsg("Final garment photos saved.","ok");await loadAll()}catch(err){localMsg(cleanErr(err),"error")}finally{uploadRunning=false;if(b){b.disabled=false;b.textContent="UPLOAD SELECTED FINAL PICS"}}}
+  async function loadRefs(){try{refs=await rpc("rr_pack_ai_style_refs_list_v9340")||[]}catch(_){refs=[]}}
+  function styleRefs(n){return refs.filter(r=>Number(r.style_no)===n)}
+  function styleName(n){return n===1?"STYLE 1 · MODEL CATALOG":n===2?"STYLE 2 · PREMIUM FLAT-LAY":"STYLE 3 · HANGING DISPLAY"}
+  async function renderStyles(){const l=lot();if(!l)return;const list=(await rpc("rr_pack_ai_list_v9340",{p_lot_no:l,p_data_mode:MODE}))?.items||[],host=$("rrStylePanels");if(!host)return;const r=await currentRole();host.innerHTML=[1,2,3].map(n=>{const arr=list.filter(x=>Number(x.style_no)===n),idx=Math.min(aiState[n]||0,Math.max(arr.length-1,0));aiState[n]=idx;const cur=arr[idx],rs=styleRefs(n);return `<article class="rr-style" data-style="${n}"><div class="fg-title-row"><div><h4>${styleName(n)}</h4><small class="fg-muted">Reference thumbnails · style only · ${r==='owner'?'Super Admin editable':'locked'}</small></div><span class="fg-chip">${arr.some(x=>x.is_final)?"FINAL SELECTED":"FINAL PENDING"}</span></div><div class="rr-ref-strip">${rs.map(x=>`<span class="rr-ref"><img src="${esc(x.image_url)}" alt=""><small>${esc(x.ref_key)}</small>${r==='owner'?`<button data-ref-del="${esc(x.id)}" data-path="${esc(x.storage_path)}" type="button">×</button>`:""}</span>`).join("")||"<span class='fg-muted'>Reference thumbnails not uploaded yet.</span>"}</div>${r==='owner'?`<label class="fg-field rr-ref-upload"><span>Add/Replace Style Reference</span><input type="file" accept="image/*" data-ref-upload="${n}"></label>`:""}<label class="fg-field"><span>Style Prompt</span><textarea data-prompt="${n}">${esc(prompts[n])}</textarea></label><div class="rr-main-preview">${cur?`<img src="${esc(cur.image_url)}" alt=""><div class="rr-counter">${idx+1}/${arr.length}${cur.is_final?" · FINAL":""}</div>`:"<div class='fg-muted'>No AI candidate yet.</div>"}</div><div class="fg-actions"><button class="fg-btn" data-prev="${n}" ${arr.length<2?'disabled':''}>← PREV</button><button class="fg-btn primary" data-gen="${n}">${arr.length?'REGENERATE':'GENERATE'}</button><button class="fg-btn" data-next="${n}" ${arr.length<2?'disabled':''}>NEXT →</button>${cur?`<button class="fg-btn danger" data-ai-del="${esc(cur.id)}" data-path="${esc(cur.storage_path)}">DELETE CURRENT</button><button class="fg-btn ok" data-final="${esc(cur.id)}">SELECT FINAL</button>`:""}<label class="fg-btn">REPLACE / UPLOAD<input type="file" accept="image/*" data-ai-upload="${n}" hidden></label></div></article>`}).join("");bindDynamic()}
+  function bindDynamic(){
+    document.querySelectorAll("[data-prev]").forEach(b=>b.onclick=()=>{const n=Number(b.dataset.prev);aiState[n]=Math.max(0,(aiState[n]||0)-1);renderStyles()});
+    document.querySelectorAll("[data-next]").forEach(b=>b.onclick=async()=>{const n=Number(b.dataset.next),l=lot(),items=(await rpc("rr_pack_ai_list_v9340",{p_lot_no:l,p_data_mode:MODE}))?.items?.filter(x=>Number(x.style_no)===n)||[];aiState[n]=Math.min(items.length-1,(aiState[n]||0)+1);renderStyles()});
+    document.querySelectorAll("[data-gen]").forEach(b=>b.onclick=()=>generateStyle(Number(b.dataset.gen)));
+    document.querySelectorAll("[data-ai-del]").forEach(b=>b.onclick=()=>deleteCandidate(b.dataset.aiDel,b.dataset.path));
+    document.querySelectorAll("[data-final]").forEach(b=>b.onclick=()=>selectFinal(b.dataset.final));
+    document.querySelectorAll("[data-ai-upload]").forEach(i=>i.onchange=()=>manualCandidate(Number(i.dataset.aiUpload),i.files?.[0]));
+    document.querySelectorAll("[data-ref-upload]").forEach(i=>i.onchange=()=>uploadReference(Number(i.dataset.refUpload),i.files?.[0]));
+    document.querySelectorAll("[data-ref-del]").forEach(b=>b.onclick=()=>deleteReference(b.dataset.refDel,b.dataset.path));
   }
-  async function loadSummary(silent=false){
-    const l=lot(); if(!l)return null;
-    mediaBlock();
-    const s=await rpc("rr_pack_media_summary_v9330",{p_lot_no:l,p_data_mode:MODE});
-    renderSummary(s);
-    if(!silent)localMsg(`Pics loaded: Camera ${s.camera_count||0}/3, AI ${s.ai_count||0}/3`,"ok");
-    return s;
-  }
-  function renderSummary(s){
-    const st=$("rrPicStatus"),pv=$("rrPicPreview"); if(!st||!pv)return;
-    st.innerHTML=`<span class="fg-chip">Camera <b>${Number(s.camera_count||0)}/3</b></span><span class="fg-chip">AI <b>${Number(s.ai_count||0)}/3</b></span><span class="fg-chip">Total <b>${Number(s.total_count||0)}</b></span>`;
-    const media=Array.isArray(s.media)?s.media:[];
-    pv.innerHTML=media.map((m,i)=>`<div class="rr-thumb"><span>${esc(m.media_role||"PIC")} ${i+1}</span><img src="${esc(m.image_url||m.storage_path||"")}" alt=""></div>`).join("")||"<p class='fg-muted'>Abhi pics nahi hain.</p>";
-  }
-  async function uploadFile(file,path){
-    const c=db(); if(!c?.storage)throw Error("Storage unavailable");
-    const up=await c.storage.from(BUCKET).upload(path,file,{contentType:file.type||"image/jpeg",upsert:false});
-    if(up.error)throw up.error;
-    const pub=c.storage.from(BUCKET).getPublicUrl(path);
-    return {path,image_url:pub.data.publicUrl};
-  }
-  async function uploadSelected(){
-    if(uploadRunning)return;
-    uploadRunning=true;
-    const up=$("rrUploadPics"); if(up){up.disabled=true;up.textContent="UPLOADING…";}
-    try{
-      const l=lot(); if(!l)throw Error("Lot select karein");
-      if(!selectedFiles.length)throw Error("Camera/Gallery se pics select karein");
-      localMsg("Upload clicked. Final pics upload ho rahi hain…");
-      const cur=await rpc("rr_pack_media_summary_v9330",{p_lot_no:l,p_data_mode:MODE});
-      const start=Number(cur.camera_count||0)+1;
-      const items=[];
-      for(let i=0;i<selectedFiles.length;i++){
-        localMsg(`Uploading ${i+1}/${selectedFiles.length}…`);
-        const f=selectedFiles[i],ext=(f.name.split(".").pop()||"jpg").replace(/[^a-z0-9]/gi,"").toLowerCase()||"jpg";
-        const path=`packing-final/${MODE}/${encodeURIComponent(l)}/${Date.now()}-${crypto.randomUUID()}.${ext}`;
-        const u=await uploadFile(f,path);
-        items.push({media_role:"CAMERA",variant_no:start+i,image_url:u.image_url,storage_path:u.path,caption:"[CAMERA] Final packing image",customer_caption:"Final packing image"});
-      }
-      const s=await rpc("rr_pack_save_media_v9332",{p_lot_no:l,p_items:items,p_data_mode:MODE});
-      selectedFiles=[];$("rrCameraPics").value="";$("rrGalleryPics").value="";
-      renderSummary(s); localMsg("Final pics saved. Ab AI Generate chalayein.","ok");
-    }catch(e){localMsg(cleanErr(e),"error")}
-    finally{uploadRunning=false;if(up){up.disabled=false;up.textContent="UPLOAD SELECTED FINAL PICS";}}
-  }
-  function b64File(b64,name){
-    const bin=atob(b64),arr=new Uint8Array(bin.length);
-    for(let i=0;i<bin.length;i++)arr[i]=bin.charCodeAt(i);
-    return new File([arr],name,{type:"image/png"});
-  }
-  async function generateAi(){
-    if(aiRunning)return;
-    aiRunning=true;
-    const aiBtn=$("rrGenerateAiPics"); if(aiBtn){aiBtn.disabled=true;aiBtn.textContent="GENERATING…";}
-    try{
-      const l=lot(); if(!l)throw Error("Lot select karein");
-      const s=await rpc("rr_pack_media_summary_v9330",{p_lot_no:l,p_data_mode:MODE});
-      const cams=(Array.isArray(s.media)?s.media:[]).filter(x=>x.media_role==="CAMERA"&&x.image_url).slice(0,3);
-      if(cams.length<3)throw Error(`AI se pehle UPLOAD SELECTED FINAL PICS dabana hoga. Uploaded camera pics: ${cams.length}/3`);
-      localMsg("AI pics generate ho rahi hain…");
-      const c=db(); if(!c?.functions)throw Error("Supabase Functions unavailable");
-      const {data,error}=await c.functions.invoke(AI_FN,{body:{lot_no:l,image_urls:cams.map(x=>x.image_url),prompt:$("rrAiPrompt").value}});
-      if(error)throw error;
-      if(!data?.ok)throw Error(data?.error||"AI generation failed");
-      if(!Array.isArray(data.images_b64)||!data.images_b64.length)throw Error("AI function ne image return nahi ki.");
-      const start=100+Number(s.ai_count||0),items=[];
-      for(let i=0;i<(data.images_b64||[]).length;i++){
-        const file=b64File(data.images_b64[i],`ai-${i+1}.png`);
-        const path=`packing-ai/${MODE}/${encodeURIComponent(l)}/${Date.now()}-${crypto.randomUUID()}.png`;
-        const u=await uploadFile(file,path);
-        const style=data.styles?.[i]?.caption||`AI Style ${i+1}`;
-        items.push({media_role:"AI",variant_no:start+i,image_url:u.image_url,storage_path:u.path,caption:`[AI] ${style}`,customer_caption:style});
-      }
-      const next=await rpc("rr_pack_save_media_v9332",{p_lot_no:l,p_items:items,p_data_mode:MODE});
-      renderSummary(next); localMsg("AI pics generated and saved.","ok");
-    }catch(e){localMsg(cleanErr(e),"error")}
-    finally{aiRunning=false;if(aiBtn){aiBtn.disabled=false;aiBtn.textContent="GENERATE 3 AI PICS";}}
-  }
-  async function ensureGate(){
-    const s=await loadSummary(true);
-    const camera=Number(s?.camera_count||0),ai=Number(s?.ai_count||0);
-    if(camera<3)throw Error(`Submit blocked: 3 final camera/gallery pics mandatory. Current ${camera}/3`);
-    if(ai<3)throw Error(`Submit blocked: 3 AI generated pics mandatory. Current ${ai}/3`);
-  }
-  document.addEventListener("click",async e=>{
-    const ai=e.target?.closest?.("#rrGenerateAiPics");
-    if(ai){e.preventDefault();e.stopImmediatePropagation();localMsg("AI button clicked. Camera pics check ho rahe hain…");generateAi();return;}
-    const up=e.target?.closest?.("#rrUploadPics");
-    if(up){e.preventDefault();e.stopImmediatePropagation();localMsg("Upload button clicked…");uploadSelected();return;}
-    const btn=e.target?.closest?.("#submitPack");
-    if(!btn||gateBypass)return;
-    e.preventDefault();e.stopImmediatePropagation();
-    try{await ensureGate();gateBypass=true;btn.click();setTimeout(()=>gateBypass=false,0)}
-    catch(err){gateBypass=false;localMsg(err.message||String(err),"error");mediaBlock()?.scrollIntoView({behavior:"smooth",block:"center"})}
-  },true);
-  function tick(){
-    const l=lot(); bindPicButtons();
-    if(l&&l!==lastLot&&!$("packWorkspace")?.hidden){lastLot=l;mediaBlock();loadSummary(true).catch(e=>localMsg(e.message,"error"))}
-  }
-  const style=document.createElement("style");
-  style.textContent=`.rr-pack-pics{margin-top:12px}.rr-pic-preview{display:grid;grid-template-columns:repeat(auto-fill,minmax(105px,1fr));gap:8px;margin-top:10px}.rr-thumb{position:relative;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:#0f1115;min-height:105px}.rr-thumb img{width:100%;height:125px;object-fit:cover;display:block}.rr-thumb span{position:absolute;left:5px;top:5px;background:#000b;color:#fff;border-radius:999px;padding:3px 6px;font-size:10px;font-weight:900;z-index:1}`;
-  document.head.appendChild(style);
-  new MutationObserver(tick).observe(document.documentElement,{childList:true,subtree:true,attributes:true,attributeFilter:["hidden"]});
-  document.addEventListener("click",()=>setTimeout(tick,80),true);
-  setInterval(bindPicButtons,1000);
-  setTimeout(tick,500);
+  function b64File(b64){const bin=atob(b64),arr=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)arr[i]=bin.charCodeAt(i);return new File([arr],"ai.png",{type:"image/png"})}
+  async function chooseRef(style){const a=styleRefs(style);if(!a.length)return null;const l=lot(),items=(await rpc("rr_pack_ai_list_v9340",{p_lot_no:l,p_data_mode:MODE}))?.items?.filter(x=>Number(x.style_no)===style)||[];return a[items.length%a.length]}
+  async function generateStyle(n){if(aiRunning[n])return;aiRunning[n]=true;try{const rate=await loadRate();if(!rate.approved)throw Error("Final rate approval required");const s=await mediaSummary(),cams=(s?.media||[]).filter(x=>x.media_role==="CAMERA"&&x.image_url).slice(0,3);if(cams.length!==3)throw Error(`AI se pehle 3 final garment photos mandatory. Current ${cams.length}/3`);const ctx=await rpc("rr_pack_catalog_context_v9340",{p_lot_no:lot(),p_data_mode:MODE}),ref=await chooseRef(n),prompt=document.querySelector(`[data-prompt="${n}"]`)?.value||prompts[n];localMsg(`${styleName(n)} generate ho rahi hai…`);const {data,error}=await db().functions.invoke(AI_FN,{body:{lot_no:lot(),style_no:n,image_urls:cams.map(x=>x.image_url),reference_urls:ref?[ref.image_url]:[],ref_key:ref?.ref_key||"",context:ctx,prompt}});if(error)throw error;if(!data?.ok||!data.image_b64)throw Error(data?.error||"AI generation failed");const f=b64File(data.image_b64),path=`packing-ai/${MODE}/${encodeURIComponent(lot())}/style-${n}/${Date.now()}-${crypto.randomUUID()}.png`,u=await uploadFile(f,path);await rpc("rr_pack_ai_save_candidate_v9340",{p_lot_no:lot(),p_style_no:n,p_image_url:u.image_url,p_storage_path:u.path,p_prompt:prompt,p_ref_key:ref?.ref_key||null,p_data_mode:MODE});const list=(await rpc("rr_pack_ai_list_v9340",{p_lot_no:lot(),p_data_mode:MODE}))?.items?.filter(x=>Number(x.style_no)===n)||[];aiState[n]=Math.max(0,list.length-1);localMsg(`${styleName(n)} candidate saved.`,"ok");await renderStyles()}catch(e){localMsg(cleanErr(e),"error")}finally{aiRunning[n]=false}}
+  async function manualCandidate(n,file){if(!file)return;try{const path=`packing-ai/${MODE}/${encodeURIComponent(lot())}/style-${n}/${Date.now()}-${crypto.randomUUID()}-${file.name.replace(/[^a-z0-9._-]/gi,"_")}`,u=await uploadFile(file,path);await rpc("rr_pack_ai_save_candidate_v9340",{p_lot_no:lot(),p_style_no:n,p_image_url:u.image_url,p_storage_path:u.path,p_prompt:"Manual replacement",p_ref_key:"MANUAL",p_data_mode:MODE});await renderStyles()}catch(e){localMsg(cleanErr(e),"error")}}
+  async function deleteCandidate(id,path){try{if(!confirm("Delete this AI image permanently?"))return;await rpc("rr_pack_ai_delete_candidate_v9340",{p_id:id});await removePaths([path]);await renderStyles();localMsg("AI image permanently deleted.","ok")}catch(e){localMsg(cleanErr(e),"error")}}
+  async function selectFinal(id){try{if(!confirm("Select as FINAL? Is style ki baki AI candidates permanent delete ho jayengi."))return;const r=await rpc("rr_pack_ai_select_final_v9340",{p_id:id});await removePaths(r?.purge_paths||[]);await renderStyles();localMsg(`Style ${r.style_no} FINAL selected. Baki candidates deleted.`,"ok")}catch(e){localMsg(cleanErr(e),"error")}}
+  async function uploadReference(n,file){if(!file)return;try{if(await currentRole()!=="owner")throw Error("Super Admin only");const ext=(file.name.split(".").pop()||"jpg"),key=`S${n}-${Date.now()}`,path=`packing-ai-reference/style-${n}/${key}.${ext}`,u=await uploadFile(file,path);await rpc("rr_pack_ai_style_ref_save_v9340",{p_style_no:n,p_image_url:u.image_url,p_storage_path:u.path,p_ref_key:key,p_sort_order:Date.now()%100000});await loadRefs();await renderStyles();localMsg("Style reference thumbnail saved.","ok")}catch(e){localMsg(cleanErr(e),"error")}}
+  async function deleteReference(id,path){try{if(!confirm("Reference thumbnail delete karein?"))return;const r=await rpc("rr_pack_ai_style_ref_delete_v9340",{p_id:id});await removePaths([r?.storage_path||path]);await loadRefs();await renderStyles()}catch(e){localMsg(cleanErr(e),"error")}}
+  async function deleteCamera(id,path){try{if(!confirm("Final garment photo delete karein?"))return;const r=await rpc("rr_pack_camera_delete_v9340",{p_media_id:id,p_lot_no:lot(),p_data_mode:MODE});await removePaths([r?.storage_path||path]);await loadAll();localMsg("Photo deleted. Replacement upload karein.","ok")}catch(e){localMsg(cleanErr(e),"error")}}
+  async function loadAll(){block();bind();try{await currentRole();const rate=await loadRate();if(!rate.approved)return;const s=await mediaSummary();await loadRefs();const ready=Number(s?.camera_count||0)===3;$("rrAiStyles").hidden=!ready;if(ready)await renderStyles()}catch(e){localMsg(cleanErr(e),"error")}}
+  async function ensureGate(){const rate=await loadRate();if(!rate.approved)throw Error("Submit blocked: Final Rate Approval pending");const s=await mediaSummary();if(Number(s?.camera_count||0)!==3)throw Error(`Submit blocked: 3 final garment photos mandatory. Current ${Number(s?.camera_count||0)}/3`);const items=(await rpc("rr_pack_ai_list_v9340",{p_lot_no:lot(),p_data_mode:MODE}))?.items||[];for(const n of [1,2,3])if(!items.some(x=>Number(x.style_no)===n&&x.is_final))throw Error(`Submit blocked: Style ${n} FINAL image select karein`)}
+  document.addEventListener("click",async e=>{const cam=e.target?.closest?.("[data-cam-del]");if(cam){e.preventDefault();deleteCamera(cam.dataset.camDel,cam.dataset.path);return}const btn=e.target?.closest?.("#submitPack");if(!btn||gateBypass)return;e.preventDefault();e.stopImmediatePropagation();try{await ensureGate();gateBypass=true;btn.click();setTimeout(()=>gateBypass=false,0)}catch(err){gateBypass=false;localMsg(err.message||String(err),"error");block()?.scrollIntoView({behavior:"smooth",block:"center"})}},true);
+  function tick(){const l=lot();bind();if(l&&l!==lastLot&&!$("packWorkspace")?.hidden){lastLot=l;block();loadAll()}else if(l&&!$("packWorkspace")?.hidden&&$("rrRequestRate"))$("rrRequestRate").disabled=!algoReady()}
+  const style=document.createElement("style");style.textContent=`.rr-catalog-engine{margin-top:10px}.rr-pic-preview{display:grid;grid-template-columns:repeat(3,minmax(90px,1fr));gap:8px;margin-top:10px}.rr-thumb{position:relative;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:#0f1115;min-height:120px}.rr-thumb img{width:100%;height:150px;object-fit:cover;display:block}.rr-thumb span{position:absolute;left:5px;top:5px;background:#000b;color:#fff;border-radius:999px;padding:3px 6px;font-size:10px;font-weight:900;z-index:1}.rr-del,.rr-ref button{position:absolute;right:4px;top:4px;border-radius:999px;padding:3px 7px;background:#5a2029}.rr-style{border:1px solid var(--line);border-radius:13px;padding:11px;margin:10px 0;background:#0d131b}.rr-style h4{margin:0}.rr-ref-strip{display:flex;gap:7px;overflow:auto;padding:8px 0}.rr-ref{position:relative;flex:0 0 76px}.rr-ref img{width:76px;height:76px;object-fit:cover;border-radius:8px;border:1px solid var(--line)}.rr-ref small{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.rr-main-preview{height:min(62vh,620px);display:grid;place-items:center;border:1px solid var(--line);border-radius:12px;background:#090c11;position:relative;overflow:hidden;margin:9px 0}.rr-main-preview img{width:100%;height:100%;object-fit:contain}.rr-counter{position:absolute;bottom:7px;right:7px;background:#000c;padding:5px 8px;border-radius:999px}.rr-style textarea{min-height:105px}.rr-ref-upload{max-width:360px}@media(max-width:600px){.rr-pic-preview{grid-template-columns:1fr 1fr}.rr-main-preview{height:460px}}`;
+  document.head.appendChild(style);new MutationObserver(tick).observe(document.documentElement,{childList:true,subtree:true,attributes:true,attributeFilter:["hidden"]});document.addEventListener("click",()=>setTimeout(tick,120),true);setInterval(tick,1200);setTimeout(tick,500);
 })();
