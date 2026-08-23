@@ -82,7 +82,7 @@
         const u=await uploadFile(f,path);
         items.push({media_role:"CAMERA",variant_no:start+i,image_url:u.image_url,storage_path:u.path,caption:"[CAMERA] Final packing image",customer_caption:"Final packing image"});
       }
-      const s=await rpc("rr_pack_save_media_v9330",{p_lot_no:l,p_items:items,p_data_mode:MODE});
+      const s=await rpc("rr_pack_save_media_v9332",{p_lot_no:l,p_items:items,p_data_mode:MODE});
       selectedFiles=[];$("rrCameraPics").value="";$("rrGalleryPics").value="";
       renderSummary(s); localMsg("Final pics saved. Ab AI Generate chalayein.","ok");
     }catch(e){localMsg(e.message||String(e),"error")}
@@ -110,7 +110,7 @@
         const u=await uploadFile(file,path);
         items.push({media_role:"AI",variant_no:start+i,image_url:u.image_url,storage_path:u.path,caption:"[AI] Generated garment image",customer_caption:"AI generated garment image"});
       }
-      const next=await rpc("rr_pack_save_media_v9330",{p_lot_no:l,p_items:items,p_data_mode:MODE});
+      const next=await rpc("rr_pack_save_media_v9332",{p_lot_no:l,p_items:items,p_data_mode:MODE});
       renderSummary(next); localMsg("AI pics generated and saved.","ok");
     }catch(e){localMsg(e.message||String(e),"error")}
   }
