@@ -2,14 +2,14 @@
  * REDZED Dealer Catalog
  * File        : config.js
  * Recovery ID : RR-005
- * Status      : RECOVERED · V9309 PACKING MANAGER BEHALF
+ * Status      : RECOVERED · V9328 PACKING ALGORITHM LOCKED
  ******************************************************************/
 const SUPABASE_URL="https://hruartsemierwhtzonei.supabase.co";
 const SUPABASE_ANON_KEY="sb_publishable_uo3dcrFuRvGsvRzPcdTV0A_5ZVwgzga";
 const CFG=Object.seal({SETTINGS:{},WHATSAPP:[],DEFAULT_WHATSAPP:null});
 const supabaseClient=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});window.supabaseClient=supabaseClient;window.supabaseDb=supabaseClient;window.redzedSupabase=supabaseClient;window.sb=supabaseClient;
 const RR_REPO_BASE="/redzed-store/";
-const RR_TRAVEL_VERSION="9309";
+const RR_TRAVEL_VERSION="9328";
 const RR_LATEST_DASHBOARD_URL=`${RR_REPO_BASE}real-dashboard-v9182.html?v=${RR_TRAVEL_VERSION}`;
 const rrIsDashboardPath=path=>/\/real-dashboard(?:-v9182)?\.html$/i.test(path||"");
 if(!rrIsDashboardPath(window.location.pathname)){
