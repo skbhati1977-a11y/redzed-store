@@ -22,7 +22,7 @@
         <div class="fg-field"><label>Gallery Pic</label><input id="rrGalleryPics" type="file" accept="image/*" multiple></div>
         <div class="fg-field"><label>AI Prompt</label><textarea id="rrAiPrompt">Create a clean branded e-commerce garment catalog image from this factory camera photo. Keep garment design, colour, print/artwork, fabric feel and proportions accurate. Remove messy background, improve lighting, make it suitable for webstore sale card, no fake logos, no text unless already on garment.</textarea></div>
       </div>
-      <div class="fg-actions"><button class="fg-btn ok" id="rrUploadPics" type="button">UPLOAD SELECTED FINAL PICS</button><button class="fg-btn primary" id="rrGenerateAiPics" type="button">GENERATE 3 AI PICS</button></div>
+      <div class="fg-actions"><button class="fg-btn ok" id="rrUploadPics" type="button">UPLOAD SELECTED FINAL PICS</button><button class="fg-btn primary" id="rrGenerateAiPics" type="button">GENERATE 3 AI PICS</button></div><div id="rrPicLocalMsg" class="fg-msg"></div>
       <div id="rrPicStatus" class="fg-summary"></div><div id="rrPicPreview" class="rr-pic-preview"></div>`;
     host.insertAdjacentElement("afterend",div);
     bindPicButtons();
@@ -33,9 +33,10 @@
     if(cam&&!cam.dataset.rrBound){cam.dataset.rrBound="1";cam.addEventListener("change",collectFiles)}
     if(gal&&!gal.dataset.rrBound){gal.dataset.rrBound="1";gal.addEventListener("change",collectFiles)}
     if(up&&!up.dataset.rrBound){up.dataset.rrBound="1";up.addEventListener("click",e=>{e.preventDefault();e.stopPropagation();uploadSelected()})}
-    if(ai&&!ai.dataset.rrBound){ai.dataset.rrBound="1";ai.addEventListener("click",e=>{e.preventDefault();e.stopPropagation();msg("AI button clicked. Camera pics check ho rahe hain…");generateAi()})}
+    if(ai&&!ai.dataset.rrBound){ai.dataset.rrBound="1";ai.addEventListener("click",e=>{e.preventDefault();e.stopPropagation();localMsg("AI button clicked. Camera pics check ho rahe hain…");generateAi()})}
     if(ref&&!ref.dataset.rrBound){ref.dataset.rrBound="1";ref.addEventListener("click",e=>{e.preventDefault();loadSummary(true)})}
   }
+  function localMsg(t,cls){const x=$("rrPicLocalMsg");if(x){x.textContent=t||"";x.className="fg-msg "+(cls||"")}msg(t,cls)}
   function collectFiles(){
     selectedFiles=[...($("rrCameraPics")?.files||[]),...($("rrGalleryPics")?.files||[])].filter(f=>/^image\//i.test(f.type||""));
     const p=$("rrPicPreview"); if(!p)return;
@@ -50,7 +51,7 @@
     mediaBlock();
     const s=await rpc("rr_pack_media_summary_v9330",{p_lot_no:l,p_data_mode:MODE});
     renderSummary(s);
-    if(!silent)msg(`Pics loaded: Camera ${s.camera_count||0}/3, AI ${s.ai_count||0}/3`,"ok");
+    if(!silent)localMsg(`Pics loaded: Camera ${s.camera_count||0}/3, AI ${s.ai_count||0}/3`,"ok");
     return s;
   }
   function renderSummary(s){
@@ -70,11 +71,12 @@
     try{
       const l=lot(); if(!l)throw Error("Lot select karein");
       if(!selectedFiles.length)throw Error("Camera/Gallery se pics select karein");
-      msg("Final pics upload ho rahi hain…");
+      localMsg("Upload clicked. Final pics upload ho rahi hain…");
       const cur=await rpc("rr_pack_media_summary_v9330",{p_lot_no:l,p_data_mode:MODE});
       const start=Number(cur.camera_count||0)+1;
       const items=[];
       for(let i=0;i<selectedFiles.length;i++){
+        localMsg(`Uploading ${i+1}/${selectedFiles.length}…`);
         const f=selectedFiles[i],ext=(f.name.split(".").pop()||"jpg").replace(/[^a-z0-9]/gi,"").toLowerCase()||"jpg";
         const path=`packing-final/${MODE}/${encodeURIComponent(l)}/${Date.now()}-${crypto.randomUUID()}.${ext}`;
         const u=await uploadFile(f,path);
@@ -82,8 +84,8 @@
       }
       const s=await rpc("rr_pack_save_media_v9330",{p_lot_no:l,p_items:items,p_data_mode:MODE});
       selectedFiles=[];$("rrCameraPics").value="";$("rrGalleryPics").value="";
-      renderSummary(s); msg("Final pics saved. Ab AI Generate chalayein.","ok");
-    }catch(e){msg(e.message||String(e),"error")}
+      renderSummary(s); localMsg("Final pics saved. Ab AI Generate chalayein.","ok");
+    }catch(e){localMsg(e.message||String(e),"error")}
   }
   function b64File(b64,name){
     const bin=atob(b64),arr=new Uint8Array(bin.length);
@@ -96,7 +98,7 @@
       const s=await rpc("rr_pack_media_summary_v9330",{p_lot_no:l,p_data_mode:MODE});
       const cams=(Array.isArray(s.media)?s.media:[]).filter(x=>x.media_role==="CAMERA"&&x.image_url).slice(0,3);
       if(cams.length<3)throw Error(`AI se pehle UPLOAD SELECTED FINAL PICS dabana hoga. Uploaded camera pics: ${cams.length}/3`);
-      msg("AI pics generate ho rahi hain…");
+      localMsg("AI pics generate ho rahi hain…");
       const c=db(); if(!c?.functions)throw Error("Supabase Functions unavailable");
       const {data,error}=await c.functions.invoke(AI_FN,{body:{lot_no:l,image_urls:cams.map(x=>x.image_url),prompt:$("rrAiPrompt").value}});
       if(error)throw error;
@@ -109,8 +111,8 @@
         items.push({media_role:"AI",variant_no:start+i,image_url:u.image_url,storage_path:u.path,caption:"[AI] Generated garment image",customer_caption:"AI generated garment image"});
       }
       const next=await rpc("rr_pack_save_media_v9330",{p_lot_no:l,p_items:items,p_data_mode:MODE});
-      renderSummary(next); msg("AI pics generated and saved.","ok");
-    }catch(e){msg(e.message||String(e),"error")}
+      renderSummary(next); localMsg("AI pics generated and saved.","ok");
+    }catch(e){localMsg(e.message||String(e),"error")}
   }
   async function ensureGate(){
     const s=await loadSummary(true);
@@ -120,18 +122,18 @@
   }
   document.addEventListener("click",async e=>{
     const ai=e.target?.closest?.("#rrGenerateAiPics");
-    if(ai){e.preventDefault();e.stopPropagation();msg("AI button clicked. Camera pics check ho rahe hain…");generateAi();return;}
+    if(ai){e.preventDefault();e.stopImmediatePropagation();localMsg("AI button clicked. Camera pics check ho rahe hain…");generateAi();return;}
     const up=e.target?.closest?.("#rrUploadPics");
-    if(up){e.preventDefault();e.stopPropagation();uploadSelected();return;}
+    if(up){e.preventDefault();e.stopImmediatePropagation();localMsg("Upload button clicked…");uploadSelected();return;}
     const btn=e.target?.closest?.("#submitPack");
     if(!btn||gateBypass)return;
     e.preventDefault();e.stopImmediatePropagation();
     try{await ensureGate();gateBypass=true;btn.click();setTimeout(()=>gateBypass=false,0)}
-    catch(err){gateBypass=false;msg(err.message||String(err),"error");mediaBlock()?.scrollIntoView({behavior:"smooth",block:"center"})}
+    catch(err){gateBypass=false;localMsg(err.message||String(err),"error");mediaBlock()?.scrollIntoView({behavior:"smooth",block:"center"})}
   },true);
   function tick(){
     const l=lot(); bindPicButtons();
-    if(l&&l!==lastLot&&!$("packWorkspace")?.hidden){lastLot=l;mediaBlock();loadSummary(true).catch(e=>msg(e.message,"error"))}
+    if(l&&l!==lastLot&&!$("packWorkspace")?.hidden){lastLot=l;mediaBlock();loadSummary(true).catch(e=>localMsg(e.message,"error"))}
   }
   const style=document.createElement("style");
   style.textContent=`.rr-pack-pics{margin-top:12px}.rr-pic-preview{display:grid;grid-template-columns:repeat(auto-fill,minmax(105px,1fr));gap:8px;margin-top:10px}.rr-thumb{position:relative;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:#0f1115;min-height:105px}.rr-thumb img{width:100%;height:125px;object-fit:cover;display:block}.rr-thumb span{position:absolute;left:5px;top:5px;background:#000b;color:#fff;border-radius:999px;padding:3px 6px;font-size:10px;font-weight:900;z-index:1}`;
