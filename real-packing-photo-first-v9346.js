@@ -132,3 +132,19 @@
   document.addEventListener('click',()=>setTimeout(schedulePatch,120),true);
   [250,600,1200].forEach(ms=>setTimeout(schedulePatch,ms));
 })();
+
+(()=>{
+  'use strict';
+  if(window.__RR_PACK_SUBMIT_SYNC_9356__)return;window.__RR_PACK_SUBMIT_SYNC_9356__=true;
+  const MODE='TEST',$=id=>document.getElementById(id),db=()=>window.supabaseClient||window.supabaseDb||window.redzedSupabase||window.sb;
+  const lot=()=>String($('selectedPackLot')?.textContent||'').replace(/^Lot\s+/i,'').trim();
+  const algoReady=()=>!!document.querySelector('#packRows tr');
+  let busy=false;
+  async function rpc(name,args={}){const c=db();if(!c?.rpc)throw Error('Supabase client unavailable');const {data,error}=await c.rpc(name,args);if(error)throw error;return data}
+  function all3Final(items){return [1,2,3].every(n=>(items||[]).some(x=>Number(x.style_no)===n&&x.is_final===true))}
+  async function sync(){const l=lot(),btn=$('submitPack');if(!l||!btn||!algoReady()||busy)return;busy=true;try{const [rate,media,ai]=await Promise.all([rpc('rr_pack_rate_status_v9340',{p_lot_no:l,p_data_mode:MODE}),rpc('rr_pack_media_summary_v9330',{p_lot_no:l,p_data_mode:MODE}),rpc('rr_pack_ai_list_v9340',{p_lot_no:l,p_data_mode:MODE})]);const photos=Math.min(3,Number(media?.camera_count||0));const finals=all3Final(ai?.items||[]);const ready=!!rate?.approved&&photos===3&&finals&&algoReady();btn.disabled=!ready;btn.title=ready?'':!rate?.approved?'Final rate approval pending':photos!==3?`Final garment photos ${photos}/3`:!finals?'Style 1, Style 2, Style 3 final selection pending':'Packing algorithm required';}catch(e){console.warn('submit sync',e)}finally{busy=false}}
+  const trigger=()=>{setTimeout(sync,80);setTimeout(sync,350);setTimeout(sync,900)};
+  document.addEventListener('click',e=>{if(e.target?.closest?.('[data-final],#rrRateRefresh,#rrPicRefresh,#rrUploadPics,#runPackAlgo'))trigger()},true);
+  new MutationObserver(trigger).observe(document.documentElement,{childList:true,subtree:true});
+  setInterval(sync,1500);[300,800,1600,2800].forEach(ms=>setTimeout(sync,ms));
+})();
