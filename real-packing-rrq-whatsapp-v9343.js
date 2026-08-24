@@ -14,4 +14,13 @@
   async function sendPending(l){if(!l||done.has(l))return;if(inflight.has(l))return inflight.get(l);const task=(async()=>{try{for(let attempt=0;attempt<8;attempt++){await sleep(attempt?700:500);let q;try{q=await rpc('rr_pack_rrq_wa_pending_v9343',{p_lot_no:l,p_data_mode:MODE})}catch(e){if(transient(e))continue;throw e}const items=Array.isArray(q?.items)?q.items:[];const ids=[...new Set(items.map(x=>x?.message_id).filter(Boolean))];if(!ids.length)continue;let data;try{data=await invokeWA(ids)}catch(e){if(transient(e))continue;throw e}const sent=Number(data?.sent||0);const failed=(data?.results||[]).filter(x=>!x.ok);if(sent>0){done.add(l);show(`Request messages ready · WhatsApp ${sent} sent.`,'ok');return;}if(failed.length)throw Error(failed[0]?.error||failed[0]?.reason||'WhatsApp send failed');return;}show('Rate request saved. WhatsApp send network retry pending; Refresh se retry karein.','error');}finally{inflight.delete(l)}})();inflight.set(l,task);return task;}
   document.addEventListener('click',e=>{const b=e.target?.closest?.('#rrRequestRate');if(!b)return;const l=lot();if(!l)return;done.delete(l);setTimeout(()=>sendPending(l).catch(err=>show('WhatsApp send: '+String(err?.message||err),'error')),250);},true);
   document.addEventListener('click',e=>{if(!e.target?.closest?.('#rrRateRefresh'))return;const l=lot();if(!l)return;done.delete(l);setTimeout(()=>sendPending(l).catch(err=>show('WhatsApp send: '+String(err?.message||err),'error')),300);},true);
+
+  // V9356 despatch/receive extension loader. Packing/RRQ logic above is unchanged.
+  if(!document.querySelector('script[data-rr-despatch-9356]')){
+    const s=document.createElement('script');
+    s.src='real-despatch-grouped-v9356.js?v=9356';
+    s.async=false;
+    s.dataset.rrDespatch9356='1';
+    document.head.appendChild(s);
+  }
 })();
