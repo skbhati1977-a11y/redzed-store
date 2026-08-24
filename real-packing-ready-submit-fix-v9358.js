@@ -3,9 +3,26 @@
 /* Keep exactly one Ready Packing Lots bridge. If the proven manager bridge already owns the RPC,
    do not wrap it again. If it does not, install the same proven direct REST bridge here. */
 window.__RR_PACK_SUBMIT_SYNC_9356__=true;
-if(window.__RR_PACK_READY_RPC_FIX_9370__)return;
-window.__RR_PACK_READY_RPC_FIX_9370__=true;
+if(window.__RR_PACK_READY_RPC_FIX_9371__)return;
+window.__RR_PACK_READY_RPC_FIX_9371__=true;
 const TARGET='rr_fg_ready_packing_cards_v788';
+
+/* Finished Goods permission compatibility.
+   Database roles use operator suffixes (packing_operator etc.) while the old page allowed short names (packing/store).
+   Expand only this page's allowed role list before core boot so a valid operator is not rejected and boot does not stop. */
+(function patchRoleAliases(){
+  if(!window.RR?.requireRoles||window.RR.__fgRoleAlias9371)return;
+  const original=window.RR.requireRoles.bind(window.RR);
+  window.RR.requireRoles=async function(allowedRoles){
+    const roles=[...(allowedRoles||[])];
+    const add=(r)=>{if(!roles.includes(r))roles.push(r);};
+    if(roles.includes('packing'))add('packing_operator');
+    if(roles.includes('store'))add('store_operator');
+    if(roles.includes('accounts'))add('account');
+    return original(roles);
+  };
+  window.RR.__fgRoleAlias9371=true;
+})();
 
 function install(){
   const c=window.supabaseClient||window.supabaseDb||window.redzedSupabase||window.sb;
