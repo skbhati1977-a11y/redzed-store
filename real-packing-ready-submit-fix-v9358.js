@@ -1,79 +1,80 @@
 (()=>{
 'use strict';
-/* V9367 permanent Ready Lots fix. Restores the previously proven direct REST bridge for ONLY rr_fg_ready_packing_cards_v788. */
+/* Permanent Ready Packing Lots transport: direct REST only for rr_fg_ready_packing_cards_v788.
+   Never falls back to a hanging Supabase rpc call. Session lookup, HTTP request and retries are all bounded. */
 window.__RR_PACK_SUBMIT_SYNC_9356__=true;
-if(window.__RR_PACK_READY_REST_BRIDGE_9367__)return;
-window.__RR_PACK_READY_REST_BRIDGE_9367__=true;
-
-const text=x=>String(x?.textContent||'').replace(/\s+/g,' ').trim();
+if(window.__RR_PACK_READY_RPC_FIX_9368__)return;
+window.__RR_PACK_READY_RPC_FIX_9368__=true;
+const TARGET='rr_fg_ready_packing_cards_v788';
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
-const withTimeout=(p,ms,label)=>Promise.race([p,new Promise((_,rej)=>setTimeout(()=>rej(new Error(label||'Timeout')),ms))]);
+const bounded=(promise,ms,label)=>Promise.race([promise,new Promise((_,rej)=>setTimeout(()=>rej(new Error(label||'Request timeout')),ms))]);
 
-function db(){return window.supabaseClient||window.supabaseDb||window.redzedSupabase||window.sb;}
-function baseAndKey(c){
-  const base=String(window.RF_SUPABASE_URL||window.SUPABASE_URL||c?.supabaseUrl||'').replace(/\/$/,'');
-  const key=String(window.RF_SUPABASE_ANON_KEY||window.SUPABASE_ANON_KEY||c?.supabaseKey||'');
-  return{base,key};
-}
-
-async function readyRest(args={}){
-  const c=db();if(!c?.auth)throw Error('Supabase client unavailable');
-  const {base,key}=baseAndKey(c);if(!base||!key)throw Error('Supabase config unavailable');
-  let token=key;
+async function readyRest(c,args){
+  const sessionRes=await bounded(c.auth.getSession(),3500,'Login session timeout');
+  if(sessionRes?.error)throw sessionRes.error;
+  const session=sessionRes?.data?.session;
+  const token=session?.access_token;
+  if(!token)throw new Error('Login session required');
+  const base=(typeof SUPABASE_URL!=='undefined'&&SUPABASE_URL)||c.supabaseUrl;
+  const key=(typeof SUPABASE_ANON_KEY!=='undefined'&&SUPABASE_ANON_KEY)||c.supabaseKey;
+  if(!base||!key)throw new Error('Supabase configuration unavailable');
+  const ctl=new AbortController();
+  const timer=setTimeout(()=>ctl.abort(),8000);
   try{
-    const s=await withTimeout(c.auth.getSession(),3500,'Login session timeout');
-    token=s?.data?.session?.access_token||key;
-  }catch(e){console.warn('Ready Lots session fallback',e);}
-
-  let last=null;
-  for(let attempt=1;attempt<=3;attempt++){
-    const ctl=new AbortController();
-    const timer=setTimeout(()=>ctl.abort(),8000);
-    try{
-      const res=await fetch(`${base}/rest/v1/rpc/rr_fg_ready_packing_cards_v788`,{
-        method:'POST',
-        headers:{'Content-Type':'application/json','apikey':key,'Authorization':`Bearer ${token}`},
-        body:JSON.stringify({p_data_mode:args?.p_data_mode||'TEST'}),
-        signal:ctl.signal,
-        cache:'no-store'
-      });
-      const raw=await res.text();
-      let data=null;try{data=raw?JSON.parse(raw):null}catch(_){data=raw}
-      if(!res.ok)throw Error(data?.message||data?.error||raw||`Ready Lots HTTP ${res.status}`);
-      return data;
-    }catch(e){
-      last=e;
-      if(attempt<3)await sleep(300*attempt);
-    }finally{clearTimeout(timer);}
-  }
-  throw(last||new Error('Ready Lots could not load'));
+    const res=await fetch(`${base}/rest/v1/rpc/${TARGET}`,{
+      method:'POST',
+      headers:{'Content-Type':'application/json','apikey':key,'Authorization':`Bearer ${token}`},
+      body:JSON.stringify(args||{}),
+      signal:ctl.signal,
+      cache:'no-store'
+    });
+    const raw=await res.text();
+    let data=null;try{data=raw?JSON.parse(raw):null}catch(_){data=raw}
+    if(!res.ok)throw new Error(data?.message||data?.hint||raw||`Ready Lots HTTP ${res.status}`);
+    return data;
+  }finally{clearTimeout(timer)}
 }
 
 function install(){
-  const c=db();if(!c?.rpc)return false;
-  if(c.__rrReadyRestBridge9367)return true;
-  const originalRpc=c.rpc.bind(c);
-  c.rpc=async function(name,args,options){
-    if(name!=='rr_fg_ready_packing_cards_v788')return originalRpc(name,args,options);
-    try{return{data:await readyRest(args),error:null,status:200};}
-    catch(error){return{data:null,error:{message:error?.name==='AbortError'?'Ready Lots server timeout. Refresh karein.':String(error?.message||error)},status:0};}
+  const c=window.supabaseClient||window.supabaseDb||window.redzedSupabase||window.sb;
+  if(!c?.rpc||!c?.auth)return false;
+  if(c.__rrReadyOnly9368)return true;
+  const orig=c.rpc.bind(c);
+  c.rpc=function(name,args,options){
+    if(name!==TARGET)return orig(name,args,options);
+    return (async()=>{
+      let last=null;
+      for(let i=0;i<3;i++){
+        try{
+          const data=await readyRest(c,args);
+          return {data,error:null,status:200};
+        }catch(e){
+          last=e;
+          console.warn(`Ready Lots direct attempt ${i+1} failed`,e);
+          if(i<2)await sleep(450*(i+1));
+        }
+      }
+      return {data:null,error:last||new Error('Ready Lots could not load')};
+    })();
   };
-  c.__rrReadyRestBridge9367=true;
+  c.__rrReadyOnly9368=true;
   return true;
 }
 
-function retryIfStuck(){
-  if(!install())return;
-  const cards=document.getElementById('packLotCards'),msg=document.getElementById('message');
-  const stuck=/Ready lots load ho rahe hain/i.test(text(cards))||/Press se Ready Lots fetch ho rahe hain/i.test(text(msg));
-  if(!stuck)return;
-  const b=document.getElementById('refreshPackLots');
-  if(b&&!b.disabled)b.click();
-}
+[0,25,75,150,300,600,1200,2400].forEach(ms=>setTimeout(install,ms));
 
-[0,40,100,220,450,900,1500].forEach(ms=>setTimeout(install,ms));
-document.addEventListener('DOMContentLoaded',()=>{
-  install();
-  [450,1200,2600,5200].forEach(ms=>setTimeout(retryIfStuck,ms));
-},{once:true});
+/* If the app was already showing the initial loading placeholder when this bridge became active,
+   trigger exactly one bounded reload attempt from the existing Refresh button. */
+let kicked=false;
+function kickIfStuck(){
+  if(kicked||!install())return;
+  const cards=document.getElementById('packLotCards');
+  const btn=document.getElementById('refreshPackLots');
+  if(!cards||!btn)return;
+  if(/Ready lots load ho rahe hain/i.test(String(cards.textContent||''))){
+    kicked=true;
+    btn.click();
+  }
+}
+[500,1200,2500,5000].forEach(ms=>setTimeout(kickIfStuck,ms));
 })();
