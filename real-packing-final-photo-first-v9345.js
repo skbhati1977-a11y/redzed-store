@@ -1,7 +1,7 @@
 (()=>{
   'use strict';
-  if(window.__RR_PACKING_FINAL_PHOTO_FIRST_V9345__)return;
-  window.__RR_PACKING_FINAL_PHOTO_FIRST_V9345__=true;
+  if(window.__RR_PACKING_FINAL_PHOTO_FIRST_V9351__)return;
+  window.__RR_PACKING_FINAL_PHOTO_FIRST_V9351__=true;
   const MODE='TEST',BUCKET='redzed-media',$=id=>document.getElementById(id),db=()=>window.supabaseClient||window.supabaseDb||window.redzedSupabase||window.sb;
   const lot=()=>String($('selectedPackLot')?.textContent||'').replace(/^Lot\s+/i,'').trim();
   let photoCount=0,uploading=false,lastLot='',refreshing=false,rateBypass=false;
@@ -32,21 +32,7 @@
       };
       c.__rrFgReadyBridge9348=true;
     }
-    if(window.RR?.requireRoles&&!window.RR.__fgRequireRolesBridge9348){
-      const originalRequire=window.RR.requireRoles.bind(window.RR);
-      window.RR.requireRoles=async function(allowedRoles){
-        try{return await originalRequire(allowedRoles)}catch(error){
-          if(!/Required permission/i.test(String(error?.message||error)))throw error;
-          const c=db();const {data:sess,error:se}=await c.auth.getSession();if(se||!sess?.session)throw error;
-          let role='';try{role=String(await nativeRpc('rr_current_role')||'').trim().toLowerCase()}catch(_){throw error}
-          const allowed=new Set((allowedRoles||[]).map(x=>String(x||'').trim().toLowerCase()));
-          if(!role||!allowed.has(role))throw error;
-          const user=sess.session.user;
-          return {session:sess.session,user,profile:{id:null,full_name:role==='owner'?'Super Admin':'Authorized User',role_code:role,is_active:true}};
-        }
-      };
-      window.RR.__fgRequireRolesBridge9348=true;
-    }
+    /* Keep this bridge scoped to Ready Lots RPC only. Auth/role boot stays with real-common.js. */
   }
 
   installBootBridges();
