@@ -36,10 +36,31 @@ $$;
 
 create or replace function public.rr_fg_packing_workers_v788()
 returns jsonb language sql stable security definer set search_path=public as $$
- select coalesce(jsonb_agg(jsonb_build_object('user_id',u.user_id,'display_name',u.display_name,
- 'worker_code',to_jsonb(u)->>'worker_code') order by u.display_name),'[]'::jsonb)
- from rr_user_assignments_v2 u where coalesce(u.is_active,false)
- and upper(coalesce(u.department_code,'')) in('PACK','PACKING')
+ with mapped_workers as(
+   select u.user_id,u.display_name,to_jsonb(u)->>'worker_code' worker_code
+   from rr_user_assignments_v2 u
+   where coalesce(u.is_active,false)
+     and upper(coalesce(u.department_code,'')) in('PACK','PACKING')
+   union all
+   select coalesce(w.linked_auth_user_id,w.worker_id) user_id,w.worker_name display_name,w.worker_code
+   from rr_upm_worker_list_v8_3('PACKING') w
+   where coalesce(w.is_active,false)
+   union all
+   select coalesce(w.linked_auth_user_id,w.worker_id) user_id,w.worker_name display_name,w.worker_code
+   from rr_upm_worker_list_v8_3('PACK') w
+   where coalesce(w.is_active,false)
+ ), clean_workers as(
+   select distinct on(user_id) user_id,display_name,worker_code
+   from mapped_workers
+   where user_id is not null and nullif(trim(display_name),'') is not null
+   order by user_id,display_name,worker_code
+ )
+ select coalesce(jsonb_agg(jsonb_build_object(
+   'user_id',user_id,
+   'display_name',display_name,
+   'worker_code',worker_code
+ ) order by display_name,worker_code),'[]'::jsonb)
+ from clean_workers
 $$;
 
 create or replace function public.rr_fg_ready_packing_cards_v788(p_data_mode text default 'TEST')
@@ -85,15 +106,33 @@ declare m jsonb;q int;n text;w record;a uuid;begin
  perform rr_fg_assert_user_v787();
  if not rr_fg_is_pack_assigner_v788() then raise exception 'Owner/Admin/Manager assignment required';end if;
  if p_data_mode not in('TEST','REAL') then raise exception 'Invalid data mode';end if;
- select u.display_name,to_jsonb(u)->>'worker_code' worker_code into w from rr_user_assignments_v2 u
- where u.user_id=p_worker_user_id and coalesce(u.is_active,false) and upper(coalesce(u.department_code,'')) in('PACK','PACKING');
+ with mapped_workers as(
+   select u.user_id,u.display_name,to_jsonb(u)->>'worker_code' worker_code
+   from rr_user_assignments_v2 u
+   where coalesce(u.is_active,false)
+     and upper(coalesce(u.department_code,'')) in('PACK','PACKING')
+     and u.user_id=p_worker_user_id
+   union all
+   select coalesce(w.linked_auth_user_id,w.worker_id) user_id,w.worker_name display_name,w.worker_code
+   from rr_upm_worker_list_v8_3('PACKING') w
+   where coalesce(w.is_active,false)
+     and (w.linked_auth_user_id=p_worker_user_id or w.worker_id=p_worker_user_id)
+   union all
+   select coalesce(w.linked_auth_user_id,w.worker_id) user_id,w.worker_name display_name,w.worker_code
+   from rr_upm_worker_list_v8_3('PACK') w
+   where coalesce(w.is_active,false)
+     and (w.linked_auth_user_id=p_worker_user_id or w.worker_id=p_worker_user_id)
+ )
+ select x.user_id,x.display_name,x.worker_code into w from mapped_workers x
+ where nullif(trim(x.display_name),'') is not null
+ order by x.display_name,x.worker_code limit 1;
  if not found then raise exception 'Active Packing Worker required';end if;
  m:=rr_fg_packable_matrix_v787(trim(p_lot_no),p_data_mode);
  select coalesce(sum((x->>'qty')::int),0) into q from jsonb_array_elements(m)x;
  if q<=0 then raise exception 'Press Ready quantity not found for Lot %',p_lot_no;end if;
  n:=rr_fg_next_no_v787('PACK_HANDOVER',p_data_mode,case when p_data_mode='TEST' then 'TPH' else 'PH' end);
  insert into rr_fg_packing_assignments_v788(handover_no,lot_no,source_matrix,ready_qty,worker_user_id,worker_name,worker_code,data_mode)
- values(n,trim(p_lot_no),m,q,p_worker_user_id,w.display_name,w.worker_code,p_data_mode)returning id into a;
+ values(n,trim(p_lot_no),m,q,w.user_id,w.display_name,w.worker_code,p_data_mode)returning id into a;
  return jsonb_build_object('assignment_id',a,'handover_no',n,'lot_no',trim(p_lot_no),'ready_qty',q,'worker_name',w.display_name);
 end$$;
 
