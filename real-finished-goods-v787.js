@@ -111,6 +111,14 @@
   async function boot(){
     const auth=await RR.requireRoles(['owner','admin','manager','packing','store','sales','accounts']); state.profile=auth.profile; const role=String(auth.profile.role_code||'').toLowerCase();$('operator').textContent=['owner','admin'].includes(role)?'SUPER ADMIN':(auth.profile.full_name||'Authorized User');
     bind(); await Promise.allSettled([loadPackLots(),loadPackWorkers(),loadReadyBoxes(),loadChallans(),loadStock(),loadCpis(),loadSuggestions()]);
+    scheduleInitialPackLoad();
+  }
+  function scheduleInitialPackLoad(){
+    if(params.get('view')&&params.get('view')!=='packing')return;
+    [500,1400,2800].forEach(ms=>setTimeout(async()=>{
+      if(state.packLots.length)return;
+      try{await loadPackWorkers();await loadPackLots();}catch(e){console.warn(e);}
+    },ms));
   }
   function bind(){
     $('tabs').addEventListener('click',e=>{const b=e.target.closest('[data-tab]');if(!b)return;document.querySelectorAll('[data-tab]').forEach(x=>x.classList.toggle('active',x===b));document.querySelectorAll('[data-view]').forEach(x=>x.hidden=x.dataset.view!==b.dataset.tab);msg('');});
