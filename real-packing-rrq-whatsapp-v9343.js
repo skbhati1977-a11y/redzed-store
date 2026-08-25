@@ -47,6 +47,8 @@
     btn.addEventListener('click',async()=>{
       const l=lot();
       if(!l){show('Lot select karein.','error');return}
+      if(window.__RR_ACTION_BUSY__&&window.__RR_ACTION_OWNER__!==btn){show('Ek action already chal raha hai. Pehle uske complete hone ka wait karein.','error');return}
+      window.__RR_ACTION_BUSY__=true;window.__RR_ACTION_OWNER__=btn;
       btn.disabled=true;
       const old=btn.textContent;
       btn.textContent='WhatsApp ready ho raha hai...';
@@ -57,7 +59,7 @@
         openWhatsapp(waPhone(item),waText(item),{sameTabFallback:true});
         show('WhatsApp open ho raha hai. Chat khulne par Send dabayein.','ok');
       }catch(e){show(String(e?.message||e),'error')}
-      finally{btn.disabled=false;btn.textContent=old}
+      finally{btn.disabled=false;btn.textContent=old;if(window.__RR_ACTION_OWNER__===btn){window.__RR_ACTION_BUSY__=false;window.__RR_ACTION_OWNER__=null}}
     });
     return btn;
   }
