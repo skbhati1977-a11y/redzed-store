@@ -27,7 +27,7 @@
   function pickOwner(items){return items.find(x=>String(x?.recipient_role||x?.role||'').toLowerCase()==='owner')||items.find(x=>waPhone(x).includes('9654401954'))||items[0]}
   function mapOutbox(r){const meta=r?.meta||{};return{message_id:r?.message_id,mobile:r?.recipient_mobile,message_text:r?.message_text,send_status:r?.send_status,recipient_name:meta.recipient_name||'',recipient_role:meta.recipient_role||'',approval_link:meta.approval_link||''}}
   async function latestOutbox(l){const c=db();if(!c?.from)return null;const {data,error}=await c.from('rr_comm_outbox_v853').select('message_id,recipient_mobile,message_text,send_status,meta,created_at').eq('data_mode',MODE).eq('channel_code','WHATSAPP').contains('meta',{source_module:'PACKING_RRQ',lot_no:l,packing_rrq_rate_approval:true}).order('created_at',{ascending:false}).limit(20);if(error)throw error;const rows=(data||[]).map(mapOutbox);return rows.length?pickOwner(rows):null}
-  async function resolveItem(l){for(let attempt=0;attempt<8;attempt++){await sleep(attempt?700:250);let q;try{q=await rpc('rr_pack_rrq_wa_pending_v9343',{p_lot_no:l,p_data_mode:MODE})}catch(e){if(transient(e))continue;throw e}const items=Array.isArray(q?.items)?q.items:[];const item=items.length?pickOwner(items):await latestOutbox(l);if(item)return item}return null}
+  async function resolveItem(l){for(let attempt=0;attempt<8;attempt++){await sleep(attempt?700:150);let q;try{q=await rpc('rr_pack_rrq_wa_pending_v9343',{p_lot_no:l,p_data_mode:MODE})}catch(e){if(transient(e))continue;throw e}const items=Array.isArray(q?.items)?q.items:[];const item=items.length?pickOwner(items):await latestOutbox(l);if(item)return item}return null}
 
   function ensureButton(){
     const req=document.getElementById('rrRequestRate');
@@ -40,31 +40,37 @@
     btn.className='fg-btn';
     btn.style.marginTop='10px';
     btn.style.background='#20242d';
+    btn.style.color='#fff';
+    btn.style.fontWeight='900';
     btn.textContent='WhatsApp SuperAdmin';
-    btn.hidden=true;
     req.insertAdjacentElement('afterend',btn);
-    btn.addEventListener('click',()=>{
-      const l=lot(),item=cache.get(l);
-      if(!item){show('WhatsApp message abhi ready nahi hai. Pehle Request/Refresh dabayein.','error');return}
-      try{openWhatsapp(waPhone(item),waText(item),{sameTabFallback:true});show('WhatsApp open ho raha hai. Chat khulne par Send dabayein.','ok')}catch(e){show(String(e?.message||e),'error')}
+    btn.addEventListener('click',async()=>{
+      const l=lot();
+      if(!l){show('Lot select karein.','error');return}
+      btn.disabled=true;
+      const old=btn.textContent;
+      btn.textContent='WhatsApp ready ho raha hai...';
+      try{
+        let item=cache.get(l);
+        if(!item){item=await resolveItem(l);if(item)cache.set(l,item)}
+        if(!item)throw Error('WhatsApp message pending hai. Request Final Rate Approval/Refresh ke baad retry karein.');
+        openWhatsapp(waPhone(item),waText(item),{sameTabFallback:true});
+        show('WhatsApp open ho raha hai. Chat khulne par Send dabayein.','ok');
+      }catch(e){show(String(e?.message||e),'error')}
+      finally{btn.disabled=false;btn.textContent=old}
     });
     return btn;
   }
-  function renderButton(item){
-    const btn=ensureButton();
-    if(!btn)return;
-    btn.hidden=!item;
-    if(item)btn.textContent='WhatsApp SuperAdmin';
-  }
   async function prepareMessage(l){
     if(!l)return;
+    ensureButton();
     if(inflight.has(l))return inflight.get(l);
-    const task=(async()=>{try{const item=await resolveItem(l);if(item){cache.set(l,item);renderButton(item);show('WhatsApp SuperAdmin ready. Button dabakar message open karein.','ok')}else{renderButton(null);show('Rate request saved. WhatsApp link pending hai; Refresh se retry karein.','error')}}finally{inflight.delete(l)}})();
+    const task=(async()=>{try{const item=await resolveItem(l);if(item){cache.set(l,item);show('WhatsApp SuperAdmin ready. Button dabakar message open karein.','ok')}}finally{inflight.delete(l)}})();
     inflight.set(l,task);
     return task;
   }
 
-  document.addEventListener('click',e=>{const b=e.target?.closest?.('#rrRequestRate,#rrRateRefresh');if(!b)return;const l=lot();if(!l)return;setTimeout(()=>prepareMessage(l).catch(err=>show('WhatsApp ready: '+String(err?.message||err),'error')),650);},true);
-  document.addEventListener('click',()=>setTimeout(()=>{ensureButton();const l=lot();if(l&&cache.has(l))renderButton(cache.get(l));},200),true);
-  [600,1400,2600].forEach(ms=>setTimeout(()=>{ensureButton();const l=lot();if(l)prepareMessage(l).catch(()=>{})},ms));
+  document.addEventListener('click',e=>{const b=e.target?.closest?.('#rrRequestRate,#rrRateRefresh');if(!b)return;const l=lot();if(!l)return;ensureButton();setTimeout(()=>prepareMessage(l).catch(err=>show('WhatsApp ready: '+String(err?.message||err),'error')),650);},true);
+  document.addEventListener('click',()=>setTimeout(()=>{ensureButton();},200),true);
+  [300,800,1400,2600,4200].forEach(ms=>setTimeout(()=>{ensureButton();const l=lot();if(l)prepareMessage(l).catch(()=>{})},ms));
 })();
