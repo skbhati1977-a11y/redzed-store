@@ -4,73 +4,58 @@
   window.__RR_PACKING_FINAL_PHOTO_FIRST_V9345__=true;
   const MODE='TEST',BUCKET='redzed-media',$=id=>document.getElementById(id),db=()=>window.supabaseClient||window.supabaseDb||window.redzedSupabase||window.sb;
   const lot=()=>String($('selectedPackLot')?.textContent||'').replace(/^Lot\s+/i,'').trim();
-  let photoCount=0,uploading=false,lastLot='',refreshing=false,rateBypass=false,pendingFiles=[];
-  const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
+  let photoCount=0,uploading=false,lastLot='',refreshing=false,rateBypass=false;
   const show=(t,cls='')=>{const a=$('rrPicLocalMsg'),b=$('message');if(a){a.textContent=t;a.className='fg-msg '+cls}if(b){b.textContent=t;b.className='fg-msg '+cls}};
-  const isAbort=e=>e?.name==='AbortError'||/aborted|abort|user aborted/i.test(String(e?.message||e||''));
-  const isFetchFail=e=>/failed to fetch|networkerror|load failed|fetch/i.test(String(e?.message||e||''));
-  const clean=e=>isAbort(e)?'Photo/status server response timeout. Refresh karke retry karein.':String(e?.message||e||'Unknown error');
-  const uid=()=>crypto?.randomUUID?crypto.randomUUID():String(Date.now())+'-'+Math.random().toString(16).slice(2);
-  function fullUrl(m){return String(m?.image_url||m?.storage_path||'')}
-  function thumbUrl(m){try{if(m?.storage_path)return db().storage.from(BUCKET).getPublicUrl(m.storage_path,{transform:{width:260,height:260,resize:'cover',quality:55}}).data.publicUrl}catch(_){}return fullUrl(m)}
-  function installViewer(){
-    if($('rrPhotoViewer'))return;
-    const s=document.createElement('style');s.id='rrPhotoViewerStyle';s.textContent='.rr-thumb img{cursor:pointer}.rr-photo-viewer{position:fixed;inset:0;z-index:2147483200;background:#000d;display:grid;place-items:center;padding:18px}.rr-photo-viewer[hidden]{display:none}.rr-photo-viewer img{max-width:100%;max-height:86vh;object-fit:contain;border-radius:10px}.rr-photo-viewer button{position:fixed;right:16px;top:16px;border:0;border-radius:999px;background:#1f2937;color:#fff;font-size:28px;line-height:1;padding:10px 16px;font-weight:900}.rr-safe-note{font-size:12px;color:#aab2c0;margin-top:6px;font-weight:800}';document.head.appendChild(s);
-    const v=document.createElement('div');v.id='rrPhotoViewer';v.className='rr-photo-viewer';v.hidden=true;v.innerHTML='<button type="button" aria-label="Close">×</button><img alt="Final garment photo">';document.body.appendChild(v);v.addEventListener('click',e=>{if(e.target===v||e.target.tagName==='BUTTON')v.hidden=true});
-  }
-  function openViewer(url){if(!url)return;installViewer();const v=$('rrPhotoViewer');v.querySelector('img').src=url;v.hidden=false}
-  function installSafeInputs(){
-    ['rrCameraPics','rrGalleryPics'].forEach(id=>{
-      let input=$(id);if(!input)return;
-      // Remove legacy pic-engine listeners before the user selects files.
-      // Never replace an input that already contains the user's selection.
-      if(!input.dataset.rrPhotoFirstInput&&!(input.files&&input.files.length)){
-        const cleanInput=input.cloneNode(true);
-        cleanInput.value='';
-        cleanInput.dataset.rrPhotoFirstInput='1';
-        input.replaceWith(cleanInput);
-        input=cleanInput;
-      }
-      input.setAttribute('multiple','multiple');
-      input.accept='image/jpeg,image/png,image/webp,image/*';
-      input.dataset.rrSafeMulti='1';
-    });
-    const pics=$('rrSourcePics');if(pics&&!$('rrSafePhotoNote')){const note=document.createElement('div');note.id='rrSafePhotoNote';note.className='rr-safe-note';note.textContent='3 photos ek saath select kar sakte hain. Upload sequential optimized hoga; preview thumbnail-only rahega.';$('rrUploadPics')?.insertAdjacentElement('afterend',note)}
-  }
-  function selectedImageFiles(){
-    const live=[...($('rrCameraPics')?.files||[]),...($('rrGalleryPics')?.files||[])].filter(f=>/^image\//i.test(f.type||''));
-    return live.length?live:pendingFiles.slice();
-  }
-  const withTimeout=(promise,ms,label)=>Promise.race([promise,new Promise((_,reject)=>setTimeout(()=>reject(Error(label)),ms))]);
-  function imageFromFile(file){return new Promise((resolve,reject)=>{const url=URL.createObjectURL(file),img=new Image();img.onload=()=>{URL.revokeObjectURL(url);resolve(img)};img.onerror=err=>{URL.revokeObjectURL(url);reject(err)};img.src=url})}
-  async function optimizeImage(file){if(!file||!/image\//i.test(file.type||''))return file;let src=null,w=0,h=0;try{src=await withTimeout(imageFromFile(file),8000,'image decode timeout');w=src.naturalWidth||src.width;h=src.naturalHeight||src.height}catch(_){return file}if(!w||!h)return file;const maxSide=1280,scale=Math.min(1,maxSide/Math.max(w,h));if(scale===1&&file.size<=450000)return file;const canvas=document.createElement('canvas');canvas.width=Math.max(1,Math.round(w*scale));canvas.height=Math.max(1,Math.round(h*scale));const ctx=canvas.getContext('2d',{alpha:false});ctx.fillStyle='#fff';ctx.fillRect(0,0,canvas.width,canvas.height);ctx.drawImage(src,0,0,canvas.width,canvas.height);let blob=null;try{blob=await withTimeout(new Promise(resolve=>canvas.toBlob(resolve,'image/jpeg',0.72)),8000,'image optimize timeout')}catch(_){return file}if(!blob||blob.size>=file.size)return file;const base=String(file.name||'photo').replace(/\.[^.]+$/,'').replace(/[^a-z0-9_-]+/gi,'-').slice(0,48)||'photo';return new File([blob],base+'.jpg',{type:'image/jpeg',lastModified:Date.now()})}
-  async function nativeRpc(name,args={}){const c=db();if(!c?.auth)throw Error('Supabase client unavailable');const {data:sess,error:se}=await c.auth.getSession();if(se)throw se;const token=sess?.session?.access_token;if(!token)throw Error('Login session required');const base=(typeof SUPABASE_URL!=='undefined'&&SUPABASE_URL)||c.supabaseUrl,key=(typeof SUPABASE_ANON_KEY!=='undefined'&&SUPABASE_ANON_KEY)||c.supabaseKey,ctl=new AbortController(),timer=setTimeout(()=>ctl.abort(),20000);try{const res=await fetch(`${base}/rest/v1/rpc/${encodeURIComponent(name)}`,{method:'POST',headers:{'Content-Type':'application/json','apikey':key,'Authorization':`Bearer ${token}`},body:JSON.stringify(args||{}),signal:ctl.signal,cache:'no-store'});const raw=await res.text();let data=null;try{data=raw?JSON.parse(raw):null}catch(_){data=raw}if(!res.ok)throw Error(data?.message||data?.hint||raw||`HTTP ${res.status}`);return data}finally{clearTimeout(timer)}}
-  async function nativeStorageUpload(path,file){
+
+  async function nativeRpc(name,args={}){
     const c=db();if(!c?.auth)throw Error('Supabase client unavailable');
-    const {data:sess,error:se}=await withTimeout(c.auth.getSession(),10000,'Login session check timeout.');if(se)throw se;
+    const {data:sess,error:se}=await c.auth.getSession();if(se)throw se;
     const token=sess?.session?.access_token;if(!token)throw Error('Login session required');
-    const base=(typeof SUPABASE_URL!=='undefined'&&SUPABASE_URL)||c.supabaseUrl,key=(typeof SUPABASE_ANON_KEY!=='undefined'&&SUPABASE_ANON_KEY)||c.supabaseKey;
-    if(!base||!key)throw Error('Supabase Storage configuration missing.');
-    const objectPath=String(path||'').split('/').map(part=>{try{return encodeURIComponent(decodeURIComponent(part))}catch(_){return encodeURIComponent(part)}}).join('/');
-    const ctl=new AbortController(),timer=setTimeout(()=>ctl.abort(),120000);
+    const base=(typeof SUPABASE_URL!=='undefined'&&SUPABASE_URL)||c.supabaseUrl;
+    const key=(typeof SUPABASE_ANON_KEY!=='undefined'&&SUPABASE_ANON_KEY)||c.supabaseKey;
+    const ctl=new AbortController(),timer=setTimeout(()=>ctl.abort(),10000);
     try{
-      const res=await fetch(`${base}/storage/v1/object/${encodeURIComponent(BUCKET)}/${objectPath}`,{method:'POST',headers:{'Authorization':`Bearer ${token}`,'apikey':key,'Content-Type':file.type||'application/octet-stream','cache-control':'3600','x-upsert':'false'},body:file,signal:ctl.signal,cache:'no-store'});
+      const res=await fetch(`${base}/rest/v1/rpc/${encodeURIComponent(name)}`,{method:'POST',headers:{'Content-Type':'application/json','apikey':key,'Authorization':`Bearer ${token}`},body:JSON.stringify(args||{}),signal:ctl.signal,cache:'no-store'});
       const raw=await res.text();let data=null;try{data=raw?JSON.parse(raw):null}catch(_){data=raw}
-      if(!res.ok)throw Error(data?.message||data?.error||raw||`Storage HTTP ${res.status}`);
+      if(!res.ok)throw Error(data?.message||data?.hint||raw||`HTTP ${res.status}`);
       return data;
-    }catch(error){if(error?.name==='AbortError')throw Error('Photo upload 120 seconds me complete nahi hui. Network retry karein.');throw error}
-    finally{clearTimeout(timer)}
+    }finally{clearTimeout(timer)}
   }
-  function installBootBridges(){const c=db();if(c?.rpc&&!c.__rrFgReadyBridge9348){const originalRpc=c.rpc.bind(c);c.rpc=async function(name,args,options){if(name!=='rr_fg_ready_packing_cards_v788')return originalRpc(name,args,options);try{return {data:await nativeRpc(name,args),error:null,status:200}}catch(error){console.warn('FG Ready Lots native bridge failed',error);return originalRpc(name,args,options)}};c.__rrFgReadyBridge9348=true}if(window.RR?.requireRoles&&!window.RR.__fgRequireRolesBridge9348){const originalRequire=window.RR.requireRoles.bind(window.RR);window.RR.requireRoles=async function(allowedRoles){try{return await originalRequire(allowedRoles)}catch(error){if(!/Required permission/i.test(String(error?.message||error)))throw error;const c=db();const {data:sess,error:se}=await c.auth.getSession();if(se||!sess?.session)throw error;let role='';try{role=String(await nativeRpc('rr_current_role')||'').trim().toLowerCase()}catch(_){throw error}const allowed=new Set((allowedRoles||[]).map(x=>String(x||'').trim().toLowerCase()));if(!role||!allowed.has(role))throw error;const user=sess.session.user;return {session:sess.session,user,profile:{id:null,full_name:role==='owner'?'Super Admin':'Authorized User',role_code:role,is_active:true}}}};window.RR.__fgRequireRolesBridge9348=true}}
+
+  function installBootBridges(){
+    const c=db();
+    if(c?.rpc&&!c.__rrFgReadyBridge9348){
+      const originalRpc=c.rpc.bind(c);
+      c.rpc=async function(name,args,options){
+        if(name!=='rr_fg_ready_packing_cards_v788')return originalRpc(name,args,options);
+        try{return {data:await nativeRpc(name,args),error:null,status:200}}catch(error){console.warn('FG Ready Lots native bridge failed',error);return originalRpc(name,args,options)}
+      };
+      c.__rrFgReadyBridge9348=true;
+    }
+    if(window.RR?.requireRoles&&!window.RR.__fgRequireRolesBridge9348){
+      const originalRequire=window.RR.requireRoles.bind(window.RR);
+      window.RR.requireRoles=async function(allowedRoles){
+        try{return await originalRequire(allowedRoles)}catch(error){
+          if(!/Required permission/i.test(String(error?.message||error)))throw error;
+          const c=db();const {data:sess,error:se}=await c.auth.getSession();if(se||!sess?.session)throw error;
+          let role='';try{role=String(await nativeRpc('rr_current_role')||'').trim().toLowerCase()}catch(_){throw error}
+          const allowed=new Set((allowedRoles||[]).map(x=>String(x||'').trim().toLowerCase()));
+          if(!role||!allowed.has(role))throw error;
+          const user=sess.session.user;
+          return {session:sess.session,user,profile:{id:null,full_name:role==='owner'?'Super Admin':'Authorized User',role_code:role,is_active:true}};
+        }
+      };
+      window.RR.__fgRequireRolesBridge9348=true;
+    }
+  }
+
   installBootBridges();
-  async function rpc(name,args={}){const c=db();if(c?.rpc){try{const r=await c.rpc(name,args);if(r.error)throw r.error;return r.data}catch(e){if(!isFetchFail(e)&&!isAbort(e))throw e;console.warn('Supabase rpc fallback to native fetch',name,e)}}return nativeRpc(name,args)}
-  async function rpcRetry(name,args={}){try{return await rpc(name,args)}catch(e){if(!isAbort(e)&&!isFetchFail(e))throw e;await new Promise(r=>setTimeout(r,700));return await rpc(name,args)}}
-  function patchLayout(){const root=$('rrCatalogEngine'),pics=$('rrSourcePics'),rate=root?.querySelector('.rr-rate-gate');if(!root||!pics||!rate)return false;if(pics.nextElementSibling!==rate)root.insertBefore(pics,rate);pics.hidden=false;installSafeInputs();const p=pics.querySelector('.fg-muted');if(p)p.textContent='Final Rate Approval request se pehle exactly 3 final garment photos Camera/Gallery se upload karein.';if(!$('rrPicCount')){const x=document.createElement('div');x.id='rrPicCount';x.className='fg-summary';x.textContent=`Final photos: ${photoCount}/3`;pics.querySelector('.fg-title-row')?.insertAdjacentElement('afterend',x)}installViewer();return true}
-  async function refreshPhotos(){const l=lot();if(!l||refreshing)return null;refreshing=true;try{const s=await rpcRetry('rr_pack_media_summary_v9330',{p_lot_no:l,p_data_mode:MODE});photoCount=Number(s?.camera_count||0);const n=$('rrPicCount');if(n)n.textContent=`Final photos: ${photoCount}/3`;const req=$('rrRequestRate');if(req)req.disabled=photoCount!==3||!document.querySelector('#packRows tr');const p=$('rrCameraPreview'),cams=(s?.media||[]).filter(x=>x.media_role==='CAMERA').slice(0,3);if(p)p.innerHTML=cams.length?cams.map((m,i)=>`<div class="rr-thumb"><span>FINAL ${i+1}</span><img loading="lazy" decoding="async" src="${esc(thumbUrl(m))}" data-full="${esc(fullUrl(m))}" alt="Tap to view"><button class="rr-del" data-cam-del="${esc(m.media_id)}" data-path="${esc(m.storage_path||'')}" type="button">×</button></div>`).join(''):`<p class="fg-muted">Abhi final garment pics nahi hain.</p>`;return s}finally{refreshing=false}}
-  async function uploadBeforeApproval(e){const btn=e.target?.closest?.('#rrUploadPics');if(!btn)return;e.preventDefault();e.stopImmediatePropagation();if(window.__RR_ACTION_BUSY__&&window.__RR_ACTION_OWNER__!==btn){show('Ek action already chal raha hai. Pehle uske complete hone ka wait karein.','error');return}if(uploading)return;uploading=true;window.__RR_ACTION_BUSY__=true;window.__RR_ACTION_OWNER__=btn;try{installSafeInputs();const l=lot();if(!l)throw Error('Lot select karein.');if(!document.querySelector('#packRows tr'))throw Error('Pehle Packing Algorithm/Table complete karein.');const files=selectedImageFiles();if(!files.length)throw Error('Camera/Gallery images select karein.');if(files.length>3)throw Error('Maximum 3 final photos select karein.');btn.disabled=true;btn.textContent='UPLOAD STARTING...';show(`${files.length} photo selected. Upload start ho raha hai...`);if(photoCount+files.length>3)throw Error(`Total final garment photos 3 hi rahengi. Current ${photoCount}/3.`);const items=[];for(let i=0;i<files.length;i++){const f0=files[i];if(f0.size>18000000)throw Error(`Photo ${i+1} bahut heavy hai. Cropped/screenshot photo select karein.`);btn.textContent=`PHOTO ${i+1}/${files.length}`;show(`Photo ${i+1}/${files.length} Storage upload ho rahi hai...`);const f=f0,path=`packing-final/${MODE}/${encodeURIComponent(l)}/${Date.now()}-${uid()}.${String(f0.name||'jpg').toLowerCase().endsWith('.png')?'png':'jpg'}`;await nativeStorageUpload(path,f);const image_url=db().storage.from(BUCKET).getPublicUrl(path).data.publicUrl;items.push({media_role:'CAMERA',variant_no:photoCount+i+1,image_url,storage_path:path,caption:'[CAMERA] Final packing image',customer_caption:'Final packing image'})}show(`${items.length} photo upload complete. Record save ho raha hai...`);const saved=await rpcRetry('rr_pack_save_media_v9332',{p_lot_no:l,p_items:items,p_data_mode:MODE});if($('rrCameraPics'))$('rrCameraPics').value='';if($('rrGalleryPics'))$('rrGalleryPics').value='';pendingFiles=[];photoCount=Number(saved?.camera_count||photoCount+items.length||0);show(`Final garment photos saved · ${photoCount}/3.`,'ok');try{await refreshPhotos()}catch(_){}}
-    catch(err){show(clean(err),'error')}finally{uploading=false;if(btn){btn.disabled=false;btn.textContent='UPLOAD SELECTED FINAL PICS'}if(window.__RR_ACTION_OWNER__===btn){window.__RR_ACTION_BUSY__=false;window.__RR_ACTION_OWNER__=null}}}
-  async function gateRequest(e){const btn=e.target?.closest?.('#rrRequestRate');if(!btn||rateBypass)return;e.preventDefault();e.stopImmediatePropagation();try{await refreshPhotos()}catch(err){show(clean(err),'error');return}if(photoCount!==3){show(`Final Rate Approval se pehle 3 final garment photos mandatory. Current ${photoCount}/3.`,'error');$('rrSourcePics')?.scrollIntoView({behavior:'smooth',block:'center'});return}rateBypass=true;try{btn.click()}finally{setTimeout(()=>rateBypass=false,0)}}
+
+  async function rpc(name,args={}){return nativeRpc(name,args)}
+  function patchLayout(){const root=$('rrCatalogEngine'),pics=$('rrSourcePics'),rate=root?.querySelector('.rr-rate-gate');if(!root||!pics||!rate)return false;if(pics.nextElementSibling!==rate)root.insertBefore(pics,rate);pics.hidden=false;const p=pics.querySelector('.fg-muted');if(p)p.textContent='Final Rate Approval request se pehle exactly 3 final garment photos Camera/Gallery se upload karein.';if(!$('rrPicCount')){const x=document.createElement('div');x.id='rrPicCount';x.className='fg-summary';x.textContent=`Final photos: ${photoCount}/3`;pics.querySelector('.fg-title-row')?.insertAdjacentElement('afterend',x)}return true}
+  async function refreshPhotos(){const l=lot();if(!l||refreshing)return null;refreshing=true;try{const s=await rpc('rr_pack_media_summary_v9330',{p_lot_no:l,p_data_mode:MODE});photoCount=Number(s?.camera_count||0);const n=$('rrPicCount');if(n)n.textContent=`Final photos: ${photoCount}/3`;const req=$('rrRequestRate');if(req)req.disabled=photoCount!==3||!document.querySelector('#packRows tr');const p=$('rrCameraPreview'),cams=(s?.media||[]).filter(x=>x.media_role==='CAMERA').slice(0,3);if(p)p.innerHTML=cams.length?cams.map((m,i)=>`<div class="rr-thumb"><span>FINAL ${i+1}</span><img src="${String(m.image_url||m.storage_path||'').replace(/"/g,'&quot;')}" alt=""><button class="rr-del" data-cam-del="${m.media_id}" data-path="${String(m.storage_path||'').replace(/"/g,'&quot;')}" type="button">×</button></div>`).join(''):`<p class="fg-muted">Abhi final garment pics nahi hain.</p>`;return s}finally{refreshing=false}}
+  async function uploadBeforeApproval(e){const btn=e.target?.closest?.('#rrUploadPics');if(!btn)return;e.preventDefault();e.stopImmediatePropagation();if(uploading)return;uploading=true;try{const l=lot();if(!l)throw Error('Lot select karein.');if(!document.querySelector('#packRows tr'))throw Error('Pehle Packing Algorithm/Table complete karein.');const files=[...($('rrCameraPics')?.files||[]),...($('rrGalleryPics')?.files||[])].filter(f=>/^image\//i.test(f.type||''));if(!files.length)throw Error('Camera/Gallery images select karein.');btn.disabled=true;btn.textContent='CHECKING…';show('Final photos check ho rahi hain…');await refreshPhotos();if(photoCount+files.length>3)throw Error(`Total final garment photos 3 hi rahengi. Current ${photoCount}/3.`);btn.textContent='UPLOADING…';show('Final garment photos upload ho rahi hain…');const items=[];for(let i=0;i<files.length;i++){const f=files[i],ext=(f.name.split('.').pop()||'jpg').replace(/[^a-z0-9]/gi,'').toLowerCase()||'jpg',path=`packing-final/${MODE}/${encodeURIComponent(l)}/${Date.now()}-${crypto.randomUUID()}.${ext}`,up=await db().storage.from(BUCKET).upload(path,f,{contentType:f.type||'image/jpeg',upsert:false});if(up.error)throw up.error;const image_url=db().storage.from(BUCKET).getPublicUrl(path).data.publicUrl;items.push({media_role:'CAMERA',variant_no:photoCount+i+1,image_url,storage_path:path,caption:'[CAMERA] Final packing image',customer_caption:'Final packing image'})}const saved=await rpc('rr_pack_save_media_v9332',{p_lot_no:l,p_items:items,p_data_mode:MODE});if($('rrCameraPics'))$('rrCameraPics').value='';if($('rrGalleryPics'))$('rrGalleryPics').value='';photoCount=Number(saved?.camera_count||0);show(`Final garment photos saved · ${photoCount}/3.`,'ok');await refreshPhotos()}catch(err){show(String(err?.name==='AbortError'?'Photo server response timeout. Retry karein.':err?.message||err),'error')}finally{uploading=false;if(btn){btn.disabled=false;btn.textContent='UPLOAD SELECTED FINAL PICS'}}}
+  async function gateRequest(e){const btn=e.target?.closest?.('#rrRequestRate');if(!btn||rateBypass)return;e.preventDefault();e.stopImmediatePropagation();try{await refreshPhotos()}catch(err){show(String(err?.message||err),'error');return}if(photoCount!==3){show(`Final Rate Approval se pehle 3 final garment photos mandatory. Current ${photoCount}/3.`,'error');$('rrSourcePics')?.scrollIntoView({behavior:'smooth',block:'center'});return}rateBypass=true;try{btn.click()}finally{setTimeout(()=>rateBypass=false,0)}}
   function syncLot(){installBootBridges();if(!patchLayout())return;const l=lot();if(!l||l===lastLot)return;lastLot=l;refreshPhotos().catch(()=>{})}
-  document.addEventListener('click',e=>{const img=e.target?.closest?.('#rrCameraPreview .rr-thumb img[data-full]');if(!img)return;e.preventDefault();e.stopPropagation();openViewer(img.dataset.full||img.src)},true);
-  document.addEventListener('click',uploadBeforeApproval,true);document.addEventListener('click',gateRequest,true);document.addEventListener('click',()=>setTimeout(syncLot,180),true);document.addEventListener('change',e=>{if(e.target?.matches?.('#rrCameraPics,#rrGalleryPics')){e.stopImmediatePropagation();const live=[...($('rrCameraPics')?.files||[]),...($('rrGalleryPics')?.files||[])].filter(f=>/^image\//i.test(f.type||''));if(live.length)pendingFiles=live.slice(0,3);patchLayout();const files=selectedImageFiles();if(files.length)show(`${Math.min(files.length,3)} photo selected. Refresh ke baad bhi selection retained hai. UPLOAD dabayein.`,'ok')}},true);[100,300,600,1000,1600,2800].forEach(ms=>setTimeout(()=>{installBootBridges();syncLot()},ms));
+  document.addEventListener('click',uploadBeforeApproval,true);document.addEventListener('click',gateRequest,true);document.addEventListener('click',()=>setTimeout(syncLot,180),true);document.addEventListener('change',e=>{if(e.target?.matches?.('#rrCameraPics,#rrGalleryPics'))patchLayout()},true);[100,300,600,1000,1600,2800].forEach(ms=>setTimeout(()=>{installBootBridges();syncLot()},ms));
 })();
