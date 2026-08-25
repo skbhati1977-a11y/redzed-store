@@ -6,7 +6,7 @@
   const qs=new URLSearchParams(location.search);
   if((qs.get('view')||'').toLowerCase()!=='packing')return;
   const MODE='TEST',$=id=>document.getElementById(id);
-  let busy=false,lastKey='',confirmBypass=false,stageCache={key:'none',text:'',allowSubmit:false,a:null,cam:0,ai:0,rate:null,aiItems:[]};
+  let busy=false,lastKey='',confirmBypass=false,computeTimer=0,lastComputeAt=0,stageCache={key:'none',text:'',allowSubmit:false,a:null,cam:0,ai:0,rate:null,aiItems:[]};
   const db=()=>window.supabaseClient||window.supabaseDb||window.redzedSupabase||window.sb;
   const lot=()=>String($('selectedPackLot')?.textContent||'').replace(/^Lot\s+/i,'').trim();
   const isOpen=()=>!!lot()&&!$('packWorkspace')?.hidden;
@@ -41,9 +41,14 @@
     if(ai<3)return {key:'ai:'+ai,text:`Rate approved. 3 AI final style images complete/select karein. Current ${ai}/3.`,allowSubmit:false,a,cam,rate:r,ai,aiItems:items};
     return {key:'submit-ready',text:'All gates complete. SUBMIT PACKING karein.',allowSubmit:true,a,cam,rate:r,ai,aiItems:items};
   }
+  function scheduleCompute(force=false,delay=250){
+    clearTimeout(computeTimer);
+    computeTimer=setTimeout(()=>compute(force),delay);
+  }
   async function compute(force=false){
-    if(!isOpen()||!db()?.rpc||busy)return;
-    busy=true;
+    if(!isOpen()||!db()?.rpc||busy||window.__RR_ACTION_BUSY__)return;
+    if(!force&&Date.now()-lastComputeAt<1500)return;
+    busy=true;lastComputeAt=Date.now();
     try{const s=await currentStage();stageCache=s;const submit=$('submitPack');if(submit)submit.disabled=!s.allowSubmit;if(!keepError()&&(force||s.key!==lastKey||/Re-run allowed before submit|Existing algorithm table loaded|Equal packing algorithm chal raha|Ready Packing/i.test(String($('message')?.textContent||'')))){show(s.text,s.allowSubmit?'ok':'');lastKey=s.key;}}
     catch(e){if(!keepError())show(e.message||String(e),'error')}finally{busy=false;}
   }
@@ -94,10 +99,10 @@
     if(!document.body)return;
     installStyle();
     document.addEventListener('click',guardRepeat,true);
-    new MutationObserver(()=>setTimeout(()=>compute(false),150)).observe(document.body,{childList:true,subtree:true});
-    document.addEventListener('click',()=>setTimeout(()=>compute(false),250),true);
-    document.addEventListener('change',()=>setTimeout(()=>compute(false),250),true);
-    setInterval(()=>compute(false),1800);setTimeout(()=>compute(true),500);
+    new MutationObserver(()=>scheduleCompute(false,300)).observe(document.body,{childList:true,subtree:true});
+    document.addEventListener('click',()=>scheduleCompute(false,350),true);
+    document.addEventListener('change',()=>scheduleCompute(false,350),true);
+    setInterval(()=>scheduleCompute(false,0),3000);scheduleCompute(true,500);
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start);else start();
 })();
