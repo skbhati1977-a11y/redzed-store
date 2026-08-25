@@ -94,7 +94,7 @@
     if(!document.body)return;
     installStyle();
     document.addEventListener('click',guardRepeat,true);
-    new MutationObserver(()=>setTimeout(()=>compute(false),150)).observe(document.body,{childList:true,subtree:true,characterData:true,attributes:true,attributeFilter:['hidden','disabled','class']});
+    new MutationObserver(()=>setTimeout(()=>compute(false),150)).observe(document.body,{childList:true,subtree:true});
     document.addEventListener('click',()=>setTimeout(()=>compute(false),250),true);
     document.addEventListener('change',()=>setTimeout(()=>compute(false),250),true);
     setInterval(()=>compute(false),1800);setTimeout(()=>compute(true),500);
