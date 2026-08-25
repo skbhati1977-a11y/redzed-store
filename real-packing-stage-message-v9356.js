@@ -67,15 +67,27 @@
       try{target.click()}finally{setTimeout(()=>{confirmBypass=false;compute(true)},650)}
     },0);
   }
+  function watchAction(target){
+    const started=Date.now();
+    const poll=()=>{
+      if(window.__RR_ACTION_OWNER__!==target)return;
+      const done=!document.body.contains(target)||(!target.disabled&&Date.now()-started>900);
+      if(done||Date.now()-started>120000){window.__RR_ACTION_BUSY__=false;window.__RR_ACTION_OWNER__=null;compute(true);return}
+      setTimeout(poll,350);
+    };
+    setTimeout(poll,350);
+  }
   function guardRepeat(e){
     if(confirmBypass||!isOpen())return;
     const target=e.target?.closest?.('#assignPack,#acceptPack,#runPackAlgo,#rrUploadPics,#rrRequestRate,[data-gen],[data-ai-upload],[data-final],#submitPack');
     if(!target)return;
+    if(window.__RR_ACTION_BUSY__&&window.__RR_ACTION_OWNER__!==target){e.preventDefault();e.stopImmediatePropagation();show('Ek action already chal raha hai. Pehle uske complete hone ka wait karein.','error');return}
+    if(!window.__RR_ACTION_BUSY__){window.__RR_ACTION_BUSY__=true;window.__RR_ACTION_OWNER__=target;watchAction(target)}
     const question=questionFor(target);
     if(!question)return;
     e.preventDefault();e.stopImmediatePropagation();
     if(target.matches('#submitPack')&&question.includes('gates complete nahi')){show(question,'error');compute(true);return;}
-    if(!window.confirm(question)){compute(true);return;}
+    if(!window.confirm(question)){if(window.__RR_ACTION_OWNER__===target){window.__RR_ACTION_BUSY__=false;window.__RR_ACTION_OWNER__=null}compute(true);return;}
     replay(target);
   }
   function start(){
