@@ -11,13 +11,18 @@
   const transient=e=>/abort|aborted|AbortError|Failed to fetch|FunctionsFetchError|NetworkError/i.test(String(e?.name||'')+' '+String(e?.message||e||''));
 
   function normalizePhone(value){let x=String(value||'').replace(/\D/g,'');if(x.length===10)x='91'+x;return x}
-  function whatsappUrl(phone,message){const number=normalizePhone(phone);if(!number)throw Error('WhatsApp number required.');return 'https://wa.me/'+number+'?text='+encodeURIComponent(message)}
+  function whatsappWebUrl(phone,message){const number=normalizePhone(phone);if(!number)throw Error('WhatsApp number required.');return 'https://wa.me/'+number+'?text='+encodeURIComponent(message)}
+  function whatsappAppUrl(phone,message){const number=normalizePhone(phone);if(!number)throw Error('WhatsApp number required.');return 'whatsapp://send?phone='+number+'&text='+encodeURIComponent(message)}
   function openWhatsapp(phone,message,{sameTabFallback=false,preparedWindow=null}={}){
-    const url=whatsappUrl(phone,message);
-    if(preparedWindow&&!preparedWindow.closed){preparedWindow.location.replace(url);return true}
-    const win=window.open(url,'_blank');
+    const appUrl=whatsappAppUrl(phone,message), webUrl=whatsappWebUrl(phone,message);
+    if(preparedWindow&&!preparedWindow.closed){
+      preparedWindow.location.replace(appUrl);
+      setTimeout(()=>{try{if(preparedWindow&&!preparedWindow.closed&&String(preparedWindow.location.href).startsWith('about:'))preparedWindow.location.replace(webUrl)}catch(_){}},1600);
+      return true;
+    }
+    const win=window.open(appUrl,'_blank');
     if(win)return true;
-    if(sameTabFallback){window.location.assign(url);return false}
+    if(sameTabFallback){window.location.assign(appUrl);setTimeout(()=>window.location.assign(webUrl),1600);return false}
     throw Error('Browser ne WhatsApp popup block kiya. WhatsApp button se dobara kholein.');
   }
 
@@ -29,7 +34,7 @@
   async function latestOutbox(l){const c=db();if(!c?.from)return null;const {data,error}=await c.from('rr_comm_outbox_v853').select('message_id,recipient_mobile,message_text,send_status,meta,created_at').eq('data_mode',MODE).eq('channel_code','WHATSAPP').contains('meta',{source_module:'PACKING_RRQ',lot_no:l,packing_rrq_rate_approval:true}).order('created_at',{ascending:false}).limit(20);if(error)throw error;const rows=(data||[]).map(mapOutbox);return rows.length?pickOwner(rows):null}
   async function resolveItem(l){for(let attempt=0;attempt<8;attempt++){await sleep(attempt?700:250);let q;try{q=await rpc('rr_pack_rrq_wa_pending_v9343',{p_lot_no:l,p_data_mode:MODE})}catch(e){if(transient(e))continue;throw e}const items=Array.isArray(q?.items)?q.items:[];const item=items.length?pickOwner(items):await latestOutbox(l);if(item)return item}return null}
   async function sendPending(l,preparedWindow){if(!l||done.has(l))return;if(inflight.has(l))return inflight.get(l);const task=(async()=>{try{const item=await resolveItem(l);if(!item){if(preparedWindow&&!preparedWindow.closed)preparedWindow.close();show('Rate request saved. WhatsApp link pending hai; Refresh se retry karein.','error');return}openWhatsapp(waPhone(item),waText(item),{sameTabFallback:true,preparedWindow});done.add(l);show('WhatsApp app open ho raha hai. Chat khulne par Send dabayein.','ok');}finally{inflight.delete(l)}})();inflight.set(l,task);return task;}
-  function prepareWindow(){try{const w=window.open('about:blank','_blank');if(w){w.document.open();w.document.write('<!doctype html><title>WhatsApp</title><body style="font-family:sans-serif;padding:24px">WhatsApp message ready ho raha hai...</body>');w.document.close()}return w}catch{return null}}
+  function prepareWindow(){try{const w=window.open('about:blank','_blank');if(w){w.document.open();w.document.write('<!doctype html><title>WhatsApp</title><body style="font-family:sans-serif;padding:24px">WhatsApp app open ho raha hai...</body>');w.document.close()}return w}catch{return null}}
   document.addEventListener('click',e=>{const b=e.target?.closest?.('#rrRequestRate');if(!b)return;const l=lot();if(!l)return;done.delete(l);const w=prepareWindow();setTimeout(()=>sendPending(l,w).catch(err=>{try{if(w&&!w.closed)w.close()}catch{}show('WhatsApp open: '+String(err?.message||err),'error')}),50);},true);
   document.addEventListener('click',e=>{if(!e.target?.closest?.('#rrRateRefresh'))return;const l=lot();if(!l)return;done.delete(l);const w=prepareWindow();setTimeout(()=>sendPending(l,w).catch(err=>{try{if(w&&!w.closed)w.close()}catch{}show('WhatsApp open: '+String(err?.message||err),'error')}),50);},true);
 })();
