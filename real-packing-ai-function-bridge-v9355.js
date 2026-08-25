@@ -83,9 +83,11 @@
   }
   async function loadAssignment(lot){
     const c=sb();if(!c||!lot)return null;
-    let r=await c.from('rr_fg_packing_assignments_v788').select('id,lot_no,status,pack_plan_id,updated_at').eq('data_mode','TEST').ilike('lot_no',lot).not('pack_plan_id','is',null).order('updated_at',{ascending:false}).limit(1);
+    const r=await c.from('rr_fg_packing_assignments_v788').select('id,lot_no,status,pack_plan_id').eq('data_mode','TEST').ilike('lot_no',lot).not('pack_plan_id','is',null).limit(20);
     if(r.error)throw r.error;
-    return (r.data||[])[0]||null;
+    const rows=(r.data||[]).filter(x=>x&&x.pack_plan_id);
+    rows.sort((a,b)=>({ACCEPTED:0,ASSIGNED:1,SUBMITTED:2}[String(a.status||'').toUpperCase()]??9)-({ACCEPTED:0,ASSIGNED:1,SUBMITTED:2}[String(b.status||'').toUpperCase()]??9));
+    return rows[0]||null;
   }
   async function recover(reason=''){
     if(busy)return;const lot=selectedLot();if(!lot)return;busy=true;
