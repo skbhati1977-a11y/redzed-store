@@ -20,8 +20,25 @@
   }
   function openViewer(url){if(!url)return;installViewer();const v=$('rrPhotoViewer');v.querySelector('img').src=url;v.hidden=false}
   function installSafeInputs(){
-    ['rrCameraPics','rrGalleryPics'].forEach(id=>{const input=$(id);if(!input)return;input.setAttribute('multiple','multiple');input.accept='image/jpeg,image/png,image/webp,image/*';input.dataset.rrSafeMulti='1'});
+    ['rrCameraPics','rrGalleryPics'].forEach(id=>{
+      let input=$(id);if(!input)return;
+      // Remove legacy pic-engine listeners before the user selects files.
+      // Never replace an input that already contains the user's selection.
+      if(!input.dataset.rrPhotoFirstInput&&!(input.files&&input.files.length)){
+        const cleanInput=input.cloneNode(true);
+        cleanInput.value='';
+        cleanInput.dataset.rrPhotoFirstInput='1';
+        input.replaceWith(cleanInput);
+        input=cleanInput;
+      }
+      input.setAttribute('multiple','multiple');
+      input.accept='image/jpeg,image/png,image/webp,image/*';
+      input.dataset.rrSafeMulti='1';
+    });
     const pics=$('rrSourcePics');if(pics&&!$('rrSafePhotoNote')){const note=document.createElement('div');note.id='rrSafePhotoNote';note.className='rr-safe-note';note.textContent='3 photos ek saath select kar sakte hain. Upload sequential optimized hoga; preview thumbnail-only rahega.';$('rrUploadPics')?.insertAdjacentElement('afterend',note)}
+  }
+  function selectedImageFiles(){
+    return selectedImageFiles();
   }
   function imageFromFile(file){return new Promise((resolve,reject)=>{const url=URL.createObjectURL(file),img=new Image();img.onload=()=>{URL.revokeObjectURL(url);resolve(img)};img.onerror=err=>{URL.revokeObjectURL(url);reject(err)};img.src=url})}
   async function optimizeImage(file){if(!file||!/image\//i.test(file.type||''))return file;let src=null,w=0,h=0;try{src=await imageFromFile(file);w=src.naturalWidth||src.width;h=src.naturalHeight||src.height}catch(_){return file}if(!w||!h)return file;const maxSide=1280,scale=Math.min(1,maxSide/Math.max(w,h));if(scale===1&&file.size<=450000)return file;const canvas=document.createElement('canvas');canvas.width=Math.max(1,Math.round(w*scale));canvas.height=Math.max(1,Math.round(h*scale));const ctx=canvas.getContext('2d',{alpha:false});ctx.fillStyle='#fff';ctx.fillRect(0,0,canvas.width,canvas.height);ctx.drawImage(src,0,0,canvas.width,canvas.height);const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/jpeg',0.72));if(!blob||blob.size>=file.size)return file;const base=String(file.name||'photo').replace(/\.[^.]+$/,'').replace(/[^a-z0-9_-]+/gi,'-').slice(0,48)||'photo';return new File([blob],base+'.jpg',{type:'image/jpeg',lastModified:Date.now()})}
@@ -37,5 +54,5 @@
   async function gateRequest(e){const btn=e.target?.closest?.('#rrRequestRate');if(!btn||rateBypass)return;e.preventDefault();e.stopImmediatePropagation();try{await refreshPhotos()}catch(err){show(clean(err),'error');return}if(photoCount!==3){show(`Final Rate Approval se pehle 3 final garment photos mandatory. Current ${photoCount}/3.`,'error');$('rrSourcePics')?.scrollIntoView({behavior:'smooth',block:'center'});return}rateBypass=true;try{btn.click()}finally{setTimeout(()=>rateBypass=false,0)}}
   function syncLot(){installBootBridges();if(!patchLayout())return;const l=lot();if(!l||l===lastLot)return;lastLot=l;refreshPhotos().catch(()=>{})}
   document.addEventListener('click',e=>{const img=e.target?.closest?.('#rrCameraPreview .rr-thumb img[data-full]');if(!img)return;e.preventDefault();e.stopPropagation();openViewer(img.dataset.full||img.src)},true);
-  document.addEventListener('click',uploadBeforeApproval,true);document.addEventListener('click',gateRequest,true);document.addEventListener('click',()=>setTimeout(syncLot,180),true);document.addEventListener('change',e=>{if(e.target?.matches?.('#rrCameraPics,#rrGalleryPics')){patchLayout();const files=[...($('rrCameraPics')?.files||[]),...($('rrGalleryPics')?.files||[])].filter(f=>/^image\//i.test(f.type||''));if(files.length)show(`${Math.min(files.length,3)} photo selected. UPLOAD SELECTED FINAL PICS dabayein.`,'ok')}},true);[100,300,600,1000,1600,2800].forEach(ms=>setTimeout(()=>{installBootBridges();syncLot()},ms));
+  document.addEventListener('click',uploadBeforeApproval,true);document.addEventListener('click',gateRequest,true);document.addEventListener('click',()=>setTimeout(syncLot,180),true);document.addEventListener('change',e=>{if(e.target?.matches?.('#rrCameraPics,#rrGalleryPics')){e.stopImmediatePropagation();patchLayout();const files=[...($('rrCameraPics')?.files||[]),...($('rrGalleryPics')?.files||[])].filter(f=>/^image\//i.test(f.type||''));if(files.length)show(`${Math.min(files.length,3)} photo selected. UPLOAD SELECTED FINAL PICS dabayein.`,'ok')}},true);[100,300,600,1000,1600,2800].forEach(ms=>setTimeout(()=>{installBootBridges();syncLot()},ms));
 })();
