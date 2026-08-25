@@ -10,7 +10,14 @@
   const db=()=>window.supabaseClient||window.supabaseDb||window.redzedSupabase||window.sb;
   const lot=()=>String($('selectedPackLot')?.textContent||'').replace(/^Lot\s+/i,'').trim();
   const isOpen=()=>!!lot()&&!$('packWorkspace')?.hidden;
-  function show(text,type='ok'){const m=$('message');if(m&&text){m.textContent=text;m.className='fg-msg '+type;}}
+  function installStyle(){
+    if(document.getElementById('rrStageMsg9356Style'))return;
+    const s=document.createElement('style');
+    s.id='rrStageMsg9356Style';
+    s.textContent='body{padding-bottom:118px}#message.fg-msg{position:fixed;left:14px;right:14px;bottom:14px;z-index:2147483000;margin:0;padding:14px 16px;border-radius:14px;background:#0d1117;border:1px solid #334155;box-shadow:0 12px 30px rgba(0,0,0,.45);font-size:17px;font-weight:900;line-height:1.35;color:#e5e7eb;max-height:30vh;overflow:auto}#message.fg-msg.ok{color:#5fe08c;border-color:#1d7a4a;background:#07150e}#message.fg-msg.error{color:#ff7d8c;border-color:#7f1d2d;background:#17080c}@media(min-width:760px){#message.fg-msg{left:50%;right:auto;bottom:22px;transform:translateX(-50%);width:min(720px,calc(100vw - 44px))}}';
+    document.head.appendChild(s);
+  }
+  function show(text,type='ok'){installStyle();const m=$('message');if(m&&text){m.textContent=text;m.className='fg-msg '+type;}}
   function keepError(){const m=$('message'),t=String(m?.textContent||'');if(!m?.className?.includes('error'))return false;return !/Re-run allowed before submit|Existing algorithm table loaded|Equal packing algorithm chal raha|SUBMIT PACKING|Ready Packing/i.test(t);}
   async function rpc(name,args={}){const r=await db().rpc(name,args);if(r.error)throw r.error;return r.data;}
   async function assignment(l){const r=await db().from('rr_fg_packing_assignments_v788').select('id,lot_no,status,worker_user_id,worker_name,pack_plan_id').eq('data_mode',MODE).ilike('lot_no',l).in('status',['ASSIGNED','ACCEPTED','SUBMITTED']).limit(1);if(r.error)throw r.error;return (r.data||[])[0]||null;}
@@ -54,6 +61,12 @@
     if(target.matches('#submitPack')&&!s.allowSubmit)return 'Packing submit ke gates complete nahi hain. Current stage complete kiye bina submit nahi hoga.';
     return '';
   }
+  function replay(target){
+    confirmBypass=true;
+    setTimeout(()=>{
+      try{target.click()}finally{setTimeout(()=>{confirmBypass=false;compute(true)},650)}
+    },0);
+  }
   function guardRepeat(e){
     if(confirmBypass||!isOpen())return;
     const target=e.target?.closest?.('#assignPack,#acceptPack,#runPackAlgo,#rrUploadPics,#rrRequestRate,[data-gen],[data-ai-upload],[data-final],#submitPack');
@@ -63,13 +76,11 @@
     e.preventDefault();e.stopImmediatePropagation();
     if(target.matches('#submitPack')&&question.includes('gates complete nahi')){show(question,'error');compute(true);return;}
     if(!window.confirm(question)){compute(true);return;}
-    confirmBypass=true;
-    target.click();
-    confirmBypass=false;
-    setTimeout(()=>compute(true),500);
+    replay(target);
   }
   function start(){
     if(!document.body)return;
+    installStyle();
     document.addEventListener('click',guardRepeat,true);
     new MutationObserver(()=>setTimeout(()=>compute(false),150)).observe(document.body,{childList:true,subtree:true,characterData:true,attributes:true,attributeFilter:['hidden','disabled','class']});
     document.addEventListener('click',()=>setTimeout(()=>compute(false),250),true);
