@@ -6,39 +6,128 @@
 <title>REAL FACTORY — Finished Goods</title>
 <style>
 :root{color-scheme:dark;--bg:#090c11;--p:#121821;--p2:#0d131b;--line:#2d3948;--txt:#eef4ff;--mut:#9ba9ba;--blue:#7db4ff;--green:#73dca3;--warn:#efc56d;--red:#ed7180}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--txt);font:14px/1.45 system-ui,-apple-system,Segoe UI,sans-serif}.app{max-width:1500px;margin:auto;padding:14px}.top,.tabs,.actions,.fg-card-line,.chips{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.top{justify-content:space-between}h1,h2,h3{margin:4px 0}.k{color:var(--mut);font-size:11px;font-weight:900;letter-spacing:.08em}.panel{background:var(--p);border:1px solid var(--line);border-radius:14px;padding:13px;margin:10px 0}button,a,input,select,textarea{font:inherit}button,a{border:1px solid var(--line);background:#18202a;color:white;border-radius:9px;padding:9px 11px;font-weight:850;text-decoration:none;cursor:pointer}button.active,.primary{background:#284c78}.danger{background:#5a2029}.hidden,[hidden]{display:none!important}input,select,textarea{width:100%;background:var(--p2);border:1px solid var(--line);color:white;border-radius:8px;padding:10px;font-size:16px}.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}.field{display:flex;flex-direction:column;gap:5px}.field span,.muted{color:var(--mut)}.fg-lot-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:9px}.fg-lot-card{display:block;text-align:left;padding:12px;min-height:110px;background:#111923;color:var(--txt)}.fg-card-line{justify-content:space-between;margin:4px 0}.fg-status{font-size:11px;padding:3px 7px;border-radius:999px;border:1px solid var(--line)}.fg-status.mine{color:var(--green)}.fg-status.open{color:var(--blue)}.fg-chip{display:inline-flex;gap:4px;align-items:center;border:1px solid var(--line);padding:5px 8px;border-radius:999px;margin:2px}.fg-msg{margin:9px 0;padding:9px 11px;border-radius:9px;background:#111923}.fg-msg.ok{color:var(--green)}.fg-msg.error{color:#ff9ba8}.fg-warning{color:var(--warn)}.fg-muted{color:var(--mut)}.scroll{overflow:auto}table{border-collapse:collapse;width:100%;min-width:900px}th,td{padding:8px;border-bottom:1px solid #293544;text-align:left;white-space:nowrap}th{background:#18202a;position:sticky;top:0}.actions{margin-top:10px}.wide{grid-column:1/-1}.two{grid-template-columns:repeat(2,minmax(0,1fr))}@media(max-width:820px){.grid{grid-template-columns:1fr 1fr}}@media(max-width:540px){.grid,.two{grid-template-columns:1fr}.app{padding:10px}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--txt);font:14px/1.45 system-ui,-apple-system,Segoe UI,sans-serif}
+.app{max-width:1500px;margin:auto;padding:14px}.top,.tabs,.actions,.fg-card-line,.chips{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.top{justify-content:space-between}
+h1,h2,h3{margin:4px 0}.k{color:var(--mut);font-size:11px;font-weight:900;letter-spacing:.08em}.panel{background:var(--p);border:1px solid var(--line);border-radius:14px;padding:13px;margin:10px 0}
+button,a,input,select,textarea{font:inherit}button,a{border:1px solid var(--line);background:#18202a;color:white;border-radius:9px;padding:9px 11px;font-weight:850;text-decoration:none;cursor:pointer}
+button.active,.primary{background:#284c78}.danger{background:#5a2029}.hidden,[hidden]{display:none!important}
+input,select,textarea{width:100%;background:var(--p2);border:1px solid var(--line);color:white;border-radius:8px;padding:10px;font-size:16px}
+.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}.field{display:flex;flex-direction:column;gap:5px}.field span,.muted{color:var(--mut)}
+.fg-lot-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:9px}.fg-lot-card{display:block;text-align:left;padding:12px;min-height:110px;background:#111923}.fg-card-line{justify-content:space-between;margin:4px 0}
+.fg-status{font-size:11px;padding:3px 7px;border-radius:999px;border:1px solid var(--line)}.fg-status.mine{color:var(--green)}.fg-status.open{color:var(--blue)}
+.fg-chip{display:inline-flex;gap:4px;align-items:center;border:1px solid var(--line);padding:5px 8px;border-radius:999px;margin:2px}.fg-msg{margin:9px 0;padding:9px 11px;border-radius:9px;background:#111923}.fg-msg.ok{color:var(--green)}.fg-msg.error{color:#ff9ba8}.fg-warning{color:var(--warn)}.fg-muted{color:var(--mut)}
+.scroll{overflow:auto}table{border-collapse:collapse;width:100%;min-width:900px}th,td{padding:8px;border-bottom:1px solid #293544;text-align:left;white-space:nowrap}th{background:#18202a;position:sticky;top:0}
+.actions{margin-top:10px}.wide{grid-column:1/-1}.two{grid-template-columns:repeat(2,minmax(0,1fr))}
+@media(max-width:820px){.grid{grid-template-columns:1fr 1fr}}@media(max-width:540px){.grid,.two{grid-template-columns:1fr}.app{padding:10px}}
 </style>
-</head>
+<link rel="stylesheet" href="rf-v853.css"></head>
 <body>
 <main class="app">
-<header class="top"><div><div class="k">REAL FACTORY · TEST DEFAULT</div><h1>Finished Goods</h1><div id="operator" class="k">Loading…</div></div><div class="actions"><a href="real-dashboard-v9182.html?v=9290">Dashboard</a></div></header>
-<nav id="tabs" class="tabs panel"><button class="active" data-tab="packing">Packing</button><button data-tab="despatch">Despatch</button><button data-tab="receive">Store Receive</button><button data-tab="stock">Webstore / Store Stock</button><button data-tab="sale">Sales · PI / CPI</button><button data-tab="verify">Sales Qty Verify</button><button data-tab="returns">Sales Return</button></nav><div id="message" class="fg-msg"></div>
-<section class="panel" data-view="packing"><div class="top"><div><div class="k">PRESS → PACKING</div><h2>Packing</h2></div><button id="refreshPackLots">Refresh Ready Lots</button></div><div class="field"><span>Search Lot</span><input id="packLotSearch" type="search" placeholder="Lot No"></div><div id="packLotCards" class="fg-lot-grid" style="margin-top:10px"></div><section id="packWorkspace" class="panel" hidden><div class="top"><div><h3 id="selectedPackLot">Lot</h3><div id="selectedPackMeta"></div></div><button id="closePackLot">Close</button></div><div id="assignPackBlock" class="grid two"><label class="field"><span>Assign Packing Worker</span><select id="packWorker"></select></label><div class="actions"><button id="assignPack" class="primary">Assign Packing</button></div></div><div id="workerPackBlock" class="actions" hidden><button id="acceptPack" class="primary">Accept Packing</button></div><div id="packSummary" style="margin:10px 0"></div><div class="scroll"><table><thead><tr><th>Box</th><th>Type</th><th>PCS</th><th>Composition</th></tr></thead><tbody id="packRows"></tbody></table></div><div class="actions"><button id="submitPack" class="primary" disabled>Submit Packing</button></div></section></section>
-<section class="panel" data-view="despatch" hidden><div class="top"><div><div class="k">PACKING → DESPATCH</div><h2>Despatch</h2></div><button id="loadReadyBoxes">Refresh Boxes</button></div><div class="grid"><label class="field"><span>Ready Boxes</span><select id="dispatchBoxes" multiple size="8"></select></label><label class="field"><span>Destination</span><input id="dispatchDestination" placeholder="Store / Godown"></label><label class="field"><span>Remarks</span><textarea id="dispatchRemarks"></textarea></label></div><div class="actions"><button id="submitDispatch" class="primary">Create Despatch</button></div></section>
-<section class="panel" data-view="receive" hidden><div class="top"><div><div class="k">DESPATCH → STORE</div><h2>Store Receive</h2></div><button id="loadChallans">Refresh Challans</button></div><div class="grid"><label class="field"><span>Challan</span><select id="receiveChallan"></select></label><label class="field"><span>Boxes</span><select id="receiveBoxes" multiple size="8"></select></label><label class="field"><span>Remarks</span><textarea id="receiveRemarks"></textarea></label></div><div class="actions"><button id="acceptReceive" class="primary">Accept Receive</button></div></section>
-<section class="panel" data-view="stock" hidden><div class="top"><div><div class="k">STORE + WEBSTORE</div><h2>Stock</h2></div><button id="loadStock">Refresh Stock</button></div><div class="scroll"><table><thead><tr><th>Lot</th><th>Item</th><th>Stock Type</th><th>Location</th><th>Available PCS</th><th>Status</th></tr></thead><tbody id="stockRows"></tbody></table></div></section>
-<section class="panel" data-view="sale" hidden><div><div class="k">SALES</div><h2>PI / CPI</h2></div><div class="grid"><label class="field"><span>Buyer</span><input id="buyerSearch" list="buyerSuggestions" placeholder="Buyer"><datalist id="buyerSuggestions"></datalist></label><label class="field"><span>Buyer Dispatch</span><input id="buyerDispatch" placeholder="Dispatch / destination"></label><label class="field"><span>Sale Lot</span><input id="saleLot" list="saleLotSuggestions" placeholder="Lot No"><datalist id="saleLotSuggestions"></datalist></label><label class="field"><span>Regular Qty</span><input id="regularQty" type="number" value="0"></label><label class="field"><span>ASSORTED Qty</span><input id="asstQty" type="number" value="0"></label><label class="field"><span>ASSORTED Rate</span><input id="asstRate" type="number" step="0.01"></label><label class="field"><span>Value Added %</span><input id="valueAdded" type="number" step="0.01" value="0"></label><label class="field"><span>Packing / Other</span><input id="packingOther" type="number" step="0.01" value="0"></label></div><div id="saleBalance" style="margin:10px 0"></div><div class="actions"><button id="addPiLine">Add Line</button></div><div class="scroll"><table><thead><tr><th>Lot</th><th>Type</th><th>Qty</th><th>Rate</th><th>Amount</th></tr></thead><tbody id="piRows"></tbody></table></div><div id="piTotals" style="margin:10px 0"></div><div class="actions"><button id="savePi">Save PI</button><button id="submitCpi" class="primary">Submit Final CPI</button></div></section>
-<section class="panel" data-view="verify" hidden><div class="top"><div><div class="k">FINAL CPI</div><h2>Sales Qty Verify</h2></div><button id="loadCpis">Refresh CPI</button></div><div class="grid"><label class="field"><span>CPI</span><select id="verifyCpi"></select></label><label class="field"><span>Remarks</span><textarea id="verifyRemarks"></textarea></label></div><div class="actions"><button id="verifyQty" class="primary">Verify Qty</button></div></section>
-<section class="panel" data-view="returns" hidden><div><div class="k">SALES RETURN</div><h2>Return</h2></div><div class="grid"><label class="field"><span>Return Mode</span><select id="returnMode"><option value="KNOWN">KNOWN</option><option value="ANONYMOUS">ANONYMOUS</option></select></label><label class="field known"><span>CPI</span><select id="returnCpi"></select></label><label class="field known"><span>Return Line</span><select id="returnLine"></select></label><label class="field anonymous" hidden><span>Condition</span><select id="anonymousCondition"><option>ANONYMOUS_FRESH</option><option>ANONYMOUS_MIXED</option><option>ALT_DAMAGE</option></select></label><label class="field anonymous" hidden><span>New Lot No</span><input id="returnNewLot"></label><label class="field"><span>Qty</span><input id="returnQty" type="number" value="0"></label><label class="field"><span>Rate</span><input id="returnRate" type="number" step="0.01"></label><label class="field"><span>Remarks</span><textarea id="returnRemarks"></textarea></label></div><div class="actions"><button id="postReturn" class="primary">Post Return</button></div></section>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="config.js"></script><script src="real-common.js"></script><script src="real-finished-goods-v853.js?v=9362"></script>
-<script>
-(function(){
-  function showMappedPacker(){
-    const ws=document.getElementById('packWorkspace'),meta=document.getElementById('selectedPackMeta'),block=document.getElementById('assignPackBlock'),sel=document.getElementById('packWorker'),btn=document.getElementById('assignPack');
-    if(!ws||ws.hidden||!meta||!block||!sel||!btn)return;
-    const chip=[...meta.querySelectorAll('.fg-chip')].find(x=>/^Packer\b/i.test((x.textContent||'').trim()));
-    if(!chip)return;
-    const name=(chip.querySelector('b')?.textContent||'').trim();
-    block.hidden=false;
-    const opt=[...sel.options].find(o=>(o.textContent||'').trim().toLowerCase().startsWith(name.toLowerCase()));
-    if(opt)sel.value=opt.value;
-    sel.disabled=true;
-    btn.disabled=true;
-    btn.textContent='PACKER MAPPED';
-  }
-  const obs=new MutationObserver(()=>setTimeout(showMappedPacker,0));
-  obs.observe(document.documentElement,{subtree:true,childList:true,attributes:true,attributeFilter:['hidden']});
-  document.addEventListener('click',e=>{if(e.target.closest('[data-pack-lot]'))setTimeout(showMappedPacker,250)},true);
-})();
-</script>
-</main></body></html>
+<header class="top">
+  <div><div class="k">REAL FACTORY · TEST DEFAULT</div><h1>Finished Goods</h1><div id="operator" class="k">Loading…</div></div>
+  <div class="actions"><a href="real-dashboard-v9182.html?v=9290">Dashboard</a></div>
+</header>
+
+<nav id="tabs" class="tabs panel">
+  <button class="active" data-tab="packing">Packing</button>
+  <button data-tab="despatch">Despatch</button>
+  <button data-tab="receive">Store Receive</button>
+  <button data-tab="stock">Webstore / Store Stock</button>
+  <button data-tab="sale">Sales · PI / CPI</button>
+  <button data-tab="verify">Sales Qty Verify</button>
+  <button data-tab="returns">Sales Return</button>
+</nav>
+<div id="message" class="fg-msg"></div>
+
+<section class="panel" data-view="packing">
+ <div class="top"><div><div class="k">PRESS → PACKING</div><h2>Packing</h2></div><button id="refreshPackLots">Refresh Ready Lots</button></div>
+ <div class="field"><span>Search Lot</span><input id="packLotSearch" type="search" placeholder="Lot No"></div>
+ <div id="packLotCards" class="fg-lot-grid" style="margin-top:10px"></div>
+
+ <section id="packWorkspace" class="panel" hidden>
+   <div class="top"><div><h3 id="selectedPackLot">Lot</h3><div id="selectedPackMeta"></div></div><button id="closePackLot">Close</button></div>
+   <div id="assignPackBlock" class="grid two">
+     <label class="field"><span>Packing Worker</span><select id="packWorker"></select></label>
+     <div class="actions"><button id="assignPack" class="primary">Assign Packing</button></div>
+   </div>
+   <div id="workerPackBlock" class="actions" hidden><button id="acceptPack" class="primary">Accept Packing</button></div>
+   <div id="packSummary" style="margin:10px 0"></div>
+   <div class="scroll"><table><thead><tr><th>Box</th><th>Type</th><th>PCS</th><th>Composition</th></tr></thead><tbody id="packRows"></tbody></table></div>
+   <div class="actions"><button id="submitPack" class="primary" disabled>Submit Packing</button></div>
+ </section>
+</section>
+
+<section class="panel" data-view="despatch" hidden>
+ <div class="top"><div><div class="k">PACKING → DESPATCH</div><h2>Despatch</h2></div><button id="loadReadyBoxes">Refresh Boxes</button></div>
+ <div class="grid">
+   <label class="field"><span>Ready Boxes</span><select id="dispatchBoxes" multiple size="8"></select></label>
+   <label class="field"><span>Destination</span><input id="dispatchDestination" placeholder="Store / Godown"></label>
+   <label class="field"><span>Remarks</span><textarea id="dispatchRemarks"></textarea></label>
+ </div>
+ <div class="actions"><button id="submitDispatch" class="primary">Create Despatch</button></div>
+</section>
+
+<section class="panel" data-view="receive" hidden>
+ <div class="top"><div><div class="k">DESPATCH → STORE</div><h2>Store Receive</h2></div><button id="loadChallans">Refresh Challans</button></div>
+ <div class="grid">
+   <label class="field"><span>Challan</span><select id="receiveChallan"></select></label>
+   <label class="field"><span>Boxes</span><select id="receiveBoxes" multiple size="8"></select></label>
+   <label class="field"><span>Remarks</span><textarea id="receiveRemarks"></textarea></label>
+ </div>
+ <div class="actions"><button id="acceptReceive" class="primary">Accept Receive</button></div>
+</section>
+
+<section class="panel" data-view="stock" hidden>
+ <div class="top"><div><div class="k">STORE + WEBSTORE</div><h2>Stock</h2></div><button id="loadStock">Refresh Stock</button></div>
+ <div class="scroll"><table><thead><tr><th>Lot</th><th>Item</th><th>Stock Type</th><th>Location</th><th>Available PCS</th><th>Status</th></tr></thead><tbody id="stockRows"></tbody></table></div>
+</section>
+
+<section class="panel" data-view="sale" hidden>
+ <div><div class="k">SALES</div><h2>PI / CPI</h2></div>
+ <div class="grid">
+   <label class="field"><span>Buyer</span><input id="buyerSearch" list="buyerSuggestions" placeholder="Buyer"><datalist id="buyerSuggestions"></datalist></label>
+   <label class="field"><span>Buyer Dispatch</span><input id="buyerDispatch" placeholder="Dispatch / destination"></label>
+   <label class="field"><span>Sale Lot</span><input id="saleLot" list="saleLotSuggestions" placeholder="Lot No"><datalist id="saleLotSuggestions"></datalist></label>
+   <label class="field"><span>Regular Qty</span><input id="regularQty" type="number" value="0"></label>
+   <label class="field"><span>ASSORTED Qty</span><input id="asstQty" type="number" value="0"></label>
+   <label class="field"><span>ASSORTED Rate</span><input id="asstRate" type="number" step="0.01"></label>
+   <label class="field"><span>Value Added %</span><input id="valueAdded" type="number" step="0.01" value="0"></label>
+   <label class="field"><span>Packing / Other</span><input id="packingOther" type="number" step="0.01" value="0"></label>
+ </div>
+ <div id="saleBalance" style="margin:10px 0"></div>
+ <div class="actions"><button id="addPiLine">Add Line</button></div>
+ <div class="scroll"><table><thead><tr><th>Lot</th><th>Type</th><th>Qty</th><th>Rate</th><th>Amount</th></tr></thead><tbody id="piRows"></tbody></table></div>
+ <div id="piTotals" style="margin:10px 0"></div>
+ <div class="actions"><button id="savePi">Save PI</button><button id="submitCpi" class="primary">Submit Final CPI</button></div>
+</section>
+
+<section class="panel" data-view="verify" hidden>
+ <div class="top"><div><div class="k">FINAL CPI</div><h2>Sales Qty Verify</h2></div><button id="loadCpis">Refresh CPI</button></div>
+ <div class="grid">
+   <label class="field"><span>CPI</span><select id="verifyCpi"></select></label>
+   <label class="field"><span>Remarks</span><textarea id="verifyRemarks"></textarea></label>
+ </div>
+ <div class="actions"><button id="verifyQty" class="primary">Verify Qty</button></div>
+</section>
+
+<section class="panel" data-view="returns" hidden>
+ <div><div class="k">SALES RETURN</div><h2>Return</h2></div>
+ <div class="grid">
+   <label class="field"><span>Return Mode</span><select id="returnMode"><option value="KNOWN">KNOWN</option><option value="ANONYMOUS">ANONYMOUS</option></select></label>
+   <label class="field known"><span>CPI</span><select id="returnCpi"></select></label>
+   <label class="field known"><span>Return Line</span><select id="returnLine"></select></label>
+   <label class="field anonymous" hidden><span>Condition</span><select id="anonymousCondition"><option>ANONYMOUS_FRESH</option><option>ANONYMOUS_MIXED</option><option>ALT_DAMAGE</option></select></label>
+   <label class="field anonymous" hidden><span>New Lot No</span><input id="returnNewLot"></label>
+   <label class="field"><span>Qty</span><input id="returnQty" type="number" value="0"></label>
+   <label class="field"><span>Rate</span><input id="returnRate" type="number" step="0.01"></label>
+   <label class="field"><span>Remarks</span><textarea id="returnRemarks"></textarea></label>
+ </div>
+ <div class="actions"><button id="postReturn" class="primary">Post Return</button></div>
+</section>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+<script src="real-common.js"></script>
+<script src="real-finished-goods-v853.js?v=8052"></script>
+</main>
+</body></html>
