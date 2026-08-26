@@ -6,6 +6,8 @@
   const $=id=>document.getElementById(id),db=()=>window.supabaseClient||window.supabaseDb||window.redzedSupabase||window.sb;
   const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));
   let lastLot="",gateBypass=false,selectedFiles=[],uploadRunning=false,role="",refs=[],aiState={1:0,2:0,3:0},aiRunning={1:false,2:false,3:false};
+  let rateSnapshot=null,ratePollBusy=false,aiWorkerBusy=false,aiActiveStyle=0;
+  const aiQueue=[];
   const prompts={
     1:"Professional model/catalog presentation. Reference thumbnails are style-only. Keep exact uploaded garment truth. Show only factual lot/art data supplied by system; never show numeric sale rate or copied reference branding/offers.",
     2:"Premium flat-lay catalog. Use wood or black/charcoal/grey base, tasteful neutral menswear accessories, and only actual uploaded garment colours. Arrange 2/4/6 garments when source images support it. Keep exact garment texture/design.",
@@ -38,15 +40,29 @@
   async function uploadFile(file,path){const c=db();const up=await c.storage.from(BUCKET).upload(path,file,{contentType:file.type||"image/jpeg",upsert:false});if(up.error)throw up.error;return{path,image_url:c.storage.from(BUCKET).getPublicUrl(path).data.publicUrl}}
   async function removePaths(paths){const clean=(paths||[]).filter(Boolean);if(!clean.length)return;const r=await db().storage.from(BUCKET).remove(clean);if(r.error)console.warn(r.error)}
   async function requestRate(){try{if(!algoReady())throw Error("Pehle Packing Algorithm/Table complete karein.");const l=lot();if(!l)throw Error("Lot select karein");const b=$("rrRequestRate");b.disabled=true;localMsg("Final rate approval request bheji ja rahi hai…");await rpc("rr_pack_request_rate_v9340",{p_lot_no:l,p_data_mode:MODE});localMsg("Request Admin/Super Admin ko bhej di gayi.","ok");await loadAll()}catch(e){localMsg(cleanErr(e),"error")}finally{if($("rrRequestRate"))$("rrRequestRate").disabled=false}}
-  async function loadRate(){const l=lot();if(!l)return{approved:false,status:"NOT_REQUESTED"};const s=await rpc("rr_pack_rate_status_v9340",{p_lot_no:l,p_data_mode:MODE});const st=$("rrRateStatus"),req=$("rrRequestRate");if(st){const text=s.approved?`APPROVED · ${esc(s.art_code||"")}`:s.status==="NOT_REQUESTED"?"Approval not requested":`${esc(s.status)} · Admin action pending`;st.innerHTML=`<span class="fg-chip"><b>${text}</b></span>${s.approved?"":"<span class='fg-muted'>AI section locked</span>"}`}
+  async function loadRate(statusOnly=false){const l=lot();if(!l)return{approved:false,status:"NOT_REQUESTED"};const s=await rpc("rr_pack_rate_status_v9340",{p_lot_no:l,p_data_mode:MODE});if(l!==lot()||$("packWorkspace")?.hidden)return s;rateSnapshot={lot:l,...s};const st=$("rrRateStatus"),req=$("rrRequestRate");if(st){const text=s.approved?`APPROVED · ${esc(s.art_code||"")}`:s.status==="NOT_REQUESTED"?"Approval not requested":`${esc(s.status)} · Admin action pending`;const html=`<span class="fg-chip"><b>${text}</b></span>${s.approved?"":"<span class='fg-muted'>AI section locked</span>"}`;if(st.innerHTML!==html)st.innerHTML=html}
     if(req){req.hidden=!!s.approved;req.disabled=!algoReady()}
-    $("rrSourcePics").hidden=!s.approved;if(!s.approved)$("rrAiStyles").hidden=true;return s}
+    if(!statusOnly)$("rrSourcePics").hidden=!s.approved;if(!s.approved)$("rrAiStyles").hidden=true;return s}
+  async function refreshApproval(force=false){
+    const l=lot();
+    if(ratePollBusy||!l||document.hidden||$("packWorkspace")?.hidden||!$("rrRateStatus"))return;
+    if(!force&&rateSnapshot?.lot===l&&rateSnapshot.approved)return;
+    ratePollBusy=true;
+    try{
+      const wasApproved=rateSnapshot?.lot===l&&rateSnapshot.approved;
+      const status=await loadRate(true);
+      if(l!==lot()||$("packWorkspace")?.hidden)return;
+      // Refresh AI availability once on approval, not on every poll (preserves active previews/prompts).
+      if(status.approved&&!wasApproved)await loadAll();
+    }catch(e){console.warn('Packing approval status refresh failed',e?.message||e)}
+    finally{ratePollBusy=false}
+  }
   async function mediaSummary(){const l=lot();if(!l)return null;const s=await rpc("rr_pack_media_summary_v9330",{p_lot_no:l,p_data_mode:MODE});const cams=(s?.media||[]).filter(x=>x.media_role==="CAMERA");const p=$("rrCameraPreview");if(p)p.innerHTML=cams.map((m,i)=>`<div class="rr-thumb"><span>FINAL ${i+1}</span><img src="${esc(m.image_url||m.storage_path||"")}" alt=""><button class="rr-del" data-cam-del="${esc(m.media_id)}" data-path="${esc(m.storage_path||"")}" type="button">×</button></div>`).join("")||"<p class='fg-muted'>Abhi final garment pics nahi hain.</p>";return s}
   async function uploadSelected(e){e?.preventDefault();if(uploadRunning)return;uploadRunning=true;const b=$("rrUploadPics");try{const rate=await loadRate();if(!rate.approved)throw Error("Final rate approval required");const l=lot(),cur=await mediaSummary(),have=Number(cur?.camera_count||0);if(!selectedFiles.length)throw Error("Camera/Gallery images select karein");if(have+selectedFiles.length>3)throw Error(`Total final garment photos 3 hi rahengi. Current ${have}/3.`);b.disabled=true;b.textContent="UPLOADING…";const items=[];for(let i=0;i<selectedFiles.length;i++){const f=selectedFiles[i],ext=(f.name.split(".").pop()||"jpg").replace(/[^a-z0-9]/gi,"").toLowerCase()||"jpg",path=`packing-final/${MODE}/${encodeURIComponent(l)}/${Date.now()}-${crypto.randomUUID()}.${ext}`,u=await uploadFile(f,path);items.push({media_role:"CAMERA",variant_no:have+i+1,image_url:u.image_url,storage_path:u.path,caption:"[CAMERA] Final packing image",customer_caption:"Final packing image"})}await rpc("rr_pack_save_media_v9332",{p_lot_no:l,p_items:items,p_data_mode:MODE});selectedFiles=[];if($("rrCameraPics"))$("rrCameraPics").value="";if($("rrGalleryPics"))$("rrGalleryPics").value="";localMsg("Final garment photos saved.","ok");await loadAll()}catch(err){localMsg(cleanErr(err),"error")}finally{uploadRunning=false;if(b){b.disabled=false;b.textContent="UPLOAD SELECTED FINAL PICS"}}}
   async function loadRefs(){try{refs=await rpc("rr_pack_ai_style_refs_list_v9340")||[]}catch(_){refs=[]}}
   function styleRefs(n){return refs.filter(r=>Number(r.style_no)===n)}
   function styleName(n){return n===1?"STYLE 1 · MODEL CATALOG":n===2?"STYLE 2 · PREMIUM FLAT-LAY":"STYLE 3 · HANGING DISPLAY"}
-  async function renderStyles(){const l=lot();if(!l)return;const list=(await rpc("rr_pack_ai_list_v9340",{p_lot_no:l,p_data_mode:MODE}))?.items||[],host=$("rrStylePanels");if(!host)return;const r=await currentRole();host.innerHTML=[1,2,3].map(n=>{const arr=list.filter(x=>Number(x.style_no)===n),idx=Math.min(aiState[n]||0,Math.max(arr.length-1,0));aiState[n]=idx;const cur=arr[idx],rs=styleRefs(n);return `<article class="rr-style" data-style="${n}"><div class="fg-title-row"><div><h4>${styleName(n)}</h4><small class="fg-muted">Reference thumbnails · style only · ${r==='owner'?'Super Admin editable':'locked'}</small></div><span class="fg-chip">${arr.some(x=>x.is_final)?"FINAL SELECTED":"FINAL PENDING"}</span></div><div class="rr-ref-strip">${rs.map(x=>`<span class="rr-ref"><img src="${esc(x.image_url)}" alt=""><small>${esc(x.ref_key)}</small>${r==='owner'?`<button data-ref-del="${esc(x.id)}" data-path="${esc(x.storage_path)}" type="button">×</button>`:""}</span>`).join("")||"<span class='fg-muted'>Reference thumbnails not uploaded yet.</span>"}</div>${r==='owner'?`<label class="fg-field rr-ref-upload"><span>Add/Replace Style Reference</span><input type="file" accept="image/*" data-ref-upload="${n}"></label>`:""}<label class="fg-field"><span>Style Prompt</span><textarea data-prompt="${n}">${esc(prompts[n])}</textarea></label><div class="rr-main-preview">${cur?`<img src="${esc(cur.image_url)}" alt=""><div class="rr-counter">${idx+1}/${arr.length}${cur.is_final?" · FINAL":""}</div>`:"<div class='fg-muted'>No AI candidate yet.</div>"}</div><div class="fg-actions"><button class="fg-btn" data-prev="${n}" ${arr.length<2?'disabled':''}>← PREV</button><button class="fg-btn primary" data-gen="${n}">${arr.length?'REGENERATE':'GENERATE'}</button><button class="fg-btn" data-next="${n}" ${arr.length<2?'disabled':''}>NEXT →</button>${cur?`<button class="fg-btn danger" data-ai-del="${esc(cur.id)}" data-path="${esc(cur.storage_path)}">DELETE CURRENT</button><button class="fg-btn ok" data-final="${esc(cur.id)}">SELECT FINAL</button>`:""}<label class="fg-btn">REPLACE / UPLOAD<input type="file" accept="image/*" data-ai-upload="${n}" hidden></label></div></article>`}).join("");bindDynamic()}
+  async function renderStyles(){const l=lot();if(!l)return;const list=(await rpc("rr_pack_ai_list_v9340",{p_lot_no:l,p_data_mode:MODE}))?.items||[],host=$("rrStylePanels");if(!host)return;const r=await currentRole();if(l!==lot()||$('packWorkspace')?.hidden)return;host.innerHTML=[1,2,3].map(n=>{const arr=list.filter(x=>Number(x.style_no)===n),idx=Math.min(aiState[n]||0,Math.max(arr.length-1,0));aiState[n]=idx;const cur=arr[idx],rs=styleRefs(n);return `<article class="rr-style" data-style="${n}"><div class="fg-title-row"><div><h4>${styleName(n)}</h4><small class="fg-muted">Reference thumbnails · style only · ${r==='owner'?'Super Admin editable':'locked'}</small></div><span class="fg-chip">${arr.some(x=>x.is_final)?"FINAL SELECTED":"FINAL PENDING"}</span></div><div class="rr-ref-strip">${rs.map(x=>`<span class="rr-ref"><img src="${esc(x.image_url)}" alt=""><small>${esc(x.ref_key)}</small>${r==='owner'?`<button data-ref-del="${esc(x.id)}" data-path="${esc(x.storage_path)}" type="button">×</button>`:""}</span>`).join("")||"<span class='fg-muted'>Reference thumbnails not uploaded yet.</span>"}</div>${r==='owner'?`<label class="fg-field rr-ref-upload"><span>Add/Replace Style Reference</span><input type="file" accept="image/*" data-ref-upload="${n}"></label>`:""}<label class="fg-field"><span>Style Prompt</span><textarea data-prompt="${n}">${esc(prompts[n])}</textarea></label><div class="rr-main-preview">${cur?`<img src="${esc(cur.image_url)}" alt=""><div class="rr-counter">${idx+1}/${arr.length}${cur.is_final?" · FINAL":""}</div>`:"<div class='fg-muted'>No AI candidate yet.</div>"}</div><div class="fg-actions"><button class="fg-btn" data-prev="${n}" ${arr.length<2?'disabled':''}>← PREV</button><button class="fg-btn primary" data-gen="${n}">${arr.length?'REGENERATE':'GENERATE'}</button><button class="fg-btn" data-next="${n}" ${arr.length<2?'disabled':''}>NEXT →</button>${cur?`<button class="fg-btn danger" data-ai-del="${esc(cur.id)}" data-path="${esc(cur.storage_path)}">DELETE CURRENT</button><button class="fg-btn ok" data-final="${esc(cur.id)}">SELECT FINAL</button>`:""}<label class="fg-btn">REPLACE / UPLOAD<input type="file" accept="image/*" data-ai-upload="${n}" hidden></label></div></article>`}).join("");bindDynamic();syncAiButtons()}
   function bindDynamic(){
     document.querySelectorAll("[data-prev]").forEach(b=>b.onclick=()=>{const n=Number(b.dataset.prev);aiState[n]=Math.max(0,(aiState[n]||0)-1);renderStyles()});
     document.querySelectorAll("[data-next]").forEach(b=>b.onclick=async()=>{const n=Number(b.dataset.next),l=lot(),items=(await rpc("rr_pack_ai_list_v9340",{p_lot_no:l,p_data_mode:MODE}))?.items?.filter(x=>Number(x.style_no)===n)||[];aiState[n]=Math.min(items.length-1,(aiState[n]||0)+1);renderStyles()});
@@ -58,8 +74,70 @@
     document.querySelectorAll("[data-ref-del]").forEach(b=>b.onclick=()=>deleteReference(b.dataset.refDel,b.dataset.path));
   }
   function b64File(b64){const bin=atob(b64),arr=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)arr[i]=bin.charCodeAt(i);return new File([arr],"ai.png",{type:"image/png"})}
-  async function chooseRef(style){const a=styleRefs(style);if(!a.length)return null;const l=lot(),items=(await rpc("rr_pack_ai_list_v9340",{p_lot_no:l,p_data_mode:MODE}))?.items?.filter(x=>Number(x.style_no)===style)||[];return a[items.length%a.length]}
-  async function generateStyle(n){if(aiRunning[n])return;aiRunning[n]=true;try{const rate=await loadRate();if(!rate.approved)throw Error("Final rate approval required");const s=await mediaSummary(),cams=(s?.media||[]).filter(x=>x.media_role==="CAMERA"&&x.image_url).slice(0,3);if(cams.length!==3)throw Error(`AI se pehle 3 final garment photos mandatory. Current ${cams.length}/3`);const ctx=await rpc("rr_pack_catalog_context_v9340",{p_lot_no:lot(),p_data_mode:MODE}),ref=await chooseRef(n),prompt=document.querySelector(`[data-prompt="${n}"]`)?.value||prompts[n];localMsg(`${styleName(n)} generate ho rahi hai…`);const {data,error}=await db().functions.invoke(AI_FN,{body:{lot_no:lot(),style_no:n,image_urls:cams.map(x=>x.image_url),reference_urls:ref?[ref.image_url]:[],ref_key:ref?.ref_key||"",context:ctx,prompt}});if(error)throw error;if(!data?.ok||!data.image_b64)throw Error(data?.error||"AI generation failed");const f=b64File(data.image_b64),path=`packing-ai/${MODE}/${encodeURIComponent(lot())}/style-${n}/${Date.now()}-${crypto.randomUUID()}.png`,u=await uploadFile(f,path);await rpc("rr_pack_ai_save_candidate_v9340",{p_lot_no:lot(),p_style_no:n,p_image_url:u.image_url,p_storage_path:u.path,p_prompt:prompt,p_ref_key:ref?.ref_key||null,p_data_mode:MODE});const list=(await rpc("rr_pack_ai_list_v9340",{p_lot_no:lot(),p_data_mode:MODE}))?.items?.filter(x=>Number(x.style_no)===n)||[];aiState[n]=Math.max(0,list.length-1);localMsg(`${styleName(n)} candidate saved.`,"ok");await renderStyles()}catch(e){localMsg(cleanErr(e),"error")}finally{aiRunning[n]=false}}
+  async function chooseRef(style,l=lot()){const a=styleRefs(style);if(!a.length)return null;const items=(await rpc("rr_pack_ai_list_v9340",{p_lot_no:l,p_data_mode:MODE}))?.items?.filter(x=>Number(x.style_no)===style)||[];return a[items.length%a.length]}
+  function syncAiButtons(){
+    document.querySelectorAll('[data-gen]').forEach(b=>{
+      const n=Number(b.dataset.gen);
+      if(aiRunning[n]){
+        if(!b.dataset.rrAiIdleLabel)b.dataset.rrAiIdleLabel=b.textContent;
+        b.disabled=true;b.textContent=aiActiveStyle===n?'GENERATING…':'QUEUED…';
+      }else if(b.dataset.rrAiIdleLabel){
+        b.disabled=false;b.textContent=b.dataset.rrAiIdleLabel;delete b.dataset.rrAiIdleLabel;
+      }
+    });
+  }
+  async function aiError(error){
+    let detail='';
+    try{
+      const response=error?.context?.clone?error.context.clone():error?.context;
+      if(response?.json){const body=await response.json();detail=typeof body?.error==='string'?body.error:body?.error?.message||body?.message||'';}
+    }catch(_){}
+    return detail||cleanErr(error);
+  }
+  function generateStyle(n){
+    if(![1,2,3].includes(n)||aiRunning[n])return;
+    const l=lot();if(!l)return;
+    const prompt=document.querySelector(`[data-prompt="${n}"]`)?.value||prompts[n];
+    aiRunning[n]=true;aiQueue.push({style:n,lot:l,prompt});syncAiButtons();
+    return drainAiQueue();
+  }
+  async function drainAiQueue(){
+    if(aiWorkerBusy)return;
+    aiWorkerBusy=true;
+    try{
+      while(aiQueue.length){
+        const job=aiQueue.shift(),n=job.style;
+        if(job.lot!==lot()||$('packWorkspace')?.hidden){aiRunning[n]=false;syncAiButtons();continue;}
+        aiActiveStyle=n;syncAiButtons();
+        try{await runStyle(job)}
+        catch(e){
+          if(job.lot===lot())localMsg(`${styleName(n)}: ${await aiError(e)}. Pehle saved images safe hain. Baaki queue rok di hai; failed/pending style ko dobara GENERATE karein.`,'error');
+          aiQueue.splice(0).forEach(p=>{aiRunning[p.style]=false});
+          break;
+        }finally{aiRunning[n]=false;aiActiveStyle=0;syncAiButtons()}
+      }
+    }finally{aiWorkerBusy=false;aiActiveStyle=0;syncAiButtons()}
+  }
+  async function runStyle(job){
+    const n=job.style,l=job.lot,prompt=job.prompt,args={p_lot_no:l,p_data_mode:MODE};
+    const rate=await rpc('rr_pack_rate_status_v9340',args);
+    if(!rate.approved)throw Error('Final rate approval required');
+    const s=await rpc('rr_pack_media_summary_v9330',args),cams=(s?.media||[]).filter(x=>x.media_role==='CAMERA'&&x.image_url).slice(0,3);
+    if(cams.length!==3)throw Error(`AI se pehle 3 final garment photos mandatory. Current ${cams.length}/3`);
+    const ctx=await rpc('rr_pack_catalog_context_v9340',args),ref=await chooseRef(n,l);
+    if(l!==lot()||$('packWorkspace')?.hidden)return;
+    localMsg(`${styleName(n)} generate ho rahi hai…${aiQueue.length?' Baaki styles queue mein hain.':''}`);
+    const {data,error}=await db().functions.invoke(AI_FN,{body:{lot_no:l,style_no:n,image_urls:cams.map(x=>x.image_url),reference_urls:ref?[ref.image_url]:[],ref_key:ref?.ref_key||'',context:ctx,prompt}});
+    if(error)throw error;
+    if(!data?.ok||!data.image_b64)throw Error(data?.error||'AI generation failed');
+    // A lot change during generation must never save the result to the newly selected lot.
+    const f=b64File(data.image_b64),path=`packing-ai/${MODE}/${encodeURIComponent(l)}/style-${n}/${Date.now()}-${crypto.randomUUID()}.png`,u=await uploadFile(f,path);
+    await rpc('rr_pack_ai_save_candidate_v9340',{p_lot_no:l,p_style_no:n,p_image_url:u.image_url,p_storage_path:u.path,p_prompt:prompt,p_ref_key:ref?.ref_key||null,p_data_mode:MODE});
+    if(l!==lot()||$('packWorkspace')?.hidden)return;
+    const list=(await rpc('rr_pack_ai_list_v9340',args))?.items?.filter(x=>Number(x.style_no)===n)||[];
+    if(l!==lot()||$('packWorkspace')?.hidden)return;
+    aiState[n]=Math.max(0,list.length-1);localMsg(`${styleName(n)} candidate saved.`,'ok');await renderStyles();
+  }
   async function manualCandidate(n,file){if(!file)return;try{const path=`packing-ai/${MODE}/${encodeURIComponent(lot())}/style-${n}/${Date.now()}-${crypto.randomUUID()}-${file.name.replace(/[^a-z0-9._-]/gi,"_")}`,u=await uploadFile(file,path);await rpc("rr_pack_ai_save_candidate_v9340",{p_lot_no:lot(),p_style_no:n,p_image_url:u.image_url,p_storage_path:u.path,p_prompt:"Manual replacement",p_ref_key:"MANUAL",p_data_mode:MODE});await renderStyles()}catch(e){localMsg(cleanErr(e),"error")}}
   async function deleteCandidate(id,path){try{if(!confirm("Delete this AI image permanently?"))return;await rpc("rr_pack_ai_delete_candidate_v9340",{p_id:id});await removePaths([path]);await renderStyles();localMsg("AI image permanently deleted.","ok")}catch(e){localMsg(cleanErr(e),"error")}}
   async function selectFinal(id){try{if(!confirm("Select as FINAL? Is style ki baki AI candidates permanent delete ho jayengi."))return;const r=await rpc("rr_pack_ai_select_final_v9340",{p_id:id});await removePaths(r?.purge_paths||[]);await renderStyles();localMsg(`Style ${r.style_no} FINAL selected. Baki candidates deleted.`,"ok")}catch(e){localMsg(cleanErr(e),"error")}}
@@ -72,4 +150,8 @@
   function tick(){const l=lot();bind();if(l&&l!==lastLot&&!$("packWorkspace")?.hidden){lastLot=l;block();loadAll()}else if(l&&!$("packWorkspace")?.hidden&&$("rrRequestRate"))$("rrRequestRate").disabled=!algoReady()}
   const style=document.createElement("style");style.textContent=`.rr-catalog-engine{margin-top:10px}.rr-pic-preview{display:grid;grid-template-columns:repeat(3,minmax(90px,1fr));gap:8px;margin-top:10px}.rr-thumb{position:relative;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:#0f1115;min-height:120px}.rr-thumb img{width:100%;height:150px;object-fit:cover;display:block}.rr-thumb span{position:absolute;left:5px;top:5px;background:#000b;color:#fff;border-radius:999px;padding:3px 6px;font-size:10px;font-weight:900;z-index:1}.rr-del,.rr-ref button{position:absolute;right:4px;top:4px;border-radius:999px;padding:3px 7px;background:#5a2029}.rr-style{border:1px solid var(--line);border-radius:13px;padding:11px;margin:10px 0;background:#0d131b}.rr-style h4{margin:0}.rr-ref-strip{display:flex;gap:7px;overflow:auto;padding:8px 0}.rr-ref{position:relative;flex:0 0 76px}.rr-ref img{width:76px;height:76px;object-fit:cover;border-radius:8px;border:1px solid var(--line)}.rr-ref small{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.rr-main-preview{height:min(62vh,620px);display:grid;place-items:center;border:1px solid var(--line);border-radius:12px;background:#090c11;position:relative;overflow:hidden;margin:9px 0}.rr-main-preview img{width:100%;height:100%;object-fit:contain}.rr-counter{position:absolute;bottom:7px;right:7px;background:#000c;padding:5px 8px;border-radius:999px}.rr-style textarea{min-height:105px}.rr-ref-upload{max-width:360px}@media(max-width:600px){.rr-pic-preview{grid-template-columns:1fr 1fr}.rr-main-preview{height:460px}}`;
   document.head.appendChild(style);new MutationObserver(tick).observe(document.documentElement,{childList:true,subtree:true,attributes:true,attributeFilter:["hidden"]});document.addEventListener("click",()=>setTimeout(tick,120),true);setInterval(tick,1200);setTimeout(tick,500);
+  setInterval(()=>refreshApproval(),5000);
+  window.addEventListener('focus',()=>refreshApproval(true));
+  window.addEventListener('pageshow',()=>refreshApproval(true));
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden)refreshApproval(true)});
 })();
