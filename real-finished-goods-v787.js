@@ -1,7 +1,7 @@
 (() => {
   'use strict';
   const $ = (id) => document.getElementById(id);
-  const esc = (v) => String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const esc = (v) => String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#39;'}[c]));
   const money = (v) => new Intl.NumberFormat('en-IN',{style:'currency',currency:'INR'}).format(Number(v||0));
   const params = new URLSearchParams(location.search);
   const state = { profile:null, packPlan:null, packLots:[], selectedPack:null, readyBoxes:[], receiveBoxes:[], piId:null, piLines:[], stock:[], cpis:[], mode:params.get('mode')==='REAL'?'REAL':'TEST', mountedLot:(params.get('lot')||'').trim() };
@@ -138,7 +138,33 @@
   async function renderPackPlan(planId,status='ACCEPTED'){try{const detail=await rpc('rr_fg_pack_plan_detail_v787',{p_plan_id:planId});state.packPlan={plan_id:planId};renderPackBoxes(detail.boxes||[]);$('packSummary').innerHTML=`<span class="fg-chip">Boxes <b>${detail.boxes.length}</b></span><span class="fg-chip">PCS <b>${detail.total_qty}</b></span><span class="fg-chip">View <b>${esc(status||'READY')}</b></span>`;$('packAlgoBlock').hidden=!(state.selectedPack?.is_mine||canAssign());$('submitPack').disabled=status==='SUBMITTED';msg(status==='SUBMITTED'?'Packed algorithm view loaded. Reset allowed.':'Existing algorithm table loaded. Re-run allowed before submit.','ok');}catch(e){msg(e.message,'error');}}
   async function submitPack(){try{if(!state.packPlan)throw Error('Packing plan required.');const r=await rpc('rr_fg_submit_assigned_pack_v788',{p_assignment_id:state.selectedPack.assignment_id,p_plan_id:state.packPlan.plan_id});msg(`${r.total_boxes} boxes / ${r.total_qty} PCS Ready for Despatch.`, 'ok');$('submitPack').disabled=true;closePackLot();await Promise.all([loadPackLots(),loadReadyBoxes()]);}catch(e){msg(e.message,'error');}}
   function dispatchEntries(){return [...$('dispatchBoxRows').querySelectorAll('tr')].filter(r=>r.querySelector('[data-dispatch-check]')?.checked).map(r=>({box_id:r.dataset.boxId,qty:Number(r.querySelector('[data-dispatch-qty]').value)}));}
-  function updateDispatchSummary(){const entries=dispatchEntries(),qty=entries.reduce((n,x)=>n+(Number.isInteger(x.qty)&&x.qty>0?x.qty:0),0);$('dispatchSummary').innerHTML=`<span class="fg-chip">Selected Boxes <b>${entries.length}</b></span><span class="fg-chip">Send PCS <b>${qty}</b></span>`;}
+  function dispatchType(box){const t=String(box?.box_type||'').toUpperCase();return t==='REGULAR'||t==='FRESH'?'FRESH':(t==='MIX'?'MIX':'ASST');}
+  function dispatchBucket(boxes){const out={boxes:boxes.length,pcs:boxes.reduce((n,x)=>n+Number(x.qty||0),0),qtys:boxes.map(x=>Number(x.qty||0)).filter(q=>q>0)};return out;}
+  function dispatchQtyLabel(bucket){
+    if(!bucket.boxes)return '0 BOX / 0 PCS';
+    const uniq=[...new Set(bucket.qtys)];
+    if(uniq.length===1)return `${bucket.boxes} × ${uniq[0]} = ${bucket.pcs} PCS`;
+    if(bucket.boxes===1)return `1 BOX = ${bucket.pcs} PCS`;
+    return `${bucket.boxes} BOX = ${bucket.pcs} PCS`;
+  }
+  function renderDispatchLotSummary(){
+    const host=$('dispatchLotSummary');if(!host)return;
+    if(!state.readyBoxes.length){host.innerHTML='';return;}
+    const selectedIds=new Set(dispatchEntries().map(x=>String(x.box_id)));
+    const lots=[...new Set(state.readyBoxes.map(x=>String(x.lot_no)))].sort((a,b)=>a.localeCompare(b,undefined,{numeric:true}));
+    host.innerHTML=lots.map(lot=>{
+      const all=state.readyBoxes.filter(x=>String(x.lot_no)===lot),sending=all.filter(x=>selectedIds.has(String(x.box_id))),balance=all.filter(x=>!selectedIds.has(String(x.box_id)));
+      const typeRows=['FRESH','ASST','MIX'].map(type=>{
+        const label=type==='FRESH'?'REGULAR / FRESH':type;
+        const a=dispatchBucket(all.filter(x=>dispatchType(x)===type)),s=dispatchBucket(sending.filter(x=>dispatchType(x)===type)),b=dispatchBucket(balance.filter(x=>dispatchType(x)===type));
+        if(!a.boxes)return '';
+        return `<tr><th>${label}</th><td>${esc(dispatchQtyLabel(a))}</td><td>${esc(dispatchQtyLabel(s))}</td><td>${esc(dispatchQtyLabel(b))}</td></tr>`;
+      }).join('');
+      const ta=dispatchBucket(all),ts=dispatchBucket(sending),tb=dispatchBucket(balance);
+      return `<div class="fg-table-wrap"><table class="fg-box-table"><thead><tr><th colspan="4">LOT ${esc(lot)}</th></tr><tr><th>TYPE</th><th>AVAILABLE</th><th>SENDING</th><th>BALANCE</th></tr></thead><tbody>${typeRows}<tr><th>LOT TOTAL</th><td>${ta.boxes} BOX / ${ta.pcs} PCS</td><td>${ts.boxes} BOX / ${ts.pcs} PCS</td><td>${tb.boxes} BOX / ${tb.pcs} PCS</td></tr></tbody></table></div>`;
+    }).join('');
+  }
+  function updateDispatchSummary(){const entries=dispatchEntries(),qty=entries.reduce((n,x)=>n+(Number.isInteger(x.qty)&&x.qty>0?x.qty:0),0);$('dispatchSummary').innerHTML=`<span class="fg-chip">Selected Boxes <b>${entries.length}</b></span><span class="fg-chip">Send PCS <b>${qty}</b></span>`;renderDispatchLotSummary();}
   async function loadReadyBoxes(){try{let q=supabaseClient.from('rr_fg_ready_box_v787').select('*').eq('data_mode',state.mode);if(state.mountedLot)q=q.eq('lot_no',state.mountedLot);const r=await q.order('box_code');if(r.error)throw r.error;state.readyBoxes=r.data||[];$('dispatchBoxRows').innerHTML=state.readyBoxes.length?state.readyBoxes.map(x=>`<tr data-box-id="${esc(x.box_id)}"><td><input type="checkbox" data-dispatch-check aria-label="Select ${esc(x.box_code)}"></td><td><b>${esc(x.box_code)}</b></td><td>${esc(x.lot_no)}</td><td>${esc(x.box_type)}</td><td>${Number(x.qty)}</td><td><input class="fg-qty-input" data-dispatch-qty type="number" min="1" step="1" required inputmode="numeric" placeholder="Mandatory"></td></tr>`).join(''):`<tr><td colspan="6" class="fg-muted">${state.mountedLot?`Lot ${esc(state.mountedLot)} में`:''} Koi Ready Box nahi hai.</td></tr>`;$('dispatchBoxRows').querySelectorAll('input').forEach(x=>x.addEventListener('input',updateDispatchSummary));updateDispatchSummary();}catch(e){msg(e.message,'error');}}
   async function submitDispatch(){try{const entries=dispatchEntries();if(!entries.length)throw Error('Kam se kam ek Box select karein.');for(const e of entries){if(!Number.isInteger(e.qty)||e.qty<=0)throw Error('Har selected Box ki Send Qty mandatory hai.');const box=state.readyBoxes.find(x=>String(x.box_id)===String(e.box_id));if(!box)throw Error('Selected Box ready list me nahi hai.');if(e.qty!==Number(box.qty))throw Error(`${box.box_code}: Send Qty ${e.qty}, Packing Qty ${box.qty} se match nahi hai.`);}const r=await rpc('rr_fg_create_despatch_v7981',{p_boxes:entries,p_destination:$('dispatchDestination').value,p_remarks:$('dispatchRemarks').value,p_data_mode:state.mode});msg(`Challan ${r.challan_no} locked: ${r.total_boxes} boxes / ${r.total_qty} PCS In Transit. Regular ${r.regular_qty} PCS, ASST ${r.asst_qty} PCS.`,'ok');await Promise.all([loadReadyBoxes(),loadChallans()]);}catch(e){msg(e.message,'error');}}
   async function loadChallans(){try{const data=await rows('rr_fg_receive_pending_v787');$('receiveChallan').innerHTML='<option value="">Select…</option>'+data.map(x=>`<option value="${x.despatch_id}" data-boxes='${esc(JSON.stringify(x.boxes))}'>${esc(x.challan_no)} · ${esc(x.destination)} · ${x.total_qty} PCS</option>`).join('');renderReceiveBoxes();}catch(e){console.warn(e);}}
