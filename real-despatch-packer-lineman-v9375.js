@@ -1,7 +1,7 @@
 (()=>{
   'use strict';
-  if(window.__RR_DESPATCH_PACKER_LINEMAN_V9386__)return;
-  window.__RR_DESPATCH_PACKER_LINEMAN_V9386__=true;
+  if(window.__RR_DESPATCH_PACKER_LINEMAN_V9387__)return;
+  window.__RR_DESPATCH_PACKER_LINEMAN_V9387__=true;
   const qsa=s=>[...document.querySelectorAll(s)];
   const mode=()=>new URLSearchParams(location.search).get('mode')==='REAL'?'REAL':'TEST';
   const db=()=>window.supabaseClient||window.supabaseDb||window.redzedSupabase||window.sb;
@@ -32,6 +32,6 @@
   async function submitQueue(e){e.preventDefault();e.stopImmediatePropagation();try{const packer=document.getElementById('dispatchPackerQueue')?.value||'',lineman=document.getElementById('dispatchLineMan')?.value||'';if(!packer)throw Error('Packer Queue selection mandatory');if(!lineman)throw Error('Delivery Lineman selection mandatory');const entries=syncVisibleSummary();if(!entries.length)throw Error('Kam se kam ek Box select karein.');for(const x of entries){const a=lotPacker.get(x.lot);if(String(a?.worker_user_id||'')!==String(packer))throw Error(`Lot ${x.lot} selected Packer Queue ka nahi hai.`);if(!Number.isInteger(x.qty)||x.qty<=0)throw Error('Selected boxes ki Send Qty mandatory hai.');}const c=db();if(!c?.rpc)throw Error('Supabase client unavailable');const r=await c.rpc('rr_fg_create_despatch_queue_v9375',{p_boxes:entries.map(({box_id,qty})=>({box_id,qty})),p_packer_worker_id:packer,p_line_man_worker_id:lineman,p_destination:document.getElementById('dispatchDestination').value,p_remarks:document.getElementById('dispatchRemarks').value||null,p_data_mode:mode()});if(r.error)throw r.error;const d=r.data||{};msg(`Challan ${d.challan_no||''} locked · ${d.total_boxes||entries.length} boxes / ${d.total_qty||0} PCS · Packer ${d.packer_name||''} → Lineman ${d.line_man_name||''}`,'ok');setTimeout(loadReadyForQueue,100);}catch(err){msg(err.message||String(err),'error');}}
   function bindSubmit(){const btn=document.getElementById('submitDispatch');if(btn&&!submitBound){btn.addEventListener('click',submitQueue,true);submitBound=true;}}
   async function hydrate(){if(!ensureControls())return false;bindSubmit();try{await loadAssignments();refreshPackerOptions();}catch(e){console.warn('Packer queue init',e);}try{await loadLineMen();}catch(e){console.warn('Lineman init',e);}hideDespatchAllocation();setTimeout(syncVisibleSummary,120);return true;}
-  function init(){let tries=0;const boot=()=>{tries++;hydrate().then(ok=>{if(!ok&&tries<20)setTimeout(boot,150);});};boot();document.addEventListener('input',e=>{if(e.target?.matches?.('#dispatchConsolidated [data-dc-send]'))setTimeout(syncVisibleSummary,0);},true);window.addEventListener('redzed:supabase-ready',()=>setTimeout(()=>hydrate(),0),{passive:true});setTimeout(()=>hydrate(),600);setTimeout(()=>hydrate(),1400);}
+  function init(){let tries=0;const boot=()=>{tries++;hydrate().then(ok=>{if(!ok&&tries<20)setTimeout(boot,150);});};boot();document.addEventListener('input',e=>{if(e.target?.matches?.('#dispatchConsolidated [data-dc-send]'))setTimeout(syncVisibleSummary,0);},false);window.addEventListener('redzed:supabase-ready',()=>setTimeout(()=>hydrate(),0),{passive:true});setTimeout(()=>hydrate(),600);setTimeout(()=>hydrate(),1400);}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 })();
