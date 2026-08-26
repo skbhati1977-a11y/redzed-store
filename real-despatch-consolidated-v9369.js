@@ -5,6 +5,12 @@
   const qtyLabel=g=>{if(!g.boxes.length)return '0 BOX / 0 PCS';const qs=[...new Set(g.boxes.map(x=>x.qty))];return qs.length===1?`${g.boxes.length} × ${qs[0]} = ${g.pcs} PCS`:`${g.boxes.length} BOX / ${g.pcs} PCS`;};
   let rendering=false,retryTimer=null,retryCount=0,lastRawSignature='';
   const sendingState=new Map();
+  function suppressLegacy(){
+    let st=document.getElementById('rr-dc-legacy-suppress');
+    if(!st){st=document.createElement('style');st.id='rr-dc-legacy-suppress';st.textContent='#dispatchLotSummary{display:none!important;height:0!important;min-height:0!important;margin:0!important;padding:0!important;overflow:hidden!important}';document.head.appendChild(st);}
+    const legacy=document.getElementById('dispatchLotSummary');
+    if(legacy){legacy.style.setProperty('display','none','important');legacy.setAttribute('aria-hidden','true');legacy.innerHTML='';}
+  }
   function rawRows(){return [...document.querySelectorAll('#dispatchBoxRows tr[data-box-id]')];}
   function rawSignature(){return rawRows().map(row=>{const c=[...row.children];return `${row.dataset.boxId}|${String(c[2]?.textContent||'').trim()}|${typeOf(c[3]?.textContent)}|${Number(c[4]?.textContent||0)}`;}).sort().join('~');}
   function readGroups(){
@@ -90,10 +96,9 @@
   function render(){
     if(rendering)return;rendering=true;
     try{
+      suppressLegacy();
       const body=document.getElementById('dispatchBoxRows');if(!body)return;
       const wrap=body.closest('.fg-table-wrap');if(!wrap)return;
-      const legacy=document.getElementById('dispatchLotSummary');
-      if(legacy){legacy.style.display='none';legacy.setAttribute('aria-hidden','true');}
       let host=document.getElementById('dispatchConsolidated');
       if(!host){host=document.createElement('div');host.id='dispatchConsolidated';host.className='fg-table-wrap';wrap.parentNode.insertBefore(host,wrap);}
       snapshotHost(host);
@@ -112,8 +117,8 @@
   }
   function init(){
     const body=document.getElementById('dispatchBoxRows');if(!body)return;
-    const legacy=document.getElementById('dispatchLotSummary');if(legacy){legacy.style.display='none';legacy.setAttribute('aria-hidden','true');}
-    new MutationObserver(()=>setTimeout(render,0)).observe(body,{childList:true,subtree:false});
+    suppressLegacy();
+    new MutationObserver(()=>{suppressLegacy();setTimeout(render,0);}).observe(document.body,{childList:true,subtree:true});
     document.getElementById('loadReadyBoxes')?.addEventListener('click',()=>setTimeout(render,450));
     window.addEventListener('redzed:supabase-ready',requestReadyReload,{passive:true});
     window.addEventListener('focus',()=>{if(!rawRows().length)requestReadyReload();},{passive:true});
