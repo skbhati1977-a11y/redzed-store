@@ -27,10 +27,11 @@
   function refreshPackerOptions(){
     const sel=document.getElementById('dispatchPackerQueue');if(!sel)return;
     const visibleLots=new Set(qsa('#dispatchConsolidated [data-dc-lot]').map(x=>x.dataset.dcLot));
-    const opts=[...packers.entries()].filter(([,a])=>visibleLots.has(String(a.lot_no||''))||[...visibleLots].some(l=>String(lotPacker.get(l)?.worker_user_id||'')===String(a.worker_user_id||'')));
+    let opts=[...packers.entries()];
+    if(visibleLots.size){opts=opts.filter(([,a])=>visibleLots.has(String(a.lot_no||''))||[...visibleLots].some(l=>String(lotPacker.get(l)?.worker_user_id||'')===String(a.worker_user_id||'')));}
     const keep=selectedPacker;
     sel.innerHTML='<option value="">Select Packer Queue…</option>'+opts.map(([id,a])=>`<option value="${id}">${String(a.worker_name||'Packer')}${a.worker_code?' · '+String(a.worker_code):''}</option>`).join('');
-    if(keep&&opts.some(([id])=>id===keep))sel.value=keep;else{selectedPacker='';sel.value='';}
+    if(keep&&opts.some(([id])=>id===keep))sel.value=keep;else if(keep){selectedPacker='';sel.value='';}
   }
   function applyQueueFilter(clearOthers=false){
     qsa('#dispatchConsolidated [data-dc-lot]').forEach(sec=>{
@@ -57,10 +58,14 @@
     }catch(err){msg(err.message||String(err),'error');}
   }
   async function init(){
-    try{mountControls();await Promise.all([loadAssignments(),loadLineMen()]);refreshPackerOptions();applyQueueFilter(false);}catch(e){console.warn('Despatch queue init',e);msg(e.message||String(e),'error');}
+    mountControls();
+    try{await loadAssignments();refreshPackerOptions();applyQueueFilter(false);}catch(e){console.warn('Packer queue init',e);msg(e.message||String(e),'error');}
+    try{await loadLineMen();}catch(e){console.warn('Lineman init',e);msg(e.message||String(e),'error');}
     const btn=document.getElementById('submitDispatch');if(btn)btn.addEventListener('click',submitQueue,true);
     new MutationObserver(()=>{refreshPackerOptions();applyQueueFilter(false);}).observe(document.body,{childList:true,subtree:true});
     document.getElementById('loadReadyBoxes')?.addEventListener('click',()=>setTimeout(async()=>{try{await loadAssignments();refreshPackerOptions();applyQueueFilter(false);}catch(e){console.warn(e);}},500));
+    setTimeout(()=>{refreshPackerOptions();applyQueueFilter(false);},700);
+    setTimeout(()=>{refreshPackerOptions();applyQueueFilter(false);},1500);
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 })();
