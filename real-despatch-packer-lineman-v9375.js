@@ -1,7 +1,7 @@
 (()=>{
   'use strict';
-  if(window.__RR_DESPATCH_PACKER_LINEMAN_V9393__)return;
-  window.__RR_DESPATCH_PACKER_LINEMAN_V9393__=true;
+  if(window.__RR_DESPATCH_PACKER_LINEMAN_V9395__)return;
+  window.__RR_DESPATCH_PACKER_LINEMAN_V9395__=true;
   const qsa=s=>[...document.querySelectorAll(s)];
   const mode=()=>new URLSearchParams(location.search).get('mode')==='REAL'?'REAL':'TEST';
   const db=()=>window.supabaseClient||window.supabaseDb||window.redzedSupabase||window.sb;
@@ -28,7 +28,7 @@
       const r=await c.rpc('rr_fg_receive_pending_v9361',{p_data_mode:mode()});if(r.error)throw r.error;
       const data=(Array.isArray(r.data)?r.data:[]).slice().sort((a,b)=>challanNo(a.challan_no)-challanNo(b.challan_no));
       const keep=sel.value;
-      sel.innerHTML='<option value="">Select…</option>'+data.map(x=>`<option value="${esc(x.despatch_id)}" data-boxes='${esc(JSON.stringify(x.boxes||[]))}'>${esc(x.challan_no)} · ${esc(x.destination)} · ${Number(x.total_qty||0)} PCS</option>`).join('');
+      sel.innerHTML='<option value="">Select…</option>'+data.map(x=>`<option value="${esc(x.despatch_id)}" data-boxes='${esc(JSON.stringify(x.boxes||[]))}'>${esc(x.challan_no)} · Lot ${esc(x.lot_no||'-')} · ${esc(x.destination)} · ${Number(x.total_qty||0)} PCS</option>`).join('');
       if(keep&&data.some(x=>String(x.despatch_id)===String(keep)))sel.value=keep;
       sel.dispatchEvent(new Event('change',{bubbles:true}));
     }catch(e){console.warn('Store Receive RPC load failed',e);}
