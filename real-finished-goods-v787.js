@@ -58,14 +58,13 @@
   function packBoxCode(code){const m=String(code||'').match(/-BOX-(\d+)$/);return m?`BOX ${m[1]}`:String(code||'');}
   function packBoxNo(code){const m=String(code||'').match(/-BOX-(\d+)$/);return m?Number(m[1]):null;}
   function packBoxType(box){
+    // Rule V9365: backend composition marks decide type for every entered capacity.
     const type = String(box.box_type||'').toUpperCase();
     const cells = box.cells||[];
-    const qty = Number(box.qty||0);
-    if(cells.some(x=>String(x.pack_mark||'').toUpperCase()==='MIX')||qty>18)return 'MIX';
-    if(cells.some(x=>String(x.pack_mark||'').toUpperCase()==='ASST'))return 'ASST';
-    const m = packMatrix(cells), expected = m.colours.length*m.sizes.length;
-    const allOne = cells.length===expected && cells.every(x=>Number(x.qty)===1);
-    if(qty===18&&expected===18&&allOne)return 'FRESH';
+    const marks = cells.map(x=>String(x.pack_mark||'').toUpperCase());
+    if(marks.includes('MIX'))return 'MIX';
+    if(marks.includes('ASST'))return 'ASST';
+    if(marks.includes('FRESH'))return 'FRESH';
     return type==='REGULAR'?'FRESH':(type||'ASST');
   }
   function packCellsKey(cells){
