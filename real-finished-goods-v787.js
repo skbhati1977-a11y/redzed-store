@@ -153,7 +153,7 @@
     const selectedIds=new Set(dispatchEntries().map(x=>String(x.box_id)));
     const lots=[...new Set(state.readyBoxes.map(x=>String(x.lot_no)))].sort((a,b)=>a.localeCompare(b,undefined,{numeric:true}));
     host.innerHTML=lots.map(lot=>{
-      const all=state.readyBoxes.filter(x=>String(x.lot_no)===lot),sending=all.filter(x=>selectedIds.has(String(x.box_id))),balance=all.filter(x=>!selectedIds.has(String(x.box_id));
+      const all=state.readyBoxes.filter(x=>String(x.lot_no)===lot),sending=all.filter(x=>selectedIds.has(String(x.box_id))),balance=all.filter(x=>!selectedIds.has(String(x.box_id)));
       const typeRows=['FRESH','ASST','MIX'].map(type=>{
         const label=type==='FRESH'?'REGULAR / FRESH':type;
         const a=dispatchBucket(all.filter(x=>dispatchType(x)===type)),s=dispatchBucket(sending.filter(x=>dispatchType(x)===type)),b=dispatchBucket(balance.filter(x=>dispatchType(x)===type));
