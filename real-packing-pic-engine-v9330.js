@@ -124,8 +124,6 @@
     if(!rate.approved)throw Error('Final rate approval required');
     const s=await rpc('rr_pack_media_summary_v9330',args),cams=(s?.media||[]).filter(x=>x.media_role==='CAMERA'&&x.image_url).slice(0,3);
     if(cams.length!==3)throw Error(`AI se pehle 3 final garment photos mandatory. Current ${cams.length}/3`);
-    // Flat-lay follows original source numbering, not the newest-first media listing.
-    if(n===2)cams.sort((a,b)=>Number(a.variant_no||0)-Number(b.variant_no||0));
     const ctx=await rpc('rr_pack_catalog_context_v9340',args),ref=await chooseRef(n,l);
     if(l!==lot()||$('packWorkspace')?.hidden)return;
     localMsg(`${styleName(n)} generate ho rahi hai…${aiQueue.length?' Baaki styles queue mein hain.':''}`);
