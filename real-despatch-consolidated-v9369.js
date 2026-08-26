@@ -92,6 +92,8 @@
     try{
       const body=document.getElementById('dispatchBoxRows');if(!body)return;
       const wrap=body.closest('.fg-table-wrap');if(!wrap)return;
+      const legacy=document.getElementById('dispatchLotSummary');
+      if(legacy){legacy.style.display='none';legacy.setAttribute('aria-hidden','true');}
       let host=document.getElementById('dispatchConsolidated');
       if(!host){host=document.createElement('div');host.id='dispatchConsolidated';host.className='fg-table-wrap';wrap.parentNode.insertBefore(host,wrap);}
       snapshotHost(host);
@@ -110,6 +112,7 @@
   }
   function init(){
     const body=document.getElementById('dispatchBoxRows');if(!body)return;
+    const legacy=document.getElementById('dispatchLotSummary');if(legacy){legacy.style.display='none';legacy.setAttribute('aria-hidden','true');}
     new MutationObserver(()=>setTimeout(render,0)).observe(body,{childList:true,subtree:false});
     document.getElementById('loadReadyBoxes')?.addEventListener('click',()=>setTimeout(render,450));
     window.addEventListener('redzed:supabase-ready',requestReadyReload,{passive:true});
