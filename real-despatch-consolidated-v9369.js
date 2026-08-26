@@ -3,7 +3,7 @@
   const TYPES=['FRESH','ASST','MIX'];
   const typeOf=v=>{const t=String(v||'').trim().toUpperCase();return t==='REGULAR'||t==='FRESH'?'FRESH':t==='MIX'?'MIX':'ASST';};
   const qtyLabel=g=>{if(!g.boxes.length)return '0 BOX / 0 PCS';const qs=[...new Set(g.boxes.map(x=>x.qty))];return qs.length===1?`${g.boxes.length} × ${qs[0]} = ${g.pcs} PCS`:`${g.boxes.length} BOX / ${g.pcs} PCS`;};
-  let rendering=false;
+  let rendering=false,retryTimer=null,retryCount=0;
   function rawRows(){return [...document.querySelectorAll('#dispatchBoxRows tr[data-box-id]')];}
   function readGroups(){
     const map=new Map();
@@ -41,6 +41,16 @@
       if(balCell)balCell.textContent=`${g.boxes.length-n} BOX / ${g.pcs-sent} PCS`;
     });
   }
+  function requestReadyReload(){
+    if(retryCount>=5)return;
+    clearTimeout(retryTimer);
+    retryTimer=setTimeout(()=>{
+      retryCount++;
+      const btn=document.getElementById('loadReadyBoxes');
+      if(btn)btn.click();
+      setTimeout(render,350);
+    },retryCount===0?300:700);
+  }
   function render(){
     if(rendering)return;rendering=true;
     try{
@@ -48,19 +58,27 @@
       const wrap=body.closest('.fg-table-wrap');if(!wrap)return;
       let host=document.getElementById('dispatchConsolidated');
       if(!host){host=document.createElement('div');host.id='dispatchConsolidated';host.className='fg-table-wrap';wrap.parentNode.insertBefore(host,wrap);}
-      wrap.style.display='none';
       const groups=readGroups();
       const lots=[...new Set([...groups.values()].map(g=>g.lot))].sort((a,b)=>a.localeCompare(b,undefined,{numeric:true}));
-      if(!lots.length){host.innerHTML='<div class="fg-muted" style="padding:12px">Koi Ready Box nahi hai.</div>';return;}
+      if(!lots.length){
+        wrap.style.display='';
+        host.innerHTML='<div class="fg-muted" style="padding:12px">Ready boxes load ho rahe hain…</div>';
+        requestReadyReload();
+        return;
+      }
+      retryCount=0;clearTimeout(retryTimer);wrap.style.display='none';
       host.innerHTML=`<table class="fg-box-table" data-rr-no-gsheet="1"><thead><tr><th>Lot</th><th>Type</th><th>Available</th><th>Sending Boxes</th><th>Sending</th><th>Balance</th></tr></thead><tbody>${lots.map(lot=>TYPES.map(type=>{const key=`${lot}||${type}`;const g=groups.get(key)||{lot,type,boxes:[],pcs:0};const disabled=g.boxes.length?'':'disabled';return `<tr data-dc-group="${key}"><td><b>${lot}</b></td><td>${type==='FRESH'?'REGULAR / FRESH':type}</td><td>${qtyLabel(g)}</td><td><input class="fg-qty-input" data-dc-send="${key}" type="number" min="0" max="${g.boxes.length}" step="1" inputmode="numeric" placeholder="0" ${disabled}></td><td data-dc-sent-pcs>0 BOX / 0 PCS</td><td data-dc-balance>${g.boxes.length} BOX / ${g.pcs} PCS</td></tr>`;}).join('')).join('')}</tbody></table>`;
       host.querySelectorAll('[data-dc-send]').forEach(inp=>inp.addEventListener('input',()=>applySelections(host)));
     }finally{rendering=false;}
   }
   function init(){
     const body=document.getElementById('dispatchBoxRows');if(!body)return;
-    render();
-    new MutationObserver(()=>render()).observe(body,{childList:true,subtree:false});
-    document.getElementById('loadReadyBoxes')?.addEventListener('click',()=>setTimeout(render,250));
+    new MutationObserver(()=>setTimeout(render,0)).observe(body,{childList:true,subtree:false});
+    document.getElementById('loadReadyBoxes')?.addEventListener('click',()=>setTimeout(render,450));
+    window.addEventListener('redzed:supabase-ready',requestReadyReload,{passive:true});
+    window.addEventListener('focus',()=>{if(!rawRows().length)requestReadyReload();},{passive:true});
+    window.addEventListener('online',()=>{if(!rawRows().length)requestReadyReload();},{passive:true});
+    setTimeout(render,0);setTimeout(requestReadyReload,250);
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 })();
