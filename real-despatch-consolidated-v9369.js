@@ -40,6 +40,16 @@
       if(sendCell)sendCell.textContent=`${n} BOX / ${sent} PCS`;
       if(balCell)balCell.textContent=`${g.boxes.length-n} BOX / ${g.pcs-sent} PCS`;
     });
+    host.querySelectorAll('[data-dc-lot]').forEach(sec=>{
+      const lot=sec.dataset.dcLot;
+      let ab=0,ap=0,sb=0,sp=0;
+      TYPES.forEach(type=>{
+        const g=groups.get(`${lot}||${type}`)||{boxes:[],pcs:0};ab+=g.boxes.length;ap+=g.pcs;
+        const inp=sec.querySelector(`[data-dc-send="${CSS.escape(`${lot}||${type}`)}"]`);
+        const n=Math.max(0,Math.min(g.boxes.length,Number(inp?.value||0)|0));sb+=n;sp+=g.boxes.slice(0,n).reduce((s,x)=>s+x.qty,0);
+      });
+      const row=sec.querySelector('[data-dc-total]');if(row)row.innerHTML=`<th>LOT TOTAL</th><td>${ab} BOX / ${ap} PCS</td><td></td><td>${sb} BOX / ${sp} PCS</td><td>${ab-sb} BOX / ${ap-sp} PCS</td>`;
+    });
   }
   function requestReadyReload(){
     if(retryCount>=5)return;
@@ -51,24 +61,24 @@
       setTimeout(render,350);
     },retryCount===0?300:700);
   }
+  function lotSection(lot,groups){
+    const rows=TYPES.map(type=>{const key=`${lot}||${type}`;const g=groups.get(key)||{lot,type,boxes:[],pcs:0};const disabled=g.boxes.length?'':'disabled';return `<tr data-dc-group="${key}"><th>${type==='FRESH'?'REGULAR / FRESH':type}</th><td>${qtyLabel(g)}</td><td><input class="fg-qty-input" data-dc-send="${key}" type="number" min="0" max="${g.boxes.length}" step="1" inputmode="numeric" placeholder="0" ${disabled}></td><td data-dc-sent-pcs>0 BOX / 0 PCS</td><td data-dc-balance>${g.boxes.length} BOX / ${g.pcs} PCS</td></tr>`;}).join('');
+    return `<section data-dc-lot="${lot}" style="margin:0 0 18px"><div class="fg-table-wrap"><table class="fg-box-table" data-rr-no-gsheet="1"><thead><tr><th colspan="5">LOT ${lot}</th></tr><tr><th>TYPE</th><th>AVAILABLE</th><th>SENDING BOXES</th><th>SENDING</th><th>BALANCE</th></tr></thead><tbody>${rows}<tr data-dc-total></tr></tbody></table></div></section>`;
+  }
   function render(){
     if(rendering)return;rendering=true;
     try{
       const body=document.getElementById('dispatchBoxRows');if(!body)return;
       const wrap=body.closest('.fg-table-wrap');if(!wrap)return;
       let host=document.getElementById('dispatchConsolidated');
-      if(!host){host=document.createElement('div');host.id='dispatchConsolidated';host.className='fg-table-wrap';wrap.parentNode.insertBefore(host,wrap);}
+      if(!host){host=document.createElement('div');host.id='dispatchConsolidated';wrap.parentNode.insertBefore(host,wrap);}
       const groups=readGroups();
       const lots=[...new Set([...groups.values()].map(g=>g.lot))].sort((a,b)=>a.localeCompare(b,undefined,{numeric:true}));
-      if(!lots.length){
-        wrap.style.display='';
-        host.innerHTML='<div class="fg-muted" style="padding:12px">Ready boxes load ho rahe hain…</div>';
-        requestReadyReload();
-        return;
-      }
+      if(!lots.length){wrap.style.display='';host.innerHTML='<div class="fg-muted" style="padding:12px">Ready boxes load ho rahe hain…</div>';requestReadyReload();return;}
       retryCount=0;clearTimeout(retryTimer);wrap.style.display='none';
-      host.innerHTML=`<table class="fg-box-table" data-rr-no-gsheet="1"><thead><tr><th>Lot</th><th>Type</th><th>Available</th><th>Sending Boxes</th><th>Sending</th><th>Balance</th></tr></thead><tbody>${lots.map(lot=>TYPES.map(type=>{const key=`${lot}||${type}`;const g=groups.get(key)||{lot,type,boxes:[],pcs:0};const disabled=g.boxes.length?'':'disabled';return `<tr data-dc-group="${key}"><td><b>${lot}</b></td><td>${type==='FRESH'?'REGULAR / FRESH':type}</td><td>${qtyLabel(g)}</td><td><input class="fg-qty-input" data-dc-send="${key}" type="number" min="0" max="${g.boxes.length}" step="1" inputmode="numeric" placeholder="0" ${disabled}></td><td data-dc-sent-pcs>0 BOX / 0 PCS</td><td data-dc-balance>${g.boxes.length} BOX / ${g.pcs} PCS</td></tr>`;}).join('')).join('')}</tbody></table>`;
+      host.innerHTML=lots.map(lot=>lotSection(lot,groups)).join('');
       host.querySelectorAll('[data-dc-send]').forEach(inp=>inp.addEventListener('input',()=>applySelections(host)));
+      renderBalances(host,groups);
     }finally{rendering=false;}
   }
   function init(){
