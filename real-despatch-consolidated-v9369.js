@@ -5,6 +5,7 @@
   const qtyLabel=g=>{if(!g.boxes.length)return '0 BOX / 0 PCS';const qs=[...new Set(g.boxes.map(x=>x.qty))];return qs.length===1?`${g.boxes.length} × ${qs[0]} = ${g.pcs} PCS`:`${g.boxes.length} BOX / ${g.pcs} PCS`;};
   let rendering=false,retryTimer=null,retryCount=0,lastRawSignature='';
   const sendingState=new Map();
+  function allowedLots(){const a=window.__RR_DESPATCH_ALLOWED_LOTS__;return Array.isArray(a)?new Set(a.map(String)):null;}
   function suppressLegacy(){
     let st=document.getElementById('rr-dc-legacy-suppress');
     if(!st){st=document.createElement('style');st.id='rr-dc-legacy-suppress';st.textContent='#dispatchLotSummary{display:none!important;height:0!important;min-height:0!important;margin:0!important;padding:0!important;overflow:hidden!important}';document.head.appendChild(st);}
@@ -43,8 +44,13 @@
     });
     [...sendingState.keys()].forEach(key=>{if(!groups.has(key))sendingState.delete(key);});
   }
+  function clearFilteredSelections(groups){
+    const allowed=allowedLots();if(!allowed)return;
+    groups.forEach((g,key)=>{if(!allowed.has(String(g.lot)))sendingState.set(key,0);});
+  }
   function applySelections(host){
     const groups=readGroups();
+    clearFilteredSelections(groups);
     host.querySelectorAll('[data-dc-send]').forEach(inp=>{
       const g=groups.get(inp.dataset.dcSend);
       const n=g?Math.max(0,Math.min(g.boxes.length,Number(inp.value||0)|0)):0;
@@ -107,8 +113,10 @@
       const changed=Boolean(lastRawSignature&&sig!==lastRawSignature);
       lastRawSignature=sig;
       seedState(groups,changed);
-      const lots=[...new Set([...groups.values()].map(g=>g.lot))].sort((a,b)=>a.localeCompare(b,undefined,{numeric:true}));
-      if(!lots.length){wrap.style.display='';host.innerHTML='<div class="fg-muted" style="padding:12px">Ready boxes load ho rahe hain…</div>';requestReadyReload();return;}
+      clearFilteredSelections(groups);
+      const allowed=allowedLots();
+      const lots=[...new Set([...groups.values()].map(g=>g.lot))].filter(lot=>!allowed||allowed.has(String(lot))).sort((a,b)=>a.localeCompare(b,undefined,{numeric:true}));
+      if(!lots.length){wrap.style.display='none';retryCount=0;clearTimeout(retryTimer);host.innerHTML='<div class="fg-muted" style="padding:12px">Selected Packer Queue me koi ready lot nahi hai.</div>';return;}
       retryCount=0;clearTimeout(retryTimer);wrap.style.display='none';
       host.innerHTML=lots.map(lot=>lotSection(lot,groups)).join('');
       host.querySelectorAll('[data-dc-send]').forEach(inp=>inp.addEventListener('input',()=>applySelections(host)));
@@ -121,6 +129,7 @@
     new MutationObserver(()=>{suppressLegacy();setTimeout(render,0);}).observe(document.body,{childList:true,subtree:true});
     document.getElementById('loadReadyBoxes')?.addEventListener('click',()=>setTimeout(render,450));
     window.addEventListener('redzed:supabase-ready',requestReadyReload,{passive:true});
+    window.addEventListener('redzed:despatch-packer-filter',()=>setTimeout(render,0),{passive:true});
     window.addEventListener('focus',()=>{if(!rawRows().length)requestReadyReload();},{passive:true});
     window.addEventListener('online',()=>{if(!rawRows().length)requestReadyReload();},{passive:true});
     setTimeout(render,0);setTimeout(requestReadyReload,250);
