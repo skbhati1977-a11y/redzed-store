@@ -10,6 +10,8 @@
   function msg(t,cls=''){const el=document.getElementById('message');if(el){el.textContent=t||'';el.className=`fg-msg ${cls}`;}}
   function hideDespatchAllocation(){
     const root=document.querySelector('[data-view="despatch"]');if(!root)return;
+    const dest=document.getElementById('dispatchDestination');
+    if(dest){const field=dest.closest('.fg-field');if(field)field.style.display='none';}
     root.querySelectorAll('.fg-field').forEach(field=>{const label=String(field.querySelector('label')?.textContent||'').trim().toLowerCase();if(label==='allocation'||label.startsWith('allocation '))field.style.display='none';});
   }
   async function loadAssignments(){const c=db();if(!c?.from)throw Error('Supabase client unavailable');const r=await c.from('rr_fg_packing_assignments_v788').select('lot_no,worker_user_id,worker_name,worker_code,pack_plan_id,status,submitted_at').eq('data_mode',mode()).eq('status','SUBMITTED').order('submitted_at',{ascending:false});if(r.error)throw r.error;lotPacker=new Map();packers=new Map();(r.data||[]).forEach(a=>{const lot=String(a.lot_no||'').trim(),wid=String(a.worker_user_id||'').trim();if(!lot||!wid||lotPacker.has(lot))return;lotPacker.set(lot,a);if(!packers.has(wid))packers.set(wid,a);});}
