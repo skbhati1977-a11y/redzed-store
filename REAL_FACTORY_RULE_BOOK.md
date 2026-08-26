@@ -46,3 +46,24 @@ CB cards, Art Due cards, Art Decide cards, or crafting decision controls must ne
 
 ### Change discipline
 Before coding Matching Cloth, read `REAL_FACTORY_PROJECT_MEMORY.md` and this rule book. Reuse approved mappings and RPCs first. Change only the minimum required destination UI/JS and do not touch unrelated modules.
+
+
+## Packing — approved actual-leftover rule (V9365)
+
+Source of truth: user-entered box capacity -> equal size split -> colour split -> same-size colour shortage adjustment -> actual leftover.
+
+- Build only the full Fresh/ASST boxes that every active size can supply. Within each size, use maximum distinct colours first, then duplicate the colour with the highest remaining stock.
+- Fresh remains the balanced one-per-colour-size repeat; ASST remains a full adjusted balanced box.
+- When another balanced box cannot be formed, all remaining colour-size stock is leftover. Do not substitute another size to force an ASST box and do not throw a shortage error for valid leftover.
+- Apply the half-capacity rule to that actual leftover, never merely `total % capacity`:
+  - Positive leftover <= half capacity: merge with the previous full box and mark the resulting box MIX.
+  - Leftover > half capacity: separate MIX with its complete leftover composition, even if that quantity equals/exceeds one capacity.
+  - No previous full box: retain the leftover as its own MIX.
+  - Zero leftover: no MIX.
+- Preserve every source colour-size quantity exactly; box numbering starts at 1 for each lot.
+- Fresh count and ASST/MIX composition views use backend marks. Never infer MIX from `qty > 18`.
+- Example: capacity 12, L24/XL18/XXL18 -> four ASST boxes of L4/XL4/XXL4 plus one MIX of L8/XL2/XXL2 = five boxes / 60 PCS.
+- Backend implementation: `rr_fg_generate_pack_v787(text,jsonb,text,integer)`, version `LOCKED_CAPACITY_SIZE_COLOUR_ACTUAL_LEFTOVER_V9365`.
+- Feasibility calculation: balanced-box count = minimum across sizes of floor(size stock / per-box size quota); actual leftover = total minus balanced-box count times capacity. Reserving the preceding box when leftover <= half produces the same merge without writing a partial failed box.
+- Frontend: `real-finished-goods-v787.js` displays backend `pack_mark` (FRESH/ASST/MIX), with existing stock-type fallback for legacy unmarked records.
+- Scope: no changes to photos, AI removal, approval, WhatsApp, submit, permissions, stock categories, despatch, or other departments. Existing plans are not automatically rewritten; normal authorized rerun applies the rule to an open lot.
