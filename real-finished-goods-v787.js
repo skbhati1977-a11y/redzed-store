@@ -1,7 +1,7 @@
 (() => {
   'use strict';
   const $ = (id) => document.getElementById(id);
-  const esc = (v) => String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#39;'}[c]));
+  const esc = (v) => String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const money = (v) => new Intl.NumberFormat('en-IN',{style:'currency',currency:'INR'}).format(Number(v||0));
   const params = new URLSearchParams(location.search);
   const state = { profile:null, packPlan:null, packLots:[], selectedPack:null, readyBoxes:[], receiveBoxes:[], piId:null, piLines:[], stock:[], cpis:[], mode:params.get('mode')==='REAL'?'REAL':'TEST', mountedLot:(params.get('lot')||'').trim() };
@@ -139,7 +139,7 @@
   async function submitPack(){try{if(!state.packPlan)throw Error('Packing plan required.');const r=await rpc('rr_fg_submit_assigned_pack_v788',{p_assignment_id:state.selectedPack.assignment_id,p_plan_id:state.packPlan.plan_id});msg(`${r.total_boxes} boxes / ${r.total_qty} PCS Ready for Despatch.`, 'ok');$('submitPack').disabled=true;closePackLot();await Promise.all([loadPackLots(),loadReadyBoxes()]);}catch(e){msg(e.message,'error');}}
   function dispatchEntries(){return [...$('dispatchBoxRows').querySelectorAll('tr')].filter(r=>r.querySelector('[data-dispatch-check]')?.checked).map(r=>({box_id:r.dataset.boxId,qty:Number(r.querySelector('[data-dispatch-qty]').value)}));}
   function dispatchType(box){const t=String(box?.box_type||'').toUpperCase();return t==='REGULAR'||t==='FRESH'?'FRESH':(t==='MIX'?'MIX':'ASST');}
-  function dispatchBucket(boxes){const out={boxes:boxes.length,pcs:boxes.reduce((n,x)=>n+Number(x.qty||0),0),qtys:boxes.map(x=>Number(x.qty||0)).filter(q=>q>0)};return out;}
+  function dispatchBucket(boxes){return {boxes:boxes.length,pcs:boxes.reduce((n,x)=>n+Number(x.qty||0),0),qtys:boxes.map(x=>Number(x.qty||0)).filter(q=>q>0)};}
   function dispatchQtyLabel(bucket){
     if(!bucket.boxes)return '0 BOX / 0 PCS';
     const uniq=[...new Set(bucket.qtys)];
@@ -153,7 +153,7 @@
     const selectedIds=new Set(dispatchEntries().map(x=>String(x.box_id)));
     const lots=[...new Set(state.readyBoxes.map(x=>String(x.lot_no)))].sort((a,b)=>a.localeCompare(b,undefined,{numeric:true}));
     host.innerHTML=lots.map(lot=>{
-      const all=state.readyBoxes.filter(x=>String(x.lot_no)===lot),sending=all.filter(x=>selectedIds.has(String(x.box_id))),balance=all.filter(x=>!selectedIds.has(String(x.box_id)));
+      const all=state.readyBoxes.filter(x=>String(x.lot_no)===lot),sending=all.filter(x=>selectedIds.has(String(x.box_id))),balance=all.filter(x=>!selectedIds.has(String(x.box_id));
       const typeRows=['FRESH','ASST','MIX'].map(type=>{
         const label=type==='FRESH'?'REGULAR / FRESH':type;
         const a=dispatchBucket(all.filter(x=>dispatchType(x)===type)),s=dispatchBucket(sending.filter(x=>dispatchType(x)===type)),b=dispatchBucket(balance.filter(x=>dispatchType(x)===type));
