@@ -1,8 +1,8 @@
 (()=>{
   'use strict';
-  const qs=s=>document.querySelector(s), qsa=s=>[...document.querySelectorAll(s)];
+  const qsa=s=>[...document.querySelectorAll(s)];
   const mode=()=>new URLSearchParams(location.search).get('mode')==='REAL'?'REAL':'TEST';
-  let lotPacker=new Map(), packers=new Map(), selectedPacker='';
+  let lotPacker=new Map(), packers=new Map(), selectedPacker='', syncTimer=null;
   function msg(t,cls=''){const el=document.getElementById('message');if(el){el.textContent=t||'';el.className=`fg-msg ${cls}`;}}
   async function loadAssignments(){
     const r=await supabaseClient.from('rr_fg_packing_assignments_v788').select('lot_no,worker_user_id,worker_name,worker_code,pack_plan_id,status,submitted_at').eq('data_mode',mode()).eq('status','SUBMITTED').order('submitted_at',{ascending:false});
@@ -13,7 +13,8 @@
   async function loadLineMen(){
     const r=await supabaseClient.rpc('rr_fg_despatch_line_men_v9361');if(r.error)throw r.error;
     const sel=document.getElementById('dispatchLineMan');if(!sel)return;
-    sel.innerHTML='<option value="">Select Delivery Lineman…</option>'+(r.data||[]).map(x=>`<option value="${x.worker_id}">${String(x.worker_name||'Line Man')}${x.worker_code?' · '+String(x.worker_code):''}</option>`).join('');
+    const html='<option value="">Select Delivery Lineman…</option>'+(r.data||[]).map(x=>`<option value="${x.worker_id}">${String(x.worker_name||'Line Man')}${x.worker_code?' · '+String(x.worker_code):''}</option>`).join('');
+    if(sel.innerHTML!==html)sel.innerHTML=html;
   }
   function mountControls(){
     if(document.getElementById('dispatchPackerQueue'))return;
@@ -30,8 +31,9 @@
     let opts=[...packers.entries()];
     if(visibleLots.size){opts=opts.filter(([,a])=>visibleLots.has(String(a.lot_no||''))||[...visibleLots].some(l=>String(lotPacker.get(l)?.worker_user_id||'')===String(a.worker_user_id||'')));}
     const keep=selectedPacker;
-    sel.innerHTML='<option value="">Select Packer Queue…</option>'+opts.map(([id,a])=>`<option value="${id}">${String(a.worker_name||'Packer')}${a.worker_code?' · '+String(a.worker_code):''}</option>`).join('');
-    if(keep&&opts.some(([id])=>id===keep))sel.value=keep;else if(keep){selectedPacker='';sel.value='';}
+    const html='<option value="">Select Packer Queue…</option>'+opts.map(([id,a])=>`<option value="${id}">${String(a.worker_name||'Packer')}${a.worker_code?' · '+String(a.worker_code):''}</option>`).join('');
+    if(sel.innerHTML!==html)sel.innerHTML=html;
+    if(keep&&opts.some(([id])=>id===keep)){sel.value=keep;}else if(keep){selectedPacker='';sel.value='';}
   }
   function applyQueueFilter(clearOthers=false){
     qsa('#dispatchConsolidated [data-dc-lot]').forEach(sec=>{
@@ -40,6 +42,7 @@
       sec.style.display=selectedPacker?(match?'':'none'):'';
     });
   }
+  function scheduleSync(delay=80){clearTimeout(syncTimer);syncTimer=setTimeout(()=>{refreshPackerOptions();applyQueueFilter(false);},delay);}
   function selectedEntries(){
     return qsa('#dispatchBoxRows tr[data-box-id]').filter(r=>r.querySelector('[data-dispatch-check]')?.checked).map(r=>({box_id:r.dataset.boxId,qty:Number(r.querySelector('[data-dispatch-qty]')?.value||0),lot:String(r.children[2]?.textContent||'').trim()}));
   }
@@ -59,13 +62,12 @@
   }
   async function init(){
     mountControls();
-    try{await loadAssignments();refreshPackerOptions();applyQueueFilter(false);}catch(e){console.warn('Packer queue init',e);msg(e.message||String(e),'error');}
+    try{await loadAssignments();refreshPackerOptions();}catch(e){console.warn('Packer queue init',e);msg(e.message||String(e),'error');}
     try{await loadLineMen();}catch(e){console.warn('Lineman init',e);msg(e.message||String(e),'error');}
     const btn=document.getElementById('submitDispatch');if(btn)btn.addEventListener('click',submitQueue,true);
-    new MutationObserver(()=>{refreshPackerOptions();applyQueueFilter(false);}).observe(document.body,{childList:true,subtree:true});
+    const raw=document.getElementById('dispatchBoxRows');if(raw)new MutationObserver(()=>scheduleSync(120)).observe(raw,{childList:true});
     document.getElementById('loadReadyBoxes')?.addEventListener('click',()=>setTimeout(async()=>{try{await loadAssignments();refreshPackerOptions();applyQueueFilter(false);}catch(e){console.warn(e);}},500));
-    setTimeout(()=>{refreshPackerOptions();applyQueueFilter(false);},700);
-    setTimeout(()=>{refreshPackerOptions();applyQueueFilter(false);},1500);
+    setTimeout(()=>scheduleSync(0),500);setTimeout(()=>scheduleSync(0),1200);
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 })();
