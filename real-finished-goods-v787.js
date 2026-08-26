@@ -58,7 +58,6 @@
   function packBoxCode(code){const m=String(code||'').match(/-BOX-(\d+)$/);return m?`BOX ${m[1]}`:String(code||'');}
   function packBoxNo(code){const m=String(code||'').match(/-BOX-(\d+)$/);return m?Number(m[1]):null;}
   function packBoxType(box){
-    // Rule V9365: backend composition marks decide type for every entered capacity.
     const type = String(box.box_type||'').toUpperCase();
     const cells = box.cells||[];
     const marks = cells.map(x=>String(x.pack_mark||'').toUpperCase());
@@ -77,52 +76,27 @@
       const type = packBoxType(box), key = `${type}|${Number(box.qty||0)}|${packCellsKey(box.cells)}`;
       const no = packBoxNo(box.box_code);
       let group = byKey.get(key);
-      if(!group){
-        group = {key,type,boxes:[],boxNos:[],totalQty:0,sample:box};
-        byKey.set(key, group);
-        groups.push(group);
-      }
-      group.boxes.push(box);
-      if(no)group.boxNos.push(no);
-      group.totalQty += Number(box.qty||0);
+      if(!group){group = {key,type,boxes:[],boxNos:[],totalQty:0,sample:box};byKey.set(key, group);groups.push(group);}
+      group.boxes.push(box);if(no)group.boxNos.push(no);group.totalQty += Number(box.qty||0);
     });
     return groups;
   }
   function packNoRanges(nums){
     const list = [...new Set(nums)].sort((a,b)=>a-b), ranges = [];
-    for(let i=0;i<list.length;i++){
-      const start = list[i]; let end = start;
-      while(i+1<list.length&&list[i+1]===end+1){end=list[++i];}
-      ranges.push(start===end?String(start):`${start}-${end}`);
-    }
+    for(let i=0;i<list.length;i++){const start = list[i]; let end = start;while(i+1<list.length&&list[i+1]===end+1){end=list[++i];}ranges.push(start===end?String(start):`${start}-${end}`);}
     return ranges.join(', ');
   }
-  function packGroupBoxLabel(group){
-    if(group.boxNos.length)return `BOX ${packNoRanges(group.boxNos)}`;
-    return packBoxCode(group.sample.box_code);
-  }
-  function packGroupQty(group){
-    const q = Number(group.sample.qty||0), count = group.boxes.length;
-    return count>1?`${q} x ${count} = ${group.totalQty}`:String(q);
-  }
-
-  async function boot(){
-    const auth=await RR.requireRoles(['owner','admin','manager','packing','store','sales','accounts']); state.profile=auth.profile; const role=String(auth.profile.role_code||'').toLowerCase();$('operator').textContent=['owner','admin'].includes(role)?'SUPER ADMIN':(auth.profile.full_name||'Authorized User');
-    bind(); await Promise.allSettled([loadPackLots(),loadPackWorkers(),loadReadyBoxes(),loadChallans(),loadStock(),loadCpis(),loadSuggestions()]);
-  }
+  function packGroupBoxLabel(group){if(group.boxNos.length)return `BOX ${packNoRanges(group.boxNos)}`;return packBoxCode(group.sample.box_code);}
+  function packGroupQty(group){const q = Number(group.sample.qty||0), count = group.boxes.length;return count>1?`${q} x ${count} = ${group.totalQty}`:String(q);}
+  async function boot(){const auth=await RR.requireRoles(['owner','admin','manager','packing','store','sales','accounts']); state.profile=auth.profile; const role=String(auth.profile.role_code||'').toLowerCase();$('operator').textContent=['owner','admin'].includes(role)?'SUPER ADMIN':(auth.profile.full_name||'Authorized User');bind(); await Promise.allSettled([loadPackLots(),loadPackWorkers(),loadReadyBoxes(),loadChallans(),loadStock(),loadCpis(),loadSuggestions()]);}
   function bind(){
     $('tabs').addEventListener('click',e=>{const b=e.target.closest('[data-tab]');if(!b)return;document.querySelectorAll('[data-tab]').forEach(x=>x.classList.toggle('active',x===b));document.querySelectorAll('[data-view]').forEach(x=>x.hidden=x.dataset.view!==b.dataset.tab);msg('');});
     const requestedView=params.get('view');
     if(requestedView){const b=document.querySelector(`[data-tab="${requestedView}"]`);if(b){b.click();document.querySelectorAll('[data-tab]').forEach(x=>x.hidden=x!==b);const names={packing:'Packing',despatch:'Despatch',receive:'Store Receive',stock:'Webstore / Store Stock',sale:'Sales · PI / CPI',verify:'Sales Qty Verify',returns:'Sales Return'};document.querySelector('h1').textContent=`${names[requestedView]||'Finished Goods'} Dashboard`;document.title=`REAL FACTORY — ${names[requestedView]||'Finished Goods'} Dashboard`;}}
     $('refreshPackLots').onclick=loadPackLots;$('packLotSearch').oninput=renderPackLots;$('closePackLot').onclick=closePackLot;$('assignPack').onclick=assignPack;$('acceptPack').onclick=acceptPack;$('runPackAlgo').onclick=generatePack;$('submitPack').onclick=submitPack;$('loadReadyBoxes').onclick=loadReadyBoxes;$('submitDispatch').onclick=submitDispatch;
-    $('loadChallans').onclick=loadChallans;$('receiveChallan').onchange=renderReceiveBoxes;$('acceptReceive').onclick=acceptReceive;$('loadStock').onclick=loadStock;
-    $('saleLot').onchange=showSaleBalance;$('addPiLine').onclick=addPiLine;$('savePi').onclick=()=>savePi(false);$('submitCpi').onclick=()=>savePi(true);
-    $('loadCpis').onclick=loadCpis;$('verifyQty').onclick=verifyQty;$('returnMode').onchange=toggleReturnMode;$('returnCpi').onchange=loadReturnLines;$('returnLine').onchange=fillReturnRate;$('postReturn').onclick=postReturn;
-    $('valueAdded').oninput=renderPi;$('packingOther').oninput=renderPi;
+    $('loadChallans').onclick=loadChallans;$('receiveChallan').onchange=renderReceiveBoxes;$('acceptReceive').onclick=acceptReceive;$('loadStock').onclick=loadStock;$('saleLot').onchange=showSaleBalance;$('addPiLine').onclick=addPiLine;$('savePi').onclick=()=>savePi(false);$('submitCpi').onclick=()=>savePi(true);$('loadCpis').onclick=loadCpis;$('verifyQty').onclick=verifyQty;$('returnMode').onchange=toggleReturnMode;$('returnCpi').onchange=loadReturnLines;$('returnLine').onchange=fillReturnRate;$('postReturn').onclick=postReturn;$('valueAdded').oninput=renderPi;$('packingOther').oninput=renderPi;
   }
-  async function loadSuggestions(){
-    try{const [lots,buyers]=await Promise.all([rows('rr_fg_stock_balance_v787'),rows('rr_buyers_v787')]);$('saleLotSuggestions').innerHTML=lots.filter(x=>Number(x.available_qty)>0).map(x=>`<option value="${esc(x.lot_no)}">${esc(x.short_item_name||'')}</option>`).join('');$('buyerSuggestions').innerHTML=buyers.map(x=>`<option value="${esc(x.buyer_name)}">${esc(x.gst_no||'')}</option>`).join('');}catch(e){console.warn(e);}
-  }
+  async function loadSuggestions(){try{const [lots,buyers]=await Promise.all([rows('rr_fg_stock_balance_v787'),rows('rr_buyers_v787')]);$('saleLotSuggestions').innerHTML=lots.filter(x=>Number(x.available_qty)>0).map(x=>`<option value="${esc(x.lot_no)}">${esc(x.short_item_name||'')}</option>`).join('');$('buyerSuggestions').innerHTML=buyers.map(x=>`<option value="${esc(x.buyer_name)}">${esc(x.gst_no||'')}</option>`).join('');}catch(e){console.warn(e);}}
   function canAssign(){return ['owner','admin','manager'].includes(String(state.profile?.role_code||'').toLowerCase());}
   async function loadPackLots(){try{msg('Press se Ready Lots fetch ho rahe hain…');state.packLots=await rpc('rr_fg_ready_packing_cards_v788',{p_data_mode:'TEST'});renderPackLots();msg(`${state.packLots.length} Ready Packing Lot cards loaded.`,'ok');}catch(e){$('packLotCards').innerHTML='<p class="fg-warning">Ready lots load nahi hue. V788 SQL run karein.</p>';msg(e.message,'error');}}
   function renderPackLots(){const q=$('packLotSearch').value.trim().toLowerCase(),list=state.packLots.filter(x=>String(x.lot_no).toLowerCase().includes(q));$('packLotCards').innerHTML=list.length?list.map(x=>`<button class="fg-lot-card" data-pack-lot="${esc(x.lot_no)}"><div class="fg-card-line"><strong>${esc(x.lot_no)}</strong><span class="fg-status ${x.is_mine?'mine':x.assignment_id?'':'open'}">${esc(x.status_label)}</span></div><div class="fg-card-line"><span>Ready PCS</span><b>${x.ready_qty}</b></div><div class="fg-card-line"><span>Colours / Sizes</span><span>${x.colours} / ${x.sizes}</span></div><div class="fg-card-line"><span>Packer</span><span>${esc(x.worker_name||'Not Assigned')}</span></div></button>`).join(''):'<p class="fg-muted">Koi matching Ready Lot nahi hai.</p>';$('packLotCards').querySelectorAll('[data-pack-lot]').forEach(b=>b.onclick=()=>openPackLot(b.dataset.packLot));}
@@ -131,35 +105,21 @@
   function closePackLot(){$('packWorkspace').hidden=true;state.selectedPack=null;state.packPlan=null;}
   async function assignPack(){try{if(!state.selectedPack)throw Error('Lot card select karein.');const worker=$('packWorker').value;if(!worker)throw Error('Packing Worker select karein.');await rpc('rr_fg_assign_packing_v788',{p_lot_no:state.selectedPack.lot_no,p_worker_user_id:worker,p_data_mode:'TEST'});msg(`Lot ${state.selectedPack.lot_no} packing worker ko assigned.`,'ok');closePackLot();await loadPackLots();}catch(e){msg(e.message,'error');}}
   async function acceptPack(){try{if(!state.selectedPack?.assignment_id)throw Error('Assigned Lot required.');await rpc('rr_fg_accept_packing_v788',{p_assignment_id:state.selectedPack.assignment_id});state.selectedPack.assignment_status='ACCEPTED';$('workerPackBlock').hidden=true;$('packAlgoBlock').hidden=false;msg('Work accepted. PCS per box fill karke algorithm run karein.','ok');}catch(e){msg(e.message,'error');}}
-  function renderPackBoxes(boxes){
-    $('packRows').innerHTML=packBoxGroups(boxes).map(g=>`<tr><td data-label="Box">${esc(packGroupBoxLabel(g))}</td><td data-label="Type">${esc(g.type)}</td><td data-label="PCS">${esc(packGroupQty(g))}</td><td data-label="Composition">${compositionTable(g.sample.cells)}</td></tr>`).join('');
-  }
+  function renderPackBoxes(boxes){$('packRows').innerHTML=packBoxGroups(boxes).map(g=>`<tr><td data-label="Box">${esc(packGroupBoxLabel(g))}</td><td data-label="Type">${esc(g.type)}</td><td data-label="PCS">${esc(packGroupQty(g))}</td><td data-label="Composition">${compositionTable(g.sample.cells)}</td></tr>`).join('');}
   async function generatePack(){try{const x=state.selectedPack;if(!x)throw Error('Lot card select karein.');let pcs=Number($('packPcsPerBox').value||0);if(!Number.isInteger(pcs)||pcs<=0)throw Error('PCS per box mandatory hai.');msg('Equal packing algorithm chal raha hai…');state.packPlan=await rpc(x.pack_plan_id?'rr_fg_reset_equal_pack_plan_v9317':'rr_fg_generate_assigned_pack_v788',{p_assignment_id:x.assignment_id,p_pcs_per_box:pcs});x.pack_plan_id=state.packPlan.plan_id;const detail=await rpc('rr_fg_pack_plan_detail_v787',{p_plan_id:state.packPlan.plan_id});renderPackBoxes(detail.boxes||[]);$('packSummary').innerHTML=`<span class="fg-chip">Boxes <b>${detail.boxes.length}</b></span><span class="fg-chip">PCS <b>${detail.total_qty}</b></span><span class="fg-chip">PCS/Box <b>${pcs}</b></span>`;$('packAlgoBlock').hidden=false;$('submitPack').disabled=false;msg('Equal algorithm ready; physical boxes verify karke Submit Packing karein.','ok');}catch(e){msg(e.message,'error');}}
   async function renderPackPlan(planId,status='ACCEPTED'){try{const detail=await rpc('rr_fg_pack_plan_detail_v787',{p_plan_id:planId});state.packPlan={plan_id:planId};renderPackBoxes(detail.boxes||[]);$('packSummary').innerHTML=`<span class="fg-chip">Boxes <b>${detail.boxes.length}</b></span><span class="fg-chip">PCS <b>${detail.total_qty}</b></span><span class="fg-chip">View <b>${esc(status||'READY')}</b></span>`;$('packAlgoBlock').hidden=!(state.selectedPack?.is_mine||canAssign());$('submitPack').disabled=status==='SUBMITTED';msg(status==='SUBMITTED'?'Packed algorithm view loaded. Reset allowed.':'Existing algorithm table loaded. Re-run allowed before submit.','ok');}catch(e){msg(e.message,'error');}}
   async function submitPack(){try{if(!state.packPlan)throw Error('Packing plan required.');const r=await rpc('rr_fg_submit_assigned_pack_v788',{p_assignment_id:state.selectedPack.assignment_id,p_plan_id:state.packPlan.plan_id});msg(`${r.total_boxes} boxes / ${r.total_qty} PCS Ready for Despatch.`, 'ok');$('submitPack').disabled=true;closePackLot();await Promise.all([loadPackLots(),loadReadyBoxes()]);}catch(e){msg(e.message,'error');}}
   function dispatchEntries(){return [...$('dispatchBoxRows').querySelectorAll('tr')].filter(r=>r.querySelector('[data-dispatch-check]')?.checked).map(r=>({box_id:r.dataset.boxId,qty:Number(r.querySelector('[data-dispatch-qty]').value)}));}
   function dispatchType(box){const t=String(box?.box_type||'').toUpperCase();return t==='REGULAR'||t==='FRESH'?'FRESH':(t==='MIX'?'MIX':'ASST');}
   function dispatchBucket(boxes){return {boxes:boxes.length,pcs:boxes.reduce((n,x)=>n+Number(x.qty||0),0),qtys:boxes.map(x=>Number(x.qty||0)).filter(q=>q>0)};}
-  function dispatchQtyLabel(bucket){
-    if(!bucket.boxes)return '0 BOX / 0 PCS';
-    const uniq=[...new Set(bucket.qtys)];
-    if(uniq.length===1)return `${bucket.boxes} × ${uniq[0]} = ${bucket.pcs} PCS`;
-    if(bucket.boxes===1)return `1 BOX = ${bucket.pcs} PCS`;
-    return `${bucket.boxes} BOX = ${bucket.pcs} PCS`;
-  }
+  function dispatchQtyLabel(bucket){if(!bucket.boxes)return '0 BOX / 0 PCS';const uniq=[...new Set(bucket.qtys)];if(uniq.length===1)return `${bucket.boxes} × ${uniq[0]} = ${bucket.pcs} PCS`;if(bucket.boxes===1)return `1 BOX = ${bucket.pcs} PCS`;return `${bucket.boxes} BOX = ${bucket.pcs} PCS`;}
   function renderDispatchLotSummary(){
-    const host=$('dispatchLotSummary');if(!host)return;
-    if(!state.readyBoxes.length){host.innerHTML='';return;}
+    const host=$('dispatchLotSummary');if(!host)return;if(!state.readyBoxes.length){host.innerHTML='';return;}
     const selectedIds=new Set(dispatchEntries().map(x=>String(x.box_id)));
     const lots=[...new Set(state.readyBoxes.map(x=>String(x.lot_no)))].sort((a,b)=>a.localeCompare(b,undefined,{numeric:true}));
     host.innerHTML=lots.map(lot=>{
       const all=state.readyBoxes.filter(x=>String(x.lot_no)===lot),sending=all.filter(x=>selectedIds.has(String(x.box_id))),balance=all.filter(x=>!selectedIds.has(String(x.box_id)));
-      const typeRows=['FRESH','ASST','MIX'].map(type=>{
-        const label=type==='FRESH'?'REGULAR / FRESH':type;
-        const a=dispatchBucket(all.filter(x=>dispatchType(x)===type)),s=dispatchBucket(sending.filter(x=>dispatchType(x)===type)),b=dispatchBucket(balance.filter(x=>dispatchType(x)===type));
-        if(!a.boxes)return '';
-        return `<tr><th>${label}</th><td>${esc(dispatchQtyLabel(a))}</td><td>${esc(dispatchQtyLabel(s))}</td><td>${esc(dispatchQtyLabel(b))}</td></tr>`;
-      }).join('');
+      const typeRows=['FRESH','ASST','MIX'].map(type=>{const label=type==='FRESH'?'REGULAR / FRESH':type;const a=dispatchBucket(all.filter(x=>dispatchType(x)===type)),s=dispatchBucket(sending.filter(x=>dispatchType(x)===type)),b=dispatchBucket(balance.filter(x=>dispatchType(x)===type));if(!a.boxes)return '';return `<tr><th>${label}</th><td>${esc(dispatchQtyLabel(a))}</td><td>${esc(dispatchQtyLabel(s))}</td><td>${esc(dispatchQtyLabel(b))}</td></tr>`;}).join('');
       const ta=dispatchBucket(all),ts=dispatchBucket(sending),tb=dispatchBucket(balance);
       return `<div class="fg-table-wrap"><table class="fg-box-table"><thead><tr><th colspan="4">LOT ${esc(lot)}</th></tr><tr><th>TYPE</th><th>AVAILABLE</th><th>SENDING</th><th>BALANCE</th></tr></thead><tbody>${typeRows}<tr><th>LOT TOTAL</th><td>${ta.boxes} BOX / ${ta.pcs} PCS</td><td>${ts.boxes} BOX / ${ts.pcs} PCS</td><td>${tb.boxes} BOX / ${tb.pcs} PCS</td></tr></tbody></table></div>`;
     }).join('');
@@ -178,10 +138,7 @@
   async function showSaleBalance(){if(!state.stock.length)await loadStock();const lot=$('saleLot').value.trim(),r=stockFor(lot,'REGULAR'),a=stockFor(lot,'ASST');$('saleBalance').innerHTML=`<span class="fg-chip">Regular Balance <b>${r?.available_qty||0}</b></span><span class="fg-chip">ASST Balance <b>${a?.available_qty||0}</b></span><span class="fg-chip">Regular Rate <b>${money(r?.sale_rate||0)}</b></span>`;if(!$('asstRate').value)$('asstRate').value=r?.sale_rate||0;}
   async function addPiLine(){try{await showSaleBalance();const lot=$('saleLot').value.trim(),rq=Number($('regularQty').value||0),aq=Number($('asstQty').value||0),reg=stockFor(lot,'REGULAR'),asst=stockFor(lot,'ASST');if(!lot||rq+aq<=0)throw Error('Lot aur quantity required.');if(rq>Number(reg?.available_qty||0)||aq>Number(asst?.available_qty||0))throw Error('Available stock se jyada quantity blocked.');const push=(type,qty,rate,item)=>{if(!qty)return;const old=state.piLines.find(x=>x.lot_no===lot&&x.stock_type===type&&x.rate===rate);if(old)old.qty+=qty;else state.piLines.push({lot_no:lot,stock_type:type,qty,rate,short_item_name:item||lot});};push('REGULAR',rq,Number(reg?.sale_rate||0),reg?.short_item_name);push('ASST',aq,Number($('asstRate').value||reg?.sale_rate||0),asst?.short_item_name||reg?.short_item_name);renderPi();}catch(e){msg(e.message,'error');}}
   function totals(){const sub=state.piLines.reduce((n,x)=>n+x.qty*x.rate,0),va=sub*Number($('valueAdded').value||0)/100,po=Math.max(0,Number($('packingOther').value||0)),raw=sub+va+po,grand=Math.round(raw/10)*10;return{sub,va,po,round:grand-raw,grand};}
-  function renderPi(){
-    const groups=[];state.piLines.forEach(x=>{const other=state.piLines.find(y=>y!==x&&y.lot_no===x.lot_no&&y.rate===x.rate);if(other){if(groups.some(g=>g.keys?.includes(x)))return;groups.push({keys:[x,other],lot_no:x.lot_no,stock_type:'REGULAR + ASST',qty:x.qty+other.qty,rate:x.rate,short_item_name:`${x.short_item_name} ASST`});}else groups.push({...x,keys:[x]});});
-    $('piRows').innerHTML=groups.map((x,i)=>`<tr><td>${esc(x.lot_no)}</td><td class="fg-short">${esc(x.short_item_name)}</td><td>${esc(x.stock_type)}</td><td>${x.qty}</td><td>${money(x.rate)}</td><td>${money(x.qty*x.rate)}</td><td><button class="fg-btn" data-remove="${i}">×</button></td></tr>`).join('');$('piRows').querySelectorAll('[data-remove]').forEach((b)=>b.onclick=()=>{groups[Number(b.dataset.remove)].keys.forEach(k=>state.piLines.splice(state.piLines.indexOf(k),1));renderPi();});const t=totals();$('piTotals').innerHTML=`<span class="fg-chip">Sub Total <b>${money(t.sub)}</b></span><span class="fg-chip">Value Added <b>${money(t.va)}</b></span><span class="fg-chip">Packing & Other <b>${money(t.po)}</b></span><span class="fg-chip">Round Off <b>${money(t.round)}</b></span><span class="fg-chip">Grand Total <b>${money(t.grand)}</b></span>`;
-  }
+  function renderPi(){const groups=[];state.piLines.forEach(x=>{const other=state.piLines.find(y=>y!==x&&y.lot_no===x.lot_no&&y.rate===x.rate);if(other){if(groups.some(g=>g.keys?.includes(x)))return;groups.push({keys:[x,other],lot_no:x.lot_no,stock_type:'REGULAR + ASST',qty:x.qty+other.qty,rate:x.rate,short_item_name:`${x.short_item_name} ASST`});}else groups.push({...x,keys:[x]});});$('piRows').innerHTML=groups.map((x,i)=>`<tr><td>${esc(x.lot_no)}</td><td class="fg-short">${esc(x.short_item_name)}</td><td>${esc(x.stock_type)}</td><td>${x.qty}</td><td>${money(x.rate)}</td><td>${money(x.qty*x.rate)}</td><td><button class="fg-btn" data-remove="${i}">×</button></td></tr>`).join('');$('piRows').querySelectorAll('[data-remove]').forEach((b)=>b.onclick=()=>{groups[Number(b.dataset.remove)].keys.forEach(k=>state.piLines.splice(state.piLines.indexOf(k),1));renderPi();});const t=totals();$('piTotals').innerHTML=`<span class="fg-chip">Sub Total <b>${money(t.sub)}</b></span><span class="fg-chip">Value Added <b>${money(t.va)}</b></span><span class="fg-chip">Packing & Other <b>${money(t.po)}</b></span><span class="fg-chip">Round Off <b>${money(t.round)}</b></span><span class="fg-chip">Grand Total <b>${money(t.grand)}</b></span>`;}
   async function savePi(finalize){try{if(!state.piLines.length)throw Error('PI me item line required.');const t=totals(),buyer=$('buyerSearch').value.trim();if(!buyer)throw Error('Buyer required.');const r=await rpc('rr_fg_save_pi_v787',{p_pi_id:state.piId,p_buyer_name:buyer,p_dispatch_details:$('buyerDispatch').value,p_lines:state.piLines,p_value_added_pct:Number($('valueAdded').value||0),p_packing_other:t.po,p_finalize:finalize,p_data_mode:'TEST'});state.piId=r.pi_id;msg(finalize?`CPI ${r.cpi_no} final; stock OUT locked.`:`PI ${r.pi_no} saved; stock par koi effect nahi.`, 'ok');if(finalize){state.piLines=[];state.piId=null;renderPi();await Promise.all([loadStock(),loadCpis(),loadSuggestions()]);}}catch(e){msg(e.message,'error');}}
   async function loadCpis(){try{state.cpis=await rows('rr_fg_final_cpi_v787');const opts='<option value="">Select…</option>'+state.cpis.map(x=>`<option value="${x.cpi_id}">${esc(x.cpi_no)} · ${esc(x.buyer_name)} · ${x.total_qty} PCS</option>`).join('');$('verifyCpi').innerHTML=opts;$('returnCpi').innerHTML=opts;}catch(e){console.warn(e);}}
   async function verifyQty(){try{const id=$('verifyCpi').value;if(!id)throw Error('CPI select karein.');const r=await rpc('rr_fg_verify_cpi_qty_v787',{p_cpi_id:id,p_remarks:$('verifyRemarks').value});msg(`${r.cpi_no} QTY VERIFIED; customer send/dispatch unlocked.`,'ok');await loadCpis();}catch(e){msg(e.message,'error');}}
