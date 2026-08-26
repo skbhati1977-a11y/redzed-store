@@ -7,12 +7,22 @@
   const db=()=>window.supabaseClient||window.supabaseDb||window.redzedSupabase||window.sb;
   let lotPacker=new Map(),packers=new Map(),selectedPacker='',syncTimer=null,submitBound=false;
   function msg(t,cls=''){const el=document.getElementById('message');if(el){el.textContent=t||'';el.className=`fg-msg ${cls}`;}}
+  function publishAllowedLots(){
+    if(!selectedPacker){window.__RR_DESPATCH_ALLOWED_LOTS__=null;}
+    else{
+      const allowed=[];
+      lotPacker.forEach((a,lot)=>{if(String(a?.worker_user_id||'')===selectedPacker)allowed.push(String(lot));});
+      window.__RR_DESPATCH_ALLOWED_LOTS__=allowed;
+    }
+    window.dispatchEvent(new CustomEvent('redzed:despatch-packer-filter',{detail:{packer:selectedPacker,allowedLots:window.__RR_DESPATCH_ALLOWED_LOTS__}}));
+  }
   async function loadAssignments(){
     const c=db();if(!c?.from)throw Error('Supabase client unavailable');
     const r=await c.from('rr_fg_packing_assignments_v788').select('lot_no,worker_user_id,worker_name,worker_code,pack_plan_id,status,submitted_at').eq('data_mode',mode()).eq('status','SUBMITTED').order('submitted_at',{ascending:false});
     if(r.error)throw r.error;
     lotPacker=new Map();packers=new Map();
     (r.data||[]).forEach(a=>{const lot=String(a.lot_no||'').trim(),wid=String(a.worker_user_id||'').trim();if(!lot||!wid||lotPacker.has(lot))return;lotPacker.set(lot,a);if(!packers.has(wid))packers.set(wid,a);});
+    publishAllowedLots();
   }
   async function loadLineMen(){
     const c=db();if(!c?.rpc)throw Error('Supabase client unavailable');
@@ -35,7 +45,7 @@
       const remarksField=remarks.closest('.fg-field');grid.insertBefore(l,remarksField||null);
     }
     const pq=document.getElementById('dispatchPackerQueue');
-    if(pq&&!pq.dataset.bound){pq.dataset.bound='1';pq.addEventListener('change',e=>{selectedPacker=String(e.target.value||'');applyQueueFilter(true);});}
+    if(pq&&!pq.dataset.bound){pq.dataset.bound='1';pq.addEventListener('change',e=>{selectedPacker=String(e.target.value||'');publishAllowedLots();});}
     return true;
   }
   function refreshPackerOptions(){
@@ -44,15 +54,9 @@
     const opts=[...packers.entries()];
     sel.innerHTML='<option value="">Select Packer Queue…</option>'+opts.map(([id,a])=>`<option value="${id}">${String(a.worker_name||'Packer')}${a.worker_code?' · '+String(a.worker_code):''}</option>`).join('');
     if(keep&&opts.some(([id])=>id===keep)){selectedPacker=keep;sel.value=keep;}else{selectedPacker='';sel.value='';}
+    publishAllowedLots();
   }
-  function applyQueueFilter(clearOthers=false){
-    qsa('#dispatchConsolidated [data-dc-lot]').forEach(sec=>{
-      const lot=sec.dataset.dcLot,a=lotPacker.get(lot),match=!selectedPacker||String(a?.worker_user_id||'')===selectedPacker;
-      if(clearOthers&&!match){sec.querySelectorAll('[data-dc-send]').forEach(inp=>{if(inp.value!=='0'){inp.value='0';inp.dispatchEvent(new Event('input',{bubbles:true}));}});}
-      sec.style.display=match?'':'none';
-    });
-  }
-  function scheduleSync(delay=80){clearTimeout(syncTimer);syncTimer=setTimeout(()=>{ensureControls();refreshPackerOptions();applyQueueFilter(false);},delay);}
+  function scheduleSync(delay=80){clearTimeout(syncTimer);syncTimer=setTimeout(()=>{ensureControls();refreshPackerOptions();},delay);}
   function selectedEntries(){return qsa('#dispatchBoxRows tr[data-box-id]').filter(r=>r.querySelector('[data-dispatch-check]')?.checked).map(r=>({box_id:r.dataset.boxId,qty:Number(r.querySelector('[data-dispatch-qty]')?.value||0),lot:String(r.children[2]?.textContent||'').trim()}));}
   async function submitQueue(e){
     e.preventDefault();e.stopImmediatePropagation();
@@ -74,7 +78,7 @@
     bindSubmit();
     try{await loadAssignments();refreshPackerOptions();}catch(e){console.warn('Packer queue init',e);}
     try{await loadLineMen();}catch(e){console.warn('Lineman init',e);}
-    applyQueueFilter(false);return true;
+    return true;
   }
   function init(){
     let tries=0;
