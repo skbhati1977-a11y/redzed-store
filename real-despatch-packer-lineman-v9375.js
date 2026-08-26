@@ -1,7 +1,7 @@
 (()=>{
   'use strict';
-  if(window.__RR_DESPATCH_PACKER_LINEMAN_V9388__)return;
-  window.__RR_DESPATCH_PACKER_LINEMAN_V9388__=true;
+  if(window.__RR_DESPATCH_PACKER_LINEMAN_V9393__)return;
+  window.__RR_DESPATCH_PACKER_LINEMAN_V9393__=true;
   const qsa=s=>[...document.querySelectorAll(s)];
   const mode=()=>new URLSearchParams(location.search).get('mode')==='REAL'?'REAL':'TEST';
   const db=()=>window.supabaseClient||window.supabaseDb||window.redzedSupabase||window.sb;
@@ -20,10 +20,25 @@
   function syncVisibleSummary(){const entries=visibleEntries(true),qty=entries.reduce((n,x)=>n+(Number.isFinite(x.qty)?x.qty:0),0),el=document.getElementById('dispatchSummary');if(el)el.innerHTML=`<span class="fg-chip">Selected Boxes <b>${entries.length}</b></span><span class="fg-chip">Send PCS <b>${qty}</b></span>`;return entries;}
   async function submitQueue(e){e.preventDefault();e.stopImmediatePropagation();try{const packer=document.getElementById('dispatchPackerQueue')?.value||'',lineman=document.getElementById('dispatchLineMan')?.value||'';if(!packer)throw Error('Packer Queue selection mandatory');if(!lineman)throw Error('Delivery Lineman selection mandatory');const entries=syncVisibleSummary();if(!entries.length)throw Error('Kam se kam ek Box select karein.');for(const x of entries){const a=lotPacker.get(x.lot);if(String(a?.worker_user_id||'')!==String(packer))throw Error(`Lot ${x.lot} selected Packer Queue ka nahi hai.`);if(!Number.isInteger(x.qty)||x.qty<=0)throw Error('Selected boxes ki Send Qty mandatory hai.');}const c=db();if(!c?.rpc)throw Error('Supabase client unavailable');const r=await c.rpc('rr_fg_create_despatch_queue_v9375',{p_boxes:entries.map(({box_id,qty})=>({box_id,qty})),p_packer_worker_id:packer,p_line_man_worker_id:lineman,p_destination:document.getElementById('dispatchDestination').value,p_remarks:document.getElementById('dispatchRemarks').value||null,p_data_mode:mode()});if(r.error)throw r.error;const d=r.data||{};msg(`Challan ${d.challan_no||''} locked · ${d.total_boxes||entries.length} boxes / ${d.total_qty||0} PCS · Packer ${d.packer_name||''} → Lineman ${d.line_man_name||''}`,'ok');setTimeout(loadReadyForQueue,100);}catch(err){msg(err.message||String(err),'error');}}
   function bindSubmit(){const btn=document.getElementById('submitDispatch');if(btn&&!submitBound){btn.addEventListener('click',submitQueue,true);submitBound=true;}}
-  function challanNo(text){const m=String(text||'').match(/(?:T?DC)\s*(\d+)/i);return m?Number(m[1]):Number.MAX_SAFE_INTEGER;}
-  function sortPendingChallans(){const sel=document.getElementById('receiveChallan');if(!sel||sel.dataset.rrSorting==='1')return;const opts=[...sel.options];if(opts.length<3)return;const keep=sel.value,head=opts.filter(o=>!o.value),items=opts.filter(o=>o.value).sort((a,b)=>challanNo(a.textContent)-challanNo(b.textContent)||String(a.textContent).localeCompare(String(b.textContent),undefined,{numeric:true}));const current=items.map(o=>o.value).join('|'),wanted=[...items].sort((a,b)=>challanNo(a.textContent)-challanNo(b.textContent)).map(o=>o.value).join('|');sel.dataset.rrSorting='1';[...head,...items].forEach(o=>sel.appendChild(o));if(keep)sel.value=keep;sel.dataset.rrSorting='0';}
-  function bindChallanSort(){const sel=document.getElementById('receiveChallan');if(!sel||sel.dataset.rrSortBound)return;sel.dataset.rrSortBound='1';new MutationObserver(()=>setTimeout(sortPendingChallans,0)).observe(sel,{childList:true});setTimeout(sortPendingChallans,0);}
-  async function hydrate(){if(!ensureControls())return false;bindSubmit();bindChallanSort();try{await loadAssignments();refreshPackerOptions();}catch(e){console.warn('Packer queue init',e);}try{await loadLineMen();}catch(e){console.warn('Lineman init',e);}hideDespatchAllocation();setTimeout(syncVisibleSummary,120);setTimeout(sortPendingChallans,160);return true;}
+  function challanNo(v){const m=String(v||'').match(/(?:T?DC)\s*(\d+)/i);return m?Number(m[1]):Number.MAX_SAFE_INTEGER;}
+  async function loadReceivePendingRpc(){
+    const sel=document.getElementById('receiveChallan');if(!sel)return;
+    try{
+      const c=db();if(!c?.rpc)return;
+      const r=await c.rpc('rr_fg_receive_pending_v9361',{p_data_mode:mode()});if(r.error)throw r.error;
+      const data=(Array.isArray(r.data)?r.data:[]).slice().sort((a,b)=>challanNo(a.challan_no)-challanNo(b.challan_no));
+      const keep=sel.value;
+      sel.innerHTML='<option value="">Select…</option>'+data.map(x=>`<option value="${esc(x.despatch_id)}" data-boxes='${esc(JSON.stringify(x.boxes||[]))}'>${esc(x.challan_no)} · ${esc(x.destination)} · ${Number(x.total_qty||0)} PCS</option>`).join('');
+      if(keep&&data.some(x=>String(x.despatch_id)===String(keep)))sel.value=keep;
+      sel.dispatchEvent(new Event('change',{bubbles:true}));
+    }catch(e){console.warn('Store Receive RPC load failed',e);}
+  }
+  function bindReceiveRpc(){
+    if(new URLSearchParams(location.search).get('view')!=='receive')return;
+    const btn=document.getElementById('loadChallans');if(btn&&!btn.dataset.rrRpcBound){btn.dataset.rrRpcBound='1';btn.addEventListener('click',()=>setTimeout(loadReceivePendingRpc,250));}
+    setTimeout(loadReceivePendingRpc,500);setTimeout(loadReceivePendingRpc,1300);
+  }
+  async function hydrate(){if(!ensureControls())return false;bindSubmit();bindReceiveRpc();try{await loadAssignments();refreshPackerOptions();}catch(e){console.warn('Packer queue init',e);}try{await loadLineMen();}catch(e){console.warn('Lineman init',e);}hideDespatchAllocation();setTimeout(syncVisibleSummary,120);return true;}
   function init(){let tries=0;const boot=()=>{tries++;hydrate().then(ok=>{if(!ok&&tries<20)setTimeout(boot,150);});};boot();document.addEventListener('input',e=>{if(e.target?.matches?.('#dispatchConsolidated [data-dc-send]'))setTimeout(syncVisibleSummary,0);},false);window.addEventListener('redzed:supabase-ready',()=>setTimeout(()=>hydrate(),0),{passive:true});setTimeout(()=>hydrate(),600);setTimeout(()=>hydrate(),1400);}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 })();
