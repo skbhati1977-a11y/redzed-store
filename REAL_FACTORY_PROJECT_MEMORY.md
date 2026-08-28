@@ -72,18 +72,32 @@ This memory is the implementation checkpoint for the finalized customer live-sal
 10. Live-stock collections/more designs can be pushed into the same permanent chat; requirement quantities synchronize to structured Requirement data and backend stock revalidation prevents overselling.
 11. Supported own-app/PWA/browser push deep-links customers back to the same conversation/message/product.
 12. Super Admin alone applies/releases PAYMENT/ACCOUNT/BILLING HOLD; active HOLD backend-blocks CPI.
-13. Held PI may use a separate Customer <-> Super Admin Private Billing Conversation that Salesman/Admin cannot access; Accountant also does not automatically see it.
-14. Private billing supports chat/voice/attachments/reply and permitted calls; recorded calls require disclosure/consent and restricted storage.
-15. Payment Commitment authority is Super Admin; commitment operational data is shared with Super Admin + Accountant, while Admin gets operational follow-up alert/status only.
-16. Payment due/follow-up alerts go internally to Accountant + Admin + Super Admin; customer gets scheduled reminder message/notification without confidential internal details.
-17. Commitment history is preserved; changed/missed promises are not overwritten and partial payments continue balance follow-up.
-18. Payment slip/customer `paid` message is not official payment confirmation.
-19. Actual payment verification/recording is Accountant authority. Salesman/Admin cannot officially confirm payment; Accountant cannot release Super Admin HOLD.
-20. Accountant confirmation updates paid/balance state and reminders; Super Admin then reviews HOLD release; release leads to READY FOR CPI, not automatic CPI.
-21. Customer can clear/hide only their own chat view by Last 7/30/90 Days, custom range or all-view; this never deletes REDZED company master history.
-22. Company-side Conversation Archive/Restore/Permanent Delete belongs ONLY to Super Admin; other staff have no company-history archive/delete authority.
-23. Company permanent-delete is distinct from archive, requires stronger confirmation/reason, and leaves immutable audit metadata.
-24. Financial/statutory/audit records remain independently protected from chat clear/delete operations.
-25. Sales Conversation and Private Billing archives remain separate by access control.
-26. Final flow: Collection -> Permanent Chat -> Requirement/More Designs -> Order Session -> PI -> optional Super Admin HOLD/Private Billing -> Commitment/Reminders -> Accountant Payment Confirmation -> Super Admin Release -> READY FOR CPI -> CPI -> Session Closed -> Same Chat Continues -> Future Collection/New Order.
-27. Before implementing this system, read the locked Rule Book section first and preserve existing Market/Receive/Stock modules unless a required shared integration is explicitly needed.
+13. Private messaging is ONLY Customer <-> Super Admin. No private chat is allowed with Salesman, Admin, Accountant or any other group member. The Super Admin private channel can be used for confidential/direct communication and is not limited only to HOLD cases.
+14. Private content is backend-restricted from unauthorized group members; Accountant does not automatically see the private conversation.
+15. Private communication supports chat/voice/attachments/reply and permitted calls; recorded calls require disclosure/consent and restricted storage.
+16. Payment Commitment authority is Super Admin; commitment operational data is shared with Super Admin + Accountant, while Admin gets operational follow-up alert/status only.
+17. Payment due/follow-up alerts go internally to Accountant + Admin + Super Admin; customer gets scheduled reminder message/notification without confidential internal details.
+18. Commitment history is preserved; changed/missed promises are not overwritten and partial payments continue balance follow-up.
+19. Payment slip/customer `paid` message is not official payment confirmation.
+20. Actual payment verification/recording is Accountant authority. Salesman/Admin cannot officially confirm payment; Accountant cannot release Super Admin HOLD.
+21. Accountant confirmation updates paid/balance state and reminders; Super Admin then reviews HOLD release; release leads to READY FOR CPI, not automatic CPI.
+22. Customer can clear/hide only their own chat view by Last 7/30/90 Days, custom range or all-view; this never deletes REDZED company master history.
+23. Company-side Conversation Archive/Restore/Permanent Delete belongs ONLY to Super Admin; other staff have no company-history archive/delete authority.
+24. Company permanent-delete is distinct from archive, requires stronger confirmation/reason, and leaves immutable audit metadata.
+25. Financial/statutory/audit records remain independently protected from chat clear/delete operations.
+26. Sales Conversation and Private Conversation archives remain separate by access control.
+27. Main Customer Group Chat bottom UI has `CALL | MESSAGE` quick controls plus the normal attachment/message/voice/send composer.
+28. CALL opens a clean single-column list of ONLY current active/authorized members of that exact Customer Group. Removed, blocked, inactive or unrelated names must never appear.
+29. Group member names are backend-driven, not permanently hard-coded. Super Admin, Lukman, Kishan, Shailender, Reeka Ji, Anuj and Customer are examples only when actually in that group.
+30. Call target selection is single-select. Selecting a member does not immediately call; UI first shows `Selected: <name>` and requires a second explicit `CALL <name>` confirmation.
+31. Wrong-recipient prevention is mandatory: separate full-width name rows, adequate spacing, one selected target, visible selected-name confirmation and explicit second call action.
+32. Recording-enabled call flow: choose member -> confirm member -> disclosure/consent -> connect -> recording starts only after required disclosure/consent.
+33. Group-context call metadata links caller, selected recipient, customer/group, time, duration and answered/missed status; permitted recording is linked to that same call/context under retention/access rules.
+34. Normal MESSAGE means Group Chat. There is no generic private-member selector and no Customer private chat with normal group members.
+35. Group Info: eligible members get `Call`; ONLY Super Admin row gets `Call | Private Chat`, with Private Chat next to Call.
+36. Super Admin Private Chat button reopens the one existing Customer <-> Super Admin private conversation; do not create duplicate threads.
+37. Call permission never implies private-message permission.
+38. Super Admin group membership/block state controls call eligibility; removed/blocked/inactive members disappear from new call choices according to effective backend state.
+39. Final communication principle: normal customer communication = transparent Group Chat; calls = safely selected group-context calls; private messaging = Customer <-> Super Admin only.
+40. Final business flow: Collection -> Permanent Chat -> Requirement/More Designs -> Order Session -> PI -> optional Super Admin HOLD/Private Communication -> Commitment/Reminders -> Accountant Payment Confirmation -> Super Admin Release -> READY FOR CPI -> CPI -> Session Closed -> Same Chat Continues -> Future Collection/New Order.
+41. Before implementation, read the locked Rule Book section first and preserve existing Market/Receive/Stock modules unless a required shared integration is explicitly needed.
