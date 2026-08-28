@@ -199,6 +199,10 @@ if (/\/real-finished-goods-v787\.html$/i.test(window.location.pathname)) {
   clean.src = '/redzed-store/real-ws-popup-clean-v9413.js?v=9413';
   clean.async = false;
   (document.head || document.documentElement).appendChild(clean);
+  const freeze = document.createElement('script');
+  freeze.src = '/redzed-store/real-ws-stock-freeze-v9414.js?v=9414';
+  freeze.async = false;
+  (document.head || document.documentElement).appendChild(freeze);
 }
 
 if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", bind);
