@@ -41,15 +41,17 @@ function clean(){
 installStyle();
 new MutationObserver(clean).observe(document.documentElement,{childList:true,subtree:true});
 document.addEventListener('pointerdown',e=>{if(e.target.closest?.('#rrWsModal9411,#rr9415modal'))queueMicrotask(clean)},true);
-/* Freeze toggle uses the two-tap click detector. Block browser dblclick from toggling it a second time. */
-document.addEventListener('dblclick',e=>{if(e.target.closest?.('[data-freeze-toggle]')){e.preventDefault();e.stopImmediatePropagation();}},true);
 clean();
 
 if(/\/real-finished-goods-v787\.html$/i.test(location.pathname)&&!window.__RR_WS_STOCK_V9415_LOADER__){
   window.__RR_WS_STOCK_V9415_LOADER__=true;
   const s=document.createElement('script');
-  s.src='/redzed-store/real-ws-stock-v9415.js?v=9415';
+  s.src='/redzed-store/real-ws-stock-v9415.js?v=9416';
   s.async=false;
   (document.head||document.documentElement).appendChild(s);
+  const f=document.createElement('script');
+  f.src='/redzed-store/real-ws-freeze-toggle-fix-v9416.js?v=9416';
+  f.async=false;
+  (document.head||document.documentElement).appendChild(f);
 }
 })();
