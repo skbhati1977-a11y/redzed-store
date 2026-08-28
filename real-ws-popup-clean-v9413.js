@@ -53,5 +53,9 @@ if(/\/real-finished-goods-v787\.html$/i.test(location.pathname)&&!window.__RR_WS
   f.src='/redzed-store/real-ws-freeze-toggle-fix-v9416.js?v=9416';
   f.async=false;
   (document.head||document.documentElement).appendChild(f);
+  const o=document.createElement('script');
+  o.src='/redzed-store/real-ws-stock-order-v9417.js?v=9417';
+  o.async=false;
+  (document.head||document.documentElement).appendChild(o);
 }
 })();
