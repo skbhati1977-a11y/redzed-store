@@ -1,0 +1,21 @@
+-- REDZED V9433 Customer Live Sales Chat foundation
+-- Applied to Supabase project hruartsemierwhtzonei on 2026-08-29.
+-- TARGETED SCOPE ONLY: customer chat/group/private-call/payment-commitment foundation.
+-- Existing Market/Receive/Stock/Packing modules are intentionally not rewritten.
+
+-- Migration name in Supabase: customer_live_sales_chat_foundation_v9433
+-- Objects created:
+-- rr_customer_chat_v9433
+-- rr_customer_chat_members_v9433
+-- rr_customer_order_sessions_v9433
+-- rr_customer_chat_messages_v9433
+-- rr_customer_chat_view_clear_v9433
+-- rr_customer_chat_archive_audit_v9433
+-- rr_customer_calls_v9433
+-- rr_payment_commitment_v9433 / events / confirmation
+-- rr_pi_superadmin_hold_v9433
+-- targeted security/authority RPCs with Super Admin-only membership/private/archive/HOLD and Accountant-only payment confirmation.
+-- Old trg_rr_market_voice_delete_on_cpi_v9432 was removed so CPI no longer deletes requirement voice history.
+-- CPI now closes only the linked order session and can append ORDER COMPLETED while permanent customer chat remains open.
+
+-- Full deployed DDL is recorded by the Supabase migration history under customer_live_sales_chat_foundation_v9433.
