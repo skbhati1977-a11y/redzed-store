@@ -54,3 +54,36 @@ This note records the verified, already-existing Matching Cloth behavior so futu
 
 ### Implementation rule
 Before changing Matching Cloth code, read this memory note and `REAL_FACTORY_RULE_BOOK.md` first. Source behavior from the approved files/RPCs listed above, then apply only the required UI/integration changes to the destination files. Do not re-create mappings from scratch when these verified sources already exist.
+
+
+## Customer Live Sales / Permanent Chat — locked project memory (2026-08-29)
+
+This memory is the implementation checkpoint for the finalized customer live-sales architecture. The detailed point-by-point authority and behavior source of truth is `REAL_FACTORY_RULE_BOOK.md`, section `Customer Live Sales, Chat, Billing & Payment — LOCKED RULES (2026-08-29)`.
+
+1. One Customer = one permanent continuous Sales Chat; CPI closes only that Order Session, never the customer chat.
+2. No-order conversations stay open and can receive future collection/message pushes.
+3. Each order remains a distinct Requirement -> PI -> CPI session inside the permanent conversation.
+4. Sales chat is team/group-owned; Super Admin alone can Join/Remove authorized staff IDs.
+5. Super Admin alone can BLOCK/UNBLOCK staff app access; block is backend-wide and history remains attributed.
+6. Customer-facing normal group messages show sender name only, never internal Salesman/Admin/Worker/Sales Team category labels.
+7. Chat supports text, voice, image/file/PDF, product cards, reply/quote, timestamps and read/unread.
+8. Universal sales attach/share panel: Gallery, Camera, Document, Location, verified Payment QR, Visiting Card, Collection, PI/Bill, Dispatch, Contact, Template and secure Link.
+9. Customer has relevant attachment options such as Gallery/Camera/Document/Location; controlled official templates remain staff-authorized.
+10. Live-stock collections/more designs can be pushed into the same permanent chat; requirement quantities synchronize to structured Requirement data and backend stock revalidation prevents overselling.
+11. Supported own-app/PWA/browser push deep-links customers back to the same conversation/message/product.
+12. Super Admin alone applies/releases PAYMENT/ACCOUNT/BILLING HOLD; active HOLD backend-blocks CPI.
+13. Held PI may use a separate Customer <-> Super Admin Private Billing Conversation that Salesman/Admin cannot access; Accountant also does not automatically see it.
+14. Private billing supports chat/voice/attachments/reply and permitted calls; recorded calls require disclosure/consent and restricted storage.
+15. Payment Commitment authority is Super Admin; commitment operational data is shared with Super Admin + Accountant, while Admin gets operational follow-up alert/status only.
+16. Payment due/follow-up alerts go internally to Accountant + Admin + Super Admin; customer gets scheduled reminder message/notification without confidential internal details.
+17. Commitment history is preserved; changed/missed promises are not overwritten and partial payments continue balance follow-up.
+18. Payment slip/customer `paid` message is not official payment confirmation.
+19. Actual payment verification/recording is Accountant authority. Salesman/Admin cannot officially confirm payment; Accountant cannot release Super Admin HOLD.
+20. Accountant confirmation updates paid/balance state and reminders; Super Admin then reviews HOLD release; release leads to READY FOR CPI, not automatic CPI.
+21. Customer can clear/hide only their own chat view by Last 7/30/90 Days, custom range or all-view; this never deletes REDZED company master history.
+22. Company-side Conversation Archive/Restore/Permanent Delete belongs ONLY to Super Admin; other staff have no company-history archive/delete authority.
+23. Company permanent-delete is distinct from archive, requires stronger confirmation/reason, and leaves immutable audit metadata.
+24. Financial/statutory/audit records remain independently protected from chat clear/delete operations.
+25. Sales Conversation and Private Billing archives remain separate by access control.
+26. Final flow: Collection -> Permanent Chat -> Requirement/More Designs -> Order Session -> PI -> optional Super Admin HOLD/Private Billing -> Commitment/Reminders -> Accountant Payment Confirmation -> Super Admin Release -> READY FOR CPI -> CPI -> Session Closed -> Same Chat Continues -> Future Collection/New Order.
+27. Before implementing this system, read the locked Rule Book section first and preserve existing Market/Receive/Stock modules unless a required shared integration is explicitly needed.
