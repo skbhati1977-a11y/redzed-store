@@ -8,6 +8,20 @@ const num=v=>Number(v||0);
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let timer=null;
 
+function ensureRealChatMenu(){
+ const list=document.getElementById('sideList');
+ if(!list||document.getElementById('rrRealChatMenu9436'))return;
+ const groups=[...list.children];
+ const webStore=groups.find(el=>el.querySelector?.('.gt')?.textContent?.trim()==='Web Store');
+ if(!webStore)return;
+ const a=document.createElement('a');
+ a.id='rrRealChatMenu9436';
+ a.className='direct';
+ a.href='real-sales-live-chat-v9434.html?v=9435';
+ a.innerHTML='<span class="gi">💬</span><span class="gt">Real Chat</span><span>›</span>';
+ webStore.insertAdjacentElement('afterend',a);
+}
+
 function ensureUI(){
  if(document.getElementById('rrDashAlterLive9255'))return document.getElementById('rrDashAlterLive9255');
  const style=document.createElement('style');
@@ -54,6 +68,9 @@ async function refresh(){
 }
 
 function start(){
+ ensureRealChatMenu();
+ setTimeout(ensureRealChatMenu,250);
+ setTimeout(ensureRealChatMenu,1000);
  ensureUI();
  setTimeout(refresh,250);
  setTimeout(refresh,1200);
