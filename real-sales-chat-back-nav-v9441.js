@@ -61,6 +61,7 @@ document.addEventListener('click',e=>{
    return;
  }
  if(t.id==='backInbox'){
+   if(window.__RR_CHAT_LOCAL_SLICE_V9463__||window.__RR_CHAT_LOCAL_SLICE_V9462__)return;
    e.preventDefault();e.stopImmediatePropagation();
    if(level()==='chat'||level()==='member'||level()==='call')go('inbox');
    else $('inbox')?.classList.remove('hide');
