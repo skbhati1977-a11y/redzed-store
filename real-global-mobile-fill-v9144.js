@@ -190,6 +190,13 @@ function bind() {
   console.info(`Global mobile fill UX v${VERSION} loaded`);
 }
 
+if (/\/real-finished-goods-v787\.html$/i.test(window.location.pathname)) {
+  const ws = document.createElement('script');
+  ws.src = '/redzed-store/real-ws-stock-v9411.js?v=9411';
+  ws.async = false;
+  (document.head || document.documentElement).appendChild(ws);
+}
+
 if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", bind);
 else bind();
 })();
