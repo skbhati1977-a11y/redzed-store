@@ -192,13 +192,13 @@ function bind() {
 
 if (/\/real-finished-goods-v787\.html$/i.test(window.location.pathname)) {
   const ws = document.createElement('script');
-  ws.src = '/redzed-store/real-ws-stock-v9411.js?v=9412';
+  ws.src = '/redzed-store/real-ws-stock-v9411.js?v=9413';
   ws.async = false;
   (document.head || document.documentElement).appendChild(ws);
-  const wsPopupGuard = document.createElement('script');
-  wsPopupGuard.src = '/redzed-store/real-ws-popup-no-filters-v9412.js?v=9412';
-  wsPopupGuard.async = false;
-  (document.head || document.documentElement).appendChild(wsPopupGuard);
+  const clean = document.createElement('script');
+  clean.src = '/redzed-store/real-ws-popup-clean-v9413.js?v=9413';
+  clean.async = false;
+  (document.head || document.documentElement).appendChild(clean);
 }
 
 if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", bind);
