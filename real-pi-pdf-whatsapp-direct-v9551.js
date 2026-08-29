@@ -15,7 +15,7 @@
     const save=$('save');if(!save||$('rrPiWaBox'))return;
     const card=save.closest('.card')||save.parentElement;
     const box=document.createElement('div');box.id='rrPiWaBox';box.className='rr-pi-wa-box';
-    box.innerHTML=`<label class="rr-pi-wa-switch"><input id="rrPiWaEnabled" type="checkbox" role="switch" checked><span>PDF ke baad direct WhatsApp kholen</span></label><div id="rrPiWaStatus" class="muted">PI save hone ke baad enabled hoga</div><button id="rrPiPdfWa" class="btn rr-pi-wa-btn" type="button" disabled>PI PDF + WHATSAPP</button><div id="rrPiWaNote" class="muted">Direct wa.me · Send aur PDF attach aap WhatsApp me manually karenge.</div>`;
+    box.innerHTML=`<label class="rr-pi-wa-switch"><input id="rrPiWaEnabled" type="checkbox" role="switch" checked><span>PDF ke baad direct WhatsApp kholen</span></label><div id="rrPiWaStatus" class="muted">PI save hone ke baad enabled hoga</div><button id="rrPiPdfWa" class="btn rr-pi-wa-btn" type="button" disabled>WHATSAPP</button><div id="rrPiWaNote" class="muted">Direct wa.me · Send aur PDF attach aap WhatsApp me manually karenge.</div>`;
     card.appendChild(box);
     $('rrPiPdfWa').onclick=run;
     new MutationObserver(update).observe($('piNo'),{childList:true,subtree:true,characterData:true});
@@ -34,7 +34,7 @@
     return [...($('rows')?.querySelectorAll('tr')||[])].map((tr,i)=>{
       const c=tr.children;
       const val=idx=>c[idx]?.querySelector('input')?.value||clean(c[idx]?.textContent);
-      return [String(i+1),clean(c[2]?.textContent),clean(c[3]?.textContent),clean(c[4]?.textContent),val(5),val(8),val(9),clean(c[10]?.textContent),clean(c[11]?.textContent)];
+      return [String(i+1),clean(c[2]?.textContent),clean(c[3]?.textContent),clean(c[4]?.textContent),val(5),clean(c[10]?.textContent),clean(c[11]?.textContent)];
     });
   }
   function makePdf(){
@@ -45,7 +45,7 @@
     doc.setFont('helvetica','normal');doc.setFontSize(10);doc.text(`Date: ${date}`,14,22);doc.text(`Customer: ${customer}`,14,28);if(dispatch)doc.text(`Dispatch: ${dispatch}`,14,34,{maxWidth:268});
     const y=dispatch?40:34;
     if(typeof doc.autoTable!=='function')throw Error('PDF table library load nahi hui.');
-    doc.autoTable({startY:y,head:[['#','Lot No.','Category','Size','Qty','Rate','Discount','Net Rate','Amount']],body:rows(),styles:{fontSize:8,cellPadding:2},headStyles:{fillColor:[35,45,58]},columnStyles:{0:{cellWidth:8},1:{cellWidth:25},2:{cellWidth:55},3:{cellWidth:28},4:{cellWidth:18},5:{cellWidth:23},6:{cellWidth:22},7:{cellWidth:24},8:{cellWidth:28}}});
+    doc.autoTable({startY:y,head:[['#','Lot No.','Category','Size','Qty','Final Rate','Amount']],body:rows(),styles:{fontSize:9,cellPadding:2},headStyles:{fillColor:[35,45,58]},columnStyles:{0:{cellWidth:10},1:{cellWidth:32},2:{cellWidth:72},3:{cellWidth:35},4:{cellWidth:24},5:{cellWidth:35},6:{cellWidth:42}}});
     let ty=(doc.lastAutoTable?.finalY||y)+8;doc.setFontSize(10);doc.setFont('helvetica','normal');
     const totals=[['Gross Amount',moneyText('gross')],['Value Added',moneyText('valueAmt')],['Freight',moneyText('freightAmt')],['Other Charges',moneyText('otherAmt')],['Round Off',moneyText('round')],['TTL Amount',moneyText('total')]];
     totals.forEach(([k,v])=>{doc.text(k,220,ty);doc.text(v,283,ty,{align:'right'});ty+=6;});
