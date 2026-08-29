@@ -5,6 +5,13 @@ window.__RR_PI_PARTY_DISCOUNT_V9557__=true;
 const $=id=>document.getElementById(id),num=v=>Math.max(0,Number(v||0));
 let pendingDiscount=null,actor=null,baseRpc=null,mounted=false;
 
+function cleanDetails(){
+  document.querySelectorAll('.top .muted').forEach(e=>{if(/isolated test|working pi files/i.test(e.textContent||''))e.style.display='none';});
+  const add=$('addLot')?.closest('.addBox');if(add){const m=add.querySelector(':scope > .muted');if(m)m.style.display='none';}
+  const am=$('addMsg');if(am&&/available stock|allow nahi/i.test(am.textContent||''))am.textContent='';
+  const ws=$('rrPiWaStatus');if(ws)ws.style.display='none';
+  const wn=$('rrPiWaNote');if(wn)wn.style.display='none';
+}
 function syncRows(v){
   document.querySelectorAll('#rows input.disc').forEach(el=>{
     el.readOnly=true;
@@ -17,6 +24,7 @@ function currentFromRows(){const e=document.querySelector('#rows input.disc');re
 function updateRowLocks(){document.querySelectorAll('#rows input.disc').forEach(el=>el.readOnly=true);}
 
 async function mount(){
+  cleanDetails();
   if(mounted)return;
   const customer=$('customer'),dispatch=$('dispatch');
   if(!customer||!dispatch||!window.RF853?.rpc)return;
@@ -43,7 +51,8 @@ async function mount(){
     let v=Number(inp.value);if(!Number.isFinite(v))v=0;
     if(v<0)v=0;if(v>10)v=10;pendingDiscount=v;syncRows(v);
   });
-  new MutationObserver(()=>{updateRowLocks();if(pendingDiscount!=null)document.querySelectorAll('#rows input.disc').forEach(el=>{if(Number(el.value||0)!==pendingDiscount){el.value=String(pendingDiscount);el.dispatchEvent(new Event('change',{bubbles:true}));el.readOnly=true;}})}).observe($('rows'),{childList:true,subtree:true});
+  new MutationObserver(()=>{cleanDetails();updateRowLocks();if(pendingDiscount!=null)document.querySelectorAll('#rows input.disc').forEach(el=>{if(Number(el.value||0)!==pendingDiscount){el.value=String(pendingDiscount);el.dispatchEvent(new Event('change',{bubbles:true}));el.readOnly=true;}})}).observe(document.body,{childList:true,subtree:true});
+  cleanDetails();
 }
 
 function installRpcShim(){
@@ -81,5 +90,6 @@ style.textContent='.partyDiscountBox{display:grid;grid-template-columns:1fr minm
 document.head.appendChild(style);
 
 let tries=0;const timer=setInterval(()=>{if(installRpcShim()){clearInterval(timer);mount();}else if(++tries>100)clearInterval(timer)},20);
-addEventListener('DOMContentLoaded',()=>{installRpcShim();mount()});
+addEventListener('DOMContentLoaded',()=>{installRpcShim();mount();cleanDetails();});
+[100,300,700,1500].forEach(ms=>setTimeout(cleanDetails,ms));
 })();
