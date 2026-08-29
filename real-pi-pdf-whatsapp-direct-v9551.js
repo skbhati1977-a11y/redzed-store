@@ -1,80 +1,22 @@
 (()=>{
-  'use strict';
-  if(window.__RR_PI_PDF_WA_V9551__)return;
-  window.__RR_PI_PDF_WA_V9551__=true;
-  const $=id=>document.getElementById(id);
-  const moneyText=id=>($(id)?.textContent||'₹0').trim();
-  const clean=v=>String(v||'').trim();
-  const phone=value=>{let n=clean(value).replace(/[^0-9]/g,'');if(n.length===10)n='91'+n;return /^[1-9][0-9]{7,14}$/.test(n)?n:'';};
-  const piNo=()=>clean($('piNo')?.textContent).replace(/^PI No\.\s*/i,'');
-  const isSaved=()=>!!piNo()&&piNo()!=='—';
-  const caption=()=>`PI No. ${piNo()}\nPI attached.\nTeam REDZED`;
-  function update(){const b=$('rrPiPdfWa');if(b)b.disabled=!isSaved();}
-  function mount(){
-    const save=$('save');if(!save||$('rrPiWaBox'))return;
-    const card=save.closest('.card')||save.parentElement;
-    const box=document.createElement('div');box.id='rrPiWaBox';box.className='rr-pi-wa-box';
-    box.innerHTML=`<label class="rr-pi-image-switch"><span>IMAGES</span><input id="rrPiPdfImages" type="checkbox" checked><i></i></label><button id="rrPiPdfWa" class="btn rr-pi-wa-btn" type="button" disabled>WHATSAPP</button>`;
-    card.appendChild(box);$('rrPiPdfWa').onclick=run;
-    const pn=$('piNo');if(pn)new MutationObserver(update).observe(pn,{childList:true,subtree:true,characterData:true});update();
-  }
-  async function customerContext(){
-    const tr=$('rows')?.querySelector('tr');if(!tr)throw Error('PI me Lot row nahi mili.');
-    const lot=clean(tr.children[2]?.textContent);if(!lot)throw Error('Lot No. missing.');
-    const customer=clean($('customer')?.value);
-    return await RF853.rpc('rr_pi_lot_context_v9517',{p_lot_no:lot,p_customer_name:customer,p_data_mode:'TEST'});
-  }
-  async function customerMobile(){const c=await customerContext();const n=phone(c?.mobile||c?.customer_mobile||c?.whatsapp_mobile||c?.phone);if(!n)throw Error('Customer WhatsApp mobile mapped nahi mila.');return n;}
-  function rawRows(){return [...($('rows')?.querySelectorAll('tr')||[])].map((tr,i)=>{const c=tr.children;const val=idx=>c[idx]?.querySelector('input')?.value||clean(c[idx]?.textContent);return {sn:String(i+1),img:c[1]?.querySelector('img')?.src||'',lot:clean(c[2]?.textContent),item:clean(c[3]?.textContent),size:clean(c[4]?.textContent),qty:val(5),rate:clean(c[10]?.textContent),amount:clean(c[11]?.textContent)};});}
-  async function imageData(url){
-    if(!url)return null;
-    try{const r=await fetch(url,{mode:'cors',credentials:'omit'});if(!r.ok)throw Error('img');const b=await r.blob();return await new Promise((resolve,reject)=>{const fr=new FileReader();fr.onload=()=>resolve(fr.result);fr.onerror=reject;fr.readAsDataURL(b);});}catch(_){return null;}
-  }
-  async function makePdf(){
-    const J=window.jspdf?.jsPDF;if(!J)throw Error('PDF library load nahi hui.');
-    if(typeof J!=='function')throw Error('PDF library invalid.');
-    const doc=new J({orientation:'portrait',unit:'mm',format:'a4'});
-    if(typeof doc.autoTable!=='function')throw Error('PDF table library load nahi hui.');
-    const no=piNo(),customer=clean($('customer')?.value),dispatch=clean($('dispatch')?.value),date=clean($('piDate')?.textContent),remarks=clean($('remarks')?.value),showImages=$('rrPiPdfImages')?.checked!==false;
-    let customerInfo={};try{customerInfo=await customerContext();}catch(_){}
-    const mobile=clean(customerInfo?.mobile||customerInfo?.customer_mobile||customerInfo?.whatsapp_mobile||customerInfo?.phone);
-    const rows=rawRows();
-    const images=showImages?await Promise.all(rows.map(r=>imageData(r.img))):[];
-    doc.setTextColor(0,0,0);doc.setDrawColor(70,70,70);
-    doc.setFont('helvetica','bold');doc.setFontSize(14);doc.text(`PI - Bill No: ${no}`,14,15);doc.line(14,18,196,18);
-    doc.setFontSize(8.5);doc.setFont('helvetica','bold');doc.text('Party Name:',14,24);doc.setFont('helvetica','normal');doc.text(customer||'—',38,24);
-    let py=29;
-    if(dispatch){doc.setFont('helvetica','bold');doc.text('Dispatch:',14,py);doc.setFont('helvetica','normal');doc.text(dispatch,38,py,{maxWidth:155});py+=5;}
-    if(mobile){doc.setFont('helvetica','bold');doc.text('Mobile Number:',14,py);doc.setFont('helvetica','normal');doc.text(mobile,38,py);py+=5;}
-    doc.setFont('helvetica','bold');doc.text('Created Date:',14,py);doc.setFont('helvetica','normal');doc.text(date||'—',38,py);py+=5;
-    const head=showImages?['Sr. No.','Image','Item Name','Lot No.','Size','QTY','Rate','Amount']:['Sr. No.','Item Name','Lot No.','Size','QTY','Rate','Amount'];
-    const body=rows.map(r=>showImages?[r.sn,'',r.item,r.lot,r.size,r.qty,r.rate,r.amount]:[r.sn,r.item,r.lot,r.size,r.qty,r.rate,r.amount]);
-    doc.autoTable({
-      startY:py+2,head:[head],body,
-      theme:'grid',
-      styles:{fontSize:7,cellPadding:1.6,textColor:[0,0,0],lineColor:[70,70,70],lineWidth:.15,valign:'middle'},
-      headStyles:{fillColor:[220,235,245],textColor:[0,0,0],fontStyle:'bold'},
-      columnStyles:showImages?{0:{cellWidth:12},1:{cellWidth:18},2:{cellWidth:48},3:{cellWidth:25},4:{cellWidth:27},5:{cellWidth:15},6:{cellWidth:20},7:{cellWidth:25}}:{0:{cellWidth:12},1:{cellWidth:58},2:{cellWidth:26},3:{cellWidth:30},4:{cellWidth:16},5:{cellWidth:22},6:{cellWidth:28}},
-      didParseCell:data=>{if(showImages&&data.section==='body'&&data.column.index===1)data.cell.styles.minCellHeight=16;},
-      didDrawCell:data=>{if(showImages&&data.section==='body'&&data.column.index===1){const im=images[data.row.index];if(im){try{doc.addImage(im,'JPEG',data.cell.x+1,data.cell.y+1,data.cell.width-2,data.cell.height-2,undefined,'FAST');}catch(_){try{doc.addImage(im,'PNG',data.cell.x+1,data.cell.y+1,data.cell.width-2,data.cell.height-2,undefined,'FAST');}catch(__){}}}}}
-    });
-    let y=(doc.lastAutoTable?.finalY||py)+4;
-    doc.setFontSize(8);doc.setFont('helvetica','bold');doc.text(`Total QTY: ${clean($('qty')?.textContent)}`,14,y);
-    const totals=[['Sub Total',moneyText('gross')],['Value Added %',clean($('value')?.value||'0')],['Value Added',moneyText('valueAmt')],['Freight',moneyText('freightAmt')],['Other Charges',moneyText('otherAmt')],['Round Off',moneyText('round')],['Grand Total',moneyText('total')]];
-    let ty=y;const lx=133,vx=196;
-    doc.setFont('helvetica','normal');totals.forEach(([k,v],i)=>{if(i===totals.length-1)doc.setFont('helvetica','bold');doc.text(k,lx,ty);doc.text(v,vx,ty,{align:'right'});ty+=5;});
-    if(remarks){const ry=Math.max(y+8,ty+2);doc.setFont('helvetica','bold');doc.text('Remarks:',14,ry);doc.setFont('helvetica','normal');doc.text(remarks,31,ry,{maxWidth:165});}
-    const fileName=`PI-${no.replace(/[^A-Za-z0-9_-]/g,'-')}.pdf`;return {doc,fileName};
-  }
-  async function run(){
-    if(!isSaved())return;const btn=$('rrPiPdfWa');btn.disabled=true;
-    try{
-      const {doc,fileName}=await makePdf();const blob=doc.output('blob');const file=new File([blob],fileName,{type:'application/pdf'});
-      const shareData={title:`PI ${piNo()}`,text:caption(),files:[file]};
-      if(navigator.share&&(!navigator.canShare||navigator.canShare({files:[file]}))){await navigator.share(shareData);}else{doc.save(fileName);const mobile=await customerMobile();window.open(`https://wa.me/${mobile}?text=${encodeURIComponent(caption())}`,'_blank','noopener,noreferrer');const m=$('msg');if(m)m.textContent='Browser file-share support nahi karta; PDF download hui hai.';}
-    }catch(e){if(e?.name!=='AbortError'){const m=$('msg');if(m)m.textContent=e?.message||'WhatsApp share failed.';}}
-    finally{btn.disabled=!isSaved();}
-  }
-  const style=document.createElement('style');style.textContent='.rr-pi-wa-box{display:grid;grid-template-columns:auto 1fr;gap:12px;align-items:center;margin-top:14px;padding-top:12px;border-top:1px solid #33445a}.rr-pi-wa-btn{width:100%;background:#18794e;border-color:#2ea66b}.rr-pi-wa-btn:disabled{opacity:.45;cursor:not-allowed}.rr-pi-image-switch{display:flex;align-items:center;gap:8px;font-weight:800}.rr-pi-image-switch input{display:none}.rr-pi-image-switch i{width:44px;height:24px;border-radius:14px;background:#4b5563;position:relative;display:block}.rr-pi-image-switch i:after{content:"";position:absolute;width:18px;height:18px;border-radius:50%;background:#fff;left:3px;top:3px;transition:.15s}.rr-pi-image-switch input:checked+i{background:#18794e}.rr-pi-image-switch input:checked+i:after{transform:translateX(20px)}@media(max-width:650px){.rr-pi-wa-box{grid-template-columns:1fr}.rr-pi-image-switch{justify-content:flex-start}}';document.head.appendChild(style);
-  addEventListener('DOMContentLoaded',mount);mount();
-})();
+'use strict';
+if(window.__RR_PI_PDF_WA_V9551__)return;window.__RR_PI_PDF_WA_V9551__=true;
+const $=id=>document.getElementById(id),clean=v=>String(v||'').trim();
+const numText=v=>{let s=clean(v).replace(/[^0-9.\-]/g,'');let n=Number(s||0);return Number.isFinite(n)?n.toLocaleString('en-IN',{minimumFractionDigits:0,maximumFractionDigits:2}):'0'};
+const phone=value=>{let n=clean(value).replace(/[^0-9]/g,'');if(n.length===10)n='91'+n;return /^[1-9][0-9]{7,14}$/.test(n)?n:''};
+const piNo=()=>clean($('piNo')?.textContent).replace(/^PI No\.\s*/i,''),isSaved=()=>!!piNo()&&piNo()!=='—';
+const caption=()=>`PI No. ${piNo()}\nPI attached.\nTeam REDZED`;
+function update(){const b=$('rrPiPdfWa');if(b)b.disabled=!isSaved()}
+function mount(){const save=$('save');if(!save||$('rrPiWaBox'))return;const card=save.closest('.card')||save.parentElement,box=document.createElement('div');box.id='rrPiWaBox';box.className='rr-pi-wa-box';box.innerHTML=`<label class="rr-pi-image-switch"><span>IMAGES</span><input id="rrPiPdfImages" type="checkbox" checked><i></i></label><button id="rrPiPdfWa" class="btn rr-pi-wa-btn" type="button" disabled>WHATSAPP</button>`;card.appendChild(box);$('rrPiPdfWa').onclick=run;const pn=$('piNo');if(pn)new MutationObserver(update).observe(pn,{childList:true,subtree:true,characterData:true});update()}
+async function customerContext(){const tr=$('rows')?.querySelector('tr');if(!tr)throw Error('PI me Lot row nahi mili.');const lot=clean(tr.children[2]?.textContent);if(!lot)throw Error('Lot No. missing.');return RF853.rpc('rr_pi_lot_context_v9517',{p_lot_no:lot,p_customer_name:clean($('customer')?.value),p_data_mode:'TEST'})}
+async function customerMobile(){const c=await customerContext(),n=phone(c?.mobile||c?.customer_mobile||c?.whatsapp_mobile||c?.phone);if(!n)throw Error('Customer WhatsApp mobile mapped nahi mila.');return n}
+function rawRows(){return [...($('rows')?.querySelectorAll('tr')||[])].map((tr,i)=>{const c=tr.children,val=idx=>c[idx]?.querySelector('input')?.value||clean(c[idx]?.textContent);return{sn:String(i+1),img:c[1]?.querySelector('img')?.src||'',lot:clean(c[2]?.textContent),item:clean(c[3]?.textContent),size:clean(c[4]?.textContent),qty:val(5),rate:numText(c[10]?.textContent),amount:numText(c[11]?.textContent)}})}
+async function imageData(url){if(!url)return null;try{const r=await fetch(url,{mode:'cors',credentials:'omit'});if(!r.ok)throw Error('img');const b=await r.blob();return await new Promise((resolve,reject)=>{const fr=new FileReader();fr.onload=()=>resolve(fr.result);fr.onerror=reject;fr.readAsDataURL(b)})}catch(_){return null}}
+async function makePdf(){const J=window.jspdf?.jsPDF;if(typeof J!=='function')throw Error('PDF library load nahi hui.');const doc=new J({orientation:'portrait',unit:'mm',format:'a4',compress:true});if(typeof doc.autoTable!=='function')throw Error('PDF table library load nahi hui.');
+const no=piNo(),customer=clean($('customer')?.value),dispatch=clean($('dispatch')?.value),date=clean($('piDate')?.textContent),remarks=clean($('remarks')?.value),showImages=$('rrPiPdfImages')?.checked!==false;let ci={};try{ci=await customerContext()}catch(_){}const mobile=clean(ci?.mobile||ci?.customer_mobile||ci?.whatsapp_mobile||ci?.phone),rows=rawRows(),images=showImages?await Promise.all(rows.map(r=>imageData(r.img))):[];
+doc.setTextColor(0);doc.setDrawColor(70);doc.setFont('helvetica','bold');doc.setFontSize(13);doc.text(`PI - Bill No: ${no}`,14,15);doc.line(14,18,196,18);doc.setFontSize(8.5);let py=24;[['Party Name',customer||'—'],['Dispatch',dispatch],['Mobile Number',mobile],['Created Date',date||'—']].forEach(([k,v])=>{if(!v)return;doc.setFont('helvetica','bold');doc.text(k+':',14,py);doc.setFont('helvetica','normal');doc.text(String(v),39,py,{maxWidth:155});py+=5});
+const head=showImages?['Sr. No.','Image','Item Name','Lot No.','Size','QTY','Rate','Amount']:['Sr. No.','Item Name','Lot No.','Size','QTY','Rate','Amount'];const body=rows.map(r=>showImages?[r.sn,'',r.item,r.lot,r.size,r.qty,r.rate,r.amount]:[r.sn,r.item,r.lot,r.size,r.qty,r.rate,r.amount]);doc.autoTable({startY:py+2,head:[head],body,theme:'grid',margin:{left:14,right:14},styles:{font:'helvetica',fontSize:7,cellPadding:1.7,textColor:[0,0,0],lineColor:[70,70,70],lineWidth:.15,valign:'middle',overflow:'linebreak'},headStyles:{fillColor:[220,235,245],textColor:[0,0,0],fontStyle:'bold'},columnStyles:showImages?{0:{cellWidth:12},1:{cellWidth:18},2:{cellWidth:47},3:{cellWidth:24},4:{cellWidth:26},5:{cellWidth:15,halign:'right'},6:{cellWidth:18,halign:'right'},7:{cellWidth:22,halign:'right'}}:{0:{cellWidth:12},1:{cellWidth:58},2:{cellWidth:27},3:{cellWidth:31},4:{cellWidth:17,halign:'right'},5:{cellWidth:22,halign:'right'},6:{cellWidth:28,halign:'right'}},didParseCell:d=>{if(showImages&&d.section==='body'&&d.column.index===1)d.cell.styles.minCellHeight=16},didDrawCell:d=>{if(showImages&&d.section==='body'&&d.column.index===1){const im=images[d.row.index];if(im)try{doc.addImage(im,'JPEG',d.cell.x+1,d.cell.y+1,d.cell.width-2,d.cell.height-2,undefined,'FAST')}catch(_){try{doc.addImage(im,'PNG',d.cell.x+1,d.cell.y+1,d.cell.width-2,d.cell.height-2,undefined,'FAST')}catch(__){}}}}});
+let y=(doc.lastAutoTable?.finalY||py)+5;if(y>245){doc.addPage('a4','portrait');y=18}doc.setFontSize(8);doc.setFont('helvetica','bold');doc.text(`TTL Items: ${clean($('items')?.textContent)}   |   TTL Qty: ${clean($('qty')?.textContent)}`,14,y);
+const totals=[['Gross Amount',numText($('gross')?.textContent)],['Value Added %',numText($('value')?.value)],['Value Added',numText($('valueAmt')?.textContent)],['Freight',numText($('freightAmt')?.textContent)],['Other Charges',numText($('otherAmt')?.textContent)],['Round Off',numText($('round')?.textContent)],['TTL Amount',numText($('total')?.textContent)]];const lx=140,vx=196;let ty=y;doc.setFont('helvetica','normal');totals.forEach(([k,v],i)=>{if(i===totals.length-1){doc.setDrawColor(120);doc.line(lx,ty-3,vx,ty-3);doc.setFont('helvetica','bold')}doc.text(k,lx,ty);doc.text(v,vx,ty,{align:'right'});ty+=5});if(remarks){const ry=Math.max(y+10,ty+3);doc.setFont('helvetica','bold');doc.text('Remarks:',14,ry);doc.setFont('helvetica','normal');doc.text(remarks,31,ry,{maxWidth:165})}return{doc,fileName:`PI-${no.replace(/[^A-Za-z0-9_-]/g,'-')}.pdf`}}
+async function run(){if(!isSaved())return;const btn=$('rrPiPdfWa');btn.disabled=true;try{const{doc,fileName}=await makePdf(),blob=doc.output('blob'),file=new File([blob],fileName,{type:'application/pdf'}),shareData={title:`PI ${piNo()}`,text:caption(),files:[file]};if(navigator.share&&(!navigator.canShare||navigator.canShare({files:[file]})))await navigator.share(shareData);else{doc.save(fileName);const mobile=await customerMobile();window.open(`https://wa.me/${mobile}?text=${encodeURIComponent(caption())}`,'_blank','noopener,noreferrer')}}catch(e){if(e?.name!=='AbortError'){const m=$('msg');if(m)m.textContent=e?.message||'WhatsApp share failed.'}}finally{btn.disabled=!isSaved()}}
+const style=document.createElement('style');style.textContent='.rr-pi-wa-box{display:grid;grid-template-columns:auto 1fr;gap:12px;align-items:center;margin-top:14px;padding-top:12px;border-top:1px solid #33445a}.rr-pi-wa-btn{width:100%;background:#18794e;border-color:#2ea66b}.rr-pi-wa-btn:disabled{opacity:.45}.rr-pi-image-switch{display:flex;align-items:center;gap:8px;font-weight:800}.rr-pi-image-switch input{display:none}.rr-pi-image-switch i{width:44px;height:24px;border-radius:14px;background:#4b5563;position:relative}.rr-pi-image-switch i:after{content:"";position:absolute;width:18px;height:18px;border-radius:50%;background:#fff;left:3px;top:3px}.rr-pi-image-switch input:checked+i{background:#18794e}.rr-pi-image-switch input:checked+i:after{transform:translateX(20px)}@media(max-width:650px){.rr-pi-wa-box{grid-template-columns:1fr}}';document.head.appendChild(style);addEventListener('DOMContentLoaded',mount);mount()})();
