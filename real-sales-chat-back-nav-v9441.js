@@ -1,9 +1,10 @@
 (()=>{
 'use strict';
-if(window.__RR_SALES_CHAT_BACK_NAV_V9441__)return;
-window.__RR_SALES_CHAT_BACK_NAV_V9441__=true;
+if(window.__RR_SALES_CHAT_BACK_NAV_V9476__)return;
+window.__RR_SALES_CHAT_BACK_NAV_V9476__=true;
 const $=id=>document.getElementById(id);
-let exiting=false,ready=false,lastChatHash='#rr-chat';
+let exiting=false,ready=false;
+const entryRef=document.referrer||'';
 const isMobile=()=>matchMedia('(max-width:760px)').matches;
 const level=()=>String(location.hash||'').replace('#rr-','')||'inbox';
 function show(lv){
@@ -20,6 +21,16 @@ function go(lv,replace=false){
  else history.pushState({rrChat:true,level:lv},'',h);
  show(lv);
 }
+function exitNow(){
+ exiting=true;
+ try{
+   if(entryRef && !/real-sales-live-chat-v9434\.html/i.test(entryRef)){
+     location.replace(entryRef);return;
+   }
+ }catch(_){}
+ if(history.length>1) history.go(-2);
+ else location.replace('real-dashboard-v9182.html?v=9461');
+}
 function init(){
  const clean=location.pathname+location.search;
  history.replaceState({rrChat:true,level:'base'},'',clean+'#rr-base');
@@ -30,7 +41,7 @@ window.addEventListener('popstate',()=>{
  if(!ready||exiting)return;
  const lv=level();
  if(lv==='base'){
-   if(confirm('Real Chat से बाहर निकलना है?')){exiting=true;setTimeout(()=>history.back(),0)}
+   if(confirm('Real Chat से बाहर निकलना है?')) exitNow();
    else go('inbox');
    return;
  }
@@ -39,32 +50,26 @@ window.addEventListener('popstate',()=>{
 document.addEventListener('click',e=>{
  const t=e.target.closest?.('button,[data-chat]');if(!t)return;
  if(t.matches?.('[data-chat]')&&isMobile()){
-   setTimeout(()=>{lastChatHash='#rr-chat';go('chat')},0);
-   return;
+   setTimeout(()=>go('chat'),0);return;
  }
  if(t.id==='groupInfo'){
-   setTimeout(()=>{if($('memberBack')?.classList.contains('on'))go('member')},0);
-   return;
+   setTimeout(()=>{if($('memberBack')?.classList.contains('on'))go('member')},0);return;
  }
  if(t.id==='callBtn'){
-   setTimeout(()=>{if($('callBack')?.classList.contains('on'))go('call')},0);
-   return;
+   setTimeout(()=>{if($('callBack')?.classList.contains('on'))go('call')},0);return;
  }
  if(t.id==='memberClose'){
    e.preventDefault();e.stopImmediatePropagation();
-   if(level()==='member')history.back();else $('memberBack')?.classList.remove('on');
-   return;
+   if(level()==='member')history.back();else $('memberBack')?.classList.remove('on');return;
  }
  if(t.id==='callClose'){
    e.preventDefault();e.stopImmediatePropagation();
-   if(level()==='call')history.back();else $('callBack')?.classList.remove('on');
-   return;
+   if(level()==='call')history.back();else $('callBack')?.classList.remove('on');return;
  }
  if(t.id==='backInbox'){
-   if(window.__RR_CHAT_LOCAL_SLICE_V9463__||window.__RR_CHAT_LOCAL_SLICE_V9462__)return;
+   if(window.__RR_CHAT_LOCAL_SLICE_V9463__||window.__RR_CHAT_LOCAL_SLICE_V9462__||window.__RR_CHAT_LOCAL_SLICE_V9465__)return;
    e.preventDefault();e.stopImmediatePropagation();
-   if(level()==='chat'||level()==='member'||level()==='call')go('inbox');
-   else $('inbox')?.classList.remove('hide');
+   if(['chat','member','call'].includes(level()))go('inbox');else $('inbox')?.classList.remove('hide');
  }
 },true);
 const obs=new MutationObserver(ms=>{if(!ready)return;for(const m of ms){const el=m.target;if(el.id==='memberBack'&&el.classList.contains('on')&&level()!=='member')go('member');if(el.id==='callBack'&&el.classList.contains('on')&&level()!=='call')go('call')}});
