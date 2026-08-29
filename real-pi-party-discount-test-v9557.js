@@ -39,8 +39,22 @@ function installRpcShim(){
     if(name==='rr_pi_set_customer_discount_v9525'){pendingDiscount=num(args.p_discount);const inp=$('partyDiscount');if(inp)inp.value=String(pendingDiscount);return {ok:true,deferred:true,discount_per_piece:pendingDiscount};}
     if(name==='rr_fg_save_pi_v816'){
       const d=pendingDiscount==null?currentFromRows():pendingDiscount;
-      return baseRpc('rr_fg_save_pi_requirement_safe_v9561',{
-        p_pi_id:args.p_pi_id??null,p_requirement_id:requirementId()||null,p_customer_name:args.p_customer_name,p_dispatch_details:args.p_dispatch_details,p_lines:args.p_lines,p_party_discount:d,p_freight_amount:args.p_freight_amount??0,p_packing_other:args.p_packing_other??0,p_gst_pct:args.p_gst_pct??0,p_finalize:args.p_finalize??false,p_data_mode:args.p_data_mode||'TEST'
+      const valuePct=Number($('value')?.value||0),freight=Number($('freight')?.value||0),other=Number($('other')?.value||0);
+      if(!Number.isFinite(valuePct)||!Number.isFinite(freight)||!Number.isFinite(other))throw Error('Invalid commercial charges.');
+      if(freight<0||other<0)throw Error('Freight / Other Charges negative nahi ho sakte.');
+      return baseRpc('rr_fg_save_pi_requirement_safe_signed_v9563',{
+        p_pi_id:args.p_pi_id??null,
+        p_requirement_id:requirementId()||null,
+        p_customer_name:args.p_customer_name,
+        p_dispatch_details:args.p_dispatch_details,
+        p_lines:args.p_lines,
+        p_party_discount:d,
+        p_value_added_pct:valuePct,
+        p_freight_amount:freight,
+        p_packing_other:other,
+        p_gst_pct:args.p_gst_pct??0,
+        p_finalize:args.p_finalize??false,
+        p_data_mode:args.p_data_mode||'TEST'
       });
     }
     return baseRpc(name,args);
