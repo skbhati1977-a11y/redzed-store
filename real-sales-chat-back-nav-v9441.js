@@ -1,12 +1,24 @@
 (()=>{
 'use strict';
-if(window.__RR_SALES_CHAT_BACK_NAV_V9476__)return;
-window.__RR_SALES_CHAT_BACK_NAV_V9476__=true;
+if(window.__RR_SALES_CHAT_BACK_NAV_V9477__)return;
+window.__RR_SALES_CHAT_BACK_NAV_V9477__=true;
 const $=id=>document.getElementById(id);
 let exiting=false,ready=false;
-const entryRef=document.referrer||'';
 const isMobile=()=>matchMedia('(max-width:760px)').matches;
 const level=()=>String(location.hash||'').replace('#rr-','')||'inbox';
+const fallback='real-dashboard-v9182.html?v=9461';
+function entryTarget(){
+  try{
+    const ref=document.referrer||'';
+    if(ref&&!/real-sales-live-chat-v9434\.html/i.test(ref)){
+      sessionStorage.setItem('rr_chat_entry_url_v9477',ref);
+      return ref;
+    }
+    const saved=sessionStorage.getItem('rr_chat_entry_url_v9477')||'';
+    if(saved&&!/real-sales-live-chat-v9434\.html/i.test(saved))return saved;
+  }catch(_){}
+  return fallback;
+}
 function show(lv){
  $('memberBack')?.classList.remove('on');
  $('callBack')?.classList.remove('on');
@@ -21,17 +33,9 @@ function go(lv,replace=false){
  else history.pushState({rrChat:true,level:lv},'',h);
  show(lv);
 }
-function exitNow(){
- exiting=true;
- try{
-   if(entryRef && !/real-sales-live-chat-v9434\.html/i.test(entryRef)){
-     location.replace(entryRef);return;
-   }
- }catch(_){}
- if(history.length>1) history.go(-2);
- else location.replace('real-dashboard-v9182.html?v=9461');
-}
+function exitNow(){exiting=true;location.replace(entryTarget())}
 function init(){
+ entryTarget();
  const clean=location.pathname+location.search;
  history.replaceState({rrChat:true,level:'base'},'',clean+'#rr-base');
  history.pushState({rrChat:true,level:'inbox'},'',clean+'#rr-inbox');
@@ -49,23 +53,11 @@ window.addEventListener('popstate',()=>{
 });
 document.addEventListener('click',e=>{
  const t=e.target.closest?.('button,[data-chat]');if(!t)return;
- if(t.matches?.('[data-chat]')&&isMobile()){
-   setTimeout(()=>go('chat'),0);return;
- }
- if(t.id==='groupInfo'){
-   setTimeout(()=>{if($('memberBack')?.classList.contains('on'))go('member')},0);return;
- }
- if(t.id==='callBtn'){
-   setTimeout(()=>{if($('callBack')?.classList.contains('on'))go('call')},0);return;
- }
- if(t.id==='memberClose'){
-   e.preventDefault();e.stopImmediatePropagation();
-   if(level()==='member')history.back();else $('memberBack')?.classList.remove('on');return;
- }
- if(t.id==='callClose'){
-   e.preventDefault();e.stopImmediatePropagation();
-   if(level()==='call')history.back();else $('callBack')?.classList.remove('on');return;
- }
+ if(t.matches?.('[data-chat]')&&isMobile()){setTimeout(()=>go('chat'),0);return}
+ if(t.id==='groupInfo'){setTimeout(()=>{if($('memberBack')?.classList.contains('on'))go('member')},0);return}
+ if(t.id==='callBtn'){setTimeout(()=>{if($('callBack')?.classList.contains('on'))go('call')},0);return}
+ if(t.id==='memberClose'){e.preventDefault();e.stopImmediatePropagation();if(level()==='member')history.back();else $('memberBack')?.classList.remove('on');return}
+ if(t.id==='callClose'){e.preventDefault();e.stopImmediatePropagation();if(level()==='call')history.back();else $('callBack')?.classList.remove('on');return}
  if(t.id==='backInbox'){
    if(window.__RR_CHAT_LOCAL_SLICE_V9463__||window.__RR_CHAT_LOCAL_SLICE_V9462__||window.__RR_CHAT_LOCAL_SLICE_V9465__)return;
    e.preventDefault();e.stopImmediatePropagation();
