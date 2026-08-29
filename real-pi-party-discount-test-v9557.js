@@ -5,6 +5,7 @@ window.__RR_PI_PARTY_DISCOUNT_V9557__=true;
 const $=id=>document.getElementById(id),num=v=>Math.max(0,Number(v||0));
 let pendingDiscount=null,actor=null,baseRpc=null,mounted=false;
 function requirementId(){let id=new URLSearchParams(location.search).get('requirement_id')||'';if(id)return id;try{id=JSON.parse(sessionStorage.getItem('rr_pi_requirement_v9514')||'{}').requirement_id||''}catch(_){}return id;}
+(function forceFreshRequirementBootstrap(){const rid=requirementId();if(!rid)return;try{const k='rr_pi_requirement_v9514',c=JSON.parse(sessionStorage.getItem(k)||'{}');if(String(c.requirement_id||'')===String(rid)&&Array.isArray(c.lines)&&c.lines.length){delete c.lines;sessionStorage.setItem(k,JSON.stringify(c));}}catch(_){}})();
 function cleanDetails(){
   document.querySelectorAll('.top .muted').forEach(e=>{if(/isolated test|working pi files/i.test(e.textContent||''))e.style.display='none';});
   const add=$('addLot')?.closest('.addBox');if(add){const m=add.querySelector(':scope > .muted');if(m)m.style.display='none';}
@@ -36,6 +37,10 @@ function installRpcShim(){
   if(!window.RF853?.rpc||window.RF853.__partyDiscount9557)return false;
   baseRpc=window.RF853.rpc.bind(window.RF853);
   window.RF853.rpc=async function(name,args={}){
+    if(name==='rr_pi_requirement_bootstrap_v9541'){
+      const rid=String(args?.p_requirement_id||requirementId()||'');
+      if(rid){try{const saved=await baseRpc('rr_pi_requirement_reopen_v9566',{p_requirement_id:rid});if(saved?.found&&Array.isArray(saved.lines)&&saved.lines.length)return saved;}catch(_){}}
+    }
     if(name==='rr_pi_set_customer_discount_v9525'){pendingDiscount=num(args.p_discount);const inp=$('partyDiscount');if(inp)inp.value=String(pendingDiscount);return {ok:true,deferred:true,discount_per_piece:pendingDiscount};}
     if(name==='rr_fg_save_pi_v816'){
       const d=pendingDiscount==null?currentFromRows():pendingDiscount;
