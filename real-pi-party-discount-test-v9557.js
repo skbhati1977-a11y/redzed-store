@@ -25,14 +25,13 @@ async function mount(){
   const card=customer.closest('.card');if(!card)return;
   const addBox=card.querySelector('.addBox');
   const box=document.createElement('div');box.id='partyDiscountBox';box.className='partyDiscountBox';
-  box.innerHTML=`<div><b>PARTY DISCOUNT · INTERNAL</b><div class="muted">Customer ko PI/PDF/CPI me discount nahi dikhega; final rate hi jayega.</div></div><div class="partyDiscountField"><label>Party Discount / PCS</label><input id="partyDiscount" type="number" min="0" max="10" step="0.01"><div id="partyDiscountStatus" class="muted"></div></div>`;
+  box.innerHTML=`<div><b>PARTY DISCOUNT · INTERNAL</b></div><div class="partyDiscountField"><label>Party Discount / PCS</label><input id="partyDiscount" type="number" min="0" max="10" step="0.01"></div>`;
   if(addBox)card.insertBefore(box,addBox);else card.appendChild(box);
-  const inp=$('partyDiscount'),status=$('partyDiscountStatus');
+  const inp=$('partyDiscount');
   const setInitial=()=>{
     const v=currentFromRows();
     if(document.querySelector('#rows input.disc')){
       inp.value=String(v);pendingDiscount=v;inp.readOnly=!actor?.superadmin;
-      status.textContent=actor?.superadmin?'Super Admin editable · successful PI Save se current + future effective':'VIEW ONLY · sirf Super Admin change kar sakta hai';
       syncRows(v);updateRowLocks();return true;
     }return false;
   };
@@ -43,7 +42,6 @@ async function mount(){
     if(!actor?.superadmin)return;
     let v=Number(inp.value);if(!Number.isFinite(v))v=0;
     if(v<0)v=0;if(v>10)v=10;pendingDiscount=v;syncRows(v);
-    status.textContent='Pending · successful SAVE / GENERATE PI ke baad isi PI se future default banega';
   });
   new MutationObserver(()=>{updateRowLocks();if(pendingDiscount!=null)document.querySelectorAll('#rows input.disc').forEach(el=>{if(Number(el.value||0)!==pendingDiscount){el.value=String(pendingDiscount);el.dispatchEvent(new Event('change',{bubbles:true}));el.readOnly=true;}})}).observe($('rows'),{childList:true,subtree:true});
 }
