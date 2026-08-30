@@ -1,0 +1,1 @@
+(()=>{'use strict';if(window.__RR_PI_NO_9583__)return;window.__RR_PI_NO_9583__=1;const old=window.RF853&&window.RF853.rpc;if(typeof old!=='function')return;window.RF853.rpc=function(name,args){if(name==='rr_pi_apply_display_no_v9540')name='rr_pi_apply_display_no_v9583';return old.call(this,name,args)}})();
