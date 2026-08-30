@@ -24,11 +24,11 @@ Status: LOCKED REFINED RULES — 2026-08-30
 20. Cancellation must retain mandatory reason, actor, timestamp and linked Collection/Requirement/PI/CI references in audit/history.
 21. Collection with no customer response: if not opened, status remains SENT / NOT OPENED; if opened but no requirement submitted, status is OPENED / NO RESPONSE. Requirement number is not created until customer actually submits a requirement.
 22. Staff may manually remind or eventually CLOSE - NO RESPONSE. CLOSED - NO RESPONSE is distinct from CANCELLED. A later NEW Collection starts a fresh cycle with full eligible collection pool.
-23. Time-based automated follow-up: after Collection SENT, system checks whether customer opened it. If not opened by configured time, send a template reminder from sender name Ranveer.
-24. Once customer opens the Collection, NOT OPENED reminders stop. A separate OPENED BUT NO REQUIREMENT timer begins. If requirement is still not submitted by configured time, Ranveer sends the configured follow-up template.
-25. Ranveer reminder scheduling supports configurable delay/interval, pause/resume and maximum reminder policy. All Collection/Requirement reminder timers stop when the required response is received or the chain is CLOSED/CANCELLED.
-26. Main chat sender display for these automated follow-ups is Ranveer; do not add Bot/Assistant labels in the normal chat message UI. Do not invent false personal history/details for the sender identity.
-27. Payment reminder automation uses a separate sender identity: Mrs. Bhati Reeka. Payment reminders stop/update according to confirmed payment/balance state; they are independent from Ranveer Collection/Requirement reminders.
+23. Time-based automated follow-up: after Collection SENT, system checks whether customer opened it. If not opened by configured time, send a template reminder from sender name Mr. Ranveer.
+24. Once customer opens the Collection, NOT OPENED reminders stop. A separate OPENED BUT NO REQUIREMENT timer begins. If requirement is still not submitted by configured time, Mr. Ranveer sends the configured follow-up template.
+25. Mr. Ranveer reminder scheduling supports configurable delay/interval, pause/resume and maximum reminder policy. All Collection/Requirement reminder timers stop when the required response is received or the chain is CLOSED/CANCELLED.
+26. Main chat sender display for these automated follow-ups is Mr. Ranveer; do not add Bot/Assistant labels in the normal chat message UI. Do not invent false personal history/details for the sender identity.
+27. Payment reminder automation uses a separate sender identity: Mrs. Bhati Reeka. Payment reminders stop/update according to confirmed payment/balance state; they are independent from Mr. Ranveer Collection/Requirement reminders.
 28. Reminder templates are controlled system templates, while real available staff can continue the same group chat naturally when the customer responds.
 29. Reminder message must always be stored in Real Chat, so if chat is closed it remains unread and appears on next open.
 30. For actual floating/device notifications while Real Chat is closed, implement customer-authorized browser/PWA push: notification permission + service worker/push subscription + backend subscription mapping to the permanent customer/contact.
