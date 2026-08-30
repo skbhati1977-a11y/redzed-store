@@ -1,6 +1,6 @@
 # REAL CHAT IMPLEMENTATION — STEP 07 OPENED STATE V9589
 
-Status: APPLIED / STRUCTURAL PASS / FUNCTIONAL FIXTURE DEFERRED
+Status: APPLIED / FUNCTIONAL PASS
 Date: 2026-08-30
 
 ## Scope
@@ -22,14 +22,21 @@ Added versioned server-side Collection OPENED transition without replacing exist
 ## Access
 Both functions are public customer-entry RPCs because opening a secure share link can occur before Supabase staff authentication. They are SECURITY DEFINER and accept only the opaque share token/short-code entry key; no arbitrary lifecycle ID is accepted.
 
-## Verification
-- Migration applied successfully.
-- Both functions exist as SECURITY DEFINER.
-- anon/authenticated/service_role execute permissions intentionally enabled for customer link opening.
-- Existing baseline remained unchanged: 80 shares, 17 Requirements, 0 lifecycle cycles.
+## Functional verification completed
+User explicitly confirmed current database content is TEST data and may be used freely for testing.
 
-## Functional test note
-A controlled fixture creation attempt through the SQL connector was blocked by the execution safety layer before any fixture was created. Because Step 05 already proved lifecycle FIRST creation and Step 06 proved Requirement linking, this step is marked structural PASS but its exact OPENED transition should be exercised in the first isolated browser/integration fixture rather than fabricating production history through another path.
+A controlled TEST lifecycle fixture was created against the existing TEST customer/chat and then exercised through the actual V9589 RPC.
+
+Verified sequence:
+1. Fixture state: `SENT_NOT_OPENED`.
+2. `rr_collection_mark_opened_v9589(token)` executed.
+3. State became exactly `OPENED_NO_RESPONSE` and `opened_at` was populated.
+4. Opening the same token again preserved the original `opened_at` (idempotent first-open behavior).
+5. Fixture was advanced to `REQUIREMENT_RECEIVED` and opened again.
+6. State remained `REQUIREMENT_RECEIVED`; OPENED logic did not regress a later lifecycle stage.
+7. Fixture/send/share rows were deleted after test.
+8. Baseline after cleanup: lifecycle cycles=0, sends=0, market shares=80, Requirements=17.
 
 ## Verdict
-STEP 07 STRUCTURAL PASS. Runtime frontend still does not call the new v9589 wrapper, so production customer behavior is unchanged.
+STEP 07 FULL FUNCTIONAL PASS.
+No pending OPENED-state backend test remains. Runtime frontend still does not call the V9589 wrapper; browser integration will be tested when that isolated frontend step is introduced.
