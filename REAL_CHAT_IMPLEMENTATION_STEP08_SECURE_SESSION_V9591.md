@@ -1,6 +1,6 @@
 # REAL CHAT IMPLEMENTATION — STEP 08 SECURE CUSTOMER SESSION V9591
 
-Status: APPLIED / FUNCTIONAL CORE PASS
+Status: APPLIED / FULL FUNCTIONAL PASS
 Date: 2026-08-30
 
 ## Scope
@@ -27,16 +27,19 @@ Initial functional test exposed a real implementation issue: pgcrypto functions 
 
 V9591 corrected the functions to use explicitly qualified `extensions.gen_random_bytes` and `extensions.digest` with fixed `public,extensions` search path.
 
-## Functional verification
-Using existing TEST customer `reekha bhati` and an existing active TEST share:
+## Full functional verification
+Using TEST data:
 1. Session issuance succeeded.
 2. Returned customer/chat/share IDs matched the existing TEST customer context.
 3. Session validation with the bound test device succeeded and returned `valid=true`.
-4. Session revocation succeeded (`true`).
-5. Test session row was deleted after verification.
-6. Session table returned to 0 rows after cleanup.
+4. Session revocation succeeded.
+5. Separate deterministic TEST session fixture was inserted with a hashed correct-device binding.
+6. Validation using a deliberately different device ID failed exactly with `Trusted device does not match.`
+7. The same session validated successfully with the correct device ID (`valid=true`).
+8. Test session rows were deleted after verification.
+9. Session table returned to 0 rows after cleanup.
 
-The SQL connector safety layer blocked a compound exception-catching negative-device test statement. Wrong-device rejection is implemented in the function but that exact negative path is not marked complete yet; it must be tested separately before Step 08 is considered fully closed.
+The earlier connector limitation was avoided by testing the negative path as a single direct RPC call instead of a compound exception-catching SQL statement.
 
 ## Verdict
-STEP 08 CORE FUNCTIONAL PASS, ONE NEGATIVE TEST PENDING: wrong-device rejection. Do not advance to Step 09 until that negative test is completed.
+STEP 08 FULL FUNCTIONAL PASS. No pending backend test remains for the secure session foundation. Do not replace the existing customer frontend/localStorage path until its isolated integration step is implemented and browser-tested.
