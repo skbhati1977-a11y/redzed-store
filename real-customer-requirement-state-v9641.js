@@ -1,0 +1,218 @@
+(()=>{
+  "use strict";
+  if(window.__RR_REQ_STATE_V9641__) return;
+  window.__RR_REQ_STATE_V9641__=1;
+
+  const Q=new URLSearchParams(location.search);
+  const token=Q.get('t')||Q.get('c');
+  const money=v=>Number(v||0).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});
+  let saved=new Map(),pricing=new Map(),state=null,history=null,draftReady=false,panelOpening=false,customerClosed=false;
+
+  async function rpc(n,a={}){ return RF853.rpc(n,a); }
+
+  function css(){
+    if(document.getElementById('rrReqState9641Style')) return;
+    const s=document.createElement('style');
+    s.id='rrReqState9641Style';
+    s.textContent=`
+      #rrFSChat .fstabs{display:grid!important;grid-template-columns:minmax(0,.72fr) minmax(0,1.42fr) minmax(0,.82fr) minmax(0,1.05fr);gap:5px!important;padding:8px!important;align-items:stretch}
+      #rrFSChat .fstabs>button{min-width:0!important;padding:7px 4px!important;font-size:10px!important;line-height:1.05!important}
+      .rrReqStat9641{min-width:0;border:1px solid #40536b;border-radius:10px;padding:5px 3px;background:#121c29;color:#fff;text-align:center;line-height:1;display:flex;flex-direction:column;justify-content:center}
+      .rrReqStat9641 small{display:block;font-size:7px;font-weight:800;color:#aeb9c7;white-space:nowrap}
+      .rrReqStat9641 b{display:block;font-size:10px;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+      .rrAvgWrap9641{display:flex;align-items:center;gap:4px;margin-left:7px;min-width:0}
+      .rrAvgPill9641{display:flex;flex-direction:column;justify-content:center;min-width:48px;max-width:60px;height:27px;box-sizing:border-box;padding:3px 5px;border:1px solid #40536b;border-radius:8px;background:#121c29;color:#fff;text-align:center;line-height:1;white-space:nowrap}
+      .rrAvgPill9641 small{font-size:6.5px;font-weight:800;color:#aeb9c7}
+      .rrAvgPill9641 b{font-size:9px;font-weight:900;margin-top:2px;overflow:hidden;text-overflow:ellipsis}
+      .rrApproved9641{text-decoration:line-through;color:#9ea9b8;font-size:12px;font-weight:700}
+      .rrNet9641{display:block;color:#fff;font-size:15px;font-weight:900;margin-top:2px}
+      .rrLineAmt9641{display:block;color:#fff;font-size:13px;font-weight:900;margin-top:5px}
+      .rrUnresolved9641{color:#ffb7b7!important}
+      #rrReqTotals9636{display:none!important}
+    `;
+    document.head.appendChild(s);
+  }
+
+  function ensureReqStats(){
+    const tabs=document.querySelector('#rrFSChat .fstabs');
+    if(!tabs) return false;
+    let q=document.getElementById('rrReqQty9641');
+    if(!q){ q=document.createElement('div'); q.id='rrReqQty9641'; q.className='rrReqStat9641'; q.innerHTML='<small>REQ QTY</small><b>—</b>'; tabs.appendChild(q); }
+    let a=document.getElementById('rrReqAmt9641');
+    if(!a){ a=document.createElement('div'); a.id='rrReqAmt9641'; a.className='rrReqStat9641'; a.innerHTML='<small>REQ AMT</small><b>—</b>'; tabs.appendChild(a); }
+    return true;
+  }
+
+  function ensureAvgStats(){
+    const h=document.getElementById('rrCustomerCollectionHeaderV9619');
+    if(!h) return false;
+    let wrap=document.getElementById('rrAvgWrap9641');
+    if(!wrap){
+      wrap=document.createElement('div'); wrap.id='rrAvgWrap9641'; wrap.className='rrAvgWrap9641';
+      wrap.innerHTML='<div id="rrAllAvg9641" class="rrAvgPill9641"><small>ALL AVG</small><b>—</b></div><div id="rrReqAvg9641" class="rrAvgPill9641"><small>REQ AVG</small><b>—</b></div>';
+      const name=h.querySelector('.rzname');
+      if(name) name.insertAdjacentElement('afterend',wrap); else h.appendChild(wrap);
+    }
+    return true;
+  }
+
+  function terminal(){
+    const s=String(state?.collection_status||'').toUpperCase();
+    return customerClosed||['PI_GENERATED','CI_GENERATED','CLOSED','CLOSED_NO_RESPONSE','CANCELLED'].includes(s);
+  }
+  function panelOpen(){ return document.getElementById('fcPanel')?.classList.contains('on'); }
+
+  function metricsFromMap(map){
+    let qty=0,amt=0,has=false,unresolved=false;
+    map.forEach((q,lot)=>{
+      q=Math.max(0,Math.floor(Number(q||0)));
+      if(q<=0) return;
+      has=true; qty+=q;
+      const p=pricing.get(String(lot));
+      if(!p||p.net_rate==null||p.pricing_status!=='RESOLVED') unresolved=true;
+      else amt+=q*Number(p.net_rate);
+    });
+    return {has,qty,amt:unresolved?null:amt,unresolved};
+  }
+
+  function confirmedMetrics(){ return metricsFromMap(saved); }
+  function draftMetrics(){
+    const m=new Map();
+    document.querySelectorAll('[data-fcq]').forEach(el=>m.set(String(el.dataset.fcq||''),Math.max(0,Math.floor(Number(el.value||0)))));
+    return metricsFromMap(m);
+  }
+
+  function currentMetrics(){ return draftReady&&panelOpen()?draftMetrics():confirmedMetrics(); }
+
+  function allAverage(m){
+    if(!history||history.status!=='RESOLVED'||history.history_qty==null||history.history_net_value==null) return null;
+    const hq=Number(history.history_qty||0),hv=Number(history.history_net_value||0);
+    if(hq<=0) return null;
+    if(!terminal()&&m.has&&m.qty>0&&m.amt!=null) return (hv+m.amt)/(hq+m.qty);
+    return Number(history.history_avg_per_pc!=null?history.history_avg_per_pc:(hv/hq));
+  }
+
+  function reqAverage(m){ return m.has&&m.qty>0&&m.amt!=null?m.amt/m.qty:null; }
+
+  function paintMetrics(){
+    ensureReqStats(); ensureAvgStats();
+    const m=currentMetrics();
+    const q=document.querySelector('#rrReqQty9641 b'),a=document.querySelector('#rrReqAmt9641 b');
+    const all=document.querySelector('#rrAllAvg9641 b'),req=document.querySelector('#rrReqAvg9641 b');
+
+    if(m.has){
+      if(q) q.textContent=`${m.qty} PCS`;
+      if(a) a.textContent=m.amt==null?'—':`₹${money(m.amt)}`;
+      if(req){ const r=reqAverage(m); req.textContent=r==null?'—':`₹${money(r)}`; }
+    }else{
+      if(q) q.textContent='—';
+      if(a) a.textContent='—';
+      if(req) req.textContent='—';
+    }
+    if(all){ const av=allAverage(m); all.textContent=av==null?'—':`₹${money(av)}`; }
+
+    const reqVisible=!terminal();
+    ['rrReqQty9641','rrReqAmt9641','rrReqAvg9641'].forEach(id=>{ const e=document.getElementById(id); if(e)e.style.display=reqVisible?'flex':'none'; });
+    const ae=document.getElementById('rrAllAvg9641'); if(ae)ae.style.display='flex';
+  }
+
+  function paintCards(){
+    document.querySelectorAll('.fc-lot').forEach(card=>{
+      const inp=card.querySelector('[data-fcq]'),lot=String(inp?.dataset.fcq||''),p=pricing.get(lot);
+      if(!inp) return;
+      const rateCap=[...card.querySelectorAll('.fc-cap')].find(x=>/Sale Rate/i.test(x.querySelector('span')?.textContent||''));
+      if(rateCap){
+        const b=rateCap.querySelector('b');
+        if(b){
+          if(p&&p.pricing_status==='RESOLVED'&&p.approved_rate!=null&&p.net_rate!=null){
+            b.innerHTML=`<span class="rrApproved9641">₹${money(p.approved_rate)}</span><span class="rrNet9641">NET ₹${money(p.net_rate)}</span>`;
+          }else b.innerHTML='<span class="rrNet9641 rrUnresolved9641">RATE —</span>';
+        }
+      }
+      let la=card.querySelector('.rrLineAmt9641');
+      if(!la){ la=document.createElement('span'); la.className='rrLineAmt9641'; inp.parentElement?.appendChild(la); }
+      const qty=Math.max(0,Math.floor(Number(inp.value||0)));
+      la.textContent=p&&p.net_rate!=null&&p.pricing_status==='RESOLVED'?`AMOUNT ₹${money(qty*Number(p.net_rate))}`:'AMOUNT —';
+    });
+    paintMetrics();
+  }
+
+  async function loadConfirmed(){
+    const [st,pr,su,hi]=await Promise.all([
+      rpc('rr_collection_current_state_v9633',{p_token:token}),
+      rpc('rr_collection_customer_pricing_v9637',{p_token:token}),
+      rpc('rr_collection_customer_requirement_summary_v9637',{p_token:token}),
+      rpc('rr_collection_customer_ci_history_v9641',{p_token:token})
+    ]);
+    state=st||null;
+    pricing=new Map((pr?.rows||[]).map(x=>[String(x.lot_no),x]));
+    saved=new Map((su?.lines||[]).map(x=>[String(x.lot_no),Number(x.requested_qty||0)]));
+    history=hi||null;
+    paintMetrics();
+  }
+
+  function prefillOnce(){
+    const inputs=[...document.querySelectorAll('[data-fcq]')];
+    if(!inputs.length) return false;
+    inputs.forEach(el=>{
+      const lot=String(el.dataset.fcq||''),q=saved.has(lot)?saved.get(lot):0;
+      el.value=String(Math.max(0,Math.floor(Number(q||0))));
+      el.dataset.rrSavedQty=String(Math.max(0,Math.floor(Number(q||0))));
+    });
+    draftReady=true; panelOpening=false; paintCards(); return true;
+  }
+
+  async function openPrefilled(){
+    if(panelOpening) return;
+    panelOpening=true; draftReady=false; paintMetrics();
+    try{ await loadConfirmed(); }catch(e){ console.warn('V9641 confirmed state unavailable',e); }
+    let n=0;
+    const t=setInterval(()=>{
+      if(prefillOnce()||++n>=50){ clearInterval(t); panelOpening=false; if(!draftReady)paintMetrics(); }
+    },100);
+  }
+
+  function discardDraft(){ draftReady=false; panelOpening=false; setTimeout(()=>paintMetrics(),0); }
+
+  function changes(){
+    const out=[];
+    document.querySelectorAll('[data-fcq]').forEach(el=>{
+      const lot=String(el.dataset.fcq||''),old=saved.has(lot)?Math.max(0,Math.floor(Number(saved.get(lot)||0))):0,now=Math.max(0,Math.floor(Number(el.value||0)));
+      if(old!==now) out.push({lot,old,now});
+    });
+    return out;
+  }
+
+  function bind(){
+    document.addEventListener('click',e=>{ if(e.target.closest?.('#fcOpen,#fcReopen,#rrSendReq9630')) openPrefilled(); },true);
+    document.addEventListener('input',e=>{ if(e.target.matches?.('[data-fcq]')&&draftReady) paintCards(); },true);
+    document.addEventListener('click',e=>{ if(e.target.closest?.('#fcCancel')) discardDraft(); },true);
+    document.addEventListener('click',e=>{
+      if(!e.target.closest?.('#fcSubmit')) return;
+      const c=changes();
+      if(!c.length){ e.preventDefault(); e.stopImmediatePropagation(); alert('NO QUANTITY CHANGES FOUND'); paintMetrics(); return; }
+      const msg='CONFIRM QUANTITY CHANGE\n\n'+c.map(x=>`${x.lot}: ${x.old} → ${x.now} pcs${x.old>0&&x.now===0?'  (REMOVE)':''}`).join('\n');
+      if(!confirm(msg)){ e.preventDefault(); e.stopImmediatePropagation(); }
+    },true);
+    document.addEventListener('rr:v9605-requirement-sent',()=>{
+      draftReady=false;
+      setTimeout(async()=>{ try{ await loadConfirmed(); }catch(e){ console.warn(e); } paintMetrics(); },150);
+    });
+    document.addEventListener('rr:v9630-customer-closed',()=>{ customerClosed=true; draftReady=false; paintMetrics(); });
+  }
+
+  function boot(){
+    css(); bind();
+    let n=0;
+    const t=setInterval(()=>{
+      ensureAvgStats();
+      if(ensureReqStats()){
+        clearInterval(t);
+        loadConfirmed().catch(e=>console.warn('V9641 load failed',e));
+        [200,500,1000,1800].forEach(ms=>setTimeout(()=>{ ensureAvgStats(); paintMetrics(); },ms));
+      }else if(++n>40) clearInterval(t);
+    },120);
+  }
+
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',boot,{once:true}); else boot();
+})();
