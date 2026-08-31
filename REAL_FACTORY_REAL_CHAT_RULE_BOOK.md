@@ -60,3 +60,11 @@ Status: LOCKED REFINED RULES — 2026-08-31
 53. A closed Collection must never be silently revived for a new commercial conversation. Previous Collection number, updates, selected categories, sent samples, Requirement/PI/CI references and closure reason/state remain permanent history.
 54. Staff/customer UI labels and backend relationships must preserve this invariant: More Samples and Updates are continuation events; Collection Number changes only when a genuinely new cycle begins after the prior cycle reaches its permitted terminal close.
 55. Safe implementation order for these rules: preserve approved customer/staff UI first; add server-side lifecycle/update/category data contract; verify current Collection identity and duplicate rules; then add customer actions; then staff auto-prefill/sample-send flow; then Requirement/PI/CI terminal transitions. Each step is isolated and verified before the next, with no unrelated module changes.
+
+## LOCKED PI / CI STOCK QUANTITY RULE — 2026-08-31
+
+56. PI generation freezes/reserves the exact approved PI quantity against stock. PI does NOT physically deduct that quantity from stock; it makes that quantity unavailable for any other party/order while the PI reservation is active.
+57. CI generation is the physical/commercial stock deduction point. When CI is generated from the linked PI, the CI quantity is deducted from stock and the corresponding PI freeze/reservation is consumed/released as part of the same controlled transition.
+58. Therefore stock accounting must distinguish AVAILABLE, PI-FROZEN/RESERVED and CI-DEDUCTED quantities. The same pieces must never be double-counted as both available and reserved, and CI must never deduct the same reserved quantity twice.
+59. If a PI is validly cancelled before CI, its frozen/reserved quantity must be released back to available stock through the authorized PI cancellation transaction and audit trail. If CI already exists, cancellation/reversal must follow the highest-stage CI cancellation rules rather than directly releasing the PI reservation.
+60. Core inventory invariant: Requirement alone does not freeze stock; PI freezes quantity; CI lessens/deducts stock. All freeze, release and deduction transitions must be transactional, linked to the same Collection -> Requirement -> PI -> CI chain, and auditable.
