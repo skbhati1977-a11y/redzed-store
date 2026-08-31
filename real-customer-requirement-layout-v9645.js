@@ -1,0 +1,25 @@
+(()=>{"use strict";if(window.__RR_REQ_LAYOUT_V9645__)return;window.__RR_REQ_LAYOUT_V9645__=1;function css(){if(document.getElementById('rrReqLayout9645Style'))return;const s=document.createElement('style');s.id='rrReqLayout9645Style';s.textContent=`
+:root{--rr9645-c1:minmax(0,1fr);--rr9645-c2:minmax(0,2fr);--rr9645-c3:minmax(0,1.15fr);--rr9645-c4:minmax(0,1.45fr);--rr9645-gap:5px;--rr9645-h:35px;--rr9645-rowpad:5.5px}
+body.rr-customer-v9619{padding-top:46px!important}
+#rrCustomerCollectionHeaderV9619{height:46px!important;min-height:46px!important;width:100%!important;display:grid!important;grid-template-columns:var(--rr9645-c1) var(--rr9645-c2) var(--rr9645-c3) var(--rr9645-c4)!important;column-gap:var(--rr9645-gap)!important;padding:var(--rr9645-rowpad) 8px!important;align-items:center!important;justify-content:stretch!important;box-sizing:border-box!important;overflow:hidden!important}
+#rrCustomerCollectionHeaderV9619 .rzname{grid-column:1/3!important;grid-row:1!important;display:flex!important;align-items:center!important;height:var(--rr9645-h)!important;min-width:0!important;font-size:14px!important;line-height:1!important;overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important}
+#rrAvgWrap9641{display:contents!important}
+#rrReqAvg9641,#rrAllAvg9641{width:100%!important;height:var(--rr9645-h)!important;min-height:var(--rr9645-h)!important;max-height:var(--rr9645-h)!important;min-width:0!important;max-width:none!important;margin:0!important;padding:3px!important;border-radius:9px!important;box-sizing:border-box!important;align-self:center!important;justify-self:stretch!important;display:flex!important;align-items:center!important;justify-content:center!important}
+#rrReqAvg9641{grid-column:3!important;grid-row:1!important}
+#rrAllAvg9641{grid-column:4!important;grid-row:1!important}
+#rrReqAvg9641 small,#rrAllAvg9641 small{font-size:6.5px!important;line-height:1!important}
+#rrReqAvg9641 b,#rrAllAvg9641 b{font-size:10px!important;line-height:1!important;margin-top:2px!important}
+body.rr-customer-v9619 #rrFSChat{top:46px!important;height:calc(100dvh - 46px)!important}
+body.rr-customer-v9619 #rrFSChat .fshead{top:-46px!important;height:46px!important;min-height:46px!important;align-items:flex-start!important;padding-top:4px!important}
+#rrFSChat .fstabs{display:grid!important;grid-template-columns:var(--rr9645-c1) var(--rr9645-c2) var(--rr9645-c3) var(--rr9645-c4)!important;gap:var(--rr9645-gap)!important;padding:var(--rr9645-rowpad) 8px!important;align-items:center!important;justify-content:stretch!important;box-sizing:border-box!important}
+#rrFSChat .fstabs>button,#rrReqQty9641,#rrReqAmt9641{width:100%!important;height:var(--rr9645-h)!important;min-height:var(--rr9645-h)!important;max-height:var(--rr9645-h)!important;min-width:0!important;margin:0!important;padding:3px 4px!important;border-radius:9px!important;box-sizing:border-box!important;align-self:center!important;justify-self:stretch!important;display:flex!important;align-items:center!important;justify-content:center!important}
+#rrFSChat .fstabs>button{font-size:9px!important;line-height:1!important}
+#rrReqQty9641,#rrReqAmt9641{flex-direction:column!important;text-align:center!important;line-height:1!important}
+#rrReqQty9641 small,#rrReqAmt9641 small{font-size:6.5px!important;line-height:1!important}
+#rrReqQty9641 b,#rrReqAmt9641 b{font-size:10px!important;line-height:1!important;margin-top:2px!important}
+/* Last message-composer row: ~20% vertical squeeze, functionality unchanged. */
+body.rr-customer-v9619 #rrFSChat .fscomp{padding:7px 12px max(7px,env(safe-area-inset-bottom))!important;gap:7px!important}
+body.rr-customer-v9619 #rrFSChat .fscomp input{padding:10px 12px!important;min-height:0!important;line-height:18px!important}
+body.rr-customer-v9619 #rrFSChat .fscomp button{min-height:38px!important;height:38px!important}
+@media(max-width:390px){#rrCustomerCollectionHeaderV9619 .rzname{font-size:12px!important}#rrReqAvg9641 b,#rrAllAvg9641 b,#rrReqQty9641 b,#rrReqAmt9641 b{font-size:9px!important}#rrFSChat .fstabs>button{font-size:8px!important}}
+`;document.head.appendChild(s)}function align(){const h=document.getElementById('rrCustomerCollectionHeaderV9619'),req=document.getElementById('rrReqAvg9641'),all=document.getElementById('rrAllAvg9641'),wrap=document.getElementById('rrAvgWrap9641'),tabs=document.querySelector('#rrFSChat .fstabs'),qty=document.getElementById('rrReqQty9641'),amt=document.getElementById('rrReqAmt9641');if(!h||!req||!all||!wrap||!tabs||!qty||!amt)return false;if(wrap.firstElementChild!==req)wrap.insertBefore(req,all);css();return true}function boot(){css();let n=0;const t=setInterval(()=>{if(align()||++n>=24)clearInterval(t)},120);[240,600,1200,2000].forEach(ms=>setTimeout(align,ms))}if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot()})();
