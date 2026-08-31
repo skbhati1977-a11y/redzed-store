@@ -1,6 +1,6 @@
 # REAL CHAT IMPLEMENTATION — COLLECTION TO PI FREEZE V9630
 
-Status: ISOLATED / TEST-ONLY BACKEND FOUNDATION
+Status: ISOLATED / TEST-ONLY FUNCTIONAL FOUNDATION
 Date: 2026-08-31
 
 ## Goal
@@ -14,8 +14,9 @@ Implement the locked Collection -> Updates/More Samples -> Requirement -> PI Fre
 - New PI reservation engine is TEST-only until isolated functional approval.
 - No automatic PI expiry/cancellation scheduler is enabled yet; working-day calendar and reminder automation will be added only after the reservation flow is functionally certified.
 
-## Database migration applied
-`real_chat_collection_to_pi_freeze_foundation_v9630`
+## Database migrations applied
+- `real_chat_collection_to_pi_freeze_foundation_v9630`
+- `real_chat_collection_update_legacy_adopt_v9631`
 
 ### New lifecycle/update tables
 - `rr_collection_update_request_v9630`
@@ -27,12 +28,24 @@ Implement the locked Collection -> Updates/More Samples -> Requirement -> PI Fre
 
 ### New RPCs
 - `rr_collection_categories_v9630()` — returns configured nonblank product categories from Art Master.
+- `rr_collection_cycle_for_share_v9631(token)` — resolves the SAME Collection cycle and safely adopts a valid legacy active share when required.
 - `rr_collection_more_samples_request_v9630(token,categories,note)` — creates a MORE_SAMPLES update inside the SAME Collection number.
 - `rr_collection_customer_close_v9630(token,reason)` — terminal customer close before PI; blocks close if PI already exists.
 - `rr_pi_reservation_conflicts_v9630(pi_id)` — calculates Lot-level demand vs current on-hand stock after other active PI reservations.
 - `rr_pi_reservation_sync_v9630(pi_id)` — TEST-only PI freeze/reserve operation; refuses freeze on unresolved shortage and marks linked Collection `PI_GENERATED`.
 - `rr_pi_reservation_modify_v9630(reservation_id,new_qty,reason)` — authorized audited reduction/reallocation of an existing active reservation.
 - `rr_pi_party_confirm_v9630(pi_id)` — records party confirmation for active reservations.
+
+## Isolated GitHub UI added
+- `real-customer-chat-commercial-actions-v9630.js`
+  - SEND MORE SAMPLES
+  - SEND REQUIREMENT
+  - CLOSE REQUIREMENT
+  - finite boot retry only; no MutationObserver/continuous loop.
+  - category multi-select is server-backed.
+- `real-customer-collection-to-frozen-test-v9630.html`
+  - loads the previously approved customer Real Chat/Collection UI plus only the V9630 action addon.
+  - production `real-market-share-v9420.html` is not changed.
 
 ## Locked inventory behavior now represented
 Requirement = demand only.
@@ -42,8 +55,8 @@ Authorized reallocation = explicit reduction only, mandatory reason, audit trail
 CI = remains existing physical stock deduction path.
 
 ## Next safe sequence
-1. Add isolated customer 3-action UI: SEND MORE SAMPLES / SEND REQUIREMENT / CLOSE REQUIREMENT.
-2. Verify category multi-select persists against the SAME Collection cycle and staff can read identical preselected categories.
+1. Functional-test isolated customer 3-action UI and verify SAME Collection identity.
+2. Verify category multi-select persists and staff reads the identical preselected categories.
 3. Add isolated staff reservation-conflict panel for a selected PI.
 4. Functional test with TEST PI: freeze -> competing demand -> audited reduction -> confirmation.
 5. Add configurable working-day calendar + 5-working-day expiry engine.
