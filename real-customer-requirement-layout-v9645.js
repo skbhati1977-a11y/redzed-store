@@ -17,14 +17,9 @@ body.rr-customer-v9619 #rrFSChat .fshead{top:-46px!important;height:46px!importa
 #rrReqQty9641,#rrReqAmt9641{flex-direction:column!important;text-align:center!important;line-height:1!important}
 #rrReqQty9641 small,#rrReqAmt9641 small{font-size:6.5px!important;line-height:1!important}
 #rrReqQty9641 b,#rrReqAmt9641 b{font-size:10px!important;line-height:1!important;margin-top:2px!important}
+/* Last message-composer row: ~20% vertical squeeze, functionality unchanged. */
 body.rr-customer-v9619 #rrFSChat .fscomp{padding:7px 12px max(7px,env(safe-area-inset-bottom))!important;gap:7px!important}
 body.rr-customer-v9619 #rrFSChat .fscomp input{padding:10px 12px!important;min-height:0!important;line-height:18px!important}
 body.rr-customer-v9619 #rrFSChat .fscomp button{min-height:38px!important;height:38px!important}
-/* Requirement mode: keep the complete collection independently scrollable and keep its own actions visible. */
-#rrFSChat:has(#fcPanel.on) #rrCommercialActions9630{display:none!important}
-#rrFSChat #fcPanel.on{display:flex!important;flex-direction:column!important;min-height:0!important;overflow:hidden!important}
-#rrFSChat #fcPanel.on #fcRows{flex:1 1 auto!important;min-height:0!important;overflow-y:auto!important;overscroll-behavior:contain;padding-bottom:8px!important}
-#rrFSChat #fcPanel.on .fcnote{flex:0 0 auto!important;box-sizing:border-box!important}
-#rrFSChat #fcPanel.on .fcactions{position:static!important;flex:0 0 auto!important;bottom:auto!important;margin:0!important;padding:9px 0 max(6px,env(safe-area-inset-bottom))!important;background:#0f1722!important;z-index:3!important}
 @media(max-width:390px){#rrCustomerCollectionHeaderV9619 .rzname{font-size:12px!important}#rrReqAvg9641 b,#rrAllAvg9641 b,#rrReqQty9641 b,#rrReqAmt9641 b{font-size:9px!important}#rrFSChat .fstabs>button{font-size:8px!important}}
 `;document.head.appendChild(s)}function align(){const h=document.getElementById('rrCustomerCollectionHeaderV9619'),req=document.getElementById('rrReqAvg9641'),all=document.getElementById('rrAllAvg9641'),wrap=document.getElementById('rrAvgWrap9641'),tabs=document.querySelector('#rrFSChat .fstabs'),qty=document.getElementById('rrReqQty9641'),amt=document.getElementById('rrReqAmt9641');if(!h||!req||!all||!wrap||!tabs||!qty||!amt)return false;if(wrap.firstElementChild!==req)wrap.insertBefore(req,all);css();return true}function boot(){css();let n=0;const t=setInterval(()=>{if(align()||++n>=24)clearInterval(t)},120);[240,600,1200,2000].forEach(ms=>setTimeout(align,ms))}if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot()})();
