@@ -1,6 +1,6 @@
 # REAL FACTORY — REAL CHAT / COLLECTION / REQUIREMENT RULE BOOK
 
-Status: LOCKED REFINED RULES — 2026-08-30
+Status: LOCKED REFINED RULES — 2026-08-31
 
 1. WhatsApp is only the entry gate. Staff shares a secure REDZED URL; continuing business conversation runs inside REDZED Real Chat. No direct WhatsApp-to-Real-Chat inbound mirroring is required for this design.
 2. First customer entry: secure URL -> Name + Mobile -> PROCEED -> verified/bound customer identity -> permanent Real Chat contact -> full-screen Real Chat.
@@ -37,3 +37,26 @@ Status: LOCKED REFINED RULES — 2026-08-30
 33. Security: typing a mobile number alone must never expose an existing customer's chat history. First entry/re-entry must use secure URL/token plus appropriate verification/session binding; trusted-device re-entry may be made seamless after secure binding.
 34. Core architecture: WhatsApp Entry Gate -> Secure Customer Identity -> Permanent Real Chat Contact -> Collection/Requirement linked cycle -> PI -> CI -> CLOSED/CANCELLED -> next NEW Collection cycle in the same permanent contact.
 35. Implementation discipline: preserve currently stable staff Real Chat and unrelated modules. Implement customer full-screen UI, lifecycle linkage, directory/unread, reminder engine and push notification layer surgically; do not silently alter unrelated PI/CI/stock/business rules.
+
+## LOCKED ACTIVE COLLECTION CONVERSATION RULES — 2026-08-31
+
+36. One Party + one active commercial conversation = one Collection Number. A Collection Number identifies the complete active commercial cycle, not an individual sample send.
+37. Fresh send starts the number, e.g. RZ COLLECTION 01. Every continuation before terminal close remains under RZ COLLECTION 01: customer more-sample requests, staff additional sample sends, Collection updates, Requirement submissions/revisions, PI and CI.
+38. Updates are versions/events inside the same Collection Number. They may be displayed as Update 01, Update 02, etc., but they MUST NOT create Collection 02 or a new business-cycle identity.
+39. Customer active-cycle actions shall include SEND MORE SAMPLES, SEND REQUIREMENT and CLOSE REQUIREMENT.
+40. SEND MORE SAMPLES opens all valid configured product categories with multi-select checkboxes. Customer may select multiple categories and submit the request without leaving the permanent Real Chat.
+41. A customer SEND MORE SAMPLES action is an update/request inside the current Collection; it does NOT create a new Collection and does NOT create a new Requirement merely by requesting more samples.
+42. Customer-selected category IDs/values must be stored server-side against the current Collection update. Staff opening that request must see those same categories automatically preselected; staff must not be required to re-enter or re-tick the customer's requested categories.
+43. Staff sample selection for a customer more-samples request must be scoped to the customer-selected categories. Staff then selects the actual eligible samples/lots to send from that scoped pool.
+44. Same-Collection cumulative duplicate blocking still applies to additional sample sends: a style/item already sent anywhere in that Collection's first send/update history cannot be sent again in a later update of that same Collection.
+45. When staff sends additional samples, customer receives UPDATE COLLECTION inside the same Real Chat/current Collection. Customer opens the update, fills required quantities/details and may SEND REQUIREMENT.
+46. SEND REQUIREMENT creates/updates the Requirement linked to the current Collection and permanent customer/chat chain. Additional sample/requirement conversation must not break or replace that Collection identity.
+47. After Requirement is received, staff may either continue the same Collection with more samples/updates or convert the Requirement to PI. Both paths remain under the same Collection Number.
+48. Customer CLOSE REQUIREMENT before PI is a terminal customer-side abandonment/closure of that active commercial cycle. No PI is created from that closed Requirement. The next fresh commercial conversation starts the next Collection Number.
+49. Staff PI creation is the commercial conversion closure of the Requirement: when PI is generated, the linked Requirement is considered closed/converged into PI automatically; a separate manual Requirement-close action is not required.
+50. PI creation does NOT final-close the Collection cycle. The same Collection Number remains the lifecycle identity through PI -> CI.
+51. CI generation is the normal successful terminal close of the Collection cycle. After CI, that Collection becomes final historical CLOSED and any later fresh business requirement/sample conversation starts the next Collection Number.
+52. Therefore the normal successful chain is: Collection 01 -> initial send -> Update 01/02/... -> Requirement -> PI -> CI -> FINAL CLOSED. The abandoned chain is: Collection 01 -> updates/Requirement -> customer CLOSE REQUIREMENT -> CLOSED WITHOUT PI. Only after terminal close may Collection 02 begin.
+53. A closed Collection must never be silently revived for a new commercial conversation. Previous Collection number, updates, selected categories, sent samples, Requirement/PI/CI references and closure reason/state remain permanent history.
+54. Staff/customer UI labels and backend relationships must preserve this invariant: More Samples and Updates are continuation events; Collection Number changes only when a genuinely new cycle begins after the prior cycle reaches its permitted terminal close.
+55. Safe implementation order for these rules: preserve approved customer/staff UI first; add server-side lifecycle/update/category data contract; verify current Collection identity and duplicate rules; then add customer actions; then staff auto-prefill/sample-send flow; then Requirement/PI/CI terminal transitions. Each step is isolated and verified before the next, with no unrelated module changes.
