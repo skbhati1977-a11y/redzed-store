@@ -1,0 +1,1 @@
+(()=>{const s=document.createElement('script');s.src='real-role-permission-market-gate-v61.js?v=8a7aa73';s.defer=true;document.head.appendChild(s)})();
