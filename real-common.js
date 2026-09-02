@@ -29,7 +29,7 @@
     if(document.getElementById('rr-global-permanent-ui-guard'))return;
     const style=document.createElement('style');
     style.id='rr-global-permanent-ui-guard';
-    style.textContent='.rr-gsheet-toolbar .rr-row-count{display:none!important}#rrGsheetBottomScrollV775{display:none!important}';
+    style.textContent='.rr-gsheet-toolbar .rr-row-count,.rr-gsheet-toolbar .rr-filter-master,.rr-gsheet-toolbar .rr-clear-all,.rr-gsheet-filter-btn{display:none!important}#rrGsheetBottomScrollV775{display:none!important}';
     document.head.appendChild(style);
   };
   installPermanentGlobalGuards();
