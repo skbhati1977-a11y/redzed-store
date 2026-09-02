@@ -37,3 +37,10 @@
   window.RRDataModeLoaderPromise=dataModeLoader;
   dataModeLoader.then(()=>load('real-mobile-compat-v775.js?v=884','rr-mobile-compat-v775')).then(()=>load('real-google-sheet-table-v775.js?v=9324','rr-google-sheet-table-v775')).then(installPermanentGlobalGuards).catch(error=>console.error(error));
 })();
+
+/* TEST63 — V776.4 only */
+(()=>{
+  if(!/real-role-permission-v776-4\.html$/i.test(location.pathname))return;
+  const style=document.createElement('style');style.id='rr-test63-v7764-cell-territory';style.textContent=`#matrixRefresh{display:none!important}.matrix th,.matrix td{box-sizing:border-box!important;overflow:hidden!important;white-space:normal!important;overflow-wrap:anywhere!important;word-break:break-word!important}.matrix .field-head,.matrix .field-cell{overflow:hidden!important;white-space:normal!important;overflow-wrap:anywhere!important;word-break:break-word!important}.matrix .field-cell strong,.matrix .field-cell small{display:block!important;width:100%!important;max-width:100%!important;white-space:normal!important;overflow-wrap:anywhere!important;word-break:break-word!important;overflow:hidden!important}.matrix select,.matrix button,.matrix input,.matrix textarea{box-sizing:border-box!important;width:100%!important;max-width:100%!important;min-width:0!important}@media(max-width:680px){.matrix .field-head,.matrix .field-cell{width:190px!important;min-width:190px!important;max-width:190px!important}.matrix thead th:not(.field-head),.matrix tbody td:not(.field-cell):not([colspan]){width:125px!important;min-width:125px!important;max-width:125px!important}.matrix th,.matrix td{height:auto!important;padding:6px!important}}`;document.head.appendChild(style);
+  const clean=()=>document.getElementById('matrixRefresh')?.remove();clean();new MutationObserver(clean).observe(document.documentElement,{childList:true,subtree:true});
+})();
