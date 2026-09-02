@@ -29,7 +29,7 @@
     if(document.getElementById('rr-global-permanent-ui-guard'))return;
     const style=document.createElement('style');
     style.id='rr-global-permanent-ui-guard';
-    style.textContent='.rr-gsheet-toolbar{display:none!important}.rr-gsheet-filter-btn{display:none!important}#rrGsheetBottomScrollV775{display:none!important}.hero>h2,.hero>p:not(.kicker),#tab-matrix .note,[data-rr-directional-comment],.rr-directional-comment{display:none!important}';
+    style.textContent='.rr-gsheet-toolbar{display:none!important}.rr-gsheet-filter-btn{display:none!important}#rrGsheetBottomScrollV775{display:none!important}.hero>h2,.hero>p:not(.kicker),#tab-matrix .note,[data-rr-directional-comment],.rr-directional-comment{display:none!important}html{scroll-behavior:smooth}.matrix-wrap{-webkit-overflow-scrolling:touch!important;overscroll-behavior:auto!important;scroll-behavior:smooth!important;touch-action:pan-x pan-y!important}.matrix th,.matrix td{box-sizing:border-box!important}.matrix select,.matrix button{box-sizing:border-box!important;max-width:100%!important}.matrix td{overflow:visible!important}@media(max-width:680px){.matrix-wrap{width:100%!important;max-width:100vw!important}.matrix .field-head,.matrix .field-cell{min-width:34vw!important;width:34vw!important;max-width:34vw!important}.matrix thead th:not(.field-head),.matrix tbody td:not(.field-cell){min-width:33vw!important;width:33vw!important;max-width:33vw!important}.matrix th,.matrix td{padding:5px!important}.matrix select{min-width:0!important;width:100%!important;padding:7px 3px!important}.matrix .field-cell strong,.matrix .field-cell small{white-space:nowrap!important;overflow:visible!important}}';
     document.head.appendChild(style);
   };
   installPermanentGlobalGuards();
