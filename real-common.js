@@ -38,11 +38,11 @@
   dataModeLoader.then(()=>load('real-mobile-compat-v775.js?v=884','rr-mobile-compat-v775')).then(()=>load('real-google-sheet-table-v775.js?v=9324','rr-google-sheet-table-v775')).then(installPermanentGlobalGuards).catch(error=>console.error(error));
 })();
 
-/* TEST64: V776.4 field-cell overflow containment only */
+/* TEST64: V776.4 requested presentation-only cleanup */
 (()=>{
   if(!/real-role-permission-v776-4\.html$/i.test(location.pathname))return;
   const style=document.createElement('style');
-  style.id='rr-test64-v7764-field-cell-overflow-only';
-  style.textContent='.matrix .field-cell{overflow:hidden!important}.matrix .field-cell strong,.matrix .field-cell small{display:block!important;max-width:100%!important;white-space:normal!important;overflow-wrap:anywhere!important;word-break:break-word!important;overflow:hidden!important}';
+  style.id='rr-test64-v7764-requested-cleanup';
+  style.textContent='.hero>h2{display:none!important}#matrixRefresh{display:none!important}#tab-matrix .note{display:none!important}.matrix .field-cell{overflow:hidden!important}.matrix .field-cell strong,.matrix .field-cell small{display:block!important;max-width:100%!important;white-space:normal!important;overflow-wrap:anywhere!important;word-break:break-word!important;overflow:hidden!important}';
   document.head.appendChild(style);
 })();
