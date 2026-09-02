@@ -45,4 +45,20 @@
   style.id='rr-test64-v7764-requested-cleanup';
   style.textContent='.hero>h2{display:none!important}#matrixRefresh{display:none!important}#tab-matrix .note{display:none!important}.matrix .field-cell{overflow:hidden!important}.matrix .field-cell strong,.matrix .field-cell small{display:block!important;max-width:100%!important;white-space:normal!important;overflow-wrap:anywhere!important;word-break:break-word!important;overflow:hidden!important}.matrix-wrap{overflow:auto!important;overflow-x:auto!important;overflow-y:auto!important;-webkit-overflow-scrolling:touch!important;overscroll-behavior:auto!important;touch-action:pan-x pan-y!important;scroll-behavior:smooth!important}';
   document.head.appendChild(style);
+
+  const hideInactiveButtonQuantity=()=>{
+    const body=document.querySelector('#tab-matrix .matrix tbody');
+    if(!body)return;
+    let hide=false;
+    [...body.children].forEach(row=>{
+      if(row.classList.contains('group')){
+        const label=(row.textContent||'').trim().replace(/\s+/g,' ').toUpperCase();
+        hide=label==='BUTTON · QUANTITY';
+      }
+      if(hide)row.style.display='none';
+    });
+  };
+  const observer=new MutationObserver(hideInactiveButtonQuantity);
+  observer.observe(document.documentElement,{childList:true,subtree:true});
+  hideInactiveButtonQuantity();
 })();
