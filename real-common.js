@@ -25,16 +25,15 @@
   window.__REAL_FACTORY_GLOBAL_UI_LOADER_V775__=true;
   const current=document.currentScript?.src||location.href,base=new URL('.',current);
   const load=(file,id)=>new Promise((resolve,reject)=>{if(document.getElementById(id)){resolve();return;}const script=document.createElement('script');script.id=id;script.src=new URL(file,base).href;script.async=false;script.onload=resolve;script.onerror=()=>reject(new Error(`REAL FACTORY global utility failed to load: ${file}`));document.head.appendChild(script);});
-  const installPermanentPageGuards=()=>{
-    if(!/\/real-role-permission(?:-v[^/]*)?\.html$/i.test(location.pathname))return;
-    if(document.getElementById('rr-role-permission-permanent-ui-guard'))return;
+  const installPermanentGlobalGuards=()=>{
+    if(document.getElementById('rr-global-permanent-ui-guard'))return;
     const style=document.createElement('style');
-    style.id='rr-role-permission-permanent-ui-guard';
+    style.id='rr-global-permanent-ui-guard';
     style.textContent='.rr-gsheet-toolbar .rr-row-count{display:none!important}#rrGsheetBottomScrollV775{display:none!important}';
     document.head.appendChild(style);
   };
-  installPermanentPageGuards();
+  installPermanentGlobalGuards();
   const dataModeLoader=load('real-data-mode-controller-v786-1-1.js?v=884','rr-data-mode-controller-v786-1-1');
   window.RRDataModeLoaderPromise=dataModeLoader;
-  dataModeLoader.then(()=>load('real-mobile-compat-v775.js?v=884','rr-mobile-compat-v775')).then(()=>load('real-google-sheet-table-v775.js?v=9324','rr-google-sheet-table-v775')).then(installPermanentPageGuards).catch(error=>console.error(error));
+  dataModeLoader.then(()=>load('real-mobile-compat-v775.js?v=884','rr-mobile-compat-v775')).then(()=>load('real-google-sheet-table-v775.js?v=9324','rr-google-sheet-table-v775')).then(installPermanentGlobalGuards).catch(error=>console.error(error));
 })();
