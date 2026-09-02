@@ -43,6 +43,6 @@
   if(!/real-role-permission-v776-4\.html$/i.test(location.pathname))return;
   const style=document.createElement('style');
   style.id='rr-test64-v7764-requested-cleanup';
-  style.textContent='.hero>h2{display:none!important}#matrixRefresh{display:none!important}#tab-matrix .note{display:none!important}.matrix .field-cell{overflow:hidden!important}.matrix .field-cell strong,.matrix .field-cell small{display:block!important;max-width:100%!important;white-space:normal!important;overflow-wrap:anywhere!important;word-break:break-word!important;overflow:hidden!important}';
+  style.textContent='.hero>h2{display:none!important}#matrixRefresh{display:none!important}#tab-matrix .note{display:none!important}.matrix .field-cell{overflow:hidden!important}.matrix .field-cell strong,.matrix .field-cell small{display:block!important;max-width:100%!important;white-space:normal!important;overflow-wrap:anywhere!important;word-break:break-word!important;overflow:hidden!important}.matrix-wrap{overflow:auto!important;overflow-x:auto!important;overflow-y:auto!important;-webkit-overflow-scrolling:touch!important;overscroll-behavior:auto!important;touch-action:pan-x pan-y!important;scroll-behavior:smooth!important}';
   document.head.appendChild(style);
 })();
