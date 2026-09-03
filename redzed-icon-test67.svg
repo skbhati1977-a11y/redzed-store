@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="112" fill="#111d2a"/>
+  <path d="M104 92h304v76H104zm0 126h304v76H104zm0 126h304v76H104z" fill="#e8b84c"/>
+  <path d="M132 116h86l162 280h-87z" fill="#d7263d"/>
+  <text x="256" y="310" text-anchor="middle" font-family="Arial,sans-serif" font-size="112" font-weight="900" fill="#fff">RZ</text>
+</svg>
