@@ -37,3 +37,27 @@
   window.RRDataModeLoaderPromise=dataModeLoader;
   dataModeLoader.then(()=>load('real-mobile-compat-v775.js?v=884','rr-mobile-compat-v775')).then(()=>load('real-google-sheet-table-v775.js?v=9324','rr-google-sheet-table-v775')).then(installPermanentGlobalGuards).catch(error=>console.error(error));
 })();
+
+/* TEST65: approved TEST64 Role Permission behavior on current MAIN */
+(()=>{
+  if(!/real-role-permission-v776-4\.html$/i.test(location.pathname))return;
+  const style=document.createElement('style');
+  style.id='rr-test65-v7764-approved-cleanup';
+  style.textContent='.hero>h2{display:none!important}#matrixRefresh{display:none!important}#tab-matrix .note{display:none!important}.matrix .field-cell{overflow:hidden!important}.matrix .field-cell strong,.matrix .field-cell small{display:block!important;max-width:100%!important;white-space:normal!important;overflow-wrap:anywhere!important;word-break:break-word!important;overflow:hidden!important}.matrix-wrap{overflow:auto!important;overflow-x:auto!important;overflow-y:auto!important;-webkit-overflow-scrolling:touch!important;overscroll-behavior:auto!important;touch-action:pan-x pan-y!important;scroll-behavior:smooth!important}';
+  document.head.appendChild(style);
+  const hideInactiveButtonQuantity=()=>{
+    const body=document.querySelector('#tab-matrix .matrix tbody');
+    if(!body)return;
+    let hide=false;
+    [...body.children].forEach(row=>{
+      if(row.classList.contains('group')){
+        const label=(row.textContent||'').trim().replace(/\s+/g,' ').toUpperCase();
+        hide=label==='BUTTON · QUANTITY';
+      }
+      if(hide)row.style.display='none';
+    });
+  };
+  const observer=new MutationObserver(hideInactiveButtonQuantity);
+  observer.observe(document.documentElement,{childList:true,subtree:true});
+  hideInactiveButtonQuantity();
+})();
