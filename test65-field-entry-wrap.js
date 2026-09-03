@@ -1,1 +1,1 @@
-(()=>{if(!/real-role-permission-v776-4\.html$/i.test(location.pathname))return;const s=document.createElement('style');s.id='rr-test65-field-entry-wrap';s.textContent='.matrix td.field-cell>small{display:none!important}';document.head.appendChild(s)})();
+(()=>{const s=document.createElement('style');s.id='rr-test65-field-entry-wrap';s.textContent='#tab-matrix .matrix td.field-cell>small{display:none!important}';document.head.appendChild(s)})();
