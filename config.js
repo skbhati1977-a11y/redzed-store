@@ -78,6 +78,7 @@ if(!/\/real-cutting-master\.html$/i.test(window.location.pathname)){const mobile
 if(!window.__RR_GLOBAL_CARET_END_LOADER_9310__){window.__RR_GLOBAL_CARET_END_LOADER_9310__=true;const caret=document.createElement("script");caret.src=`${RR_REPO_BASE}real-global-caret-end-v9310.js?v=9310`;caret.async=false;(document.head||document.documentElement).appendChild(caret)}
 if(rrIsRealChatPath(window.location.pathname)){
  window.__RR_SLICE_MENU_LOADER_9309__=true;
+ const add67=document.createElement('script');add67.src='real-chat-add-customer-test67.js?v=67';add67.async=false;(document.head||document.documentElement).appendChild(add67);
  const hideRealChatGlobalRail=()=>{document.getElementById('rrSlicePanel')?.remove();document.getElementById('rrSliceBack')?.remove();document.getElementById('rrSliceRail')?.remove();document.body?.classList.remove('rrSliceReserved')};
  document.addEventListener('DOMContentLoaded',hideRealChatGlobalRail,{once:true});setTimeout(hideRealChatGlobalRail,0);
 }else if(!rrIsDashboardPath(window.location.pathname)&&!window.__RR_SLICE_MENU_LOADER_9309__){window.__RR_SLICE_MENU_LOADER_9309__=true;const nav=document.createElement('script');nav.src=`${RR_REPO_BASE}real-global-slice-menu-v9190.js?v=${RR_TRAVEL_VERSION}`;nav.async=false;(document.head||document.documentElement).appendChild(nav)}
