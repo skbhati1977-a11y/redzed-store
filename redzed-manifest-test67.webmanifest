@@ -1,0 +1,18 @@
+{
+  "name": "REDZED Real Chat",
+  "short_name": "REDZED",
+  "description": "REDZED customer and distributor Real Chat",
+  "start_url": "./s.html?source=pwa&v=67",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#091019",
+  "theme_color": "#111d2a",
+  "icons": [
+    {
+      "src": "redzed-icon-test67.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
