@@ -7,6 +7,7 @@
 <header><h1>TEST67 · Distributor Market Window</h1><small>Private customers · owner-wide orders · batch submission · PI confirmation</small></header>
 <main>
  <section class="card"><h2>Private customer</h2><div class="grid"><input id="customerName" placeholder="Customer name (private)"><input id="customerMobile" placeholder="Mobile (private)"><button id="addCustomer">Create auto Customer ID</button></div></section>
+ <section class="card"><h2>Market Window · Send Collection</h2><div class="grid"><select id="collectionCustomer"></select><input id="mwSearch" placeholder="Search lot / article"><button id="loadMw">Load TEST lots</button></div><div id="mwCards"></div><button class="primary" id="sendCollection">Send selected collection</button><div id="collectionResult"></div></section>
  <section class="card"><h2>Create Order / Requirement</h2><div class="grid"><select id="orderCustomer"></select><input id="lotNo" placeholder="Lot / Article No."><input id="qty" type="number" min="1" placeholder="Quantity"><input id="enhancement" type="number" min="0" step="0.01" placeholder="Rate Enhancement ₹"><button id="addLine">Add article</button></div><div id="draftLines"></div><button class="primary" id="createOrder">Create Order</button></section>
  <section class="card"><h2>Customer-wise orders</h2><div id="orders"></div><button class="primary" id="submitBatch">Send selected orders in one batch</button></section>
  <section class="card"><h2>Batches</h2><div id="batches"></div></section>
