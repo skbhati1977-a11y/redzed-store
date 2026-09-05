@@ -171,6 +171,92 @@
       : null;
   }
 
+  function ensureCollectionCardStyle() {
+    if (document.getElementById("rrPartnerCustomerCollectionCardCss89"))
+      return;
+    const style = document.createElement("style");
+    style.id = "rrPartnerCustomerCollectionCardCss89";
+    style.textContent = `
+      #fsMsgs .rrPartnerCustomerCollectionMessage89 .fsbody{display:none!important}
+      #fsMsgs .rrPartnerCustomerCollectionCard89{display:grid;width:100%;grid-template-columns:58px minmax(0,1fr) auto;gap:10px;align-items:center;box-sizing:border-box;margin:7px 0 2px;padding:10px;border:1px solid #536b88;border-radius:13px;background:#101923;color:#fff;text-align:left}
+      #fsMsgs .rrPartnerCustomerCollectionIcon89{display:flex;width:58px;height:66px;align-items:center;justify-content:center;overflow:hidden;border-radius:9px;background:#09111b;font-size:27px}
+      #fsMsgs .rrPartnerCustomerCollectionIcon89 img{display:block!important;width:58px!important;height:66px!important;min-width:58px!important;min-height:66px!important;max-width:58px!important;max-height:66px!important;margin:0!important;border-radius:9px!important;object-fit:cover!important}
+      #fsMsgs .rrPartnerCustomerCollectionCopy89{min-width:0}
+      #fsMsgs .rrPartnerCustomerCollectionCopy89 b{display:block;font-size:14px;line-height:1.1}
+      #fsMsgs .rrPartnerCustomerCollectionCopy89 small{display:block;margin-top:5px;color:#aeb9c7;font-size:11px;line-height:1.2}
+      #fsMsgs .rrPartnerCustomerCollectionOpen89{color:#8fc4ff;font-size:12px;font-weight:900;white-space:nowrap}
+      #fsMsgs .rrPartnerCustomerCollectionMessage89>.fsattbtn,#fsMsgs .rrPartnerCustomerCollectionMessage89>.fsattimg{display:none!important}
+    `;
+    document.head.appendChild(style);
+  }
+
+  function collectionUrlFrom(message) {
+    const body = message?.querySelector(".fsbody")?.textContent || "";
+    const absolute = body.match(/https:\/\/[^\s<]+\/s\.html\?[^\s<]+/i);
+    const relative = body.match(/\/s\.html\?[^\s<]+/i);
+    const raw = (absolute?.[0] || relative?.[0] || "").replace(
+      /[),.;]+$/,
+      "",
+    );
+    if (!raw) return "";
+    try {
+      return new URL(raw, location.href).href;
+    } catch (_) {
+      return "";
+    }
+  }
+
+  function syncCollectionPoster(message, card) {
+    const source = [...message.querySelectorAll("img.fsattimg")].find(
+      (image) => !card.contains(image),
+    );
+    const icon = card.querySelector(".rrPartnerCustomerCollectionIcon89");
+    if (!source || !icon || icon.querySelector("img")) return;
+    const image = document.createElement("img");
+    image.src = source.src;
+    image.alt = source.alt || "Collection";
+    icon.textContent = "";
+    icon.appendChild(image);
+    source.style.display = "none";
+  }
+
+  function decorateCollectionMessages() {
+    ensureCollectionCardStyle();
+    document.querySelectorAll("#fsMsgs .fsm").forEach((message) => {
+      const url = collectionUrlFrom(message);
+      if (!url) return;
+      let card = message.querySelector(".rrPartnerCustomerCollectionCard89");
+      if (!card) {
+        message.classList.add("rrPartnerCustomerCollectionMessage89");
+        card = document.createElement("button");
+        card.type = "button";
+        card.className = "rrPartnerCustomerCollectionCard89";
+        card.innerHTML =
+          '<span class="rrPartnerCustomerCollectionIcon89">🛍️</span><span class="rrPartnerCustomerCollectionCopy89"><b>COLLECTION / UPDATE</b><small>Tap to view designs, photos and requirement</small></span><span class="rrPartnerCustomerCollectionOpen89">OPEN ›</span>';
+        card.addEventListener("click", () => {
+          const current = new URL(url, location.href);
+          const currentToken = query.get("t") || query.get("c") || "";
+          const cardToken =
+            current.searchParams.get("t") || current.searchParams.get("c") || "";
+          if (currentToken && cardToken === currentToken) {
+            const openButton =
+              document.getElementById("fcReopen") ||
+              document.getElementById("fcOpen");
+            if (openButton) {
+              openButton.click();
+              return;
+            }
+          }
+          current.searchParams.set("open", "collection");
+          location.href = current.href;
+        });
+        const time = message.querySelector("time");
+        message.insertBefore(card, time || null);
+      }
+      syncCollectionPoster(message, card);
+    });
+  }
+
   function applyLabels() {
     const session =
       trusted || window.RR_PARTNER_CUSTOMER_TRUSTED_SESSION_V67 || {};
@@ -186,6 +272,9 @@
     const privateTab = document.getElementById("fsPrivate");
     const groupTab = document.getElementById("fsGroup");
     const info = document.getElementById("fsInfo");
+    const collectionHeader = document.querySelector(
+      "#rrCustomerCollectionHeaderV9619 .rzname",
+    );
     setText(title, `${owner} ↔ ${group}`);
     setText(
       privateTab,
@@ -193,6 +282,8 @@
     );
     setText(groupTab, "GROUP");
     setText(info, "GROUP INFO");
+    setText(collectionHeader, `${owner} COLLECTION`);
+    decorateCollectionMessages();
   }
 
   window.RR_CHAT_RELATION_ADAPTER_V67 = {

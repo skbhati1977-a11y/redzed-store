@@ -82,14 +82,14 @@
             : "REDZED_CUSTOMER";
           if (relation === "DISTRIBUTOR_CUSTOMER") {
             await loadScript(
-              "real-market-partner-shared-chat-adapter-test67.js?v=89",
+              "real-market-partner-shared-chat-adapter-test67.js?v=90",
             );
             await loadScript(
               "real-market-partner-collection-core-adapter-test67.js?v=83",
             );
           }
           for (const src of baseScripts) await loadScript(src);
-          await loadScript("real-mobile-back-step-test67.js?v=82");
+          await loadScript("real-mobile-back-step-test67.js?v=90");
 
           const openApprovedChat = () => {
             if (
@@ -99,6 +99,23 @@
               return false;
             document.getElementById("customerBoot")?.remove();
             RR_FULL_SECURE_CHAT_V9597.open();
+            if (
+              new URLSearchParams(location.search).get("open") === "collection"
+            ) {
+              let collectionTries = 0;
+              const openCollection = () => {
+                const button =
+                  document.getElementById("fcReopen") ||
+                  document.getElementById("fcOpen");
+                if (button) {
+                  button.click();
+                  return;
+                }
+                if (++collectionTries < 60)
+                  setTimeout(openCollection, 100);
+              };
+              openCollection();
+            }
             return true;
           };
           let tries = 0;

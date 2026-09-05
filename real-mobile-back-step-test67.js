@@ -68,6 +68,23 @@
   }
 
   function closeTopLayer() {
+    const moreSamples = document.querySelector("#rrMorePanel9630.on");
+    if (visible(moreSamples)) {
+      const closeMore = document.getElementById("rrMoreBack9630") ||
+        document.getElementById("rrMoreCancel9630");
+      if (closeMore) closeMore.click();
+      else moreSamples.classList.remove("on");
+      document.activeElement?.blur?.();
+      return true;
+    }
+    const collectionPanel = document.querySelector("#fcPanel.on");
+    if (visible(collectionPanel)) {
+      const closeCollection = document.getElementById("fcCancel");
+      if (closeCollection) closeCollection.click();
+      else collectionPanel.classList.remove("on");
+      document.activeElement?.blur?.();
+      return true;
+    }
     const layers = openLayers();
     if (layers.length) return closeLayer(layers[layers.length - 1]);
     const openChain = document.querySelector(

@@ -843,7 +843,9 @@
           card.onclick = (event) => {
             event.preventDefault();
             event.stopPropagation();
-            location.href = url;
+            const collectionUrl = new URL(url, location.href);
+            collectionUrl.searchParams.set("open", "collection");
+            location.href = collectionUrl.href;
           };
           const body = [...message.children].find(
             (node) => node.tagName === "DIV" && /\/s\.html\?/i.test(node.textContent || ""),
