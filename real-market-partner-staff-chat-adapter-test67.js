@@ -37,6 +37,7 @@
   const SESSION_KEY = "rr_customer_secure_session_v9592";
   const DEVICE_KEY = "rr_customer_device_v9592";
   const attachmentCache = new Map();
+  const collectionPreviewCache = new Map();
   const profile = {
     id: "test67-distributor",
     full_name: "DISTRIBUTOR",
@@ -786,6 +787,42 @@
     }
   }
 
+  async function hydrateCollectionCard(card, url) {
+    if (!card || card.dataset.rrPartnerPreview === "1") return;
+    card.dataset.rrPartnerPreview = "1";
+    try {
+      const parsed = new URL(url, location.href);
+      const token = parsed.searchParams.get("t") || parsed.searchParams.get("c");
+      if (!token) return;
+      if (!collectionPreviewCache.has(token)) {
+        collectionPreviewCache.set(
+          token,
+          rawRpc("rr_market_share_view_v9420", { p_token: token }),
+        );
+      }
+      const share = await collectionPreviewCache.get(token);
+      const row = Array.isArray(share?.rows) ? share.rows[0] : null;
+      const media = Array.isArray(row?.media) ? row.media : [];
+      const imageUrl =
+        row?.primary_image_url ||
+        media.map((item) => item?.image_url || item?.storage_path).find(Boolean);
+      if (!imageUrl || !card.isConnected) return;
+      const icon = card.querySelector(".rrMkIcon9505");
+      if (!icon) return;
+      const image = document.createElement("img");
+      image.src = imageUrl;
+      image.alt = row?.lot_no || "Collection";
+      image.loading = "eager";
+      image.decoding = "async";
+      image.style.cssText =
+        "display:block;width:52px;height:64px;object-fit:cover;border-radius:8px;background:#090d12";
+      icon.textContent = "";
+      icon.appendChild(image);
+    } catch (_) {
+      card.dataset.rrPartnerPreview = "";
+    }
+  }
+
   function decorateMessages() {
     document.querySelectorAll("#msgs .msg[data-msg-id]").forEach((message) => {
       if (!message.querySelector(".rrMarketLinkCard9505")) {
@@ -813,6 +850,7 @@
           );
           if (body) body.style.display = "none";
           message.insertBefore(card, message.querySelector("time"));
+          hydrateCollectionCard(card, url);
         }
       }
       if (!message.querySelector(".rrPartnerDelete82")) {
