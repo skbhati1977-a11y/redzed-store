@@ -15,6 +15,14 @@
   let core = null;
   let latestCollection = null;
 
+  function setText(node, value) {
+    if (node && node.textContent !== value) node.textContent = value;
+  }
+
+  function setHtml(node, value) {
+    if (node && node.innerHTML !== value) node.innerHTML = value;
+  }
+
   function device() {
     let value = localStorage.getItem(DEVICE_KEY);
     if (!value) {
@@ -226,15 +234,16 @@
     }
     const dashboard = document.querySelector('.rf-actions a[href*="real-dashboard"]');
     if (dashboard) {
-      dashboard.textContent = "← CHAT";
+      setText(dashboard, "← CHAT");
       dashboard.href = `real-sales-live-chat-v9434.html?rr_partner_mode=CUSTOMER&customer=${encodeURIComponent(customerId)}&from=distributor`;
     }
     const title = document.querySelector(".rf-brand h1");
-    if (title) title.textContent = "Distributor Collection";
+    setText(title, "Distributor Collection");
     const subtitle = document.querySelector(".rf-brand .muted");
-    if (subtitle)
-      subtitle.textContent =
-        "Fresh samples only · thumbnail, category, size and photos";
+    setText(
+      subtitle,
+      "Fresh samples only · thumbnail, category, size and photos",
+    );
     document.querySelector(".ww-bucket")?.classList.add("rrPartnerHidden82");
     const bucket = document.getElementById("bucketBtn");
     if (bucket) bucket.style.display = "none";
@@ -256,12 +265,14 @@
         (item) => String(item.lot_no) === String(lot),
       );
       const available = Number(row?.available_qty || 0);
-      line.innerHTML =
+      setHtml(
+        line,
         available <= 0
           ? "📦 OUT OF STOCK"
           : String(row?.stock_status || "").toUpperCase() === "LOW_STOCK"
             ? "📦 LOW STOCK"
-            : "📦 STOCK-IN";
+            : "📦 STOCK-IN",
+      );
     });
   }
 

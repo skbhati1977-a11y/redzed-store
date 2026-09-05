@@ -50,6 +50,9 @@
   let didAutoOpen = false;
 
   const $ = (id) => document.getElementById(id);
+  const setText = (node, value) => {
+    if (node && node.textContent !== value) node.textContent = value;
+  };
   const esc = (value) =>
     String(value ?? "").replace(
       /[&<>"']/g,
@@ -814,21 +817,18 @@
     });
     document
       .querySelectorAll("#msgs .rrMarketLinkCard9505 .rrMkText9505 b")
-      .forEach((node) => (node.textContent = "COLLECTION / UPDATE"));
+      .forEach((node) => setText(node, "COLLECTION / UPDATE"));
   }
 
   function applyLabels() {
-    if ($("chatTitle")) $("chatTitle").textContent = relationTitle();
+    setText($("chatTitle"), relationTitle());
     const brand = document.querySelector(".chatBrand");
-    if (brand) brand.textContent = "💬 Real Chat";
-    if ($("privateTab"))
-      $("privateTab").textContent =
-        mode === "CUSTOMER" ? "🔒 DISTRIBUTOR" : "";
-    if ($("groupTab"))
-      $("groupTab").textContent = mode === "CUSTOMER" ? "GROUP" : "REDZED";
+    setText(brand, "💬 Real Chat");
+    setText($("privateTab"), mode === "CUSTOMER" ? "🔒 DISTRIBUTOR" : "");
+    setText($("groupTab"), mode === "CUSTOMER" ? "GROUP" : "REDZED");
     if (mode === "REDZED") {
       if ($("privateTab")) $("privateTab").style.display = "none";
-      if ($("groupInfo")) $("groupInfo").textContent = "RELATION INFO";
+      setText($("groupInfo"), "RELATION INFO");
       if ($("callBtn")) $("callBtn").style.display = "none";
     }
   }
