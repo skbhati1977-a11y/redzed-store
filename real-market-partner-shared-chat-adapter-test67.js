@@ -15,6 +15,10 @@
   let trusted = null;
   const rawRpc = RF853.rpc.bind(RF853);
 
+  function setText(node, value) {
+    if (node && node.textContent !== value) node.textContent = value;
+  }
+
   function device() {
     let id = localStorage.getItem(deviceKey);
     if (!id) {
@@ -182,11 +186,13 @@
     const privateTab = document.getElementById("fsPrivate");
     const groupTab = document.getElementById("fsGroup");
     const info = document.getElementById("fsInfo");
-    if (title) title.textContent = `${owner} ↔ ${group}`;
-    if (privateTab)
-      privateTab.textContent = `🔒 ${owner.replace(/ DISTRIBUTOR$/i, "")} DISTRIBUTOR`;
-    if (groupTab) groupTab.textContent = "GROUP";
-    if (info) info.textContent = "GROUP INFO";
+    setText(title, `${owner} ↔ ${group}`);
+    setText(
+      privateTab,
+      `🔒 ${owner.replace(/ DISTRIBUTOR$/i, "")} DISTRIBUTOR`,
+    );
+    setText(groupTab, "GROUP");
+    setText(info, "GROUP INFO");
   }
 
   window.RR_CHAT_RELATION_ADAPTER_V67 = {
