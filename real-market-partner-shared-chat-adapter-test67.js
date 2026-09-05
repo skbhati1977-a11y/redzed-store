@@ -12,6 +12,7 @@
   const keyTail = token.slice(-18).replace(/[^a-z0-9]/gi, "") || "unknown";
   const sessionKey = `rr_partner_customer_session_v67_${keyTail}`;
   const deviceKey = "rr_partner_customer_device_v67";
+  const collectionPreviewCache = new Map();
   let trusted = null;
   const rawRpc = RF853.rpc.bind(RF853);
 
@@ -220,6 +221,44 @@
     source.style.display = "none";
   }
 
+  async function hydrateCollectionPreview(card, url) {
+    const icon = card.querySelector(".rrPartnerCustomerCollectionIcon89");
+    if (!icon || icon.querySelector("img") || card.dataset.rrPreview89) return;
+    card.dataset.rrPreview89 = "loading";
+    try {
+      const parsed = new URL(url, location.href);
+      const shareToken =
+        parsed.searchParams.get("t") || parsed.searchParams.get("c") || "";
+      if (!shareToken) throw Error("Collection token missing.");
+      if (!collectionPreviewCache.has(shareToken)) {
+        collectionPreviewCache.set(
+          shareToken,
+          call("rr_market_share_view_v9420", { p_token: shareToken }),
+        );
+      }
+      const share = await collectionPreviewCache.get(shareToken);
+      const row = Array.isArray(share?.rows) ? share.rows[0] : null;
+      const media = Array.isArray(row?.media) ? row.media : [];
+      const imageUrl =
+        row?.primary_image_url ||
+        media
+          .map((item) => item?.image_url || item?.storage_path)
+          .find(Boolean);
+      if (!imageUrl || !card.isConnected || icon.querySelector("img"))
+        throw Error("Collection preview unavailable.");
+      const image = document.createElement("img");
+      image.src = imageUrl;
+      image.alt = row?.lot_no || "Collection";
+      image.loading = "eager";
+      image.decoding = "async";
+      icon.textContent = "";
+      icon.appendChild(image);
+      card.dataset.rrPreview89 = "ready";
+    } catch (_) {
+      card.dataset.rrPreview89 = "unavailable";
+    }
+  }
+
   function decorateCollectionMessages() {
     ensureCollectionCardStyle();
     document.querySelectorAll("#fsMsgs .fsm").forEach((message) => {
@@ -254,6 +293,7 @@
         message.insertBefore(card, time || null);
       }
       syncCollectionPoster(message, card);
+      hydrateCollectionPreview(card, url);
     });
   }
 

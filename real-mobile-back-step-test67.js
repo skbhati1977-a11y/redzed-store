@@ -38,11 +38,17 @@
       "[role='dialog'][aria-hidden='false']",
     ].join(",");
     const all = [...document.querySelectorAll(selector)];
-    return all.filter(visible).sort((a, b) => {
-      const za = Number.parseInt(getComputedStyle(a).zIndex, 10) || 0;
-      const zb = Number.parseInt(getComputedStyle(b).zIndex, 10) || 0;
-      return za === zb ? all.indexOf(a) - all.indexOf(b) : za - zb;
-    });
+    return all
+      .filter(
+        (element) =>
+          !(isCustomerCollection && element.id === "rrFSChat") &&
+          visible(element),
+      )
+      .sort((a, b) => {
+        const za = Number.parseInt(getComputedStyle(a).zIndex, 10) || 0;
+        const zb = Number.parseInt(getComputedStyle(b).zIndex, 10) || 0;
+        return za === zb ? all.indexOf(a) - all.indexOf(b) : za - zb;
+      });
   }
 
   function closeLayer(layer) {
@@ -191,7 +197,11 @@
       location.replace(directoryUrl());
       return;
     }
-    if (isDirectory || isCustomerCollection) {
+    if (isCustomerCollection) {
+      leaveRoot();
+      return;
+    }
+    if (isDirectory) {
       handleRootBack();
       return;
     }
