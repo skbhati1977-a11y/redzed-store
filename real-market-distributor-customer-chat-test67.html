@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Opening Distributor Customer Chat</title>
+  </head>
+  <body>
+    <p>Opening shared Real Chat…</p>
+    <script>
+      const next = new URL("real-sales-live-chat-v9434.html", location.href);
+      const current = new URL(location.href);
+      next.searchParams.set("rr_partner_mode", "CUSTOMER");
+      next.searchParams.set("from", "distributor");
+      if (current.searchParams.get("customer"))
+        next.searchParams.set("customer", current.searchParams.get("customer"));
+      location.replace(next.href);
+    </script>
+  </body>
+</html>

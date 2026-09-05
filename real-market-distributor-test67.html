@@ -1,23 +1,383 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>REDZED Distributor Workspace · TEST67</title>
-<style>
-:root{color-scheme:dark;--bg:#08111c;--panel:#101e2c;--line:#29445d;--muted:#9eb1c4;--blue:#1682d4;--ok:#29b873}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:#f6f8fb;font-family:system-ui,-apple-system,sans-serif}button,input,select,textarea{font:inherit}button{cursor:pointer}.top{position:sticky;top:0;z-index:30;display:flex;align-items:center;gap:10px;padding:10px 12px;background:#0a1623f2;border-bottom:1px solid var(--line);backdrop-filter:blur(12px)}.brand{flex:1}.brand b{display:block;font-size:18px}.brand small,.muted{color:var(--muted)}.icon{width:44px;height:44px;border:1px solid #45627d;border-radius:12px;background:#14283a;color:#fff;font-size:20px}.shell{max-width:1180px;margin:auto;padding:12px}.view{display:none}.view.on{display:block}.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:13px;margin:10px 0}.toolbar,.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:8px}.toolbar input,.toolbar select,.toolbar button,.form input,.form select,.form textarea,.form button,.order button,.chatbar button{width:100%;min-height:44px;border:1px solid #3a5872;border-radius:10px;background:#0a1622;color:#fff;padding:9px}.primary{background:var(--blue)!important;color:#fff;font-weight:850}.good{background:#176e4d!important}.danger{background:#682830!important;color:#fff}.summary{grid-template-columns:repeat(3,1fr)}.metric{background:#0a1622;border:1px solid var(--line);border-radius:13px;padding:11px}.metric b{display:block;font-size:19px;margin-top:4px}.customer,.order,.simple{border:1px solid var(--line);border-radius:12px;padding:11px;margin:8px 0;background:#0c1824}.customer{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.avatar{width:42px;height:42px;border-radius:50%;display:grid;place-items:center;background:#1f4a70;font-weight:900}.customer .grow{flex:1;min-width:140px}.customer small{display:block;color:var(--muted)}.customerGroup{width:min(180px,100%);min-height:38px;border:1px solid #3a5872;border-radius:9px;background:#0a1622;color:#fff;padding:7px}.mwgrid,.lotmini{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:11px}.product{position:relative;background:#0d1925;border:1px solid var(--line);border-radius:15px;overflow:hidden}.product.sel{outline:3px solid #42a5f5}.product .pick{position:absolute;z-index:3;left:9px;top:9px;width:28px;height:28px}.photo{display:block;width:100%;padding:0;border:0;aspect-ratio:4/5;background:#050a10;color:#fff;overflow:hidden}.photo img{width:100%;height:100%;object-fit:cover}.pbody{padding:9px}.facts{display:grid;grid-template-columns:1fr 1fr;gap:5px;font-size:12px}.facts span{background:#08121c;border-radius:7px;padding:6px}.stock{color:#67e3a5;font-weight:900}.low{color:#ffc15c}.out{color:#ff858b}.prices{font-size:12px;line-height:1.55;margin-top:7px}.prices strong{color:#79e3ac}.drawerback,.modalback{position:fixed;inset:0;z-index:80;background:#000b;display:none}.drawerback.on,.modalback.on{display:flex}.drawer{width:min(330px,88vw);height:100%;background:#0d1b29;border-right:1px solid var(--line);padding:14px}.drawer button{display:block;width:100%;padding:13px;margin:6px 0;text-align:left;border:1px solid var(--line);border-radius:10px;background:#132538;color:#fff;font-weight:750}.sheet{margin:auto;width:min(700px,calc(100% - 18px));max-height:90dvh;overflow:auto;background:#101e2c;border:1px solid #45627d;border-radius:20px;padding:14px}.sheethead{display:flex;align-items:center;gap:8px}.sheethead b{flex:1;font-size:18px}.viewer{width:min(760px,100%);margin:auto}.viewerMain{height:min(72dvh,760px);display:grid;place-items:center;background:#05080c}.viewerMain img{max-width:100%;max-height:100%;object-fit:contain}.viewerThumbs{display:flex;gap:7px;overflow:auto;padding:8px;background:#101e2c}.viewerThumbs button{flex:0 0 74px;height:84px;padding:0;border:2px solid transparent;border-radius:8px;overflow:hidden;background:#000}.viewerThumbs button.on{border-color:#fff}.viewerThumbs img{width:100%;height:100%;object-fit:cover}.sharebox a{color:#75c8ff;word-break:break-all}#view-market,#view-chat{padding-bottom:92px}#sendCollection{position:fixed;left:50%;bottom:calc(10px + env(safe-area-inset-bottom));transform:translateX(-50%);z-index:55;width:min(620px,calc(100% - 28px));min-height:56px;border:1px solid #38a477;border-radius:15px;box-shadow:0 8px 28px #000b;font-weight:900}.hidden{display:none!important}#notice{position:fixed;z-index:120;right:10px;bottom:78px;max-width:420px;display:none;background:#14304a;border:1px solid #4e7da5;border-radius:11px;padding:11px 14px}.filebtn{display:block;text-align:center;padding:12px;border:1px dashed #68839e;border-radius:10px;background:#0a1622}.row{display:flex;gap:8px;align-items:center}.row>*{flex:1}h2{font-size:18px;margin:4px 0 11px}.pill{display:inline-block;border:1px solid #47647f;border-radius:999px;padding:3px 8px;font-size:11px}.money{color:#6ce0a3}.empty{padding:18px;text-align:center;color:var(--muted)}.timeline{display:flex;flex-direction:column;gap:9px}.bubble{max-width:88%;border:1px solid var(--line);border-radius:15px;padding:11px;background:#0b1722}.bubble.customer{align-self:flex-start;border-bottom-left-radius:4px}.bubble.distributor{align-self:flex-end;border-bottom-right-radius:4px;background:#12304a}.bubble.redzed{align-self:flex-start;border-left:4px solid #ef4545}.bubble small{display:block;color:var(--muted);margin-top:4px}.chatbar{position:fixed;left:50%;bottom:max(8px,env(safe-area-inset-bottom));transform:translateX(-50%);z-index:54;width:min(720px,calc(100% - 18px));display:grid;grid-template-columns:repeat(3,1fr);gap:6px;padding:7px;background:#0a1623eF;border:1px solid var(--line);border-radius:15px}.lotmini{grid-template-columns:repeat(2,minmax(0,1fr))}.mini{display:flex;gap:8px;align-items:center;border:1px solid var(--line);border-radius:11px;padding:7px;background:#091521}.mini img{width:64px;height:76px;object-fit:cover;border-radius:8px;background:#050a10}.mini span{min-width:0;font-size:12px}@media(max-width:760px){.mwgrid{grid-template-columns:repeat(2,minmax(0,1fr))}.summary{grid-template-columns:repeat(2,1fr)}}@media(max-width:480px){.shell{padding:8px}.mwgrid{grid-template-columns:1fr 1fr;gap:7px}.facts{grid-template-columns:1fr}.summary{grid-template-columns:1fr 1fr}.brand small{display:none}.card{padding:10px}.photo{aspect-ratio:3/4}.chatbar button{font-size:11px;padding:6px}.lotmini{grid-template-columns:1fr}}
-</style></head><body>
-<header class="top"><button id="menuBtn" class="icon">☰</button><div class="brand"><b>REDZED · DISTRIBUTOR</b><small>Personal Market Workspace · TEST67</small></div><button id="openAdd" class="icon primary" aria-label="Add Contact" title="Add Contact">＋</button></header>
-<main class="shell">
- <section id="view-customers" class="view on"><div class="card"><div><h2>My Customers</h2><div class="muted">Private customer directory</div></div><div class="toolbar"><input id="customerSearch" placeholder="Search customer name / mobile"><label class="filebtn">📇 IMPORT VCF<input id="vcfFile" type="file" accept=".vcf,text/vcard,text/x-vcard" hidden></label></div><div id="vcfStatus" class="muted"></div></div><div id="customers"></div></section>
- <section id="view-chat" class="view"><div class="card"><div class="row"><div><h2 id="chatTitle">Customer Journey</h2><div id="chatSub" class="muted">Private customer chat</div></div><button id="backCustomers">BACK</button></div></div><div id="chatTimeline" class="timeline"></div><div class="chatbar"><button id="chatCollection" class="good">COLLECTION</button><button id="chatRequirement">REQUIREMENT</button><button id="chatRedzed" class="primary">REDZED · PI/CI</button></div></section>
- <section id="view-market" class="view"><div class="card"><h2>Market Window</h2><div class="toolbar"><select id="collectionCustomer"></select><input id="mwSearch" placeholder="Lot / category / product"><button id="loadMw" class="primary">LOAD LOTS</button></div><div class="toolbar" style="margin-top:8px"><label>Universal Margin / Enhancement ₹<input id="defaultMargin" type="number" min="0" value="10"></label><label>Universal Customer Discount ₹<input id="defaultDiscount" type="number" min="0" value="0"></label><button id="sendCollection" class="good">SEND COLLECTION</button></div><div class="muted">Universal rates typing के साथ सभी lots पर अपने-आप लागू होते हैं.</div><div class="muted" id="mwStatus"></div></div><div id="mwCards" class="mwgrid"></div><div id="collectionResult" class="card sharebox hidden"></div></section>
- <section id="view-collections" class="view"><div class="card"><h2>Collections / Updates</h2><div class="muted">Distributor से अपने customers को भेजी गई private collection chains</div></div><div id="collections"></div></section>
- <section id="view-orders" class="view"><div class="grid summary"><div class="metric">Present Requirement Qty<b id="presentQty">0</b></div><div class="metric">Present Amount<b id="presentAmount">₹0</b></div><div class="metric">Present Average<b id="presentAverage">₹0</b></div><div class="metric">All Requirement Qty<b id="allQty">0</b></div><div class="metric">All Amount<b id="allAmount">₹0</b></div><div class="metric">All Average<b id="allAverage">₹0</b></div></div><div class="card"><h2>Customer Requirements</h2><div class="muted">MAKE PI closes the requirement; it can then be sent to REDZED.</div><div id="orders"></div><button id="submitBatch" class="primary">SEND CLOSED REQUIREMENT TO REDZED</button></div></section>
- <section id="view-groups" class="view"><div class="card"><h2>My Groups</h2><div class="toolbar form"><input id="groupName" placeholder="Group name"><input id="groupInfo" placeholder="Group info"><button id="addGroup" class="primary">ADD GROUP</button></div></div><div id="groups"></div></section>
- <section id="view-staff" class="view"><div class="card"><h2>My Staff</h2><div class="toolbar form"><input id="staffName" placeholder="Staff name"><input id="staffMobile" placeholder="Mobile"><select id="staffRole"><option>SALES</option><option>MANAGER</option><option>COLLECTION</option></select><button id="addStaff" class="primary">ADD STAFF</button></div></div><div id="staff"></div></section>
- <section id="view-batches" class="view"><div class="card"><h2>REDZED Team · PI / CI</h2><div class="muted">This upstream lane is visible only to the distributor.</div><div id="batches"></div></div></section>
-</main>
-<div id="drawerBack" class="drawerback"><nav class="drawer"><h2>Distributor Menu</h2><button data-view="customers">👥 Customers</button><button data-view="market">🛍 Market Window</button><button data-view="collections">📤 Collections / Updates</button><button data-view="orders">📋 Requirements / Orders</button><button data-view="groups">🗂 Groups / Group Info</button><button data-view="staff">🧑‍💼 My Staff</button><button data-view="batches">🧾 REDZED Push / PI</button><button id="closeMenu">✕ Close</button></nav></div>
-<div id="addBack" class="modalback"><section class="sheet form"><div class="sheethead"><b>Add Customer</b><button id="closeAdd" class="icon">×</button></div><input id="customerName" placeholder="Customer name"><input id="customerMobile" placeholder="Mobile / WhatsApp"><button id="addCustomer" class="primary">CREATE CUSTOMER</button></section></div>
-<div id="viewerBack" class="modalback"><section class="viewer"><div class="top"><b id="viewerTitle" style="flex:1">Product Photos</b><button id="closeViewer" class="icon">×</button></div><div class="viewerMain"><img id="viewerImage"></div><div id="viewerThumbs" class="viewerThumbs"></div></section></div>
-<div id="collectionBack" class="modalback"><section class="sheet"><div class="sheethead"><b id="collectionTitle">Collection</b><button id="closeCollection" class="icon">×</button></div><div id="collectionLots" class="lotmini"></div></section></div>
-<div id="notice"></div>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="config.js?v=67"></script><script src="real-common.js?v=67"></script><script src="rf-v853-core.js?v=67"></script><script src="real-customer-secure-session-addon-v9592.js?v=67"></script><script src="real-market-distributor-test67.js?v=72"></script>
-</body></html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width,initial-scale=1,viewport-fit=cover"
+    />
+    <title>Distributor Directory · TEST67</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #07111d;
+        --panel: #101f2e;
+        --line: #2d4860;
+        --muted: #9fb0c3;
+        --blue: #1687d8;
+        --green: #188052;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+        min-height: 100%;
+        background: var(--bg);
+        color: #f7f9fc;
+        font-family:
+          system-ui,
+          -apple-system,
+          sans-serif;
+      }
+      button,
+      input,
+      select {
+        font: inherit;
+      }
+      .top {
+        position: sticky;
+        top: 0;
+        z-index: 40;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 12px;
+        background: #091725f2;
+        border-bottom: 1px solid var(--line);
+      }
+      .brand {
+        flex: 1;
+      }
+      .brand b {
+        display: block;
+        font-size: 18px;
+      }
+      .brand small,
+      .muted {
+        color: var(--muted);
+      }
+      .icon {
+        width: 46px;
+        height: 46px;
+        border: 1px solid #45647e;
+        border-radius: 13px;
+        background: #13283a;
+        color: #fff;
+        font-size: 21px;
+      }
+      .blue {
+        background: var(--blue) !important;
+      }
+      .wrap {
+        max-width: 760px;
+        margin: auto;
+        padding: 10px;
+      }
+      .card,
+      .customer {
+        border: 1px solid var(--line);
+        border-radius: 15px;
+        background: var(--panel);
+        padding: 11px;
+        margin: 9px 0;
+      }
+      .directoryTools {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 8px;
+      }
+      .filebtn,
+      input,
+      select,
+      .sheet button {
+        width: 100%;
+        min-height: 47px;
+        border: 1px solid #45627d;
+        border-radius: 10px;
+        background: #081520;
+        color: #fff;
+        padding: 10px;
+      }
+      .filebtn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-style: dashed;
+        font-weight: 850;
+      }
+      .customer {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        cursor: pointer;
+      }
+      .avatar {
+        width: 43px;
+        height: 43px;
+        flex: 0 0 43px;
+        border-radius: 50%;
+        display: grid;
+        place-items: center;
+        background: #1b547f;
+        font-weight: 900;
+      }
+      .grow {
+        flex: 1;
+        min-width: 0;
+      }
+      .grow b,
+      .grow small {
+        display: block;
+      }
+      .grow small {
+        color: var(--muted);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .importRow,
+      .tabs {
+        display: grid;
+        grid-template-columns: 120px 1fr;
+        gap: 8px;
+      }
+      .tabs {
+        grid-template-columns: 1fr 1fr;
+      }
+      .tabs button,
+      .statusBtn {
+        min-height: 42px;
+        border: 1px solid #45627d;
+        border-radius: 10px;
+        background: #081520;
+        color: #fff;
+        font-weight: 800;
+      }
+      .tabs button.on {
+        background: #fff;
+        color: #07111d;
+      }
+      .statusBtn {
+        width: auto !important;
+        min-width: 82px;
+        padding: 7px 9px !important;
+        color: #79e7ad !important;
+      }
+      .statusBtn.off {
+        color: #ff9ba1 !important;
+      }
+      .kindBadge {
+        color: #72c7ff;
+        font-size: 11px;
+        font-weight: 900;
+      }
+      .drawerBack,
+      .modalBack {
+        position: fixed;
+        inset: 0;
+        z-index: 80;
+        background: #000c;
+        display: none;
+      }
+      .drawerBack.on,
+      .modalBack.on {
+        display: flex;
+      }
+      .drawer {
+        width: min(330px, 88vw);
+        height: 100%;
+        background: #0d1b29;
+        padding: 13px;
+        border-right: 1px solid var(--line);
+      }
+      .drawer button {
+        display: block;
+        width: 100%;
+        min-height: 48px;
+        margin: 6px 0;
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        background: #13283a;
+        color: #fff;
+        text-align: left;
+        padding: 10px;
+        font-weight: 800;
+      }
+      .sheet {
+        margin: auto;
+        width: min(650px, calc(100% - 18px));
+        max-height: 92dvh;
+        overflow: auto;
+        background: #0d1b29;
+        border: 1px solid #46647e;
+        border-radius: 18px;
+        padding: 13px;
+      }
+      .sheetHead {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 10px;
+      }
+      .sheetHead b {
+        flex: 1;
+        font-size: 18px;
+      }
+      .form {
+        display: grid;
+        gap: 8px;
+      }
+      .listItem {
+        padding: 9px;
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        margin: 7px 0;
+      }
+      .switchRow {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+      }
+      .switchRow input {
+        width: 24px;
+        min-height: 24px;
+      }
+      .notice {
+        position: fixed;
+        left: 50%;
+        bottom: 15px;
+        transform: translateX(-50%);
+        z-index: 120;
+        display: none;
+        max-width: calc(100% - 24px);
+        background: #12314a;
+        border: 1px solid #5484a9;
+        border-radius: 10px;
+        padding: 10px 14px;
+      }
+      .empty {
+        text-align: center;
+        color: var(--muted);
+        padding: 24px;
+      }
+      .hidden {
+        display: none !important;
+      }
+      .checkRow {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        min-height: 47px;
+        padding: 8px 4px;
+      }
+      .checkRow input {
+        width: 24px;
+        min-height: 24px;
+      }
+      @media (max-width: 520px) {
+        .importRow {
+          grid-template-columns: 105px 1fr;
+        }
+        .brand small {
+          display: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header class="top">
+      <button id="menuBtn" class="icon">☰</button>
+      <div class="brand">
+        <b id="brandTitle">DISTRIBUTOR</b
+        ><small>Customer Directory · TEST67</small>
+      </div>
+      <button id="addBtn" class="icon blue" aria-label="Add contact">
+        ＋
+      </button>
+    </header>
+    <main class="wrap">
+      <section class="card">
+        <div class="directoryTools">
+          <div class="importRow">
+            <select id="vcfKind" aria-label="Import contact type">
+              <option value="CUSTOMER">CUSTOMER</option>
+              <option value="STAFF">STAFF</option>
+            </select>
+            <label class="filebtn"
+              >📇 IMPORT VCF<input
+                id="vcfFile"
+                type="file"
+                accept=".vcf,text/vcard,text/x-vcard"
+                hidden /></label>
+          </div>
+          <input
+            id="customerSearch"
+            placeholder="Search name / mobile"
+          />
+          <div class="tabs">
+            <button id="customersTab" class="on" type="button">CUSTOMERS</button>
+            <button id="staffTab" type="button">STAFF</button>
+          </div>
+        </div>
+        <div id="vcfStatus" class="muted"></div>
+      </section>
+      <section id="customers"></section>
+    </main>
+    <div id="drawerBack" class="drawerBack">
+      <nav class="drawer">
+        <h2>Distributor Menu</h2>
+        <button id="redzedChatBtn">💬 REDZED Chat</button
+        ><button id="groupsBtn">🗂 Groups</button
+        ><button id="staffBtn">🧑‍💼 Staff</button
+        ><button data-close="drawerBack">✕ Close</button>
+      </nav>
+    </div>
+    <div id="addBack" class="modalBack">
+      <section class="sheet">
+        <div class="sheetHead">
+          <b id="contactSheetTitle">Add Contact</b
+          ><button class="icon" data-close="addBack">✕</button>
+        </div>
+        <div class="form">
+          <select id="contactKind">
+            <option value="CUSTOMER">CUSTOMER</option>
+            <option value="STAFF">STAFF</option>
+          </select>
+          <input id="contactName" placeholder="Contact name" /><input
+            id="contactMobile"
+            placeholder="Mobile / WhatsApp"
+          />
+          <select id="contactRole">
+            <option>SALES</option>
+            <option>MANAGER</option>
+            <option>COLLECTION</option>
+          </select>
+          <label class="checkRow"><input id="contactActive" type="checkbox" checked> Active</label>
+          <button id="saveContact" class="blue">SAVE CONTACT</button>
+        </div>
+      </section>
+    </div>
+    <div id="groupsBack" class="modalBack">
+      <section class="sheet">
+        <div class="sheetHead">
+          <b>Groups</b><button class="icon" data-close="groupsBack">✕</button>
+        </div>
+        <p class="muted">Every customer has one permanent group. Active staff are enrolled automatically.</p>
+        <div id="groups"></div>
+      </section>
+    </div>
+    <div id="notice" class="notice"></div>
+    <script>
+      window.__RR_SLICE_MENU_LOADER_9309__ = true;
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="config.js?v=67"></script>
+    <script src="real-common.js?v=67"></script>
+    <script src="rf-v853-core.js?v=67"></script>
+    <script src="real-customer-secure-session-addon-v9592.js?v=67"></script>
+    <script src="real-market-distributor-directory-test67.js?v=83"></script>
+    <script src="real-mobile-back-step-test67.js?v=75"></script>
+  </body>
+</html>

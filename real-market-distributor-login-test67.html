@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="hi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Distributor Login · TEST67</title>
+    <style>
+      :root {
+        color-scheme: dark;
+      }
+      body {
+        margin: 0;
+        min-height: 100dvh;
+        display: grid;
+        place-items: center;
+        padding: 18px;
+        box-sizing: border-box;
+        background: #07111d;
+        color: #fff;
+        font-family: system-ui, sans-serif;
+      }
+      main {
+        width: min(430px, 100%);
+        padding: 22px;
+        border: 1px solid #36516b;
+        border-radius: 20px;
+        background: #101f2e;
+      }
+      small {
+        display: block;
+        color: #9fb0c3;
+        line-height: 1.5;
+      }
+      #status {
+        margin-top: 14px;
+        color: #8fe0b7;
+        font-weight: 800;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Distributor Login</h1>
+      <small
+        >इसी phone पर distributor name और mobile verify करें। Verification के
+        बाद आपका private TEST67 workspace खुलेगा।</small
+      >
+      <div id="status">Secure workspace खोल रहे हैं…</div>
+    </main>
+    <script>
+      window.__RR_SLICE_MENU_LOADER_9309__ = true;
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="config.js?v=67"></script>
+    <script src="real-common.js?v=67"></script>
+    <script src="rf-v853-core.js?v=67"></script>
+    <script src="real-customer-secure-session-addon-v9592.js?v=67"></script>
+    <script>
+      (() => {
+        const status = document.getElementById("status");
+        const auth = () => {
+          const saved = JSON.parse(
+            localStorage.getItem("rr_customer_secure_session_v9592") || "{}",
+          );
+          return {
+            p_session_token: saved.session_token || "",
+            p_device_id: RR_CUSTOMER_SECURE_SESSION_V9592.device(),
+          };
+        };
+        async function openWorkspace() {
+          try {
+            const workspace = await RF853.rpc(
+              "rr_market_partner_workspace_v67",
+              auth(),
+            );
+            if (!workspace?.owner_name)
+              throw Error("Distributor workspace उपलब्ध नहीं है।");
+            status.textContent = "Verified ✓";
+            location.replace("real-market-distributor-test67.html");
+          } catch (error) {
+            status.style.color = "#ff9da5";
+            status.textContent =
+              error.message ||
+              "यह invite distributor workspace से linked नहीं है।";
+          }
+        }
+        document.addEventListener(
+          "rr:customer-secure-session-ready",
+          openWorkspace,
+          { once: true },
+        );
+        document.addEventListener(
+          "rr:customer-secure-session-error",
+          (event) => {
+            status.style.color = "#ff9da5";
+            status.textContent =
+              event.detail?.message || "Distributor verification failed.";
+          },
+          { once: true },
+        );
+      })();
+    </script>
+  </body>
+</html>
