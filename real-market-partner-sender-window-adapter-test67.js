@@ -153,14 +153,23 @@
       const privateBody = String(
         args.p_body ||
           `${latestCollection.collection_display_no || "COLLECTION"} · Open collection`,
-      ).replace(/REDZED(?:\s+COLLECTION)?/gi, `${owner} DISTRIBUTOR COLLECTION`);
+      ).replace(/^REDZED(?:\s+COLLECTION)?/i, `${owner} DISTRIBUTOR COLLECTION`);
+      const attachment =
+        /^rr_chat_staff_upload_/i.test(name) && args.p_base64
+          ? {
+              name: args.p_file_name || "collection-poster.jpg",
+              type: args.p_mime_type || "image/jpeg",
+              data_url: `data:${args.p_mime_type || "image/jpeg"};base64,${args.p_base64}`,
+            }
+          : null;
       const result = await rawRpc(
-        "rr_market_partner_collection_chat_upsert_v82",
+        "rr_market_partner_collection_chat_upsert_v86",
         {
           ...auth(),
           p_partner_customer_id: customerId,
           p_collection_id: latestCollection.collection_id,
           p_body: privateBody,
+          p_attachment: attachment,
         },
       );
       sessionStorage.setItem(

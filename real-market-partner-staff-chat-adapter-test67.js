@@ -789,11 +789,15 @@
   function decorateMessages() {
     document.querySelectorAll("#msgs .msg[data-msg-id]").forEach((message) => {
       if (!message.querySelector(".rrMarketLinkCard9505")) {
-        const match = (message.textContent || "").match(
-          /https:\/\/[^\s<]+\/s\.html\?[^\s<]+/i,
-        );
-        if (match) {
-          const url = match[0].replace(/[),.;]+$/, "");
+        const text = message.textContent || "";
+        const absolute = text.match(/https:\/\/[^\s<]+\/s\.html\?[^\s<]+/i);
+        const sharePath = text.match(/\/s\.html\?[^\s<]+/i);
+        if (absolute || sharePath) {
+          const rawUrl = (absolute?.[0] || sharePath?.[0] || "").replace(
+            /[),.;]+$/,
+            "",
+          );
+          const url = absolute ? rawUrl : new URL(rawUrl, location.href).href;
           const card = document.createElement("button");
           card.type = "button";
           card.className = "rrMarketLinkCard9505";
