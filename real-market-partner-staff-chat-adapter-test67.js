@@ -219,7 +219,10 @@
       ];
     }
 
-    if (name === "rr_chat_staff_messages_v9434") {
+    if (
+      name === "rr_chat_staff_messages_v9434" ||
+      name === "rr_chat_staff_messages_v9479"
+    ) {
       const rows = await rawRpc("rr_market_partner_chat_messages_v67", {
         ...base,
         p_lane: lane(args.p_channel),
@@ -228,7 +231,10 @@
       return normalizeMessages(rows);
     }
 
-    if (name === "rr_chat_send_staff_v9433") {
+    if (
+      name === "rr_chat_send_staff_v9433" ||
+      name === "rr_chat_send_staff_v9479"
+    ) {
       return rawRpc("rr_market_partner_chat_send_v67", {
         ...base,
         p_lane: lane(args.p_channel),
@@ -238,7 +244,10 @@
       });
     }
 
-    if (name === "rr_chat_staff_upload_v9434") {
+    if (
+      name === "rr_chat_staff_upload_v9434" ||
+      name === "rr_chat_staff_upload_v9479"
+    ) {
       return rawRpc("rr_market_partner_chat_send_v67", {
         ...base,
         p_lane: lane(args.p_channel),
