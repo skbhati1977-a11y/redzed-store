@@ -72,7 +72,8 @@
     return (
       {
         DRAFT: "CUSTOMER REQUIREMENT OPEN",
-        READY: "REQUIREMENT CLOSED",
+        READY: "ACTION PENDING",
+        CONSOLIDATION_QUEUED: "ADDED TO CONSOLIDATED LIST",
         BATCHED: "SENT TO REDZED",
         PI_PROPOSED: "REDZED PI RECEIVED",
         CONFIRMED: "PI CONFIRMED",
@@ -703,7 +704,8 @@
   function orderCard(o, docs = false) {
     const canPi = ["DRAFT", "READY"].includes(o.status),
       ready = o.status === "READY" && !o.redzed_pushed_at;
-    return `<article class="card"><div class="row"><b>${esc(o.requirement_display_no || o.order_ref)}</b><span>${esc(statusLabel(o))}</span></div><div class="muted">Linked ${esc(o.collection_display_no || "collection")}</div>${(o.lines || []).map((l) => `<div class="line">${l.image_url ? `<img src="${esc(l.image_url)}">` : ""}<b>${esc(l.lot_no)}</b> · ${esc(l.category || "-")} · ${esc(l.size_text || "-")}<br>Required <b>${Number(l.requested_qty || 0)}</b>${canPi && !docs ? `<input data-dpi="${l.id}" type="number" min="0" value="${Number(l.distributor_pi_qty ?? l.requested_qty ?? 0)}">` : ""}</div>`).join("")}${canPi && !docs ? `<button class="good" data-make-pi="${o.id}">${o.distributor_pi_ref ? "UPDATE & RESEND PI" : "MAKE PI & SEND TO CUSTOMER"}</button>` : ""}${ready && !docs ? `<button class="primary" data-send-redzed="${o.id}">SEND CLOSED REQUIREMENT TO REDZED</button>` : ""}${o.redzed_pushed_at ? '<div class="muted">Sent to REDZED ✓</div>' : ""}${o.status === "CI_FINAL" && !o.customer_ci_visible ? `<button class="good" data-push-ci="${o.id}">PUSH CI TO CUSTOMER</button>` : ""}</article>`;
+    const queued = o.status === "CONSOLIDATION_QUEUED" && !o.redzed_pushed_at;
+    return `<article class="card"><div class="row"><b>${esc(o.requirement_display_no || o.order_ref)}</b><span>${esc(statusLabel(o))}</span></div><div class="muted">Linked ${esc(o.collection_display_no || "collection")}</div>${(o.lines || []).map((l) => `<div class="line">${l.image_url ? `<img src="${esc(l.image_url)}">` : ""}<b>${esc(l.lot_no)}</b> · ${esc(l.category || "-")} · ${esc(l.size_text || "-")}<br>Required <b>${Number(l.requested_qty || 0)}</b>${canPi && !docs ? `<input data-dpi="${l.id}" type="number" min="0" value="${Number(l.distributor_pi_qty ?? l.requested_qty ?? 0)}">` : ""}</div>`).join("")}${canPi && !docs ? `<button class="good" data-make-pi="${o.id}">${o.distributor_pi_ref ? "UPDATE & RESEND PI" : "MAKE PI & SEND TO CUSTOMER"}</button>` : ""}${ready && !docs ? `<button class="primary" data-send-redzed="${o.id}">SEND TO REDZED NOW</button><button data-add-consolidated="${o.id}">ADD TO CONSOLIDATED LIST</button>` : ""}${queued && !docs ? `<button data-remove-consolidated="${o.id}">REMOVE FROM CONSOLIDATED LIST</button>` : ""}${o.redzed_pushed_at ? '<div class="muted">Sent to REDZED ✓</div>' : ""}${o.status === "CI_FINAL" && !o.customer_ci_visible ? `<button class="good" data-push-ci="${o.id}">PUSH CI TO CUSTOMER</button>` : ""}</article>`;
   }
   function paintRequirements() {
     const rows = customerOrders();
@@ -716,8 +718,14 @@
     $$("[data-send-redzed]").forEach(
       (b) => (b.onclick = () => sendRedzed([b.dataset.sendRedzed])),
     );
-    $$("[data-push-ci]").forEach(
+    $("[data-push-ci]").forEach(
       (b) => (b.onclick = () => pushCi(b.dataset.pushCi)),
+    );
+    $("[data-add-consolidated]").forEach(
+      (b) => (b.onclick = () => setConsolidation(b.dataset.addConsolidated, true)),
+    );
+    $("[data-remove-consolidated]").forEach(
+      (b) => (b.onclick = () => setConsolidation(b.dataset.removeConsolidated, false)),
     );
   }
   function paintDocuments() {
@@ -752,6 +760,17 @@
       note(e.message, true);
     }
   }
+  async function setConsolidation(id, add) {
+    try {
+      await rpc("rr_market_partner_consolidation_queue_v67", {
+        ...auth(), p_order_id: id, p_add: Boolean(add),
+      });
+      note(add ? "Requirement consolidated list में add हुई ✓" : "Requirement consolidated list से हटाई ✓");
+      await load();
+    } catch (e) {
+      note(e.message, true);
+    }
+  }
   async function sendRedzed(ids) {
     try {
       const d = await rpc("rr_market_partner_batch_submit_v67", {
@@ -781,7 +800,7 @@
   }
   function paintUpstreamRequirements() {
     const rows = (state.orders || []).filter(
-      (o) => o.status === "READY" && !o.redzed_pushed_at,
+      (o) => o.status === "CONSOLIDATION_QUEUED" && !o.redzed_pushed_at,
     );
     $("#upstreamRequirements").innerHTML = rows.length
       ? rows
