@@ -625,14 +625,15 @@
           (order) => order.status === "READY" && !order.redzed_pushed_at,
         );
         openSheet(
-          "CLOSED REQUIREMENTS TO REDZED",
+          "CONSOLIDATE REQUIREMENT",
           ready.length
             ? ready
                 .map(
                   (order) =>
-                    `<article class="rrPartnerOrder82"><b>${esc(order.requirement_display_no || order.order_ref)}</b><small>Customer identity private · ${esc(statusText(order))}</small>${lineRows(order)}<button data-send-redzed="${esc(order.id)}">SEND REQUIREMENT TO REDZED</button></article>`,
+                    `<article class="rrPartnerOrder82"><label><input type="checkbox" data-consolidate-order value="${esc(order.id)}"> <b>${esc(order.requirement_display_no || order.order_ref)}</b></label><small>Customer identity private · ${esc(statusText(order))}</small>${lineRows(order)}</article>`,
                 )
-                .join("")
+                .join("") +
+              '<button id="rrSendConsolidated82" type="button">SEND SELECTED TO REDZED</button>'
             : '<div class="rrPartnerEmpty82">No customer-closed requirement waiting for REDZED.</div>',
         );
       } else {
@@ -657,6 +658,15 @@
         (button) =>
           (button.onclick = () => sendRedzed([button.dataset.sendRedzed])),
       );
+      const consolidate = document.getElementById("rrSendConsolidated82");
+      if (consolidate)
+        consolidate.onclick = () => {
+          const ids = [...document.querySelectorAll("[data-consolidate-order]:checked")]
+            .map((input) => input.value)
+            .filter(Boolean);
+          if (!ids.length) return flash("कम से कम एक requirement select करें.", true);
+          sendRedzed(ids);
+        };
     } catch (error) {
       flash(error.message, true);
     }
