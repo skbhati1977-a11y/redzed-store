@@ -80,6 +80,29 @@
                 p_token: token,
               })
             : "REDZED_CUSTOMER";
+          // A customer session belongs to one share link only.  The legacy
+          // direct flow stored it globally, which allowed a distributor link
+          // (or another customer link) to be reused after browser Back.
+          if (relation === "REDZED_CUSTOMER" && token) {
+            const bindingKey = "rr_customer_share_binding_test67";
+            const binding = token.slice(-24);
+            const previousBinding = localStorage.getItem(bindingKey);
+            let savedRelation = "";
+            try {
+              savedRelation = JSON.parse(
+                localStorage.getItem("rr_customer_secure_session_v9592") ||
+                  "null",
+              )?.relation;
+            } catch (_) {}
+            if (
+              previousBinding !== binding ||
+              savedRelation === "DISTRIBUTOR_CUSTOMER"
+            ) {
+              localStorage.removeItem("rr_customer_secure_session_v9592");
+              localStorage.removeItem("rr_market_customer_identity_v9423");
+            }
+            localStorage.setItem(bindingKey, binding);
+          }
           if (relation === "DISTRIBUTOR_CUSTOMER") {
             await loadScript(
               "real-market-partner-shared-chat-adapter-test67.js?v=94",
@@ -89,6 +112,16 @@
             );
           }
           for (const src of baseScripts) await loadScript(src);
+
+          // Keep the original RedZed ↔ Customer collection controls exactly
+          // once.  A late wrapper previously added a second CLOSE button.
+          const removeDuplicateClose = () =>
+            document.getElementById("fcCloseRequirementV33")?.remove();
+          removeDuplicateClose();
+          new MutationObserver(removeDuplicateClose).observe(
+            document.documentElement,
+            { childList: true, subtree: true },
+          );
           await loadScript("real-mobile-back-step-test67.js?v=91");
 
           const openApprovedChat = () => {
