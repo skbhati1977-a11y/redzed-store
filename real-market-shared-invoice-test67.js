@@ -72,8 +72,19 @@
   }
   function pdfName(){return `${doc?.kind||"PI"}-${doc?.ref||"DRAFT"}.pdf`.replace(/[^a-z0-9_.-]+/gi,"-");}
   async function pdfAttachment(){const pdf=await makePdf(),blob=pdf.output("blob"),data_url=await new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve(r.result);r.onerror=reject;r.readAsDataURL(blob);});return {pdf,blob,data_url,name:pdfName(),type:"application/pdf"};}
+  async function jpegAttachment(){
+    if(!window.pdfjsLib)throw Error("PI JPEG preview engine unavailable.");
+    const pdf=await makePdf(),data=pdf.output("arraybuffer");
+    pdfjsLib.GlobalWorkerOptions.workerSrc="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+    const source=await pdfjsLib.getDocument({data:new Uint8Array(data)}).promise,page=await source.getPage(1),base=page.getViewport({scale:1}),scale=Math.max(1,1200/base.width),viewport=page.getViewport({scale}),canvas=document.createElement("canvas");
+    canvas.width=Math.floor(viewport.width);canvas.height=Math.floor(viewport.height);
+    await page.render({canvasContext:canvas.getContext("2d",{alpha:false}),viewport}).promise;
+    const blob=await new Promise((resolve,reject)=>canvas.toBlob((value)=>value?resolve(value):reject(Error("PI JPEG preview create failed.")),"image/jpeg",.9));
+    const data_url=await new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(reader.result);reader.onerror=reject;reader.readAsDataURL(blob);});
+    return {blob,data_url,name:pdfName().replace(/\.pdf$/i,"-preview.jpg"),type:"image/jpeg"};
+  }
   async function downloadPdf(){(await makePdf()).save(pdfName());message("A4 PDF download शुरू हुई ✓","ok");}
-  async function sendRealChat(){requireOnline();const a=auth(),attachment=await pdfAttachment();await rpc("rr_market_partner_chat_send_v67",{...a,p_lane:"CUSTOMER_GROUP",p_partner_customer_id:order.customer_id||order.partner_customer_id,p_message:`[DPI:${order.id}] ${doc.ref} · ${order.requirement_display_no||order.order_ref||"REQUIREMENT"} · ${doc.kind||"PI"} SENT TO CUSTOMER`,p_attachment:{name:attachment.name,type:attachment.type,data_url:attachment.data_url}});message(`${doc.kind||"PI"} ${doc.ref} PDF Real Chat में भेजी ✓`,"ok");}
+  async function sendRealChat(){requireOnline();const a=auth(),attachment=await jpegAttachment(),caption=`PI No. ${doc.ref} · ${order.requirement_display_no||order.order_ref||"REQUIREMENT"}`;await rpc("rr_market_partner_chat_send_v67",{...a,p_lane:"CUSTOMER_GROUP",p_partner_customer_id:order.customer_id||order.partner_customer_id,p_message:`[DPI:${order.id}] ${doc.ref} · ${caption}`,p_attachment:{name:attachment.name,type:attachment.type,data_url:attachment.data_url}});message(`${doc.kind||"PI"} ${doc.ref} JPEG preview caption के साथ Real Chat में भेजी ✓`,"ok");}
 
   async function savePi() {
     try {
