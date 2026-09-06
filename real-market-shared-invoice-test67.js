@@ -34,7 +34,8 @@
     const a = auth(), [w, p, charges] = await Promise.all([rpc("rr_market_partner_workspace_v67", a), rpc("rr_market_partner_customer_pi_state_v67", a),rpc("rr_market_partner_customer_pi_charges_get_v67",{...a,p_order_id:orderId})]);
     order = (w.orders || []).find((x) => String(x.id) === String(orderId)); if (!order) throw Error("Requirement unavailable.");
     const ps = (Array.isArray(p) ? p : []).find((x) => String(x.order_id) === String(orderId)); if (ps) { const m = new Map((ps.lines || []).map((x) => [String(x.id), x])); order.lines = (order.lines || []).map((x) => ({ ...x, ...(m.get(String(x.id)) || {}) })); }
-    lines = order.lines || []; doc = order.distributor_pi_ref ? { ref: order.distributor_pi_ref, status: order.distributor_pi_status || "WAITING", pushed_at: order.distributor_pi_pushed_at, kind: order.customer_ci_visible && order.ci_ref ? "CI" : "PI",charges } : { kind: "PI",charges }; if (doc.kind === "CI") doc.ref = order.ci_ref;
+    const piRef=ps?.distributor_pi_ref||order.distributor_pi_ref, piStatus=ps?.distributor_pi_status||order.distributor_pi_status, piPushed=ps?.distributor_pi_pushed_at||order.distributor_pi_pushed_at, ciRef=ps?.customer_ci_ref||order.ci_ref, ciVisible=ps?.customer_ci_visible??order.customer_ci_visible;
+    lines = order.lines || []; doc = piRef ? { ref: piRef, status: piStatus || "WAITING", pushed_at: piPushed, kind: ciVisible && ciRef ? "CI" : "PI",charges } : { kind: "PI",charges }; if (doc.kind === "CI") doc.ref = ciRef;
   }
   async function loadRedzed() {
     if (!batchId) throw Error("Batch reference missing."); const detail = await rpc("rr_market_staff_batch_detail_v67", { p_batch_id: batchId });
