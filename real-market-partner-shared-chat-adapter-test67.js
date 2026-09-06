@@ -187,6 +187,8 @@
       #fsMsgs .rrPartnerCustomerCollectionCopy89 small{display:block;margin-top:5px;color:#aeb9c7;font-size:11px;line-height:1.2}
       #fsMsgs .rrPartnerCustomerCollectionOpen89{color:#8fc4ff;font-size:12px;font-weight:900;white-space:nowrap}
       #fsMsgs .rrPartnerCustomerCollectionMessage89>.fsattbtn,#fsMsgs .rrPartnerCustomerCollectionMessage89>.fsattimg{display:none!important}
+      #fsMsgs .rrPartnerCustomerPiCard89{display:grid;width:100%;grid-template-columns:58px minmax(0,1fr) auto;gap:10px;align-items:center;box-sizing:border-box;margin:7px 0 2px;padding:10px;border:1px solid #536b88;border-radius:13px;background:#101923;color:#fff;text-align:left}
+      #fsMsgs .rrPartnerCustomerPiCard89 b,#fsMsgs .rrPartnerCustomerPiCard89 small{display:block}.rrPartnerCustomerPiCard89 small{margin-top:5px;color:#aeb9c7}.rrPartnerCustomerPiCard89 strong{color:#8fc4ff}
     `;
     document.head.appendChild(style);
   }
@@ -237,6 +239,12 @@
         );
       }
       const share = await collectionPreviewCache.get(shareToken);
+      const displayNo = String(share?.collection_display_no || "COLLECTION");
+      const match = displayNo.match(/^COLLECTION\s+(\d+)(?:\s*·\s*UPDATE\s+(\d+))?/i);
+      const title = card.querySelector(".rrPartnerCustomerCollectionCopy89 b");
+      const detail = card.querySelector(".rrPartnerCustomerCollectionCopy89 small");
+      setText(title, displayNo);
+      if (match) setText(detail, `COLLECTION NO. ${match[1]} · UPDATE NO. ${match[2] || 0}`);
       const row = Array.isArray(share?.rows) ? share.rows[0] : null;
       const media = Array.isArray(row?.media) ? row.media : [];
       const imageUrl =
@@ -271,7 +279,7 @@
         card.type = "button";
         card.className = "rrPartnerCustomerCollectionCard89";
         card.innerHTML =
-          '<span class="rrPartnerCustomerCollectionIcon89">🛍️</span><span class="rrPartnerCustomerCollectionCopy89"><b>COLLECTION / UPDATE</b><small>Tap to view designs, photos and requirement</small></span><span class="rrPartnerCustomerCollectionOpen89">OPEN ›</span>';
+          '<span class="rrPartnerCustomerCollectionIcon89">🛍️</span><span class="rrPartnerCustomerCollectionCopy89"><b>COLLECTION</b><small>Loading collection number…</small></span><span class="rrPartnerCustomerCollectionOpen89">OPEN ›</span>';
         card.addEventListener("click", () => {
           const current = new URL(url, location.href);
           const currentToken = query.get("t") || query.get("c") || "";
@@ -294,6 +302,34 @@
       }
       syncCollectionPoster(message, card);
       hydrateCollectionPreview(card, url);
+    });
+  }
+
+  function openPiArtifact() {
+    document.querySelectorAll("[data-artifact]").forEach((button) =>
+      button.classList.toggle("on", button.dataset.artifact === "pi"),
+    );
+    document.querySelectorAll(".artifact").forEach((node) =>
+      node.classList.toggle("on", node.id === "artifact-pi"),
+    );
+    document.getElementById("artifact-pi")?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  }
+
+  function decoratePiMessages() {
+    ensureCollectionCardStyle();
+    document.querySelectorAll("#fsMsgs .fsm").forEach((message) => {
+      if (message.querySelector(".rrPartnerCustomerPiCard89")) return;
+      const body = message.querySelector(".fsbody");
+      const match = (body?.textContent || "").match(/\[DPI:([0-9a-f-]{36})\]\s*([^·\n]+)?/i);
+      if (!match) return;
+      if (body) body.style.display = "none";
+      const card = document.createElement("button");
+      card.type = "button";
+      card.className = "rrPartnerCustomerPiCard89";
+      card.innerHTML = '<span>📄</span><span><b>PI</b><small>Distributor PI received · tap to review and respond</small></span><strong>OPEN ›</strong>';
+      setText(card.querySelector("b"), String(match[2] || "PI").trim());
+      card.onclick = openPiArtifact;
+      message.insertBefore(card, message.querySelector("time") || null);
     });
   }
 
@@ -324,6 +360,7 @@
     setText(info, "GROUP INFO");
     setText(collectionHeader, `${owner} COLLECTION`);
     decorateCollectionMessages();
+    decoratePiMessages();
   }
 
   window.RR_CHAT_RELATION_ADAPTER_V67 = {

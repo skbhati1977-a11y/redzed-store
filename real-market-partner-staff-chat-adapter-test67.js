@@ -443,6 +443,16 @@
     );
   }
 
+  function numberedLabel(displayNo, fallback) {
+    const text = String(displayNo || fallback || "").trim();
+    const match = text.match(/^(COLLECTION|REQUIREMENT)\s+(\d+)(?:\s*·\s*UPDATE\s+(\d+))?/i);
+    if (!match) return { title: text || fallback, detail: "" };
+    return {
+      title: `${match[1].toUpperCase()} ${match[2]}${match[3] ? ` · UPDATE ${match[3]}` : ""}`,
+      detail: `${match[1].toUpperCase()} NO. ${match[2]} · UPDATE NO. ${match[3] || 0}`,
+    };
+  }
+
   function lineRows(order, editable = false, confirm = false) {
     return (order.lines || [])
       .map((line) => {
@@ -485,6 +495,18 @@
         p_lines: lines,
         p_note: null,
       });
+      try {
+        await rawRpc("rr_market_partner_chat_send_v67", {
+          ...authArgs(),
+          p_lane: "CUSTOMER_GROUP",
+          p_partner_customer_id: customerId,
+          p_message: `[DPI:${orderId}] ${result.distributor_pi_ref || "PI"} · ${order.requirement_display_no || order.order_ref || "REQUIREMENT"} · SENT TO CUSTOMER`,
+          p_attachment: null,
+        });
+      } catch (error) {
+        // PI is committed. A failed chat notice must never fire the PI twice.
+        console.warn("Customer PI chat notification failed", error);
+      }
       workspaceAt = 0;
       closeSheet();
       $("rrReqBack9508")?.classList.remove("on");
@@ -677,6 +699,27 @@
     }
   }
 
+  async function openSentRedzedRequirements() {
+    try {
+      const data = await state(true);
+      const rows = (data.orders || []).filter(
+        (order) => order.redzed_pushed_at || ["BATCHED", "PI_PROPOSED", "CONFIRMED", "PARTIAL_CONFIRMED", "CI_FINAL", "CLOSED"].includes(order.status),
+      );
+      openSheet(
+        "REQUIREMENTS SENT TO REDZED",
+        rows.length
+          ? rows.map((order) => {
+              const req = numberedLabel(order.requirement_display_no || order.order_ref, "REQUIREMENT");
+              const col = numberedLabel(order.collection_display_no, "COLLECTION");
+              return `<article class="rrPartnerOrder82"><b>${esc(req.title)}</b><small>${esc(req.detail)} · ${esc(col.detail)} · ${esc(statusText(order))}</small>${lineRows(order)}</article>`;
+            }).join("")
+          : '<div class="rrPartnerEmpty82">No requirement has been sent to REDZED yet.</div>',
+      );
+    } catch (error) {
+      flash(error.message, true);
+    }
+  }
+
   function openCollection(addMoreRequirementId = "") {
     if (mode !== "CUSTOMER") return openRequirements();
     rememberReturn();
@@ -737,8 +780,8 @@
     dock.className = "rrPartnerDock82";
     dock.innerHTML =
       mode === "CUSTOMER"
-        ? '<button id="rrPartnerCollection82">COLLECTION</button><button id="rrPartnerRequirement82">REQUIREMENT</button><button id="rrPartnerDocuments82">PI / CI</button>'
-        : '<button id="rrPartnerCollection82">REQUIREMENTS</button><button id="rrPartnerRequirement82">REDZED PI</button><button id="rrPartnerDocuments82">CI</button>';
+        ? '<button id="rrPartnerCollection82">SEND COLLECTION<br>TO CUSTOMER</button><button id="rrPartnerRequirement82">CUSTOMER<br>REQUIREMENT</button><button id="rrPartnerDocuments82">CUSTOMER<br>PI / CI</button>'
+        : '<button id="rrPartnerCollection82">REQUIREMENTS<br>TO REDZED</button><button id="rrPartnerRequirement82">REDZED PI</button><button id="rrPartnerDocuments82">REDZED CI</button>';
     chat.appendChild(dock);
     $("rrPartnerCollection82").onclick = () =>
       mode === "CUSTOMER" ? openCollection() : openRequirements();
@@ -801,6 +844,11 @@
         );
       }
       const share = await collectionPreviewCache.get(token);
+      const label = numberedLabel(share?.collection_display_no, "COLLECTION");
+      const title = card.querySelector(".rrMkText9505 b");
+      const detail = card.querySelector(".rrMkText9505 small");
+      setText(title, label.title);
+      setText(detail, label.detail || "Tap to view designs, photos and requirement");
       const row = Array.isArray(share?.rows) ? share.rows[0] : null;
       const media = Array.isArray(row?.media) ? row.media : [];
       const imageUrl =
@@ -825,6 +873,43 @@
 
   function decorateMessages() {
     document.querySelectorAll("#msgs .msg[data-msg-id]").forEach((message) => {
+      const messageText = message.textContent || "";
+      const requirementMatch = messageText.match(/\[REQ:([0-9a-f-]{36})\]/i);
+      const piMatch = messageText.match(/\[DPI:([0-9a-f-]{36})\]\s*([^·\n]+)?/i);
+      const batchMatch = messageText.match(/\[PBATCH:([0-9a-f-]{36})\]/i);
+      if (requirementMatch) {
+        const order = (workspace?.orders || []).find((item) => String(item.id) === requirementMatch[1]);
+        const card = message.querySelector(".rrReqCard9508");
+        if (order && card) {
+          const req = numberedLabel(order.requirement_display_no || order.order_ref, "REQUIREMENT");
+          const col = numberedLabel(order.collection_display_no, "COLLECTION");
+          setText(card.querySelector("b"), `📋 ${req.title}`);
+          setText(card.querySelector("small"), `${req.detail} · ${col.detail} · Tap to review styles & qty`);
+          setText(card.querySelector(".rrReqOpen9508"), `OPEN ${req.title} ›`);
+        }
+      }
+      if (piMatch && !message.querySelector(".rrPartnerPiCard82")) {
+        [...message.children].forEach((child) => {
+          if (child.tagName === "DIV" && /\[DPI:/i.test(child.textContent || "")) child.style.display = "none";
+        });
+        const card = document.createElement("button");
+        card.type = "button";
+        card.className = "rrMarketLinkCard9505 rrPartnerPiCard82";
+        card.innerHTML = `<span class="rrMkIcon9505">📄</span><span class="rrMkText9505"><b>${esc(String(piMatch[2] || "PI").trim())}</b><small>PI sent to customer · tap to open</small></span><span class="rrMkGo9505">OPEN ›</span>`;
+        card.onclick = (event) => { event.preventDefault(); event.stopPropagation(); openDocuments(); };
+        message.insertBefore(card, message.querySelector("time"));
+      }
+      if (batchMatch && !message.querySelector(".rrPartnerBatchCard82")) {
+        [...message.children].forEach((child) => {
+          if (child.tagName === "DIV" && /\[PBATCH:/i.test(child.textContent || "")) child.style.display = "none";
+        });
+        const card = document.createElement("button");
+        card.type = "button";
+        card.className = "rrMarketLinkCard9505 rrPartnerBatchCard82";
+        card.innerHTML = '<span class="rrMkIcon9505">📋</span><span class="rrMkText9505"><b>REQUIREMENT SENT TO REDZED</b><small>Tap to open requirement number, update number and quantities</small></span><span class="rrMkGo9505">OPEN ›</span>';
+        card.onclick = (event) => { event.preventDefault(); event.stopPropagation(); openSentRedzedRequirements(); };
+        message.insertBefore(card, message.querySelector("time"));
+      }
       if (!message.querySelector(".rrMarketLinkCard9505")) {
         const text = message.textContent || "";
         const absolute = text.match(/https:\/\/[^\s<]+\/s\.html\?[^\s<]+/i);
@@ -839,7 +924,7 @@
           card.type = "button";
           card.className = "rrMarketLinkCard9505";
           card.innerHTML =
-            '<span class="rrMkIcon9505">🛍️</span><span class="rrMkText9505"><b>COLLECTION / UPDATE</b><small>Tap to view designs, photos and requirement</small></span><span class="rrMkGo9505">OPEN ›</span>';
+            '<span class="rrMkIcon9505">🛍️</span><span class="rrMkText9505"><b>COLLECTION</b><small>Loading collection number…</small></span><span class="rrMkGo9505">OPEN ›</span>';
           card.onclick = (event) => {
             event.preventDefault();
             event.stopPropagation();
@@ -868,9 +953,6 @@
         message.appendChild(button);
       }
     });
-    document
-      .querySelectorAll("#msgs .rrMarketLinkCard9505 .rrMkText9505 b")
-      .forEach((node) => setText(node, "COLLECTION / UPDATE"));
   }
 
   function applyLabels() {
