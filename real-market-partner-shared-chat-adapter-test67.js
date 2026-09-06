@@ -189,6 +189,11 @@
       #fsMsgs .rrPartnerCustomerCollectionMessage89>.fsattbtn,#fsMsgs .rrPartnerCustomerCollectionMessage89>.fsattimg{display:none!important}
       #fsMsgs .rrPartnerCustomerPiCard89{display:grid;width:100%;grid-template-columns:58px minmax(0,1fr) auto;gap:10px;align-items:center;box-sizing:border-box;margin:7px 0 2px;padding:10px;border:1px solid #536b88;border-radius:13px;background:#101923;color:#fff;text-align:left}
       #fsMsgs .rrPartnerCustomerPiCard89 b,#fsMsgs .rrPartnerCustomerPiCard89 small{display:block}.rrPartnerCustomerPiCard89 small{margin-top:5px;color:#aeb9c7}.rrPartnerCustomerPiCard89 strong{color:#8fc4ff}
+      .rrPartnerDocs89{position:fixed;inset:0;z-index:10220;display:none;align-items:flex-end;background:#000c}.rrPartnerDocs89.on{display:flex}
+      .rrPartnerDocsCard89{width:min(760px,100%);max-height:88dvh;display:flex;flex-direction:column;overflow:hidden;border:1px solid #40516a;border-radius:22px 22px 0 0;background:#10161f;color:#fff}
+      .rrPartnerDocsHead89{display:flex;align-items:center;gap:8px;padding:11px;border-bottom:1px solid #334154}.rrPartnerDocsHead89 b{flex:1}.rrPartnerDocsHead89 button,.rrPartnerDocsBody89 button{border:1px solid #465a73;border-radius:10px;background:#182535;color:#fff;font-weight:900;padding:10px}
+      .rrPartnerDocsBody89{overflow:auto;padding:10px}.rrPartnerDoc89{border:1px solid #35475d;border-radius:13px;padding:11px;background:#131d29}.rrPartnerDoc89+.rrPartnerDoc89{margin-top:9px}.rrPartnerDoc89>small{display:block;margin:4px 0 9px;color:#a2afbf}
+      .rrPartnerDocLine89{display:grid;grid-template-columns:58px minmax(0,1fr) 92px;gap:8px;align-items:center;padding:8px 0;border-top:1px solid #2b394a}.rrPartnerDocLine89 img{width:58px;height:66px;object-fit:cover;border-radius:8px;background:#09111b}.rrPartnerDocLine89 small{display:block;color:#aeb9c7}.rrPartnerDocLine89 select,.rrPartnerDocLine89 input,.rrPartnerDocs89 textarea{width:100%;box-sizing:border-box;margin-top:5px;padding:8px;border:1px solid #43536b;border-radius:8px;background:#0c141e;color:#fff}.rrPartnerDocs89 textarea{min-height:58px}.rrPartnerDocsSend89{width:100%;margin-top:10px;background:#fff!important;color:#111!important}.rrPartnerDocsEmpty89{padding:24px 8px;text-align:center;color:#9ba9ba}
     `;
     document.head.appendChild(style);
   }
@@ -305,14 +310,82 @@
     });
   }
 
-  function openPiArtifact() {
-    document.querySelectorAll("[data-artifact]").forEach((button) =>
-      button.classList.toggle("on", button.dataset.artifact === "pi"),
+  function esc(value) {
+    return String(value ?? "").replace(
+      /[&<>"']/g,
+      (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" })[char],
     );
-    document.querySelectorAll(".artifact").forEach((node) =>
-      node.classList.toggle("on", node.id === "artifact-pi"),
+  }
+
+  function ensureDocumentsSheet() {
+    if (document.getElementById("rrPartnerDocs89")) return;
+    document.body.insertAdjacentHTML(
+      "beforeend",
+      '<div id="rrPartnerDocs89" class="rrPartnerDocs89"><section class="rrPartnerDocsCard89"><div class="rrPartnerDocsHead89"><b>PI / CI</b><button id="rrPartnerDocsClose89" type="button">×</button></div><div id="rrPartnerDocsBody89" class="rrPartnerDocsBody89">Loading…</div></section></div>',
     );
-    document.getElementById("artifact-pi")?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    document.getElementById("rrPartnerDocsClose89").onclick = closeDocuments;
+    document.getElementById("rrPartnerDocs89").onclick = (event) => {
+      if (event.target.id === "rrPartnerDocs89") closeDocuments();
+    };
+  }
+
+  function closeDocuments() {
+    document.getElementById("rrPartnerDocs89")?.classList.remove("on");
+  }
+
+  function documentLine(line, editable) {
+    const quantity = Number(line.customer_qty ?? line.proposed_qty ?? line.qty ?? 0);
+    const decision = String(line.decision || "WAITING");
+    return `<div class="rrPartnerDocLine89">${line.image_url ? `<img src="${esc(line.image_url)}" alt="${esc(line.lot_no)}">` : '<span>👕</span>'}<span><b>${esc(line.lot_no || "-")}</b><small>${esc(line.category || "-")} · ${esc(line.size_text || "-")}</small><small>Required ${Number(line.requested_qty ?? line.qty ?? 0)} PCS</small></span>${editable ? `<span><select data-rrpi-action89="${esc(line.id)}"><option value="CONFIRM" ${decision === "CONFIRM" ? "selected" : ""}>CONFIRM</option><option value="CHANGE" ${decision === "CHANGE" ? "selected" : ""}>CHANGE</option><option value="CANCEL" ${decision === "CANCEL" ? "selected" : ""}>CANCEL</option></select><input data-rrpi-qty89="${esc(line.id)}" type="number" min="0" value="${quantity}"></span>` : `<b>${quantity} PCS</b>`}</div>`;
+  }
+
+  async function submitPiResponse(pi) {
+    const decisions = (pi.lines || []).map((line) => ({
+      line_id: line.id,
+      action: document.querySelector(`[data-rrpi-action89="${CSS.escape(String(line.id))}"]`)?.value || "CONFIRM",
+      qty: Math.max(0, Math.floor(Number(document.querySelector(`[data-rrpi-qty89="${CSS.escape(String(line.id))}"]`)?.value || 0))),
+    }));
+    const button = document.getElementById("rrPartnerPiSend89");
+    try {
+      if (button) button.disabled = true;
+      const result = await call("rr_market_partner_customer_distributor_pi_response_v67", {
+        p_token: token,
+        p_decisions: decisions,
+        p_note: document.getElementById("rrPartnerPiNote89")?.value.trim() || null,
+      });
+      await openPiArtifact();
+      const flash = document.getElementById("flash");
+      if (flash) {
+        flash.textContent = `PI ${result.distributor_pi_status || "RESPONSE"} · DISTRIBUTOR को भेजी ✓`;
+        flash.style.display = "block";
+        setTimeout(() => (flash.style.display = "none"), 2400);
+      }
+    } catch (error) {
+      alert(error.message);
+    } finally {
+      if (button) button.disabled = false;
+    }
+  }
+
+  async function openPiArtifact() {
+    ensureCollectionCardStyle();
+    ensureDocumentsSheet();
+    const sheet = document.getElementById("rrPartnerDocs89");
+    const body = document.getElementById("rrPartnerDocsBody89");
+    sheet.classList.add("on");
+    body.textContent = "Loading PI / CI…";
+    try {
+      const [pi, share] = await Promise.all([
+        call("rr_market_partner_customer_pi_view_v67", { p_token: token }),
+        call("rr_market_share_view_v9420", { p_token: token }),
+      ]);
+      const ci = share?.ci || null;
+      body.innerHTML = `${pi ? `<article class="rrPartnerDoc89"><b>${esc(pi.ref || "PI")}</b><small>PI FROM DISTRIBUTOR · STATUS ${esc(pi.status || "WAITING")}</small>${(pi.lines || []).map((line) => documentLine(line, true)).join("")}<textarea id="rrPartnerPiNote89" placeholder="Optional note to distributor">${esc(pi.note || "")}</textarea><button id="rrPartnerPiSend89" class="rrPartnerDocsSend89" type="button">SEND PI RESPONSE</button></article>` : '<div class="rrPartnerDocsEmpty89">Distributor PI अभी प्राप्त नहीं हुई।</div>'}${ci ? `<article class="rrPartnerDoc89"><b>${esc(ci.ref || "CI")}</b><small>FINAL CI FROM DISTRIBUTOR</small>${(ci.lines || []).map((line) => documentLine(line, false)).join("")}</article>` : ''}`;
+      const send = document.getElementById("rrPartnerPiSend89");
+      if (send) send.onclick = () => submitPiResponse(pi);
+    } catch (error) {
+      body.innerHTML = `<div class="rrPartnerDocsEmpty89">${esc(error.message)}</div>`;
+    }
   }
 
   function decoratePiMessages() {
