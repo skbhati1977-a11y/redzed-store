@@ -1022,6 +1022,12 @@
       if (MODE === "CUSTOMER" && !customerId)
         throw Error("Customer reference missing.");
       wire();
+      if (MODE === "REDZED") {
+        const button = $("#requirementBtn");
+        if (button) button.textContent = "CONSOLIDATE REQUIREMENT";
+        const title = $("#requirementPanelTitle");
+        if (title) title.textContent = "CONSOLIDATE REQUIREMENT";
+      }
       await load();
     } catch (e) {
       note(e.message, true);
