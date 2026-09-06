@@ -185,15 +185,12 @@
   }
 
   async function openBatch(batchId, view = currentView) {
-    try {
-      openSheet("DISTRIBUTOR JOURNEY", '<div class="rrRzEmpty83">Loading…</div>');
-      const detail = await rawRpc("rr_market_staff_batch_detail_v67", {
-        p_batch_id: batchId,
-      });
-      renderBatch(detail, view);
-    } catch (error) {
-      openSheet("DISTRIBUTOR JOURNEY", `<div class="rrRzEmpty83">${esc(error.message)}</div>`);
-    }
+    const target = new URL("real-market-shared-invoice-test67.html", location.href);
+    target.searchParams.set("role", "REDZED");
+    target.searchParams.set("batch", batchId);
+    if (activeChatId) target.searchParams.set("chat", activeChatId);
+    target.searchParams.set("view", view);
+    location.href = target.href;
   }
 
   async function sendNotice(body) {
