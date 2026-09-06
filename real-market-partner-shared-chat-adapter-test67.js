@@ -321,7 +321,7 @@
     if (document.getElementById("rrPartnerDocs89")) return;
     document.body.insertAdjacentHTML(
       "beforeend",
-      '<div id="rrPartnerDocs89" class="rrPartnerDocs89"><section class="rrPartnerDocsCard89"><div class="rrPartnerDocsHead89"><b>PI / CI</b><button id="rrPartnerDocsClose89" type="button">×</button></div><div id="rrPartnerDocsBody89" class="rrPartnerDocsBody89">Loading…</div></section></div>',
+      '<div id="rrPartnerDocs89" class="rrPartnerDocs89"><section class="rrPartnerDocsCard89"><div class="rrPartnerDocsHead89"><b>INVOICES · VIEW / RESPOND ONLY</b><button id="rrPartnerDocsClose89" type="button">×</button></div><div id="rrPartnerDocsBody89" class="rrPartnerDocsBody89">Loading…</div></section></div>',
     );
     document.getElementById("rrPartnerDocsClose89").onclick = closeDocuments;
     document.getElementById("rrPartnerDocs89").onclick = (event) => {
