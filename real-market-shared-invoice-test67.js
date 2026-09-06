@@ -5,12 +5,14 @@
   const money = (n) => "₹" + Number(n || 0).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const esc = (v) => String(v ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" })[c]);
   const DEVICE_KEY = "rr_customer_device_v9592", SESSION_KEY = "rr_customer_secure_session_v9592";
-  let order = null, doc = null, lines = [], chargesReady = false, customerProfile = {};
+  let order = null, doc = null, lines = [], chargesReady = false, customerProfile = {}, piChatSent = false;
 
   function message(text, kind = "error") { const box = $("msg"); box.textContent = text || ""; box.className = `msg ${kind}`; }
   function friendlyError(error) { const raw = String(error?.message || error || "Action failed."); return /Failed to fetch|NetworkError|Load failed|fetch/i.test(raw) ? "Internet connection नहीं है। Connection आने के बाद दोबारा tap करें।" : raw; }
   function requireOnline() { if (navigator.onLine === false) throw Error("Internet connection नहीं है। Connection आने के बाद दोबारा tap करें।"); }
-  async function runButton(id, task, options = {}) { const button = $(id); if (!button || button.dataset.busy === "1") return; const old = button.textContent; button.dataset.busy = "1"; button.disabled = true; button.classList.add("busy"); button.textContent = options.busyText || "PLEASE WAIT…"; message(""); try { if (options.online) requireOnline(); await task(); } catch (error) { if (error?.name !== "AbortError") message(friendlyError(error)); } finally { button.dataset.busy = "0"; button.disabled = false; button.classList.remove("busy"); button.textContent = old; } }
+  async function runButton(id, task, options = {}) { const button = $(id); if (!button || button.dataset.busy === "1" || button.dataset.locked === "1") return; const old = button.textContent; button.dataset.busy = "1"; button.disabled = true; button.classList.add("busy"); button.textContent = options.busyText || "PLEASE WAIT…"; message(""); try { if (options.online) requireOnline(); await task(); } catch (error) { if (error?.name !== "AbortError") message(friendlyError(error)); } finally { button.dataset.busy = "0"; button.classList.remove("busy"); button.disabled = button.dataset.locked === "1"; button.textContent = button.dataset.locked === "1" ? "SENT ✓" : old; } }
+
+  function renderPiChatState() { const button=$("sendChat"); if(!button)return; button.dataset.locked=piChatSent?"1":"0"; button.disabled=piChatSent; button.textContent=piChatSent?"SENT ✓":"SEND PI TO REAL CHAT (PDF/JPEG)"; }
 
   function device() { let d = localStorage.getItem(DEVICE_KEY); if (!d) { const a = new Uint8Array(24); crypto.getRandomValues(a); d = [...a].map((b) => b.toString(16).padStart(2, "0")).join(""); localStorage.setItem(DEVICE_KEY, d); } return d; }
   function auth() { let s = null; try { s = JSON.parse(localStorage.getItem(SESSION_KEY) || "null"); } catch (_) {} if (!s?.session_token) throw Error("Valid distributor login required."); return { p_session_token: s.session_token, p_device_id: device() }; }
@@ -31,17 +33,17 @@
     $("reqNo").textContent = "Requirement No. " + (order?.requirement_display_no || doc?.requirement_display_no || order?.batch_ref || "—"); $("docNo").textContent = (doc?.kind === "CI" ? "CI" : "PI") + " No. " + (doc?.ref || "DRAFT"); $("docTitle").textContent = doc?.kind === "CI" ? "CI · COMMERCIAL INVOICE" : "PI · PROFORMA INVOICE";
     $("status").value = doc?.status || "DRAFT"; $("docDate").textContent = new Date(doc?.pushed_at || doc?.created_at || Date.now()).toLocaleString("en-IN");
     const operator = ["DISTRIBUTOR", "REDZED"].includes(role);
-    $("savePi").hidden = !operator || !!doc?.ref; $("sendChat").hidden = role!=="DISTRIBUTOR" || !doc?.ref; $("convertCi").hidden = !operator || !doc?.ref || doc?.kind === "CI"; $("download").hidden = !operator || !doc?.ref; $("share").hidden = !operator || !doc?.ref;
+    $("savePi").hidden = !operator || !!doc?.ref; $("sendChat").hidden = role!=="DISTRIBUTOR" || !doc?.ref; renderPiChatState(); $("convertCi").hidden = !operator || !doc?.ref || doc?.kind === "CI"; $("download").hidden = !operator || !doc?.ref; $("share").hidden = !operator || !doc?.ref;
     if (role === "CUSTOMER" && doc?.ref && doc?.kind !== "CI") renderResponse();
   }
   function renderResponse() { $("response").classList.add("on"); $("responseLines").innerHTML = lines.map((x) => { const v = values(x), d = x.decision || "WAITING", qty = x.customer_qty ?? v.qty; return `<div class="decision"><span><b>${esc(x.lot_no)}</b><small class="muted">${esc(x.category || "-")} · ${esc(x.size_text || "-")} · ${money(v.finalRate)}</small></span><select data-action="${esc(x.id)}"><option value="CONFIRM" ${d === "CONFIRM" ? "selected" : ""}>CONFIRM</option><option value="CHANGE" ${d === "CHANGE" ? "selected" : ""}>CHANGE</option><option value="CANCEL" ${d === "CANCEL" ? "selected" : ""}>CANCEL</option></select><input class="num" data-response-qty="${esc(x.id)}" type="number" min="0" value="${Number(qty || 0)}"></div>`; }).join(""); }
 
   async function loadDistributor() {
-    const a = auth(), [w, p, charges] = await Promise.all([rpc("rr_market_partner_workspace_v67", a), rpc("rr_market_partner_customer_pi_state_v67", a),rpc("rr_market_partner_customer_pi_charges_get_v67",{...a,p_order_id:orderId})]);
+    const a = auth(), [w, p, charges, delivery] = await Promise.all([rpc("rr_market_partner_workspace_v67", a), rpc("rr_market_partner_customer_pi_state_v67", a),rpc("rr_market_partner_customer_pi_charges_get_v67",{...a,p_order_id:orderId}),rpc("rr_market_partner_pi_chat_status_v67",{...a,p_order_id:orderId})]);
     order = (w.orders || []).find((x) => String(x.id) === String(orderId)); if (!order) throw Error("Requirement unavailable.");
     const ps = (Array.isArray(p) ? p : []).find((x) => String(x.order_id) === String(orderId)); if (ps) { const m = new Map((ps.lines || []).map((x) => [String(x.id), x])); order.lines = (order.lines || []).map((x) => ({ ...x, ...(m.get(String(x.id)) || {}) })); }
     const piRef=ps?.distributor_pi_ref||order.distributor_pi_ref, piStatus=ps?.distributor_pi_status||order.distributor_pi_status, piPushed=ps?.distributor_pi_pushed_at||order.distributor_pi_pushed_at, ciRef=ps?.customer_ci_ref||order.ci_ref, ciVisible=ps?.customer_ci_visible??order.customer_ci_visible;
-    lines = order.lines || []; doc = piRef ? { ref: piRef, status: piStatus || "WAITING", pushed_at: piPushed, kind: ciVisible && ciRef ? "CI" : "PI",charges } : { kind: "PI",charges }; if (doc.kind === "CI") doc.ref = ciRef;
+    lines = order.lines || []; piChatSent=delivery?.sent===true; doc = piRef ? { ref: piRef, status: piStatus || "WAITING", pushed_at: piPushed, kind: ciVisible && ciRef ? "CI" : "PI",charges } : { kind: "PI",charges }; if (doc.kind === "CI") doc.ref = ciRef;
   }
   async function loadRedzed() {
     if (!batchId) throw Error("Batch reference missing."); const detail = await rpc("rr_market_staff_batch_detail_v67", { p_batch_id: batchId });
@@ -84,7 +86,7 @@
     return {blob,data_url,name:pdfName().replace(/\.pdf$/i,"-preview.jpg"),type:"image/jpeg"};
   }
   async function downloadPdf(){(await makePdf()).save(pdfName());message("A4 PDF download शुरू हुई ✓","ok");}
-  async function sendRealChat(){requireOnline();const a=auth(),attachment=await jpegAttachment(),caption=`PI No. ${doc.ref} · ${order.requirement_display_no||order.order_ref||"REQUIREMENT"}`;await rpc("rr_market_partner_chat_send_v67",{...a,p_lane:"CUSTOMER_GROUP",p_partner_customer_id:order.customer_id||order.partner_customer_id,p_message:`[DPI:${order.id}] ${doc.ref} · ${caption}`,p_attachment:{name:attachment.name,type:attachment.type,data_url:attachment.data_url}});message(`${doc.kind||"PI"} ${doc.ref} JPEG preview caption के साथ Real Chat में भेजी ✓`,"ok");}
+  async function sendRealChat(){requireOnline();if(piChatSent){renderPiChatState();return;}const a=auth(),attachment=await jpegAttachment(),result=await rpc("rr_market_partner_pi_chat_send_v67",{...a,p_order_id:order.id,p_attachment:{name:attachment.name,type:attachment.type,data_url:attachment.data_url}});piChatSent=!!result?.sent_at;renderPiChatState();message(result?.already_sent?`${doc.kind||"PI"} ${doc.ref} पहले ही Real Chat में भेजी जा चुकी है ✓`:`${doc.kind||"PI"} ${doc.ref} JPEG preview के साथ Real Chat में भेजी ✓`,"ok");}
 
   async function savePi() {
     try {
