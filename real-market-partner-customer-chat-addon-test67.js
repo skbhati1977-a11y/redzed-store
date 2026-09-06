@@ -104,8 +104,9 @@
     const piReady = !!$("#artifact-pi #sendPiResponse"),
       ciText = $("#artifact-ci")?.textContent || "",
       ciReady = /^\s*CI\s+\S+/i.test(ciText.trim());
-    $('[data-artifact="pi"]')?.classList.toggle("rr67docReady", piReady);
-    $('[data-artifact="ci"]')?.classList.toggle("rr67docReady", ciReady);
+    const piTab = $('[data-artifact="pi"]'), ciTab = $('[data-artifact="ci"]');
+    if (piTab) { piTab.textContent = "VIEW PI"; piTab.classList.toggle("rr67docReady", piReady); }
+    if (ciTab) { ciTab.textContent = "VIEW CI"; ciTab.classList.toggle("rr67docReady", ciReady); }
     $(".journeyNav")?.style.setProperty(
       "--rr67-tabs",
       String(2 + Number(piReady) + Number(ciReady)),
