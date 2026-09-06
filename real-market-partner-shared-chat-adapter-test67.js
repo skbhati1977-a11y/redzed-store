@@ -401,7 +401,14 @@
       card.className = "rrPartnerCustomerPiCard89";
       card.innerHTML = '<span>📄</span><span><b>PI</b><small>Distributor PI received · tap to review and respond</small></span><strong>OPEN ›</strong>';
       setText(card.querySelector("b"), String(match[2] || "PI").trim());
-      card.onclick = openPiArtifact;
+      card.onclick = () => {
+        const url = new URL("real-market-shared-invoice-test67.html", location.href);
+        url.searchParams.set("role", "CUSTOMER");
+        url.searchParams.set("order", match[1]);
+        url.searchParams.set("t", token);
+        url.searchParams.set("v", "1");
+        location.href = url.href;
+      };
       message.insertBefore(card, message.querySelector("time") || null);
     });
   }
