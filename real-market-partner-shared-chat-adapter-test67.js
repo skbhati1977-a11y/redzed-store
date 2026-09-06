@@ -189,7 +189,6 @@
       #fsMsgs .rrPartnerCustomerCollectionMessage89>.fsattbtn,#fsMsgs .rrPartnerCustomerCollectionMessage89>.fsattimg{display:none!important}
       #fsMsgs .rrPartnerCustomerPiCard89{display:grid;width:100%;grid-template-columns:58px minmax(0,1fr) auto;gap:10px;align-items:center;box-sizing:border-box;margin:7px 0 2px;padding:10px;border:1px solid #536b88;border-radius:13px;background:#101923;color:#fff;text-align:left}
       #fsMsgs .rrPartnerCustomerPiCard89 b,#fsMsgs .rrPartnerCustomerPiCard89 small{display:block}.rrPartnerCustomerPiCard89 small{margin-top:5px;color:#aeb9c7}.rrPartnerCustomerPiCard89 strong{color:#8fc4ff}
-      #fsMsgs .rrPartnerCustomerPiMessage89>.fsattbtn,#fsMsgs .rrPartnerCustomerPiMessage89>.fsattimg,#fsMsgs .rrPartnerCustomerPiMessage89>.rrMediaThumb9664,#fsMsgs .rrPartnerCustomerPiMessage89>.rrAutoImg9651{display:none!important}
       .rrPartnerDocs89{position:fixed;inset:0;z-index:10220;display:none;align-items:flex-end;background:#000c}.rrPartnerDocs89.on{display:flex}
       .rrPartnerDocsCard89{width:min(760px,100%);max-height:88dvh;display:flex;flex-direction:column;overflow:hidden;border:1px solid #40516a;border-radius:22px 22px 0 0;background:#10161f;color:#fff}
       .rrPartnerDocsHead89{display:flex;align-items:center;gap:8px;padding:11px;border-bottom:1px solid #334154}.rrPartnerDocsHead89 b{flex:1}.rrPartnerDocsHead89 button,.rrPartnerDocsBody89 button{border:1px solid #465a73;border-radius:10px;background:#182535;color:#fff;font-weight:900;padding:10px}
@@ -396,7 +395,6 @@
       const body = message.querySelector(".fsbody");
       const match = (body?.textContent || "").match(/\[DPI:([0-9a-f-]{36})\]\s*([^·\n]+)?/i);
       if (!match) return;
-      message.classList.add("rrPartnerCustomerPiMessage89");
       if (body) body.style.display = "none";
       const card = document.createElement("button");
       card.type = "button";
