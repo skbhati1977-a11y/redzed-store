@@ -87,13 +87,37 @@
     );
   }
   function eventAttachment(a) {
-    if (!a?.data_url) return "";
+    if (!a?.attachment_id) return "";
     const t = String(a.type || "");
+    if (!a.data_url)
+      return `<button type="button" class="chatAttachmentLoad" data-attachment-id="${esc(a.attachment_id)}" style="display:block;margin-top:7px;border:1px solid #43536b;border-radius:9px;background:#111a26;color:#fff;padding:8px 10px;font-weight:800">📎 ${esc(a.name || "Attachment")} · OPEN</button>`;
     if (t.startsWith("image/"))
       return `<img src="${esc(a.data_url)}" alt="${esc(a.name || "attachment")}" style="display:block;max-width:220px;max-height:260px;border-radius:9px;margin-top:7px">`;
     if (t.startsWith("audio/"))
       return `<audio controls src="${esc(a.data_url)}" style="display:block;max-width:100%;margin-top:7px"></audio>`;
     return `<a href="${esc(a.data_url)}" download="${esc(a.name || "attachment")}" style="color:#72c7ff">📎 ${esc(a.name || "Attachment")}</a>`;
+  }
+  async function openChatAttachment(id, button) {
+    if (!id || button?.disabled) return;
+    if (button) { button.disabled = true; button.textContent = "Loading…"; }
+    try {
+      const d = await rpc("rr_market_partner_chat_attachment_v67", {
+        ...auth(),
+        p_lane: activeLane,
+        p_partner_customer_id: MODE === "CUSTOMER" ? customerId : null,
+        p_attachment_id: id,
+      });
+      const raw = atob(String(d?.base64 || ""));
+      const bytes = new Uint8Array(raw.length);
+      for (let i = 0; i < raw.length; i += 1) bytes[i] = raw.charCodeAt(i);
+      const url = URL.createObjectURL(new Blob([bytes], { type: d?.mime_type || "application/octet-stream" }));
+      window.open(url, "_blank", "noopener,noreferrer");
+      setTimeout(() => URL.revokeObjectURL(url), 60000);
+      if (button) { button.disabled = false; button.textContent = `📎 ${d?.file_name || "Attachment"} · OPEN`; }
+    } catch (e) {
+      if (button) { button.disabled = false; button.textContent = "Attachment unavailable · retry"; }
+      note(e.message || String(e), true);
+    }
   }
   async function load() {
     try {
@@ -465,9 +489,14 @@
       (button) =>
         (button.onclick = () => openChainViewer(button.dataset.chainPhoto)),
     );
-    $$("[data-delete-chat]").forEach(
+    $("[data-delete-chat]").forEach(
       (button) =>
         (button.onclick = () => deleteChatMessage(button.dataset.deleteChat)),
+    );
+    $(".chatAttachmentLoad").forEach(
+      (button) =>
+        (button.onclick = () =>
+          openChatAttachment(button.dataset.attachmentId, button)),
     );
     if (atBottom)
       setTimeout(
