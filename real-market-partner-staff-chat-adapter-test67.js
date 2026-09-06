@@ -494,50 +494,11 @@
   }
 
   async function makePi(orderId) {
-    try {
-      const data = await state(true);
-      const order = (data.orders || []).find((item) => item.id === orderId);
-      if (!order) throw Error("Requirement unavailable.");
-      const lines = (order.lines || []).map((line) => ({
-        line_id: line.id,
-        qty: Math.max(
-          0,
-          Math.floor(
-            Number(
-              document.querySelector(`[data-pi-qty="${CSS.escape(line.id)}"]`)
-                ?.value ?? line.requested_qty ?? 0,
-            ),
-          ),
-        ),
-      }));
-      const result = await rawRpc("rr_market_partner_make_customer_pi_v67", {
-        ...authArgs(),
-        p_order_id: orderId,
-        p_lines: lines,
-        p_note: null,
-      });
-      try {
-        await rawRpc("rr_market_partner_chat_send_v67", {
-          ...authArgs(),
-          p_lane: "CUSTOMER_GROUP",
-          p_partner_customer_id: customerId,
-          p_message: `[DPI:${orderId}] ${result.distributor_pi_ref || "PI"} · ${order.requirement_display_no || order.order_ref || "REQUIREMENT"} · SENT TO CUSTOMER`,
-          p_attachment: null,
-        });
-      } catch (error) {
-        // PI is committed. A failed chat notice must never fire the PI twice.
-        console.warn("Customer PI chat notification failed", error);
-      }
-      workspaceAt = 0;
-      closeSheet();
-      $("rrReqBack9508")?.classList.remove("on");
-      flash(
-        `${result.distributor_pi_ref || "PI"} customer को भेजी · requirement closed ✓`,
-      );
-      setTimeout(() => $("groupTab")?.click(), 80);
-    } catch (error) {
-      flash(error.message, true);
-    }
+    const url = new URL("real-market-shared-invoice-test67.html", location.href);
+    url.searchParams.set("role", "DISTRIBUTOR");
+    url.searchParams.set("order", orderId);
+    url.searchParams.set("v", "1");
+    location.href = url.href;
   }
 
   async function sendRedzed(orderIds) {
@@ -908,7 +869,15 @@
         card.type = "button";
         card.className = "rrMarketLinkCard9505 rrPartnerPiCard82";
         card.innerHTML = `<span class="rrMkIcon9505">📄</span><span class="rrMkText9505"><b>${esc(String(piMatch[2] || "PI").trim())}</b><small>PI sent to customer · tap to open</small></span><span class="rrMkGo9505">OPEN ›</span>`;
-        card.onclick = (event) => { event.preventDefault(); event.stopPropagation(); openDocuments(); };
+        card.onclick = (event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          const url = new URL("real-market-shared-invoice-test67.html", location.href);
+          url.searchParams.set("role", "DISTRIBUTOR");
+          url.searchParams.set("order", piMatch[1]);
+          url.searchParams.set("v", "1");
+          location.href = url.href;
+        };
         message.insertBefore(card, message.querySelector("time"));
       }
       if (batchMatch && !message.querySelector(".rrPartnerBatchCard82")) {
