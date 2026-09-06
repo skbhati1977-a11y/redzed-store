@@ -7,6 +7,11 @@
   const DEVICE_KEY = "rr_customer_device_v9592", SESSION_KEY = "rr_customer_secure_session_v9592";
   let order = null, doc = null, lines = [], chargesReady = false, customerProfile = {};
 
+  function message(text, kind = "error") { const box = $("msg"); box.textContent = text || ""; box.className = `msg ${kind}`; }
+  function friendlyError(error) { const raw = String(error?.message || error || "Action failed."); return /Failed to fetch|NetworkError|Load failed|fetch/i.test(raw) ? "Internet connection नहीं है। Connection आने के बाद दोबारा tap करें।" : raw; }
+  function requireOnline() { if (navigator.onLine === false) throw Error("Internet connection नहीं है। Connection आने के बाद दोबारा tap करें।"); }
+  async function runButton(id, task, options = {}) { const button = $(id); if (!button || button.dataset.busy === "1") return; const old = button.textContent; button.dataset.busy = "1"; button.disabled = true; button.classList.add("busy"); button.textContent = options.busyText || "PLEASE WAIT…"; message(""); try { if (options.online) requireOnline(); await task(); } catch (error) { if (error?.name !== "AbortError") message(friendlyError(error)); } finally { button.dataset.busy = "0"; button.disabled = false; button.classList.remove("busy"); button.textContent = old; } }
+
   function device() { let d = localStorage.getItem(DEVICE_KEY); if (!d) { const a = new Uint8Array(24); crypto.getRandomValues(a); d = [...a].map((b) => b.toString(16).padStart(2, "0")).join(""); localStorage.setItem(DEVICE_KEY, d); } return d; }
   function auth() { let s = null; try { s = JSON.parse(localStorage.getItem(SESSION_KEY) || "null"); } catch (_) {} if (!s?.session_token) throw Error("Valid distributor login required."); return { p_session_token: s.session_token, p_device_id: device() }; }
   async function rpc(name, args = {}) { return RF853.rpc(name, args); }
@@ -67,26 +72,25 @@
   }
   function pdfName(){return `${doc?.kind||"PI"}-${doc?.ref||"DRAFT"}.pdf`.replace(/[^a-z0-9_.-]+/gi,"-");}
   async function pdfAttachment(){const pdf=await makePdf(),blob=pdf.output("blob"),data_url=await new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve(r.result);r.onerror=reject;r.readAsDataURL(blob);});return {pdf,blob,data_url,name:pdfName(),type:"application/pdf"};}
-  async function downloadPdf(){try{(await makePdf()).save(pdfName());}catch(e){$("msg").textContent=e.message;}}
-  async function sendRealChat(){const a=auth(),attachment=await pdfAttachment();await rpc("rr_market_partner_chat_send_v67",{...a,p_lane:"CUSTOMER_GROUP",p_partner_customer_id:order.customer_id||order.partner_customer_id,p_message:`[DPI:${order.id}] ${doc.ref} · ${order.requirement_display_no||order.order_ref||"REQUIREMENT"} · ${doc.kind||"PI"} SENT TO CUSTOMER`,p_attachment:{name:attachment.name,type:attachment.type,data_url:attachment.data_url}});$("msg").textContent=`${doc.kind||"PI"} ${doc.ref} PDF Real Chat में भेजी ✓`;}
-  async function sendRealChatClick(){try{await sendRealChat();}catch(e){$("msg").textContent=e.message;}}
+  async function downloadPdf(){(await makePdf()).save(pdfName());message("A4 PDF download शुरू हुई ✓","ok");}
+  async function sendRealChat(){requireOnline();const a=auth(),attachment=await pdfAttachment();await rpc("rr_market_partner_chat_send_v67",{...a,p_lane:"CUSTOMER_GROUP",p_partner_customer_id:order.customer_id||order.partner_customer_id,p_message:`[DPI:${order.id}] ${doc.ref} · ${order.requirement_display_no||order.order_ref||"REQUIREMENT"} · ${doc.kind||"PI"} SENT TO CUSTOMER`,p_attachment:{name:attachment.name,type:attachment.type,data_url:attachment.data_url}});message(`${doc.kind||"PI"} ${doc.ref} PDF Real Chat में भेजी ✓`,"ok");}
 
   async function savePi() {
     try {
       if (role === "REDZED") { const payload = proposals(), r = await rpc("rr_market_staff_propose_batch_v67", { p_batch_id: order.id, p_line_proposals: payload, p_pi_ref: "" }); doc = { kind: "PI", ref: r.pi_ref, status: r.status, pushed_at: new Date().toISOString() }; lines.forEach((x) => { x.proposed_qty = payload.find((y) => y.line_id === x.id)?.proposed_qty; }); await staffNotice(`[PBATCH:${r.id}] ${r.batch_ref} · PI ${r.pi_ref} SENT TO DISTRIBUTOR`); }
       else { const a = auth(), c=readCharges(), payload = lines.map((x) => ({ line_id: x.id, qty: Math.max(0, Math.floor(Number(document.querySelector(`[data-qty="${CSS.escape(x.id)}"]`)?.value ?? values(x).qty))) })); await rpc("rr_market_partner_customer_pi_charges_v67",{...a,p_order_id:order.id,p_value_pct:c.valuePct,p_freight:c.freight,p_other:c.other,p_tax_pct:0}); const r = await rpc("rr_market_partner_make_customer_pi_v67", { ...a, p_order_id: order.id, p_lines: payload, p_note: null }); doc = { kind: "PI", ref: r.distributor_pi_ref, status: r.distributor_pi_status || "WAITING", pushed_at: new Date().toISOString(),charges:{value_pct:c.valuePct,freight:c.freight,other:c.other,tax_pct:0} }; lines.forEach((x) => { x.distributor_pi_qty = payload.find((y) => y.line_id === x.id)?.qty; }); try { await sendRealChat(); } catch (e) { throw Error(`PI ${doc.ref} saved, but Real Chat delivery failed: ${e.message}`); } }
-      $("msg").textContent = `PI ${doc.ref} भेजी ✓`; render();
-    } catch (e) { $("msg").textContent = e.message; }
+      message(`PI ${doc.ref} भेजी ✓`,"ok"); render();
+    } catch (e) { throw e; }
   }
   async function convertCi() {
     try {
       if (role === "REDZED") { const r = await rpc("rr_market_staff_finalize_ci_v67", { p_batch_id: order.id, p_ci_ref: "" }); doc = { kind: "CI", ref: r.ci_ref, status: r.status, created_at: new Date().toISOString() }; await staffNotice(`[PBATCH:${r.id}] ${r.batch_ref} · CI ${r.ci_ref} SENT TO DISTRIBUTOR`); }
       else { const r = await rpc("rr_market_partner_convert_customer_ci_v67", { ...auth(), p_order_id: order.id }); doc = { kind: "CI", ref: r.customer_ci_ref, status: r.status || "FINAL", created_at: new Date().toISOString() }; }
-      $("msg").textContent = `CI ${doc.ref} generated ✓`; render();
-    } catch (e) { $("msg").textContent = e.message; }
+      message(`CI ${doc.ref} generated ✓`,"ok"); render();
+    } catch (e) { throw e; }
   }
-  async function respond() { try { const decisions = lines.map((x) => ({ line_id: x.id, action: document.querySelector(`[data-action="${CSS.escape(x.id)}"]`).value, qty: Number(document.querySelector(`[data-response-qty="${CSS.escape(x.id)}"]`).value || 0) })), r = await rpc("rr_market_partner_customer_distributor_pi_response_v67", { p_token: shareToken, p_decisions: decisions, p_note: $("note").value || null }); $("msg").textContent = `PI response ${r.distributor_pi_status} · distributor को भेजी ✓`; } catch (e) { $("msg").textContent = e.message; } }
-  async function share() { try { const a=await pdfAttachment(),file=new File([a.blob],a.name,{type:a.type}); if(navigator.canShare?.({files:[file]})) await navigator.share({title:`${doc.kind||"PI"} ${doc.ref}`,files:[file]}); else {a.pdf.save(a.name);$("msg").textContent="A4 PDF downloaded; share it from Downloads.";} } catch(e){if(e.name!=="AbortError")$("msg").textContent=e.message;} }
-  async function boot() { try { if (role === "DISTRIBUTOR") await loadDistributor(); else if (role === "REDZED") await loadRedzed(); else await loadCustomer(); render(); ["valuePct","freightInput","otherInput"].forEach((id)=>$(id).addEventListener("input",render)); $("savePi").onclick = savePi; $("sendChat").onclick=sendRealChatClick; $("convertCi").onclick = convertCi; $("sendResponse").onclick = respond; $("download").onclick=downloadPdf; $("share").onclick = share; } catch (e) { $("msg").textContent = e.message; } }
+  async function respond() { const decisions = lines.map((x) => ({ line_id: x.id, action: document.querySelector(`[data-action="${CSS.escape(x.id)}"]`).value, qty: Number(document.querySelector(`[data-response-qty="${CSS.escape(x.id)}"]`).value || 0) })), r = await rpc("rr_market_partner_customer_distributor_pi_response_v67", { p_token: shareToken, p_decisions: decisions, p_note: $("note").value || null }); message(`PI response ${r.distributor_pi_status} · distributor को भेजी ✓`,"ok"); }
+  async function share() { const a=await pdfAttachment(),file=new File([a.blob],a.name,{type:a.type}); if(navigator.canShare?.({files:[file]})) await navigator.share({title:`${doc.kind||"PI"} ${doc.ref}`,files:[file]}); else {a.pdf.save(a.name);message("A4 PDF downloaded; Downloads से share करें।","ok");} }
+  async function boot() { try { if (role === "DISTRIBUTOR") await loadDistributor(); else if (role === "REDZED") await loadRedzed(); else await loadCustomer(); render(); ["valuePct","freightInput","otherInput"].forEach((id)=>$(id).addEventListener("input",render)); $("savePi").onclick = ()=>runButton("savePi",savePi,{online:true,busyText:"SENDING PI…"}); $("sendChat").onclick=()=>runButton("sendChat",sendRealChat,{online:true,busyText:"SENDING…"}); $("convertCi").onclick = ()=>runButton("convertCi",convertCi,{online:true,busyText:"CREATING CI…"}); $("sendResponse").onclick = ()=>runButton("sendResponse",respond,{online:true,busyText:"SENDING…"}); $("download").onclick=()=>runButton("download",downloadPdf,{busyText:"MAKING PDF…"}); $("share").onclick = ()=>runButton("share",share,{busyText:"PREPARING…"}); window.addEventListener("offline",()=>message("Internet connection नहीं है। Real Chat और CI actions connection आने तक उपलब्ध नहीं हैं।")); window.addEventListener("online",()=>message("Internet connection वापस आ गया है। अब action दोबारा tap करें।","ok")); } catch (e) { message(friendlyError(e)); } }
   boot();
 })();
