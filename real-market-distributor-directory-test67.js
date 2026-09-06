@@ -72,7 +72,7 @@
       ? rows
           .map(
             (c) =>
-              `<article class="customer" data-chat="${c.id}"><div class="avatar">${esc((c.name || "?")[0])}</div><div class="grow"><span class="kindBadge">CUSTOMER · ${esc(c.group_name || `${c.name} GROUP`)}</span><b>${esc(c.name)}</b><small>${esc(c.mobile || "No mobile")}</small></div>${statusButton("CUSTOMER", c)}</article>`,
+              `<article class="customer" data-chat="${c.id}"><div class="avatar">${esc((c.name || "?")[0])}</div><div class="grow"><span class="kindBadge">CUSTOMER · ${esc(c.group_name || `${c.name} GROUP`)}</span><b>${esc(c.name)}</b><small>${esc(c.mobile || "No mobile")}</small><div style="display:grid;grid-template-columns:1fr 1fr auto;gap:6px;margin-top:7px"><label><small>DISTRIBUTOR MARGIN</small><input data-customer-margin="${c.id}" type="number" min="0" step="0.01" value="${Number(c.margin || 0)}"></label><label><small>CUSTOMER DISCOUNT</small><input data-customer-discount="${c.id}" type="number" min="0" step="0.01" value="${Number(c.discount || 0)}"></label><button type="button" class="statusBtn" data-save-pricing="${c.id}" style="align-self:end">SAVE</button></div><small>Fixed until distributor changes it · staff view-only</small></div>${statusButton("CUSTOMER", c)}</article>`,
           )
           .join("")
       : '<div class="empty">No customer found.</div>';
@@ -80,6 +80,12 @@
       row.onclick = (e) => {
         if (e.target.closest("button")) return;
         location.href = `real-sales-live-chat-v9434.html?rr_partner_mode=CUSTOMER&customer=${encodeURIComponent(row.dataset.chat)}&from=distributor`;
+      };
+    });
+    $$("[data-save-pricing]").forEach((button) => {
+      button.onclick = (e) => {
+        e.stopPropagation();
+        saveCustomerPricing(button.dataset.savePricing);
       };
     });
   }
@@ -234,6 +240,23 @@
             ? "Customer active · permanent group restored ✓"
             : "Customer inactive · group history preserved ✓",
       );
+      await load();
+    } catch (e) {
+      note(e.message, true);
+      await load();
+    }
+  }
+  async function saveCustomerPricing(customerId) {
+    const margin = Math.max(0, Number($(`[data-customer-margin="${customerId}"]`)?.value || 0));
+    const discount = Math.max(0, Number($(`[data-customer-discount="${customerId}"]`)?.value || 0));
+    try {
+      await rpc("rr_market_partner_customer_pricing_set_v67", {
+        ...auth(),
+        p_partner_customer_id: customerId,
+        p_margin_amount: margin,
+        p_discount_amount: discount,
+      });
+      note("Customer margin और discount fixed ✓");
       await load();
     } catch (e) {
       note(e.message, true);
