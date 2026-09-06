@@ -156,7 +156,9 @@
     )
       .trim()
       .toUpperCase();
-    return `${owner} DISTRIBUTOR ↔ ${group}`;
+    const ownerShort = owner.split(/\s+/)[0] || "DISTRIBUTOR";
+    const customerShort = group.replace(/\s+GROUP$/i, "").trim().split(/\s+/)[0] || "CUSTOMER";
+    return `${ownerShort} ${customerShort} GROUP`;
   }
 
   function distributorLabel(name) {

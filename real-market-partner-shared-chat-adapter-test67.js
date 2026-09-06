@@ -424,6 +424,9 @@
     )
       .trim()
       .toUpperCase();
+    const ownerShort = owner.replace(/\s+DISTRIBUTOR$/i, "").trim().split(/\s+/)[0] || "DISTRIBUTOR";
+    const customerShort = group.replace(/\s+GROUP$/i, "").trim().split(/\s+/)[0] || "CUSTOMER";
+    const groupTitle = `${customerShort} ${ownerShort} GROUP`;
     const title = document.getElementById("fsTitle");
     const privateTab = document.getElementById("fsPrivate");
     const groupTab = document.getElementById("fsGroup");
@@ -431,14 +434,14 @@
     const collectionHeader = document.querySelector(
       "#rrCustomerCollectionHeaderV9619 .rzname",
     );
-    setText(title, `${owner} ↔ ${group}`);
+    setText(title, groupTitle);
     setText(
       privateTab,
       `🔒 ${owner.replace(/ DISTRIBUTOR$/i, "")} DISTRIBUTOR`,
     );
     setText(groupTab, "GROUP");
     setText(info, "GROUP INFO");
-    setText(collectionHeader, `${owner} COLLECTION`);
+    setText(collectionHeader, groupTitle);
     decorateCollectionMessages();
     decoratePiMessages();
   }

@@ -197,8 +197,11 @@
       const other = String(customer.group_name || customer.name || "CUSTOMER")
         .trim()
         .toUpperCase();
-      $("#relationTitle").textContent = `${owner} ↔ ${other}`;
-      $("#relationName").textContent = `${owner} ↔ ${other}`;
+      const ownerShort = owner.replace(/\s+DISTRIBUTOR$/i, "").trim().split(/\s+/)[0] || "DISTRIBUTOR";
+      const customerShort = other.replace(/\s+GROUP$/i, "").trim().split(/\s+/)[0] || "CUSTOMER";
+      const groupTitle = `${ownerShort} ${customerShort} GROUP`;
+      $("#relationTitle").textContent = groupTitle;
+      $("#relationName").textContent = groupTitle;
       $("#relationSub").textContent =
         `${customer.status} · customer group chat`;
       $("#directLane").textContent = owner.replace(/ DISTRIBUTOR$/, "");

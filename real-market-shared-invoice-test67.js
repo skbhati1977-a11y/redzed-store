@@ -78,9 +78,13 @@
     if(!window.pdfjsLib)throw Error("PI JPEG preview engine unavailable.");
     const pdf=await makePdf(),data=pdf.output("arraybuffer");
     pdfjsLib.GlobalWorkerOptions.workerSrc="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
-    const source=await pdfjsLib.getDocument({data:new Uint8Array(data)}).promise,page=await source.getPage(1),base=page.getViewport({scale:1}),scale=Math.max(1,1200/base.width),viewport=page.getViewport({scale}),canvas=document.createElement("canvas");
-    canvas.width=Math.floor(viewport.width);canvas.height=Math.floor(viewport.height);
-    await page.render({canvasContext:canvas.getContext("2d",{alpha:false}),viewport}).promise;
+    const source=await pdfjsLib.getDocument({data:new Uint8Array(data)}).promise,pages=[];let width=0,height=0;
+    for(let pageNo=1;pageNo<=source.numPages;pageNo++){
+      const page=await source.getPage(pageNo),base=page.getViewport({scale:1}),scale=Math.max(1,1200/base.width),viewport=page.getViewport({scale});
+      pages.push({page,viewport});width=Math.max(width,Math.floor(viewport.width));height+=Math.floor(viewport.height);
+    }
+    const canvas=document.createElement("canvas");canvas.width=width;canvas.height=height;const context=canvas.getContext("2d",{alpha:false});context.fillStyle="#fff";context.fillRect(0,0,width,height);let top=0;
+    for(const item of pages){await item.page.render({canvasContext:context,viewport:item.viewport,transform:[1,0,0,1,0,top]}).promise;top+=Math.floor(item.viewport.height);}
     const blob=await new Promise((resolve,reject)=>canvas.toBlob((value)=>value?resolve(value):reject(Error("PI JPEG preview create failed.")),"image/jpeg",.9));
     const data_url=await new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(reader.result);reader.onerror=reject;reader.readAsDataURL(blob);});
     return {blob,data_url,name:pdfName().replace(/\.pdf$/i,"-preview.jpg"),type:"image/jpeg"};
