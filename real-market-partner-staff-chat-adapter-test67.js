@@ -284,7 +284,31 @@
     }
 
     if (name === "rr_chat_staff_attachment_v9434") {
-      const attachment = attachmentCache.get(String(args.p_attachment_id));
+      const attachmentId = String(args.p_attachment_id || "");
+      let attachment = attachmentCache.get(attachmentId);
+      // Message lists intentionally return attachment metadata without the
+      // (potentially large) data URL. Fetch the bytes only when the user opens
+      // the attachment or the PDF preview asks for them.
+      if (!attachment?.data_url) {
+        const loaded = await rawRpc("rr_market_partner_chat_attachment_v67", {
+          ...base,
+          p_lane: lane(args.p_channel || "GROUP"),
+          p_partner_customer_id: mode === "CUSTOMER" ? customerId : null,
+          p_attachment_id: attachmentId,
+        });
+        if (loaded?.base64) {
+          attachment = {
+            ...(attachment || {}),
+            name: loaded.file_name || attachment?.name || "attachment",
+            type:
+              loaded.mime_type ||
+              attachment?.type ||
+              "application/octet-stream",
+            data_url: `data:${loaded.mime_type || attachment?.type || "application/octet-stream"};base64,${loaded.base64}`,
+          };
+          attachmentCache.set(attachmentId, attachment);
+        }
+      }
       if (!attachment?.data_url) throw Error("Attachment is unavailable.");
       return {
         file_name: attachment.name || "attachment",
