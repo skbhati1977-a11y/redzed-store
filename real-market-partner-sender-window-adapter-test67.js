@@ -65,17 +65,6 @@
     return { customer, workspace, core };
   }
 
-  function sentLots() {
-    const sent = new Set();
-    (core?.views || []).forEach((item) =>
-      (item.view?.rows || []).forEach((line) => {
-        const lot = String(line.lot_no || "").trim().toUpperCase();
-        if (lot) sent.add(lot);
-      }),
-    );
-    return sent;
-  }
-
   function numeric(id, fallback = 0) {
     return Math.max(
       0,
@@ -114,10 +103,8 @@
         ...auth(),
         p_search: args.p_search || null,
       });
-      const used = sentLots();
-      return (Array.isArray(rows) ? rows : []).filter(
-        (row) => !used.has(String(row.lot_no || "").trim().toUpperCase()),
-      );
+      // Every new collection starts from the complete available catalogue.
+      return Array.isArray(rows) ? rows : [];
     }
 
     if (name === "rr_market_create_share_v9420") {
@@ -251,7 +238,7 @@
     const subtitle = document.querySelector(".rf-brand .muted");
     setText(
       subtitle,
-      "Fresh samples only · thumbnail, category, size and photos",
+      "All available samples · thumbnail, category, size and photos",
     );
     document.querySelector(".ww-bucket")?.classList.add("rrPartnerHidden82");
     const bucket = document.getElementById("bucketBtn");
