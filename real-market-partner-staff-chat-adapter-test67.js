@@ -806,7 +806,7 @@
     dock.className = "rrPartnerDock82";
     dock.innerHTML =
       mode === "CUSTOMER"
-        ? '<button id="rrPartnerCollection82">COLLECTION</button><button id="rrPartnerRequirement82">REQUIREMENT</button><button id="rrPartnerDocuments82">PI / CI</button>'
+        ? '<button id="rrPartnerCollection82">SEND COLLECTION</button><button id="rrPartnerRequirement82">SEND REQUIREMENT</button><button id="rrPartnerDocuments82">PI / CI</button>'
         : '<button id="rrPartnerCollection82">REQUIREMENT</button><button id="rrPartnerRequirement82">PI</button><button id="rrPartnerDocuments82">CI</button>';
     chat.appendChild(dock);
     $("rrPartnerCollection82").onclick = () =>
