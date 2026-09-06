@@ -789,43 +789,29 @@
 
   function injectActions() {
     const chat = document.querySelector(".chat");
-    const tabs = document.querySelector(".tabs");
-    if (!chat || !tabs || $("rrPartnerDock82")) return false;
-    chat.classList.add("partner82");
+    if (!chat) return false;
     actionCss();
-    const metrics = document.createElement("div");
-    metrics.id = "rrPartnerMetrics82";
-    metrics.className = "rrPartnerMetrics82";
-    metrics.innerHTML =
-      mode === "CUSTOMER"
-        ? '<div class="rrPartnerMetric82"><small>REQ AVG</small><b id="rrReqAvg82">—</b></div><div class="rrPartnerMetric82"><small>ALL AVG</small><b id="rrAllAvg82">—</b></div><div class="rrPartnerMetric82"><small>REQ QTY</small><b id="rrReqQty82">—</b></div><div class="rrPartnerMetric82"><small>REQ AMT</small><b id="rrReqAmt82">—</b></div>'
-        : '<div class="rrPartnerMetric82" style="grid-column:1/-1"><small>PRIVATE RELATION</small><b>Customer identity hidden from REDZED</b></div>';
-    tabs.after(metrics);
-    const dock = document.createElement("nav");
-    dock.id = "rrPartnerDock82";
-    dock.className = "rrPartnerDock82";
-    dock.innerHTML =
-      mode === "CUSTOMER"
-        ? '<button id="rrPartnerCollection82">SEND COLLECTION</button><button id="rrPartnerRequirement82">SEND REQUIREMENT</button><button id="rrPartnerDocuments82">PI / CI</button>'
-        : '<button id="rrPartnerCollection82">REQUIREMENT</button><button id="rrPartnerRequirement82">PI</button><button id="rrPartnerDocuments82">CI</button>';
-    chat.appendChild(dock);
-    $("rrPartnerCollection82").onclick = () =>
-      mode === "CUSTOMER" ? openCollection() : openRequirements();
-    $("rrPartnerRequirement82").onclick = () =>
-      mode === "CUSTOMER" ? openRequirements() : openDocuments();
-    $("rrPartnerDocuments82").onclick = openDocuments;
-    $("marketWindowDitto")?.addEventListener(
-      "click",
-      (event) => {
-        event.preventDefault();
-        event.stopImmediatePropagation();
-        openCollection();
-      },
-      true,
-    );
+    // The distributor relation must use the same chat chrome and controls as
+    // the established RedZed/customer flow. Remove the former custom metrics
+    // and three-button dock; only the actor mapping remains in this adapter.
+    chat.classList.remove("partner82");
+    $("rrPartnerMetrics82")?.remove();
+    $("rrPartnerDock82")?.remove();
+    const marketWindow = $("marketWindowDitto");
+    if (marketWindow && marketWindow.dataset.rrPartnerMapped !== "1") {
+      marketWindow.dataset.rrPartnerMapped = "1";
+      marketWindow.addEventListener(
+        "click",
+        (event) => {
+          event.preventDefault();
+          event.stopImmediatePropagation();
+          openCollection();
+        },
+        true,
+      );
+    }
     const internal = document.querySelector('[data-pick="internal"]');
     if (internal) internal.style.display = "none";
-    paintMetrics();
     return true;
   }
 
