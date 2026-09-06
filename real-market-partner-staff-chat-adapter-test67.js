@@ -477,7 +477,8 @@
     return (
       {
         DRAFT: "REQUIREMENT RECEIVED",
-        READY: "REQUIREMENT CLOSED",
+        READY: "ACTION PENDING",
+        CONSOLIDATION_QUEUED: "ADDED TO CONSOLIDATED LIST",
         BATCHED: "SENT TO REDZED",
         PI_PROPOSED: "REDZED PI RECEIVED",
         CONFIRMED: "PI CONFIRMED",
@@ -554,6 +555,21 @@
     }
   }
 
+  async function setConsolidation(orderId, add) {
+    try {
+      await rawRpc("rr_market_partner_consolidation_queue_v67", {
+        ...authArgs(),
+        p_order_id: orderId,
+        p_add: Boolean(add),
+      });
+      workspaceAt = 0;
+      closeSheet();
+      flash(add ? "Requirement consolidated list में add हुई ✓" : "Requirement consolidated list से हटाई ✓");
+    } catch (error) {
+      flash(error.message, true);
+    }
+  }
+
   async function pushPi(orderIds) {
     try {
       await rawRpc("rr_market_partner_pi_push_v67", {
@@ -622,7 +638,7 @@
       );
       if (mode === "REDZED") {
         const ready = rows.filter(
-          (order) => order.status === "READY" && !order.redzed_pushed_at,
+          (order) => order.status === "CONSOLIDATION_QUEUED" && !order.redzed_pushed_at,
         );
         openSheet(
           "CONSOLIDATE REQUIREMENT",
@@ -630,7 +646,7 @@
             ? ready
                 .map(
                   (order) =>
-                    `<article class="rrPartnerOrder82"><label><input type="checkbox" data-consolidate-order value="${esc(order.id)}"> <b>${esc(order.requirement_display_no || order.order_ref)}</b></label><small>Customer identity private · ${esc(statusText(order))}</small>${lineRows(order)}</article>`,
+                    `<article class="rrPartnerOrder82"><label><input type="checkbox" data-consolidate-order value="${esc(order.id)}"> <b>${esc(order.requirement_display_no || order.order_ref)}</b></label><small>Customer identity private · ${esc(statusText(order))}</small>${lineRows(order)}<button type="button" data-remove-consolidated="${esc(order.id)}">REMOVE FROM LIST</button></article>`,
                 )
                 .join("") +
               '<button id="rrSendConsolidated82" type="button">SEND SELECTED TO REDZED</button>'
@@ -645,7 +661,9 @@
                   const canPi = ["DRAFT", "READY"].includes(order.status);
                   const canSend =
                     order.status === "READY" && !order.redzed_pushed_at;
-                  return `<article class="rrPartnerOrder82"><b>${esc(order.requirement_display_no || order.order_ref)}</b><small>${esc(statusText(order))} · linked ${esc(order.collection_display_no || "collection")}</small>${lineRows(order, canPi)}${canPi ? `<button class="good" data-make-pi="${esc(order.id)}">${order.distributor_pi_ref ? "UPDATE & RESEND PI" : "MAKE PI & SEND TO CUSTOMER"}</button>` : ""}${canSend ? `<button data-send-redzed="${esc(order.id)}">SEND REQUIREMENT TO REDZED</button>` : ""}</article>`;
+                  const queued =
+                    order.status === "CONSOLIDATION_QUEUED" && !order.redzed_pushed_at;
+                  return `<article class="rrPartnerOrder82"><b>${esc(order.requirement_display_no || order.order_ref)}</b><small>${esc(statusText(order))} · linked ${esc(order.collection_display_no || "collection")}</small>${lineRows(order, canPi)}${canPi ? `<button class="good" data-make-pi="${esc(order.id)}">${order.distributor_pi_ref ? "UPDATE & RESEND PI" : "MAKE PI & SEND TO CUSTOMER"}</button>` : ""}${canSend ? `<button data-send-redzed="${esc(order.id)}">SEND TO REDZED NOW</button><button type="button" data-add-consolidated="${esc(order.id)}">ADD TO CONSOLIDATED LIST</button>` : ""}${queued ? `<button type="button" data-remove-consolidated="${esc(order.id)}">REMOVE FROM CONSOLIDATED LIST</button>` : ""}</article>`;
                 })
                 .join("")
             : '<div class="rrPartnerEmpty82">Customer requirement not received yet.</div>',
@@ -657,6 +675,12 @@
       document.querySelectorAll("[data-send-redzed]").forEach(
         (button) =>
           (button.onclick = () => sendRedzed([button.dataset.sendRedzed])),
+      );
+      document.querySelectorAll("[data-add-consolidated]").forEach(
+        (button) => (button.onclick = () => setConsolidation(button.dataset.addConsolidated, true)),
+      );
+      document.querySelectorAll("[data-remove-consolidated]").forEach(
+        (button) => (button.onclick = () => setConsolidation(button.dataset.removeConsolidated, false)),
       );
       const consolidate = document.getElementById("rrSendConsolidated82");
       if (consolidate)
