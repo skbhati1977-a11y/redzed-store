@@ -96,7 +96,28 @@
   async function state(force = false) {
     if (!force && workspace && Date.now() - workspaceAt < 1200)
       return workspace;
-    workspace = await rawRpc("rr_market_partner_workspace_v67", authArgs());
+    const base = authArgs();
+    const [nextWorkspace, piState] = await Promise.all([
+      rawRpc("rr_market_partner_workspace_v67", base),
+      rawRpc("rr_market_partner_customer_pi_state_v67", base).catch(() => []),
+    ]);
+    const piByOrder = new Map(
+      (Array.isArray(piState) ? piState : []).map((item) => [String(item.order_id), item]),
+    );
+    workspace = nextWorkspace || {};
+    workspace.orders = (workspace.orders || []).map((order) => {
+      const pi = piByOrder.get(String(order.id));
+      if (!pi) return order;
+      const lines = new Map((pi.lines || []).map((line) => [String(line.id), line]));
+      return {
+        ...order,
+        ...pi,
+        lines: (order.lines || []).map((line) => ({
+          ...line,
+          ...(lines.get(String(line.id)) || {}),
+        })),
+      };
+    });
     workspaceAt = Date.now();
     const owner = String(workspace?.owner_name || "Distributor").trim();
     profile.full_name = owner;
@@ -665,7 +686,7 @@
           (order.distributor_pi_ref || order.pi_ref || order.ci_ref),
       );
       openSheet(
-        mode === "REDZED" ? "REDZED PI / CI" : "CUSTOMER PI / CI",
+        "PI / CI",
         rows.length
           ? rows
               .map((order) => {
@@ -679,7 +700,12 @@
                   order.status === "CI_FINAL" &&
                   order.ci_ref &&
                   !order.customer_ci_visible;
-                return `<article class="rrPartnerOrder82"><b>${esc(order.distributor_pi_ref || order.pi_ref || order.ci_ref)}</b><small>${esc(statusText(order))}${order.ci_ref ? ` · CI ${esc(order.ci_ref)}` : ""}</small>${lineRows(order, false, confirm)}${confirm ? `<button data-confirm-order="${esc(order.id)}">CONFIRM REDZED PI (OPTIONAL)</button>` : ""}${canPushPi ? `<button data-push-pi="${esc(order.id)}">PUSH REDZED PI TO CUSTOMER</button>` : ""}${canPushCi ? `<button class="good" data-push-ci="${esc(order.id)}">PUSH CI TO CUSTOMER</button>` : ""}</article>`;
+                const req = numberedLabel(order.requirement_display_no || order.order_ref, "REQUIREMENT");
+                const col = numberedLabel(order.collection_display_no, "COLLECTION");
+                const stage = order.distributor_pi_ref
+                  ? `PI SENT TO CUSTOMER · ${order.distributor_pi_status || "WAITING"}`
+                  : statusText(order);
+                return `<article class="rrPartnerOrder82"><b>${esc(order.distributor_pi_ref || order.pi_ref || order.ci_ref)}</b><small>${esc(stage)} · ${esc(req.title)} · ${esc(col.title)}${order.ci_ref ? ` · CI ${esc(order.ci_ref)}` : ""}</small>${lineRows(order, false, confirm)}${confirm ? `<button data-confirm-order="${esc(order.id)}">CONFIRM REDZED PI (OPTIONAL)</button>` : ""}${canPushPi ? `<button data-push-pi="${esc(order.id)}">PUSH REDZED PI TO CUSTOMER</button>` : ""}${canPushCi ? `<button class="good" data-push-ci="${esc(order.id)}">PUSH CI TO CUSTOMER</button>` : ""}</article>`;
               })
               .join("")
           : '<div class="rrPartnerEmpty82">No PI / CI in this private relation yet.</div>',
@@ -780,8 +806,8 @@
     dock.className = "rrPartnerDock82";
     dock.innerHTML =
       mode === "CUSTOMER"
-        ? '<button id="rrPartnerCollection82">SEND COLLECTION<br>TO CUSTOMER</button><button id="rrPartnerRequirement82">CUSTOMER<br>REQUIREMENT</button><button id="rrPartnerDocuments82">CUSTOMER<br>PI / CI</button>'
-        : '<button id="rrPartnerCollection82">REQUIREMENTS<br>TO REDZED</button><button id="rrPartnerRequirement82">REDZED PI</button><button id="rrPartnerDocuments82">REDZED CI</button>';
+        ? '<button id="rrPartnerCollection82">COLLECTION</button><button id="rrPartnerRequirement82">REQUIREMENT</button><button id="rrPartnerDocuments82">PI / CI</button>'
+        : '<button id="rrPartnerCollection82">REQUIREMENT</button><button id="rrPartnerRequirement82">PI</button><button id="rrPartnerDocuments82">CI</button>';
     chat.appendChild(dock);
     $("rrPartnerCollection82").onclick = () =>
       mode === "CUSTOMER" ? openCollection() : openRequirements();
