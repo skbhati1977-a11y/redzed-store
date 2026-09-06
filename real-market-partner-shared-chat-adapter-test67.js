@@ -391,7 +391,13 @@
   function decoratePiMessages() {
     ensureCollectionCardStyle();
     document.querySelectorAll("#fsMsgs .fsm").forEach((message) => {
-      if (message.querySelector(".rrPartnerCustomerPiCard89")) return;
+      const existingCard = message.querySelector(".rrPartnerCustomerPiCard89");
+      if (existingCard) {
+        message.querySelectorAll(".fsattimg,.rrMediaThumb9664,.rrAutoImg9651").forEach((image) => {
+          image.onclick = (event) => { event.preventDefault(); event.stopImmediatePropagation(); existingCard.click(); };
+        });
+        return;
+      }
       const body = message.querySelector(".fsbody");
       const match = (body?.textContent || "").match(/\[DPI:([0-9a-f-]{36})\]\s*([^·\n]+)?/i);
       if (!match) return;
@@ -406,10 +412,18 @@
         url.searchParams.set("role", "CUSTOMER");
         url.searchParams.set("order", match[1]);
         url.searchParams.set("t", token);
-        url.searchParams.set("v", "1");
+        url.searchParams.set("mode", "jpeg");
+        url.searchParams.set("v", "15");
         location.href = url.href;
       };
       message.insertBefore(card, message.querySelector("time") || null);
+      message.querySelectorAll(".fsattimg,.rrMediaThumb9664,.rrAutoImg9651").forEach((image) => {
+        image.onclick = (event) => {
+          event.preventDefault();
+          event.stopImmediatePropagation();
+          card.click();
+        };
+      });
     });
   }
 

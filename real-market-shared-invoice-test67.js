@@ -35,6 +35,7 @@
     const operator = ["DISTRIBUTOR", "REDZED"].includes(role);
     $("savePi").hidden = !operator || !!doc?.ref; $("sendChat").hidden = role!=="DISTRIBUTOR" || !doc?.ref; renderPiChatState(); $("convertCi").hidden = !operator || !doc?.ref || doc?.kind === "CI"; $("download").hidden = !operator || !doc?.ref; $("share").hidden = !operator || !doc?.ref;
     if (role === "CUSTOMER" && doc?.ref && doc?.kind !== "CI") renderResponse();
+    if (role === "CUSTOMER" && q.get("mode") === "jpeg") setTimeout(() => showJpegMode().catch((error) => message(friendlyError(error))), 0);
   }
   function renderResponse() { $("response").classList.add("on"); $("responseLines").innerHTML = lines.map((x) => { const v = values(x), d = x.decision || "WAITING", qty = x.customer_qty ?? v.qty; return `<div class="decision"><span><b>${esc(x.lot_no)}</b><small class="muted">${esc(x.category || "-")} · ${esc(x.size_text || "-")} · ${money(v.finalRate)}</small></span><select data-action="${esc(x.id)}"><option value="CONFIRM" ${d === "CONFIRM" ? "selected" : ""}>CONFIRM</option><option value="CHANGE" ${d === "CHANGE" ? "selected" : ""}>CHANGE</option><option value="CANCEL" ${d === "CANCEL" ? "selected" : ""}>CANCEL</option></select><input class="num" data-response-qty="${esc(x.id)}" type="number" min="0" value="${Number(qty || 0)}"></div>`; }).join(""); }
 
@@ -88,6 +89,12 @@
     const blob=await new Promise((resolve,reject)=>canvas.toBlob((value)=>value?resolve(value):reject(Error("PI JPEG preview create failed.")),"image/jpeg",.9));
     const data_url=await new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(reader.result);reader.onerror=reject;reader.readAsDataURL(blob);});
     return {blob,data_url,name:pdfName().replace(/\.pdf$/i,"-preview.jpg"),type:"image/jpeg"};
+  }
+  async function showJpegMode(){
+    message("पूरी JPG तैयार हो रही है…","ok");
+    const attachment=await jpegAttachment();
+    document.body.innerHTML=`<main style="margin:0;min-height:100dvh;background:#090d13;color:#fff"><div style="position:sticky;top:0;z-index:2;display:flex;align-items:center;gap:10px;padding:10px;background:#101722;border-bottom:1px solid #334155"><button id="jpegBack" style="padding:9px 13px;border:1px solid #53677f;border-radius:9px;background:#182535;color:#fff;font-weight:900">BACK</button><b style="flex:1">${esc(doc?.ref||"PI")} · COMPLETE JPG</b></div><img src="${attachment.data_url}" alt="${esc(doc?.ref||"PI")}" style="display:block;width:100%;height:auto;background:#fff"></main>`;
+    document.getElementById("jpegBack").onclick=()=>history.back();
   }
   async function downloadPdf(){(await makePdf()).save(pdfName());message("A4 PDF download शुरू हुई ✓","ok");}
   async function sendRealChat(){requireOnline();if(piChatSent){renderPiChatState();return;}const a=auth(),attachment=await jpegAttachment(),result=await rpc("rr_market_partner_pi_chat_send_v67",{...a,p_order_id:order.id,p_attachment:{name:attachment.name,type:attachment.type,data_url:attachment.data_url}});piChatSent=!!result?.sent_at;renderPiChatState();message(result?.already_sent?`${doc.kind||"PI"} ${doc.ref} पहले ही Real Chat में भेजी जा चुकी है ✓`:`${doc.kind||"PI"} ${doc.ref} JPEG preview के साथ Real Chat में भेजी ✓`,"ok");}
