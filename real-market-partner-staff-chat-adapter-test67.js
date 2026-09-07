@@ -446,7 +446,12 @@
       .rrPartnerOrder82>button.good{background:#197d51}.rrPartnerEmpty82{padding:28px 10px;text-align:center;color:#9ba9ba}
       .rrPartnerDelete82{display:block;margin-top:7px;border:1px solid #76505a;background:#2b171c;color:#ffbec7;border-radius:7px;padding:5px 8px;font-size:10px;font-weight:900}
       .rrPartnerPiMessage82 img,.rrPartnerPiMessage82 .fsattbtn,.rrPartnerPiMessage82 .attimg,.rrPartnerPiMessage82 .rrMediaThumb9664,.rrPartnerPiMessage82 .rrAutoImg9651{display:none!important}
-      .rrPartnerLivePiPreview82{display:block;width:100%;aspect-ratio:210/297;margin:0 0 8px;border:1px solid #52657d;border-radius:12px;background:#fff}
+      .rrPartnerLivePiShell82{position:relative;width:100%;aspect-ratio:210/297;margin:0 0 8px;border:1px solid #52657d;border-radius:12px;overflow:hidden;background:#fff;cursor:pointer}
+      .rrPartnerLivePiShell82:after{content:'TAP TO OPEN';position:absolute;right:8px;bottom:8px;padding:5px 8px;border-radius:999px;background:#07111dcc;color:#fff;font-size:9px;font-weight:900}
+      .rrPartnerLivePiPreview82{display:block;width:100%;height:100%;border:0;background:#fff;pointer-events:none}
+      .rrPartnerPiViewer82{position:fixed;inset:0;z-index:2147483500;display:flex;align-items:flex-start;justify-content:center;padding:54px 8px 12px;background:#05080df2;touch-action:none;transition:opacity .18s ease}
+      .rrPartnerPiViewer82 iframe{width:min(100%,760px);height:calc(100dvh - 70px);border:0;border-radius:12px;background:#fff;pointer-events:auto;transition:transform .18s ease}
+      .rrPartnerPiViewerClose82{position:fixed;right:12px;top:8px;z-index:2147483502;width:42px;height:42px;border:1px solid #64748b;border-radius:50%;background:#111c;color:#fff;font-size:25px}
       .chat.partner82 .msgs{padding-bottom:160px!important}.attach button[data-pick="internal"]{display:none!important}
       @media(max-width:760px){.rrPartnerDock82{left:0}.rrPartnerMetrics82{grid-template-columns:repeat(4,minmax(0,1fr))}.rrPartnerMetric82 small{font-size:8px}.rrPartnerMetric82 b{font-size:12px}}
     `;
@@ -906,6 +911,28 @@
     }
   }
 
+  function openLivePiViewer(shell, preview) {
+    if (!shell || !preview || document.querySelector(".rrPartnerPiViewer82")) return;
+    const marker = document.createComment("live-pi-preview");
+    shell.insertBefore(marker, preview);
+    const viewer = document.createElement("div");
+    viewer.className = "rrPartnerPiViewer82";
+    viewer.innerHTML = '<button type="button" class="rrPartnerPiViewerClose82" aria-label="Close">×</button>';
+    viewer.appendChild(preview);
+    document.body.appendChild(viewer);
+    let startY = 0, dragY = 0;
+    const close = () => {
+      marker.parentNode?.insertBefore(preview, marker);
+      marker.remove();
+      viewer.remove();
+    };
+    viewer.querySelector(".rrPartnerPiViewerClose82").onclick = close;
+    viewer.addEventListener("pointerdown", (event) => { if(event.target.closest("button")) return; startY=event.clientY; dragY=0; });
+    viewer.addEventListener("pointermove", (event) => { if(!startY) return; dragY=Math.max(0,event.clientY-startY); preview.style.transform=`translateY(${dragY}px)`; viewer.style.opacity=String(Math.max(.3,1-dragY/450)); });
+    viewer.addEventListener("pointerup", () => { if(dragY>85) close(); else { preview.style.transform=""; viewer.style.opacity="1"; } startY=0; dragY=0; });
+    viewer.addEventListener("pointercancel", () => { preview.style.transform=""; viewer.style.opacity="1"; startY=0; dragY=0; });
+  }
+
   function decorateMessages() {
     document.querySelectorAll("#msgs .msg[data-msg-id]").forEach((message) => {
       const messageText = message.textContent || "";
@@ -942,6 +969,10 @@
           url.searchParams.set("v", "1");
           location.href = url.href;
         };
+        const previewShell = document.createElement("div");
+        previewShell.className = "rrPartnerLivePiShell82";
+        previewShell.setAttribute("role", "button");
+        previewShell.tabIndex = 0;
         const preview = document.createElement("iframe");
         preview.className = "rrPartnerLivePiPreview82";
         preview.title = `${String(piMatch[2] || "PI").trim()} latest complete JPG`;
@@ -953,7 +984,10 @@
         previewUrl.searchParams.set("embed", "1");
         previewUrl.searchParams.set("v", "20");
         preview.src = previewUrl.href;
-        message.insertBefore(preview, message.querySelector("time"));
+        previewShell.appendChild(preview);
+        previewShell.onclick = () => openLivePiViewer(previewShell, preview);
+        previewShell.onkeydown = (event) => { if(event.key === "Enter" || event.key === " "){ event.preventDefault(); openLivePiViewer(previewShell, preview); } };
+        message.insertBefore(previewShell, message.querySelector("time"));
         message.insertBefore(card, message.querySelector("time"));
       }
       if (batchMatch && !message.querySelector(".rrPartnerBatchCard82")) {
