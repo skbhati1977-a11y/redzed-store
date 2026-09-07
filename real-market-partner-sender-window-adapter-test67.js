@@ -265,8 +265,38 @@
         ...auth(),
         p_search: args.p_search || null,
       });
-      // Every new collection starts from the complete available catalogue.
-      return Array.isArray(rows) ? rows : [];
+      const catalogue = Array.isArray(rows) ? rows : [];
+      const current = Array.isArray(core?.views) ? core.views[0]?.view : null;
+      if (!current) return catalogue;
+
+      const requirements = Array.isArray(current.requirements)
+        ? current.requirements
+        : current.requirement
+          ? [current.requirement]
+          : [];
+      const cycleClosed = requirements.some((item) =>
+        [
+          "READY",
+          "BATCHED",
+          "PI_PROPOSED",
+          "CONFIRMED",
+          "PARTIAL_CONFIRMED",
+          "CANCELLED",
+          "CI_FINAL",
+          "CLOSED",
+        ].includes(String(item?.status || "").toUpperCase()),
+      );
+      if (cycleClosed) return catalogue;
+
+      const alreadySent = new Set(
+        (Array.isArray(current.collections) ? current.collections : [])
+          .flatMap((collection) => Array.isArray(collection?.lines) ? collection.lines : [])
+          .map((line) => String(line?.lot_no || "").trim().toLowerCase())
+          .filter(Boolean),
+      );
+      return catalogue.filter(
+        (row) => !alreadySent.has(String(row?.lot_no || "").trim().toLowerCase()),
+      );
     }
 
     if (name === "rr_market_create_share_v9420") {
