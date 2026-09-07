@@ -2,7 +2,7 @@
  * REDZED Dealer Catalog
  * File        : config.js
  * Recovery ID : RR-005
- * Status      : RECOVERED · V9461 CANONICAL DASHBOARD ROUTES
+ * Status      : RECOVERED · V9676 CANONICAL DASHBOARD ROUTES
  ******************************************************************/
 const SUPABASE_URL="https://hruartsemierwhtzonei.supabase.co";
 const SUPABASE_ANON_KEY="sb_publishable_uo3dcrFuRvGsvRzPcdTV0A_5ZVwgzga";
@@ -12,7 +12,7 @@ const supabaseClient=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY
 // previews serve the same files from /. Keep navigation portable so a tested
 // rehearsal build cannot redirect into a non-existent Vercel subdirectory.
 const RR_REPO_BASE=location.hostname.toLowerCase().endsWith(".github.io")?"/redzed-store/":"/";
-const RR_TRAVEL_VERSION="9461";
+const RR_TRAVEL_VERSION="9676";
 const RR_LATEST_DASHBOARD_URL=`${RR_REPO_BASE}real-dashboard-v9182.html?v=${RR_TRAVEL_VERSION}`;
 const rrIsDashboardPath=path=>/\/real-dashboard(?:-v9182)?\.html$/i.test(path||"");
 const rrIsRealChatPath=path=>/\/real-sales-live-chat-v9434\.html$/i.test(path||"");
