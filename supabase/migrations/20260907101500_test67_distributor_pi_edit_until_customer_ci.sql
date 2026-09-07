@@ -11,7 +11,9 @@ begin
   v_owner:=(v_ctx->>'owner_customer_id')::uuid;
   select * into v_order from public.rr_market_partner_order_v67
   where id=p_order_id and owner_customer_id=v_owner and data_mode='TEST'
-    and customer_ci_ref is null and status not in('CANCELLED','CI_FINAL')
+    and status not in('CANCELLED','CI_FINAL')
+    and not exists(select 1 from public.rr_market_partner_customer_ci_v67 ci
+      where ci.source_order_id=p_order_id and ci.owner_customer_id=v_owner and ci.data_mode='TEST')
   for update;
   if v_order.id is null then raise exception 'PI is locked because customer CI is already created or requirement is unavailable.';end if;
   if jsonb_typeof(p_lines)<>'array' or jsonb_array_length(p_lines)=0 then raise exception 'PI needs every requirement line.';end if;
@@ -64,7 +66,9 @@ begin
   distributor_pi_freight=coalesce(p_freight,0),distributor_pi_other=coalesce(p_other,0),
   distributor_pi_tax_pct=coalesce(p_tax_pct,0),updated_at=now()
  where id=p_order_id and owner_customer_id=v_owner and data_mode='TEST'
-   and customer_ci_ref is null and status not in('CANCELLED','CI_FINAL') returning * into v_order;
+   and status not in('CANCELLED','CI_FINAL')
+   and not exists(select 1 from public.rr_market_partner_customer_ci_v67 ci
+     where ci.source_order_id=p_order_id and ci.owner_customer_id=v_owner and ci.data_mode='TEST') returning * into v_order;
  if v_order.id is null then raise exception 'PI charges are locked because customer CI is already created or requirement is unavailable.';end if;
  return jsonb_build_object('value_pct',v_order.distributor_pi_value_pct,'freight',v_order.distributor_pi_freight,
   'other',v_order.distributor_pi_other,'tax_pct',v_order.distributor_pi_tax_pct);

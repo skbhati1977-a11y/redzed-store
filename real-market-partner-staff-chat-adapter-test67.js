@@ -922,13 +922,15 @@
         }
       }
       if (piMatch && !message.querySelector(".rrPartnerPiCard82")) {
+        message.classList.add("rrPartnerPiMessage82");
+        message.querySelectorAll(".att,.attimg,.attachment,.media,.rrMediaThumb9664,.rrAutoImg9651").forEach((node) => { node.style.display = "none"; });
         [...message.children].forEach((child) => {
           if (child.tagName === "DIV" && /\[DPI:/i.test(child.textContent || "")) child.style.display = "none";
         });
         const card = document.createElement("button");
         card.type = "button";
         card.className = "rrMarketLinkCard9505 rrPartnerPiCard82";
-        card.innerHTML = `<span class="rrMkIcon9505">📄</span><span class="rrMkText9505"><b>${esc(String(piMatch[2] || "PI").trim())}</b><small>PI sent to customer · tap to open</small></span><span class="rrMkGo9505">OPEN ›</span>`;
+        card.innerHTML = `<span class="rrMkIcon9505">📄</span><span class="rrMkText9505"><b>${esc(String(piMatch[2] || "PI").trim())}</b><small>Editable distributor PI · customer sees the same live document</small></span><span class="rrMkGo9505">EDIT PI ›</span>`;
         card.onclick = (event) => {
           event.preventDefault();
           event.stopPropagation();

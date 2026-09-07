@@ -12,7 +12,7 @@
   function requireOnline() { if (navigator.onLine === false) throw Error("Internet connection नहीं है। Connection आने के बाद दोबारा tap करें।"); }
   async function runButton(id, task, options = {}) { const button = $(id); if (!button || button.dataset.busy === "1" || button.dataset.locked === "1") return; const old = button.textContent; button.dataset.busy = "1"; button.disabled = true; button.classList.add("busy"); button.textContent = options.busyText || "PLEASE WAIT…"; message(""); try { if (options.online) requireOnline(); await task(); } catch (error) { if (error?.name !== "AbortError") message(friendlyError(error)); } finally { button.dataset.busy = "0"; button.classList.remove("busy"); button.disabled = button.dataset.locked === "1"; button.textContent = button.dataset.locked === "1" ? "SENT ✓" : old; } }
 
-  function renderPiChatState() { const button=$("sendChat"); if(!button)return; button.dataset.locked=piChatSent?"1":"0"; button.disabled=piChatSent; button.textContent=piChatSent?"SENT ✓":"SEND PI TO REAL CHAT (PDF/JPEG)"; }
+  function renderPiChatState() { const button=$("sendChat"); if(!button)return; button.dataset.locked=piChatSent?"1":"0"; button.disabled=piChatSent; button.textContent=piChatSent?"LIVE PI LINKED TO CHAT ✓":"LINK LIVE PI TO REAL CHAT"; }
 
   function device() { let d = localStorage.getItem(DEVICE_KEY); if (!d) { const a = new Uint8Array(24); crypto.getRandomValues(a); d = [...a].map((b) => b.toString(16).padStart(2, "0")).join(""); localStorage.setItem(DEVICE_KEY, d); } return d; }
   function auth() { let s = null; try { s = JSON.parse(localStorage.getItem(SESSION_KEY) || "null"); } catch (_) {} if (!s?.session_token) throw Error("Valid distributor login required."); return { p_session_token: s.session_token, p_device_id: device() }; }
@@ -33,7 +33,7 @@
     $("reqNo").textContent = "Requirement No. " + (order?.requirement_display_no || doc?.requirement_display_no || order?.batch_ref || "—"); $("docNo").textContent = (doc?.kind === "CI" ? "CI" : "PI") + " No. " + (doc?.ref || "DRAFT"); $("docTitle").textContent = doc?.kind === "CI" ? "CI · COMMERCIAL INVOICE" : "PI · PROFORMA INVOICE";
     $("status").value = doc?.status || "DRAFT"; $("docDate").textContent = new Date(doc?.pushed_at || doc?.created_at || Date.now()).toLocaleString("en-IN");
     const operator = ["DISTRIBUTOR", "REDZED"].includes(role);
-    $("savePi").hidden = !operator || doc?.kind === "CI"; $("savePi").textContent=doc?.ref?"UPDATE PI":"SAVE & SEND PI"; $("sendChat").hidden = role!=="DISTRIBUTOR" || !doc?.ref; renderPiChatState(); $("convertCi").hidden = !operator || !doc?.ref || doc?.kind === "CI"; $("download").hidden = !operator || !doc?.ref; $("share").hidden = !operator || !doc?.ref;
+    $("savePi").hidden = !operator || doc?.kind === "CI"; $("savePi").textContent=doc?.ref?"UPDATE LIVE PI":"SAVE & LINK PI"; $("sendChat").hidden = role!=="DISTRIBUTOR" || !doc?.ref; renderPiChatState(); $("convertCi").hidden = !operator || !doc?.ref || doc?.kind === "CI"; $("download").hidden = !operator || !doc?.ref; $("share").hidden = !operator || !doc?.ref;
     if (role === "CUSTOMER" && doc?.ref && doc?.kind !== "CI") renderResponse();
     if (role === "CUSTOMER" && q.get("mode") === "jpeg") setTimeout(() => showJpegMode().catch((error) => message(friendlyError(error))), 0);
   }
@@ -81,7 +81,7 @@
     pdfjsLib.GlobalWorkerOptions.workerSrc="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
     const source=await pdfjsLib.getDocument({data:new Uint8Array(data)}).promise,pages=[];let width=0,height=0;
     for(let pageNo=1;pageNo<=source.numPages;pageNo++){
-      const page=await source.getPage(pageNo),base=page.getViewport({scale:1}),scale=Math.max(1,1200/base.width),viewport=page.getViewport({scale});
+      const page=await source.getPage(pageNo),base=page.getViewport({scale:1}),scale=Math.max(1,900/base.width),viewport=page.getViewport({scale});
       pages.push({page,viewport});width=Math.max(width,Math.floor(viewport.width));height+=Math.floor(viewport.height);
     }
     const canvas=document.createElement("canvas");canvas.width=width;canvas.height=height;const context=canvas.getContext("2d",{alpha:false});context.fillStyle="#fff";context.fillRect(0,0,width,height);let top=0;
