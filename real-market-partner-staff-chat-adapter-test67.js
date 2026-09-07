@@ -452,6 +452,7 @@
       .rrPartnerPiViewer82{position:fixed;inset:0;z-index:2147483500;display:flex;align-items:flex-start;justify-content:center;padding:54px 8px 12px;background:#05080df2;touch-action:none;transition:opacity .18s ease}
       .rrPartnerPiViewer82 iframe{width:min(100%,760px);height:calc(100dvh - 70px);border:0;border-radius:12px;background:#fff;pointer-events:auto;transition:transform .18s ease}
       .rrPartnerPiViewerClose82{position:fixed;right:12px;top:8px;z-index:2147483502;width:42px;height:42px;border:1px solid #64748b;border-radius:50%;background:#111c;color:#fff;font-size:25px}
+      .rrPartnerPiSwipe82{position:absolute;inset:0;z-index:2147483501;touch-action:none;cursor:grab}
       .chat.partner82 .msgs{padding-bottom:160px!important}.attach button[data-pick="internal"]{display:none!important}
       @media(max-width:760px){.rrPartnerDock82{left:0}.rrPartnerMetrics82{grid-template-columns:repeat(4,minmax(0,1fr))}.rrPartnerMetric82 small{font-size:8px}.rrPartnerMetric82 b{font-size:12px}}
     `;
@@ -917,7 +918,7 @@
     shell.insertBefore(marker, preview);
     const viewer = document.createElement("div");
     viewer.className = "rrPartnerPiViewer82";
-    viewer.innerHTML = '<button type="button" class="rrPartnerPiViewerClose82" aria-label="Close">×</button>';
+    viewer.innerHTML = '<button type="button" class="rrPartnerPiViewerClose82" aria-label="Close">×</button><div class="rrPartnerPiSwipe82" aria-label="Drag down to close"></div>';
     viewer.appendChild(preview);
     document.body.appendChild(viewer);
     let startY = 0, dragY = 0;
@@ -927,10 +928,11 @@
       viewer.remove();
     };
     viewer.querySelector(".rrPartnerPiViewerClose82").onclick = close;
-    viewer.addEventListener("pointerdown", (event) => { if(event.target.closest("button")) return; startY=event.clientY; dragY=0; });
-    viewer.addEventListener("pointermove", (event) => { if(!startY) return; dragY=Math.max(0,event.clientY-startY); preview.style.transform=`translateY(${dragY}px)`; viewer.style.opacity=String(Math.max(.3,1-dragY/450)); });
-    viewer.addEventListener("pointerup", () => { if(dragY>85) close(); else { preview.style.transform=""; viewer.style.opacity="1"; } startY=0; dragY=0; });
-    viewer.addEventListener("pointercancel", () => { preview.style.transform=""; viewer.style.opacity="1"; startY=0; dragY=0; });
+    const swipe = viewer.querySelector(".rrPartnerPiSwipe82");
+    swipe.addEventListener("pointerdown", (event) => { startY=event.clientY; dragY=0; swipe.setPointerCapture?.(event.pointerId); });
+    swipe.addEventListener("pointermove", (event) => { if(!startY) return; dragY=Math.max(0,event.clientY-startY); preview.style.transform=`translateY(${dragY}px)`; viewer.style.opacity=String(Math.max(.3,1-dragY/450)); });
+    swipe.addEventListener("pointerup", () => { if(dragY>70) close(); else { preview.style.transform=""; viewer.style.opacity="1"; } startY=0; dragY=0; });
+    swipe.addEventListener("pointercancel", () => { preview.style.transform=""; viewer.style.opacity="1"; startY=0; dragY=0; });
   }
 
   function decorateMessages() {
