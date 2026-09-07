@@ -72,6 +72,128 @@
     );
   }
 
+  function selectedLots() {
+    return [...document.querySelectorAll(".ww-select:checked")]
+      .map((item) => String(item.dataset.select || "").trim())
+      .filter(Boolean);
+  }
+
+  function showSendStatus(message, isError = false) {
+    const node = document.getElementById("flash");
+    if (!node) return;
+    node.textContent = message;
+    node.style.display = "block";
+    node.style.background = isError ? "#7f1d1d" : "#fff";
+    node.style.color = isError ? "#fff" : "#000";
+    clearTimeout(node.__rrPartnerTimer87);
+    node.__rrPartnerTimer87 = setTimeout(() => {
+      node.style.display = "none";
+    }, 3200);
+  }
+
+  function firstSelectedImage(lot) {
+    const card = document.querySelector(
+      `.ww-card[data-card="${CSS.escape(lot)}"]`,
+    );
+    return card?.querySelector(".ww-main img")?.src ||
+      card?.querySelector(".ww-thumb img")?.src || "";
+  }
+
+  async function posterAttachment(lot, count) {
+    const imageUrl = firstSelectedImage(lot);
+    if (!imageUrl) return null;
+    const response = await fetch(imageUrl, { mode: "cors", cache: "no-store" });
+    if (!response.ok) throw Error("Collection image could not be prepared.");
+    const objectUrl = URL.createObjectURL(await response.blob());
+    try {
+      const source = new Image();
+      await new Promise((resolve, reject) => {
+        source.onload = resolve;
+        source.onerror = reject;
+        source.src = objectUrl;
+      });
+      const width = 1080, height = 1350;
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+      const context2d = canvas.getContext("2d");
+      const scale = Math.max(width / source.width, height / source.height);
+      const drawWidth = source.width * scale, drawHeight = source.height * scale;
+      context2d.fillStyle = "#111";
+      context2d.fillRect(0, 0, width, height);
+      context2d.drawImage(source,(width-drawWidth)/2,(height-drawHeight)/2,drawWidth,drawHeight);
+      context2d.fillStyle = "rgba(0,0,0,.78)";
+      context2d.beginPath();
+      if (context2d.roundRect) context2d.roundRect(width-300,42,245,112,34);
+      else context2d.rect(width-300,42,245,112);
+      context2d.fill();
+      context2d.fillStyle = "#fff";
+      context2d.font = "800 58px system-ui,sans-serif";
+      context2d.textAlign = "center";
+      context2d.fillText(`+${count}`,width-178,116);
+      const blob = await new Promise((resolve) => canvas.toBlob(resolve,"image/jpeg",.9));
+      if (!blob) throw Error("Collection image could not be prepared.");
+      const dataUrl = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result || ""));
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+      return {name:`DISTRIBUTOR-${lot}-${count}-styles.jpg`,type:"image/jpeg",data_url:dataUrl};
+    } finally {
+      URL.revokeObjectURL(objectUrl);
+    }
+  }
+
+  let atomicSendRunning = false;
+  async function atomicSend() {
+    if (atomicSendRunning) return;
+    const lots = selectedLots();
+    if (!lots.length) return showSendStatus("SELECT AT LEAST ONE LOT", true);
+    const button = document.getElementById("sendChatBtn");
+    atomicSendRunning = true;
+    if (button) { button.disabled = true; button.textContent = "SENDING COLLECTION…"; }
+    try {
+      const { customer } = await context();
+      const margin = numeric("rrPartnerMargin82", customer.margin);
+      const discount = numeric("rrPartnerDiscount82", customer.discount);
+      const attachment = await posterAttachment(lots[0], lots.length);
+      const result = await rawRpc("rr_market_partner_collection_send_v87", {
+        ...auth(),
+        p_partner_customer_id: customerId,
+        p_lines: lots.map((lot) => ({lot_no:lot,margin_amount:margin,discount_amount:discount})),
+        p_link_base: new URL("s.html", location.href).href.split("?")[0],
+        p_attachment: attachment,
+      });
+      if (!result?.collection_id || !result?.chat_message_id)
+        throw Error("Collection and chat card were not both saved.");
+      showSendStatus(`${result.collection_display_no} · SENT ✓`);
+      sessionStorage.setItem(RETURN_KEY,JSON.stringify({mode:"CUSTOMER",customer:customerId,at:Date.now()}));
+      setTimeout(() => {
+        const back = new URL("real-sales-live-chat-v9434.html", location.href);
+        back.search = "";
+        back.searchParams.set("rr_partner_mode", "CUSTOMER");
+        back.searchParams.set("customer", customerId);
+        back.searchParams.set("refresh", "1");
+        back.searchParams.set("v", "partner87");
+        back.hash = "rr-chat";
+        location.href = back.href;
+      }, 700);
+    } catch (error) {
+      showSendStatus(error.message || "SEND FAILED · NOTHING SAVED", true);
+    } finally {
+      atomicSendRunning = false;
+      if (button) { button.disabled = false; button.textContent = "SEND TO CUSTOMER"; }
+    }
+  }
+
+  document.addEventListener("click", (event) => {
+    if (!event.target.closest?.("#sendChatBtn")) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    atomicSend();
+  }, true);
+
   async function requirementDetail(requirementId) {
     const { customer, workspace: data } = await context();
     const order = (data.orders || []).find(
