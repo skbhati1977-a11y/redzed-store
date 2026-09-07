@@ -1081,7 +1081,7 @@
           location.href = url.href;
         };
       }
-      if (!message.querySelector(".rrMarketLinkCard9505")) {
+      {
         const text = message.textContent || "";
         const absolute = text.match(/https:\/\/[^\s<]+\/s\.html\?[^\s<]+/i);
         const sharePath = text.match(/\/s\.html\?[^\s<]+/i);
@@ -1091,11 +1091,21 @@
             "",
           );
           const url = absolute ? rawUrl : new URL(rawUrl, location.href).href;
-          const card = document.createElement("button");
-          card.type = "button";
-          card.className = "rrMarketLinkCard9505";
-          card.innerHTML =
-            '<span class="rrMkIcon9505">🛍️</span><span class="rrMkText9505"><b>COLLECTION</b><small>Loading collection number…</small></span><span class="rrMkGo9505">OPEN ›</span>';
+          const existingCards = [...message.querySelectorAll(":scope > .rrMarketLinkCard9505")]
+            .filter((item) => !item.classList.contains("rrPartnerPiCard82") && !item.classList.contains("rrPartnerBatchCard82"));
+          let card = existingCards.find((item) => item.dataset.rrPartnerPreview === "1") || existingCards[0];
+          existingCards.filter((item) => item !== card).forEach((item) => item.remove());
+          if (!card) {
+            card = document.createElement("button");
+            card.type = "button";
+            card.className = "rrMarketLinkCard9505";
+            card.innerHTML =
+              '<span class="rrMkIcon9505">🛍️</span><span class="rrMkText9505"><b>COLLECTION</b><small>Loading collection number…</small></span><span class="rrMkGo9505">OPEN ›</span>';
+            message.insertBefore(card, message.querySelector("time"));
+          }
+          // The shared link-card observer must reuse this mapped card instead
+          // of appending a second generic "REDZED COLLECTION" field.
+          message.dataset.rrMarketCard = "1";
           card.onclick = (event) => {
             event.preventDefault();
             event.stopPropagation();
@@ -1107,7 +1117,6 @@
             (node) => node.tagName === "DIV" && /\/s\.html\?/i.test(node.textContent || ""),
           );
           if (body) body.style.display = "none";
-          message.insertBefore(card, message.querySelector("time"));
           hydrateCollectionCard(card, url);
         }
       }
