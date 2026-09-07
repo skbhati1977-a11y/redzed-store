@@ -1048,7 +1048,37 @@
           card.dataset.rrPartnerState82 = cardState;
           card.innerHTML = cardHtml;
         }
-        card.onclick = (event) => { event.preventDefault(); event.stopPropagation(); openSentRedzedRequirements(); };
+        let batchPreview = message.querySelector(".rrPartnerBatchPreview82");
+        if (sentRef && !batchPreview) {
+          batchPreview = document.createElement("div");
+          batchPreview.className = "rrPartnerLivePiShell82 rrPartnerBatchPreview82";
+          batchPreview.setAttribute("role", "button");
+          batchPreview.tabIndex = 0;
+          const preview = document.createElement("iframe");
+          preview.className = "rrPartnerLivePiPreview82";
+          preview.title = `${refLabel(sentKind, sentRef)} complete JPG`;
+          preview.loading = "eager";
+          const previewUrl = new URL("real-market-shared-invoice-test67.html", location.href);
+          previewUrl.searchParams.set("role", "UPSTREAM");
+          previewUrl.searchParams.set("batch", batchId);
+          previewUrl.searchParams.set("mode", "jpeg");
+          previewUrl.searchParams.set("embed", "1");
+          previewUrl.searchParams.set("v", "31");
+          preview.src = previewUrl.href;
+          batchPreview.appendChild(preview);
+          batchPreview.onclick = () => openLivePiViewer(batchPreview, preview);
+          batchPreview.onkeydown = (event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); openLivePiViewer(batchPreview, preview); } };
+          message.insertBefore(batchPreview, card);
+        } else if (!sentRef && batchPreview) batchPreview.remove();
+        card.onclick = (event) => {
+          event.preventDefault(); event.stopPropagation();
+          if (!sentRef) { openSentRedzedRequirements(); return; }
+          const url = new URL("real-market-shared-invoice-test67.html", location.href);
+          url.searchParams.set("role", "UPSTREAM");
+          url.searchParams.set("batch", batchId);
+          url.searchParams.set("v", "31");
+          location.href = url.href;
+        };
       }
       if (!message.querySelector(".rrMarketLinkCard9505")) {
         const text = message.textContent || "";
