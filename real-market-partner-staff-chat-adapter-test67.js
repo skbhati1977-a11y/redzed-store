@@ -129,6 +129,7 @@
     const owner = String(workspace?.owner_name || "Distributor").trim();
     profile.full_name = owner;
     profile.id = workspace?.owner_customer_id || profile.id;
+    setTimeout(() => decorateMessages(), 0);
     return workspace;
   }
 
