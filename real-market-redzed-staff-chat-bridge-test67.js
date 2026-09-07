@@ -62,7 +62,7 @@
         .chat.rrRzPartner83 .msgs{padding-bottom:160px!important}
         .rrRzBack83{z-index:10190!important}.rrRzSheet83{width:min(780px,100%);max-height:90dvh;overflow:auto;background:#10161f;border:1px solid #43536b;border-radius:20px 20px 0 0;padding:0;color:#fff}
         .rrRzHead83{position:sticky;top:0;z-index:2;display:flex;align-items:center;gap:8px;padding:11px;background:#10161f;border-bottom:1px solid #334154}.rrRzHead83 b{flex:1}.rrRzHead83 button{width:44px;height:44px}
-        .rrRzBody83{padding:10px}.rrRzBatch83{border:1px solid #35475d;border-radius:13px;padding:11px;margin-bottom:9px;background:#131d29}.rrRzBatch83 small{display:block;color:#a2afbf;margin:3px 0 8px}.rrRzBatch83>button,.rrRzActions83 button{width:100%;min-height:44px;margin-top:8px;border:1px solid #49647f;border-radius:10px;background:#176ca8;color:#fff;font-weight:900}
+        .rrRzBody83{padding:10px}.rrRzBatch83{border:1px solid #35475d;border-radius:13px;padding:11px;margin-bottom:9px;background:#131d29}.rrRzBatch83 small{display:block;color:#a2afbf;margin:3px 0 8px}.rrRzBatch83>button,.rrRzActions83 button{width:100%;min-height:44px;margin-top:8px;border:1px solid #49647f;border-radius:10px;background:#176ca8;color:#fff;font-weight:900}.rrRzActions83 button:disabled{background:#143426;border-color:#2c8b61;color:#b9f6d9;opacity:1}
         .rrRzOrder83{margin:9px 0;padding:9px;border:1px solid #2f4054;border-radius:11px}.rrRzLine83{display:grid;grid-template-columns:64px minmax(0,1fr) 85px;gap:7px;align-items:center;padding:7px 0;border-top:1px solid #2b394a}.rrRzLine83 img{width:60px;height:70px;object-fit:cover;border-radius:7px}.rrRzLine83 input,.rrRzActions83 input{width:100%;padding:9px;background:#0c141e;color:#fff;border:1px solid #43536b;border-radius:8px}.rrRzActions83{display:grid;gap:7px;margin-top:11px}.rrRzEmpty83{padding:28px 10px;text-align:center;color:#9ba9ba}.rrRzCard83{width:100%;display:block;margin:7px 0;padding:11px;border:1px solid #49627d;border-radius:12px;background:#101923;color:#fff;text-align:left}.rrRzCard83 b,.rrRzCard83 small{display:block}.rrRzCard83 small{color:#9fb0c2;margin-top:3px}
         @media(max-width:760px){.rrRzDock83{left:0}.rrRzLine83{grid-template-columns:52px minmax(0,1fr) 76px}.rrRzLine83 img{width:50px;height:60px}}
       `;
@@ -162,9 +162,8 @@
 
   function renderBatch(detail, view) {
     activeBatch = detail;
-    const canPi = ["SUBMITTED", "PI_PROPOSED", "WAITING_CONFIRMATION"].includes(
-      detail.status,
-    );
+    const piSent = !!detail.pi_ref;
+    const canPi = !piSent && detail.status === "SUBMITTED";
     const canCi = ["WAITING_CONFIRMATION", "CONFIRMED", "PARTIAL_CONFIRMED"].includes(
       detail.status,
     );
@@ -175,7 +174,7 @@
           `<section class="rrRzOrder83"><b>${esc(order.requirement_display_no || order.order_ref || `SOURCE REQUIREMENT ${index + 1}`)}</b><small>${esc(order.customer_ref || "Private customer")} · ${esc(String(order.status || "").replaceAll("_", " "))}</small>${(order.lines || []).map((line) => lineHtml(line, editable)).join("")}</section>`,
       )
       .join("");
-    const actions = `<div class="rrRzActions83">${canPi ? `<input id="rrRzPiRef83" placeholder="PI reference" value="${esc(detail.pi_ref || "")}"><button id="rrRzSendPi83">MAKE / SEND PI TO DISTRIBUTOR</button>` : ""}${canCi ? `<input id="rrRzCiRef83" placeholder="CI reference (blank = auto)" value="${esc(detail.ci_ref || "")}"><button id="rrRzSendCi83">GENERATE CI · CONFIRMATION OPTIONAL</button>` : ""}</div>`;
+    const actions = `<div class="rrRzActions83">${canPi ? `<input id="rrRzPiRef83" placeholder="PI reference" value=""><button id="rrRzSendPi83">MAKE & SEND PI TO DISTRIBUTOR</button>` : piSent ? `<button type="button" disabled>PI ${esc(detail.pi_ref)} · SENT ✓</button>` : ""}${canCi ? `<input id="rrRzCiRef83" placeholder="CI reference (blank = auto)" value="${esc(detail.ci_ref || "")}"><button id="rrRzSendCi83">GENERATE CI · CONFIRMATION OPTIONAL</button>` : ""}</div>`;
     openSheet(
       `${detail.requirement_display_no || detail.batch_ref} · ${batchStatus(detail)}`,
       `<p><b>${esc(distributorLabel(detail.direct_customer_name))}</b><br><small>Downstream customer identity is private.</small></p>${orders || '<div class="rrRzEmpty83">No requirement lines.</div>'}${actions}`,
@@ -208,6 +207,10 @@
 
   async function sendPi() {
     if (!activeBatch) return;
+    if (activeBatch.pi_ref) {
+      flash(`PI ${activeBatch.pi_ref} already sent ✓`);
+      return;
+    }
     try {
       const proposals = [...document.querySelectorAll("[data-rz-line]")].map(
         (input) => ({
@@ -251,23 +254,45 @@
 
   function decorateMessages() {
     if (!relation()) return;
-    document.querySelectorAll("#msgs .msg[data-msg-id]").forEach((message) => {
-      if (message.querySelector(".rrRzCard83")) return;
+    const messages = [...document.querySelectorAll("#msgs .msg[data-msg-id]")];
+    const latestByBatch = new Map();
+    messages.forEach((message) => {
       const match = (message.textContent || "").match(
         /\[PBATCH:([0-9a-f-]{36})\]/i,
       );
       if (!match) return;
+      latestByBatch.set(match[1].toLowerCase(), message);
+    });
+    messages.forEach((message) => {
+      const match = (message.textContent || "").match(
+        /\[PBATCH:([0-9a-f-]{36})\]/i,
+      );
+      if (!match) return;
+      const batchId = match[1].toLowerCase();
+      const isCurrent = latestByBatch.get(batchId) === message;
+      message.hidden = !isCurrent;
+      if (!isCurrent) return;
       [...message.children].forEach((child) => {
         if (child.tagName === "DIV" && /\[PBATCH:/i.test(child.textContent || ""))
           child.style.display = "none";
       });
-      const card = document.createElement("button");
-      card.type = "button";
-      card.className = "rrRzCard83";
-      card.innerHTML =
-        "<b>📋 DISTRIBUTOR REQUIREMENT / PI / CI</b><small>Open the private REDZED–Distributor journey</small>";
-      card.onclick = () => openBatch(match[1], "REQ");
-      message.insertBefore(card, message.querySelector("time"));
+      const batch = (relation()?.batches || []).find(
+        (item) => String(item.id).toLowerCase() === batchId,
+      );
+      const sentRef = batch?.ci_ref || batch?.pi_ref || "";
+      const sentKind = batch?.ci_ref ? "CI" : "PI";
+      const targetView = batch?.ci_ref ? "CI" : batch?.pi_ref ? "PI" : "REQ";
+      let card = message.querySelector(".rrRzCard83");
+      if (!card) {
+        card = document.createElement("button");
+        card.type = "button";
+        card.className = "rrRzCard83";
+        message.insertBefore(card, message.querySelector("time"));
+      }
+      card.innerHTML = sentRef
+        ? `<b>✓ ${sentKind} ${esc(sentRef)} · SENT</b><small>Already delivered · tap to open the current live journey</small>`
+        : "<b>📋 REQUIREMENT SENT TO REDZED</b><small>Tap to open the mapped requirement and prepare PI</small>";
+      card.onclick = () => openBatch(match[1], targetView);
     });
   }
 

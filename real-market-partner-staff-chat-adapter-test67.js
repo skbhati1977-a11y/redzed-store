@@ -949,11 +949,22 @@
   }
 
   function decorateMessages() {
-    document.querySelectorAll("#msgs .msg[data-msg-id]").forEach((message) => {
+    const messages = [...document.querySelectorAll("#msgs .msg[data-msg-id]")];
+    const latestByBatch = new Map();
+    messages.forEach((message) => {
+      const match = (message.textContent || "").match(/\[PBATCH:([0-9a-f-]{36})\]/i);
+      if (match) latestByBatch.set(match[1].toLowerCase(), message);
+    });
+    messages.forEach((message) => {
       const messageText = message.textContent || "";
       const requirementMatch = messageText.match(/\[REQ:([0-9a-f-]{36})\]/i);
       const piMatch = messageText.match(/\[DPI:([0-9a-f-]{36})\]\s*([^·\n]+)?/i);
       const batchMatch = messageText.match(/\[PBATCH:([0-9a-f-]{36})\]/i);
+      if (batchMatch) {
+        const isCurrent = latestByBatch.get(batchMatch[1].toLowerCase()) === message;
+        message.hidden = !isCurrent;
+        if (!isCurrent) return;
+      }
       if (requirementMatch) {
         const order = (workspace?.orders || []).find((item) => String(item.id) === requirementMatch[1]);
         const card = message.querySelector(".rrReqCard9508");
@@ -1005,16 +1016,25 @@
         message.insertBefore(previewShell, message.querySelector("time"));
         message.insertBefore(card, message.querySelector("time"));
       }
-      if (batchMatch && !message.querySelector(".rrPartnerBatchCard82")) {
+      if (batchMatch) {
         [...message.children].forEach((child) => {
           if (child.tagName === "DIV" && /\[PBATCH:/i.test(child.textContent || "")) child.style.display = "none";
         });
-        const card = document.createElement("button");
-        card.type = "button";
-        card.className = "rrMarketLinkCard9505 rrPartnerBatchCard82";
-        card.innerHTML = '<span class="rrMkIcon9505">📋</span><span class="rrMkText9505"><b>REQUIREMENT SENT TO REDZED</b><small>Tap to open requirement number, update number and quantities</small></span><span class="rrMkGo9505">OPEN ›</span>';
+        const batchId = batchMatch[1].toLowerCase();
+        const batch = (workspace?.batches || []).find((item) => String(item.id).toLowerCase() === batchId);
+        const sentRef = batch?.ci_ref || batch?.pi_ref || "";
+        const sentKind = batch?.ci_ref ? "CI" : "PI";
+        let card = message.querySelector(".rrPartnerBatchCard82");
+        if (!card) {
+          card = document.createElement("button");
+          card.type = "button";
+          card.className = "rrMarketLinkCard9505 rrPartnerBatchCard82";
+          message.insertBefore(card, message.querySelector("time"));
+        }
+        card.innerHTML = sentRef
+          ? `<span class="rrMkIcon9505">✓</span><span class="rrMkText9505"><b>${sentKind} ${esc(sentRef)} · SENT ✓</b><small>Already delivered · tap to open the current mapped journey</small></span><span class="rrMkGo9505">OPEN ›</span>`
+          : '<span class="rrMkIcon9505">📋</span><span class="rrMkText9505"><b>REQUIREMENT SENT TO REDZED</b><small>Tap to open requirement number, update number and quantities</small></span><span class="rrMkGo9505">OPEN ›</span>';
         card.onclick = (event) => { event.preventDefault(); event.stopPropagation(); openSentRedzedRequirements(); };
-        message.insertBefore(card, message.querySelector("time"));
       }
       if (!message.querySelector(".rrMarketLinkCard9505")) {
         const text = message.textContent || "";
