@@ -447,7 +447,6 @@
       .rrPartnerDelete82{display:block;margin-top:7px;border:1px solid #76505a;background:#2b171c;color:#ffbec7;border-radius:7px;padding:5px 8px;font-size:10px;font-weight:900}
       .rrPartnerPiMessage82 img,.rrPartnerPiMessage82 .fsattbtn,.rrPartnerPiMessage82 .attimg,.rrPartnerPiMessage82 .rrMediaThumb9664,.rrPartnerPiMessage82 .rrAutoImg9651{display:none!important}
       .rrPartnerLivePiShell82{position:relative;width:100%;aspect-ratio:210/297;margin:0 0 8px;border:1px solid #52657d;border-radius:12px;overflow:hidden;background:#fff;cursor:pointer}
-      .rrPartnerLivePiShell82:after{content:'TAP TO OPEN';position:absolute;right:8px;bottom:8px;padding:5px 8px;border-radius:999px;background:#07111dcc;color:#fff;font-size:9px;font-weight:900}
       .rrPartnerLivePiPreview82{display:block;width:100%;height:100%;border:0;background:#fff;pointer-events:none}
       .rrPartnerPiViewer82{position:fixed;inset:0;z-index:2147483500;display:flex;align-items:flex-start;justify-content:center;padding:54px 8px 12px;background:#05080df2;touch-action:none;transition:opacity .18s ease}
       .rrPartnerPiViewer82 iframe{width:min(100%,760px);height:calc(100dvh - 70px);border:0;border-radius:12px;background:#fff;pointer-events:auto;transition:transform .18s ease}
@@ -921,18 +920,21 @@
     viewer.innerHTML = '<button type="button" class="rrPartnerPiViewerClose82" aria-label="Close">×</button><div class="rrPartnerPiSwipe82" aria-label="Drag down to close"></div>';
     viewer.appendChild(preview);
     document.body.appendChild(viewer);
+    try { preview.contentWindow.scrollTo(0,0); } catch (_) {}
     let startY = 0, dragY = 0;
     const close = () => {
       marker.parentNode?.insertBefore(preview, marker);
+      preview.style.transform="";
+      try { preview.contentWindow.scrollTo(0,0); } catch (_) {}
       marker.remove();
       viewer.remove();
     };
     viewer.querySelector(".rrPartnerPiViewerClose82").onclick = close;
     const swipe = viewer.querySelector(".rrPartnerPiSwipe82");
     swipe.addEventListener("pointerdown", (event) => { startY=event.clientY; dragY=0; swipe.setPointerCapture?.(event.pointerId); });
-    swipe.addEventListener("pointermove", (event) => { if(!startY) return; dragY=Math.max(0,event.clientY-startY); preview.style.transform=`translateY(${dragY}px)`; viewer.style.opacity=String(Math.max(.3,1-dragY/450)); });
-    swipe.addEventListener("pointerup", () => { if(dragY>70) close(); else { preview.style.transform=""; viewer.style.opacity="1"; } startY=0; dragY=0; });
-    swipe.addEventListener("pointercancel", () => { preview.style.transform=""; viewer.style.opacity="1"; startY=0; dragY=0; });
+    swipe.addEventListener("pointermove", (event) => { if(!startY) return; dragY=Math.max(0,event.clientY-startY); });
+    swipe.addEventListener("pointerup", () => { if(dragY>70) close(); startY=0; dragY=0; });
+    swipe.addEventListener("pointercancel", () => { startY=0; dragY=0; });
   }
 
   function decorateMessages() {
