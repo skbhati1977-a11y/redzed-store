@@ -8,7 +8,10 @@ const SUPABASE_URL="https://hruartsemierwhtzonei.supabase.co";
 const SUPABASE_ANON_KEY="sb_publishable_uo3dcrFuRvGsvRzPcdTV0A_5ZVwgzga";
 const CFG=Object.seal({SETTINGS:{},WHATSAPP:[],DEFAULT_WHATSAPP:null});
 const supabaseClient=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});window.supabaseClient=supabaseClient;window.supabaseDb=supabaseClient;window.redzedSupabase=supabaseClient;window.sb=supabaseClient;
-// GitHub Pages serves this repository below /redzed-store/, while Vercel\n// previews serve the same files from /. Keep navigation portable so a tested\n// rehearsal build cannot redirect into a non-existent Vercel subdirectory.\nconst RR_REPO_BASE=location.hostname.toLowerCase().endsWith(".github.io")?"/redzed-store/":"/";
+// GitHub Pages serves this repository below /redzed-store/, while Vercel
+// previews serve the same files from /. Keep navigation portable so a tested
+// rehearsal build cannot redirect into a non-existent Vercel subdirectory.
+const RR_REPO_BASE=location.hostname.toLowerCase().endsWith(".github.io")?"/redzed-store/":"/";
 const RR_TRAVEL_VERSION="9461";
 const RR_LATEST_DASHBOARD_URL=`${RR_REPO_BASE}real-dashboard-v9182.html?v=${RR_TRAVEL_VERSION}`;
 const rrIsDashboardPath=path=>/\/real-dashboard(?:-v9182)?\.html$/i.test(path||"");
