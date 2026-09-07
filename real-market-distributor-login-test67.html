@@ -65,6 +65,13 @@
       (() => {
         const status = document.getElementById("status");
         const form = document.getElementById("loginForm");
+        const switchDistributor = new URLSearchParams(location.search).get("switch") === "1";
+        if (switchDistributor) {
+          localStorage.removeItem("rr_customer_secure_session_v9592");
+          localStorage.removeItem("rr_market_partner_owner_name_v67");
+          status.textContent = "Distributor name और mobile verify करें।";
+          form.hidden = false;
+        }
         const deviceKey = "rr_customer_device_v9592";
         const device = () => {
           let id=localStorage.getItem(deviceKey);
@@ -97,7 +104,7 @@
           }
         }
         form.onsubmit=async(event)=>{event.preventDefault();const button=document.getElementById("loginButton");button.disabled=true;status.style.color="#8fe0b7";status.textContent="VERIFYING DISTRIBUTOR…";try{const result=await RF853.rpc("rr_market_partner_login_issue_v67",{p_name:document.getElementById("distributorName").value,p_mobile:document.getElementById("distributorMobile").value,p_device_id:device()});const ownerName=String(result.owner_name||document.getElementById("distributorName").value||"Distributor").trim();localStorage.setItem("rr_market_partner_owner_name_v67",ownerName);localStorage.setItem("rr_customer_secure_session_v9592",JSON.stringify({session_token:result.session_token,issued_at:new Date().toISOString(),relation:"DISTRIBUTOR",owner_name:ownerName}));await openWorkspace(false);}catch(error){status.style.color="#ff9da5";status.textContent=error.message||"Distributor verification failed.";button.disabled=false;}};
-        openWorkspace(true);
+        if (!switchDistributor) openWorkspace(true);
       })();
     </script>
   </body>
