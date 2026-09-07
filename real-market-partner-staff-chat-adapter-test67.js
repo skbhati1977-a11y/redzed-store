@@ -733,7 +733,7 @@
                 const stage = order.distributor_pi_ref
                   ? `PI SENT TO CUSTOMER · ${order.distributor_pi_status || "WAITING"}`
                   : statusText(order);
-                return `<article class="rrPartnerOrder82"><b>${esc(order.distributor_pi_ref || order.pi_ref || order.ci_ref)}</b><small>${esc(stage)} · ${esc(req.title)} · ${esc(col.title)}${order.ci_ref ? ` · CI ${esc(order.ci_ref)}` : ""}</small>${lineRows(order, false, confirm)}${confirm ? `<button data-confirm-order="${esc(order.id)}">CONFIRM REDZED PI (OPTIONAL)</button>` : ""}${canPushPi ? `<button data-push-pi="${esc(order.id)}">PUSH REDZED PI TO CUSTOMER</button>` : ""}${canPushCi ? `<button class="good" data-push-ci="${esc(order.id)}">PUSH CI TO CUSTOMER</button>` : ""}</article>`;
+                return `<article class="rrPartnerOrder82"><b>${esc(order.customer_ci_ref || order.distributor_pi_ref || order.pi_ref || order.ci_ref)}</b><small>${esc(stage)} · ${esc(req.title)} · ${esc(col.title)}${order.ci_ref ? ` · Upstream CI ${esc(order.ci_ref)}` : ""}</small>${lineRows(order, false, confirm)}${order.distributor_pi_ref ? `<button class="good" data-live-customer-doc="${esc(order.id)}">OPEN CURRENT CUSTOMER PI / CI</button>` : ""}${confirm ? `<button data-confirm-order="${esc(order.id)}">CONFIRM REDZED PI (OPTIONAL)</button>` : ""}${canPushPi ? `<button data-push-pi="${esc(order.id)}">PUSH REDZED PI TO CUSTOMER</button>` : ""}${canPushCi ? `<button class="good" data-push-ci="${esc(order.id)}">PUSH CI TO CUSTOMER</button>` : ""}</article>`;
               })
               .join("")
           : '<div class="rrPartnerEmpty82">No PI / CI in this private relation yet.</div>',
@@ -748,6 +748,16 @@
       document.querySelectorAll("[data-push-ci]").forEach(
         (button) => (button.onclick = () => pushCi([button.dataset.pushCi])),
       );
+      document.querySelectorAll("[data-live-customer-doc]").forEach((button) => {
+        button.onclick = () => {
+          rememberReturn();
+          const url = new URL("real-market-shared-invoice-test67.html", location.href);
+          url.searchParams.set("role", "DISTRIBUTOR");
+          url.searchParams.set("order", button.dataset.liveCustomerDoc);
+          url.searchParams.set("v", "23");
+          location.href = url.href;
+        };
+      });
     } catch (error) {
       flash(error.message, true);
     }
