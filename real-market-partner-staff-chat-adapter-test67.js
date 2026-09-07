@@ -772,10 +772,14 @@
           ? rows.map((batch) => {
               const status = batch.status === "SUBMITTED" ? "WAITING FOR REDZED ACTION" : batch.status === "WAITING_CONFIRMATION" ? "PI SENT · CONFIRMATION OPTIONAL" : batch.status === "CI_FINAL" ? "CI FINAL · CYCLE CLOSED" : String(batch.status || "").replaceAll("_", " ");
               const sources = (batch.requirements || []).map((item) => `<section class="rrPartnerOrder82" style="margin-top:10px"><b>${esc(item.requirement_display_no || "Source requirement")}</b><small>${esc(String(item.status || "").replaceAll("_", " "))}</small>${(item.lines || []).map((line) => `<div class="rrPartnerLine82"><span><b>${esc(line.lot_no || "-")}</b><small>${esc(line.category || "-")} · ${esc(line.size_text || "-")}</small></span><span style="text-align:right"><b>${Number(line.requested_qty || 0)} PCS</b><small>${line.proposed_qty == null ? "Requested Qty" : `REDZED working qty ${Number(line.proposed_qty || 0)}`}</small></span></div>`).join("")}</section>`).join("");
-              return `<article class="rrPartnerOrder82"><b>${esc(batch.requirement_display_no || batch.batch_ref)}</b><small>${batch.batch_kind === "CONSOLIDATED" ? "CONSOLIDATED" : "SINGLE"} · ${Number(batch.order_count || 0)} source requirement(s) · ${esc(status)}</small><div class="rrPartnerLine82"><b>Distributor view</b><small>Sent requirement is locked here. REDZED Staff can adjust allocation/PI quantity against available or frozen stock.</small></div>${sources}${batch.pi_ref ? `<div class="rrPartnerLine82"><b>${esc(batch.pi_ref)}</b><small>REDZED PI</small></div>` : ""}${batch.ci_ref ? `<div class="rrPartnerLine82"><b>${esc(batch.ci_ref)}</b><small>REDZED CI</small></div>` : ""}</article>`;
+              const nextAction = batch.ci_ref ? `CI READY · ${esc(batch.ci_ref)}` : batch.pi_ref ? `PI READY · ${esc(batch.pi_ref)}` : "WAITING FOR REDZED PI";
+              return `<article class="rrPartnerOrder82"><b>${esc(batch.requirement_display_no || batch.batch_ref)}</b><small>${batch.batch_kind === "CONSOLIDATED" ? "CONSOLIDATED" : "SINGLE"} · ${Number(batch.order_count || 0)} source requirement(s) · ${esc(status)}</small><div class="rrPartnerLine82"><span><b>Current journey</b><small>Read-only distributor view</small></span><span style="text-align:right"><b>${nextAction}</b></span></div>${sources}${batch.pi_ref ? `<div class="rrPartnerLine82"><b>${esc(batch.pi_ref)}</b><small>REDZED PI · read-only</small></div>` : ""}${batch.ci_ref ? `<div class="rrPartnerLine82"><b>${esc(batch.ci_ref)}</b><small>REDZED CI · read-only</small></div>` : ""}<button type="button" data-refresh-redzed-requirements="1">REFRESH CURRENT STATUS</button></article>`;
             }).join("")
           : '<div class="rrPartnerEmpty82">No requirement has been sent to REDZED yet.</div>',
       );
+      document.querySelectorAll("[data-refresh-redzed-requirements]").forEach((button) => {
+        button.onclick = () => openSentRedzedRequirements();
+      });
     } catch (error) {
       flash(error.message, true);
     }
