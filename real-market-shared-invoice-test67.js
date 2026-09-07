@@ -148,5 +148,17 @@
   async function respond() { const decisions = lines.map((x) => ({ line_id: x.id, action: document.querySelector(`[data-action="${CSS.escape(x.id)}"]`).value, qty: Number(document.querySelector(`[data-response-qty="${CSS.escape(x.id)}"]`).value || 0) })), r = await rpc("rr_market_partner_customer_distributor_pi_response_v67", { p_token: shareToken, p_decisions: decisions, p_note: $("note").value || null }); message(`PI response ${r.distributor_pi_status} · distributor को भेजी ✓`,"ok"); }
   async function share() { const a=await pdfAttachment(),file=new File([a.blob],a.name,{type:a.type}); if(navigator.canShare?.({files:[file]})) await navigator.share({title:`${doc.kind||"PI"} ${doc.ref}`,files:[file]}); else {a.pdf.save(a.name);message("A4 PDF downloaded; Downloads से share करें।","ok");} }
   async function boot() { try { if (role === "DISTRIBUTOR") await loadDistributor(); else if (role === "REDZED") await loadRedzed(); else await loadCustomer(); render(); ["valuePct","freightInput","otherInput"].forEach((id)=>$(id).addEventListener("input",render)); $("saveDraft").onclick=()=>runButton("saveDraft",saveDraft,{online:true,busyText:"SAVING DRAFT…"}); $("savePi").onclick = ()=>runButton("savePi",savePi,{online:true,busyText:"SENDING PI…"}); $("sendChat").onclick=()=>runButton("sendChat",sendRealChat,{online:true,busyText:"SENDING…"}); $("convertCi").onclick = ()=>runButton("convertCi",convertCi,{online:true,busyText:"CREATING CI…"}); $("cancelCi").onclick = ()=>runButton("cancelCi",cancelCi,{online:true,busyText:"ROLLING BACK…"}); $("sendResponse").onclick = ()=>runButton("sendResponse",respond,{online:true,busyText:"SENDING…"}); $("download").onclick=()=>runButton("download",downloadPdf,{busyText:"MAKING PDF…"}); $("share").onclick = ()=>runButton("share",share,{busyText:"PREPARING…"}); window.addEventListener("offline",()=>message("Internet connection नहीं है। Real Chat और CI actions connection आने तक उपलब्ध नहीं हैं।")); window.addEventListener("online",()=>message("Internet connection वापस आ गया है। अब action दोबारा tap करें।","ok")); } catch (e) { message(friendlyError(e)); } }
-  boot();
+  async function authenticatedBoot() {
+    if (role === "REDZED") {
+      const client = await RF853.client();
+      const { data, error } = await client.auth.getSession();
+      if (error || !data?.session) {
+        const next = `${location.pathname.split("/").pop()}${location.search}`;
+        location.replace(`real-login.html?next=${encodeURIComponent(next)}`);
+        return;
+      }
+    }
+    await boot();
+  }
+  authenticatedBoot().catch((error) => message(friendlyError(error)));
 })();
