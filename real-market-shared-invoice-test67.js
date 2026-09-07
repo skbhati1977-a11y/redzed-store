@@ -151,8 +151,26 @@
   async function authenticatedBoot() {
     if (role === "REDZED") {
       const client = await RF853.client();
-      const { data, error } = await client.auth.getSession();
-      if (error || !data?.session) {
+      let session = (await client.auth.getSession()).data?.session || null;
+      if (!session && typeof window.RRRefreshSupabaseSession === "function") session = await window.RRRefreshSupabaseSession(false);
+      if (!session) {
+        session = await new Promise((resolve) => {
+          let finished = false;
+          let subscription = null;
+          let timer = null;
+          const finish = (value) => {
+            if (finished) return;
+            finished = true;
+            clearTimeout(timer);
+            subscription?.unsubscribe?.();
+            resolve(value || null);
+          };
+          const result = client.auth.onAuthStateChange((_event, value) => { if (value) finish(value); });
+          subscription = result?.data?.subscription || null;
+          timer = setTimeout(() => finish(null), 1200);
+        });
+      }
+      if (!session?.access_token) {
         const next = `${location.pathname.split("/").pop()}${location.search}`;
         location.replace(`real-login.html?next=${encodeURIComponent(next)}`);
         return;

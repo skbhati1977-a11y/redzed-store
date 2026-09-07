@@ -9,7 +9,7 @@ form.addEventListener("submit", async (e) => {
   const email = document.getElementById("email").value.trim();
   const password = document.getElementById("password").value;
 
-  const { error } = await supabaseClient.auth.signInWithPassword({
+  const { data, error } = await supabaseClient.auth.signInWithPassword({
     email,
     password
   });
@@ -27,6 +27,17 @@ form.addEventListener("submit", async (e) => {
     `;
     return;
   }
+
+  if (!data?.session?.access_token) {
+    msg.textContent = "Login session could not be saved. Please try again.";
+    return;
+  }
+  const verified = await supabaseClient.auth.getUser(data.session.access_token);
+  if (verified.error || !verified.data?.user) {
+    msg.textContent = verified.error?.message || "Login verification failed.";
+    return;
+  }
+  await new Promise((resolve) => setTimeout(resolve, 250));
 
   const requested = new URLSearchParams(location.search).get("next") || "";
   const safeNext = /^(?:real-[a-z0-9._-]+\.html)(?:\?[a-z0-9_=&.%+-]*)?$/i.test(requested)
