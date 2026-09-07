@@ -5,7 +5,7 @@
   const money = (n) => "₹" + Number(n || 0).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const esc = (v) => String(v ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" })[c]);
   const DEVICE_KEY = "rr_customer_device_v9592", SESSION_KEY = "rr_customer_secure_session_v9592";
-  let order = null, doc = null, lines = [], chargesReady = false, customerProfile = {}, piChatSent = false;
+  let order = null, doc = null, lines = [], chargesReady = false, customerProfile = {}, piChatSent = false, staffRpcClient = null;
 
   function message(text, kind = "error") { const box = $("msg"),boot=$("jpegBootStatus"); if(box){box.textContent = text || "";box.className = `msg ${kind}`;} if(boot&&text)boot.textContent=text; }
   function friendlyError(error) { const raw = String(error?.message || error || "Action failed."); return /Failed to fetch|NetworkError|Load failed|fetch/i.test(raw) ? "Internet connection नहीं है। Connection आने के बाद दोबारा tap करें।" : raw; }
@@ -16,7 +16,14 @@
 
   function device() { let d = localStorage.getItem(DEVICE_KEY); if (!d) { const a = new Uint8Array(24); crypto.getRandomValues(a); d = [...a].map((b) => b.toString(16).padStart(2, "0")).join(""); localStorage.setItem(DEVICE_KEY, d); } return d; }
   function auth() { let s = null; try { s = JSON.parse(localStorage.getItem(SESSION_KEY) || "null"); } catch (_) {} if (!s?.session_token) throw Error("Valid distributor login required."); return { p_session_token: s.session_token, p_device_id: device() }; }
-  async function rpc(name, args = {}) { return RF853.rpc(name, args); }
+  async function rpc(name, args = {}) {
+    if (role === "REDZED" && staffRpcClient) {
+      const { data, error } = await staffRpcClient.rpc(name, args);
+      if (error) throw error;
+      return data;
+    }
+    return RF853.rpc(name, args);
+  }
   function values(x) { const qty = Number(x.distributor_pi_qty ?? x.proposed_qty ?? x.requested_qty ?? x.quantity ?? x.qty ?? 0), purchase = Number(x.base_rate ?? x.purchase_rate ?? x.rate ?? 0), margin = Number(x.rate_enhancement ?? x.margin_amount ?? 0), grossRate = Number(x.sale_rate ?? (purchase + margin)), discount = Number(x.customer_discount ?? x.discount ?? x.discount_amount ?? 0), finalRate = Number(x.final_rate ?? x.final_customer_rate ?? (grossRate - discount)); return { qty, purchase, margin, grossRate, discount, finalRate, effectiveMargin: finalRate - purchase, amount: qty * finalRate }; }
   function canEditQty() { return (role === "DISTRIBUTOR" || role === "REDZED") && doc?.kind !== "CI"; }
   function chargeValues() { const c = doc?.charges || {}; return { valuePct:Number(c.value_pct || 0), freight:Number(c.freight || 0), other:Number(c.other || 0) }; }
@@ -175,6 +182,10 @@
         location.replace(`real-login.html?next=${encodeURIComponent(next)}`);
         return;
       }
+      staffRpcClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+        auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
+        global: { headers: { Authorization: `Bearer ${session.access_token}` } },
+      });
     }
     await boot();
   }
