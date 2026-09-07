@@ -28,7 +28,11 @@ form.addEventListener("submit", async (e) => {
     return;
   }
 
-  location.href = "real-dashboard.html";
+  const requested = new URLSearchParams(location.search).get("next") || "";
+  const safeNext = /^(?:real-[a-z0-9._-]+\.html)(?:\?[a-z0-9_=&.%+-]*)?$/i.test(requested)
+    ? requested
+    : "real-dashboard.html";
+  location.href = safeNext;
 });
 
 async function sendRecovery() {

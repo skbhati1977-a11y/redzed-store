@@ -4,11 +4,23 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Opening REDZED Distributor Chat</title>
-  <meta http-equiv="refresh" content="0;url=real-sales-live-chat-v9434.html?from=staff-batch">
 </head>
 <body>
+  <p id="status">Checking REDZED Staff login…</p>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="config.js?v=9461"></script>
   <script>
-    location.replace("real-sales-live-chat-v9434.html?from=staff-batch");
+    (async()=>{
+      const {data}=await supabaseClient.auth.getSession();
+      if(!data?.session){
+        const next=encodeURIComponent("real-market-staff-batch-test67.html");
+        location.replace(`real-login.html?next=${next}`);
+        return;
+      }
+      location.replace("real-sales-live-chat-v9434.html?from=staff-batch");
+    })().catch(error=>{
+      document.getElementById("status").textContent=error.message||"REDZED Staff login check failed.";
+    });
   </script>
   <a href="real-sales-live-chat-v9434.html?from=staff-batch">Open REDZED Distributor Chat</a>
 </body>
