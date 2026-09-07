@@ -93,8 +93,9 @@
   async function showJpegMode(){
     message("पूरी JPG तैयार हो रही है…","ok");
     const attachment=await jpegAttachment();
-    document.body.innerHTML=`<main style="margin:0;min-height:100dvh;background:#090d13;color:#fff"><div style="position:sticky;top:0;z-index:2;display:flex;align-items:center;gap:10px;padding:10px;background:#101722;border-bottom:1px solid #334155"><button id="jpegBack" style="padding:9px 13px;border:1px solid #53677f;border-radius:9px;background:#182535;color:#fff;font-weight:900">BACK</button><b style="flex:1">${esc(doc?.ref||"PI")} · COMPLETE JPG</b></div><img src="${attachment.data_url}" alt="${esc(doc?.ref||"PI")}" style="display:block;width:100%;height:auto;background:#fff"></main>`;
-    document.getElementById("jpegBack").onclick=()=>history.back();
+    const embedded=q.get("embed")==="1";
+    document.body.innerHTML=`<main style="margin:0;min-height:100dvh;background:#fff;color:#fff">${embedded?"":`<div style="position:sticky;top:0;z-index:2;display:flex;align-items:center;gap:10px;padding:10px;background:#101722;border-bottom:1px solid #334155"><button id="jpegBack" style="padding:9px 13px;border:1px solid #53677f;border-radius:9px;background:#182535;color:#fff;font-weight:900">BACK</button><b style="flex:1">${esc(doc?.ref||"PI")} · COMPLETE JPG</b></div>`}<img src="${attachment.data_url}" alt="${esc(doc?.ref||"PI")}" style="display:block;width:100%;height:auto;background:#fff"></main>`;
+    if(!embedded)document.getElementById("jpegBack").onclick=()=>history.back();
   }
   async function downloadPdf(){(await makePdf()).save(pdfName());message("A4 PDF download शुरू हुई ✓","ok");}
   async function sendRealChat(){requireOnline();if(piChatSent){renderPiChatState();return;}const a=auth(),attachment=await jpegAttachment(),result=await rpc("rr_market_partner_pi_chat_send_v67",{...a,p_order_id:order.id,p_attachment:{name:attachment.name,type:attachment.type,data_url:attachment.data_url}});piChatSent=!!result?.sent_at;renderPiChatState();message(result?.already_sent?`${doc.kind||"PI"} ${doc.ref} पहले ही Real Chat में भेजी जा चुकी है ✓`:`${doc.kind||"PI"} ${doc.ref} JPEG preview के साथ Real Chat में भेजी ✓`,"ok");}

@@ -445,6 +445,8 @@
       .rrPartnerOrder82>button{width:100%;min-height:44px;margin-top:8px;border:1px solid #49647f;border-radius:10px;background:#176ca8;color:#fff;font-weight:900}
       .rrPartnerOrder82>button.good{background:#197d51}.rrPartnerEmpty82{padding:28px 10px;text-align:center;color:#9ba9ba}
       .rrPartnerDelete82{display:block;margin-top:7px;border:1px solid #76505a;background:#2b171c;color:#ffbec7;border-radius:7px;padding:5px 8px;font-size:10px;font-weight:900}
+      .rrPartnerPiMessage82 img,.rrPartnerPiMessage82 .fsattbtn,.rrPartnerPiMessage82 .attimg,.rrPartnerPiMessage82 .rrMediaThumb9664,.rrPartnerPiMessage82 .rrAutoImg9651{display:none!important}
+      .rrPartnerLivePiPreview82{display:block;width:100%;aspect-ratio:210/297;margin:0 0 8px;border:1px solid #52657d;border-radius:12px;background:#fff}
       .chat.partner82 .msgs{padding-bottom:160px!important}.attach button[data-pick="internal"]{display:none!important}
       @media(max-width:760px){.rrPartnerDock82{left:0}.rrPartnerMetrics82{grid-template-columns:repeat(4,minmax(0,1fr))}.rrPartnerMetric82 small{font-size:8px}.rrPartnerMetric82 b{font-size:12px}}
     `;
@@ -940,6 +942,18 @@
           url.searchParams.set("v", "1");
           location.href = url.href;
         };
+        const preview = document.createElement("iframe");
+        preview.className = "rrPartnerLivePiPreview82";
+        preview.title = `${String(piMatch[2] || "PI").trim()} latest complete JPG`;
+        preview.loading = "eager";
+        const previewUrl = new URL("real-market-shared-invoice-test67.html", location.href);
+        previewUrl.searchParams.set("role", "DISTRIBUTOR");
+        previewUrl.searchParams.set("order", piMatch[1]);
+        previewUrl.searchParams.set("mode", "jpeg");
+        previewUrl.searchParams.set("embed", "1");
+        previewUrl.searchParams.set("v", "18");
+        preview.src = previewUrl.href;
+        message.insertBefore(preview, message.querySelector("time"));
         message.insertBefore(card, message.querySelector("time"));
       }
       if (batchMatch && !message.querySelector(".rrPartnerBatchCard82")) {
