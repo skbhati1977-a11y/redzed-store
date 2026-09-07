@@ -83,7 +83,7 @@ if(rrIsRealChatPath(window.location.pathname)){
  window.__RR_SLICE_MENU_LOADER_9309__=true;
  if(!document.querySelector('link[href*="rz-manifest-v61"]')){const manifest61=document.createElement('link');manifest61.rel='manifest';manifest61.href=`${RR_REPO_BASE}rz-manifest-v61.webmanifest?v=61b`;document.head.appendChild(manifest61)}
  const unread61=document.createElement('script');unread61.src=`${RR_REPO_BASE}real-chat-staff-unread-deeplink-v61.js?v=61u2`;unread61.async=false;(document.head||document.documentElement).appendChild(unread61);
- const push61=document.createElement('script');push61.src=`${RR_REPO_BASE}real-chat-staff-floating-notify-v61.js?v=61push8`;push61.async=false;(document.head||document.documentElement).appendChild(push61);
+ const push61=document.createElement('script');push61.src=`${RR_REPO_BASE}real-chat-staff-floating-notify-v61.js?v=61push9`;push61.async=false;(document.head||document.documentElement).appendChild(push61);
  const add67=document.createElement('script');add67.src='real-chat-add-customer-test67.js?v=67';add67.async=false;(document.head||document.documentElement).appendChild(add67);
  const hideRealChatGlobalRail=()=>{document.getElementById('rrSlicePanel')?.remove();document.getElementById('rrSliceBack')?.remove();document.getElementById('rrSliceRail')?.remove();document.body?.classList.remove('rrSliceReserved')};
  document.addEventListener('DOMContentLoaded',hideRealChatGlobalRail,{once:true});setTimeout(hideRealChatGlobalRail,0);
