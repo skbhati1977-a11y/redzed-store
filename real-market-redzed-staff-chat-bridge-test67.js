@@ -281,9 +281,18 @@
         card.className = "rrRzCard83";
         message.insertBefore(card, message.querySelector("time"));
       }
-      card.innerHTML = sentRef
+      const cardState = `${sentKind}|${sentRef || "REQUIREMENT"}`;
+      const cardHtml = sentRef
         ? `<b>✓ ${sentKind} ${esc(sentRef)} · SENT</b><small>Already delivered · tap to open the current live journey</small>`
         : "<b>📋 REQUIREMENT SENT TO REDZED</b><small>Tap to open the mapped requirement and prepare PI</small>";
+      // This bridge observes the whole chat DOM. Rewriting innerHTML on every
+      // observer pass schedules another child-list mutation and can starve the
+      // browser before the message is painted. Only repaint when journey state
+      // actually changes (requirement -> PI -> CI).
+      if (card.dataset.rrRzState83 !== cardState) {
+        card.dataset.rrRzState83 = cardState;
+        card.innerHTML = cardHtml;
+      }
       card.onclick = () => openBatch(match[1], targetView);
     });
   }

@@ -1031,9 +1031,17 @@
           card.className = "rrMarketLinkCard9505 rrPartnerBatchCard82";
           message.insertBefore(card, message.querySelector("time"));
         }
-        card.innerHTML = sentRef
+        const cardState = `${sentKind}|${sentRef || "REQUIREMENT"}`;
+        const cardHtml = sentRef
           ? `<span class="rrMkIcon9505">✓</span><span class="rrMkText9505"><b>${sentKind} ${esc(sentRef)} · SENT ✓</b><small>Already delivered · tap to open the current mapped journey</small></span><span class="rrMkGo9505">OPEN ›</span>`
           : '<span class="rrMkIcon9505">📋</span><span class="rrMkText9505"><b>REQUIREMENT SENT TO REDZED</b><small>Tap to open requirement number, update number and quantities</small></span><span class="rrMkGo9505">OPEN ›</span>';
+        // Avoid a self-triggering MutationObserver loop. The chat observer
+        // calls decorateMessages after child changes, so an unconditional
+        // innerHTML write here can keep the UI thread busy forever.
+        if (card.dataset.rrPartnerState82 !== cardState) {
+          card.dataset.rrPartnerState82 = cardState;
+          card.innerHTML = cardHtml;
+        }
         card.onclick = (event) => { event.preventDefault(); event.stopPropagation(); openSentRedzedRequirements(); };
       }
       if (!message.querySelector(".rrMarketLinkCard9505")) {
