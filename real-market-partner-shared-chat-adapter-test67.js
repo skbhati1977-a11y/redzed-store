@@ -14,7 +14,24 @@
   const deviceKey = "rr_partner_customer_device_v67";
   const collectionPreviewCache = new Map();
   let trusted = null;
+  let piImageRouting = false;
   const rawRpc = RF853.rpc.bind(RF853);
+
+  function routePiImage(event) {
+    const image = event.target?.closest?.("#fsMsgs .fsattimg,#fsMsgs .rrMediaThumb9664,#fsMsgs .rrAutoImg9651");
+    if (!image) return;
+    const card = image.closest(".fsm")?.querySelector(".rrPartnerCustomerPiCard89");
+    if (!card) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    if (piImageRouting) return;
+    piImageRouting = true;
+    card.click();
+    setTimeout(() => { piImageRouting = false; }, 1000);
+  }
+  document.addEventListener("touchend", routePiImage, { capture: true, passive: false });
+  document.addEventListener("pointerup", routePiImage, true);
+  document.addEventListener("click", routePiImage, true);
 
   function setText(node, value) {
     if (node && node.textContent !== value) node.textContent = value;
