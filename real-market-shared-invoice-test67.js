@@ -35,8 +35,7 @@
     const operator = ["DISTRIBUTOR", "REDZED"].includes(role);
     $("savePi").hidden = !operator || doc?.kind === "CI"; $("savePi").textContent=doc?.ref?"UPDATE LIVE PI":"SAVE & LINK PI"; $("sendChat").hidden = role!=="DISTRIBUTOR" || !doc?.ref; renderPiChatState(); $("convertCi").hidden = !operator || !doc?.ref || doc?.kind === "CI"; $("download").hidden = !operator || !doc?.ref; $("share").hidden = !operator || !doc?.ref;
     if (role === "CUSTOMER" && doc?.ref && doc?.kind !== "CI") renderResponse();
-    if (q.get("mode") === "preview") setTimeout(() => showPreviewMode().catch((error) => message(friendlyError(error))), 0);
-    else if (role === "CUSTOMER" && q.get("mode") === "jpeg") setTimeout(() => showJpegMode().catch((error) => message(friendlyError(error))), 0);
+    if (q.get("mode") === "jpeg") setTimeout(() => showJpegMode().catch((error) => message(friendlyError(error))), 0);
   }
   function renderResponse() { $("response").classList.add("on"); $("responseLines").innerHTML = lines.map((x) => { const v = values(x), d = x.decision || "WAITING", qty = x.customer_qty ?? v.qty; return `<div class="decision"><span><b>${esc(x.lot_no)}</b><small class="muted">${esc(x.category || "-")} · ${esc(x.size_text || "-")} · ${money(v.finalRate)}</small></span><select data-action="${esc(x.id)}"><option value="CONFIRM" ${d === "CONFIRM" ? "selected" : ""}>CONFIRM</option><option value="CHANGE" ${d === "CHANGE" ? "selected" : ""}>CHANGE</option><option value="CANCEL" ${d === "CANCEL" ? "selected" : ""}>CANCEL</option></select><input class="num" data-response-qty="${esc(x.id)}" type="number" min="0" value="${Number(qty || 0)}"></div>`; }).join(""); }
 
