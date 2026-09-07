@@ -705,10 +705,10 @@
     );
   }
   function orderCard(o, docs = false) {
-    const canPi = ["DRAFT", "READY"].includes(o.status),
+    const canPi = !["CANCELLED", "CLOSED"].includes(o.status) && !o.customer_ci_ref && !o.customer_ci_visible,
       ready = o.status === "READY" && !o.redzed_pushed_at;
     const queued = o.status === "CONSOLIDATION_QUEUED" && !o.redzed_pushed_at;
-    return `<article class="card"><div class="row"><b>${esc(o.requirement_display_no || o.order_ref)}</b><span>${esc(statusLabel(o))}</span></div><div class="muted">Linked ${esc(o.collection_display_no || "collection")}</div>${(o.lines || []).map((l) => `<div class="line">${l.image_url ? `<img src="${esc(l.image_url)}">` : ""}<b>${esc(l.lot_no)}</b> · ${esc(l.category || "-")} · ${esc(l.size_text || "-")}<br>Required <b>${Number(l.requested_qty || 0)}</b>${canPi && !docs ? `<input data-dpi="${l.id}" type="number" min="0" value="${Number(l.distributor_pi_qty ?? l.requested_qty ?? 0)}">` : ""}</div>`).join("")}${canPi && !docs ? `<button class="good" data-make-pi="${o.id}">${o.distributor_pi_ref ? "UPDATE & RESEND PI" : "MAKE PI & SEND TO CUSTOMER"}</button>` : ""}${ready && !docs ? `<button class="primary" data-send-redzed="${o.id}">SEND TO REDZED NOW</button><button data-add-consolidated="${o.id}">ADD TO CONSOLIDATED LIST</button>` : ""}${queued && !docs ? `<button data-remove-consolidated="${o.id}">REMOVE FROM CONSOLIDATED LIST</button>` : ""}${o.redzed_pushed_at ? '<div class="muted">Sent to REDZED ✓</div>' : ""}${o.status === "CI_FINAL" && !o.customer_ci_visible ? `<button class="good" data-push-ci="${o.id}">PUSH CI TO CUSTOMER</button>` : ""}</article>`;
+    return `<article class="card"><div class="row"><b>${esc(o.requirement_display_no || o.order_ref)}</b><span>${esc(statusLabel(o))}</span></div><div class="muted">Linked ${esc(o.collection_display_no || "collection")}</div>${(o.lines || []).map((l) => `<div class="line">${l.image_url ? `<img src="${esc(l.image_url)}">` : ""}<b>${esc(l.lot_no)}</b> · ${esc(l.category || "-")} · ${esc(l.size_text || "-")}<br>Required <b>${Number(l.requested_qty || 0)}</b>${canPi && !docs ? `<input data-dpi="${l.id}" type="number" min="0" value="${Number(l.distributor_pi_qty ?? l.requested_qty ?? 0)}">` : ""}</div>`).join("")}${canPi && !docs ? `<button class="good" data-make-pi="${o.id}">${o.distributor_pi_ref ? "UPDATE & RESEND PI" : "MAKE PI & SEND TO CUSTOMER"}</button>` : ""}${ready && !docs ? `<button class="primary" data-send-redzed="${o.id}">SEND TO REDZED NOW</button><button data-add-consolidated="${o.id}">ADD TO CONSOLIDATED LIST</button>` : ""}${queued && !docs ? `<button data-remove-consolidated="${o.id}">REMOVE FROM CONSOLIDATED LIST</button>` : ""}${o.redzed_pushed_at ? '<div class="muted">Sent to REDZED ✓</div>' : ""}${o.status === "CI_FINAL" && o.distributor_pi_ref && !o.customer_ci_visible ? `<button class="good" data-push-ci="${o.id}">CREATE & SEND CUSTOMER CI</button>` : ""}</article>`;
   }
   function paintRequirements() {
     const rows = customerOrders();
@@ -860,7 +860,7 @@
         (b) => b.ci_ref || b.status === "CI_FINAL",
       ),
       pendingCustomerCi = (state.orders || []).filter(
-        (o) => o.status === "CI_FINAL" && o.ci_ref && !o.customer_ci_visible,
+        (o) => o.status === "CI_FINAL" && o.ci_ref && o.distributor_pi_ref && !o.customer_ci_visible,
       );
     $("#documents").innerHTML = rows.length
       ? rows
@@ -870,7 +870,7 @@
           )
           .join("") +
         (pendingCustomerCi.length
-          ? `<button id="pushAllCiBtn" class="formButton blue">PUSH CI TO ALL ${pendingCustomerCi.length} CUSTOMERS</button>`
+          ? `<button id="pushAllCiBtn" class="formButton blue">CREATE & SEND CUSTOMER CI TO ${pendingCustomerCi.length} CUSTOMER${pendingCustomerCi.length === 1 ? "" : "S"}</button>`
           : '<div class="muted">All customer-wise CI copies are sent.</div>')
       : '<div class="empty">No REDZED CI yet. PI confirmation is optional.</div>';
     if ($("#pushAllCiBtn"))

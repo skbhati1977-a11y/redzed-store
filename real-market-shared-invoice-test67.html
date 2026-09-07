@@ -5,7 +5,52 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <title>PI · PROFORMA INVOICE</title>
   <style>
-    *{box-sizing:border-box}body{margin:0;background:#0b1017;color:#eef3fa;font:15px Arial}.page{max-width:1400px;margin:auto;padding:10px}.jpeg-boot{display:none;position:fixed;inset:0;z-index:99999;align-items:center;justify-content:center;background:#090d13;color:#fff;text-align:center}.jpeg-boot-card{width:min(86vw,360px);padding:24px;border:1px solid #40516a;border-radius:18px;background:#111a25}.jpeg-spinner{width:44px;height:44px;margin:0 auto 16px;border:4px solid #33445a;border-top-color:#fff;border-radius:50%;animation:jpeg-spin .75s linear infinite}.jpeg-mode .page{display:none}.jpeg-mode .jpeg-boot{display:flex}@keyframes jpeg-spin{to{transform:rotate(360deg)}}.top,.card{background:#111a25;border:1px solid #33445a;border-radius:12px;padding:13px;margin-bottom:10px}.top{display:flex;justify-content:space-between;gap:12px}.muted{color:#9daabd;font-size:12px}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}.charges{grid-template-columns:repeat(3,1fr);margin-bottom:14px}.field label{display:block;color:#9daabd;font-size:12px;margin-bottom:4px}.field input,.field textarea,select{width:100%;background:#0b1119;border:1px solid #40516a;color:#fff;border-radius:7px;padding:10px}.wrap{overflow:auto}table{width:100%;border-collapse:collapse;min-width:980px}th,td{border:1px solid #33445a;padding:8px;text-align:center;vertical-align:middle}th{color:#c7d3e2;background:#172230}.pic{width:48px;height:58px;object-fit:cover;border-radius:6px}.num{width:76px;background:#0b1119;border:1px solid #40516a;color:#fff;border-radius:6px;padding:7px}.totals{display:grid;grid-template-columns:1fr auto;gap:7px;max-width:440px;margin-left:auto}.totals b{text-align:right}.grand{font-size:17px;padding-top:7px;border-top:1px solid #40516a}.total-meta{text-align:right;color:#9daabd;margin-top:9px}.actions{display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end}.btn{border:1px solid #49617d;background:#19283a;color:#fff;padding:12px 16px;border-radius:10px;font-weight:800}.primary{background:#fff;color:#111}.good{background:#18794e}.btn:disabled{opacity:.45}.btn.busy{cursor:wait}.msg{padding:8px;color:#ffcf70}.msg.ok{color:#86efac}.response{display:none}.response.on{display:block}.decision{display:grid;grid-template-columns:1fr 120px 100px;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid #33445a}.secure-note{color:#9daabd;font-size:11px;margin-top:8px}.internal-only{display:none!important}.pricing-detail{display:block;margin-top:4px;color:#ffcf70;font-size:10px}@media print{.pricing-private,.rr-godown-view-only,.actions,.secure-note{display:none!important}}@media(max-width:650px){.grid,.charges{grid-template-columns:1fr}.top{display:block}.page{padding:7px}.totals{max-width:none}.decision{grid-template-columns:1fr 105px 82px}}
+    *{box-sizing:border-box}
+    body{margin:0;background:#0b1017;color:#eef3fa;font:15px Arial}
+    .page{max-width:1400px;margin:auto;padding:10px}
+    .jpeg-boot{display:none;position:fixed;inset:0;z-index:99999;align-items:center;justify-content:center;background:#090d13;color:#fff;text-align:center}
+    .jpeg-boot-card{width:min(86vw,360px);padding:24px;border:1px solid #40516a;border-radius:18px;background:#111a25}
+    .jpeg-spinner{width:44px;height:44px;margin:0 auto 16px;border:4px solid #33445a;border-top-color:#fff;border-radius:50%;animation:jpeg-spin .75s linear infinite}
+    .jpeg-mode .page{display:none}.jpeg-mode .jpeg-boot{display:flex}
+    @keyframes jpeg-spin{to{transform:rotate(360deg)}}
+    .top,.card{background:#111a25;border:1px solid #33445a;border-radius:12px;padding:13px;margin-bottom:10px}
+    .top{display:flex;justify-content:space-between;gap:12px}
+    .muted{color:#9daabd;font-size:12px}.source-meta{display:block;margin-top:4px}
+    .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}.charges{grid-template-columns:repeat(3,1fr);margin-bottom:14px}
+    .field label{display:block;color:#9daabd;font-size:12px;margin-bottom:4px}
+    .field input,.field textarea,select{width:100%;background:#0b1119;border:1px solid #40516a;color:#fff;border-radius:7px;padding:10px}
+    .wrap{overflow-x:auto;overflow-y:visible;overscroll-behavior-inline:contain;-webkit-overflow-scrolling:touch;isolation:isolate}
+    table{width:100%;border-collapse:collapse;min-width:980px}
+    th,td{border:1px solid #33445a;padding:8px;text-align:center;vertical-align:middle}
+    th{color:#c7d3e2;background:#172230}.pic{width:48px;height:58px;object-fit:cover;border-radius:6px}
+    .num{width:76px;background:#0b1119;border:1px solid #40516a;color:#fff;border-radius:6px;padding:7px}
+    .totals{display:grid;grid-template-columns:1fr auto;gap:7px;max-width:440px;margin-left:auto}.totals b{text-align:right}
+    .grand{font-size:17px;padding-top:7px;border-top:1px solid #40516a}.total-meta{text-align:right;color:#9daabd;margin-top:9px}
+    .actions{display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end}
+    .btn{border:1px solid #49617d;background:#19283a;color:#fff;padding:12px 16px;border-radius:10px;font-weight:800}.primary{background:#fff;color:#111}.good{background:#18794e}.btn:disabled{opacity:.45}.btn.busy{cursor:wait}
+    .msg{padding:8px;color:#ffcf70;white-space:pre-line}.msg.ok{color:#86efac}
+    .response{display:none}.response.on{display:block}.decision{display:grid;grid-template-columns:1fr 120px 100px;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid #33445a}
+    .secure-note{color:#9daabd;font-size:11px;margin-top:8px}.internal-only{display:none!important}.pricing-detail{display:block;margin-top:4px;color:#ffcf70;font-size:10px}
+    .cancel-dialog{width:min(92vw,460px);border:1px solid #53677f;border-radius:18px;padding:0;background:#111a25;color:#fff;box-shadow:0 24px 80px #000b}
+    .cancel-dialog::backdrop{background:#02050bd9;backdrop-filter:blur(2px)}
+    .cancel-form{padding:20px}.cancel-form h2{margin:0 0 8px}.cancel-form p{margin:0 0 16px;color:#aab6c7;line-height:1.45}
+    .cancel-form textarea{width:100%;min-height:92px;resize:vertical;background:#0b1119;border:1px solid #52647b;border-radius:10px;padding:11px;color:#fff;font:inherit}
+    .cancel-actions{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:14px}.cancel-actions .rollback{background:#721f2f;border-color:#9a4050}
+    @media print{.pricing-private,.rr-godown-view-only,.actions,.secure-note,.cancel-dialog{display:none!important}}
+    @media(max-width:650px){
+      .grid,.charges{grid-template-columns:1fr}.top{display:block}.page{padding:7px}.totals{max-width:none}.decision{grid-template-columns:1fr 105px 82px}
+      .wrap{overflow:visible;padding:0;border:0;background:transparent;isolation:auto}
+      table{display:block;min-width:0;width:100%}thead{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+      tbody{display:grid;gap:10px}tbody tr{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0;background:#111a25;border:1px solid #33445a;border-radius:12px;padding:10px;overflow:hidden}
+      tbody td{display:flex;min-width:0;align-items:center;justify-content:space-between;gap:10px;border:0;border-bottom:1px solid #29394c;padding:9px 6px;text-align:right;overflow-wrap:anywhere}
+      tbody td::before{content:attr(data-label);flex:0 0 auto;color:#94a3b8;font-size:11px;font-weight:800;text-align:left}
+      tbody td[data-label="Pic"],tbody td[data-label="Article / Lot"],tbody td[data-label="Source Requirement"],tbody td[data-label="Godown / Allocation"]{grid-column:1/-1}
+      tbody td[data-label="Pic"]{justify-content:flex-start}tbody td[data-label="Article / Lot"]{font-size:16px}
+      tbody td[data-label="Godown / Allocation"]{background:#172230;border-radius:8px;margin-top:5px}
+      tbody td:last-child{border-bottom:0}.pic{width:58px;height:68px}.num{width:92px}
+      .actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));justify-content:stretch}.actions .btn{min-height:58px;padding:11px 8px}
+      .cancel-actions{grid-template-columns:1fr}.cancel-actions .btn{min-height:50px}
+    }
   </style>
 </head>
 <body>
@@ -13,12 +58,21 @@
 <div class="jpeg-boot"><div class="jpeg-boot-card"><div class="jpeg-spinner"></div><b>COMPLETE JPG LOADING…</b><div id="jpegBootStatus" class="muted" style="margin-top:8px">PDF-format image तैयार हो रही है</div></div></div>
 <main class="page">
   <section class="top"><div><b id="docTitle" style="font-size:21px">PI · PROFORMA INVOICE</b><div class="muted">Requirement → PI → CI · one mapped invoice flow</div></div><div><b id="reqNo">Requirement No. —</b><div><b id="docNo">PI No. —</b></div><div class="muted" id="docDate"></div></div></section>
-  <section class="card"><div class="grid"><div class="field"><label>Party</label><input id="party" readonly></div><div class="field"><label>Linked Collection</label><input id="collection" readonly></div><div class="field"><label>Status</label><input id="status" readonly></div></div></section>
+  <section class="card"><div class="grid"><div class="field"><label>Party</label><input id="party" readonly></div><div class="field"><label id="collectionLabel">Mapped Source</label><input id="collection" readonly></div><div class="field"><label>Status</label><input id="status" readonly></div></div></section>
   <section class="card"><b id="workingTitle">REQUIREMENT / PI WORKING TABLE</b><div id="workingHelp" class="muted" style="margin-top:5px">Requested quantity and working allocation stay mapped line-by-line.</div></section>
-  <section class="card wrap"><table><thead><tr><th>S.No.</th><th>Pic</th><th>Article / Lot</th><th>Category</th><th>Size</th><th id="sourceHead" class="internal-only">Source Requirement</th><th>Requested Qty</th><th id="workingQtyHead">PI Qty</th><th>Rate</th><th id="discountHead" class="pricing-private internal-only">Discount</th><th>Net Rate</th><th>Amount</th><th id="godownHead" class="internal-only">Godown / Allocation</th></tr></thead><tbody id="rows"></tbody></table></section>
+  <section class="card wrap"><table aria-label="Mapped requirement and invoice lines"><thead><tr><th>S.No.</th><th>Pic</th><th>Article / Lot</th><th>Category</th><th>Size</th><th id="sourceHead" class="internal-only">Source Requirement</th><th>Requested Qty</th><th id="workingQtyHead">PI Qty</th><th>Rate</th><th id="discountHead" class="pricing-private internal-only">Discount</th><th>Net Rate</th><th>Amount</th><th id="godownHead" class="internal-only">Godown / Allocation<br><small>STAFF VIEW ONLY</small></th></tr></thead><tbody id="rows"></tbody></table></section>
   <section class="card"><div class="grid charges"><div class="field"><label>Value Added %</label><input id="valuePct" type="number" step="0.01" value="0"></div><div class="field"><label>Freight</label><input id="freightInput" type="number" min="0" value="0"></div><div class="field"><label>Other Charges</label><input id="otherInput" type="number" min="0" value="0"></div></div><div class="totals"><span>Gross Amount</span><b id="gross">₹0</b><span id="discountLabel" class="pricing-private internal-only">Discount</span><b id="discount" class="pricing-private internal-only">₹0</b><span>Value Added</span><b id="valueAmount">₹0</b><span>Freight</span><b id="freight">₹0</b><span>Other Charges</span><b id="other">₹0</b><span>Round Off</span><b id="round">₹0</b><span class="grand">TTL Amount</span><b class="grand" id="total">₹0</b></div><div class="total-meta">TTL Items <b id="items">0</b> &nbsp;|&nbsp; TTL Qty <b id="qty">0</b></div></section>
   <section id="response" class="card response"><b>CUSTOMER PI RESPONSE</b><div id="responseLines"></div><div class="field" style="margin-top:10px"><label>Note</label><textarea id="note" rows="2"></textarea></div><div class="actions" style="margin-top:10px"><button id="sendResponse" class="btn primary">SEND PI RESPONSE</button></div></section>
   <section class="card"><div class="actions"><button class="btn" onclick="history.back()">BACK</button><button id="saveDraft" class="btn" hidden>SAVE DRAFT</button><button id="savePi" class="btn primary" hidden>SAVE & SEND PI</button><button id="sendChat" class="btn" hidden>SEND PI TO REAL CHAT (PDF/JPEG)</button><button id="convertCi" class="btn good" hidden>CONVERT PI TO CI</button><button id="cancelCi" class="btn" style="background:#5b1f2b" hidden>CANCEL CI · ROLLBACK TO PI</button><button id="download" class="btn" hidden>DOWNLOAD A4 PDF</button><button id="share" class="btn" hidden>SHARE A4 PDF</button></div><div id="confirmationRule" class="secure-note">Customer confirmation is optional. CI can be created without it.</div><div class="secure-note">Godown/allocation and private margin/discount data are never included in the customer PDF or external shared output.</div><div id="msg" class="msg"></div></section>
 </main>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script><script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.4/dist/jspdf.plugin.autotable.min.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script><script src="config.js?v=9462"></script><script src="real-market-anon-client-test67.js?v=2"></script><script src="real-common.js"></script><script src="rf-v853-core.js"></script><script src="real-market-shared-invoice-test67.js?v=28"></script>
+<dialog id="cancelDialog" class="cancel-dialog">
+  <form id="cancelForm" class="cancel-form" method="dialog">
+    <h2 id="cancelTitle">Cancel CI · Rollback to PI</h2>
+    <p id="cancelText">Current CI cancel होगी और latest PI restore होगी। Requirement history सुरक्षित रहेगी।</p>
+    <label for="cancelReason"><b>Cancellation reason</b></label>
+    <textarea id="cancelReason" required maxlength="300" placeholder="Reason लिखें…"></textarea>
+    <div class="cancel-actions"><button id="keepCi" type="button" class="btn">KEEP CI</button><button type="submit" class="btn rollback">ROLLBACK TO PI</button></div>
+  </form>
+</dialog>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script><script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.4/dist/jspdf.plugin.autotable.min.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script><script src="config.js?v=9462"></script><script src="real-market-anon-client-test67.js?v=2"></script><script src="real-common.js"></script><script src="rf-v853-core.js"></script><script src="real-market-shared-invoice-test67.js?v=29"></script>
 </body></html>

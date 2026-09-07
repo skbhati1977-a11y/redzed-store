@@ -25,6 +25,13 @@
           "'": "&#039;",
         })[char],
     );
+  const refLabel = (kind, ref) => {
+    const clean = String(ref || "").trim();
+    const type = String(kind || "").toUpperCase();
+    return !clean || new RegExp(`(^|\\s)${type}(\\s|$)`, "i").test(clean)
+      ? clean || type
+      : `${type} ${clean}`;
+  };
 
   function distributorLabel(name) {
     const clean = String(name || "Distributor")
@@ -58,7 +65,7 @@
       style.textContent = `
         .rrRzBadge83{display:inline-block;margin-top:4px;padding:2px 6px;border:1px solid #3e6281;border-radius:999px;color:#8dccff;font-size:9px;font-weight:900}
         .rrRzDock83{position:fixed;left:320px;right:0;bottom:70px;z-index:10018;display:none;grid-template-columns:repeat(3,1fr);gap:7px;padding:8px;background:#0b0f15ef;border-top:1px solid #334154}
-        .rrRzDock83.on{display:grid}.rrRzDock83 button{min-height:48px;border:1px solid #43536b;border-radius:11px;background:#182535;color:#fff;font-weight:900}.rrRzDock83 button:first-child{background:#197d51}.rrRzDock83 button:last-child{background:#167bc0}
+        .rrRzDock83.on{display:grid}.rrRzDock83 button{min-height:48px;border:1px solid #43536b;border-radius:11px;background:#182535;color:#cbd5e1;font-weight:900}.rrRzDock83 button.active{border-color:#63b3ed;background:#176ca8;color:#fff;box-shadow:inset 0 -3px 0 #8dd2ff}
         .chat.rrRzPartner83 .msgs{padding-bottom:160px!important}
         .rrRzBack83{z-index:10190!important}.rrRzSheet83{width:min(780px,100%);max-height:90dvh;overflow:auto;background:#10161f;border:1px solid #43536b;border-radius:20px 20px 0 0;padding:0;color:#fff}
         .rrRzHead83{position:sticky;top:0;z-index:2;display:flex;align-items:center;gap:8px;padding:11px;background:#10161f;border-bottom:1px solid #334154}.rrRzHead83 b{flex:1}.rrRzHead83 button{width:44px;height:44px}
@@ -92,6 +99,15 @@
     }
   }
 
+  function selectView(view) {
+    currentView = view;
+    document.querySelectorAll("#rrRzDock83 [data-rz-view]").forEach((button) => {
+      const active = button.dataset.rzView === view;
+      button.classList.toggle("active", active);
+      button.setAttribute("aria-current", active ? "page" : "false");
+    });
+  }
+
   function openSheet(title, html) {
     ensureUi();
     $("rrRzTitle83").textContent = title;
@@ -110,31 +126,21 @@
 
   function batchesFor(view) {
     const rows = relation()?.batches || [];
-    if (view === "REQ")
-      return rows.filter((item) =>
-        ["SUBMITTED", "PI_PROPOSED", "WAITING_CONFIRMATION"].includes(
-          item.status,
-        ),
-      );
+    if (view === "REQ") return rows.filter((item) => item.status === "SUBMITTED");
     if (view === "PI")
       return rows.filter((item) =>
         [
-          "SUBMITTED",
           "PI_PROPOSED",
           "WAITING_CONFIRMATION",
           "CONFIRMED",
           "PARTIAL_CONFIRMED",
         ].includes(item.status),
       );
-    return rows.filter((item) =>
-      ["WAITING_CONFIRMATION", "CONFIRMED", "PARTIAL_CONFIRMED", "CI_FINAL"].includes(
-        item.status,
-      ),
-    );
+    return rows.filter((item) => item.status === "CI_FINAL");
   }
 
   function openList(view) {
-    currentView = view;
+    selectView(view);
     const rows = batchesFor(view);
     const title =
       view === "REQ" ? "DISTRIBUTOR REQUIREMENTS" : view === "PI" ? "DISTRIBUTOR PI" : "DISTRIBUTOR CI";
@@ -143,8 +149,14 @@
       rows.length
         ? rows
             .map(
-              (batch) =>
-                `<article class="rrRzBatch83"><b>${esc(batch.requirement_display_no || batch.batch_ref)}</b><small>${batch.batch_kind === "CONSOLIDATED" ? "CONSOLIDATED" : "SINGLE"} · ${Number(batch.order_count || 0)} source requirement(s) · ${esc(batchStatus(batch))}${batch.pi_ref ? ` · ${esc(batch.pi_ref)}` : ""}${batch.ci_ref ? ` · ${esc(batch.ci_ref)}` : ""}</small><button data-rz-batch="${esc(batch.id)}">OPEN & EDIT</button></article>`,
+              (batch) => {
+                const action = batch.ci_ref
+                  ? "OPEN FINAL CI"
+                  : batch.pi_ref
+                    ? "OPEN SENT PI"
+                    : "OPEN & PREPARE PI";
+                return `<article class="rrRzBatch83"><b>${esc(batch.requirement_display_no || batch.batch_ref)}</b><small>${batch.batch_kind === "CONSOLIDATED" ? "CONSOLIDATED" : "SINGLE"} · ${Number(batch.order_count || 0)} source requirement(s) · ${esc(batchStatus(batch))}${batch.pi_ref ? ` · ${esc(batch.pi_ref)}` : ""}${batch.ci_ref ? ` · ${esc(batch.ci_ref)}` : ""}</small><button data-rz-batch="${esc(batch.id)}">${action}</button></article>`;
+              },
             )
             .join("")
         : '<div class="rrRzEmpty83">No item in this stage.</div>',
@@ -174,7 +186,7 @@
           `<section class="rrRzOrder83"><b>${esc(order.requirement_display_no || order.order_ref || `SOURCE REQUIREMENT ${index + 1}`)}</b><small>${esc(order.customer_ref || "Private customer")} · ${esc(String(order.status || "").replaceAll("_", " "))}</small>${(order.lines || []).map((line) => lineHtml(line, editable)).join("")}</section>`,
       )
       .join("");
-    const actions = `<div class="rrRzActions83">${canPi ? `<input id="rrRzPiRef83" placeholder="PI reference" value=""><button id="rrRzSendPi83">MAKE & SEND PI TO DISTRIBUTOR</button>` : piSent ? `<button type="button" disabled>PI ${esc(detail.pi_ref)} · SENT ✓</button>` : ""}${canCi ? `<input id="rrRzCiRef83" placeholder="CI reference (blank = auto)" value="${esc(detail.ci_ref || "")}"><button id="rrRzSendCi83">GENERATE CI · CONFIRMATION OPTIONAL</button>` : ""}</div>`;
+    const actions = `<div class="rrRzActions83">${canPi ? `<input id="rrRzPiRef83" placeholder="PI reference" value=""><button id="rrRzSendPi83">MAKE & SEND PI TO DISTRIBUTOR</button>` : piSent ? `<button type="button" disabled>${esc(refLabel("PI",detail.pi_ref))} · SENT ✓</button>` : ""}${canCi ? `<input id="rrRzCiRef83" placeholder="CI reference (blank = auto)" value="${esc(detail.ci_ref || "")}"><button id="rrRzSendCi83">GENERATE CI · CONFIRMATION OPTIONAL</button>` : ""}</div>`;
     openSheet(
       `${detail.requirement_display_no || detail.batch_ref} · ${batchStatus(detail)}`,
       `<p><b>${esc(distributorLabel(detail.direct_customer_name))}</b><br><small>Downstream customer identity is private.</small></p>${orders || '<div class="rrRzEmpty83">No requirement lines.</div>'}${actions}`,
@@ -204,7 +216,7 @@
   async function sendPi() {
     if (!activeBatch) return;
     if (activeBatch.pi_ref) {
-      flash(`PI ${activeBatch.pi_ref} already sent ✓`);
+      flash(`${refLabel("PI", activeBatch.pi_ref)} already sent ✓`);
       return;
     }
     try {
@@ -222,7 +234,7 @@
       if (!detail.already_sent) await sendNotice(detail.id);
       await loadRelations(true);
       renderBatch(detail, "PI");
-      flash(detail.already_sent ? `PI ${detail.pi_ref} already sent ✓` : "PI distributor को भेजी ✓");
+      flash(detail.already_sent ? `${refLabel("PI", detail.pi_ref)} already sent ✓` : "PI distributor को भेजी ✓");
     } catch (error) {
       flash(error.message, true);
     }
@@ -283,7 +295,7 @@
       }
       const cardState = `${sentKind}|${sentRef || "REQUIREMENT"}`;
       const cardHtml = sentRef
-        ? `<b>✓ ${sentKind} ${esc(sentRef)} · SENT</b><small>Already delivered · tap to open the current live journey</small>`
+        ? `<b>✓ ${esc(refLabel(sentKind,sentRef))} · SENT</b><small>REDZED STAFF · Already delivered · tap to open the current live journey</small>`
         : "<b>📋 REQUIREMENT SENT TO REDZED</b><small>Tap to open the mapped requirement and prepare PI</small>";
       // This bridge observes the whole chat DOM. Rewriting innerHTML on every
       // observer pass schedules another child-list mutation and can starve the
@@ -317,6 +329,10 @@
       }
     });
     if (item) {
+      if (!$("rrRzBack83")?.classList.contains("on")) {
+        const latest = (item.batches || [])[0];
+        selectView(latest?.ci_ref ? "CI" : latest?.pi_ref ? "PI" : "REQ");
+      }
       setText(
         $("chatTitle"),
         `REDZED ↔ ${distributorLabel(item.distributor_name).toUpperCase()}`,

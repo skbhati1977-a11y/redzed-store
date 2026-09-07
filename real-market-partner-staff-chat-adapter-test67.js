@@ -66,6 +66,13 @@
           "'": "&#039;",
         })[char],
     );
+  const refLabel = (kind, ref) => {
+    const clean = String(ref || "").trim();
+    const type = String(kind || "").toUpperCase();
+    return !clean || new RegExp(`(^|\\s)${type}(\\s|$)`, "i").test(clean)
+      ? clean || type
+      : `${type} ${clean}`;
+  };
 
   function device() {
     let value = localStorage.getItem(DEVICE_KEY);
@@ -720,20 +727,22 @@
               .map((order) => {
                 const confirm =
                   mode === "REDZED" && order.status === "PI_PROPOSED";
-                const canPushPi =
+                const canCreateCustomerPi =
                   mode === "CUSTOMER" &&
-                  order.pi_ref &&
-                  !order.customer_pi_visible;
+                  !order.distributor_pi_ref &&
+                  !order.customer_ci_ref &&
+                  order.status !== "CANCELLED";
                 const canPushCi =
                   order.status === "CI_FINAL" &&
                   order.ci_ref &&
+                  order.distributor_pi_ref &&
                   !order.customer_ci_visible;
                 const req = numberedLabel(order.requirement_display_no || order.order_ref, "REQUIREMENT");
                 const col = numberedLabel(order.collection_display_no, "COLLECTION");
                 const stage = order.distributor_pi_ref
                   ? `PI SENT TO CUSTOMER · ${order.distributor_pi_status || "WAITING"}`
                   : statusText(order);
-                return `<article class="rrPartnerOrder82"><b>${esc(order.customer_ci_ref || order.distributor_pi_ref || order.pi_ref || order.ci_ref)}</b><small>${esc(stage)} · ${esc(req.title)} · ${esc(col.title)}${order.ci_ref ? ` · Upstream CI ${esc(order.ci_ref)}` : ""}</small>${lineRows(order, false, confirm)}${order.distributor_pi_ref ? `<button class="good" data-live-customer-doc="${esc(order.id)}">OPEN CURRENT CUSTOMER PI / CI</button>` : ""}${confirm ? `<button data-confirm-order="${esc(order.id)}">CONFIRM REDZED PI (OPTIONAL)</button>` : ""}${canPushPi ? `<button data-push-pi="${esc(order.id)}">PUSH REDZED PI TO CUSTOMER</button>` : ""}${canPushCi ? `<button class="good" data-push-ci="${esc(order.id)}">PUSH CI TO CUSTOMER</button>` : ""}</article>`;
+                return `<article class="rrPartnerOrder82"><b>${esc(order.customer_ci_ref || order.distributor_pi_ref || order.pi_ref || order.ci_ref)}</b><small>${esc(stage)} · ${esc(req.title)} · ${esc(col.title)}${order.ci_ref ? ` · Upstream CI ${esc(order.ci_ref)}` : ""}</small>${lineRows(order, false, confirm)}${order.distributor_pi_ref ? `<button class="good" data-live-customer-doc="${esc(order.id)}">OPEN CURRENT CUSTOMER PI / CI</button>` : ""}${canCreateCustomerPi ? `<button class="good" data-live-customer-doc="${esc(order.id)}">MAKE CUSTOMER PI</button>` : ""}${confirm ? `<button data-confirm-order="${esc(order.id)}">CONFIRM REDZED PI (OPTIONAL)</button>` : ""}${canPushCi ? `<button class="good" data-push-ci="${esc(order.id)}">CREATE & SEND CUSTOMER CI</button>` : ""}</article>`;
               })
               .join("")
           : '<div class="rrPartnerEmpty82">No PI / CI in this private relation yet.</div>',
@@ -741,9 +750,6 @@
       document.querySelectorAll("[data-confirm-order]").forEach(
         (button) =>
           (button.onclick = () => confirmOrder(button.dataset.confirmOrder)),
-      );
-      document.querySelectorAll("[data-push-pi]").forEach(
-        (button) => (button.onclick = () => pushPi([button.dataset.pushPi])),
       );
       document.querySelectorAll("[data-push-ci]").forEach(
         (button) => (button.onclick = () => pushCi([button.dataset.pushCi])),
@@ -1033,7 +1039,7 @@
         }
         const cardState = `${sentKind}|${sentRef || "REQUIREMENT"}`;
         const cardHtml = sentRef
-          ? `<span class="rrMkIcon9505">✓</span><span class="rrMkText9505"><b>${sentKind} ${esc(sentRef)} · SENT ✓</b><small>Already delivered · tap to open the current mapped journey</small></span><span class="rrMkGo9505">OPEN ›</span>`
+          ? `<span class="rrMkIcon9505">✓</span><span class="rrMkText9505"><b>${esc(refLabel(sentKind, sentRef))} · SENT ✓</b><small>Already delivered · tap to open the current mapped journey</small></span><span class="rrMkGo9505">OPEN ›</span>`
           : '<span class="rrMkIcon9505">📋</span><span class="rrMkText9505"><b>REQUIREMENT SENT TO REDZED</b><small>Tap to open requirement number, update number and quantities</small></span><span class="rrMkGo9505">OPEN ›</span>';
         // Avoid a self-triggering MutationObserver loop. The chat observer
         // calls decorateMessages after child changes, so an unconditional
