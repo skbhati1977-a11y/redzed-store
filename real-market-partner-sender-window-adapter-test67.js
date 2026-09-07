@@ -99,50 +99,90 @@
       card?.querySelector(".ww-thumb img")?.src || "";
   }
 
+  function withTimeout(promise, milliseconds, message) {
+    let timer;
+    return Promise.race([
+      promise,
+      new Promise((_, reject) => {
+        timer = setTimeout(() => reject(Error(message)), milliseconds);
+      }),
+    ]).finally(() => clearTimeout(timer));
+  }
+
+  async function loadPosterSource(imageUrl) {
+    if (!imageUrl) return null;
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 6000);
+    try {
+      const response = await fetch(imageUrl, {
+        mode: "cors",
+        cache: "no-store",
+        signal: controller.signal,
+      });
+      if (!response.ok) return null;
+      const objectUrl = URL.createObjectURL(await response.blob());
+      try {
+        const source = new Image();
+        await withTimeout(new Promise((resolve, reject) => {
+          source.onload = resolve;
+          source.onerror = reject;
+          source.src = objectUrl;
+        }), 6000, "Collection image timed out.");
+        return source;
+      } finally {
+        URL.revokeObjectURL(objectUrl);
+      }
+    } catch (_) {
+      return null;
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
   async function posterAttachment(lot, count) {
     const imageUrl = firstSelectedImage(lot);
-    if (!imageUrl) return null;
-    const response = await fetch(imageUrl, { mode: "cors", cache: "no-store" });
-    if (!response.ok) throw Error("Collection image could not be prepared.");
-    const objectUrl = URL.createObjectURL(await response.blob());
-    try {
-      const source = new Image();
-      await new Promise((resolve, reject) => {
-        source.onload = resolve;
-        source.onerror = reject;
-        source.src = objectUrl;
-      });
-      const width = 1080, height = 1350;
+    const source = await loadPosterSource(imageUrl);
+    const width = 720, height = 900;
       const canvas = document.createElement("canvas");
       canvas.width = width;
       canvas.height = height;
       const context2d = canvas.getContext("2d");
-      const scale = Math.max(width / source.width, height / source.height);
-      const drawWidth = source.width * scale, drawHeight = source.height * scale;
       context2d.fillStyle = "#111";
       context2d.fillRect(0, 0, width, height);
-      context2d.drawImage(source,(width-drawWidth)/2,(height-drawHeight)/2,drawWidth,drawHeight);
+      if (source) {
+        const scale = Math.max(width / source.width, height / source.height);
+        const drawWidth = source.width * scale, drawHeight = source.height * scale;
+        context2d.drawImage(source,(width-drawWidth)/2,(height-drawHeight)/2,drawWidth,drawHeight);
+      } else {
+        context2d.fillStyle = "#fff";
+        context2d.font = "800 46px system-ui,sans-serif";
+        context2d.textAlign = "center";
+        context2d.fillText("NEW COLLECTION", width / 2, height / 2 - 30);
+        context2d.font = "700 36px system-ui,sans-serif";
+        context2d.fillText(lot, width / 2, height / 2 + 35);
+      }
       context2d.fillStyle = "rgba(0,0,0,.78)";
       context2d.beginPath();
-      if (context2d.roundRect) context2d.roundRect(width-300,42,245,112,34);
-      else context2d.rect(width-300,42,245,112);
+      if (context2d.roundRect) context2d.roundRect(width-220,28,180,84,26);
+      else context2d.rect(width-220,28,180,84);
       context2d.fill();
       context2d.fillStyle = "#fff";
-      context2d.font = "800 58px system-ui,sans-serif";
+      context2d.font = "800 42px system-ui,sans-serif";
       context2d.textAlign = "center";
-      context2d.fillText(`+${count}`,width-178,116);
-      const blob = await new Promise((resolve) => canvas.toBlob(resolve,"image/jpeg",.9));
+      context2d.fillText(`+${count}`,width-130,84);
+      const blob = await withTimeout(
+        new Promise((resolve) => canvas.toBlob(resolve,"image/jpeg",.72)),
+        6000,
+        "Collection image encoding timed out.",
+      );
       if (!blob) throw Error("Collection image could not be prepared.");
-      const dataUrl = await new Promise((resolve, reject) => {
+      const dataUrl = await withTimeout(new Promise((resolve, reject) => {
         const reader = new FileReader();
         reader.onload = () => resolve(String(reader.result || ""));
         reader.onerror = reject;
         reader.readAsDataURL(blob);
-      });
+      }), 6000, "Collection image reading timed out.");
       return {name:`DISTRIBUTOR-${lot}-${count}-styles.jpg`,type:"image/jpeg",data_url:dataUrl};
-    } finally {
-      URL.revokeObjectURL(objectUrl);
-    }
   }
 
   let atomicSendRunning = false;
@@ -158,13 +198,13 @@
       const margin = numeric("rrPartnerMargin82", customer.margin);
       const discount = numeric("rrPartnerDiscount82", customer.discount);
       const attachment = await posterAttachment(lots[0], lots.length);
-      const result = await rawRpc("rr_market_partner_collection_send_v87", {
+      const result = await withTimeout(rawRpc("rr_market_partner_collection_send_v87", {
         ...auth(),
         p_partner_customer_id: customerId,
         p_lines: lots.map((lot) => ({lot_no:lot,margin_amount:margin,discount_amount:discount})),
         p_link_base: new URL("s.html", location.href).href.split("?")[0],
         p_attachment: attachment,
-      });
+      }), 30000, "SEND TIMED OUT · CHECK NETWORK AND TRY AGAIN");
       if (!result?.collection_id || !result?.chat_message_id)
         throw Error("Collection and chat card were not both saved.");
       showSendStatus(`${result.collection_display_no} · SENT ✓`);
