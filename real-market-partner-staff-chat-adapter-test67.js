@@ -949,9 +949,9 @@
         const previewUrl = new URL("real-market-shared-invoice-test67.html", location.href);
         previewUrl.searchParams.set("role", "DISTRIBUTOR");
         previewUrl.searchParams.set("order", piMatch[1]);
-        previewUrl.searchParams.set("mode", "jpeg");
+        previewUrl.searchParams.set("mode", "preview");
         previewUrl.searchParams.set("embed", "1");
-        previewUrl.searchParams.set("v", "18");
+        previewUrl.searchParams.set("v", "19");
         preview.src = previewUrl.href;
         message.insertBefore(preview, message.querySelector("time"));
         message.insertBefore(card, message.querySelector("time"));
