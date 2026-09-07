@@ -144,7 +144,7 @@
         ? rows
             .map(
               (batch) =>
-                `<article class="rrRzBatch83"><b>${esc(batch.batch_ref)}</b><small>${Number(batch.order_count || 0)} requirement(s) · ${esc(batchStatus(batch))}${batch.pi_ref ? ` · PI ${esc(batch.pi_ref)}` : ""}${batch.ci_ref ? ` · CI ${esc(batch.ci_ref)}` : ""}</small><button data-rz-batch="${esc(batch.id)}">OPEN IN THIS CHAT</button></article>`,
+                `<article class="rrRzBatch83"><b>${esc(batch.requirement_display_no || batch.batch_ref)}</b><small>${batch.batch_kind === "CONSOLIDATED" ? "CONSOLIDATED" : "SINGLE"} · ${Number(batch.order_count || 0)} source requirement(s) · ${esc(batchStatus(batch))}${batch.pi_ref ? ` · ${esc(batch.pi_ref)}` : ""}${batch.ci_ref ? ` · ${esc(batch.ci_ref)}` : ""}</small><button data-rz-batch="${esc(batch.id)}">OPEN & EDIT</button></article>`,
             )
             .join("")
         : '<div class="rrRzEmpty83">No item in this stage.</div>',
@@ -172,12 +172,12 @@
     const orders = (detail.orders || [])
       .map(
         (order, index) =>
-          `<section class="rrRzOrder83"><b>REQUIREMENT ${index + 1}</b><small>${esc(String(order.status || "").replaceAll("_", " "))}</small>${(order.lines || []).map((line) => lineHtml(line, editable)).join("")}</section>`,
+          `<section class="rrRzOrder83"><b>${esc(order.requirement_display_no || order.order_ref || `SOURCE REQUIREMENT ${index + 1}`)}</b><small>${esc(order.customer_ref || "Private customer")} · ${esc(String(order.status || "").replaceAll("_", " "))}</small>${(order.lines || []).map((line) => lineHtml(line, editable)).join("")}</section>`,
       )
       .join("");
     const actions = `<div class="rrRzActions83">${canPi ? `<input id="rrRzPiRef83" placeholder="PI reference" value="${esc(detail.pi_ref || "")}"><button id="rrRzSendPi83">MAKE / SEND PI TO DISTRIBUTOR</button>` : ""}${canCi ? `<input id="rrRzCiRef83" placeholder="CI reference (blank = auto)" value="${esc(detail.ci_ref || "")}"><button id="rrRzSendCi83">GENERATE CI · CONFIRMATION OPTIONAL</button>` : ""}</div>`;
     openSheet(
-      `${detail.batch_ref} · ${batchStatus(detail)}`,
+      `${detail.requirement_display_no || detail.batch_ref} · ${batchStatus(detail)}`,
       `<p><b>${esc(distributorLabel(detail.direct_customer_name))}</b><br><small>Downstream customer identity is private.</small></p>${orders || '<div class="rrRzEmpty83">No requirement lines.</div>'}${actions}`,
     );
     if ($("rrRzSendPi83")) $("rrRzSendPi83").onclick = sendPi;

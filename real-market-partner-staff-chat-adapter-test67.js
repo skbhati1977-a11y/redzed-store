@@ -755,17 +755,14 @@
 
   async function openSentRedzedRequirements() {
     try {
-      const data = await state(true);
-      const rows = (data.orders || []).filter(
-        (order) => order.redzed_pushed_at || ["BATCHED", "PI_PROPOSED", "CONFIRMED", "PARTIAL_CONFIRMED", "CI_FINAL", "CLOSED"].includes(order.status),
-      );
+      const rows = await rawRpc("rr_market_partner_batches_v67", authArgs());
       openSheet(
         "REQUIREMENTS SENT TO REDZED",
         rows.length
-          ? rows.map((order) => {
-              const req = numberedLabel(order.requirement_display_no || order.order_ref, "REQUIREMENT");
-              const col = numberedLabel(order.collection_display_no, "COLLECTION");
-              return `<article class="rrPartnerOrder82"><b>${esc(req.title)}</b><small>${esc(req.detail)} · ${esc(col.detail)} · ${esc(statusText(order))}</small>${lineRows(order)}</article>`;
+          ? rows.map((batch) => {
+              const status = batch.status === "SUBMITTED" ? "WAITING FOR REDZED ACTION" : batch.status === "WAITING_CONFIRMATION" ? "PI SENT · CONFIRMATION OPTIONAL" : batch.status === "CI_FINAL" ? "CI FINAL · CYCLE CLOSED" : String(batch.status || "").replaceAll("_", " ");
+              const sources = (batch.requirements || []).map((item) => `<div class="rrPartnerLine82"><b>${esc(item.requirement_display_no || "Source requirement")}</b><small>${esc(String(item.status || "").replaceAll("_", " "))}</small></div>`).join("");
+              return `<article class="rrPartnerOrder82"><b>${esc(batch.requirement_display_no || batch.batch_ref)}</b><small>${batch.batch_kind === "CONSOLIDATED" ? "CONSOLIDATED" : "SINGLE"} · ${Number(batch.order_count || 0)} source requirement(s) · ${esc(status)}</small>${sources}${batch.pi_ref ? `<div class="rrPartnerLine82"><b>${esc(batch.pi_ref)}</b><small>REDZED PI</small></div>` : ""}${batch.ci_ref ? `<div class="rrPartnerLine82"><b>${esc(batch.ci_ref)}</b><small>REDZED CI</small></div>` : ""}</article>`;
             }).join("")
           : '<div class="rrPartnerEmpty82">No requirement has been sent to REDZED yet.</div>',
       );
