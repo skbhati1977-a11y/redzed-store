@@ -25,7 +25,7 @@
     return RF853.rpc(name, args);
   }
   function values(x) { const qty = Number(x.distributor_pi_qty ?? x.proposed_qty ?? x.requested_qty ?? x.quantity ?? x.qty ?? 0), purchase = Number(x.base_rate ?? x.purchase_rate ?? x.rate ?? 0), margin = Number(x.rate_enhancement ?? x.margin_amount ?? 0), grossRate = Number(x.sale_rate ?? (purchase + margin)), discount = Number(x.customer_discount ?? x.discount ?? x.discount_amount ?? 0), finalRate = Number(x.final_rate ?? x.final_customer_rate ?? (grossRate - discount)); return { qty, purchase, margin, grossRate, discount, finalRate, effectiveMargin: finalRate - purchase, amount: qty * finalRate }; }
-  function canEditQty() { return (role === "DISTRIBUTOR" || role === "REDZED") && doc?.kind !== "CI"; }
+  function canEditQty() { return (role === "DISTRIBUTOR" || role === "REDZED") && doc?.kind !== "CI" && !(role === "REDZED" && doc?.ref); }
   function chargeValues() { const c = doc?.charges || {}; return { valuePct:Number(c.value_pct || 0), freight:Number(c.freight || 0), other:Number(c.other || 0) }; }
   function readCharges() { return { valuePct:Number($("valuePct").value || 0), freight:Math.max(0,Number($("freightInput").value || 0)), other:Math.max(0,Number($("otherInput").value || 0)) }; }
 
@@ -33,7 +33,7 @@
     let displayGross = 0, discount = 0, gross = 0, totalQty = 0; const staff = role === "REDZED";
     $("godownHead").classList.toggle("internal-only", !staff); $("sourceHead").classList.toggle("internal-only", !staff); [$("discountHead"),$("discountLabel"),$("discount")].forEach((x)=>x.classList.toggle("internal-only",role!=="DISTRIBUTOR"));
     $("workingTitle").textContent = staff ? "REDZED ALLOCATION / PI WORKING TABLE" : role === "DISTRIBUTOR" ? "DISTRIBUTOR CUSTOMER PI WORKING TABLE" : "PI DETAILS";
-    $("workingHelp").textContent = staff ? "Requested Qty original और locked है। Working PI Qty को available/frozen stock के अनुसार बदलें, फिर SAVE DRAFT या MAKE & SEND PI करें।" : "Requested Qty और PI Qty एक ही mapped line पर दिखाई जाती हैं।";
+    $("workingHelp").textContent = staff ? (doc?.ref ? `PI ${doc.ref} distributor को भेजी जा चुकी है और अब locked है ✓` : "Requested Qty original और locked है। Working PI Qty को available/frozen stock के अनुसार बदलें, फिर SAVE DRAFT या MAKE & SEND PI करें।") : "Requested Qty और PI Qty एक ही mapped line पर दिखाई जाती हैं।";
     $("workingQtyHead").textContent = staff ? "REDZED Working PI Qty" : "PI Qty";
     $("rows").innerHTML = lines.map((x, i) => { const v = values(x); displayGross += v.qty * v.grossRate; discount += v.qty * v.discount; gross += v.amount; totalQty += v.qty; return `<tr><td>${i + 1}</td><td>${x.image_url ? `<img class="pic" src="${esc(x.image_url)}" alt="">` : "👕"}</td><td><b>${esc(x.lot_no || x.article_name || "-")}</b></td><td>${esc(x.category || x.article_name || "-")}</td><td>${esc(x.size_text || x.size || "-")}</td>${staff ? `<td><b>${esc(x.requirement_display_no || x.order_ref || "Requirement")}</b><small class="muted">${esc(x.customer_ref || "Private customer")}</small></td>` : ""}<td><b>${Number(x.requested_qty ?? x.quantity ?? x.qty ?? 0)}</b></td><td>${canEditQty() ? `<input class="num" data-qty="${esc(x.id)}" type="number" min="0" value="${v.qty}" aria-label="Working PI quantity for ${esc(x.lot_no || "line")}">` : v.qty}</td><td>${money(role === "DISTRIBUTOR" ? v.grossRate : v.finalRate)}${role === "DISTRIBUTOR" ? `<small class="pricing-detail pricing-private">Purchase ${money(v.purchase)} + Margin ${money(v.margin)} · Effective margin ${money(v.effectiveMargin)}</small>` : ""}</td>${role === "DISTRIBUTOR" ? `<td class="pricing-private">${money(v.discount)}</td>` : ""}<td>${money(v.finalRate)}</td><td>${money(v.amount)}</td>${staff ? `<td class="rr-godown-view-only">${esc(x.godown || "—")}</td>` : ""}</tr>`; }).join("");
     const saved=chargeValues(), editable=role==="DISTRIBUTOR"&&doc?.kind!=="CI"; if(!chargesReady){[["valuePct",saved.valuePct],["freightInput",saved.freight],["otherInput",saved.other]].forEach(([id,v])=>{$(id).value=v;});chargesReady=true;} ["valuePct","freightInput","otherInput"].forEach((id)=>{$(id).readOnly=!editable;});
@@ -66,7 +66,7 @@
   }
   async function loadCustomer() { doc = await rpc("rr_market_partner_customer_invoice_view_v67", { p_token: shareToken }); if (!doc) throw Error("PI अभी उपलब्ध नहीं है।"); doc.charges=doc.charges||{}; lines = doc.lines || []; order = { customer_name: "Customer", requirement_display_no: doc.requirement_display_no, collection_display_no: doc.collection_display_no }; }
   function proposals() { return lines.map((x) => ({ line_id: x.id, proposed_qty: Math.max(0, Math.floor(Number(document.querySelector(`[data-qty="${CSS.escape(x.id)}"]`)?.value ?? values(x).qty))) })); }
-  async function staffNotice(message) { if (!chatId) return; await rpc("rr_chat_send_staff_v9433", { p_chat_id: chatId, p_channel: "GROUP", p_message_type: "TEXT", p_body: message, p_payload: { relation_scope: "DISTRIBUTOR_REDZED", ui: "TEST67_SHARED_INVOICE" }, p_reply_to: null, p_order_session_id: null }); }
+  async function staffNotice(noticeBatchId) { if (!chatId) return; await rpc("rr_market_staff_batch_chat_upsert_v67", { p_chat_id: chatId, p_batch_id: noticeBatchId }); }
 
   async function imageData(url) { if (!url) return null; try { const blob=await (await fetch(url)).blob(); return await new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve(r.result);r.onerror=reject;r.readAsDataURL(blob);}); } catch (_) { return null; } }
   async function packingRows(){return Promise.all(lines.map(async(x)=>{let c={};try{c=await rpc("rr_pi_lot_context_v9517",{p_lot_no:x.lot_no,p_customer_name:order?.customer_name||"",p_data_mode:"TEST"});customerProfile={...customerProfile,...c};}catch(_){}return {...x,image_url:c.image||x.image_url,size_text:c.size_text||c.size||x.size_text,pack_pcs_per_box:Number(c.pack_pcs_per_box||0)};}));}
@@ -132,14 +132,14 @@
         render();
         return;
       }
-      if (role === "REDZED") { const payload = proposals(), r = await rpc("rr_market_staff_propose_batch_v67", { p_batch_id: order.id, p_line_proposals: payload, p_pi_ref: "" }); doc = { kind: "PI", ref: r.pi_ref, status: r.status, pushed_at: new Date().toISOString() }; lines.forEach((x) => { x.proposed_qty = payload.find((y) => y.line_id === x.id)?.proposed_qty; }); await staffNotice(`[PBATCH:${r.id}] ${r.batch_ref} · PI ${r.pi_ref} SENT TO DISTRIBUTOR`); }
+      if (role === "REDZED") { const payload = proposals(), r = await rpc("rr_market_staff_propose_batch_v67", { p_batch_id: order.id, p_line_proposals: payload, p_pi_ref: "" }); doc = { kind: "PI", ref: r.pi_ref, status: r.status, pushed_at: new Date().toISOString() }; lines.forEach((x) => { x.proposed_qty = payload.find((y) => y.line_id === x.id)?.proposed_qty; }); if (r.already_sent) { message(`PI ${r.pi_ref} पहले ही distributor को भेजी जा चुकी है ✓`, "ok"); render(); return; } await staffNotice(r.id); }
       else { const a = auth(), c=readCharges(), payload = lines.map((x) => ({ line_id: x.id, qty: Math.max(0, Math.floor(Number(document.querySelector(`[data-qty="${CSS.escape(x.id)}"]`)?.value ?? values(x).qty))) })); await rpc("rr_market_partner_customer_pi_charges_v67",{...a,p_order_id:order.id,p_value_pct:c.valuePct,p_freight:c.freight,p_other:c.other,p_tax_pct:0}); const r = await rpc("rr_market_partner_make_customer_pi_v67", { ...a, p_order_id: order.id, p_lines: payload, p_note: null }); doc = { kind: "PI", ref: r.distributor_pi_ref, status: r.distributor_pi_status || "WAITING", pushed_at: new Date().toISOString(),charges:{value_pct:c.valuePct,freight:c.freight,other:c.other,tax_pct:0} }; lines.forEach((x) => { x.distributor_pi_qty = payload.find((y) => y.line_id === x.id)?.qty; }); try { await sendRealChat(); } catch (e) { throw Error(`PI ${doc.ref} saved, but Real Chat delivery failed: ${e.message}`); } }
       message(`PI ${doc.ref} भेजी ✓`,"ok"); render();
     } catch (e) { throw e; }
   }
   async function convertCi() {
     try {
-      if (role === "REDZED") { const r = await rpc("rr_market_staff_finalize_ci_v67", { p_batch_id: order.id, p_ci_ref: "" }); doc = { kind: "CI", ref: r.ci_ref, status: r.status, created_at: new Date().toISOString() }; await staffNotice(`[PBATCH:${r.id}] ${r.batch_ref} · CI ${r.ci_ref} SENT TO DISTRIBUTOR`); }
+      if (role === "REDZED") { const r = await rpc("rr_market_staff_finalize_ci_v67", { p_batch_id: order.id, p_ci_ref: "" }); doc = { kind: "CI", ref: r.ci_ref, status: r.status, created_at: new Date().toISOString() }; await staffNotice(r.id); }
       else { const r = await rpc("rr_market_partner_convert_customer_ci_v67", { ...auth(), p_order_id: order.id }); doc = { kind: "CI", ref: r.customer_ci_ref, status: r.status || "FINAL", created_at: new Date().toISOString() }; }
       message(`CI ${doc.ref} generated ✓`,"ok"); render();
     } catch (e) { throw e; }
@@ -150,7 +150,7 @@
     if(!confirm("Cancel this CI and restore the latest PI? Requirement history will remain safe."))return;
     if(role==="REDZED"){
       const r=await rpc("rr_market_staff_cancel_ci_v67",{p_batch_id:order.id,p_reason:String(reason).trim()});
-      doc={kind:"PI",ref:r.pi_ref,status:r.status}; await staffNotice(`[PBATCH:${r.id}] ${r.requirement_display_no||r.batch_ref} · CI CANCELLED · PI RESTORED`);
+      doc={kind:"PI",ref:r.pi_ref,status:r.status}; await staffNotice(r.id);
     }else{
       const r=await rpc("rr_market_partner_cancel_customer_ci_v67",{...auth(),p_order_id:order.id,p_reason:String(reason).trim()});
       doc={kind:"PI",ref:r.distributor_pi_ref,status:r.status}; piChatSent=false;

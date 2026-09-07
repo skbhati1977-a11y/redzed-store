@@ -189,19 +189,15 @@
     target.searchParams.set("batch", batchId);
     if (activeChatId) target.searchParams.set("chat", activeChatId);
     target.searchParams.set("view", view);
+    target.searchParams.set("v", "87");
     location.href = target.href;
   }
 
-  async function sendNotice(body) {
+  async function sendNotice(noticeBatchId) {
     if (!activeChatId) return;
-    await rawRpc("rr_chat_send_staff_v9433", {
+    await rawRpc("rr_market_staff_batch_chat_upsert_v67", {
       p_chat_id: activeChatId,
-      p_channel: "GROUP",
-      p_message_type: "TEXT",
-      p_body: body,
-      p_payload: { relation_scope: "DISTRIBUTOR_REDZED", ui: "TEST67_V83" },
-      p_reply_to: null,
-      p_order_session_id: null,
+      p_batch_id: noticeBatchId,
     });
   }
 
@@ -223,12 +219,10 @@
         p_line_proposals: proposals,
         p_pi_ref: $("rrRzPiRef83")?.value.trim() || "",
       });
-      await sendNotice(
-        `[PBATCH:${detail.id}] ${detail.batch_ref} · PI ${detail.pi_ref} SENT TO DISTRIBUTOR`,
-      );
+      if (!detail.already_sent) await sendNotice(detail.id);
       await loadRelations(true);
       renderBatch(detail, "PI");
-      flash("PI distributor को भेजी ✓");
+      flash(detail.already_sent ? `PI ${detail.pi_ref} already sent ✓` : "PI distributor को भेजी ✓");
     } catch (error) {
       flash(error.message, true);
     }
@@ -241,9 +235,7 @@
         p_batch_id: activeBatch.id,
         p_ci_ref: $("rrRzCiRef83")?.value.trim() || "",
       });
-      await sendNotice(
-        `[PBATCH:${detail.id}] ${detail.batch_ref} · CI ${detail.ci_ref} SENT TO DISTRIBUTOR`,
-      );
+      await sendNotice(detail.id);
       await loadRelations(true);
       renderBatch(detail, "CI");
       flash("CI distributor को भेजी ✓");
