@@ -31,10 +31,21 @@
     <script>
       window.__RR_SLICE_MENU_LOADER_9309__ = true;
       (async () => {
-        const token =
-          new URLSearchParams(location.search).get("t") ||
-          new URLSearchParams(location.search).get("c") ||
-          "";
+        const launchKey = "rr_customer_verified_launch_v9688";
+        const query = new URLSearchParams(location.search);
+        let token = query.get("t") || query.get("c") || "";
+        if (!token) {
+          try {
+            const remembered = JSON.parse(localStorage.getItem(launchKey) || "null");
+            if (remembered?.token && remembered?.relation === "REDZED_CUSTOMER") {
+              const restored = new URL(location.href);
+              restored.searchParams.set("t", remembered.token);
+              restored.searchParams.set("source", "pwa");
+              location.replace(restored.href);
+              return;
+            }
+          } catch (_) {}
+        }
         const loadScript = (src) =>
           new Promise((resolve, reject) => {
             const script = document.createElement("script");
@@ -118,6 +129,7 @@
             );
           }
           for (const src of baseScripts) await loadScript(src);
+          await loadScript("real-customer-cycle-message-card-v9688.js?v=9688");
 
           // Keep the original RedZed ↔ Customer collection controls exactly
           // once.  A late wrapper previously added a second CLOSE button.
