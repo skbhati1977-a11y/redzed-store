@@ -35,8 +35,22 @@
     const p = m.payload || {};
     return p.collection_display_no || p.requirement_display_no || norm(m.body).replace(/^\[REQ:[^\]]+\]\s*/i, "").split(" · ").slice(0, 2).join(" · ") || "REDZED UPDATE";
   }
+  function isRequirementSource(source) {
+    return source === "DIRECT_MARKET_REQUIREMENT" || source === "MARKET_REQUIREMENT";
+  }
+  function shareToken(m) {
+    const p = m?.payload || {};
+    return p.share_token || p.share_short_code || tokenFrom(p.url || "");
+  }
+  function shareUrl(m, token, cycleUrls) {
+    const p = m?.payload || {};
+    if (p.url) return p.url;
+    const cycleUrl = cycleUrls.get(String(p.direct_collection_cycle_id || ""));
+    if (cycleUrl) return cycleUrl;
+    return token ? `${location.origin}/s.html?t=${encodeURIComponent(token)}` : "";
+  }
   function paint(node, m, image, url) {
-    const p = m.payload || {}, req = String(p.source || "").toUpperCase() === "DIRECT_MARKET_REQUIREMENT";
+    const p = m.payload || {}, req = isRequirementSource(String(p.source || "").toUpperCase());
     const body = node.querySelector(".fsbody");
     if (!body || body.dataset.cycleCard9688 === "1") return;
     const update = Number(req ? p.requirement_update_no : p.collection_update_no || 0);
@@ -66,13 +80,13 @@
       const nodes = [...document.querySelectorAll("#fsMsgs .fsm")], unused = new Set(nodes.map((_, i) => i));
       for (const m of messages) {
         const source = String(m?.payload?.source || "").toUpperCase();
-        if (!['DIRECT_MARKET_WINDOW', 'DIRECT_MARKET_REQUIREMENT'].includes(source)) continue;
+        if (!['DIRECT_MARKET_WINDOW', 'DIRECT_MARKET_REQUIREMENT', 'MARKET_WINDOW', 'MARKET_REQUIREMENT'].includes(source)) continue;
         const index = [...unused].find((i) => norm(nodes[i].querySelector(".fsbody")?.textContent) === norm(m.body));
         if (index == null) continue;
         unused.delete(index);
-        const cycle = String(m.payload?.direct_collection_cycle_id || "");
-        const url = m.payload?.url || urls.get(cycle) || location.href;
-        const share = await getShare(tokenFrom(url) || new URLSearchParams(location.search).get("t") || "");
+        const token = shareToken(m);
+        const url = shareUrl(m, token, urls);
+        const share = await getShare(token);
         paint(nodes[index], m, firstImage(share), url);
       }
     } catch (_) {} finally { busy = false; }
