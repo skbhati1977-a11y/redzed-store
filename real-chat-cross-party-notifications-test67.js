@@ -111,22 +111,6 @@
     if (seen.size > 600) [...seen].slice(0, 300).forEach((key) => seen.delete(key));
   }
 
-  function permissionPrompt() {
-    if (!("Notification" in window) || Notification.permission !== "default") return;
-    const button = document.createElement("button");
-    button.type = "button";
-    button.textContent = "🔔 Notifications चालू करें";
-    button.style.cssText = "position:fixed;z-index:2147483645;right:14px;top:14px;padding:10px 14px;border:1px solid #6caef2;border-radius:999px;background:#15304d;color:#fff;font-weight:700";
-    button.onclick = async () => {
-      const result = await Notification.requestPermission();
-      if (result === "granted") {
-        button.remove();
-        navigator.vibrate?.(100);
-      }
-    };
-    document.body.appendChild(button);
-  }
-
   navigator.serviceWorker?.register("./redzed-sw-test67.js?v=68").catch(() => {});
   addEventListener("pointerdown", () => {
     try {
@@ -137,7 +121,6 @@
   new MutationObserver(scan).observe(document.documentElement, { subtree: true, childList: true });
   setTimeout(() => {
     scan();
-    permissionPrompt();
   }, 350);
   setTimeout(() => (seeded = true), 2500);
 })();

@@ -32,7 +32,7 @@
     const req = data?.requirement_display_no || data?.requirement_no || "REQUIREMENT";
     const collection = data?.collection_display_no || "COLLECTION";
     const cu = Number(data?.collection_update_no || 0);
-    return { req, collection: collection + (cu > 0 ? ` · UPDATE ${cu}` : "") };
+    return { req, collection: `SOURCE: ${collection}` + (cu > 0 ? ` · UPDATE ${cu}` : " · ORIGINAL") };
   }
 
   async function decorateCard(node) {
