@@ -155,18 +155,11 @@
   function relationTitle(data = workspace) {
     const owner = String(data?.owner_name || "Distributor")
       .replace(/\s+DISTRIBUTOR$/i, "")
-      .trim()
-      .toUpperCase();
-    if (mode === "REDZED") return `REDZED ↔ ${owner} DISTRIBUTOR`;
+      .trim();
+    if (mode === "REDZED") return `REDZED – ${owner}`;
     const customer = selectedCustomer(data);
-    const group = String(
-      customer?.group_name || `${customer?.name || "CUSTOMER"} GROUP`,
-    )
-      .trim()
-      .toUpperCase();
-    const ownerShort = owner.split(/\s+/)[0] || "DISTRIBUTOR";
-    const customerShort = group.replace(/\s+GROUP$/i, "").trim().split(/\s+/)[0] || "CUSTOMER";
-    return `${ownerShort} ${customerShort} GROUP`;
+    const customerName = String(customer?.name || "Customer").trim();
+    return `${customerName} – ${owner || "Distributor"} Group`;
   }
 
   function distributorLabel(name) {
