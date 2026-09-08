@@ -269,6 +269,8 @@
   }
   function wire() {
     $("#menuBtn").onclick = () => open("drawerBack");
+    $("#distributorHomeBtn").onclick = () =>
+      (location.href = "real-market-distributor-home-test68.html");
     $("#addBtn").onclick = () => {
       $("#contactKind").value = viewKind;
       $("#contactActive").checked = true;
