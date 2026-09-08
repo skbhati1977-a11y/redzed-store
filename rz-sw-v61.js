@@ -1,4 +1,4 @@
-const VERSION='rz61-push-6';
+const VERSION='rz61-push-9';
 self.addEventListener('install',e=>{self.skipWaiting()});
 self.addEventListener('activate',e=>e.waitUntil(self.clients.claim()));
 self.addEventListener('push',e=>{

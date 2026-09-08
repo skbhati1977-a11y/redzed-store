@@ -111,7 +111,7 @@
     if (seen.size > 600) [...seen].slice(0, 300).forEach((key) => seen.delete(key));
   }
 
-  navigator.serviceWorker?.register("./redzed-sw-test67.js?v=68").catch(() => {});
+  navigator.serviceWorker?.register("./rz-sw-v61.js?v=61push9", { updateViaCache: "none" }).catch(() => {});
   addEventListener("pointerdown", () => {
     try {
       audio ||= new (window.AudioContext || window.webkitAudioContext)();
