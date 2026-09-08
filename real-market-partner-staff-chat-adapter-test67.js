@@ -239,7 +239,10 @@
     const base = authArgs();
     const customer = selectedCustomer(data);
 
-    if (name === "rr_chat_staff_inbox_v9434") {
+    if (
+      name === "rr_chat_staff_inbox_v9434" ||
+      name === "rr_chat_staff_inbox_v9704"
+    ) {
       if (mode === "CUSTOMER" && (!customer || customer.status !== "ACTIVE"))
         return [];
       return [
