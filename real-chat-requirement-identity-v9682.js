@@ -6,7 +6,7 @@
   const cache = new Map();
   let activeId = "";
   const esc = (value) => String(value ?? "").replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" })[char]);
-  const chatId = () => document.querySelector("#inboxRows .chatrow.on")?.dataset.chat || localStorage.getItem("rr_real_chat_last_group_v9507") || "";
+  const chatId = () => window.__RR_CURRENT_CHAT_ID__ || document.querySelector("#inboxRows .chatrow.on")?.dataset.chat || localStorage.getItem("rr_real_chat_last_group_v9507") || "";
   const stage = (value) => ({
     READY_FOR_PI: "READY FOR PI",
     PI_GENERATED: "PI GENERATED",
@@ -24,8 +24,14 @@
   }
 
   async function detail(id) {
-    if (!cache.has(id)) cache.set(id, RF853.rpc("rr_chat_requirement_detail_v9508", { p_chat_id: chatId(), p_requirement_id: id }));
-    return cache.get(id);
+    const chat = chatId();
+    if (!chat) throw new Error("Current customer chat missing. List se chat dobara open karein.");
+    const key = `${chat}|${id}`;
+    if (!cache.has(key)) {
+      cache.set(key, RF853.rpc("rr_chat_requirement_detail_v9508", { p_chat_id: chat, p_requirement_id: id })
+        .catch((error) => { cache.delete(key); throw error; }));
+    }
+    return cache.get(key);
   }
 
   function label(data) {
@@ -47,7 +53,10 @@
       button.querySelector("b").textContent = `📋 ${x.req}`;
       button.querySelector("small").innerHTML = `${esc(x.collection)} · <span data-rr-stage>${esc(stage(data.status))}</span>`;
       button.addEventListener("click", () => { activeId = match[1]; showSheet(); }, { capture: true });
-    } catch (_) {}
+    } catch (error) {
+      const body = document.getElementById("rrReqBody9508");
+      if (body) body.innerHTML = `<div class="muted">${esc(error?.message || "Requirement open nahi hui. Chat list se dobara open karein.")}</div>`;
+    }
   }
 
   async function showSheet() {
