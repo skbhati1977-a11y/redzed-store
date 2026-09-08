@@ -4,13 +4,22 @@
   window.__RR_CROSS_PARTY_NOTIFICATIONS_TEST67__ = true;
 
   const MUTE_KEY = "rr_chat_mute";
-  const seen = new Set();
+  const SEEN_KEY = "rr_chat_notified_message_ids_v9718";
+  const loadSeen = () => {
+    try { return new Set(JSON.parse(localStorage.getItem(SEEN_KEY) || "[]").slice(-800)); }
+    catch (_) { return new Set(); }
+  };
+  const seen = loadSeen();
   let seeded = false;
   let audio = null;
 
   const muted = () => localStorage.getItem(MUTE_KEY) === "1";
   const messageKey = (node) =>
-    String(node.dataset.msgId || node.getAttribute("data-message-id") || node.textContent || "").replace(/\s+/g, " ").trim();
+    String(node.dataset.msgId || node.dataset.rrMsgid || node.dataset.msgid9482 || node.getAttribute("data-message-id") || "").trim();
+  const saveSeen = () => {
+    try { localStorage.setItem(SEEN_KEY, JSON.stringify([...seen].slice(-600))); }
+    catch (_) {}
+  };
 
   function label(node) {
     const sender = node.querySelector("small")?.textContent?.trim() || "New update";
@@ -80,6 +89,10 @@
   }
 
   function alertIncoming(node, key) {
+    // Background delivery belongs to the canonical Web Push outbox. This
+    // DOM observer is foreground-only, preventing chat reopen/re-render from
+    // replaying an existing message as a fresh Android notification.
+    if (document.hidden || node.classList.contains("me")) return;
     const { title, body } = label(node);
     banner(title, body);
     if (document.getElementById("rrChatBar")) {
@@ -88,7 +101,6 @@
     }
     tone();
     if (!muted()) navigator.vibrate?.([160, 80, 160]);
-    systemNotice(title, body, key);
   }
 
   function scan() {
@@ -99,6 +111,7 @@
         const key = messageKey(node);
         if (key) seen.add(key);
       });
+      saveSeen();
       seeded = true;
       return;
     }
@@ -109,6 +122,7 @@
       if (!node.classList.contains("me")) alertIncoming(node, key);
     });
     if (seen.size > 600) [...seen].slice(0, 300).forEach((key) => seen.delete(key));
+    saveSeen();
   }
 
   navigator.serviceWorker?.register("./rz-sw-v61.js?v=61push9", { updateViaCache: "none" }).catch(() => {});
