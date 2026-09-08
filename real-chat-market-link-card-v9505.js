@@ -110,7 +110,7 @@
   }
   function loadExtras() {
     if (!/\/real-sales-live-chat-v9434\.html$/i.test(location.pathname)) return;
-    loadScript("rrChatAutoOpen9507", "real-chat-auto-open-refresh-v9507.js?v=9507");
+    loadScript("rrChatAutoOpen9507", "real-chat-auto-open-refresh-v9507.js?v=9689");
   }
   function css() {
     if (document.getElementById("rrMarketLinkCss9505")) return;
