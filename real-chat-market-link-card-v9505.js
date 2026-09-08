@@ -14,6 +14,16 @@
     }
   }
 
+  function firstImage(data) {
+    for (const row of Array.isArray(data?.rows) ? data.rows : []) {
+      const media = Array.isArray(row?.media) ? row.media : [];
+      const image = media.map((item) => item?.image_url || item?.storage_path).find(Boolean);
+      if (image) return image;
+      if (row?.primary_image_url) return row.primary_image_url;
+    }
+    return "";
+  }
+
   function ensureStaffViewer() {
     let viewer = document.getElementById("rrStaffCollection9680");
     if (viewer) return viewer;
@@ -95,8 +105,10 @@
     ]).then(([data, state]) => {
       const updateNo = Number(state?.collection_update_no || 0);
       const title = state?.collection_display_no || data?.collection_display_no || "REDZED COLLECTION";
+      const image = firstImage(data);
       box.querySelector(".rrMkText9505 b").textContent = title + (updateNo > 0 ? ` · UPDATE ${updateNo}` : "");
       box.querySelector(".rrMkText9505 small").textContent = `${styles ? `${styles} selected styles · ` : ""}${String(state?.collection_status || "COLLECTION").replaceAll("_", " ")}`;
+      if (image) box.querySelector(".rrMkIcon9505").innerHTML = `<img src="${esc(image)}" alt="${esc(title)} first style" loading="lazy" decoding="async">`;
     }).catch(() => {});
   }
 
@@ -116,7 +128,7 @@
     if (document.getElementById("rrMarketLinkCss9505")) return;
     const style = document.createElement("style");
     style.id = "rrMarketLinkCss9505";
-    style.textContent = ".rrMarketLinkCard9505{width:100%;display:flex;align-items:center;gap:10px;margin:7px 0 3px;padding:11px 12px;border:1px solid #49627d;border-radius:13px;background:#101923;color:#fff;text-align:left;cursor:pointer}.rrMkIcon9505{font-size:25px;flex:0 0 auto}.rrMkText9505{display:block;min-width:0;flex:1}.rrMkText9505 b,.rrMkText9505 small{display:block}.rrMkText9505 b{font-size:14px}.rrMkText9505 small{font-size:11px;color:#9fb0c2;margin-top:2px}.rrMkGo9505{font-weight:900;color:#8fc8ff;white-space:nowrap}";
+    style.textContent = ".rrMarketLinkCard9505{width:100%;display:flex;align-items:center;gap:10px;margin:7px 0 3px;padding:11px 12px;border:1px solid #49627d;border-radius:13px;background:#101923;color:#fff;text-align:left;cursor:pointer}.rrMkIcon9505{font-size:25px;flex:0 0 58px;width:58px;height:58px;display:grid;place-items:center;overflow:hidden;border-radius:9px;background:#0a1017}.rrMkIcon9505 img{display:block;width:100%;height:100%;object-fit:cover}.rrMkText9505{display:block;min-width:0;flex:1}.rrMkText9505 b,.rrMkText9505 small{display:block}.rrMkText9505 b{font-size:14px}.rrMkText9505 small{font-size:11px;color:#9fb0c2;margin-top:2px}.rrMkGo9505{font-weight:900;color:#8fc8ff;white-space:nowrap}";
     document.head.appendChild(style);
   }
   function init() { css(); loadExtras(); scan(); new MutationObserver(scan).observe(document.body, { childList: true, subtree: true }); }
