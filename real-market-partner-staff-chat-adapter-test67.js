@@ -425,7 +425,11 @@
       eq() {
         return chain;
       },
+      limit() {
+        return chain;
+      },
       single: async () => ({ data: profile, error: null }),
+      maybeSingle: async () => ({ data: profile, error: null }),
     };
     return chain;
   };
