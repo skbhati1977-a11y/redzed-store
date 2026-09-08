@@ -317,11 +317,14 @@
   async function boot() {
     try {
       const session = await RR_CUSTOMER_SECURE_SESSION_V9592.ensure();
-      if (!session) return note("Valid distributor login से खोलें.", true);
+      if (!session) {
+        location.replace("real-market-distributor-login-test67.html");
+        return;
+      }
       wire();
       await load();
     } catch (e) {
-      note(e.message, true);
+      location.replace("real-market-distributor-login-test67.html");
     }
   }
   document.addEventListener("rr:customer-secure-session-ready", boot, {
