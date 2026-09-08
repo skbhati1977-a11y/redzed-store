@@ -875,9 +875,10 @@
   }
 
   async function deleteMessage(messageId) {
-    if (!confirm("Delete this message from the private chat?")) return;
+    const all = confirm("DELETE FOR ALL?\n\nOK = Delete for all\nCancel = choose Delete for me");
+    if (!all && !confirm("DELETE FOR ME only?")) return;
     try {
-      await rawRpc("rr_market_partner_chat_delete_v67", {
+      await rawRpc("rr_market_partner_chat_delete_v9712", {
         ...authArgs(),
         p_lane: lane(
           $("privateTab")?.classList.contains("on")
@@ -886,9 +887,10 @@
         ),
         p_partner_customer_id: mode === "CUSTOMER" ? customerId : null,
         p_message_id: messageId,
+        p_scope: all ? "ALL" : "ME",
       });
       $("groupTab")?.click();
-      flash("Message deleted ✓");
+      flash(all ? "Deleted for all ✓" : "Deleted for me ✓");
     } catch (error) {
       flash(error.message, true);
     }

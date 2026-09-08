@@ -140,6 +140,8 @@
       "rr_market_partner_customer_chat_thumbnail_batch_session_v67",
     rr_chat_customer_delete_message_session_v59:
       "rr_market_partner_customer_chat_delete_message_session_v67",
+    rr_chat_customer_delete_v9712:
+      "rr_market_partner_customer_chat_delete_v9712",
     rr_chat_customer_disappearing_get_session_v59:
       "rr_market_partner_customer_chat_disappearing_get_session_v67",
     rr_chat_customer_disappearing_set_session_v59:
