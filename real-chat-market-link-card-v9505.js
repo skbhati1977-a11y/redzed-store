@@ -52,9 +52,13 @@
     body.textContent = "Loading collection...";
     try {
       if (!token) throw Error("Collection token missing.");
-      const data = await RF853.rpc("rr_market_share_view_v9420", { p_token: token });
+      const [data, state] = await Promise.all([
+        RF853.rpc("rr_market_share_view_v9420", { p_token: token }),
+        RF853.rpc("rr_collection_current_state_v9633", { p_token: token }).catch(() => null)
+      ]);
       const rows = Array.isArray(data?.rows) ? data.rows : [];
-      document.getElementById("rrScTitle9680").textContent = data?.collection_display_no || "REDZED COLLECTION";
+      const updateNo = Number(state?.collection_update_no || 0);
+      document.getElementById("rrScTitle9680").textContent = (state?.collection_display_no || data?.collection_display_no || "REDZED COLLECTION") + (updateNo > 0 ? ` · UPDATE ${updateNo}` : "");
       body.innerHTML = `<div class="rrScNote9680">यह collection ${esc(party)} की इसी existing staff chat में read-only खुली है। Customer login/name/mobile दोबारा नहीं माँगा जाएगा।</div><div class="rrScGrid9680">${rows.map((row) => {
         const media = Array.isArray(row.media) ? row.media : [];
         const image = media[0]?.image_url || media[0]?.storage_path || row.primary_image_url || "";
@@ -84,6 +88,16 @@
     node.dataset.rrMarketCard = "1";
     [...node.children].filter((child) => child.tagName === "DIV" && (child.textContent || "").match(rx)).forEach((child) => { child.style.display = "none"; });
     node.insertBefore(box, node.querySelector("time") || null);
+    const token = tokenFrom(url);
+    if (token) Promise.all([
+      RF853.rpc("rr_market_share_view_v9420", { p_token: token }),
+      RF853.rpc("rr_collection_current_state_v9633", { p_token: token }).catch(() => null)
+    ]).then(([data, state]) => {
+      const updateNo = Number(state?.collection_update_no || 0);
+      const title = state?.collection_display_no || data?.collection_display_no || "REDZED COLLECTION";
+      box.querySelector(".rrMkText9505 b").textContent = title + (updateNo > 0 ? ` · UPDATE ${updateNo}` : "");
+      box.querySelector(".rrMkText9505 small").textContent = `${styles ? `${styles} selected styles · ` : ""}${String(state?.collection_status || "COLLECTION").replaceAll("_", " ")}`;
+    }).catch(() => {});
   }
 
   function scan() { document.querySelectorAll("#msgs .msg,.rr-msgs .rr-msg").forEach(card); }
