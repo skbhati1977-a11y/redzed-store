@@ -1,9 +1,11 @@
 (() => {
   "use strict";
+  const path = location.pathname.toLowerCase();
+  const isStaffChat = path.endsWith("/real-sales-live-chat-v9434.html");
+  if (isStaffChat && window.__RR_SALES_CHAT_BACK_NAV_V9478__) return;
   if (window.__RR_MOBILE_BACK_STEP_TEST67__) return;
   window.__RR_MOBILE_BACK_STEP_TEST67__ = true;
 
-  const path = location.pathname.toLowerCase();
   const isDirectory = path.endsWith("/real-market-distributor-test67.html");
   const isDistributorChat =
     path.endsWith("/real-market-distributor-customer-chat-test67.html") ||
@@ -11,7 +13,6 @@
   const isCustomerCollection = path.endsWith("/s.html");
   const logicalSteps = [];
   let restoring = false;
-  let exitArmedAt = 0;
   let leaving = false;
 
   function visible(element) {
@@ -136,23 +137,6 @@
     return true;
   }
 
-  function showExitHint() {
-    let hint = document.getElementById("rrBackExitHint67");
-    if (!hint) {
-      hint = document.createElement("div");
-      hint.id = "rrBackExitHint67";
-      hint.style.cssText =
-        "position:fixed;left:50%;bottom:calc(88px + env(safe-area-inset-bottom));transform:translateX(-50%);z-index:2147483647;background:#fff;color:#07111d;border-radius:999px;padding:10px 16px;font:800 13px system-ui;box-shadow:0 8px 30px #0009;white-space:nowrap";
-      document.body.appendChild(hint);
-    }
-    hint.textContent = "बाहर जाने के लिए Back फिर दबाएँ";
-    hint.hidden = false;
-    clearTimeout(showExitHint.timer);
-    showExitHint.timer = setTimeout(() => {
-      hint.hidden = true;
-    }, 1800);
-  }
-
   function rearmGuard() {
     history.pushState(
       { ...(history.state || {}), rrMobileBackGuard67: true },
@@ -183,11 +167,8 @@
   }
 
   function handleRootBack() {
-    const now = Date.now();
-    if (now - exitArmedAt < 1800) return leaveRoot();
-    exitArmedAt = now;
-    showExitHint();
-    rearmGuard();
+    if (confirm("REDZED app से बाहर निकलना है?")) leaveRoot();
+    else rearmGuard();
   }
 
   function onPopState() {

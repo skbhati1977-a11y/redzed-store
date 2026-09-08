@@ -4,6 +4,14 @@
   const RETURN_KEY = "rr_partner_chat_return_v82";
   const query = new URLSearchParams(location.search);
   let mode = String(query.get("rr_partner_mode") || "").toUpperCase();
+  const returningFromPartnerWork = (() => {
+    try {
+      const path = new URL(document.referrer).pathname.toLowerCase();
+      return /\/(?:real-web-window-v9329|real-market-shared-invoice-test67|real-market-partner-sender-window-test67)\.html$/.test(path);
+    } catch (_) {
+      return false;
+    }
+  })();
   const remembered = (() => {
     try {
       return JSON.parse(sessionStorage.getItem(RETURN_KEY) || "null");
@@ -12,7 +20,12 @@
     }
   })();
 
-  if (!mode && remembered?.mode && Date.now() - Number(remembered.at || 0) < 900000) {
+  if (
+    !mode &&
+    returningFromPartnerWork &&
+    remembered?.mode &&
+    Date.now() - Number(remembered.at || 0) < 900000
+  ) {
     sessionStorage.removeItem(RETURN_KEY);
     const target = new URL(location.href);
     target.searchParams.set("rr_partner_mode", remembered.mode);
