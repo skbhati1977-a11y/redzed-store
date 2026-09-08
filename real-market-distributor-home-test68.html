@@ -2,75 +2,11 @@
 <html lang="hi">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-    <title>Distributor Home · TEST68</title>
-    <style>
-      :root{color-scheme:dark;--bg:#07111d;--panel:#101f2e;--line:#35516b;--muted:#9fb0c3;--blue:#1687d8}
-      *{box-sizing:border-box}html,body{margin:0;min-height:100%;background:var(--bg);color:#fff;font-family:system-ui,-apple-system,sans-serif}
-      body{display:grid;place-items:center;padding:18px}.home{width:min(520px,100%)}
-      .head,.card{border:1px solid var(--line);border-radius:18px;background:var(--panel)}
-      .head{padding:18px;margin-bottom:12px}.head small,#status{display:block;color:var(--muted);margin-top:5px}.head h1{margin:0;font-size:24px}
-      .card{padding:12px;display:grid;gap:10px}.lane{display:block;width:100%;min-height:82px;padding:14px;border:1px solid #496984;border-radius:14px;background:#13283a;color:#fff;text-align:left;text-decoration:none}
-      .lane b,.lane small{display:block}.lane b{font-size:18px}.lane small{margin-top:5px;color:#b9c7d5;line-height:1.35}.lane.primary{background:var(--blue);border-color:#6fc5ff}.lane:active{transform:translateY(1px)}
-      #logout{width:100%;min-height:48px;margin-top:12px;border:1px solid #704b55;border-radius:12px;background:#2a171c;color:#ffc2c8;font-weight:900}
-    </style>
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Opening Distributor Chats…</title>
+    <meta http-equiv="refresh" content="0;url=real-market-distributor-test67.html?v=9721" />
   </head>
   <body>
-    <main class="home">
-      <section class="head">
-        <h1 id="title">DISTRIBUTOR HOME</h1>
-        <small>हर relation की chat अलग रहेगी—कोई merge या mirror नहीं।</small>
-        <span id="status">Secure distributor session verify हो रही है…</span>
-      </section>
-      <section id="lanes" class="card" hidden>
-        <a class="lane" href="s.html?from=distributor_personal&amp;v=9720">
-          <b>REDZED CUSTOMER</b>
-          <small>RedZed के साथ आपकी personal/customer chat</small>
-        </a>
-        <a class="lane primary" href="real-market-distributor-redzed-chat-test67.html?from=distributor_home&amp;v=9720">
-          <b>REDZED DISTRIBUTOR</b>
-          <small>RedZed के साथ distributorship, requirement और PI/CI</small>
-        </a>
-        <a class="lane" href="real-market-distributor-test67.html?from=distributor_home&amp;v=9720">
-          <b>MY CUSTOMERS</b>
-          <small>अपने customers, groups और customer chats</small>
-        </a>
-      </section>
-      <button id="logout" type="button" hidden>CHANGE / LOGOUT DISTRIBUTOR</button>
-    </main>
-    <script>window.__RR_SLICE_MENU_LOADER_9309__=true;</script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="config.js?v=9720"></script>
-    <script src="real-common.js?v=9720"></script>
-    <script src="rf-v853-core.js?v=9720"></script>
-    <script src="real-customer-secure-session-addon-v9592.js?v=9720"></script>
-    <script>
-      (()=>{
-        const $=id=>document.getElementById(id),device=()=>RR_CUSTOMER_SECURE_SESSION_V9592.device();
-        async function boot(){
-          try{
-            await RR_CUSTOMER_SECURE_SESSION_V9592.ensure();
-            const saved=JSON.parse(localStorage.getItem("rr_customer_secure_session_v9592")||"null");
-            if(!saved?.session_token)throw Error("Distributor login required.");
-            const workspace=await RF853.rpc("rr_market_partner_workspace_v67",{p_session_token:saved.session_token,p_device_id:device()});
-            if(!workspace?.owner_name)throw Error("Distributor workspace unavailable.");
-            const name=String(workspace.owner_name).trim().toUpperCase();
-            $("title").textContent=`${name} · DISTRIBUTOR HOME`;
-            $("status").textContent="तीनों अलग chat territories ready हैं।";
-            $("lanes").hidden=false;$("logout").hidden=false;
-          }catch(error){
-            $("status").textContent=error.message||"Distributor login required.";
-            setTimeout(()=>location.replace("real-market-distributor-login-test67.html"),700);
-          }
-        }
-        $("logout").onclick=()=>{
-          localStorage.removeItem("rr_customer_secure_session_v9592");
-          localStorage.removeItem("rr_market_partner_owner_name_v67");
-          location.replace("real-market-distributor-login-test67.html?switch=1");
-        };
-        document.addEventListener("rr:customer-secure-session-ready",boot,{once:true});
-        if(document.readyState!=="loading")setTimeout(boot,80);
-      })();
-    </script>
+    <script>location.replace("real-market-distributor-test67.html?v=9721");</script>
   </body>
 </html>

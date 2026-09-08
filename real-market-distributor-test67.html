@@ -146,6 +146,33 @@
       .tabs {
         grid-template-columns: 1fr 1fr;
       }
+      .relationTabs {
+        position: sticky;
+        top: 67px;
+        z-index: 35;
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 7px;
+        padding: 8px 10px;
+        background: #091725f2;
+        border-bottom: 1px solid var(--line);
+      }
+      .relationTabs button {
+        min-width: 0;
+        min-height: 46px;
+        padding: 6px 4px;
+        border: 1px solid #45627d;
+        border-radius: 10px;
+        background: #13283a;
+        color: #fff;
+        font-size: 11px;
+        line-height: 1.12;
+        font-weight: 900;
+      }
+      .relationTabs button.on {
+        background: var(--blue);
+        border-color: #72c7ff;
+      }
       .tabs button,
       .statusBtn {
         min-height: 42px;
@@ -297,6 +324,11 @@
         ＋
       </button>
     </header>
+    <nav class="relationTabs" aria-label="Distributor chat relations">
+      <button id="myCustomersLane" class="on" type="button">MY<br />CUSTOMERS</button>
+      <button id="rzDistributorLane" type="button">RZ<br />DISTRIBUTOR</button>
+      <button id="rzDirectLane" type="button">RZ<br />DIRECT</button>
+    </nav>
     <main class="wrap">
       <section class="card">
         <div class="directoryTools">
@@ -381,7 +413,7 @@
     <script src="real-customer-secure-session-addon-v9592.js?v=67"></script>
     <script src="real-notification-permission-guard-v69.js?v=69"></script>
     <script src="real-chat-staff-floating-notify-v61.js?v=61push9"></script>
-    <script src="real-market-distributor-directory-test67.js?v=84"></script>
+    <script src="real-market-distributor-directory-test67.js?v=9721"></script>
     <script src="real-mobile-back-step-test67.js?v=92"></script>
   </body>
 </html>

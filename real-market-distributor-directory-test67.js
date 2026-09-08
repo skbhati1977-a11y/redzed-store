@@ -270,7 +270,16 @@
   function wire() {
     $("#menuBtn").onclick = () => open("drawerBack");
     $("#distributorHomeBtn").onclick = () =>
-      (location.href = "real-market-distributor-home-test68.html");
+      (location.href = "real-market-distributor-test67.html");
+    $("#myCustomersLane").onclick = () => {
+      $("#myCustomersLane").classList.add("on");
+      $("#customerSearch").focus();
+    };
+    $("#rzDistributorLane").onclick = () =>
+      (location.href =
+        "real-market-distributor-redzed-chat-test67.html?from=distributor_list&v=9721");
+    $("#rzDirectLane").onclick = () =>
+      (location.href = "s.html?from=distributor_direct&v=9721");
     $("#addBtn").onclick = () => {
       $("#contactKind").value = viewKind;
       $("#contactActive").checked = true;
