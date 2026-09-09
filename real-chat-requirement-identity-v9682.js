@@ -5,6 +5,8 @@
   const RX = /\[REQ:([0-9a-f-]{36})\]/i;
   const cache = new Map();
   let activeId = "";
+  let renderedKey = "";
+  let rendering = false;
   const esc = (value) => String(value ?? "").replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" })[char]);
   const chatId = () => window.__RR_CURRENT_CHAT_ID__ || document.querySelector("#inboxRows .chatrow.on")?.dataset.chat || localStorage.getItem("rr_real_chat_last_group_v9507") || "";
   const stage = (value) => ({
@@ -34,6 +36,15 @@
     return cache.get(key);
   }
 
+  function queueSheet(attempt = 0) {
+    if (!activeId) return;
+    if (document.getElementById("rrReqBack9508")?.classList.contains("on")) {
+      showSheet();
+      return;
+    }
+    if (attempt < 20) setTimeout(() => queueSheet(attempt + 1), 100);
+  }
+
   function label(data) {
     const req = data?.requirement_display_no || data?.requirement_no || "REQUIREMENT";
     const collection = data?.collection_display_no || "COLLECTION";
@@ -52,7 +63,14 @@
       const x = label(data);
       button.querySelector("b").textContent = `📋 ${x.req}`;
       button.querySelector("small").innerHTML = `${esc(x.collection)} · <span data-rr-stage>${esc(stage(data.status))}</span>`;
-      button.addEventListener("click", () => { activeId = match[1]; showSheet(); }, { capture: true });
+      // Keep identity decoration passive. The canonical requirement-flow owns
+      // navigation; this listener only records which card was selected and
+      // enriches the sheet after that flow has opened it.
+      button.addEventListener("click", () => {
+        activeId = match[1];
+        renderedKey = "";
+        queueSheet();
+      }, { capture: true });
     } catch (error) {
       const body = document.getElementById("rrReqBody9508");
       if (body) body.innerHTML = `<div class="muted">${esc(error?.message || "Requirement open nahi hui. Chat list se dobara open karein.")}</div>`;
@@ -60,7 +78,12 @@
   }
 
   async function showSheet() {
-    if (!activeId) return;
+    if (!activeId || rendering) return;
+    const sheet = document.getElementById("rrReqBack9508");
+    if (!sheet?.classList.contains("on")) return;
+    const key = `${chatId()}|${activeId}`;
+    if (renderedKey === key) return;
+    rendering = true;
     try {
       const data = await detail(activeId);
       const body = document.getElementById("rrReqBody9508");
@@ -83,21 +106,28 @@
         add.style.display = data.can_add_update === false ? "none" : "";
       }
       if (pi) {
-        pi.disabled = data.can_prepare_pi === false;
+        const hasLines = Array.isArray(data?.lines) && data.lines.some((line) => Number(line?.accepted_qty || line?.requested_qty || 0) > 0);
+        pi.disabled = data.can_prepare_pi === false || !hasLines;
         pi.textContent = data?.pi?.status === "CI_FINAL" ? `CI FINAL · ${data.pi.ci_no || ""}` :
-          data?.pi ? `PI CREATED · ${data.pi.pi_no || ""}` : "PREPARE PI";
+          data?.pi ? `PI CREATED · ${data.pi.pi_no || ""}` : hasLines ? "PREPARE PI" : "NO ITEMS SAVED";
       }
-    } catch (_) {}
+      renderedKey = key;
+    } catch (_) {
+      renderedKey = "";
+    } finally {
+      rendering = false;
+    }
   }
 
   function scan() {
     document.querySelectorAll("#msgs .msg").forEach(decorateCard);
-    if (document.getElementById("rrReqBack9508")?.classList.contains("on")) showSheet();
   }
   function init() {
     css();
     scan();
-    new MutationObserver(scan).observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ["class"] });
+    // Observe only newly rendered chat messages. Watching sheet attributes and
+    // then mutating that same sheet caused an endless mobile render loop.
+    new MutationObserver(scan).observe(document.body, { childList: true, subtree: true });
   }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init, { once: true });
   else init();
