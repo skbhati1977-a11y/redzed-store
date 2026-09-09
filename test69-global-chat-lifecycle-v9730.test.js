@@ -33,4 +33,17 @@ const bridge = fs.readFileSync("real-market-redzed-staff-chat-bridge-test67.js",
 assert.match(bridge, /activeBaseTitle/);
 assert.match(bridge, /setText\(\$\("chatTitle"\), activeBaseTitle\)/);
 
+const alignment = fs.readFileSync("real-chat-sender-alignment-v9732.js", "utf8");
+assert.match(alignment, /message_type \|\| ""\)\.toUpperCase\(\) === "REQUIREMENT"/);
+assert.match(alignment, /REQUIREMENT_RX\.test/);
+assert.match(alignment, /__rr_is_mine === "boolean"/);
+assert.match(alignment, /sender_name: oppositeParty/);
+
+const partner = fs.readFileSync("real-market-partner-staff-chat-adapter-test67.js", "utf8");
+assert.match(partner, /const isMine = actor === "DISTRIBUTOR"/);
+assert.match(partner, /__rr_is_mine: isMine/);
+
+const chatPage = fs.readFileSync("real-sales-live-chat-v9434.html", "utf8");
+assert.ok(chatPage.indexOf("real-chat-sender-alignment-v9732.js") < chatPage.indexOf("real-sales-live-chat-v9434.js"));
+
 console.log("TEST69 global chat lifecycle checks passed");

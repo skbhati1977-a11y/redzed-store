@@ -205,6 +205,7 @@
             : actor === "REDZED"
               ? "REDZED"
               : owner;
+        const isMine = actor === "DISTRIBUTOR";
         return {
           id: message.id,
           channel:
@@ -213,6 +214,7 @@
               ? "SUPERADMIN_PRIVATE"
               : undefined,
           sender_name: sender,
+          sender_kind: actor,
           message_type: attachment
             ? String(attachment.type || "").startsWith("audio/")
               ? "VOICE"
@@ -225,8 +227,9 @@
                 file_name: attachment.name,
                 mime_type: attachment.type,
                 byte_size: attachment.byte_size,
+                __rr_is_mine: isMine,
               }
-            : {},
+            : { __rr_is_mine: isMine },
           reply_to_message_id: null,
           created_at: message.created_at,
         };
