@@ -17,7 +17,9 @@
     || localStorage.getItem("rr_real_chat_last_group_v9507") || "";
 
   function requirementId(card) {
-    return (card.closest(".msg")?.textContent || card.parentElement?.textContent || "").match(RX)?.[1] || "";
+    return card?.dataset?.requirementId
+      || (card.closest(".msg")?.textContent || card.parentElement?.textContent || "").match(RX)?.[1]
+      || "";
   }
 
   function timeout(promise, milliseconds, message) {
@@ -108,28 +110,11 @@
     }
   }
 
-  function resumePi(existing, id, chat) {
-    try { sessionStorage.setItem("rr_pi_requirement_v9514", JSON.stringify(existing)); } catch (_) {}
-    const url = new URL("real-pi-specimen-v9514-replace-test.html", location.href);
-    url.searchParams.set("v", "9727");
-    url.searchParams.set("requirement_id", id);
-    url.searchParams.set("chat_id", chat);
-    url.searchParams.set("resume_pi", "1");
-    location.href = url.href;
-  }
-
   async function open(id) {
     const chat = chatId();
     if (!chat) return;
     const serial = ++requestSerial;
     openSheet();
-
-    // These calls intentionally run independently. A slow/unauthorised PI
-    // lookup must never block the requirement viewer from opening.
-    timeout(RF853.rpc("rr_pi_requirement_editor_v9705", { p_requirement_id: id }), 5000, "PI lookup timeout")
-      .then((existing) => {
-        if (serial === requestSerial && existing?.pi_id) resumePi(existing, id, chat);
-      }).catch(() => {});
 
     try {
       const data = await timeout(
@@ -152,17 +137,25 @@
     const id = requirementId(card);
     if (!id) return;
     const now = Date.now();
-    event.preventDefault();
-    event.stopPropagation();
-    if (id === openingId && now - openingAt < 700) return;
+    // Do not cancel the initial down event: mobile browsers must still emit
+    // the compatibility click used by the canonical PI/action adapters.
+    if (event.type === "click" || event.type === "pointerup") event.preventDefault();
+    event.stopImmediatePropagation();
+    // A phone may emit touchstart, pointerdown, pointerup and click for one
+    // physical tap. Own the earliest event and suppress its synthetic copies.
+    if (id === openingId && now - openingAt < 1200) return;
     openingId = id;
     openingAt = now;
+    card.dataset.requirementId = id;
+    try { sessionStorage.setItem("rr_active_requirement_v9515", id); } catch (_) {}
     open(id).catch((error) => {
       const body = $("rrReqBody9508");
       if (body) body.textContent = error?.message || "Requirement open failed.";
     });
   }
 
+  document.addEventListener("touchstart", intercept, { capture: true, passive: false });
+  document.addEventListener("pointerdown", intercept, true);
   document.addEventListener("pointerup", intercept, true);
   document.addEventListener("click", intercept, true);
 })();
