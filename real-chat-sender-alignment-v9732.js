@@ -38,9 +38,24 @@
     if (!window.RF853?.rpc || RF853.rpc.__rrSenderAlignment9732) return;
     const original = RF853.rpc.bind(RF853);
     const wrapped = async (name, args = {}) => {
-      const result = await original(name, args);
-      if ((name === "rr_chat_staff_messages_v9434" || name === "rr_chat_staff_messages_v9479") && Array.isArray(result)) {
-        return result.map(normalize);
+      const isMessageList = name === "rr_chat_staff_messages_v9434" || name === "rr_chat_staff_messages_v9479";
+      let requestArgs = args;
+      let result = await original(name, requestArgs);
+      if (isMessageList) {
+        // A previous chat request can finish after another inbox row has been
+        // opened. Never let that late response paint inside the new territory.
+        // Re-fetch against the currently active chat; cap retries so rapid taps
+        // cannot create an unbounded request chain.
+        for (let retry = 0; retry < 2; retry += 1) {
+          const activeChatId = String(window.__RR_CURRENT_CHAT_ID__ || "");
+          const requestedChatId = String(requestArgs?.p_chat_id || "");
+          if (!activeChatId || activeChatId === requestedChatId) break;
+          requestArgs = { ...requestArgs, p_chat_id: activeChatId };
+          result = await original(name, requestArgs);
+        }
+        const finalActiveId = String(window.__RR_CURRENT_CHAT_ID__ || "");
+        if (finalActiveId && finalActiveId !== String(requestArgs?.p_chat_id || "")) return [];
+        if (Array.isArray(result)) return result.map(normalize);
       }
       return result;
     };

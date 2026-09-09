@@ -38,6 +38,9 @@ assert.match(alignment, /message_type \|\| ""\)\.toUpperCase\(\) === "REQUIREMEN
 assert.match(alignment, /REQUIREMENT_RX\.test/);
 assert.match(alignment, /__rr_is_mine === "boolean"/);
 assert.match(alignment, /sender_name: oppositeParty/);
+assert.match(alignment, /activeChatId === requestedChatId/);
+assert.match(alignment, /p_chat_id: activeChatId/);
+assert.match(alignment, /finalActiveId.*requestArgs/s);
 
 const partner = fs.readFileSync("real-market-partner-staff-chat-adapter-test67.js", "utf8");
 assert.match(partner, /const isMine = actor === "DISTRIBUTOR"/);
