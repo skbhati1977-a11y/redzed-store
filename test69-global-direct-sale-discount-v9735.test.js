@@ -19,6 +19,6 @@ assert.match(main, /syncDirectPartyDiscount\(\);const d=directPartyDiscount\(\);
 assert.doesNotMatch(main, /Direct Sale की सभी rows में selected party discount समान होना चाहिए/,
   "A stale hidden row must not block a valid Direct Sale");
 assert.match(page, /real-pi-party-discount-test-v9557\.js\?v=9735/);
-assert.match(page, /real-pi-specimen-v9514-replace-test\.js\?v=9736/);
+assert.match(page, /real-pi-specimen-v9514-replace-test\.js\?v=9737/);
 
 console.log("TEST69 global Direct Sale discount v9735 checks passed");
