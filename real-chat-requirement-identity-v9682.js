@@ -109,9 +109,12 @@
       }
       if (pi) {
         const hasLines = Array.isArray(data?.lines) && data.lines.some((line) => Number(line?.accepted_qty || line?.requested_qty || 0) > 0);
-        pi.disabled = data.can_prepare_pi === false || !hasLines;
-        pi.textContent = data?.pi?.status === "CI_FINAL" ? `CI FINAL · ${data.pi.ci_no || ""}` :
-          data?.pi ? `PI CREATED · ${data.pi.pi_no || ""}` : hasLines ? "PREPARE PI" : "NO ITEMS SAVED";
+        const lifecycle = window.RRMarketLifecycle.state({ ...data, ...data?.pi, pi: data?.pi });
+        const ciFinal = lifecycle.ciFinal;
+        const existingPi = lifecycle.piEditable;
+        pi.disabled = ciFinal || !hasLines || (!existingPi && data.can_prepare_pi === false);
+        pi.textContent = ciFinal ? `CI FINAL · ${data?.pi?.ci_no || ""}` :
+          existingPi ? `EDIT PI · ${data.pi.pi_no || ""}` : hasLines ? "PREPARE PI" : "NO ITEMS SAVED";
       }
       renderedKey = key;
     } catch (_) {

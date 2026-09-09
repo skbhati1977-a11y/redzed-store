@@ -103,9 +103,12 @@
     }
     const pi = $("rrReqPi9508");
     if (pi) {
-      pi.disabled = data?.can_prepare_pi === false || !usable.length;
-      pi.textContent = data?.pi?.status === "CI_FINAL" ? `CI FINAL · ${data.pi.ci_no || ""}`
-        : data?.pi ? `PI CREATED · ${data.pi.pi_no || ""}`
+      const lifecycle = window.RRMarketLifecycle.state({ ...data, ...data?.pi, pi: data?.pi });
+      const ciFinal = lifecycle.ciFinal;
+      const existingPi = lifecycle.piEditable;
+      pi.disabled = ciFinal || !usable.length || (!existingPi && data?.can_prepare_pi === false);
+      pi.textContent = ciFinal ? `CI FINAL · ${data?.pi?.ci_no || ""}`
+        : existingPi ? `EDIT PI · ${data.pi.pi_no || ""}`
           : usable.length ? "PREPARE PI" : "NO ITEMS SAVED";
     }
   }
@@ -137,9 +140,7 @@
     const id = requirementId(card);
     if (!id) return;
     const now = Date.now();
-    // Do not cancel the initial down event: mobile browsers must still emit
-    // the compatibility click used by the canonical PI/action adapters.
-    if (event.type === "click" || event.type === "pointerup") event.preventDefault();
+    event.preventDefault();
     event.stopImmediatePropagation();
     // A phone may emit touchstart, pointerdown, pointerup and click for one
     // physical tap. Own the earliest event and suppress its synthetic copies.
@@ -154,8 +155,8 @@
     });
   }
 
-  document.addEventListener("touchstart", intercept, { capture: true, passive: false });
-  document.addEventListener("pointerdown", intercept, true);
+  // Pointer-up owns one physical tap. Click remains the keyboard and legacy
+  // browser fallback. Down events caused the former blink/freeze race.
   document.addEventListener("pointerup", intercept, true);
   document.addEventListener("click", intercept, true);
 })();

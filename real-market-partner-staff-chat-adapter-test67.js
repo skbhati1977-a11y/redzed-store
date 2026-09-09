@@ -688,12 +688,13 @@
           rows.length
             ? rows
                 .map((order) => {
-                  const canPi = ["DRAFT", "READY"].includes(order.status);
+                  const lifecycle = window.RRMarketLifecycle.state(order);
+                  const canPi = lifecycle.canPreparePi && (["DRAFT", "READY"].includes(order.status) || lifecycle.piEditable);
                   const canSend =
                     order.status === "READY" && !order.redzed_pushed_at;
                   const queued =
                     order.status === "CONSOLIDATION_QUEUED" && !order.redzed_pushed_at;
-                  return `<article class="rrPartnerOrder82"><b>${esc(order.requirement_display_no || order.order_ref)}</b><small>${esc(statusText(order))} · linked ${esc(order.collection_display_no || "collection")}</small>${lineRows(order, canPi)}${canPi ? `<button class="good" data-make-pi="${esc(order.id)}">${order.distributor_pi_ref ? "UPDATE & RESEND PI" : "MAKE PI & SEND TO CUSTOMER"}</button>` : ""}${canSend ? `<button data-send-redzed="${esc(order.id)}">SEND TO REDZED NOW</button><button type="button" data-add-consolidated="${esc(order.id)}">ADD TO CONSOLIDATED LIST</button>` : ""}${queued ? `<button type="button" data-remove-consolidated="${esc(order.id)}">REMOVE FROM CONSOLIDATED LIST</button>` : ""}</article>`;
+                  return `<article class="rrPartnerOrder82"><b>${esc(order.requirement_display_no || order.order_ref)}</b><small>${esc(statusText(order))} · linked ${esc(order.collection_display_no || "collection")}</small>${lineRows(order, canPi)}${canPi ? `<button class="good" data-make-pi="${esc(order.id)}">${order.distributor_pi_ref ? "EDIT CURRENT PI" : "MAKE PI & SEND TO CUSTOMER"}</button>` : ""}${canSend ? `<button data-send-redzed="${esc(order.id)}">SEND TO REDZED NOW</button><button type="button" data-add-consolidated="${esc(order.id)}">ADD TO CONSOLIDATED LIST</button>` : ""}${queued ? `<button type="button" data-remove-consolidated="${esc(order.id)}">REMOVE FROM CONSOLIDATED LIST</button>` : ""}</article>`;
                 })
                 .join("")
             : '<div class="rrPartnerEmpty82">Customer requirement not received yet.</div>',

@@ -26,8 +26,9 @@
     return RF853.rpc(name, args);
   }
   function values(x) { const qty = Number(x.distributor_pi_qty ?? x.proposed_qty ?? x.requested_qty ?? x.quantity ?? x.qty ?? 0), purchase = Number(x.base_rate ?? x.purchase_rate ?? x.rate ?? 0), margin = Number(x.rate_enhancement ?? x.margin_amount ?? 0), grossRate = Number(x.sale_rate ?? (purchase + margin)), discount = Number(x.customer_discount ?? x.discount ?? x.discount_amount ?? 0), finalRate = Number(x.final_rate ?? x.final_customer_rate ?? (grossRate - discount)); return { qty, purchase, margin, grossRate, discount, finalRate, effectiveMargin: finalRate - purchase, amount: qty * finalRate }; }
-  function staffPiEditable() { return role === "REDZED" && doc?.kind !== "CI" && (!doc?.ref || doc?.revision_open === true); }
-  function canEditQty() { return (role === "DISTRIBUTOR" && doc?.kind !== "CI") || staffPiEditable(); }
+  function lifecycle() { return window.RRMarketLifecycle.state({ ...doc, piRef: doc?.kind === "PI" ? doc?.ref : "", ciRef: doc?.kind === "CI" ? doc?.ref : "" }); }
+  function staffPiEditable() { return role === "REDZED" && !lifecycle().ciFinal && (!doc?.ref || doc?.revision_open === true); }
+  function canEditQty() { return (role === "DISTRIBUTOR" && !lifecycle().ciFinal) || staffPiEditable(); }
   function chargeValues() { const c = doc?.charges || {}; return { valuePct:Number(c.value_pct || 0), freight:Number(c.freight || 0), other:Number(c.other || 0) }; }
   function readCharges() { return { valuePct:Number($("valuePct").value || 0), freight:Math.max(0,Number($("freightInput").value || 0)), other:Math.max(0,Number($("otherInput").value || 0)) }; }
   function statusLabel(status) { const value=String(status||"DRAFT").toUpperCase(); if(value==="WAITING_CONFIRMATION")return "PI SENT · CONFIRMATION OPTIONAL"; if(value==="CI_FINAL")return role==="REDZED"?"CI FINAL · SENT TO DISTRIBUTOR":"UPSTREAM CI RECEIVED · CUSTOMER PI READY"; return ({SUBMITTED:"REQUIREMENT RECEIVED",PI_PROPOSED:"PI READY",CONFIRMED:"PI CONFIRMED",PARTIAL_CONFIRMED:"PI PARTIALLY CONFIRMED",FINAL:"CUSTOMER CI FINAL",CLOSED:"CUSTOMER CI SENT",CANCELLED:"CANCELLED · PI RESTORED",DRAFT:"DRAFT"})[value]||value.replaceAll("_"," "); }
@@ -94,7 +95,11 @@
     lines = order.lines || []; piChatSent=delivery?.sent===true; doc = piRef ? { ref: piRef, status: piStatus || "WAITING", pushed_at: piPushed, kind: ciVisible && ciRef ? "CI" : "PI",charges } : { kind: "PI",charges }; if (doc.kind === "CI") doc.ref = ciRef;
   }
   async function loadRedzed() {
-    if (!batchId) throw Error("Batch reference missing."); const detail = await rpc("rr_market_staff_batch_detail_v67", { p_batch_id: batchId });
+    if (!batchId) throw Error("Batch reference missing."); let detail = await rpc("rr_market_staff_batch_detail_v67", { p_batch_id: batchId });
+    if (detail.pi_ref && !detail.ci_ref && detail.pi_revision_open !== true) {
+      await rpc("rr_market_staff_reopen_pi_revision_v67", { p_batch_id: batchId });
+      detail = await rpc("rr_market_staff_batch_detail_v67", { p_batch_id: batchId });
+    }
     const sourceOrders=detail.orders||[], sourceCount=sourceOrders.length, sourceMapping=detail.batch_kind==="CONSOLIDATED"?`${sourceCount} source requirements · consolidated`:sourceOrders[0]?.requirement_display_no||`${sourceCount} source requirement`;
     order = { id: detail.id, batch_ref: detail.batch_ref, batch_kind: detail.batch_kind, customer_name: detail.direct_customer_name, requirement_display_no: detail.requirement_display_no || detail.batch_ref, collection_display_no: sourceMapping };
     lines = (detail.orders || []).flatMap((o) => (o.lines || []).map((x) => ({ ...x, order_ref: o.order_ref, requirement_display_no: o.requirement_display_no, customer_ref: o.customer_ref }))).concat((detail.extra_lines||[]).map((x)=>({...x,is_extra:true,requirement_display_no:"DIRECT REDZED ADD-ON"})));
