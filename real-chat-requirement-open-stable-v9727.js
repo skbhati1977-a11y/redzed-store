@@ -11,6 +11,14 @@
   let openingId = "";
   let openingAt = 0;
   let requestSerial = 0;
+  let touchTap = null;
+  const TAP_SLOP_PX = 14;
+
+  // Keep vertical chat scrolling native, while removing the browser's delayed
+  // double-tap gesture from requirement cards.
+  const touchCss = document.createElement("style");
+  touchCss.textContent = ".rrReqCard9508{touch-action:manipulation}";
+  document.head.appendChild(touchCss);
 
   const chatId = () => window.__RR_CURRENT_CHAT_ID__
     || document.querySelector("#inboxRows .chatrow.on")?.dataset.chat
@@ -18,7 +26,7 @@
 
   function requirementId(card) {
     return card?.dataset?.requirementId
-      || (card.closest(".msg")?.textContent || card.parentElement?.textContent || "").match(RX)?.[1]
+      || (card?.closest(".msg")?.textContent || card?.parentElement?.textContent || "").match(RX)?.[1]
       || "";
   }
 
@@ -134,10 +142,10 @@
     }
   }
 
-  function intercept(event) {
-    const card = event.target.closest?.(".rrReqCard9508");
+  function activate(event, forcedCard, forcedId) {
+    const card = forcedCard || event.target.closest?.(".rrReqCard9508");
     if (!card) return;
-    const id = requirementId(card);
+    const id = forcedId || requirementId(card);
     if (!id) return;
     const now = Date.now();
     event.preventDefault();
@@ -155,8 +163,41 @@
     });
   }
 
-  // Pointer-up owns one physical tap. Click remains the keyboard and legacy
-  // browser fallback. Down events caused the former blink/freeze race.
-  document.addEventListener("pointerup", intercept, true);
-  document.addEventListener("click", intercept, true);
+  function beginTouch(event) {
+    if (event.touches.length !== 1) { touchTap = null; return; }
+    const card = event.target.closest?.(".rrReqCard9508");
+    const id = requirementId(card);
+    if (!card || !id) { touchTap = null; return; }
+    const point = event.touches[0];
+    touchTap = { card, id, x: point.clientX, y: point.clientY, moved: false };
+  }
+
+  function moveTouch(event) {
+    if (!touchTap || event.touches.length !== 1) return;
+    const point = event.touches[0];
+    if (Math.hypot(point.clientX - touchTap.x, point.clientY - touchTap.y) > TAP_SLOP_PX) {
+      touchTap.moved = true;
+    }
+  }
+
+  function endTouch(event) {
+    const tap = touchTap;
+    touchTap = null;
+    if (!tap || tap.moved || event.changedTouches.length !== 1) return;
+    const point = event.changedTouches[0];
+    if (Math.hypot(point.clientX - tap.x, point.clientY - tap.y) > TAP_SLOP_PX) return;
+    activate(event, tap.card, tap.id);
+  }
+
+  // A tap inside a scroll container can end as pointercancel when the card is
+  // away from the scroll boundary. Touch-end + movement threshold makes the
+  // result independent of the card's vertical position without hijacking swipes.
+  document.addEventListener("touchstart", beginTouch, { capture: true, passive: true });
+  document.addEventListener("touchmove", moveTouch, { capture: true, passive: true });
+  document.addEventListener("touchend", endTouch, { capture: true, passive: false });
+  document.addEventListener("touchcancel", () => { touchTap = null; }, true);
+  document.addEventListener("pointerup", (event) => {
+    if (event.pointerType !== "touch") activate(event);
+  }, true);
+  document.addEventListener("click", activate, true);
 })();

@@ -19,9 +19,14 @@ assert.equal(state({ kind: "CI", ref: "CI 14" }).canPreparePi, false);
 assert.equal(state({ status: "PI_CANCELLED", pi_ref: "PI 15" }).piEditable, true);
 
 const open = fs.readFileSync("real-chat-requirement-open-stable-v9727.js", "utf8");
-assert.doesNotMatch(open, /addEventListener\("touchstart", intercept/);
+assert.match(open, /addEventListener\("touchstart", beginTouch/);
+assert.match(open, /addEventListener\("touchmove", moveTouch/);
+assert.match(open, /addEventListener\("touchend", endTouch/);
+assert.match(open, /TAP_SLOP_PX = 14/);
 assert.doesNotMatch(open, /addEventListener\("pointerdown", intercept/);
-assert.match(open, /addEventListener\("pointerup", intercept/);
+assert.match(open, /addEventListener\("pointerup", \(event\)/);
+assert.match(open, /event\.pointerType !== "touch"/);
+assert.match(open, /touch-action:manipulation/);
 assert.match(open, /EDIT PI/);
 
 const bridge = fs.readFileSync("real-market-redzed-staff-chat-bridge-test67.js", "utf8");
