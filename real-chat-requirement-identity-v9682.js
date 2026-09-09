@@ -60,6 +60,8 @@
       const data = await detail(match[1]);
       const button = node.querySelector(".rrReqCard9508");
       if (!button) return;
+      button.dataset.requirementId = match[1];
+      button.setAttribute("aria-label", "Open requirement");
       const x = label(data);
       button.querySelector("b").textContent = `📋 ${x.req}`;
       button.querySelector("small").innerHTML = `${esc(x.collection)} · <span data-rr-stage>${esc(stage(data.status))}</span>`;
