@@ -6,7 +6,8 @@ const fs = require("node:fs");
 function staticFallback(reason) {
   const html = fs.readFileSync("test70-cb-purchase-real-chat-pilot.html", "utf8");
   const js = fs.readFileSync("test70-cb-purchase-real-chat-pilot.js", "utf8");
-  for (const required of ["Department Group","Personal Chat","Stitching Department Group","Lot No. या Worker खोजें","काम चल रहा","काम पूरा","Worker का काम देखें","काम स्वीकार करें","अंदर की तस्वीरें","फोन की गैलरी नहीं खुलेगी","सिर्फ TEST"]) assert.ok(html.includes(required), `जरूरी भाग नहीं मिला: ${required}`);
+  for (const required of ["Department Group","Personal Chat","Stitching Department Group","Lot No. या Worker खोजें","काम चल रहा","काम पूरा","Worker का काम देखें","काम स्वीकार करें","काम की तस्वीरें","सिर्फ TEST"]) assert.ok(html.includes(required), `जरूरी भाग नहीं मिला: ${required}`);
+  for (const removed of ["काम की बात इसी समूह में रखें","खुली बातचीत बंद","फोन की गैलरी नहीं खुलेगी","इसी Department का काम"]) assert.ok(!html.includes(removed) && !js.includes(removed), `Extra direction अभी मौजूद है: ${removed}`);
   for (const required of ["Printer Group","Sticker Group","Metal ID Group","Kaaj Button Group","Packing Group"]) assert.ok(js.includes(required), `Department Group नहीं मिला: ${required}`);
   assert.ok(html.includes("bubble mine") && html.includes("card mine"), "बाएँ-दाएँ संदेश नहीं मिले");
   assert.ok((html.match(/data-react=/g) || []).length >= 12, "काम के बटन कम हैं");
