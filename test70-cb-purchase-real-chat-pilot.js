@@ -54,7 +54,7 @@
   }
 
   function renderGroups() {
-    $("groupList").innerHTML = groups.map((name, index) => `<button class="person" data-group-index="${index}"><span class="face">👥</span><div><b>${esc(name)}</b><small>इसी Department का काम</small></div>›</button>`).join("");
+    $("groupList").innerHTML = groups.map((name, index) => `<button class="person" data-group-index="${index}"><span class="face">👥</span><div><b>${esc(name)}</b></div>›</button>`).join("");
     document.querySelectorAll("[data-group-index]").forEach(button => button.onclick = () => {
       activeGroup = groups[Number(button.dataset.groupIndex)];
       activeWork = "ALL";
