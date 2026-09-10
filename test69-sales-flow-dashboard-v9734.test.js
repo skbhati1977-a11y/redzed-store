@@ -18,7 +18,8 @@ for (const required of [
 }
 
 assert.match(page, /Chat \+ Requirement stable/);
-assert.match(page, /Accounts bridge pending/);
-assert.match(page, /Inventory bridge pending/);
+assert.match(page, /Accounts bridge verified/);
+assert.match(page, /Inventory bridge verified/);
+assert.match(page, /Balance Sheet<\/td><td class="okText">Balanced · difference 0/);
 assert.match(page, /MAIN unchanged/);
 console.log("TEST69 sales flow dashboard checks passed");
