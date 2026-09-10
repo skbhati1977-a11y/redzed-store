@@ -6,8 +6,8 @@ const clean=(value:unknown)=>String(value||"").trim().toLowerCase();
 Deno.serve(async(req)=>{
  if(req.method==="OPTIONS")return new Response("ok",{headers:cors});
  try{
-  const url=Deno.env.get("SUPABASE_URL")!,key=Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-  const admin=createClient(url,key,{auth:{persistSession:false}}),token=(req.headers.get("authorization")||"").replace(/^Bearer\s+/i,"");
+  const url=Deno.env.get("SUPABASE_URL")!,key=Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,anon=Deno.env.get("SUPABASE_ANON_KEY")!;
+  const authorization=req.headers.get("authorization")||"",admin=createClient(url,key,{auth:{persistSession:false}}),actorClient=createClient(url,anon,{global:{headers:{Authorization:authorization}},auth:{persistSession:false}}),token=authorization.replace(/^Bearer\s+/i,"");
   const actorResult=await admin.auth.getUser(token),actor=actorResult.data.user;if(!actor)return json({error:"Authenticated Owner/Admin required."},401);
   const actorProfile=await admin.from("rr_user_profiles").select("role_code,is_active,access_status").eq("auth_user_id",actor.id).maybeSingle();
   const actorRole=clean(actorProfile.data?.role_code),active=actorProfile.data?.is_active&&clean(actorProfile.data?.access_status||"active")==="active";
@@ -29,7 +29,7 @@ Deno.serve(async(req)=>{
    if(!["owner","super_admin"].includes(actorRole))return json({error:"Only Owner can change primary roles."},403);
    const role=clean(body.role_code),department=clean(body.department_code),profileId=String(body.profile_id||"");
    if(!profileId||!role||!department)return json({error:"Profile, role and department required."},400);
-   const updated=await admin.from("rr_user_profiles").update({role_code:role,department_code:department,updated_at:new Date().toISOString()}).eq("id",profileId).select("id").maybeSingle();
+   const updated=await actorClient.from("rr_user_profiles").update({role_code:role,department_code:department,updated_at:new Date().toISOString()}).eq("id",profileId).select("id").maybeSingle();
    if(updated.error||!updated.data)throw updated.error||new Error("Profile not found.");
    if(body.auth_user_id)await admin.auth.admin.updateUserById(String(body.auth_user_id),{app_metadata:{role_code:role,department_code:department}});
    return json({ok:true,role_code:role,department_code:department});
