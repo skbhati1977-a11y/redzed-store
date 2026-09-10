@@ -1,0 +1,11 @@
+"use strict";
+const assert=require("node:assert/strict"),fs=require("node:fs");
+const sql=fs.readFileSync("supabase/migrations/20260910120000_test69_rci_role_privacy_gate_v9746.sql","utf8");
+assert.match(sql,/in \('owner','admin','sales','accounts'\)/);
+assert.match(sql,/Distributor customer accounts are private/);
+assert.match(sql,/m\.source_kind='REDZED_CUSTOMER'/);
+assert.match(sql,/not exists\(select 1 from public\.rr_customer_sales_map_v9745 m where m\.buyer_id=b\.id and m\.is_active\)/);
+assert.match(sql,/customer_name='Reeka Bhati'/);
+assert.match(sql,/9873887784/);
+for(const name of ['rr_rci_context_v9740','rr_rci_save_draft_v9740','rr_rci_post_standalone_v9740','rr_rci_reverse_v9740','rr_rci_detail_v9740','rr_rci_for_ci_v9740'])assert.match(sql,new RegExp(`create function public\\.${name}`));
+console.log('TEST69 V9746 RCI role/privacy and Reeka canonical gate checks passed');
