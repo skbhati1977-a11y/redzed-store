@@ -52,15 +52,14 @@ test('Admin journal changes canonical creditor; second session sees it; reversal
     await expect(admin.locator('#journalMsg')).toContainText(/Journal TJV\d+ posted/, { timeout: 20_000 });
     voucher = ((await admin.locator('#journalMsg').innerText()).match(/TJV\d+/) || [])[0] || '';
     expect(voucher).toBeTruthy();
-    const changed = await creditorBalance(second);
-    expect(Math.abs(Math.abs(changed - before) - 7.77)).toBeLessThan(0.02);
+    await expect.poll(async () => Math.abs((await creditorBalance(second)) - before), { timeout: 20_000 }).toBeCloseTo(7.77, 2);
     await admin.locator('[data-tab="creditors"]').click();
     await admin.locator('#reverseVoucher').fill(voucher);
     await admin.locator('#reverseReason').fill('Automated two-session cleanup');
     await admin.locator('#reverseVoucherBtn').click();
     await expect(admin.locator('#reverseMsg')).toContainText('reversed with audit trail', { timeout: 20_000 });
     voucher = '';
-    expect(Math.abs((await creditorBalance(second)) - before)).toBeLessThan(0.02);
+    await expect.poll(async () => await creditorBalance(second), { timeout: 20_000 }).toBeCloseTo(before, 2);
   } finally {
     if (voucher && !admin.isClosed()) {
       await admin.locator('[data-tab="creditors"]').click().catch(() => {});
