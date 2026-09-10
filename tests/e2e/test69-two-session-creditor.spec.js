@@ -38,6 +38,8 @@ test('Admin journal changes canonical creditor; second session sees it; reversal
   const secondContext = await browser.newContext();
   const admin = await adminContext.newPage();
   const second = await secondContext.newPage();
+  admin.setDefaultTimeout(20_000);
+  second.setDefaultTimeout(20_000);
   let voucher = '';
   try {
     await login(admin, process.env.TEST69_ADMIN_USERNAME, process.env.TEST69_ADMIN_PASSWORD);
