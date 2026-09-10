@@ -15,7 +15,7 @@ Deno.serve(async(req)=>{
   const body=await req.json(),action=clean(body.action);
   if(action==="list_users"){
    const listed=await admin.auth.admin.listUsers({page:1,perPage:1000});if(listed.error)throw listed.error;
-   return json({users:listed.data.users.map(u=>({auth_user_id:u.id,id:u.id,email:u.email,auth_created_at:u.created_at,last_sign_in_at:u.last_sign_in_at}))});
+   return json({users:listed.data.users.map(u=>({auth_user_id:u.id,email:u.email,auth_created_at:u.created_at,last_sign_in_at:u.last_sign_in_at}))});
   }
   if(action==="create_user"){
    const role=clean(body.role_code),department=clean(body.department_code);
