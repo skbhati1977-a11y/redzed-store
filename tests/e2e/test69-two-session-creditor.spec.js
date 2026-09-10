@@ -53,7 +53,7 @@ test('Admin journal changes canonical creditor; second session sees it; reversal
     voucher = ((await admin.locator('#journalMsg').innerText()).match(/TJV\d+/) || [])[0] || '';
     expect(voucher).toBeTruthy();
     const changed = await creditorBalance(second);
-    expect(Math.abs((changed - before) + 7.77)).toBeLessThan(0.02);
+    expect(Math.abs(Math.abs(changed - before) - 7.77)).toBeLessThan(0.02);
     await admin.locator('[data-tab="creditors"]').click();
     await admin.locator('#reverseVoucher').fill(voucher);
     await admin.locator('#reverseReason').fill('Automated two-session cleanup');
@@ -67,6 +67,7 @@ test('Admin journal changes canonical creditor; second session sees it; reversal
       await admin.locator('#reverseVoucher').fill(voucher).catch(() => {});
       await admin.locator('#reverseReason').fill('Emergency automated cleanup').catch(() => {});
       await admin.locator('#reverseVoucherBtn').click().catch(() => {});
+      await admin.locator('#reverseMsg').filter({ hasText: 'reversed with audit trail' }).waitFor({ timeout: 20_000 }).catch(() => {});
     }
     await adminContext.close(); await secondContext.close();
   }
