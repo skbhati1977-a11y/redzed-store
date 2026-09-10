@@ -52,8 +52,8 @@
     if($("reportLedger"))$("reportLedger").innerHTML=make("Select ledger…");
     if($("bookLedger"))$("bookLedger").innerHTML=make("All / Select ledger…");
     if($("supplier"))$("supplier").innerHTML=make("Select supplier…",x=>/supplier|vendor|creditor|purchase/i.test(x.ledger_kind)||!/cash|bank/i.test(x.ledger_kind));
-    if($("against"))$("against").innerHTML=make("Select ledger…",x=>!/cash|bank/i.test(x.ledger_kind));
-    if($("cashbank"))$("cashbank").innerHTML=make("Select cash / bank…",x=>/cash|bank/i.test(x.ledger_kind));
+    for(const id of ["against","mAgainst"])if($(id))$(id).innerHTML=make("Select ledger…",x=>!/cash|bank/i.test(x.ledger_kind));
+    for(const id of ["cashbank","mCash"])if($(id))$(id).innerHTML=make("Select cash / bank…",x=>/cash|bank/i.test(x.ledger_kind));
   }
   async function loadLedgers(){
     const errors=[];
@@ -116,7 +116,9 @@
   function wirePreviewTemplates(){
     $("previewPurchase")?.addEventListener("click",()=>{calc();message("pmsg",`Preview total ${money($("total").value)}. Posting continues through the dedicated material/purchase backend.`,"ok")});
     let receipt=true;const syncMoney=()=>{if($("receiptMode"))$("receiptMode").classList.toggle("active",receipt);if($("paymentMode"))$("paymentMode").classList.toggle("active",!receipt);if($("againstLabel"))$("againstLabel").childNodes[0].nodeValue=receipt?"Received From":"Paid To"};
-    $("receiptMode")?.addEventListener("click",()=>{receipt=true;syncMoney()});$("paymentMode")?.addEventListener("click",()=>{receipt=false;syncMoney()});$("saveMoney")?.addEventListener("click",()=>message("mmsg",`${receipt?"Receipt":"Payment"} preview ${money($("amount").value)}.`,"ok"));syncMoney();
+    const postBtn=$("postMoney")||$("saveMoney"),msgId=$("moneyMsg")?"moneyMsg":"mmsg";
+    const syncButton=()=>{syncMoney();if(postBtn)postBtn.textContent=`Post ${receipt?"Receipt":"Payment"}`};
+    $("receiptMode")?.addEventListener("click",()=>{receipt=true;syncButton()});$("paymentMode")?.addEventListener("click",()=>{receipt=false;syncButton()});postBtn?.addEventListener("click",async()=>{try{const against=($("mAgainst")||$("against"))?.value,cash=($("mCash")||$("cashbank"))?.value,amount=Number(($("mAmount")||$("amount"))?.value||0);if(!against||!cash)throw new Error("Ledger and Cash / Bank required.");if(!(amount>0))throw new Error("Amount must be greater than zero.");setBusy(postBtn,true,"Posting…");const fn=receipt?"rr_accounts_post_receipt_v805":"rr_accounts_post_payment_v805",common={p_cash_bank_ledger_id:cash,p_amount:amount,p_ref_no:($("mRef")||$("reference"))?.value||null,p_narration:($("mNote")||$("narration"))?.value||null,p_data_mode:mode()},args=receipt?{...common,p_party_ledger_id:against}:{...common,p_against_ledger_id:against};const out=await rpc(fn,args);message(msgId,`${receipt?"Receipt":"Payment"} ${out.voucher_no||""} posted ${money(amount)}. Delete के बदले Day Book से Reverse करें.`,"ok");($("mAmount")||$("amount")).value="0"}catch(e){message(msgId,errorText(e),"error")}finally{setBusy(postBtn,false);syncButton()}});syncButton();
   }
 
   async function refresh(){if(state.busy)return;state.busy=true;const btn=$("refreshAll");setBusy(btn,true,"Refreshing…");try{await Promise.all([loadLedgers(),searchReports($("reportSearch")?.value||"")]);$("modeMirror").value=mode()}catch(e){console.error(e);message("searchMsg",errorText(e),"error")}finally{state.busy=false;setBusy(btn,false)}}
