@@ -1,46 +1,102 @@
 (() => {
   "use strict";
   const $ = id => document.getElementById(id);
-  const today = new Date().toISOString().slice(0, 10);
-  document.querySelectorAll('input[type="date"]').forEach(input => { if (!input.value) input.value = today; });
+  const staff = [
+    { role: "SUPER ADMIN", name: "Shailender" },
+    { role: "ADMIN", name: "Admin Staff" },
+    { role: "MANAGER", name: "Manager Staff" },
+    { role: "MASTER", name: "Master Staff" },
+    { role: "LINEMAN", name: "Javed" },
+    { role: "PRINTER", name: "Printer Staff" },
+    { role: "STICKER", name: "Sticker Staff" }
+  ];
+  let lane = "group";
+  let privatePerson = null;
+  const open = id => $(id).classList.add("on");
+  const close = id => $(id).classList.remove("on");
+  const esc = value => String(value ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));
 
-  function open(id) { $(id).classList.add("on"); }
-  function close(id) { $(id).classList.remove("on"); }
-  document.querySelectorAll("[data-start]").forEach(button => button.addEventListener("click", () => open(button.dataset.start === "cb" ? "cbBack" : "mcBack")));
-  document.querySelectorAll("[data-close]").forEach(button => button.addEventListener("click", () => close(button.dataset.close)));
-  document.querySelectorAll(".sheetback").forEach(back => back.addEventListener("click", event => { if (event.target === back) close(back.id); }));
-  $("back").addEventListener("click", () => $("inbox").classList.toggle("hide"));
-  document.querySelector('[data-open="cb"]').addEventListener("click", () => $("inbox").classList.add("hide"));
-
-  function addChatResult(title, detail) {
-    const node = document.createElement("div");
-    node.className = "msg me";
-    node.innerHTML = `<b>${title}</b><div>${detail}</div><time>TEST PREVIEW · ✓ SENT LOCALLY · NO DATABASE WRITE</time>`;
-    $("msgs").appendChild(node);
-    node.scrollIntoView({ block: "end" });
+  function setLane(next, person = null) {
+    lane = next;
+    privatePerson = person;
+    document.querySelectorAll("[data-lane]").forEach(button => button.classList.toggle("on", button.dataset.lane === lane));
+    if (lane === "group") {
+      $("chatTitle").textContent = "REDZED · OPERATIONS GROUP";
+      $("chatSub").textContent = "Super Admin · Admin · Manager · Master · Lineman · Printer · Sticker";
+    } else {
+      $("chatTitle").textContent = person ? person.name : "PRIVATE BUSINESS CHAT";
+      $("chatSub").textContent = person ? `${person.role} · Business messages only` : "STAFF ☰ से व्यक्ति चुनें";
+    }
   }
 
-  $("cbForm").addEventListener("submit", event => {
+  function renderStaff() {
+    $("staffList").innerHTML = staff.map((person, index) => `${index === 0 || staff[index - 1].role !== person.role ? `<div class="role">${esc(person.role)}</div>` : ""}<button class="person" data-person="${index}"><span>${esc(person.name.slice(0, 1))}</span><div><b>${esc(person.name)}</b><small>${esc(person.role)} · Private business chat</small></div>›</button>`).join("");
+    $("receiver").innerHTML = '<option value="">Select…</option>' + staff.map(person => `<option>${esc(person.name)} · ${esc(person.role)}</option>`).join("");
+    document.querySelectorAll("[data-person]").forEach(button => button.onclick = () => {
+      setLane("private", staff[Number(button.dataset.person)]);
+      close("staffBack");
+    });
+  }
+
+  function addMessage(title, body, meta = "TEST PREVIEW · ✓ SENT LOCALLY · NO DATABASE WRITE") {
+    const node = document.createElement("div");
+    node.className = "msg me";
+    node.innerHTML = `<small>${lane === "group" ? "OPERATIONS GROUP" : esc(privatePerson?.name || "PRIVATE")}</small><b>${esc(title)}</b><div>${esc(body)}</div><time>${esc(meta)}</time>`;
+    $("msgs").appendChild(node);
+    node.scrollIntoView({block:"end"});
+  }
+
+  document.querySelectorAll("[data-lane]").forEach(button => button.onclick = () => {
+    if (button.dataset.lane === "private") open("staffBack"); else setLane("group");
+  });
+  $("staffMenu").onclick = () => open("staffBack");
+  document.querySelectorAll("[data-close]").forEach(button => button.onclick = () => close(button.dataset.close));
+  document.querySelectorAll(".backdrop").forEach(back => back.onclick = event => { if (event.target === back) close(back.id); });
+  $("newBusiness").onclick = () => open("businessBack");
+  $("message").onclick = () => open("businessBack");
+  $("attach").onclick = () => open("mediaBack");
+  $("voice").onclick = () => addMessage("VOICE BLOCKED", "Voice केवल किसी workflow card के Reply action से भेजी जा सकती है।");
+
+  $("businessForm").onsubmit = event => {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
-    const qty = Number(data.get("roll_1")) + Number(data.get("roll_2"));
-    const result = $("cbResult");
-    result.textContent = `PASS · ${data.get("cb_no")} · ${data.get("divisions")} D cards · ${qty.toFixed(3)} kg · database write blocked.`;
-    result.classList.add("on");
-    addChatResult("CB NEW TEST PASSED", `${data.get("cb_no")} · Regular Cloth ${qty.toFixed(3)} kg`);
+    addMessage(`${data.get("category")} · ${data.get("reference")}`, `Addressed To: ${data.get("receiver")} · ${data.get("remarks")}`);
+    event.currentTarget.reset();
+    renderStaff();
+    close("businessBack");
+  };
+
+  document.querySelectorAll("[data-react]").forEach(button => button.onclick = () => {
+    const action = button.dataset.react;
+    const card = button.closest("[data-card]");
+    if (["reject", "return", "remark"].includes(action)) {
+      $("reactionTitle").textContent = `${action.toUpperCase()} · REMARKS REQUIRED`;
+      const form = $("reactionForm");
+      form.elements.action.value = action;
+      form.elements.card.value = card.dataset.card;
+      form.elements.remarks.value = "";
+      open("remarkBack");
+      return;
+    }
+    card.querySelector(".status").textContent = `✅ ${action === "approve" ? "APPROVED" : "ACCEPTED"} · action recorded in this card · TEST ONLY`;
+    card.querySelectorAll("[data-react]").forEach(item => item.disabled = true);
   });
 
-  $("mcForm").addEventListener("submit", event => {
+  $("reactionForm").onsubmit = event => {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
-    const qty = Number(data.get("qty"));
-    const value = Number(data.get("value"));
-    const rate = qty > 0 ? value / qty : 0;
-    const result = $("mcResult");
-    result.textContent = `PASS · MC1 IN ${qty.toFixed(3)} kg · preview average ₹${rate.toFixed(4)}/kg · database write blocked.`;
-    result.classList.add("on");
-    addChatResult("MC1 TEST PASSED", `Matching Cloth ${qty.toFixed(3)} kg · ₹${value.toFixed(2)}`);
+    const card = document.querySelector(`[data-card="${data.get("card")}"]`);
+    card.querySelector(".status").textContent = `✅ ${String(data.get("action")).toUpperCase()} · Remarks: ${data.get("remarks")} · TEST ONLY`;
+    card.querySelectorAll("[data-react]").forEach(item => item.disabled = true);
+    close("remarkBack");
+  };
+
+  document.querySelectorAll("[data-media]").forEach(button => button.onclick = () => {
+    addMessage("INTERNAL MEDIA ATTACHED", button.dataset.media);
+    close("mediaBack");
   });
 
-  window.__TEST70_CB_CHAT_PILOT__ = { mode: "AUTOMATED_TEST", databaseWrites: false, ready: true };
+  renderStaff();
+  setLane("group");
+  window.__TEST70_CONTROLLED_CHAT__ = {mode:"AUTOMATED_TEST",databaseWrites:false,freeChat:false,deviceGallery:false,lanes:["STAFF_GROUP","PRIVATE_BUSINESS"],ready:true};
 })();
