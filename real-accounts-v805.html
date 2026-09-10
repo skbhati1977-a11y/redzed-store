@@ -12,7 +12,7 @@
 <body>
 <main class="app">
   <header class="top">
-    <div class="inline"><button id="openAccountsMenu" type="button" aria-label="Open accounts menu">☰</button><div class="brand">
+    <div class="inline"><button id="openAccountsMenu" type="button" aria-label="Open accounts menu">☰ Accounts Menu</button><div class="brand">
       <small>REAL FACTORY · ACCOUNTS · FIELD-WISE ADD NEW V8078</small>
       <h1>Accounts & Intelligent Reports</h1>
       <p>AUTO POST FIRST · TEST FIRST · report search + direct analysis</p>
@@ -26,7 +26,8 @@
   </header>
 
   <nav class="tabs" aria-label="Accounts sections">
-    <button type="button" data-tab="reports" class="active">Reports / Ask</button>
+    <button type="button" data-tab="accountsHome" class="active">Accounts Home</button>
+    <button type="button" data-tab="reports">Reports / Ask</button>
     <button type="button" data-tab="ledgers">Day Book / Ledgers</button>
     <button type="button" data-tab="purchase">Sales & Purchase</button>
     <button type="button" data-tab="money">Receipt & Payment</button>
@@ -34,7 +35,27 @@
     <button type="button" data-tab="accountsMap">Chart of Accounts</button>
   </nav>
 
-  <section id="reports" class="page">
+  <section id="accountsHome" class="page">
+    <section class="panel">
+      <div class="result-head"><div><small class="chip">EASY ACCOUNTS HOME</small><h2>Accounting Modules</h2><p class="muted">हर accounting काम एक जगह से खोलें। खाली account heads भी Chart of Accounts में ₹0 के साथ दिखेंगे।</p></div><button type="button" data-open-tab="accountsMap" class="primary">View Complete Accounts</button></div>
+      <div class="cards" style="margin-top:14px">
+        <button class="suggestion" data-open-tab="accountsMap"><b>Complete Chart of Accounts</b><small>Balance Sheet + P&amp;L heads · zero-visible</small></button>
+        <button class="suggestion" data-open-tab="reports" data-report-query="customer ledger"><b>Sundry Debtors</b><small>Customer ledger · outstanding · receipts</small></button>
+        <button class="suggestion" data-open-tab="creditors"><b>Sundry Creditors</b><small>Supplier ledger · payable · payments</small></button>
+        <button class="suggestion" data-open-tab="reports" data-report-query="salary"><b>Salary &amp; Wages</b><small>Salary · overtime · piece-rate wages</small></button>
+        <button class="suggestion" data-open-tab="reports" data-report-query="loan advance"><b>Loans &amp; Advances</b><small>Given · received · employee advances</small></button>
+        <button class="suggestion" data-open-tab="money"><b>Receipts &amp; Payments</b><small>Cash · bank · party entries</small></button>
+        <button class="suggestion" data-open-tab="money" data-focus-id="journalDebit"><b>Journal Entries</b><small>Debit / Credit posting and reversal</small></button>
+        <button class="suggestion" data-open-tab="reports" data-report-query="expense"><b>Expenses</b><small>Direct · indirect · factory expenses</small></button>
+        <button class="suggestion" data-open-tab="purchase"><b>Sales &amp; Purchase</b><small>Invoices · returns · damage claims</small></button>
+        <button class="suggestion" data-open-tab="reports" data-report-query="stock"><b>Inventory &amp; Stock</b><small>Lots · quantity · valuation · returns</small></button>
+        <button class="suggestion" data-open-tab="ledgers"><b>Day Book &amp; Ledgers</b><small>View · search · share · export</small></button>
+        <button class="suggestion" data-open-tab="reports"><b>P&amp;L / Balance Sheet</b><small>Trial Balance · Profit &amp; Loss · Balance Sheet</small></button>
+      </div>
+    </section>
+  </section>
+
+  <section id="reports" class="page hidden">
     <div class="report-grid">
       <section class="panel">
         <h2>Ask Reports</h2>
@@ -202,6 +223,6 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="config.js"></script>
 <script src="real-common.js"></script>
-<script src="real-accounts-v805.js?v=9765"></script>
+<script src="real-accounts-v805.js?v=9766"></script>
 </body>
 </html>

@@ -1,7 +1,7 @@
 const { test, expect } = require('@playwright/test');
 
 const baseURL = (process.env.TEST69_BASE_URL || '').replace(/\/$/, '');
-const target = 'real-accounts-v805.html?v=9763';
+const target = 'real-accounts-v805.html?v=9766';
 const loginURL = `${baseURL}/real-login.html?next=${encodeURIComponent(target)}`;
 
 async function login(page, username, password) {
@@ -11,6 +11,7 @@ async function login(page, username, password) {
   await page.locator('#loginBtn').click();
   await page.waitForURL(url => url.pathname.endsWith('/real-accounts-v805.html'), { timeout: 30_000 });
   await expect(page.locator('[data-tab="creditors"]')).toBeVisible({ timeout: 30_000 });
+  await expect(page.locator('#accountsHome')).toBeVisible();
 }
 
 async function creditorBalance(page) {
@@ -41,6 +42,11 @@ test('Admin journal changes canonical creditor; second session sees it; reversal
   try {
     await login(admin, process.env.TEST69_ADMIN_USERNAME, process.env.TEST69_ADMIN_PASSWORD);
     await login(second, process.env.TEST69_SECOND_USERNAME, process.env.TEST69_SECOND_PASSWORD);
+    await expect(admin.locator('#openAccountsMenu')).toHaveText(/Accounts Menu/);
+    await admin.locator('#openAccountsMenu').click();
+    await expect(admin.locator('#accountsDrawer')).toBeVisible();
+    await expect(admin.locator('#accountsDrawer')).toContainText('Complete Chart of Accounts');
+    await admin.locator('#closeAccountsMenu').click();
     await admin.locator('[data-tab="accountsMap"]').click();
     await admin.locator('#loadAccountsMap').click();
     await expect(admin.locator('#accountsMapResult')).toContainText('Loans & Advances (Asset)', { timeout: 20_000 });

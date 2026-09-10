@@ -17,6 +17,9 @@ for (const fn of ['loadCreditors', 'postJournal', 'reverseVoucher']) assert.ok(j
 for (const id of ['openAccountsMenu', 'accountsDrawer', 'entryPopup', 'sharePopupEntry', 'exportPopupEntry']) assert.ok(html.includes(`id="${id}"`), `missing #${id}`);
 for (const token of ['data-share-entry', 'data-export-entry', 'data-share-set', 'pointerdown', 'navigator.share']) assert.ok(js.includes(token), `missing ${token}`);
 for (const token of ['accountsMap', 'loadAccountsMap', 'Complete Chart of Accounts']) assert.ok(html.includes(token), `missing ${token}`);
+for (const token of ['id="accountsHome"', '☰ Accounts Menu', 'Salary &amp; Wages', 'Loans &amp; Advances', 'P&amp;L / Balance Sheet']) assert.ok(html.includes(token), `missing Accounts Home token ${token}`);
+assert.ok(html.includes('data-tab="accountsHome" class="active"'));
+assert.ok(html.includes('id="reports" class="page hidden"'));
 assert.ok(js.includes('rr_accounts_structure_v9765'));
 
 console.log('V9763 creditor mapping/UI contract: PASS');
