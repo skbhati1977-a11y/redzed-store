@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="hi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <title>TEST70 · CB Purchase Real Chat Pilot</title>
+  <style>
+    :root{color-scheme:dark;--bg:#0b0f15;--panel:#10161f;--panel2:#182231;--line:#2c3a4c;--muted:#9aa8b9;--green:#20382e;--blue:#82c8ff;--gold:#e7c36d}
+    *{box-sizing:border-box}html,body{margin:0;height:100%;background:var(--bg);color:#fff;font-family:system-ui,-apple-system,sans-serif}button,input,select,textarea{font:inherit}button{cursor:pointer}
+    .app{height:100dvh;display:grid;grid-template-columns:330px 1fr;overflow:hidden}.inbox{background:var(--panel);border-right:1px solid var(--line);overflow:auto}.head{min-height:62px;padding:12px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:9px}.head b{font-size:19px}.test{margin-left:auto;padding:5px 8px;border:1px solid #866d2c;border-radius:999px;color:#ffe3a1;font-size:10px;font-weight:900}.row{display:block;width:100%;padding:13px 12px;border:0;border-bottom:1px solid #263142;background:transparent;color:#fff;text-align:left}.row.on{background:#1a2533}.row b,.row small{display:block}.row small{margin-top:3px;color:var(--muted)}
+    .chat{display:flex;flex-direction:column;min-width:0}.chathead{min-height:62px;padding:8px 10px;border-bottom:1px solid var(--line);background:var(--panel);display:flex;align-items:center;gap:9px}.chathead b{flex:1}.back{border:1px solid #40516a;border-radius:10px;background:var(--panel2);color:#fff;padding:9px 11px}.msgs{flex:1;overflow:auto;padding:14px 14px 100px;display:flex;flex-direction:column;gap:10px}.msg{max-width:min(82%,520px);padding:10px 12px;border:1px solid var(--line);border-radius:14px;background:#18212d;align-self:flex-start}.msg.me{align-self:flex-end;background:var(--green)}.msg small,.muted{color:var(--muted)}.msg time{display:block;margin-top:7px;color:#8796a8;font-size:10px}.card{width:min(100%,620px);align-self:flex-start;padding:14px;border:1px solid #41536b;border-radius:16px;background:#111a25}.card h2,.card h3{margin:0 0 5px}.card p{margin:5px 0 12px;color:#b7c1cd}.actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}.action{min-height:48px;border:1px solid #52657e;border-radius:11px;background:#fff;color:#111;font-weight:900;padding:10px}.action.secondary{background:#182535;color:#fff}.compose{position:fixed;left:330px;right:0;bottom:0;padding:9px;background:var(--bg);display:grid;grid-template-columns:1fr auto;gap:7px}.compose input{min-width:0;padding:12px;border:1px solid #43536b;border-radius:11px;background:#0d141d;color:#fff}.compose button{border:1px solid #43536b;border-radius:11px;background:#182231;color:#fff;padding:0 16px}
+    .sheetback{position:fixed;inset:0;z-index:50;background:#000c;display:none;align-items:flex-end;justify-content:center}.sheetback.on{display:flex}.sheet{width:min(780px,100%);max-height:92dvh;overflow:auto;background:#10161f;border:1px solid #41516a;border-radius:22px 22px 0 0;padding:13px}.sheethead{position:sticky;top:-13px;z-index:2;background:#10161ff5;border-bottom:1px solid var(--line);margin:-13px -13px 12px;padding:13px;display:flex;align-items:center;gap:8px}.sheethead div{flex:1}.sheethead h2{margin:2px 0}.close{width:44px;height:44px;border:1px solid #65404a;border-radius:12px;background:#351b22;color:#fff;font-size:24px}.form{display:grid;gap:11px}.section{padding:12px;border:1px solid var(--line);border-radius:14px;background:#121923}.section h3{margin:0 0 10px}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}label span{display:block;color:#c2cad5;font-size:11px;font-weight:800;margin-bottom:5px}input,select,textarea{width:100%;padding:10px;border:1px solid #3d4c60;border-radius:9px;background:#0c121a;color:#fff}.notice{padding:10px;border:1px solid #7a642b;border-radius:10px;background:#2b2414;color:#ffe4a1}.sticky{position:sticky;bottom:-13px;margin:0 -13px -13px;padding:11px 13px;border-top:1px solid var(--line);background:#10161ff5;display:grid;grid-template-columns:1fr 1.4fr;gap:8px}.result{display:none;padding:12px;border:1px solid #2d7850;border-radius:11px;background:#173423;color:#a6f0c2}.result.on{display:block}
+    @media(max-width:760px){.app{grid-template-columns:1fr}.inbox{position:absolute;inset:0;z-index:10}.inbox.hide{display:none}.compose{left:0}.grid,.actions{grid-template-columns:1fr}.msg{max-width:90%}}
+  </style>
+</head>
+<body>
+  <main class="app">
+    <aside id="inbox" class="inbox">
+      <div class="head"><b>💬 Real Chat</b><span class="test">AUTOMATED TEST</span></div>
+      <button class="row on" data-open="cb"><b>🧾 CB PURCHASE</b><small>Regular Cloth · Matching Cloth MC1</small></button>
+      <button class="row" disabled><b>Customer Chats</b><small>Existing chat flow untouched in this pilot</small></button>
+    </aside>
+    <section class="chat">
+      <div class="chathead"><button id="back" class="back">←</button><b>CB PURCHASE · REDZED</b><span class="test">NO DB WRITE</span></div>
+      <div id="msgs" class="msgs">
+        <div class="msg"><b>CB Purchase Workspace</b><div>Regular Cloth और Matching Cloth के existing flows यहाँ अलग cards में उपलब्ध हैं।</div><time>SYSTEM · TEST70</time></div>
+        <article class="card">
+          <h2>CB NEW · REGULAR CLOTH</h2><p>CB identity, colours, colour-wise rolls और division allocation.</p>
+          <button class="action" data-start="cb">＋ START CB NEW</button>
+        </article>
+        <article class="card">
+          <h2>MC1 · MATCHING CLOTH</h2><p>Vendor bill entry; quantity और value consolidated MC1 card में जाएँगे.</p>
+          <button class="action" data-start="mc">＋ ADD MATCHING CLOTH</button>
+        </article>
+      </div>
+      <div class="compose"><input placeholder="Message… (pilot preview only)" disabled><button disabled>➤</button></div>
+    </section>
+  </main>
+
+  <div id="cbBack" class="sheetback"><section class="sheet">
+    <header class="sheethead"><div><small>CB PURCHASE · TEST MODE</small><h2>CB New · Regular Cloth</h2></div><button class="close" data-close="cbBack">×</button></header>
+    <form id="cbForm" class="form">
+      <div class="notice">Automated pilot: Save test होगा, लेकिन database में कोई entry नहीं बनेगी।</div>
+      <section class="section"><h3>CB Identity</h3><div class="grid"><label><span>CB No. *</span><input name="cb_no" required value="TEST-CB70"></label><label><span>Division Count *</span><input name="divisions" type="number" min="1" max="50" required value="2"></label><label><span>Colour Count *</span><input name="colours" type="number" min="1" max="20" required value="2"></label><label><span>Remarks</span><input name="remarks" value="Real Chat pilot"></label></div></section>
+      <section class="section"><h3>CB Colours</h3><div class="grid"><label><span>Colour 1 Name *</span><input name="colour_1" required value="Black"></label><label><span>Colour 2 Name *</span><input name="colour_2" required value="White"></label></div></section>
+      <section class="section"><h3>Regular Cloth Purchase</h3><div class="grid"><label><span>Material *</span><input value="Regular Cloth" disabled></label><label><span>Vendor Name *</span><input name="vendor" required value="TEST VENDOR"></label><label><span>Fabric / Material Name *</span><input name="fabric" required value="TEST FABRIC"></label><label><span>Bill No. *</span><input name="bill_no" required value="TEST-BILL-70"></label><label><span>Bill Date *</span><input name="bill_date" type="date" required></label><label><span>Bill Rate *</span><input name="rate" type="number" min="0.0001" step="0.0001" required value="100"></label><label><span>Bill Value *</span><input name="value" type="number" min="0.01" step="0.01" required value="2000"></label><label><span>Allocation *</span><select name="allocation"><option>All Divisions</option><option>Selected Divisions</option></select></label><label><span>Black · Roll 1 Qty kg *</span><input name="roll_1" type="number" min="0.001" step="0.001" required value="10"></label><label><span>White · Roll 1 Qty kg *</span><input name="roll_2" type="number" min="0.001" step="0.001" required value="10"></label></div></section>
+      <div id="cbResult" class="result"></div>
+      <div class="sticky"><button class="action secondary" type="button" data-close="cbBack">CANCEL</button><button class="action" type="submit">TEST CREATE CB</button></div>
+    </form>
+  </section></div>
+
+  <div id="mcBack" class="sheetback"><section class="sheet">
+    <header class="sheethead"><div><small>MC1 PURCHASE · TEST MODE</small><h2>Matching Cloth Purchase</h2></div><button class="close" data-close="mcBack">×</button></header>
+    <form id="mcForm" class="form">
+      <div class="notice">Automated pilot: MC1 calculation preview होगा; database write blocked है।</div>
+      <section class="section"><h3>Purchase Entry</h3><div class="grid"><label><span>Vendor Name *</span><input name="vendor" required value="TEST MC VENDOR"></label><label><span>Bill No. *</span><input name="bill_no" required value="TEST-MC-70"></label><label><span>Bill Qty *</span><input name="qty" type="number" min="0.001" step="0.001" required value="10"></label><label><span>Bill Rate *</span><input name="rate" type="number" min="0.0001" step="0.0001" required value="50"></label><label><span>Bill Value *</span><input name="value" type="number" min="0.01" step="0.01" required value="500"></label><label><span>Bill Date</span><input name="bill_date" type="date"></label></div><label><span>Remarks</span><textarea name="remarks">Real Chat pilot</textarea></label></section>
+      <div id="mcResult" class="result"></div>
+      <div class="sticky"><button class="action secondary" type="button" data-close="mcBack">CANCEL</button><button class="action" type="submit">TEST ADD TO MC1</button></div>
+    </form>
+  </section></div>
+  <script src="test70-cb-purchase-real-chat-pilot.js?v=1"></script>
+</body>
+</html>
