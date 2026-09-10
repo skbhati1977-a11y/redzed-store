@@ -23,6 +23,7 @@ assert.ok(html.includes('id="reports" class="page hidden"'));
 assert.ok(js.includes('rr_accounts_structure_v9765'));
 for (const id of ['ledgerSummary', 'ledgerSummarySearch', 'ledgerStatementPage', 'statementSearch', 'statementTotals']) assert.ok(html.includes(`id="${id}"`), `missing #${id}`);
 for (const token of ['rr_accounts_ledger_summary_v9767', 'rr_accounts_ledger_statement_v9767', 'rr_accounts_voucher_detail_v9767', 'history.pushState', 'popstate']) assert.ok(js.includes(token), `missing focused ledger flow ${token}`);
+for (const token of ['Latest:', 'scrollIntoView({block:"center",behavior:"smooth"})']) assert.ok(js.includes(token), `missing latest-entry visibility ${token}`);
 assert.ok(!js.includes('<th>Transaction Id</th>'));
 
 console.log('V9763 creditor mapping/UI contract: PASS');
