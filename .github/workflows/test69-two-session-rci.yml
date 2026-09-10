@@ -8,6 +8,9 @@ on:
     paths:
       - ".github/workflows/test69-two-session-rci.yml"
       - "tests/e2e/test69-two-session-rci.spec.js"
+      - "tests/e2e/test69-two-session-creditor.spec.js"
+      - "real-accounts-v805.html"
+      - "real-accounts-v805.js"
       - "real-login.html"
       - "real-login.js"
       - "real-rci-v9740.html"
@@ -54,7 +57,7 @@ jobs:
         run: npx playwright install --with-deps chromium
 
       - name: Run destructive-safe TEST lifecycle
-        run: npx playwright test tests/e2e/test69-two-session-rci.spec.js --reporter=line
+        run: npx playwright test tests/e2e/test69-two-session-rci.spec.js tests/e2e/test69-two-session-creditor.spec.js --reporter=line
 
       - name: Upload failure evidence
         if: failure()

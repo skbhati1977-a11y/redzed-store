@@ -6,7 +6,7 @@
   const money=v=>`₹${fmt(v)}`;
   const today=()=>new Date().toISOString().slice(0,10);
   const monthStart=()=>{const d=new Date();d.setDate(1);return d.toISOString().slice(0,10)};
-  const state={client:null,ledgers:[],suggestions:[],selected:null,bookRows:[],materialTypes:[],materials:[],busy:false,addEntity:null,addTarget:null,masterRequests:[],accountCategories:[]};
+  const state={client:null,ledgers:[],suggestions:[],selected:null,bookRows:[],creditors:[],creditorOffset:0,materialTypes:[],materials:[],busy:false,addEntity:null,addTarget:null,masterRequests:[],accountCategories:[]};
 
   function message(id,text,type=""){const el=$(id);if(!el)return;el.textContent=text||"";el.className=`msg ${type}`.trim()}
   function errorText(e){return e?.message||e?.error_description||e?.details||String(e||"Unknown error")}
@@ -31,7 +31,7 @@
   function zeroClean(root=document){root.querySelectorAll('input[type=number]').forEach(i=>{i.addEventListener('focus',()=>{if(Number(i.value||0)===0)i.value=""});i.addEventListener('blur',()=>{if(i.value==="")i.value="0"})})}
   function enterFlow(root){if(!root)return;root.addEventListener('keydown',e=>{if(e.key!=="Enter"||e.shiftKey||e.ctrlKey||e.altKey)return;const t=e.target;if(!["INPUT","SELECT"].includes(t.tagName)||t.type==="search")return;const els=[...root.querySelectorAll('input,select,button.primary')].filter(x=>!x.disabled&&x.tabIndex!==-1&&x.offsetParent!==null);const i=els.indexOf(t);if(i<0)return;e.preventDefault();(els[i+1]||root.querySelector('button.primary'))?.focus();if(!els[i+1])root.querySelector('button.primary')?.click()})}
 
-  document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{document.querySelectorAll('[data-tab]').forEach(x=>x.classList.remove('active'));b.classList.add('active');document.querySelectorAll('.page').forEach(x=>x.classList.add('hidden'));$(b.dataset.tab)?.classList.remove('hidden');if(b.dataset.tab==="ledgers"&&!state.bookRows.length)loadDayBook().catch(()=>{})});
+  document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{document.querySelectorAll('[data-tab]').forEach(x=>x.classList.remove('active'));b.classList.add('active');document.querySelectorAll('.page').forEach(x=>x.classList.add('hidden'));$(b.dataset.tab)?.classList.remove('hidden');if(b.dataset.tab==="ledgers"&&!state.bookRows.length)loadDayBook().catch(()=>{});if(b.dataset.tab==="creditors"&&!state.creditors.length)loadCreditors().catch(()=>{})});
 
   function calc(){const q=Number($("qty")?.value||0),r=Number($("rate")?.value||0);if($("total"))$("total").value=(q*r).toFixed(2)}
   function materialLabelFor(code){return ({REGULAR_CLOTH:"Cloth Name",MATCHING_CLOTH:"Matching Cloth Name",STICKER:"Sticker Name",METAL_ID:"Metal ID Name",PANNI:"Panni Name",GATTA:"Gatta Name",BOX:"Box Name",PASTING_ROLL:"Pasting Name",KANDHI_TAPE:"Kandhi Tape Name"})[code]||"Material Name"}
@@ -73,6 +73,8 @@
     if($("supplier"))$("supplier").innerHTML=opts("Select supplier…",x=>["SUPPLIER","PARTY","GENERAL"].includes(x.ledger_kind));
     if($("against"))$("against").innerHTML=opts("Select ledger…",x=>!["CASH","BANK"].includes(x.ledger_kind));
     if($("cashbank"))$("cashbank").innerHTML=opts("Select cash / bank…",x=>["CASH","BANK"].includes(x.ledger_kind));
+    if($("journalDebit"))$("journalDebit").innerHTML=opts("Select debit ledger…");
+    if($("journalCredit"))$("journalCredit").innerHTML=opts("Select credit ledger…");
   }
   async function loadLedgers(){
     const errors=[];
@@ -137,6 +139,12 @@
 
   async function loadDayBook(){const btn=$("loadDayBook");setBusy(btn,true,"Loading…");message("bookMsg","Loading…");try{const view=$("bookView").value;let data;if(view==="LEDGER"){const ledger=$("bookLedger").value;if(!ledger)throw new Error("Select Ledger for Ledger Statement.");data=await rpc("rr_ledger_statement_v806",{p_ledger_id:ledger,p_from_date:$("bookFrom").value,p_to_date:$("bookTo").value,p_data_mode:mode()})}else{data=await rpc("rr_day_book_v806",{p_from_date:$("bookFrom").value,p_to_date:$("bookTo").value,p_data_mode:mode()})}state.bookRows=Array.isArray(data)?data:[];renderBook();message("bookMsg",`${state.bookRows.length} row${state.bookRows.length===1?"":"s"} loaded.`,"ok")}catch(e){console.error(e);state.bookRows=[];renderBook();message("bookMsg",errorText(e),"error")}finally{setBusy(btn,false)}}
   function renderBook(){const q=String($("bookSearch")?.value||"").trim().toLowerCase();const rows=q?state.bookRows.filter(r=>JSON.stringify(r).toLowerCase().includes(q)):state.bookRows;$("bookResult").innerHTML=renderTable(rows)}
+
+  async function loadCreditors(reset=false){if(reset)state.creditorOffset=0;const btn=$("loadCreditors");setBusy(btn,true,"Loading…");message("creditorMsg","Loading canonical mapping…");try{const rows=await rpc("rr_accounts_creditor_search_v9763",{p_search:$("creditorSearch")?.value||"",p_limit:100,p_offset:state.creditorOffset,p_data_mode:mode()});state.creditors=Array.isArray(rows)?rows:[];$("creditorResult").innerHTML=renderTable(state.creditors);$("creditorPrev").disabled=state.creditorOffset===0;$("creditorNext").disabled=state.creditors.length<100;message("creditorMsg",`${state.creditors.length} canonical creditor mapping(s) loaded · offset ${state.creditorOffset}.`,`ok`)}catch(e){state.creditors=[];$("creditorResult").innerHTML=`<div class="empty">${esc(errorText(e))}</div>`;message("creditorMsg",errorText(e),"error")}finally{setBusy(btn,false)}}
+
+  async function postJournal(){const btn=$("postJournal");try{const debit=$("journalDebit").value,credit=$("journalCredit").value,amount=Number($("journalAmount").value||0),note=$("journalNote").value.trim();if(!debit||!credit||debit===credit)throw new Error("Distinct Debit and Credit ledgers required.");if(!(amount>0))throw new Error("Amount must be greater than zero.");if(!note)throw new Error("Narration required.");setBusy(btn,true,"Posting…");const out=await rpc("rr_accounts_post_journal_v9763",{p_debit_ledger_id:debit,p_credit_ledger_id:credit,p_amount:amount,p_ref_no:$("journalRef").value||null,p_narration:note,p_data_mode:mode()});message("journalMsg",`Journal ${out.voucher_no||""} posted ${money(amount)}.`,`ok`);$("journalAmount").value="0";await Promise.all([loadDayBook(),loadCreditors()])}catch(e){message("journalMsg",errorText(e),"error")}finally{setBusy(btn,false)}}
+
+  async function reverseVoucher(){const btn=$("reverseVoucherBtn");try{const voucher=$("reverseVoucher").value.trim(),reason=$("reverseReason").value.trim();if(!voucher||!reason)throw new Error("Voucher No and reversal reason required.");setBusy(btn,true,"Reversing…");await rpc("rr_accounts_reverse_voucher_v9763",{p_voucher_no:voucher,p_reason:reason,p_data_mode:mode()});message("reverseMsg",`${voucher} reversed with audit trail.`,`ok`);await Promise.all([loadDayBook(),loadCreditors()])}catch(e){message("reverseMsg",errorText(e),"error")}finally{setBusy(btn,false)}}
 
   function wirePreviewTemplates(){
     $("previewPurchase")?.addEventListener("click",()=>{calc();message("pmsg",`Preview total ${money($("total").value)}. Posting continues through the dedicated material/purchase backend.`,"ok")});
@@ -291,7 +299,7 @@
     }catch(e){alert(errorText(e))}
   }
 
-$("searchReports")?.addEventListener("click",()=>searchReports());$("reportSearch")?.addEventListener("input",()=>{clearTimeout(searchTimer);searchTimer=setTimeout(()=>searchReports(),220)});$("reportSearch")?.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();searchReports()}});$("loadDayBook")?.addEventListener("click",loadDayBook);$("bookSearch")?.addEventListener("input",renderBook);$("bookView")?.addEventListener("change",()=>{$("bookLedger").parentElement.classList.toggle("hidden",$("bookView").value!=="LEDGER")});$("dataMode")?.addEventListener("change",()=>{$("modeMirror").value=mode();refresh()});$("refreshAll")?.addEventListener("click",refresh);wirePreviewTemplates();zeroClean();enterFlow($("purchase"));enterFlow($("money"));
+$("searchReports")?.addEventListener("click",()=>searchReports());$("reportSearch")?.addEventListener("input",()=>{clearTimeout(searchTimer);searchTimer=setTimeout(()=>searchReports(),220)});$("reportSearch")?.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();searchReports()}});$("loadDayBook")?.addEventListener("click",loadDayBook);$("bookSearch")?.addEventListener("input",renderBook);$("bookView")?.addEventListener("change",()=>{$("bookLedger").parentElement.classList.toggle("hidden",$("bookView").value!=="LEDGER")});$("loadCreditors")?.addEventListener("click",()=>loadCreditors(true));$("creditorSearch")?.addEventListener("input",()=>{clearTimeout(searchTimer);searchTimer=setTimeout(()=>loadCreditors(true),220)});$("creditorPrev")?.addEventListener("click",()=>{state.creditorOffset=Math.max(0,state.creditorOffset-100);loadCreditors()});$("creditorNext")?.addEventListener("click",()=>{state.creditorOffset+=100;loadCreditors()});$("postJournal")?.addEventListener("click",postJournal);$("reverseVoucherBtn")?.addEventListener("click",reverseVoucher);$("dataMode")?.addEventListener("change",()=>{$("modeMirror").value=mode();state.creditorOffset=0;refresh()});$("refreshAll")?.addEventListener("click",refresh);wirePreviewTemplates();zeroClean();enterFlow($("purchase"));enterFlow($("money"));
   }
 
   window.RR_ACCOUNTS_V805={
