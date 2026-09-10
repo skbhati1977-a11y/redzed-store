@@ -113,7 +113,10 @@ async function loadConsole({quiet=false}={}){
       const byAuthId=new Map(authUsers.map(u=>[String(u.auth_user_id||u.id),u]));
       state.data.users=(state.data.users||[]).map(profile=>({
         ...profile,
-        ...(byAuthId.get(String(profile.auth_user_id))||{})
+        ...(byAuthId.get(String(profile.auth_user_id))||{}),
+        id:profile.id,
+        profile_id:profile.id,
+        auth_user_id:profile.auth_user_id
       }));
     }catch(edgeError){
       console.warn("Auth user list unavailable; profile list shown.",edgeError);
