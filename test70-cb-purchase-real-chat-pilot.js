@@ -18,6 +18,12 @@
   let lane = "group";
   let privatePerson = null;
   let activeGroup = "सिलाई विभाग समूह";
+  const cardGroups = {
+    assign: "सिलाई विभाग समूह",
+    material: "खरीद समूह",
+    handover: "फोल्डिंग समूह",
+    rate: "पैकिंग समूह"
+  };
   const open = id => $(id).classList.add("on");
   const close = id => $(id).classList.remove("on");
   const esc = value => String(value ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));
@@ -58,7 +64,9 @@
   function filterCards() {
     const q = $("cardSearch").value.trim().toLowerCase();
     document.querySelectorAll("#msgs .card").forEach(card => {
-      card.style.display = !q || card.textContent.toLowerCase().includes(q) ? "" : "none";
+      const matchesSearch = q && card.textContent.toLowerCase().includes(q);
+      const matchesGroup = cardGroups[card.dataset.card] === activeGroup;
+      card.style.display = matchesSearch || (!q && matchesGroup) ? "" : "none";
     });
   }
 
@@ -131,5 +139,6 @@
   renderStaff();
   renderGroups();
   setLane("group");
+  filterCards();
   window.__TEST70_CONTROLLED_CHAT__ = {mode:"AUTOMATED_TEST",databaseWrites:false,freeChat:false,deviceGallery:false,lanes:["STAFF_GROUP","PRIVATE_BUSINESS"],ready:true};
 })();
