@@ -75,10 +75,7 @@ jobs:
         shell: bash
         run: |
           mkdir -p test-results
-          if ! npx playwright test tests/e2e/test69-two-session-creditor.spec.js --reporter=json > test-results/creditor-report.json; then
-            cat test-results/creditor-report.json
-            exit 1
-          fi
+          npx playwright test tests/e2e/test69-two-session-creditor.spec.js --reporter=line 2>&1 | tee test-results/creditor-report.txt
 
       - name: Upload failure evidence
         if: failure()
