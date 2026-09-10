@@ -9,8 +9,8 @@ async function login(page, username, password) {
   await page.locator('#identifier').fill(username);
   await page.locator('#password').fill(password);
   await page.locator('#loginBtn').click();
-  await page.waitForURL(/real-rci-v9740\.html/, { timeout: 30_000 });
-  await expect(page.locator('#flowLabel')).toContainText('Standalone RCI');
+  await page.waitForURL(url => url.pathname.endsWith('/real-rci-v9740.html'), { timeout: 30_000 });
+  await expect(page.locator('#flowLabel')).toContainText('Standalone RCI', { timeout: 30_000 });
   await expect(page.locator('#msg')).not.toContainText(/not allowed|denied|unauthorized/i);
 }
 
