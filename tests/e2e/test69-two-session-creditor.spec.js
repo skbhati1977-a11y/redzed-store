@@ -1,7 +1,7 @@
 const { test, expect } = require('@playwright/test');
 
 const baseURL = (process.env.TEST69_BASE_URL || '').replace(/\/$/, '');
-const target = 'real-accounts-v805.html?v=9766';
+const target = 'real-accounts-v805.html?v=9767';
 const loginURL = `${baseURL}/real-login.html?next=${encodeURIComponent(target)}`;
 
 async function login(page, username, password) {
@@ -32,7 +32,7 @@ async function selectLedger(page, selectId, text) {
 }
 
 test('Admin journal changes canonical creditor; second session sees it; reversal restores it', async ({ browser }) => {
-  test.setTimeout(150_000);
+  test.setTimeout(240_000);
   expect(baseURL, 'TEST69_BASE_URL must be configured').toBeTruthy();
   const adminContext = await browser.newContext();
   const secondContext = await browser.newContext();
@@ -42,6 +42,14 @@ test('Admin journal changes canonical creditor; second session sees it; reversal
   try {
     await login(admin, process.env.TEST69_ADMIN_USERNAME, process.env.TEST69_ADMIN_PASSWORD);
     await login(second, process.env.TEST69_SECOND_USERNAME, process.env.TEST69_SECOND_PASSWORD);
+    await admin.locator('[data-ledger-scope="DEBTORS"]').first().click();
+    await expect(admin.locator('#ledgerSummaryResult .ledger-row').first()).toBeVisible({ timeout: 20_000 });
+    await admin.locator('#ledgerSummaryResult .ledger-row').first().click();
+    await expect(admin.locator('#ledgerStatementPage')).toBeVisible();
+    await expect(admin.locator('#ledgerStatementPage')).toContainText('Opening Balance');
+    await expect(admin.locator('#ledgerStatementPage')).toContainText('Running Balance');
+    await expect(admin.locator('#ledgerStatementPage #openAccountsMenu')).toHaveCount(0);
+    await admin.locator('#closeLedgerStatement').click();
     await expect(admin.locator('#openAccountsMenu')).toHaveText(/Accounts Menu/);
     await admin.locator('#openAccountsMenu').click();
     await expect(admin.locator('#accountsDrawer')).toBeVisible();
