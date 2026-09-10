@@ -9,21 +9,24 @@
     { role: "लाइनमैन", name: "जावेद" },
     { role: "प्रिंटर", name: "प्रिंटर कर्मचारी" },
     { role: "स्टिकर", name: "स्टिकर कर्मचारी" }
+    ,{ role: "Stitching Worker", name: "इमामुल" }
   ];
   const groups = [
-    "खरीद समूह","कटिंग समूह","प्रिंटर समूह","स्टिकर समूह","मेटल आईडी समूह",
-    "सिलाई विभाग समूह","ओवरलॉक समूह","फोल्डिंग समूह","काज बटन समूह",
-    "धागा कटाई समूह","गुणवत्ता जाँच समूह","प्रेस समूह","पैकिंग समूह"
+    "Purchase Group","Cutting Group","Printer Group","Sticker Group","Metal ID Group",
+    "Stitching Department Group","Overlock Group","Folding Group","Kaaj Button Group",
+    "Thread Cutting Group","Quality Check Group","Press Group","Packing Group"
   ];
   let lane = "group";
   let privatePerson = null;
-  let activeGroup = "सिलाई विभाग समूह";
+  let activeGroup = "Stitching Department Group";
+  let activeWork = "ALL";
   const cardGroups = {
-    assign: "सिलाई विभाग समूह",
-    material: "खरीद समूह",
-    handover: "फोल्डिंग समूह",
-    rate: "पैकिंग समूह"
+    assign: "Stitching Department Group",
+    material: "Purchase Group",
+    handover: "Folding Group",
+    rate: "Packing Group"
   };
+  const cardStates = {assign:"RUNNING",material:"RUNNING",handover:"DONE",rate:"RUNNING"};
   const open = id => $(id).classList.add("on");
   const close = id => $(id).classList.remove("on");
   const esc = value => String(value ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));
@@ -34,15 +37,15 @@
     document.querySelectorAll("[data-lane]").forEach(button => button.classList.toggle("on", button.dataset.lane === lane));
     if (lane === "group") {
       $("chatTitle").textContent = activeGroup;
-      $("chatSub").textContent = "इस विभाग के कारीगर · सुपर एडमिन · एडमिन · मैनेजर · मास्टर · लाइनमैन";
+      $("chatSub").textContent = "इस Department के Worker · Super Admin · Admin · Manager · Master · Lineman";
     } else {
-      $("chatTitle").textContent = person ? person.name : "निजी काम की बात";
-      $("chatSub").textContent = person ? `${person.role} · केवल काम की बात` : "☰ से व्यक्ति चुनें";
+      $("chatTitle").textContent = person ? person.name : "Personal Chat";
+      $("chatSub").textContent = person ? `${person.role} · केवल काम की Chat` : "☰ से Staff चुनें";
     }
   }
 
   function renderStaff() {
-    $("staffList").innerHTML = staff.map((person, index) => `${index === 0 || staff[index - 1].role !== person.role ? `<div class="role">${esc(person.role)}</div>` : ""}<button class="person" data-person="${index}"><span class="face">${esc(person.name.slice(0, 1))}</span><div><b>${esc(person.name)}</b><small>${esc(person.role)} · निजी काम की बात</small></div>›</button>`).join("");
+    $("staffList").innerHTML = staff.map((person, index) => `${index === 0 || staff[index - 1].role !== person.role ? `<div class="role">${esc(person.role)}</div>` : ""}<button class="person" data-person="${index}"><span class="face">${esc(person.name.slice(0, 1))}</span><div><b>${esc(person.name)}</b><small>${esc(person.role)} · Personal Chat</small></div>›</button>`).join("");
     $("receiver").innerHTML = '<option value="">चुनें…</option>' + staff.map(person => `<option>${esc(person.name)} · ${esc(person.role)}</option>`).join("");
     document.querySelectorAll("[data-person]").forEach(button => button.onclick = () => {
       setLane("private", staff[Number(button.dataset.person)]);
@@ -51,9 +54,10 @@
   }
 
   function renderGroups() {
-    $("groupList").innerHTML = groups.map((name, index) => `<button class="person" data-group-index="${index}"><span class="face">👥</span><div><b>${esc(name)}</b><small>इसी विभाग का काम</small></div>›</button>`).join("");
+    $("groupList").innerHTML = groups.map((name, index) => `<button class="person" data-group-index="${index}"><span class="face">👥</span><div><b>${esc(name)}</b><small>इसी Department का काम</small></div>›</button>`).join("");
     document.querySelectorAll("[data-group-index]").forEach(button => button.onclick = () => {
       activeGroup = groups[Number(button.dataset.groupIndex)];
+      activeWork = "ALL";
       setLane("group");
       $("cardSearch").value = "";
       filterCards();
@@ -66,7 +70,8 @@
     document.querySelectorAll("#msgs .card").forEach(card => {
       const matchesSearch = q && card.textContent.toLowerCase().includes(q);
       const matchesGroup = cardGroups[card.dataset.card] === activeGroup;
-      card.style.display = matchesSearch || (!q && matchesGroup) ? "" : "none";
+      const matchesWork = activeWork === "ALL" || cardStates[card.dataset.card] === activeWork;
+      card.style.display = (matchesSearch || (!q && matchesGroup)) && matchesWork ? "" : "none";
     });
   }
 
@@ -84,6 +89,19 @@
   $("staffMenu").onclick = () => open("staffBack");
   $("groupMenu").onclick = () => open("groupBack");
   $("cardSearch").oninput = filterCards;
+  document.querySelectorAll("[data-work]").forEach(button => button.onclick = () => {
+    activeWork = button.dataset.work;
+    document.querySelectorAll("[data-work]").forEach(item => item.classList.toggle("on", item === button));
+    filterCards();
+  });
+  $("workerWork").onclick = () => {
+    activeGroup = "Stitching Department Group";
+    activeWork = "ALL";
+    setLane("group");
+    $("cardSearch").value = "इमामुल";
+    filterCards();
+  };
+  $("workerChat").onclick = () => setLane("private", staff.find(person => person.name === "इमामुल"));
   document.querySelectorAll("[data-close]").forEach(button => button.onclick = () => close(button.dataset.close));
   document.querySelectorAll(".cover").forEach(back => back.onclick = event => { if (event.target === back) close(back.id); });
   $("newBusiness").onclick = () => open("businessBack");
@@ -138,6 +156,10 @@
 
   renderStaff();
   renderGroups();
+  document.querySelector('[data-card="assign"] h2').textContent = "काम Assign हुआ · Lot 2606";
+  document.querySelector('[data-card="material"] h2').textContent = "नए Material Name की मंज़ूरी";
+  document.querySelector('[data-card="handover"] h2').textContent = "काम Submit हुआ · Lot 2606";
+  document.querySelector('[data-card="rate"] h2').textContent = "Rate की मंज़ूरी · Lot 2606";
   setLane("group");
   filterCards();
   window.__TEST70_CONTROLLED_CHAT__ = {mode:"AUTOMATED_TEST",databaseWrites:false,freeChat:false,deviceGallery:false,lanes:["STAFF_GROUP","PRIVATE_BUSINESS"],ready:true};
