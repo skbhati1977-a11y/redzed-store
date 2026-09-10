@@ -16,7 +16,8 @@ const RR_TRAVEL_VERSION="9676";
 const RR_LATEST_DASHBOARD_URL=`${RR_REPO_BASE}real-dashboard-v9182.html?v=${RR_TRAVEL_VERSION}`;
 const rrIsDashboardPath=path=>/\/real-dashboard(?:-v9182)?\.html$/i.test(path||"");
 const rrIsRealChatPath=path=>/\/real-sales-live-chat-v9434\.html$/i.test(path||"");
-if(!rrIsDashboardPath(window.location.pathname)){
+const rrIsAuthPath=path=>/\/(?:real-login|reset-password)\.html$/i.test(path||"");
+if(!rrIsDashboardPath(window.location.pathname)&&!rrIsAuthPath(window.location.pathname)){
  const pinDashboardReturn=()=>{
   document.querySelectorAll('a[href]').forEach(a=>{
    try{const u=new URL(a.getAttribute('href'),window.location.href);if(/\/real-dashboard(?:-v\d+)?\.html$/i.test(u.pathname))a.href=RR_LATEST_DASHBOARD_URL}catch(_e){}
@@ -87,7 +88,7 @@ if(rrIsRealChatPath(window.location.pathname)){
  const add67=document.createElement('script');add67.src='real-chat-add-customer-test67.js?v=67';add67.async=false;(document.head||document.documentElement).appendChild(add67);
  const hideRealChatGlobalRail=()=>{document.getElementById('rrSlicePanel')?.remove();document.getElementById('rrSliceBack')?.remove();document.getElementById('rrSliceRail')?.remove();document.body?.classList.remove('rrSliceReserved')};
  document.addEventListener('DOMContentLoaded',hideRealChatGlobalRail,{once:true});setTimeout(hideRealChatGlobalRail,0);
-}else if(!rrIsDashboardPath(window.location.pathname)&&!window.__RR_SLICE_MENU_LOADER_9309__){window.__RR_SLICE_MENU_LOADER_9309__=true;const nav=document.createElement('script');nav.src=`${RR_REPO_BASE}real-global-slice-menu-v9190.js?v=${RR_TRAVEL_VERSION}`;nav.async=false;(document.head||document.documentElement).appendChild(nav)}
+}else if(!rrIsDashboardPath(window.location.pathname)&&!rrIsAuthPath(window.location.pathname)&&!window.__RR_SLICE_MENU_LOADER_9309__){window.__RR_SLICE_MENU_LOADER_9309__=true;const nav=document.createElement('script');nav.src=`${RR_REPO_BASE}real-global-slice-menu-v9190.js?v=${RR_TRAVEL_VERSION}`;nav.async=false;(document.head||document.documentElement).appendChild(nav)}
 if(/\/(?:s|real-customer-invite-test67)\.html$/i.test(window.location.pathname)){
  const permission67=document.createElement('script');permission67.src='redzed-permission-onboarding-test67.js?v=69';permission67.async=false;(document.head||document.documentElement).appendChild(permission67);
  const crossParty67=document.createElement('script');crossParty67.src=`${RR_REPO_BASE}real-chat-cross-party-notifications-test67.js?v=9718`;crossParty67.async=false;(document.head||document.documentElement).appendChild(crossParty67);
