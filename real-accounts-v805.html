@@ -12,11 +12,11 @@
 <body>
 <main class="app">
   <header class="top">
-    <div class="brand">
+    <div class="inline"><button id="openAccountsMenu" type="button" aria-label="Open accounts menu">☰</button><div class="brand">
       <small>REAL FACTORY · ACCOUNTS · FIELD-WISE ADD NEW V8078</small>
       <h1>Accounts & Intelligent Reports</h1>
       <p>AUTO POST FIRST · TEST FIRST · report search + direct analysis</p>
-    </div>
+    </div></div>
     <div class="actions">
       <label style="min-width:112px">Data Mode<select id="dataMode"><option>TEST</option><option>REAL</option></select></label>
       <a href="real-material-master-v805.html">Material Master</a>
@@ -141,6 +141,28 @@
   </section>
 </main>
 
+<aside id="accountsDrawer" class="hidden" aria-label="Accounts modules" style="position:fixed;inset:0 auto 0 0;width:min(360px,88vw);z-index:100;background:#0b111a;border-right:1px solid var(--line);padding:16px;overflow:auto;box-shadow:20px 0 60px #000b">
+  <div class="result-head"><div><small class="chip">ACCOUNTS HUB</small><h2>Easy Accounting</h2></div><button id="closeAccountsMenu" type="button">✕</button></div>
+  <div class="suggestions" style="margin-top:18px">
+    <button class="suggestion" data-open-tab="reports"><b>Dashboard &amp; Reports</b><small>Trial Balance · P&amp;L · Balance Sheet</small></button>
+    <button class="suggestion" data-open-tab="reports" data-report-query="customer ledger"><b>Sundry Debtors</b><small>Customer ledger · outstanding · receipts</small></button>
+    <button class="suggestion" data-open-tab="creditors"><b>Sundry Creditors</b><small>Supplier ledger · payable · payments</small></button>
+    <button class="suggestion" data-open-tab="purchase"><b>Sales &amp; Purchase</b><small>Invoices · returns · damage claims</small></button>
+    <button class="suggestion" data-open-tab="money"><b>Receipts &amp; Payments</b><small>Cash · bank · party entries</small></button>
+    <button class="suggestion" data-open-tab="money" data-focus-id="journalDebit"><b>Journal Entries</b><small>Debit / Credit posting</small></button>
+    <button class="suggestion" data-open-tab="reports" data-report-query="expense"><b>Expenses</b><small>Expense ledgers and P&amp;L effect</small></button>
+    <button class="suggestion" data-open-tab="reports" data-report-query="stock"><b>Inventory &amp; Stock</b><small>Lots · quantity · value · returns</small></button>
+    <button class="suggestion" data-open-tab="ledgers"><b>Day Book &amp; Ledgers</b><small>Search · popup · share · export</small></button>
+  </div>
+</aside>
+
+<section id="entryPopup" class="hidden" style="position:fixed;inset:0;background:#000c;z-index:130;padding:16px;place-items:center">
+  <div class="panel" style="width:min(760px,100%);max-height:90vh;overflow:auto">
+    <div class="result-head"><div><small class="chip">ENTRY DETAILS</small><h2>Accounts Entry</h2></div><button id="closeEntryPopup" type="button">Close</button></div>
+    <div id="entryPopupBody"></div><div class="actions" style="margin-top:12px"><button id="sharePopupEntry" class="primary" type="button">Share / Send</button><button id="exportPopupEntry" type="button">Export CSV</button><button id="printPopupEntry" type="button">Print</button></div>
+  </div>
+</section>
+
 <section id="addMasterModal" class="hidden" style="position:fixed;inset:0;background:#000b;z-index:120;padding:16px;place-items:center">
   <div class="panel" style="width:min(720px,100%);max-height:92vh;overflow:auto">
     <div class="result-head">
@@ -172,6 +194,6 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="config.js"></script>
 <script src="real-common.js"></script>
-<script src="real-accounts-v805.js?v=9763"></script>
+<script src="real-accounts-v805.js?v=9764"></script>
 </body>
 </html>
