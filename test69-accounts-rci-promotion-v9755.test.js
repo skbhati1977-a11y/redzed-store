@@ -1,0 +1,13 @@
+const fs=require('fs'),assert=require('assert');
+const a=fs.readFileSync('supabase/migrations/20260910160000_test69_accounts_rci_promotion_gate_v9754.sql','utf8');
+const b=fs.readFileSync('supabase/migrations/20260910161500_test69_distinct_debtor_identity_v9755.sql','utf8');
+assert.match(a,/rr_rci_accounts_link_v9754/);
+assert.match(a,/rr_accounts_post_rci_v9754/);
+assert.match(a,/SALES_RETURN/);
+assert.match(a,/DISTRIBUTOR_CUSTOMER/);
+assert.match(a,/v_kind='REDZED_CUSTOMER' and length\(v_mobile\)=10/);
+assert.doesNotMatch(a,/v_kind='DISTRIBUTOR_CUSTOMER' and length\(v_mobile\)=10/);
+assert.match(b,/linked_entity_id=b\.id::text/);
+assert.match(b,/v_name:=v_name\|\|' · '\|\|upper/);
+assert.match(b,/opening_balance,opening_side,is_active/);
+console.log('PASS test69 accounts + RCI promotion V9754/V9755');
