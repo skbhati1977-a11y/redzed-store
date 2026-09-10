@@ -41,6 +41,13 @@ test('Admin journal changes canonical creditor; second session sees it; reversal
   try {
     await login(admin, process.env.TEST69_ADMIN_USERNAME, process.env.TEST69_ADMIN_PASSWORD);
     await login(second, process.env.TEST69_SECOND_USERNAME, process.env.TEST69_SECOND_PASSWORD);
+    await admin.locator('[data-tab="accountsMap"]').click();
+    await admin.locator('#loadAccountsMap').click();
+    await expect(admin.locator('#accountsMapResult')).toContainText('Loans & Advances (Asset)', { timeout: 20_000 });
+    await expect(admin.locator('#accountsMapResult')).toContainText('Piece Rate Wages');
+    await expect(admin.locator('#accountsMapResult')).toContainText('Customer Receivable');
+    await expect(admin.locator('#accountsMapResult')).toContainText('Supplier Payable');
+    await expect(admin.locator('#accountsMapResult').getByRole('button', { name: '+ Create Account' }).first()).toBeVisible();
     const before = await creditorBalance(second);
     await admin.locator('[data-tab="money"]').click();
     await selectLedger(admin, '#journalDebit', 'TEST SUPPLIER E2E');

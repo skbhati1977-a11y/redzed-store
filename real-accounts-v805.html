@@ -31,6 +31,7 @@
     <button type="button" data-tab="purchase">Sales & Purchase</button>
     <button type="button" data-tab="money">Receipt & Payment</button>
     <button type="button" data-tab="creditors">Sundry Creditors</button>
+    <button type="button" data-tab="accountsMap">Chart of Accounts</button>
   </nav>
 
   <section id="reports" class="page">
@@ -139,12 +140,19 @@
     <div class="grid"><label>Voucher No<input id="reverseVoucher" autocomplete="off"></label><label style="grid-column:span 2">Reason<input id="reverseReason"></label></div>
     <div class="actions" style="margin-top:10px"><button id="reverseVoucherBtn" class="danger" type="button">Reverse Voucher</button><span id="reverseMsg" class="msg"></span></div>
   </section>
+
+  <section id="accountsMap" class="panel page hidden">
+    <div class="result-head"><div><h2>Complete Chart of Accounts</h2><p class="muted">Balance Sheet + Profit &amp; Loss structure. Empty heads remain visible at ₹0.</p></div><button id="loadAccountsMap" class="primary" type="button">Refresh Structure</button></div>
+    <div class="filter-grid"><label style="grid-column:span 3">Search head / ledger<input id="accountsMapSearch" type="search" placeholder="salary, loan, stock, expense…"></label><label>Financial Group<select id="accountsMapGroup"><option value="">All Groups</option><option>ASSET</option><option>LIABILITY</option><option>EQUITY</option><option>INCOME</option><option>EXPENSE</option><option>PURCHASE</option><option>SALARY</option><option>TAX</option><option>SUSPENSE</option></select></label></div>
+    <div id="accountsMapSummary" class="cards" style="margin:12px 0"></div><p id="accountsMapMsg" class="msg"></p><div id="accountsMapResult"><div class="empty">Load complete accounts structure.</div></div>
+  </section>
 </main>
 
 <aside id="accountsDrawer" class="hidden" aria-label="Accounts modules" style="position:fixed;inset:0 auto 0 0;width:min(360px,88vw);z-index:100;background:#0b111a;border-right:1px solid var(--line);padding:16px;overflow:auto;box-shadow:20px 0 60px #000b">
   <div class="result-head"><div><small class="chip">ACCOUNTS HUB</small><h2>Easy Accounting</h2></div><button id="closeAccountsMenu" type="button">✕</button></div>
   <div class="suggestions" style="margin-top:18px">
     <button class="suggestion" data-open-tab="reports"><b>Dashboard &amp; Reports</b><small>Trial Balance · P&amp;L · Balance Sheet</small></button>
+    <button class="suggestion" data-open-tab="accountsMap"><b>Complete Chart of Accounts</b><small>All Balance Sheet &amp; P&amp;L heads · zero-visible</small></button>
     <button class="suggestion" data-open-tab="reports" data-report-query="customer ledger"><b>Sundry Debtors</b><small>Customer ledger · outstanding · receipts</small></button>
     <button class="suggestion" data-open-tab="creditors"><b>Sundry Creditors</b><small>Supplier ledger · payable · payments</small></button>
     <button class="suggestion" data-open-tab="purchase"><b>Sales &amp; Purchase</b><small>Invoices · returns · damage claims</small></button>
@@ -194,6 +202,6 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="config.js"></script>
 <script src="real-common.js"></script>
-<script src="real-accounts-v805.js?v=9764"></script>
+<script src="real-accounts-v805.js?v=9765"></script>
 </body>
 </html>
