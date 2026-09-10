@@ -21,7 +21,7 @@
         REDZED REAL
       </p>
 
-      <h1>Owner Login</h1>
+      <h1>User Login</h1>
 
       <p class="rr-muted">
         Real Factory. Real Control.
@@ -30,13 +30,13 @@
       <form id="loginForm" class="rr-form">
 
         <label>
-          Email
+          Email, mobile or username
 
           <input
-            id="email"
-            type="email"
-            autocomplete="email"
-            value="skbhati1977@gmail.com"
+            id="identifier"
+            type="text"
+            autocomplete="username"
+            placeholder="name.department / mobile / email"
             required
           >
         </label>
@@ -44,12 +44,10 @@
         <label>
           Password
 
-          <input
-            id="password"
-            type="password"
-            autocomplete="current-password"
-            required
-          >
+          <span style="display:flex;gap:8px;align-items:center">
+            <input id="password" type="password" autocomplete="current-password" required style="flex:1">
+            <button id="togglePassword" class="rr-btn rr-btn-secondary" type="button" aria-label="Show password" aria-pressed="false" style="width:auto;min-width:48px">👁</button>
+          </span>
         </label>
 
         <button
@@ -58,6 +56,10 @@
           type="submit"
         >
           Login
+        </button>
+
+        <button id="forgotBtn" class="rr-btn rr-btn-secondary" type="button">
+          Forgot / Reset Password
         </button>
 
         <p
