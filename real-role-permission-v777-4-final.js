@@ -15,7 +15,7 @@ const actorRole=()=>lower(
   || state.auth?.user?.role_code
   || ""
 );
-const isOwner=()=>actorRole()==="owner";
+const isOwner=()=>["owner","super_admin","superadmin"].includes(actorRole());
 const isAdmin=()=>actorRole()==="admin";
 const userRole=u=>lower(u?.role_code);
 const isOwnerUser=u=>userRole(u)==="owner";
