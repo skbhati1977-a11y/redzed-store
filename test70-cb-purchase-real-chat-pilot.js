@@ -37,15 +37,13 @@
     document.querySelectorAll("[data-lane]").forEach(button => button.classList.toggle("on", button.dataset.lane === lane));
     if (lane === "group") {
       $("chatTitle").textContent = activeGroup;
-      $("chatSub").textContent = "इस Department के Worker · Super Admin · Admin · Manager · Master · Lineman";
     } else {
       $("chatTitle").textContent = person ? person.name : "Personal Chat";
-      $("chatSub").textContent = person ? `${person.role} · केवल काम की Chat` : "☰ से Staff चुनें";
     }
   }
 
   function renderStaff() {
-    $("staffList").innerHTML = staff.map((person, index) => `${index === 0 || staff[index - 1].role !== person.role ? `<div class="role">${esc(person.role)}</div>` : ""}<button class="person" data-person="${index}"><span class="face">${esc(person.name.slice(0, 1))}</span><div><b>${esc(person.name)}</b><small>${esc(person.role)} · Personal Chat</small></div>›</button>`).join("");
+    $("staffList").innerHTML = staff.map((person, index) => `${index === 0 || staff[index - 1].role !== person.role ? `<div class="role">${esc(person.role)}</div>` : ""}<button class="person" data-person="${index}"><span class="face">${esc(person.name.slice(0, 1))}</span><div><b>${esc(person.name)}</b></div>›</button>`).join("");
     $("receiver").innerHTML = '<option value="">चुनें…</option>' + staff.map(person => `<option>${esc(person.name)} · ${esc(person.role)}</option>`).join("");
     document.querySelectorAll("[data-person]").forEach(button => button.onclick = () => {
       setLane("private", staff[Number(button.dataset.person)]);
