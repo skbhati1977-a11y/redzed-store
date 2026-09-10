@@ -12,6 +12,11 @@ on:
       - "real-login.js"
       - "real-rci-v9740.html"
       - "real-rci-v9740.js"
+      - "real-pi-specimen-v9514-replace-test.html"
+      - "real-pi-specimen-v9514-replace-test.js"
+      - "real-sales-flow-dashboard-test69-v9734.html"
+      - "supabase/migrations/**"
+      - "test69-*.test.js"
 
 permissions:
   contents: read
