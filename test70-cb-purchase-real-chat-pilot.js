@@ -19,14 +19,14 @@
   let lane = "group";
   let privatePerson = null;
   let activeGroup = "Stitching Department Group";
-  let activeWork = "ALL";
+  let activeWork = "TODO";
   const cardGroups = {
     assign: "Stitching Department Group",
     material: "Purchase Group",
     handover: "Folding Group",
     rate: "Packing Group"
   };
-  const cardStates = {assign:"RUNNING",material:"RUNNING",handover:"DONE",rate:"RUNNING"};
+  const cardStates = {assign:"TODO",material:"TODO",handover:"DONE",rate:"RUNNING"};
   const open = id => $(id).classList.add("on");
   const close = id => $(id).classList.remove("on");
   const esc = value => String(value ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));
@@ -55,7 +55,7 @@
     $("groupList").innerHTML = groups.map((name, index) => `<button class="person" data-group-index="${index}"><span class="face">👥</span><div><b>${esc(name)}</b></div>›</button>`).join("");
     document.querySelectorAll("[data-group-index]").forEach(button => button.onclick = () => {
       activeGroup = groups[Number(button.dataset.groupIndex)];
-      activeWork = "ALL";
+      activeWork = "TODO";
       setLane("group");
       $("cardSearch").value = "";
       filterCards();
@@ -68,7 +68,7 @@
     document.querySelectorAll("#msgs .card").forEach(card => {
       const matchesSearch = q && card.textContent.toLowerCase().includes(q);
       const matchesGroup = cardGroups[card.dataset.card] === activeGroup;
-      const matchesWork = activeWork === "ALL" || cardStates[card.dataset.card] === activeWork;
+      const matchesWork = cardStates[card.dataset.card] === activeWork;
       card.style.display = (matchesSearch || (!q && matchesGroup)) && matchesWork ? "" : "none";
     });
   }
@@ -94,7 +94,7 @@
   });
   $("workerWork").onclick = () => {
     activeGroup = "Stitching Department Group";
-    activeWork = "ALL";
+    activeWork = "TODO";
     setLane("group");
     $("cardSearch").value = "इमामुल";
     filterCards();
