@@ -6,7 +6,8 @@ const fs = require("node:fs");
 function staticFallback(reason) {
   const html = fs.readFileSync("test70-cb-purchase-real-chat-pilot.html", "utf8");
   const js = fs.readFileSync("test70-cb-purchase-real-chat-pilot.js", "utf8");
-  for (const required of ["Real Chat","Department Group","Personal Chat","Stitching Department Group","Lot No. या Worker खोजें","काम देना बाकी","काम चल रहा है","काम पूरा","Worker का काम देखें","काम स्वीकार करें","काम की तस्वीरें","सिर्फ TEST"]) assert.ok(html.includes(required), `जरूरी भाग नहीं मिला: ${required}`);
+  for (const required of ["Real Chat","Department Group","Personal Chat","Stitching Department Group","Lot No. या Worker खोजें","काम देना बाकी","काम चल रहा है","काम पूरा","Worker का काम","काम स्वीकार करें","काम की तस्वीरें","सिर्फ TEST"]) assert.ok(html.includes(required), `जरूरी भाग नहीं मिला: ${required}`);
+  assert.ok(html.includes("#workerSummary .buttons .act:first-child") && html.includes("grid-column:auto!important"), "Worker buttons बराबर नहीं हैं");
   assert.ok(!html.includes(">सभी काम<") && !html.includes(">काम की Chat<"), "पुराना heading/status अभी मौजूद है");
   for (const removed of ["काम की बात इसी समूह में रखें","खुली बातचीत बंद","फोन की गैलरी नहीं खुलेगी","इसी Department का काम","इस Department के Worker","केवल काम की Chat","· Personal Chat</small>"]) assert.ok(!html.includes(removed) && !js.includes(removed), `Extra direction अभी मौजूद है: ${removed}`);
   for (const required of ["Printer Group","Sticker Group","Metal ID Group","Kaaj Button Group","Packing Group"]) assert.ok(js.includes(required), `Department Group नहीं मिला: ${required}`);
