@@ -17,7 +17,10 @@ async function login(page, username, password) {
 async function selectKnownSale(page) {
   await page.locator('#ciSearch').fill('TCI11');
   await expect(page.locator('#ciSelect')).toContainText('Avnimycutie', { timeout: 20_000 });
-  await page.locator('#ciSelect').selectOption({ label: /Avnimycutie.*TCI11/i });
+  const matchedOption = page.locator('#ciSelect option').filter({ hasText: /Avnimycutie.*TCI11/i }).first();
+  const matchedValue = await matchedOption.getAttribute('value');
+  expect(matchedValue, 'TCI11 canonical CI option must have an id').toBeTruthy();
+  await page.locator('#ciSelect').selectOption(matchedValue);
   await expect(page.locator('#ciNo')).toContainText('TCI11', { timeout: 20_000 });
   await page.locator('#sourceSearch').fill('1RR1');
   await expect(page.locator('#sourceLine')).toContainText('1RR1');
