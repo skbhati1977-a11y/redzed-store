@@ -1,0 +1,10 @@
+"use strict";
+const assert=require("node:assert/strict"),fs=require("node:fs");
+const dashboard=fs.readFileSync("real-dashboard-v805-sidepanel.js","utf8");
+const config=fs.readFileSync("config.js","utf8");
+assert.ok(dashboard.includes('title:"Worker Real Chat"'));
+assert.ok(dashboard.includes('href:"test70-cb-purchase-real-chat-pilot.html?v=70"'));
+assert.ok(dashboard.includes('"upm","workerchat","packing"'));
+assert.ok(config.indexOf("text==='worker real chat'")<config.indexOf("text==='real chat'"));
+assert.ok(config.includes("test70-cb-purchase-real-chat-pilot.html?v=70"));
+console.log("PASS: Dashboard opens Worker Real Chat without replacing Customer/Sales Real Chat.");
