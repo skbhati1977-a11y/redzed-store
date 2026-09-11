@@ -15,6 +15,6 @@ assert.match(main, /\$\('addLot'\)\.value='';\$\('addQty'\)\.value='';\$\('addAv
   "Successful Add Row must explicitly clear all add-lot inputs");
 assert.doesNotMatch(main, /SAVE se pehle phir stock check hoga\.`;\$\('addLot'\)\.focus\(\)/,
   "Successful Add Row must not refocus and repopulate the cleared lot field");
-assert.match(page, /real-pi-specimen-v9514-replace-test\.js\?v=9737/);
+assert.match(page, /real-pi-specimen-v9514-replace-test\.js\?v=9775/);
 
 console.log("TEST69 global Direct Sale customer/add-row v9737 checks passed");

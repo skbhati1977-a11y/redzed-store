@@ -1,0 +1,12 @@
+const fs=require('node:fs'),assert=require('node:assert/strict');
+const html=fs.readFileSync('real-accounts-v805.html','utf8');
+const js=fs.readFileSync('real-accounts-v805.js','utf8');
+const pi=fs.readFileSync('real-pi-actions-v9707.js','utf8');
+const sql=fs.readFileSync('supabase/migrations/20260911100000_test69_accounts_party_locked_share_v9776.sql','utf8');
+for(const token of ['data-share-ledger-summary','Share Summary','kind:"SUMMARY"','rr_accounts_party_chat_v9776','rr_accounts_party_upload_v9776','Party-locked Real Chat','ledgerId'])assert.ok(js.includes(token),`missing accounts lock ${token}`);
+assert.ok(html.includes('realChatLockedParty'));
+assert.ok(!html.includes('id="realChatShareSearch"'),'account share must not expose a recipient chooser');
+for(const token of ['accounts_ledger_id','rr_accounts_party_chat_v9776','rr_accounts_party_upload_v9776'])assert.ok(pi.includes(token),`missing PI lock ${token}`);
+for(const token of ['linked_entity_id','rr_customer_sales_map_v9745','DIRECT_CUSTOMER','p_chat_id is distinct from locked_chat','Account privacy lock','revoke all','from public,anon','to authenticated,service_role'])assert.ok(sql.includes(token),`missing SQL lock ${token}`);
+assert.ok(!/grant execute[^;]+\bto\s+anon\b/is.test(sql),'V9776 must not grant anon execution');
+console.log('V9776 party-locked account sharing: PASS');

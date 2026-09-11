@@ -16,9 +16,9 @@ assert.match(actions, /async function chatId\(\)/,
   "Real Chat send must use an asynchronous canonical mapping resolver");
 assert.match(actions, /rr_sales_customer_relation_ids_v9704/,
   "Legacy customers without a cached chat ID must be repaired through canonical relation mapping");
-assert.match(actions, /const id = await chatId\(\)/,
+assert.match(actions, /id\s*=\s*await chatId\(\)/,
   "Real Chat send must await mapping repair before upload");
-assert.match(page, /real-pi-specimen-v9514-replace-test\.js\?v=9737/);
+assert.match(page, /real-pi-specimen-v9514-replace-test\.js\?v=9775/);
 assert.match(page, /real-pi-actions-v9707\.js\?v=9736/);
 
 console.log("TEST69 global Direct Sale Real Chat mapping v9736 checks passed");
