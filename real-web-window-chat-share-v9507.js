@@ -96,7 +96,8 @@
   }
   let attempts=0;
   const timer=setInterval(()=>{if(bind()||++attempts>60)clearInterval(timer)},100);
-  new MutationObserver(hideActiveSentLots).observe(document.documentElement,{childList:true,subtree:true});
+  const cards=$('cards');
+  if(cards)new MutationObserver(()=>requestAnimationFrame(hideActiveSentLots)).observe(cards,{childList:true});
   document.addEventListener('click',event=>{if(event.target.closest?.('#refreshBtn,#applyFilter'))setTimeout(hideActiveSentLots,250)},true);
   loadActiveSentLots();
   if(document.readyState!=='loading')bind();

@@ -1,0 +1,9 @@
+(()=>{
+  'use strict';
+  if(window.__RR_CUSTOMER_ACTIVE_COLLECTION_ROW_V9780__)return;
+  window.__RR_CUSTOMER_ACTIVE_COLLECTION_ROW_V9780__=1;
+  function css(){if(document.getElementById('rrCustomerActiveRowCss9780'))return;const s=document.createElement('style');s.id='rrCustomerActiveRowCss9780';s.textContent='#rrFSChat #fsCollectionCard{position:fixed!important;left:0!important;right:0!important;bottom:66px!important;z-index:10022!important;height:46px!important;margin:0!important;padding:0 10px!important;display:flex!important;align-items:center!important;background:#162231!important;border-top:1px solid #40536b!important;border-bottom:1px solid #40536b!important}#rrFSChat #fsCollectionCard .fcSingleLine{height:44px!important;width:100%!important;padding:0 10px!important;text-align:left!important;border:0!important;background:transparent!important;color:#fff!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}#rrFSChat #rrCommercialActions9630{display:none!important}#rrFSChat .fsmsgs{padding-bottom:54px!important}#rrFSChat #fsCollectionCard[style*="display: none"]{display:none!important}';document.head.appendChild(s)}
+  function normalize(){const card=document.getElementById('fsCollectionCard'),button=card?.querySelector('.fcSingleLine');if(!button)return false;const raw=String(button.textContent||'').replace(/UPDATE\s+(RZ COLLECTION\s+\d+)\s+·\s+0*(\d+)/i,'$1 · UPDATE $2').replace(/^UPDATE\s+(RZ COLLECTION\s+\d+)$/i,'$1 · OPEN');if(raw!==button.textContent)button.textContent=raw;return true}
+  function boot(){css();let n=0;const t=setInterval(()=>{if(normalize()||++n>50)clearInterval(t)},120);const chat=document.getElementById('rrFSChat');if(chat)new MutationObserver(normalize).observe(chat,{childList:true,subtree:true,characterData:true})}
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
+})();
