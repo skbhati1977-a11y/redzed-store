@@ -28,6 +28,7 @@ for (const token of ['id="accountsBack"', 'id="closeLedgerSummary"', '#rrSliceRa
 for (const token of ['#accounts-menu', '#ledger-summary', 'closeLedgerSummary(true)', 'closeEntry(true)']) assert.ok(js.includes(token), `missing mobile back history ${token}`);
 for (const token of ['shareLedgerRealChat', 'Share to Real Chat', 'realChatSharePopup']) assert.ok(html.includes(token), `missing Real Chat share UI ${token}`);
 for (const token of ['rr_chat_staff_inbox_v9704', 'rr_chat_staff_upload_v9434', 'data-share-statement-row', 'toDataURL("image/jpeg"', 'rr_accounts_chat_delivery_v9773', '✓✓', 'Read']) assert.ok(js.includes(token), `missing truthful Real Chat JPG share flow ${token}`);
+for (const token of ['requireAccountsSession', 'auth.getSession()', 'real-login.html?next=']) assert.ok(js.includes(token), `missing Accounts auth guard ${token}`);
 for (const token of ['ledgerShareStatus', 'Not shared yet']) assert.ok(html.includes(token), `missing share receipt UI ${token}`);
 const receiptSql = fs.readFileSync('supabase/migrations/20260911070000_test69_accounts_chat_jpeg_receipts_v9773.sql', 'utf8');
 for (const token of ['rr_chat_customer_ack_session_v9773', 'rr_accounts_chat_delivery_v9773', "member_kind='CUSTOMER'", "status',case when out_row.read_at"]) assert.ok(receiptSql.includes(token), `missing receipt contract ${token}`);

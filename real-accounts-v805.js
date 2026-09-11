@@ -27,6 +27,7 @@
 
   async function rpc(name,args={}){const c=resolveClient();const r=await c.rpc(name,args);if(r.error)throw r.error;return r.data}
   async function table(name,select="*"){const c=resolveClient();const r=await c.from(name).select(select);if(r.error)throw r.error;return r.data||[]}
+  async function requireAccountsSession(){const c=resolveClient();let {data,error}=await c.auth.getSession();if(error||!data?.session){const refreshed=await window.RRRefreshSupabaseSession?.(true);if(refreshed?.user)data={session:refreshed}}if(data?.session)return true;const next=encodeURIComponent(`real-accounts-v805.html${location.search||"?v=9774"}`);location.replace(`real-login.html?next=${next}`);return false}
 
   function zeroClean(root=document){root.querySelectorAll('input[type=number]').forEach(i=>{i.addEventListener('focus',()=>{if(Number(i.value||0)===0)i.value=""});i.addEventListener('blur',()=>{if(i.value==="")i.value="0"})})}
   function enterFlow(root){if(!root)return;root.addEventListener('keydown',e=>{if(e.key!=="Enter"||e.shiftKey||e.ctrlKey||e.altKey)return;const t=e.target;if(!["INPUT","SELECT"].includes(t.tagName)||t.type==="search")return;const els=[...root.querySelectorAll('input,select,button.primary')].filter(x=>!x.disabled&&x.tabIndex!==-1&&x.offsetParent!==null);const i=els.indexOf(t);if(i<0)return;e.preventDefault();(els[i+1]||root.querySelector('button.primary'))?.focus();if(!els[i+1])root.querySelector('button.primary')?.click()})}
@@ -360,5 +361,5 @@ $("searchReports")?.addEventListener("click",()=>searchReports());$("reportSearc
     runSelectedReport
   };
 
-  document.addEventListener("DOMContentLoaded",()=>{initDates();wire();renderShareAudit();refreshShareReceipt();state.chatReceiptPoll=setInterval(refreshShareReceipt,4000);refresh()});
+  document.addEventListener("DOMContentLoaded",async()=>{initDates();wire();renderShareAudit();if(!await requireAccountsSession())return;refreshShareReceipt();state.chatReceiptPoll=setInterval(refreshShareReceipt,4000);refresh()});
 })();
