@@ -14,7 +14,7 @@ for(const token of ['rrCustomerActiveRowCss9780','fsCollectionCard','position:fi
 for(const token of ['rr_direct_collection_active_v9779','already in active Collection hidden','rrActiveSent9779','focus_collection','focus_message'])assert.ok(market.includes(token),`missing Market Window rule ${token}`);
 assert.ok(market.includes("observe(cards,{childList:true})"),'Market Window must observe only cards');
 assert.ok(!market.includes("observe(document.documentElement,{childList:true,subtree:true})"),'Market Window recursive observer freeze must stay removed');
-assert.ok(page.includes('real-chat-active-requirement-row-v9780.js?v=9781'),'RedZ chat must load V9781 active work row');
+assert.ok(page.includes('real-chat-active-requirement-row-v9780.js?v=9782'),'RedZ chat must load V9782 active work row');
 assert.ok(!page.includes('real-chat-active-collection-row-v9779.js?v=9779'),'RedZ chat must not show customer Collection row');
 assert.ok(customerPage.includes('real-customer-active-collection-row-v9780.js?v=9780'),'customer chat must load Collection row');
 assert.ok(marketPage.includes('real-web-window-chat-share-v9507.js?v=9780'),'Market Window must cache-bust freeze repair');
