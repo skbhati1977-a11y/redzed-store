@@ -3,7 +3,7 @@ const js=fs.readFileSync('real-accounts-v805.js','utf8');
 const pi=fs.readFileSync('real-pi-specimen-v9514-replace-test.js','utf8');
 const zoom=fs.readFileSync('real-chat-image-zoom-v9775.js','utf8');
 const sql=fs.readFileSync('supabase/migrations/20260911090000_test69_accounts_individual_entry_pi_qty_v9775.sql','utf8');
-for(const token of ['rr_accounts_ledger_summary_v9775','rr_accounts_ledger_statement_v9775','rr_accounts_voucher_detail_v9775','shareVoucherEntry','kind:"VOUCHER"','posting_lines','voucher_piece_qty','Total Pieces','data-open-linked-pi'])assert.ok(js.includes(token),`missing ${token}`);
+for(const token of ['rr_accounts_ledger_summary_v9775','rr_accounts_ledger_statement_v9777','rr_accounts_voucher_detail_v9777','shareVoucherEntry','kind:"VOUCHER"','posting_lines','voucher_piece_qty','Total Pieces','data-open-linked-pi'])assert.ok(js.includes(token),`missing ${token}`);
 for(const token of ['rr_pi_editor_by_id_v9775','loadPiIdUrl','pi_id','readonly'])assert.ok(pi.includes(token),`missing PI ${token}`);
 for(const token of ['pinch','dblclick','touchmove','rr_chat_staff_attachment_v9434'])assert.ok(zoom.toLowerCase().includes(token.toLowerCase()),`missing zoom ${token}`);
 for(const token of ['rr_accounts_piece_context_v9775','rr_fg_pi_lines_v787','rr_rci_v9740','market_requirement_id','revoke all','from public,anon','to authenticated,service_role'])assert.ok(sql.toLowerCase().includes(token.toLowerCase()),`missing SQL ${token}`);

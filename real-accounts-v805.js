@@ -25,7 +25,7 @@
     throw new Error("Accounts connection is not ready. Keep the existing canonical config.js in the GitHub root.");
   }
 
-  async function rpc(name,args={}){const v9775={rr_accounts_ledger_summary_v9767:"rr_accounts_ledger_summary_v9775",rr_accounts_ledger_statement_v9767:"rr_accounts_ledger_statement_v9775",rr_accounts_voucher_detail_v9767:"rr_accounts_voucher_detail_v9775"};const c=resolveClient();const r=await c.rpc(v9775[name]||name,args);if(r.error)throw r.error;return r.data}
+  async function rpc(name,args={}){const current={rr_accounts_ledger_summary_v9767:"rr_accounts_ledger_summary_v9775",rr_accounts_ledger_statement_v9767:"rr_accounts_ledger_statement_v9777",rr_accounts_voucher_detail_v9767:"rr_accounts_voucher_detail_v9777"};const c=resolveClient();const r=await c.rpc(current[name]||name,args);if(r.error)throw r.error;return r.data}
   async function table(name,select="*"){const c=resolveClient();const r=await c.from(name).select(select);if(r.error)throw r.error;return r.data||[]}
   async function requireAccountsSession(){const c=resolveClient();let {data,error}=await c.auth.getSession();if(error||!data?.session){const refreshed=await window.RRRefreshSupabaseSession?.(true);if(refreshed?.user)data={session:refreshed}}if(data?.session)return true;const next=encodeURIComponent(`real-accounts-v805.html${location.search||"?v=9774"}`);location.replace(`real-login.html?next=${next}`);return false}
 

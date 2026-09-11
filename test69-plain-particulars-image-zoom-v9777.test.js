@@ -1,0 +1,13 @@
+const fs=require('fs'),assert=require('assert');
+const js=fs.readFileSync('real-accounts-v805.js','utf8');
+const zoom=fs.readFileSync('real-chat-image-zoom-v9775.js','utf8');
+const sales=fs.readFileSync('real-sales-live-chat-v9434.html','utf8');
+const customer=fs.readFileSync('s.html','utf8');
+const sql=fs.readFileSync('supabase/migrations/20260911110000_test69_plain_particulars_v9777.sql','utf8');
+for(const token of ['rr_accounts_ledger_statement_v9777','rr_accounts_voucher_detail_v9777'])assert.ok(js.includes(token),`missing frontend RPC ${token}`);
+for(const token of ["then 'Sales'","then 'Return'","then 'Receipt'","then 'Payment'","else 'Entry'","security invoker","from public,anon","to authenticated,service_role"])assert.ok(sql.toLowerCase().includes(token.toLowerCase()),`missing plain-label SQL ${token}`);
+assert.ok(!/line_narration|t\.narration|replace\s*\(\s*initcap/i.test(sql),'technical narration must not appear in V9777 Particulars');
+for(const token of ['touchmove','touchend','lastTap','dblclick','wheel','img.fsattimg[data-aid]','rr_chat_staff_attachment_v9434'])assert.ok(zoom.includes(token),`missing zoom behavior ${token}`);
+assert.ok(sales.includes('real-chat-image-zoom-v9775.js?v=9777'),'staff chat must load V9777 zoom');
+assert.ok(customer.includes('real-chat-image-zoom-v9775.js?v=9777'),'customer chat must load V9777 zoom');
+console.log('V9777 plain particulars and JPG pinch/double-tap zoom: PASS');
