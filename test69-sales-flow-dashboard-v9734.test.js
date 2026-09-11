@@ -7,6 +7,7 @@ const links = [...page.matchAll(/href="([^"]+)"/g)].map((match) => match[1].repl
 
 for (const required of [
   "real-sales-live-chat-v9434.html",
+  "real-web-window-v9329.html",
   "real-market-distributor-test67.html",
   "real-pi-specimen-v9514-replace-test.html",
   "real-market-staff-batch-test67.html",
@@ -18,7 +19,8 @@ for (const required of [
 }
 
 assert.match(page, /Chat \+ Requirement stable/);
-assert.match(page, /Accounts bridge verified/);
+assert.match(page, /Collection updates V9783/);
+assert.match(page, /Accounts sharing V9777/);
 assert.match(page, /Inventory bridge verified/);
 assert.match(page, /Balance Sheet<\/td><td class="okText">Balanced · difference 0/);
 assert.match(page, /MAIN unchanged/);
