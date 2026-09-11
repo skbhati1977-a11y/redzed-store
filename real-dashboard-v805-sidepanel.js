@@ -7,6 +7,7 @@
 
     {id:"upm",group:"production",title:"Universal Production Manager",desc:"Cutting, Printing, Sticker, Metal ID, Stitching, Finishing, Packing, Despatch and Open Random Queue tabs in one inlay.",href:"real-upm-home-v805.html?v=805",tag:"V805 INLAY",status:"ACTIVE"},
     {id:"submitted",group:"production",title:"Submitted Work",desc:"Submitted production, lot/worker/department audit and verification.",href:"real-upm-submitted-work-v772.html?v=805",tag:"V772",status:"ACTIVE"},
+    {id:"workerchat",group:"production",title:"Worker Real Chat",desc:"Department group and worker personal chat mapped from existing UPM records.",href:"test70-cb-purchase-real-chat-pilot.html?v=70",tag:"TEST70 LIVE",status:"TEST"},
 
     {id:"packing",group:"finished",title:"Packing Dashboard",desc:"Press-ready cards, assign/accept, box algorithm and Submit Packing.",href:"real-finished-goods-v787.html?view=packing&v=789",tag:"PACKING",status:"TEST"},
     {id:"despatch",group:"finished",title:"Despatch Dashboard",desc:"Ready boxes, locked challan and Store travel gate.",href:"real-finished-goods-v787.html?view=despatch&v=789",tag:"DESPATCH",status:"TEST"},
@@ -33,7 +34,7 @@
     {id:"mode",group:"control",title:"Data Mode Control",desc:"Global TEST default, REAL protection and permission-controlled mode.",href:"real-data-mode-control-v786.html?v=786329",tag:"TEST/REAL",status:"TEST"}
   ];
 
-  const coreIds = ["product","upm","packing","sale","accounts","salarypay"];
+  const coreIds = ["product","upm","workerchat","packing","sale","accounts","salarypay"];
   const $ = id => document.getElementById(id);
 
   function card(m){
