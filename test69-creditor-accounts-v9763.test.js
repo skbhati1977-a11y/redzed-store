@@ -27,7 +27,13 @@ for (const token of ['Latest:', 'scrollIntoView({block:"center",behavior:"smooth
 for (const token of ['id="accountsBack"', 'id="closeLedgerSummary"', '#rrSliceRail,#rrSlicePanel,#rrSliceBack']) assert.ok(html.includes(token), `missing focused accounts navigation ${token}`);
 for (const token of ['#accounts-menu', '#ledger-summary', 'closeLedgerSummary(true)', 'closeEntry(true)']) assert.ok(js.includes(token), `missing mobile back history ${token}`);
 for (const token of ['shareLedgerRealChat', 'Share to Real Chat', 'realChatSharePopup']) assert.ok(html.includes(token), `missing Real Chat share UI ${token}`);
-for (const token of ['rr_chat_staff_inbox_v9704', 'rr_chat_send_staff_v9433', 'data-share-statement-row', 'source:"ACCOUNTS"']) assert.ok(js.includes(token), `missing Real Chat share flow ${token}`);
+for (const token of ['rr_chat_staff_inbox_v9704', 'rr_chat_staff_upload_v9434', 'data-share-statement-row', 'toDataURL("image/jpeg"', 'rr_accounts_chat_delivery_v9773', '✓✓', 'Read']) assert.ok(js.includes(token), `missing truthful Real Chat JPG share flow ${token}`);
+for (const token of ['ledgerShareStatus', 'Not shared yet']) assert.ok(html.includes(token), `missing share receipt UI ${token}`);
+const receiptSql = fs.readFileSync('supabase/migrations/20260911070000_test69_accounts_chat_jpeg_receipts_v9773.sql', 'utf8');
+for (const token of ['rr_chat_customer_ack_session_v9773', 'rr_accounts_chat_delivery_v9773', "member_kind='CUSTOMER'", "status',case when out_row.read_at"]) assert.ok(receiptSql.includes(token), `missing receipt contract ${token}`);
+const customerReceiptJs = fs.readFileSync('real-customer-chat-receipts-v9773.js', 'utf8');
+for (const token of ['p_mark_read', 'visibilityState', 'rrFSChat', 'rr_chat_customer_ack_session_v9773']) assert.ok(customerReceiptJs.includes(token), `missing customer receipt behavior ${token}`);
+assert.ok(fs.readFileSync('s.html', 'utf8').includes('real-customer-chat-receipts-v9773.js?v=9773'));
 assert.ok(!js.includes('<th>Transaction Id</th>'));
 
 console.log('V9763 creditor mapping/UI contract: PASS');
