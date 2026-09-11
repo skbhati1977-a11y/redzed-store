@@ -1,0 +1,7 @@
+(()=>{"use strict";if(window.__RR_COLLECTION_IDENTITY_V9778__)return;window.__RR_COLLECTION_IDENTITY_V9778__=1;
+const Q=new URLSearchParams(location.search),token=Q.get("t")||Q.get("c");
+async function submit(e){const button=e.target.closest?.("#fcSubmit");if(!button||!token)return;e.preventDefault();e.stopImmediatePropagation();const lines=[...document.querySelectorAll("[data-fcq]")].map(el=>({lot_no:String(el.dataset.fcq||""),qty:Math.max(0,Math.floor(Number(el.value||0)))})).filter(x=>x.lot_no&&x.qty>0);if(!lines.length){alert("SELECT QTY FIRST");return}button.disabled=true;const old=button.textContent;button.textContent="SENDING…";try{const d=await RF853.rpc("rr_collection_submit_requirement_v9778",{p_token:token,p_message:document.getElementById("fcNote")?.value?.trim()||"",p_lines:lines,p_requirement_id:null});document.dispatchEvent(new CustomEvent("rr:v9605-requirement-sent",{detail:d}));location.reload()}catch(err){alert(err?.message||"Requirement send failed")}finally{button.disabled=false;button.textContent=old}}
+document.addEventListener("click",submit,true);
+const originalRpc=()=>{if(!window.RF853?.rpc||RF853.rpc.__v9778)return false;const old=RF853.rpc.bind(RF853),mapped=async(name,args)=>old(name==="rr_collection_customer_requirement_summary_v9637"?"rr_collection_customer_requirement_summary_v9778":name,args);mapped.__v9778=true;RF853.rpc=mapped;return true};
+let n=0;const t=setInterval(()=>{if(originalRpc()||++n>40)clearInterval(t)},100);
+})();
