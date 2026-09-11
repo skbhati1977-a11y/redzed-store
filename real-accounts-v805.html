@@ -189,7 +189,7 @@
 </aside>
 
 <section id="ledgerStatementPage" class="hidden" aria-label="Ledger statement" style="position:fixed;inset:0;z-index:110;background:var(--bg);overflow:auto;padding:12px">
-  <header class="result-head" style="position:sticky;top:0;z-index:4;background:var(--bg);padding:4px 0 10px;border-bottom:1px solid var(--line)"><button id="closeLedgerStatement" type="button">← Back</button><div style="flex:1"><h2 id="statementLedgerName" style="margin:0">Ledger Statement</h2><small id="statementScope" class="muted"></small></div></header>
+  <header class="result-head" style="position:sticky;top:0;z-index:4;background:var(--bg);padding:4px 0 10px;border-bottom:1px solid var(--line)"><button id="closeLedgerStatement" type="button">← Back</button><div style="flex:1"><h2 id="statementLedgerName" style="margin:0">Ledger Statement</h2><small id="statementScope" class="muted"></small></div><button id="shareLedgerRealChat" class="primary" type="button">Share Ledger to Real Chat</button></header>
   <div class="filter-grid" style="margin:12px 0"><label style="grid-column:span 3">Search Particular / Voucher No.<input id="statementSearch" type="search" placeholder="Particular or voucher number"></label><label>From<input id="statementFrom" type="date"></label><label>To<input id="statementTo" type="date"></label></div>
   <div id="statementTotals" class="cards"></div><p id="statementMsg" class="msg"></p><div id="statementResult"></div>
 </section>
@@ -197,7 +197,15 @@
 <section id="entryPopup" class="hidden" style="position:fixed;inset:0;background:#000c;z-index:130;padding:16px;place-items:center">
   <div class="panel" style="width:min(760px,100%);max-height:90vh;overflow:auto">
     <div class="result-head"><div><small class="chip">ENTRY DETAILS</small><h2>Accounts Entry</h2></div><button id="closeEntryPopup" type="button">← Back</button></div>
-    <div id="entryPopupBody"></div><div class="actions" style="margin-top:12px"><button id="sharePopupEntry" class="primary" type="button">Share / Send</button><button id="exportPopupEntry" type="button">Export CSV</button><button id="printPopupEntry" type="button">Print</button></div>
+    <div id="entryPopupBody"></div><div class="actions" style="margin-top:12px"><button id="sharePopupEntry" class="primary" type="button">Share to Real Chat</button><button id="exportPopupEntry" type="button">Export CSV</button><button id="printPopupEntry" type="button">Print</button></div>
+  </div>
+</section>
+
+<section id="realChatSharePopup" class="hidden" style="position:fixed;inset:0;background:#000c;z-index:150;padding:16px;place-items:center">
+  <div class="panel" style="width:min(620px,100%);max-height:92vh;overflow:auto">
+    <div class="result-head"><div><small class="chip">REAL CHAT</small><h2>Share Accounts</h2></div><button id="closeRealChatShare" type="button">← Back</button></div>
+    <label>Search Customer / Chat<input id="realChatShareSearch" type="search" placeholder="Customer name"></label>
+    <p id="realChatShareMsg" class="msg"></p><div id="realChatShareRows" class="suggestions"></div>
   </div>
 </section>
 
@@ -232,6 +240,6 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="config.js"></script>
 <script src="real-common.js"></script>
-<script src="real-accounts-v805.js?v=9770"></script>
+<script src="real-accounts-v805.js?v=9772"></script>
 </body>
 </html>
