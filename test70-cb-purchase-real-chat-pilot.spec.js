@@ -14,6 +14,8 @@ const archiveSql=fs.readFileSync("supabase/migrations/20260912101500_test70_real
 const truthfulSql=fs.readFileSync("supabase/migrations/20260912060848_test70_real_chat_truthful_mapping_v72.sql","utf8");
 const behalfSql=fs.readFileSync("supabase/migrations/20260912062417_test70_real_chat_on_behalf_mapping_v73.sql","utf8");
 const twoWaySql=fs.readFileSync("supabase/migrations/20260912124500_test70_real_chat_global_two_way_participants_v74.sql","utf8");
+const cuttingLotSql=fs.readFileSync("supabase/migrations/20260912131000_test70_real_chat_cutting_lot_actor_v75.sql","utf8");
+const cuttingCompleteSql=fs.readFileSync("supabase/migrations/20260912133500_test70_real_chat_cutting_conversion_completion_v76.sql","utf8");
 for(const text of ["Real Chat","OPEN","WORKING","CLOSE","TEST · LIVE","Lot Number, Category ya Worker Name","PERSONAL CHAT","test70-real-chat-live-v70.js"])assert.ok(html.includes(text),`Missing UI contract: ${text}`);
 for(const text of ["rr_real_chat_work_inbox_v70","UPM_ASSIGNMENT:","rr_upm_work_assignments_v8","rr_upm_current_worker_id_v9112","read_only_mirror","revoke all","grant execute"])assert.ok(sql.includes(text),`Missing backend contract: ${text}`);
 for(const text of ["rr_real_chat_work_inbox_v71","rr_real_chat_message_bridge_v70","rr_real_chat_mark_receipt_v70","LIVE_TEST_MAPPING","RECEIPTS_ONLY_ACTIONS_USE_EXISTING_FORMS","Art","Print","Sticker","Metal ID"])assert.ok(js.includes(text),`Missing live adapter contract: ${text}`);
@@ -49,7 +51,9 @@ for(const text of ["enforceFactoryEdgeLine","setProperty('padding-top','0','impo
 for(const text of ["messageSide(c,kind,participantName,participantId)","message_side:messageSide(c,kind,name,id)","data-side=\"'+side+'\"","work-card.outgoing","work-card.incoming:before","work-card.outgoing:before"])assert.ok(js.includes(text)||html.includes(text),`Missing directional chat bubble contract: ${text}`);
 for(const text of ["chatRows(kind,id,participantName)","sameName(p.sender_name,participantName)","sameName(p.receiver_name,participantName)","sender_worker_id","friendlyStatus","की ओर से किया"])assert.ok(js.includes(text),`Missing compact two-way personal chat contract: ${text}`);
 for(const text of ["rr_real_chat_two_way_participants_v74","sender_worker_id:=v_sender_worker","receiver_worker_id:=v_receiver_worker","sender_department_code","receiver_department_code","Legacy reconciliation","rr_rc_bridge_select_v70","archived rows stay archived"])assert.ok(twoWaySql.includes(text),`Missing global two-way bridge contract: ${text}`);
+for(const text of ["rr_real_chat_truthful_cutting_lot_v75","rr_cutting_lots_v3","operator_name","LOT_RELEASE:%","CB से Lot बनाया","Legacy reconciliation"])assert.ok(cuttingLotSql.includes(text),`Missing truthful CB-to-Lot actor mapping: ${text}`);
+for(const text of ["message_status','COMPLETED","canonical OPEN queue","legacy/present/future","LOT_RELEASE:%"])assert.ok(cuttingCompleteSql.includes(text),`Missing completed CB-to-Lot message contract: ${text}`);
 assert.ok(!js.includes("Canonical: "),"Technical canonical source must stay hidden from chat cards");
 for(const text of ["performed_by_name","on_behalf_of_name","REMAKE_ISSUE","v_sender:=v_lm;v_receiver:=v_cm","DELIVER_TO_KARIGAR","KARIGAR_SUBMIT_GOOD"])assert.ok(behalfSql.includes(text),`Missing on-behalf mapping: ${text}`);
-for(const text of ["receiver_name:p.receiver_name","test70-real-chat-live-v70.js?v=83"])assert.ok(js.includes(text)||html.includes(text),`Missing on-behalf UI contract: ${text}`);
+for(const text of ["receiver_name:p.receiver_name","message:p.message||p.action_message||null","action-note","test70-real-chat-live-v70.js?v=84"])assert.ok(js.includes(text)||html.includes(text),`Missing on-behalf/action-message UI contract: ${text}`);
 console.log("PASS: TEST70 uses canonical OPEN and existing role/state workflow actions.");
