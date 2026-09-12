@@ -8,6 +8,9 @@ const bridgeSql=fs.readFileSync("supabase/migrations/20260911214000_test70_real_
 const membershipSql=fs.readFileSync("supabase/migrations/20260911223500_test70_department_membership_matrix.sql","utf8");
 const reconcileSql=fs.readFileSync("supabase/migrations/20260912040633_test70_reconcile_department_membership.sql","utf8");
 const actionsSql=fs.readFileSync("supabase/migrations/20260912090000_test70_real_chat_canonical_work_actions_v71.sql","utf8");
+const historySql=fs.readFileSync("supabase/migrations/20260912093000_test70_real_chat_full_history_sync_v71.sql","utf8");
+const e2eSql=fs.readFileSync("supabase/migrations/20260912094500_test70_real_chat_end_to_end_events_v71.sql","utf8");
+const archiveSql=fs.readFileSync("supabase/migrations/20260912101500_test70_real_chat_sellable_archive_v71.sql","utf8");
 for(const text of ["Real Chat","OPEN","WORKING","CLOSE","TEST · LIVE","Lot Number, Category ya Worker Name","PERSONAL CHAT","test70-real-chat-live-v70.js"])assert.ok(html.includes(text),`Missing UI contract: ${text}`);
 for(const text of ["rr_real_chat_work_inbox_v70","UPM_ASSIGNMENT:","rr_upm_work_assignments_v8","rr_upm_current_worker_id_v9112","read_only_mirror","revoke all","grant execute"])assert.ok(sql.includes(text),`Missing backend contract: ${text}`);
 for(const text of ["rr_real_chat_work_inbox_v71","rr_real_chat_message_bridge_v70","rr_real_chat_mark_receipt_v70","LIVE_TEST_MAPPING","RECEIPTS_ONLY_ACTIONS_USE_EXISTING_FORMS","Art","Print","Sticker","Metal ID"])assert.ok(js.includes(text),`Missing live adapter contract: ${text}`);
@@ -26,4 +29,11 @@ for(const text of ["rr_real_chat_work_inbox_v71","rr_upm_department_colour_due_c
 for(const text of ["actionButtons","data-action","department_counts","pageshow","visibilitychange"])assert.ok(js.includes(text),`Missing action lifecycle refresh contract: ${text}`);
 assert.ok(actionsSql.includes("coalesce(v_assignment.actual_rate,0)<=0 and v_role='MANAGER'"),"Only Manager gets the departmental rate action");
 assert.ok(actionsSql.includes("v_dept in ('PACKING','DISPATCH') and v_role='ADMIN'"),"Only Admin gets Final Sale Rate / RRQ action");
+for(const text of ["Product Master","Universal Product Master","Sales","Accounts","Salary & Wages","Real Chat Directory","data-workflow","view:'workflow'"])assert.ok(js.includes(text)||html.includes(text),`Missing full-app menu contract: ${text}`);
+for(const text of ["rr_upm_dynamic_submit_history_v741","rr_upm_actions_v726","rr_upm_alter_events_v740","rr_upm_rectification_cases_v9101","rr_real_chat_auto_sync_v71"])assert.ok(historySql.includes(text),`Missing UPM history source: ${text}`);
+for(const text of ["rr_cb_art_assignments","rr_cb_print_assignments","rr_cb_sticker_assignments","rr_cb_metal_id_assignments_v801","rr_fg_pi_v787","rr_fg_returns_v787","rr_rci_v9740","rr_rci_accounts_link_v9754","rr_salary_payment_batch_lines_v785","rr_pcs_payment_batch_lines_v784","rr_attendance_day_v778","rr_worker_payroll_profile_events_v777_2"])assert.ok(e2eSql.includes(text),`Missing full backbone source: ${text}`);
+assert.ok(e2eSql.includes("source_module in ('ACCOUNTS','MONTHLY_PAYROLL','SALARY_PAYMENT','PCS_PAYROLL','WORKER_PAYROLL','RCI_ACCOUNTS','RRQ')"),"Financial chat sources need a restricted RLS gate");
+assert.ok(e2eSql.includes("on conflict(canonical_key) do update"),"Backfill must be idempotent");
+for(const text of ["archived_at","SALES_DESPATCH_RECEIVED","ALL_UNIT_LOTS_DESPATCHED","ALL_CB_LOTS_DESPATCHED","rr_fg_despatch_custody_v9361","upper(d.status)='RECEIVED'"])assert.ok(archiveSql.includes(text),`Missing dispatch archive contract: ${text}`);
+assert.ok(js.includes(".is('archived_at',null)"),"Archived workflow messages must not render in active chats");
 console.log("PASS: TEST70 uses canonical OPEN and existing role/state workflow actions.");

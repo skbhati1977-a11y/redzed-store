@@ -63,6 +63,20 @@ begin
         and (nullif(trim(p_department_code),'') is null
           or m.department_code=public.rr_upm_core_department_v9077(p_department_code))
         and (v_global or m.worker_id=v_worker or m.department_code=v_home)
+        and exists (
+          select 1 from public.rr_upm_departments d
+          where public.rr_upm_core_department_v9077(d.department_code)=m.department_code
+            and d.is_active
+            and coalesce(d.colour_assignment_enabled,true)
+            and coalesce(d.worker_assignment_enabled,true)
+            and upper(coalesce(d.department_type,'PRODUCTION'))='PRODUCTION'
+            and not coalesce(d.is_start_department,false)
+            and not exists (
+              select 1 from public.rr_upm_departments ch
+              where ch.is_active
+                and public.rr_upm_core_department_v9077(ch.parent_department_code)=m.department_code
+            )
+        )
       order by m.department_code
     loop
       v_dept := v_department.department_code;
