@@ -16,6 +16,7 @@ const behalfSql=fs.readFileSync("supabase/migrations/20260912062417_test70_real_
 const twoWaySql=fs.readFileSync("supabase/migrations/20260912124500_test70_real_chat_global_two_way_participants_v74.sql","utf8");
 const cuttingLotSql=fs.readFileSync("supabase/migrations/20260912131000_test70_real_chat_cutting_lot_actor_v75.sql","utf8");
 const cuttingCompleteSql=fs.readFileSync("supabase/migrations/20260912133500_test70_real_chat_cutting_conversion_completion_v76.sql","utf8");
+const lifecycleSql=fs.readFileSync("supabase/migrations/20260912141500_test70_real_chat_global_lifecycle_v77.sql","utf8");
 for(const text of ["Real Chat","OPEN","WORKING","CLOSE","TEST · LIVE","Lot Number, Category ya Worker Name","PERSONAL CHAT","test70-real-chat-live-v70.js"])assert.ok(html.includes(text),`Missing UI contract: ${text}`);
 for(const text of ["rr_real_chat_work_inbox_v70","UPM_ASSIGNMENT:","rr_upm_work_assignments_v8","rr_upm_current_worker_id_v9112","read_only_mirror","revoke all","grant execute"])assert.ok(sql.includes(text),`Missing backend contract: ${text}`);
 for(const text of ["rr_real_chat_work_inbox_v71","rr_real_chat_message_bridge_v70","rr_real_chat_mark_receipt_v70","LIVE_TEST_MAPPING","RECEIPTS_ONLY_ACTIONS_USE_EXISTING_FORMS","Art","Print","Sticker","Metal ID"])assert.ok(js.includes(text),`Missing live adapter contract: ${text}`);
@@ -55,5 +56,7 @@ for(const text of ["rr_real_chat_truthful_cutting_lot_v75","rr_cutting_lots_v3",
 for(const text of ["message_status','COMPLETED","canonical OPEN queue","legacy/present/future","LOT_RELEASE:%"])assert.ok(cuttingCompleteSql.includes(text),`Missing completed CB-to-Lot message contract: ${text}`);
 assert.ok(!js.includes("Canonical: "),"Technical canonical source must stay hidden from chat cards");
 for(const text of ["performed_by_name","on_behalf_of_name","REMAKE_ISSUE","v_sender:=v_lm;v_receiver:=v_cm","DELIVER_TO_KARIGAR","KARIGAR_SUBMIT_GOOD"])assert.ok(behalfSql.includes(text),`Missing on-behalf mapping: ${text}`);
-for(const text of ["receiver_name:p.receiver_name","message:p.message||p.action_message||null","action-note","test70-real-chat-live-v70.js?v=84"])assert.ok(js.includes(text)||html.includes(text),`Missing on-behalf/action-message UI contract: ${text}`);
+for(const text of ["receiver_name:p.receiver_name","message:p.message||p.action_message||friendlyAction","action-note","test70-real-chat-live-v70.js?v=85"])assert.ok(js.includes(text)||html.includes(text),`Missing on-behalf/action-message UI contract: ${text}`);
+for(const text of ["rr_real_chat_lifecycle_v77","rr_real_chat_mapping_audit_v77","legacy/present/future","UPM_ALTER_EVENT:%","CUTTING_LOT","canonical inbox remains the sole pending-action source"])assert.ok(lifecycleSql.includes(text),`Missing global lifecycle/audit contract: ${text}`);
+assert.ok(js.includes("p.message_status||p.status||b.source_event_type"),"Completed message state must override stale operational status");
 console.log("PASS: TEST70 uses canonical OPEN and existing role/state workflow actions.");
