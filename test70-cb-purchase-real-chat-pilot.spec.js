@@ -23,6 +23,7 @@ const onBehalfSql=fs.readFileSync("supabase/migrations/20260912201500_test70_glo
 const operatorContextSql=fs.readFileSync("supabase/migrations/20260912210000_test70_test_operator_context_v93.sql","utf8");
 const hybridIdentitySql=fs.readFileSync("supabase/migrations/20260912213000_test70_hybrid_identity_delegate_v94.sql","utf8");
 const delegationGuardSql=fs.readFileSync("supabase/migrations/20260912214500_test70_explicit_delegation_guard_v95.sql","utf8");
+const actionConversationSql=fs.readFileSync("supabase/migrations/20260912223000_test70_action_conversation_engine_v96.sql","utf8");
 for(const text of ["Real Chat","OPEN","WORKING","CLOSE","TEST · LIVE","Lot Number, Category ya Worker Name","PERSONAL CHAT","test70-real-chat-live-v70.js"])assert.ok(html.includes(text),`Missing UI contract: ${text}`);
 for(const text of ["rr_real_chat_work_inbox_v70","UPM_ASSIGNMENT:","rr_upm_work_assignments_v8","rr_upm_current_worker_id_v9112","read_only_mirror","revoke all","grant execute"])assert.ok(sql.includes(text),`Missing backend contract: ${text}`);
 for(const text of ["rr_real_chat_work_inbox_v71","rr_real_chat_message_bridge_v70","rr_real_chat_mark_receipt_v70","IDENTITY_FIRST_V83","RECEIPTS_ONLY_ACTIONS_USE_EXISTING_FORMS","Art","Print","Sticker","Metal ID"])assert.ok(js.includes(text),`Missing live adapter contract: ${text}`);
@@ -62,7 +63,7 @@ for(const text of ["rr_real_chat_truthful_cutting_lot_v75","rr_cutting_lots_v3",
 for(const text of ["message_status','COMPLETED","canonical OPEN queue","legacy/present/future","LOT_RELEASE:%"])assert.ok(cuttingCompleteSql.includes(text),`Missing completed CB-to-Lot message contract: ${text}`);
 assert.ok(!js.includes("Canonical: "),"Technical canonical source must stay hidden from chat cards");
 for(const text of ["performed_by_name","on_behalf_of_name","REMAKE_ISSUE","v_sender:=v_lm;v_receiver:=v_cm","DELIVER_TO_KARIGAR","KARIGAR_SUBMIT_GOOD"])assert.ok(behalfSql.includes(text),`Missing on-behalf mapping: ${text}`);
-for(const text of ["receiver_name:p.receiver_name","message:p.message||p.action_message||friendlyAction","action-note","test70-real-chat-live-v70.js?v=95"])assert.ok(js.includes(text)||html.includes(text),`Missing on-behalf/action-message UI contract: ${text}`);
+for(const text of ["receiver_name:p.receiver_name","message:p.message||p.action_message||friendlyAction","action-note","test70-real-chat-live-v70.js?v=96"])assert.ok(js.includes(text)||html.includes(text),`Missing on-behalf/action-message UI contract: ${text}`);
 for(const text of ["rr_real_chat_lifecycle_v77","rr_real_chat_mapping_audit_v77","legacy/present/future","UPM_ALTER_EVENT:%","CUTTING_LOT","canonical inbox remains the sole pending-action source"])assert.ok(lifecycleSql.includes(text),`Missing global lifecycle/audit contract: ${text}`);
 assert.ok(js.includes("p.message_status||p.status||b.source_event_type"),"Completed message state must override stale operational status");
 for(const text of ["rr_real_chat_sync_purchase_v90","module not in ('CB_PURCHASE','MATCHING_PURCHASE')","receiver_worker_id=null","Art Decide Queue","REPLACED_BY_SOURCE_TRUE_PURCHASE_V90"])assert.ok(purchaseTruthSql.includes(text),`Missing V90 source-truth repair: ${text}`);
@@ -70,4 +71,6 @@ for(const text of ["performed_by_name","on_behalf_of_name","sudesh bhati","new.a
 for(const text of ["test_operator_mode","on_behalf_worker_id","Shailender is the configured Purchase-side","new.sender_worker_id:=v_context_worker"])assert.ok(operatorContextSql.includes(text),`Missing V93 contextual test-operator rule: ${text}`);
 for(const text of ["DIRECT_IDENTITY","DELEGATED_TEST_OR_ADMIN","OWNER','SUPER_ADMIN','ADMIN","real login identity wins"])assert.ok(hybridIdentitySql.includes(text),`Missing V94 hybrid identity rule: ${text}`);
 for(const text of ["delegation_requested","non-Sudesh real logins are direct","DIRECT_IDENTITY"])assert.ok(delegationGuardSql.includes(text),`Missing V95 explicit delegation guard: ${text}`);
+for(const text of ["rr_real_chat_canonical_events_v96","CREATE_CB","ART_DECIDE_SUBMIT","CUTTING_RELEASE","rr_pm_save_decision_bundle_v804","rr_real_chat_reconcile_cb_slice_v96","ART_DECIDE_PENDING","READY_FOR_CUTTING","REPLACED_BY_ACTION_CONVERSATION_V96"])assert.ok(actionConversationSql.includes(text),`Missing V96 Action-to-Conversation contract: ${text}`);
+for(const text of ["function flowCard","ART_DECIDE","READY_FOR_CUTTING","CUTTING_RELEASED","['OPEN','WORKING','REOPENED']","test70-real-chat-live-v70.js?v=96"])assert.ok(js.includes(text)||html.includes(text),`Missing V96 conversational renderer: ${text}`);
 console.log("PASS: TEST70 uses canonical OPEN and existing role/state workflow actions.");

@@ -354,6 +354,6 @@ function bind(){
     else if(!$("decisionSheet").classList.contains("hidden"))closeDecision()
   })
 }
-async function boot(){try{state.client=await waitForClient();if(!state.client)throw new Error("Supabase client unavailable.");await loadRole();if(!["owner","admin"].includes(state.role))throw new Error("Art Decide Master requires Owner/Admin role.");bind();await loadData()}catch(e){console.error(e);$("gallery").innerHTML=`<article class="empty"><h3>Art Decide Master start failed</h3><p>${esc(textError(e))}</p></article>`;say(textError(e),"error")}}
+async function boot(){try{state.client=await waitForClient();if(!state.client)throw new Error("Supabase client unavailable.");await loadRole();if(!["owner","admin"].includes(state.role))throw new Error("Art Decide Master requires Owner/Admin role.");bind();await loadData();const requested=new URLSearchParams(location.search).get("cb_unit_id");if(requested&&unitFor(requested))openDecision(requested)}catch(e){console.error(e);$("gallery").innerHTML=`<article class="empty"><h3>Art Decide Master start failed</h3><p>${esc(textError(e))}</p></article>`;say(textError(e),"error")}}
 boot();
 })();
