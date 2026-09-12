@@ -3290,6 +3290,7 @@ async function createLot(event = {}) {
       : `LOT ${releasedNos.join(" · ")} RELEASED · Cutting completed · ${nextStage}.`;
     say(successText, releaseWarnings.length ? "info" : "success");
     setLotReleaseFeedback(successText, releaseWarnings.length ? "info" : "success");
+    if (window.RRActionReturn?.hasReturn()) window.setTimeout(() => window.RRActionReturn.success(), 350);
   } catch (error) {
     if (!releaseCommitted && matchingReservations.length) {
       await cancelMatchingReservations(client, matchingReservations, "Lot release failed");
@@ -3657,6 +3658,16 @@ loadMatchingLotSource(client)
   await loadCostSettings(client);
   refreshMatchingStockControls();
   renderGallery();
+
+  if (!loadAllData.deepLinkOpened) {
+    const params = new URLSearchParams(location.search);
+    const requestedUnit = params.get("cb_unit_id");
+    const requestedMode = params.get("lot_mode") === "multi" ? "multi" : "single";
+    if (requestedUnit && divisionCards().some(card => String(card.division.division_id) === String(requestedUnit))) {
+      loadAllData.deepLinkOpened = true;
+      window.setTimeout(() => openLotByDivision(requestedUnit, requestedMode), 0);
+    }
+  }
 
   console.info("REDZED Cutting Master PM Core V720.36.2 loaded", {
     galleryRows: galleryRows.length,
