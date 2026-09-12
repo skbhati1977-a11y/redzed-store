@@ -43,7 +43,8 @@ assert.ok(!truthfulSql.includes("UNIVERSAL_REDZED_STAFF"),"V72 must not rebuild 
 assert.ok(js.includes(".range(from,from+pageSize-1)"),"Bridge history must page beyond the Supabase 1000-row response cap");
 for(const state of ["REJECTED","VERIFIED","APPROVED","FINALIZED","RECEIVED"])assert.ok(js.includes(state),`Terminal history status missing: ${state}`);
 for(const text of ["bindFactoryEdgeSwipe","startX<=24","setFactoryMenu(true)","setFactoryMenu(false)"])assert.ok(js.includes(text),`Missing edge swipe navigation: ${text}`);
-for(const text of ["body.rrSliceReserved{padding-top:0!important}","width:100vw","#rrSliceRail{top:42%","#rrSliceRailTitle{display:none!important}"])assert.ok(html.includes(text),`Missing fullscreen edge-menu contract: ${text}`);
+for(const text of ["html body.rrSliceReserved{padding-top:0!important}","position:fixed;inset:0;width:100vw","#rrSliceRail{top:44%","width:5px!important","#rrSliceRailTitle{display:none!important}"])assert.ok(html.includes(text),`Missing fullscreen edge-line contract: ${text}`);
+for(const text of ["enforceFactoryEdgeLine","setProperty('padding-top','0','important')","btn.textContent=''","Swipe for Main Menu"])assert.ok(js.includes(text),`Missing late global-menu override: ${text}`);
 for(const text of ["performed_by_name","on_behalf_of_name","REMAKE_ISSUE","v_sender:=v_lm;v_receiver:=v_cm","DELIVER_TO_KARIGAR","KARIGAR_SUBMIT_GOOD"])assert.ok(behalfSql.includes(text),`Missing on-behalf mapping: ${text}`);
-for(const text of ["Performed by "," · on behalf of ","receiver_name:p.receiver_name","test70-real-chat-live-v70.js?v=80"])assert.ok(js.includes(text)||html.includes(text),`Missing on-behalf UI contract: ${text}`);
+for(const text of ["Performed by "," · on behalf of ","receiver_name:p.receiver_name","test70-real-chat-live-v70.js?v=81"])assert.ok(js.includes(text)||html.includes(text),`Missing on-behalf UI contract: ${text}`);
 console.log("PASS: TEST70 uses canonical OPEN and existing role/state workflow actions.");
