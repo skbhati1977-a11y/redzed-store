@@ -6,6 +6,7 @@ const sql=fs.readFileSync("supabase/migrations/20260911150000_test70_real_chat_w
 const directorySql=fs.readFileSync("supabase/migrations/20260911201000_test70_real_chat_directory.sql","utf8");
 const bridgeSql=fs.readFileSync("supabase/migrations/20260911214000_test70_real_chat_message_bridge.sql","utf8");
 const membershipSql=fs.readFileSync("supabase/migrations/20260911223500_test70_department_membership_matrix.sql","utf8");
+const reconcileSql=fs.readFileSync("supabase/migrations/20260912040633_test70_reconcile_department_membership.sql","utf8");
 for(const text of ["Real Chat","OPEN","WORKING","CLOSE","TEST · LIVE","Lot Number, Category ya Worker Name","PERSONAL CHAT","test70-real-chat-live-v70.js"])assert.ok(html.includes(text),`Missing UI contract: ${text}`);
 for(const text of ["rr_real_chat_work_inbox_v70","UPM_ASSIGNMENT:","rr_upm_work_assignments_v8","rr_upm_current_worker_id_v9112","read_only_mirror","revoke all","grant execute"])assert.ok(sql.includes(text),`Missing backend contract: ${text}`);
 for(const text of ["rr_real_chat_work_inbox_v70","rr_real_chat_message_bridge_v70","rr_real_chat_mark_receipt_v70","LIVE_TEST_MAPPING","RECEIPT_ONLY","Art","Print","Sticker","Metal ID"])assert.ok(js.includes(text),`Missing live adapter contract: ${text}`);
@@ -18,4 +19,6 @@ assert.ok(!html.includes("Accept karein")&&!html.includes("Wapas karein"),"Proto
 for(const text of ["rr_real_chat_message_bridge_v70","rr_real_chat_receipts_v70","rr_real_chat_notification_links_v70","rr_real_chat_action_registry_v70","RECEIVER_MISMATCH","data_mode = 'TEST'"])assert.ok(bridgeSql.includes(text),`Missing bridge contract: ${text}`);
 for(const text of ["rr_real_chat_directory_v71","rr_real_chat_department_membership_v70","KAAJ_BUTTON","HOME_DEPARTMENT","UNIVERSAL_REDZED_STAFF","NAMED_CROSS_DEPARTMENT_STAFF"])assert.ok(membershipSql.includes(text),`Missing department membership contract: ${text}`);
 for(const text of ["ALL DEPARTMENTS","WORKER SIDE","REDZED STAFF SIDE","rr_real_chat_directory_v71"])assert.ok(js.includes(text),`Missing department drill-down: ${text}`);
+for(const text of ["history.replaceState({view:'inbox'}","view:'department'","view:'chat'","restoreView(e.state)","parentDepartment"])assert.ok(js.includes(text),`Missing nested history restoration: ${text}`);
+for(const text of ["set is_active=false","HOME_DEPARTMENT","UNIVERSAL_REDZED_STAFF","NAMED_CROSS_DEPARTMENT_STAFF","upper(coalesce(d.access_status,'ACTIVE'))='ACTIVE'","TEST70_REAL_CHAT_DIRECTORY_V71_RECONCILED"])assert.ok(reconcileSql.includes(text),`Missing reconciled membership rule: ${text}`);
 console.log("PASS: TEST70 live canonical UPM mirror is scoped, read-only and fail-closed.");
