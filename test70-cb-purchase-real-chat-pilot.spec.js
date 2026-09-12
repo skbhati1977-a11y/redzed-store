@@ -41,4 +41,6 @@ for(const text of ["rr_real_chat_truthful_bridge_v72","new.receiver_user_id:=nul
 assert.ok(!truthfulSql.includes("UNIVERSAL_REDZED_STAFF"),"V72 must not rebuild universal staff fan-out");
 assert.ok(js.includes(".range(from,from+pageSize-1)"),"Bridge history must page beyond the Supabase 1000-row response cap");
 for(const state of ["REJECTED","VERIFIED","APPROVED","FINALIZED","RECEIVED"])assert.ok(js.includes(state),`Terminal history status missing: ${state}`);
+for(const text of ["bindFactoryEdgeSwipe","startX<=24","setFactoryMenu(true)","setFactoryMenu(false)"])assert.ok(js.includes(text),`Missing edge swipe navigation: ${text}`);
+for(const text of ["body.rrSliceReserved{padding-top:0!important}","width:100vw","#rrSliceRail{top:42%","#rrSliceRailTitle{display:none!important}","test70-real-chat-live-v70.js?v=79"])assert.ok(html.includes(text),`Missing fullscreen edge-menu contract: ${text}`);
 console.log("PASS: TEST70 uses canonical OPEN and existing role/state workflow actions.");
