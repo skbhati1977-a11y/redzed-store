@@ -20,6 +20,8 @@ function thumb(c){const m=media(c);return m.length?'<button class="thumb" data-m
 function tick(c){const b=S.bridge.get(c.event_key),r=b?.rr_real_chat_receipts_v70?.[0];if(!b)return '<span class="tick">✓</span>';if(r?.read_at)return '<span class="tick read">✓✓</span>';if(r?.delivered_at)return '<span class="tick">✓✓</span>';return '<span class="tick">✓</span>'}
 function viewUrl(status=S.status){const u=new URL(location.href);['chat','worker_id','rc_view','rc_kind','rc_id','rc_parent','rc_status'].forEach(k=>u.searchParams.delete(k));u.searchParams.set('rc_status',status);if(S.active){const isChat=['group','person'].includes(S.active.kind);u.searchParams.set('rc_view',isChat?'chat':S.active.kind);u.searchParams.set('rc_kind',S.active.kind);u.searchParams.set('rc_id',S.active.id);if(S.active.parentDepartment)u.searchParams.set('rc_parent',S.active.parentDepartment)}return u.pathname+u.search+u.hash}
 function successStatus(a){const x=(String(a.code||'')+' '+String(a.href||'')+' '+String(a.label||'')).toUpperCase();if(x.includes('ART'))return'WORKING';if(x.includes('CUTTING')||x.includes('RELEASE LOT'))return'CLOSE';if(x.includes('NEW CB')||x.includes('CREATE CB'))return'OPEN';return S.status}
+function currentViewState(){if(!S.active)return{view:'inbox',status:S.status};if(['group','person'].includes(S.active.kind))return{view:'chat',kind:S.active.kind,id:S.active.id,parentDepartment:S.active.parentDepartment||null,status:S.status};if(S.active.kind==='department')return{view:'department',department:S.active.id,status:S.status};if(S.active.kind==='workflow'){const [group,item]=String(S.active.id).split(':').map(Number);return{view:'workflow',group,item,status:S.status}}if(S.active.kind==='division')return{view:'division',id:S.active.id,status:S.status};return{view:'inbox',status:S.status}}
+function persistCurrentView(){history.replaceState(currentViewState(),'',viewUrl(S.status))}
 function actionHref(a){if(!a.href)return'#';const u=new URL(a.href,location.href);u.searchParams.set('from','TEST70_REAL_CHAT');u.searchParams.set('return',viewUrl(S.status));u.searchParams.set('success_return',viewUrl(successStatus(a)));return u.pathname+u.search+u.hash}
 function actionButtons(c){const rows=arr(c.actions);return rows.length?'<div class="card-actions">'+rows.map(a=>'<a href="'+safe(actionHref(a))+'" data-action="'+safe(a.code)+'" title="Existing engine: '+safe(a.engine)+'">'+safe(a.label)+'</a>').join('')+'</div>':''}
 function friendlyStatus(v){return String(v||'').replace(/^(CM|LM|UPM|RR)_/,'').replaceAll('_',' ').toLowerCase().replace(/^./,x=>x.toUpperCase())}
@@ -71,9 +73,11 @@ async function boot(){
   if(['OPEN','WORKING','CLOSE'].includes(requestedStatus))S.status=requestedStatus;
   const requestedView=p.get('rc_view'),requestedId=p.get('rc_id'),requestedKind=p.get('rc_kind'),requestedParent=p.get('rc_parent');
   const initialState=requestedView==='chat'&&requestedKind&&requestedId?{view:'chat',kind:requestedKind,id:requestedId,parentDepartment:requestedParent||null,status:S.status}:{view:'inbox',status:S.status};
-  history.replaceState(history.state||initialState,'',location.href);
+  const resumeState=requestedView==='chat'?initialState:(history.state||initialState);
+  if(resumeState.view==='chat')S.active={kind:resumeState.kind,id:resumeState.id,parentDepartment:resumeState.parentDepartment||null};
+  history.replaceState(resumeState,'',location.href);
   renderDrawer();
-  document.addEventListener('click',e=>{const a=e.target.closest('a');if(!a||(!a.matches('[data-action]')&&a.id!=='contextAction'))return;if(a.id==='contextAction'){e.preventDefault();const u=new URL(a.getAttribute('href'),location.href);u.searchParams.set('from','TEST70_REAL_CHAT');u.searchParams.set('return',viewUrl(S.status));u.searchParams.set('success_return',viewUrl('OPEN'));location.assign(u.pathname+u.search+u.hash)}});
+  document.addEventListener('click',e=>{const a=e.target.closest('a');if(!a||(!a.matches('[data-action]')&&a.id!=='contextAction'))return;persistCurrentView();if(a.id==='contextAction'){e.preventDefault();const u=new URL(a.getAttribute('href'),location.href);u.searchParams.set('from','TEST70_REAL_CHAT');u.searchParams.set('return',viewUrl(S.status));u.searchParams.set('success_return',viewUrl('OPEN'));location.assign(u.pathname+u.search+u.hash)}},true);
   $('menu').onclick=()=>$('drawer').hidden=false;$('menuClose').onclick=()=>$('drawer').hidden=true;$('drawer').onclick=e=>{if(e.target===$('drawer'))$('drawer').hidden=true};
   document.querySelectorAll('[data-status]').forEach(b=>b.onclick=()=>changeStatus(b.dataset.status));document.querySelectorAll('[data-chat-status]').forEach(b=>b.onclick=()=>changeStatus(b.dataset.chatStatus));
   $('find').oninput=e=>{clearTimeout(boot.t);boot.t=setTimeout(()=>{S.search=e.target.value.trim();load(true)},250)};
@@ -81,7 +85,7 @@ async function boot(){
   $('viewerClose').onclick=()=>$('viewer').hidden=true;let x=0;$('viewerStage').onpointerdown=e=>x=e.clientX;$('viewerStage').onpointerup=e=>{const d=e.clientX-x;if(Math.abs(d)>50){S.image=(S.image+(d<0?1:-1)+S.media.length)%S.media.length;showImage()}};
   if(hydrateCache()){$('state').textContent='Opening saved Real Chat…';renderActive()}
   await load(false);
-  if(requestedView==='chat'&&requestedKind&&requestedId)openChat(requestedKind,requestedId,false,requestedParent||null);else if(p.get('chat')==='personal'&&p.get('worker_id'))openChat('person',p.get('worker_id'),false);
+  if(resumeState.view==='chat')openChat(resumeState.kind,resumeState.id,false,resumeState.parentDepartment||null);else if(p.get('chat')==='personal'&&p.get('worker_id'))openChat('person',p.get('worker_id'),false);
   Promise.all([rpc('rr_real_chat_sync_upm_history_v71'),rpc('rr_real_chat_sync_e2e_events_v71',{p_key:null})]).then(()=>!document.hidden&&load(false)).catch(()=>null);
   let rt;S.realtime=S.db.channel('test70-real-chat-v71').on('postgres_changes',{event:'*',schema:'public',table:'rr_real_chat_message_bridge_v70'},()=>{clearTimeout(rt);rt=setTimeout(()=>!document.hidden&&load(false),250)}).subscribe();
   addEventListener('pageshow',e=>{if(e.persisted)load(true)});document.addEventListener('visibilitychange',()=>{if(!document.hidden)load(true)});setInterval(()=>!document.hidden&&load(true),60000)
