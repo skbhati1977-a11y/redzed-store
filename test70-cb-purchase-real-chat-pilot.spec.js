@@ -11,6 +11,7 @@ const actionsSql=fs.readFileSync("supabase/migrations/20260912090000_test70_real
 const historySql=fs.readFileSync("supabase/migrations/20260912093000_test70_real_chat_full_history_sync_v71.sql","utf8");
 const e2eSql=fs.readFileSync("supabase/migrations/20260912094500_test70_real_chat_end_to_end_events_v71.sql","utf8");
 const archiveSql=fs.readFileSync("supabase/migrations/20260912101500_test70_real_chat_sellable_archive_v71.sql","utf8");
+const truthfulSql=fs.readFileSync("supabase/migrations/20260912060848_test70_real_chat_truthful_mapping_v72.sql","utf8");
 for(const text of ["Real Chat","OPEN","WORKING","CLOSE","TEST · LIVE","Lot Number, Category ya Worker Name","PERSONAL CHAT","test70-real-chat-live-v70.js"])assert.ok(html.includes(text),`Missing UI contract: ${text}`);
 for(const text of ["rr_real_chat_work_inbox_v70","UPM_ASSIGNMENT:","rr_upm_work_assignments_v8","rr_upm_current_worker_id_v9112","read_only_mirror","revoke all","grant execute"])assert.ok(sql.includes(text),`Missing backend contract: ${text}`);
 for(const text of ["rr_real_chat_work_inbox_v71","rr_real_chat_message_bridge_v70","rr_real_chat_mark_receipt_v70","LIVE_TEST_MAPPING","RECEIPTS_ONLY_ACTIONS_USE_EXISTING_FORMS","Art","Print","Sticker","Metal ID"])assert.ok(js.includes(text),`Missing live adapter contract: ${text}`);
@@ -36,4 +37,8 @@ assert.ok(e2eSql.includes("source_module in ('ACCOUNTS','MONTHLY_PAYROLL','SALAR
 assert.ok(e2eSql.includes("on conflict(canonical_key) do update"),"Backfill must be idempotent");
 for(const text of ["archived_at","SALES_DESPATCH_RECEIVED","ALL_UNIT_LOTS_DESPATCHED","ALL_CB_LOTS_DESPATCHED","rr_fg_despatch_custody_v9361","upper(d.status)='RECEIVED'"])assert.ok(archiveSql.includes(text),`Missing dispatch archive contract: ${text}`);
 assert.ok(js.includes(".is('archived_at',null)"),"Archived workflow messages must not render in active chats");
+for(const text of ["rr_real_chat_truthful_bridge_v72","new.receiver_user_id:=null","GLOBAL_OWNER_STAFF","HOME_DEPARTMENT_STAFF","NAMED_CROSS_DEPARTMENT_STAFF"])assert.ok(truthfulSql.includes(text),`Missing truthful mapping correction: ${text}`);
+assert.ok(!truthfulSql.includes("UNIVERSAL_REDZED_STAFF"),"V72 must not rebuild universal staff fan-out");
+assert.ok(js.includes(".range(from,from+pageSize-1)"),"Bridge history must page beyond the Supabase 1000-row response cap");
+for(const state of ["REJECTED","VERIFIED","APPROVED","FINALIZED","RECEIVED"])assert.ok(js.includes(state),`Terminal history status missing: ${state}`);
 console.log("PASS: TEST70 uses canonical OPEN and existing role/state workflow actions.");
