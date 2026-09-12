@@ -333,7 +333,8 @@ async function saveDecision(){
     const r=await state.client.rpc("rr_pm_save_decision_bundle_v804",{p_cb_unit_id:state.active.id,p_art_id:state.artId,p_print_mode:state.printMode,p_print_ids:state.printIds,p_sticker_mode:state.stickerMode,p_sticker_master_ids:state.stickerIds,p_metal_id_mode:state.metalMode,p_metal_id_master_ids:state.metalIds,p_data_mode:mode});
     if(r.error)throw r.error;
     const savedLabel=`${cbNo(state.active)} · ${dNo(state.active)}`;
-    closeDecision();await loadData();say(`${savedLabel} Art / Crafting decision saved.`,"success")
+    closeDecision();await loadData();say(`${savedLabel} Art / Crafting decision saved.`,"success");
+    if(window.RRActionReturn?.hasReturn())window.setTimeout(()=>window.RRActionReturn.success(),250)
   }catch(e){console.error(e);decisionSay(textError(e),"error")}
   finally{setBusy(btn,false)}
 }
