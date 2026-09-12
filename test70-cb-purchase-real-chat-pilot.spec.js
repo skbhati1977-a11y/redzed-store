@@ -12,6 +12,7 @@ const historySql=fs.readFileSync("supabase/migrations/20260912093000_test70_real
 const e2eSql=fs.readFileSync("supabase/migrations/20260912094500_test70_real_chat_end_to_end_events_v71.sql","utf8");
 const archiveSql=fs.readFileSync("supabase/migrations/20260912101500_test70_real_chat_sellable_archive_v71.sql","utf8");
 const truthfulSql=fs.readFileSync("supabase/migrations/20260912060848_test70_real_chat_truthful_mapping_v72.sql","utf8");
+const behalfSql=fs.readFileSync("supabase/migrations/20260912062417_test70_real_chat_on_behalf_mapping_v73.sql","utf8");
 for(const text of ["Real Chat","OPEN","WORKING","CLOSE","TEST · LIVE","Lot Number, Category ya Worker Name","PERSONAL CHAT","test70-real-chat-live-v70.js"])assert.ok(html.includes(text),`Missing UI contract: ${text}`);
 for(const text of ["rr_real_chat_work_inbox_v70","UPM_ASSIGNMENT:","rr_upm_work_assignments_v8","rr_upm_current_worker_id_v9112","read_only_mirror","revoke all","grant execute"])assert.ok(sql.includes(text),`Missing backend contract: ${text}`);
 for(const text of ["rr_real_chat_work_inbox_v71","rr_real_chat_message_bridge_v70","rr_real_chat_mark_receipt_v70","LIVE_TEST_MAPPING","RECEIPTS_ONLY_ACTIONS_USE_EXISTING_FORMS","Art","Print","Sticker","Metal ID"])assert.ok(js.includes(text),`Missing live adapter contract: ${text}`);
@@ -42,5 +43,7 @@ assert.ok(!truthfulSql.includes("UNIVERSAL_REDZED_STAFF"),"V72 must not rebuild 
 assert.ok(js.includes(".range(from,from+pageSize-1)"),"Bridge history must page beyond the Supabase 1000-row response cap");
 for(const state of ["REJECTED","VERIFIED","APPROVED","FINALIZED","RECEIVED"])assert.ok(js.includes(state),`Terminal history status missing: ${state}`);
 for(const text of ["bindFactoryEdgeSwipe","startX<=24","setFactoryMenu(true)","setFactoryMenu(false)"])assert.ok(js.includes(text),`Missing edge swipe navigation: ${text}`);
-for(const text of ["body.rrSliceReserved{padding-top:0!important}","width:100vw","#rrSliceRail{top:42%","#rrSliceRailTitle{display:none!important}","test70-real-chat-live-v70.js?v=79"])assert.ok(html.includes(text),`Missing fullscreen edge-menu contract: ${text}`);
+for(const text of ["body.rrSliceReserved{padding-top:0!important}","width:100vw","#rrSliceRail{top:42%","#rrSliceRailTitle{display:none!important}"])assert.ok(html.includes(text),`Missing fullscreen edge-menu contract: ${text}`);
+for(const text of ["performed_by_name","on_behalf_of_name","REMAKE_ISSUE","v_sender:=v_lm;v_receiver:=v_cm","DELIVER_TO_KARIGAR","KARIGAR_SUBMIT_GOOD"])assert.ok(behalfSql.includes(text),`Missing on-behalf mapping: ${text}`);
+for(const text of ["Performed by "," · on behalf of ","receiver_name:p.receiver_name","test70-real-chat-live-v70.js?v=80"])assert.ok(js.includes(text)||html.includes(text),`Missing on-behalf UI contract: ${text}`);
 console.log("PASS: TEST70 uses canonical OPEN and existing role/state workflow actions.");
