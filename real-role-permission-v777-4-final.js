@@ -15,7 +15,7 @@ const actorRole=()=>lower(
   || state.auth?.user?.role_code
   || ""
 );
-const isOwner=()=>actorRole()==="owner";
+const isOwner=()=>["owner","super_admin","superadmin"].includes(actorRole());
 const isAdmin=()=>actorRole()==="admin";
 const userRole=u=>lower(u?.role_code);
 const isOwnerUser=u=>userRole(u)==="owner";
@@ -113,7 +113,10 @@ async function loadConsole({quiet=false}={}){
       const byAuthId=new Map(authUsers.map(u=>[String(u.auth_user_id||u.id),u]));
       state.data.users=(state.data.users||[]).map(profile=>({
         ...profile,
-        ...(byAuthId.get(String(profile.auth_user_id))||{})
+        ...(byAuthId.get(String(profile.auth_user_id))||{}),
+        id:profile.id,
+        profile_id:profile.id,
+        auth_user_id:profile.auth_user_id
       }));
     }catch(edgeError){
       console.warn("Auth user list unavailable; profile list shown.",edgeError);
@@ -291,6 +294,7 @@ function userActionButtonsV773(u){
   }
 
   return `
+    ${isOwner()?`<button class="secondary tiny" data-edit-user-role="${safe(u.id)}">Edit Role / Department</button>`:""}
     <button class="warning tiny" data-user-action="TEMP_BLOCK" data-user="${safe(u.id)}">Block Access Now</button>
     <button class="secondary tiny" data-reset-user="${safe(u.id)}">Reset Password</button>
     <button class="primary tiny" data-user-action="ACTIVATE" data-user="${safe(u.id)}">Activate</button>
@@ -342,6 +346,8 @@ function bindUserButtons(){
     .forEach(b=>b.onclick=()=>resetUserPassword(
       b.dataset.resetUser,b
     ));
+  document.querySelectorAll("[data-edit-user-role]")
+    .forEach(b=>b.onclick=()=>editUserRole(b.dataset.editUserRole,b));
 }
 
 
@@ -1496,6 +1502,7 @@ async function changeUserAccess(profileId,action,button){
 }
 
 async function resetUserPassword(profileId,button){const user=state.data.users.find(u=>u.id===profileId);if(!user?.auth_user_id){say("Auth User ID missing.","error");return}if(isOwnerUser(user)){say("OWNER password ko Role & Permission se override/reset nahi kar sakte.","error");return}if(isAdminUser(user)&&!isOwner()){say("Sirf OWNER Admin password reset kar sakta hai.","error");return}const password=prompt(`New temporary password for ${user.full_name||"user"}`)||"";if(password.length<8){say("Password minimum 8 characters.","error");return}busy(button,true,"Resetting…");try{await invokeUserAdmin({action:"reset_password",auth_user_id:user.auth_user_id,password});say("Temporary password reset हुआ। पुराना password display नहीं हुआ।","success")}catch(e){say(`${err(e)} · Edge Function deploy check करें।`,"error")}finally{busy(button,false)}}
+async function editUserRole(profileId,button){const user=state.data.users.find(u=>u.id===profileId);if(!user||!isOwner())return;const role=lower(prompt(`Primary role for ${user.full_name}`,user.role_code)||"");if(!role)return;const department=lower(prompt(`Primary department for ${user.full_name}`,user.department_code||role)||"");if(!department)return;if(!confirm(`${user.full_name}: ${role} · ${department} save करें?`))return;busy(button,true,"Saving…");try{await invokeUserAdmin({action:"set_role",profile_id:user.id,auth_user_id:user.auth_user_id,role_code:role,department_code:department});await loadConsole({quiet:true});renderUsers();say(`${user.full_name}: ${role.toUpperCase()} · ${department.toUpperCase()} saved.`,"success")}catch(e){say(`${err(e)} · Edge Function deploy check करें।`,"error")}finally{busy(button,false)}}
 
 function bind(){document.querySelectorAll("[data-close]").forEach(x=>x.onclick=()=>closeSheet(x.dataset.close));$("tabs").querySelectorAll("button").forEach(b=>b.onclick=()=>showTab(b.dataset.tab));$("impactNo").onclick=()=>setImpactMode("NON_IMPACT");$("impactYes").onclick=()=>setImpactMode("IMPACT");$("addRoute").onclick=()=>{state.routes=collectRoutes();state.routes.push({target_module_code:"printing",relation_mode:"VIEW_REFERENCE"});renderRoutes()};$("fieldForm").onsubmit=saveFieldDraft;$("runDemo").onclick=runDemo;$("activateField").onclick=activateField;$("suspendField").onclick=suspendField;$("revokeField").onclick=revokeField;$("userForm").onsubmit=createUser;$("workerForm").onsubmit=createManualWorker;$("departmentForm").onsubmit=saveDepartment;$("workerSkillsForm").onsubmit=saveWorkerSkills;
   $("leadershipRole").onchange=updateLeadershipCompensationFieldsV776;

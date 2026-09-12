@@ -1,0 +1,87 @@
+name: TEST69 two-session RCI lifecycle
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - test69-promotion-gate-v9746
+    paths:
+      - ".github/workflows/test69-two-session-rci.yml"
+      - "tests/e2e/test69-two-session-rci.spec.js"
+      - "tests/e2e/test69-two-session-creditor.spec.js"
+      - "real-accounts-v805.html"
+      - "real-accounts-v805.js"
+      - "real-login.html"
+      - "real-login.js"
+      - "real-rci-v9740.html"
+      - "real-rci-v9740.js"
+      - "real-pi-specimen-v9514-replace-test.html"
+      - "real-pi-specimen-v9514-replace-test.js"
+      - "real-sales-flow-dashboard-test69-v9734.html"
+      - "supabase/migrations/**"
+      - "test69-*.test.js"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: test69-two-session-rci
+  cancel-in-progress: false
+
+jobs:
+  rci-lifecycle:
+    name: Admin + authorized second session
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      TEST69_BASE_URL: https://redzed-test65-git-test69-promotion-gate-v9746-skbhati1977-4414.vercel.app
+      TEST69_ADMIN_USERNAME: ${{ secrets.TEST69_ADMIN_USERNAME }}
+      TEST69_ADMIN_PASSWORD: ${{ secrets.TEST69_ADMIN_PASSWORD }}
+      TEST69_SECOND_USERNAME: ${{ secrets.TEST69_SECOND_USERNAME }}
+      TEST69_SECOND_PASSWORD: ${{ secrets.TEST69_SECOND_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check encrypted TEST credentials are configured
+        shell: bash
+        run: |
+          test -n "$TEST69_ADMIN_USERNAME"
+          test -n "$TEST69_ADMIN_PASSWORD"
+          test -n "$TEST69_SECOND_USERNAME"
+          test -n "$TEST69_SECOND_PASSWORD"
+
+      - name: Install Playwright
+        run: npm install --no-save --no-package-lock @playwright/test@1.55.0
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Wait for Focused Accounts V9767 preview deployment
+        shell: bash
+        run: |
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent "$TEST69_BASE_URL/real-accounts-v805.html?v=9767" | grep -q 'real-accounts-v805.js?v=9767'; then
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "Focused Accounts V9767 preview did not become ready within 5 minutes"
+          exit 1
+
+      - name: Verify RCI two-session lifecycle
+        run: npx playwright test tests/e2e/test69-two-session-rci.spec.js --reporter=line
+
+      - name: Verify creditor two-session lifecycle
+        shell: bash
+        run: |
+          mkdir -p test-results
+          npx playwright test tests/e2e/test69-two-session-creditor.spec.js --reporter=line 2>&1 | tee test-results/creditor-report.txt
+
+      - name: Upload failure evidence
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test69-two-session-rci-evidence
+          path: test-results/
+          if-no-files-found: ignore
+          retention-days: 7

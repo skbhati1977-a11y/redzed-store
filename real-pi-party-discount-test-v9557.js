@@ -1,5 +1,7 @@
 (()=>{
 'use strict';
+// Requirement PI owns this helper. Direct Sale has its own canonical party-discount field.
+if(new URLSearchParams(location.search).get('entry_mode')==='DIRECT_SALE')return;
 if(window.__RR_PI_PARTY_DISCOUNT_V9557__)return;
 window.__RR_PI_PARTY_DISCOUNT_V9557__=true;
 const $=id=>document.getElementById(id),num=v=>Math.max(0,Number(v||0));

@@ -31,10 +31,21 @@
     <script>
       window.__RR_SLICE_MENU_LOADER_9309__ = true;
       (async () => {
-        const token =
-          new URLSearchParams(location.search).get("t") ||
-          new URLSearchParams(location.search).get("c") ||
-          "";
+        const launchKey = "rr_customer_verified_launch_v9688";
+        const query = new URLSearchParams(location.search);
+        let token = query.get("t") || query.get("c") || "";
+        if (!token) {
+          try {
+            const remembered = JSON.parse(localStorage.getItem(launchKey) || "null");
+            if (remembered?.token && remembered?.relation === "REDZED_CUSTOMER") {
+              const restored = new URL(location.href);
+              restored.searchParams.set("t", remembered.token);
+              restored.searchParams.set("source", "pwa");
+              location.replace(restored.href);
+              return;
+            }
+          } catch (_) {}
+        }
         const loadScript = (src) =>
           new Promise((resolve, reject) => {
             const script = document.createElement("script");
@@ -46,19 +57,23 @@
           });
         const baseScripts = [
           "real-notification-permission-guard-v69.js?v=69",
+          "real-chat-staff-floating-notify-v61.js?v=61push9",
           "real-collection-cycle-share-adapter-v9686.js?v=9686",
           "real-customer-secure-session-addon-v9592.js?v=9680",
           "real-customer-chat-thumbnail-cache-v51.js?v=51",
           "real-customer-chat-image-upload-v54.js?v=58instant1",
           "real-customer-fullscreen-secure-chat-v9648.js?v=9668",
+          "real-customer-chat-receipts-v9773.js?v=9773",
           "real-customer-chat-image-upload-hook-v54.js?v=56",
           "real-customer-attach-outside-close-v9649.js?v=9668",
           "real-customer-chat-media-stable-v9664.js?v=56",
           "real-customer-chat-universal-thumbnail-v9674.js?v=58persistent1",
+          "real-chat-image-zoom-v9775.js?v=9777",
           "real-customer-group-media-files-v59.js?v=59h-hold-swipe",
-          "real-customer-chat-delete-disappearing-v59.js?v=60-exact-map3",
+          "real-customer-chat-delete-disappearing-v59.js?v=9712",
           "real-customer-chat-url-wrap-v9668.js?v=9668",
           "real-customer-chat-collection-card-v9605.js?v=9684",
+          "real-customer-collection-identity-v9778.js?v=9778",
           "real-direct-customer-single-card-v9684.js?v=9684",
           "real-customer-chat-collection-tune-v9606.js?v=9668",
           "real-customer-chat-collection-layout-v9623.js?v=9668",
@@ -111,13 +126,14 @@
           }
           if (relation === "DISTRIBUTOR_CUSTOMER") {
             await loadScript(
-              "real-market-partner-shared-chat-adapter-test67.js?v=102",
+              "real-market-partner-shared-chat-adapter-test67.js?v=9712",
             );
             await loadScript(
               "real-market-partner-collection-core-adapter-test67.js?v=83",
             );
           }
           for (const src of baseScripts) await loadScript(src);
+          await loadScript("real-customer-cycle-message-card-v9688.js?v=9716");
 
           // Keep the original RedZed ↔ Customer collection controls exactly
           // once.  A late wrapper previously added a second CLOSE button.

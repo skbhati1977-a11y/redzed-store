@@ -5,8 +5,10 @@
   const RX = /\[REQ:([0-9a-f-]{36})\]/i;
   const cache = new Map();
   let activeId = "";
+  let renderedKey = "";
+  let rendering = false;
   const esc = (value) => String(value ?? "").replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" })[char]);
-  const chatId = () => document.querySelector("#inboxRows .chatrow.on")?.dataset.chat || localStorage.getItem("rr_real_chat_last_group_v9507") || "";
+  const chatId = () => window.__RR_CURRENT_CHAT_ID__ || document.querySelector("#inboxRows .chatrow.on")?.dataset.chat || localStorage.getItem("rr_real_chat_last_group_v9507") || "";
   const stage = (value) => ({
     READY_FOR_PI: "READY FOR PI",
     PI_GENERATED: "PI GENERATED",
@@ -24,8 +26,23 @@
   }
 
   async function detail(id) {
-    if (!cache.has(id)) cache.set(id, RF853.rpc("rr_chat_requirement_detail_v9508", { p_chat_id: chatId(), p_requirement_id: id }));
-    return cache.get(id);
+    const chat = chatId();
+    if (!chat) throw new Error("Current customer chat missing. List se chat dobara open karein.");
+    const key = `${chat}|${id}`;
+    if (!cache.has(key)) {
+      cache.set(key, RF853.rpc("rr_chat_requirement_detail_v9508", { p_chat_id: chat, p_requirement_id: id })
+        .catch((error) => { cache.delete(key); throw error; }));
+    }
+    return cache.get(key);
+  }
+
+  function queueSheet(attempt = 0) {
+    if (!activeId) return;
+    if (document.getElementById("rrReqBack9508")?.classList.contains("on")) {
+      showSheet();
+      return;
+    }
+    if (attempt < 20) setTimeout(() => queueSheet(attempt + 1), 100);
   }
 
   function label(data) {
@@ -43,15 +60,32 @@
       const data = await detail(match[1]);
       const button = node.querySelector(".rrReqCard9508");
       if (!button) return;
+      button.dataset.requirementId = match[1];
+      button.setAttribute("aria-label", "Open requirement");
       const x = label(data);
       button.querySelector("b").textContent = `📋 ${x.req}`;
       button.querySelector("small").innerHTML = `${esc(x.collection)} · <span data-rr-stage>${esc(stage(data.status))}</span>`;
-      button.addEventListener("click", () => { activeId = match[1]; showSheet(); }, { capture: true });
-    } catch (_) {}
+      // Keep identity decoration passive. The canonical requirement-flow owns
+      // navigation; this listener only records which card was selected and
+      // enriches the sheet after that flow has opened it.
+      button.addEventListener("click", () => {
+        activeId = match[1];
+        renderedKey = "";
+        queueSheet();
+      }, { capture: true });
+    } catch (error) {
+      const body = document.getElementById("rrReqBody9508");
+      if (body) body.innerHTML = `<div class="muted">${esc(error?.message || "Requirement open nahi hui. Chat list se dobara open karein.")}</div>`;
+    }
   }
 
   async function showSheet() {
-    if (!activeId) return;
+    if (!activeId || rendering) return;
+    const sheet = document.getElementById("rrReqBack9508");
+    if (!sheet?.classList.contains("on")) return;
+    const key = `${chatId()}|${activeId}`;
+    if (renderedKey === key) return;
+    rendering = true;
     try {
       const data = await detail(activeId);
       const body = document.getElementById("rrReqBody9508");
@@ -74,21 +108,31 @@
         add.style.display = data.can_add_update === false ? "none" : "";
       }
       if (pi) {
-        pi.disabled = data.can_prepare_pi === false;
-        pi.textContent = data?.pi?.status === "CI_FINAL" ? `CI FINAL · ${data.pi.ci_no || ""}` :
-          data?.pi ? `PI CREATED · ${data.pi.pi_no || ""}` : "PREPARE PI";
+        const hasLines = Array.isArray(data?.lines) && data.lines.some((line) => Number(line?.accepted_qty || line?.requested_qty || 0) > 0);
+        const lifecycle = window.RRMarketLifecycle.state({ ...data, ...data?.pi, pi: data?.pi });
+        const ciFinal = lifecycle.ciFinal;
+        const existingPi = lifecycle.piEditable;
+        pi.disabled = ciFinal || !hasLines || (!existingPi && data.can_prepare_pi === false);
+        pi.textContent = ciFinal ? `CI FINAL · ${data?.pi?.ci_no || ""}` :
+          existingPi ? `EDIT PI · ${data.pi.pi_no || ""}` : hasLines ? "PREPARE PI" : "NO ITEMS SAVED";
       }
-    } catch (_) {}
+      renderedKey = key;
+    } catch (_) {
+      renderedKey = "";
+    } finally {
+      rendering = false;
+    }
   }
 
   function scan() {
     document.querySelectorAll("#msgs .msg").forEach(decorateCard);
-    if (document.getElementById("rrReqBack9508")?.classList.contains("on")) showSheet();
   }
   function init() {
     css();
     scan();
-    new MutationObserver(scan).observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ["class"] });
+    // Observe only newly rendered chat messages. Watching sheet attributes and
+    // then mutating that same sheet caused an endless mobile render loop.
+    new MutationObserver(scan).observe(document.body, { childList: true, subtree: true });
   }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init, { once: true });
   else init();

@@ -916,15 +916,18 @@
     }
   }
   async function deleteChatMessage(messageId) {
-    if (!messageId || !confirm("Delete this message from the chat?")) return;
+    if (!messageId) return;
+    const all = confirm("DELETE FOR ALL?\n\nOK = Delete for all\nCancel = choose Delete for me");
+    if (!all && !confirm("DELETE FOR ME only?")) return;
     try {
-      await rpc("rr_market_partner_chat_delete_v67", {
+      await rpc("rr_market_partner_chat_delete_v9712", {
         ...auth(),
         p_lane: activeLane,
         p_partner_customer_id: MODE === "CUSTOMER" ? customerId : null,
         p_message_id: messageId,
+        p_scope: all ? "ALL" : "ME",
       });
-      note("Message deleted ✓");
+      note(all ? "Deleted for all ✓" : "Deleted for me ✓");
       await load();
     } catch (error) {
       note(error.message, true);

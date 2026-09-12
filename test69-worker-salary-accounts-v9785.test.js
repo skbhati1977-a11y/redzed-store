@@ -1,0 +1,14 @@
+"use strict";
+const assert=require("node:assert/strict");
+const fs=require("node:fs");
+const sql=fs.readFileSync("supabase/migrations/20260911143000_test69_worker_salary_accounts_mapping_v9785.sql","utf8");
+const alias=fs.readFileSync("supabase/migrations/20260911144500_test69_legacy_salary_worker_alias_v9786.sql","utf8");
+const js=fs.readFileSync("real-accounts-v805.js","utf8");
+for(const token of ["rr_worker_accounts_map_v9785","linked_entity_type='WORKER'","rr_accounts_worker_salary_sync_v9785","rr_accounts_ledger_summary_v9785","rr_accounts_ledger_statement_v9785","rr_worker_salary_ledger_v781","balance_effect"])assert.ok(sql.includes(token),`missing salary mapping ${token}`);
+assert.match(sql,/enable row level security/i);
+assert.match(sql,/revoke all on table public\.rr_worker_accounts_map_v9785 from public,anon,authenticated/i);
+for(const token of ["rr_salary_worker_alias_v9786","EXACT_NAME_DEPARTMENT","security_invoker=true","rr_worker_salary_ledger_accounts_v9786","Salary summary alias injection failed"])assert.ok(alias.includes(token),`missing legacy-safe mapping ${token}`);
+assert.ok(js.includes("rr_accounts_ledger_summary_v9785"),"Accounts must load worker-wise Salary summary");
+assert.ok(js.includes("rr_accounts_ledger_statement_v9785"),"Accounts must open worker-wise Salary statement");
+assert.ok(js.includes("department_code"),"Salary list must expose department");
+console.log("V9785 worker-wise Salary & Wages Accounts mapping: PASS");

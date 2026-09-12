@@ -8,6 +8,7 @@
   const rawRpc = RF853.rpc.bind(RF853);
   const relations = new Map();
   let activeChatId = "";
+  let activeBaseTitle = "";
   let activeBatch = null;
   let currentView = "REQ";
   let loaded = false;
@@ -342,6 +343,7 @@
       setText($("groupInfo"), "RELATION INFO");
       decorateMessages();
     } else {
+      if (activeBaseTitle) setText($("chatTitle"), activeBaseTitle);
       setText($("groupTab"), "GROUP");
       setText($("privateTab"), "🔒 SUPER ADMIN");
       setText($("groupInfo"), "GROUP INFO");
@@ -365,6 +367,7 @@
       const row = event.target.closest?.("#inboxRows .chatrow[data-chat]");
       if (row) {
         activeChatId = row.dataset.chat || "";
+        activeBaseTitle = row.querySelector("b")?.textContent?.trim() || "";
         setTimeout(applyActive, 80);
       }
       if (event.target.closest?.("#groupInfo") && relation()) {

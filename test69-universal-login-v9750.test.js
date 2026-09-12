@@ -1,0 +1,10 @@
+"use strict";
+const assert=require("node:assert/strict"),fs=require("node:fs");
+const html=fs.readFileSync("real-login.html","utf8"),js=fs.readFileSync("real-login.js","utf8"),sql=fs.readFileSync("supabase/migrations/20260910133000_test69_universal_staff_login_v9750.sql","utf8"),edge=fs.readFileSync("supabase/functions/rr-staff-login-v9750/index.ts","utf8"),config=fs.readFileSync("config.js","utf8");
+assert.match(html,/>User Login</); assert.doesNotMatch(html,/value="skbhati1977@gmail.com"/);
+assert.match(html,/Email, mobile or username/); assert.match(html,/togglePassword/); assert.match(html,/Forgot \/ Reset Password/);
+assert.match(js,/signInWithPassword\(\{ email: identifier, password \}\)/); assert.match(js,/rr-staff-login-v9750/); assert.match(js,/setSession/);
+assert.match(sql,/login_username/); assert.match(sql,/service_role/); assert.match(sql,/revoke all.*anon,authenticated/i);
+assert.match(edge,/Invalid login credentials/); assert.doesNotMatch(edge,/console\.log/);
+assert.match(config,/rrIsAuthPath/); assert.match(config,/!rrIsAuthPath\(window\.location\.pathname\).*__RR_SLICE_MENU_LOADER_9309__/);
+console.log("TEST69 V9750 universal staff login checks passed");

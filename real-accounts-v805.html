@@ -6,33 +6,57 @@
   <title>REAL FACTORY · Accounts & Reports</title>
   <style>
     :root{color-scheme:dark;--bg:#090c12;--panel:#111722;--panel2:#0d131d;--line:#2b3648;--line2:#344258;--text:#eef4ff;--muted:#9daabd;--blue:#4f7fd8;--green:#49b987;--red:#e26773;--amber:#e4b45c;--shadow:0 18px 50px rgba(0,0,0,.22)}
-    *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:radial-gradient(circle at top,#111a29 0,#090c12 42%);color:var(--text);font:14px/1.45 Inter,system-ui,-apple-system,Segoe UI,sans-serif}.app{max-width:1550px;margin:auto;padding:14px 14px 60px}.top{position:sticky;top:0;z-index:30;margin:-14px -14px 12px;padding:12px 14px;background:rgba(9,12,18,.92);backdrop-filter:blur(18px);border-bottom:1px solid var(--line);display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap}.brand small{display:block;color:#9fb8de;font-weight:900;letter-spacing:.08em}.brand h1{font-size:22px;margin:2px 0}.brand p{margin:0;color:var(--muted)}.actions,.tabs,.inline{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.panel{background:linear-gradient(180deg,#121925,#0f151f);border:1px solid var(--line);border-radius:15px;padding:13px;margin:12px 0;box-shadow:var(--shadow)}.panel h2,.panel h3{margin:0 0 10px}.grid{display:grid;grid-template-columns:repeat(4,minmax(180px,1fr));gap:10px}.report-grid{display:grid;grid-template-columns:minmax(320px,.8fr) minmax(460px,1.7fr);gap:12px}.filter-grid{display:grid;grid-template-columns:repeat(5,minmax(150px,1fr));gap:9px}label{display:flex;flex-direction:column;gap:5px;color:var(--muted);font-weight:800}input,select,button,a,textarea{min-height:42px;background:var(--panel2);color:var(--text);border:1px solid var(--line2);border-radius:10px;padding:9px 10px;font:inherit;font-size:16px}button,a{text-decoration:none;font-weight:900;cursor:pointer}button:hover,a:hover{border-color:#627a9f}.active,.primary{background:linear-gradient(180deg,#31538d,#243f6e);border-color:#577bb8}.success{background:rgba(73,185,135,.12);border-color:rgba(73,185,135,.5)}.danger{background:rgba(226,103,115,.12);border-color:rgba(226,103,115,.45)}.hidden{display:none!important}.muted{color:var(--muted)}.msg{min-height:20px;color:var(--muted)}.msg.ok{color:#79d5aa}.msg.error{color:#ff8b96}.scroll{overflow:auto;border:1px solid var(--line);border-radius:11px}table{border-collapse:separate;border-spacing:0;width:100%;min-width:900px}th,td{padding:9px;border-bottom:1px solid #263245;text-align:left;white-space:nowrap}th{position:sticky;top:0;z-index:2;background:#17202e;color:#c8d7ea}.table-wrap{position:relative}.hscroll{overflow-x:auto;overflow-y:hidden;height:13px;margin-top:5px}.hscroll>div{height:1px}.cards{display:grid;grid-template-columns:repeat(4,minmax(150px,1fr));gap:9px}.metric{background:#0c121b;border:1px solid var(--line);border-radius:12px;padding:11px}.metric small{display:block;color:var(--muted);font-weight:800}.metric strong{display:block;font-size:20px;margin-top:3px}.suggestions{display:grid;gap:7px;margin-top:8px}.suggestion{width:100%;text-align:left;background:#0b111a;border:1px solid #2c3a4f;padding:10px;border-radius:11px}.suggestion.active{border-color:#6d92d2;background:#14213a}.suggestion b{display:block}.suggestion small{display:block;color:var(--muted);margin-top:2px}.chip{display:inline-flex;align-items:center;border:1px solid #40506a;border-radius:999px;padding:3px 7px;font-size:11px;font-weight:900;color:#bfd0e7}.searchbox{position:relative}.searchbox input{width:100%;padding-right:46px}.searchbox button{position:absolute;right:4px;top:4px;min-height:34px;height:34px;padding:4px 10px}.result-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap}.result-title{margin:0}.empty{padding:28px;text-align:center;color:var(--muted)}.json-block{white-space:pre-wrap;word-break:break-word;background:#0a1018;border:1px solid var(--line);border-radius:10px;padding:12px;max-height:550px;overflow:auto}.section-title{margin:16px 0 7px;color:#bcd0ee;font-size:13px;text-transform:uppercase;letter-spacing:.07em}.kv{display:grid;grid-template-columns:minmax(170px,.8fr) 1.2fr;gap:1px;background:#263245;border:1px solid #263245;border-radius:10px;overflow:hidden}.kv div{background:#0e151f;padding:8px 10px}.kv div:nth-child(odd){color:var(--muted);font-weight:800}.mode-note{font-size:12px;color:#cbd7e8}.status-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--green);margin-right:6px}.freeze-first th:first-child,.freeze-first td:first-child{position:sticky;left:0;z-index:1;background:#111925}.freeze-first th:first-child{z-index:3;background:#17202e}.tabs{margin-bottom:4px}.tabs button{min-height:40px}.page{animation:fade .15s ease}@keyframes fade{from{opacity:.4;transform:translateY(2px)}to{opacity:1;transform:none}}@media(max-width:1100px){.report-grid{grid-template-columns:1fr}.filter-grid{grid-template-columns:repeat(3,1fr)}.grid{grid-template-columns:repeat(2,1fr)}.cards{grid-template-columns:repeat(2,1fr)}}@media(max-width:650px){.app{padding:10px 10px 45px}.top{margin:-10px -10px 10px;padding:10px}.grid,.filter-grid,.cards{grid-template-columns:1fr}.tabs{overflow:auto;flex-wrap:nowrap;padding-bottom:3px}.tabs button{white-space:nowrap}.panel{padding:10px}.report-grid{display:block}.report-grid>.panel{margin:0 0 10px}.kv{grid-template-columns:1fr}.kv div:nth-child(odd){padding-bottom:2px}.kv div:nth-child(even){padding-top:2px}}
+    *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:radial-gradient(circle at top,#111a29 0,#090c12 42%);color:var(--text);font:14px/1.45 Inter,system-ui,-apple-system,Segoe UI,sans-serif}body.ledger-focus #rrSliceRail,body.ledger-focus #rrSlicePanel,body.ledger-focus #rrSliceBack{display:none!important;visibility:hidden!important;pointer-events:none!important}.app{max-width:1550px;margin:auto;padding:14px 14px 60px}.top{position:sticky;top:0;z-index:30;margin:-14px -14px 12px;padding:12px 14px;background:rgba(9,12,18,.92);backdrop-filter:blur(18px);border-bottom:1px solid var(--line);display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap}.brand small{display:block;color:#9fb8de;font-weight:900;letter-spacing:.08em}.brand h1{font-size:22px;margin:2px 0}.brand p{margin:0;color:var(--muted)}.actions,.tabs,.inline{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.panel{background:linear-gradient(180deg,#121925,#0f151f);border:1px solid var(--line);border-radius:15px;padding:13px;margin:12px 0;box-shadow:var(--shadow)}.panel h2,.panel h3{margin:0 0 10px}.grid{display:grid;grid-template-columns:repeat(4,minmax(180px,1fr));gap:10px}.report-grid{display:grid;grid-template-columns:minmax(320px,.8fr) minmax(460px,1.7fr);gap:12px}.filter-grid{display:grid;grid-template-columns:repeat(5,minmax(150px,1fr));gap:9px}label{display:flex;flex-direction:column;gap:5px;color:var(--muted);font-weight:800}input,select,button,a,textarea{min-height:42px;background:var(--panel2);color:var(--text);border:1px solid var(--line2);border-radius:10px;padding:9px 10px;font:inherit;font-size:16px}button,a{text-decoration:none;font-weight:900;cursor:pointer}button:hover,a:hover{border-color:#627a9f}.active,.primary{background:linear-gradient(180deg,#31538d,#243f6e);border-color:#577bb8}.success{background:rgba(73,185,135,.12);border-color:rgba(73,185,135,.5)}.danger{background:rgba(226,103,115,.12);border-color:rgba(226,103,115,.45)}.hidden{display:none!important}.muted{color:var(--muted)}.msg{min-height:20px;color:var(--muted)}.msg.ok{color:#79d5aa}.msg.error{color:#ff8b96}.scroll{overflow:auto;border:1px solid var(--line);border-radius:11px}table{border-collapse:separate;border-spacing:0;width:100%;min-width:900px}th,td{padding:9px;border-bottom:1px solid #263245;text-align:left;white-space:nowrap}th{position:sticky;top:0;z-index:2;background:#17202e;color:#c8d7ea}.table-wrap{position:relative}.hscroll{overflow-x:auto;overflow-y:hidden;height:13px;margin-top:5px}.hscroll>div{height:1px}.cards{display:grid;grid-template-columns:repeat(4,minmax(150px,1fr));gap:9px}.metric{background:#0c121b;border:1px solid var(--line);border-radius:12px;padding:11px}.metric small{display:block;color:var(--muted);font-weight:800}.metric strong{display:block;font-size:20px;margin-top:3px}.suggestions{display:grid;gap:7px;margin-top:8px}.suggestion{width:100%;text-align:left;background:#0b111a;border:1px solid #2c3a4f;padding:10px;border-radius:11px}.suggestion.active{border-color:#6d92d2;background:#14213a}.suggestion b{display:block}.suggestion small{display:block;color:var(--muted);margin-top:2px}.chip{display:inline-flex;align-items:center;border:1px solid #40506a;border-radius:999px;padding:3px 7px;font-size:11px;font-weight:900;color:#bfd0e7}.searchbox{position:relative}.searchbox input{width:100%;padding-right:46px}.searchbox button{position:absolute;right:4px;top:4px;min-height:34px;height:34px;padding:4px 10px}.result-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap}.result-title{margin:0}.empty{padding:28px;text-align:center;color:var(--muted)}.json-block{white-space:pre-wrap;word-break:break-word;background:#0a1018;border:1px solid var(--line);border-radius:10px;padding:12px;max-height:550px;overflow:auto}.section-title{margin:16px 0 7px;color:#bcd0ee;font-size:13px;text-transform:uppercase;letter-spacing:.07em}.kv{display:grid;grid-template-columns:minmax(170px,.8fr) 1.2fr;gap:1px;background:#263245;border:1px solid #263245;border-radius:10px;overflow:hidden}.kv div{background:#0e151f;padding:8px 10px}.kv div:nth-child(odd){color:var(--muted);font-weight:800}.mode-note{font-size:12px;color:#cbd7e8}.status-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--green);margin-right:6px}.freeze-first th:first-child,.freeze-first td:first-child{position:sticky;left:0;z-index:1;background:#111925}.freeze-first th:first-child{z-index:3;background:#17202e}.tabs{margin-bottom:4px}.tabs button{min-height:40px}.page{animation:fade .15s ease}@keyframes fade{from{opacity:.4;transform:translateY(2px)}to{opacity:1;transform:none}}@media(max-width:1100px){.report-grid{grid-template-columns:1fr}.filter-grid{grid-template-columns:repeat(3,1fr)}.grid{grid-template-columns:repeat(2,1fr)}.cards{grid-template-columns:repeat(2,1fr)}}@media(max-width:650px){.app{padding:10px 10px 45px}.top{margin:-10px -10px 10px;padding:10px}.grid,.filter-grid,.cards{grid-template-columns:1fr}.tabs{overflow:auto;flex-wrap:nowrap;padding-bottom:3px}.tabs button{white-space:nowrap}.panel{padding:10px}.report-grid{display:block}.report-grid>.panel{margin:0 0 10px}.kv{grid-template-columns:1fr}.kv div:nth-child(odd){padding-bottom:2px}.kv div:nth-child(even){padding-top:2px}}
+  </style>
+  <style>
+    body.rrSliceReserved{padding-top:0!important}
+    #rrSliceRail,#rrSlicePanel,#rrSliceBack{display:none!important;visibility:hidden!important;pointer-events:none!important}
   </style>
 </head>
 <body>
 <main class="app">
   <header class="top">
-    <div class="brand">
-      <small>REAL FACTORY · ACCOUNTS · FIELD-WISE ADD NEW V8078</small>
-      <h1>Accounts & Intelligent Reports</h1>
-      <p>AUTO POST FIRST · TEST FIRST · report search + direct analysis</p>
-    </div>
-    <div class="actions">
-      <label style="min-width:112px">Data Mode<select id="dataMode"><option>TEST</option><option>REAL</option></select></label>
-      <a href="real-material-master-v805.html">Material Master</a>
-      <a href="real-dashboard-v9182.html?v=9290">Dashboard</a>
-      <button id="refreshAll" type="button">Refresh</button>
-    </div>
+    <div class="inline"><button id="accountsBack" type="button" aria-label="Go back">← Back</button><button id="openAccountsMenu" type="button" aria-label="Open accounts menu">☰ Accounts Menu</button></div>
   </header>
+  <div class="actions" style="justify-content:flex-end"><label style="min-width:112px">Data Mode<select id="dataMode"><option>TEST</option><option>REAL</option></select></label><button id="refreshAll" type="button">Refresh</button></div>
 
   <nav class="tabs" aria-label="Accounts sections">
-    <button type="button" data-tab="reports" class="active">Reports / Ask</button>
+    <button type="button" data-tab="accountsHome" class="active">Accounts Home</button>
+    <button type="button" data-tab="reports">Reports / Ask</button>
     <button type="button" data-tab="ledgers">Day Book / Ledgers</button>
     <button type="button" data-tab="purchase">Sales & Purchase</button>
     <button type="button" data-tab="money">Receipt & Payment</button>
+    <button type="button" data-tab="creditors">Sundry Creditors</button>
+    <button type="button" data-tab="accountsMap">Chart of Accounts</button>
   </nav>
 
-  <section id="reports" class="page">
+  <section id="accountsHome" class="page">
+    <section class="panel">
+      <div class="result-head"><div><small class="chip">EASY ACCOUNTS HOME</small><h2>Accounting Modules</h2><p class="muted">हर accounting काम एक जगह से खोलें। खाली account heads भी Chart of Accounts में ₹0 के साथ दिखेंगे।</p></div><button type="button" data-open-tab="accountsMap" class="primary">View Complete Accounts</button></div>
+      <div class="cards" style="margin-top:14px">
+        <button class="suggestion" data-open-tab="accountsMap"><b>Complete Chart of Accounts</b><small>Balance Sheet + P&amp;L heads · zero-visible</small></button>
+        <button class="suggestion" data-ledger-scope="DEBTORS"><b>Sundry Debtors</b><small>Customer ledger · outstanding · receipts</small></button>
+        <button class="suggestion" data-ledger-scope="CREDITORS"><b>Sundry Creditors</b><small>Supplier ledger · payable · payments</small></button>
+        <button class="suggestion" data-ledger-scope="SALARY"><b>Salary &amp; Wages</b><small>Salary · overtime · piece-rate wages</small></button>
+        <button class="suggestion" data-ledger-scope="LOAN_ADVANCE"><b>Loans &amp; Advances</b><small>Given · received · employee advances</small></button>
+        <button class="suggestion" data-open-tab="money"><b>Receipts &amp; Payments</b><small>Cash · bank · party entries</small></button>
+        <button class="suggestion" data-open-tab="money" data-focus-id="journalDebit"><b>Journal Entries</b><small>Debit / Credit posting and reversal</small></button>
+        <button class="suggestion" data-ledger-scope="EXPENSE"><b>Expenses</b><small>Direct · indirect · factory expenses</small></button>
+        <button class="suggestion" data-open-tab="purchase"><b>Sales &amp; Purchase</b><small>Invoices · returns · damage claims</small></button>
+        <button class="suggestion" data-open-tab="reports" data-report-query="stock"><b>Inventory &amp; Stock</b><small>Lots · quantity · valuation · returns</small></button>
+        <button class="suggestion" data-open-tab="ledgers"><b>Day Book &amp; Ledgers</b><small>View · search · share · export</small></button>
+        <button class="suggestion" data-open-tab="reports"><b>P&amp;L / Balance Sheet</b><small>Trial Balance · Profit &amp; Loss · Balance Sheet</small></button>
+      </div>
+    </section>
+  </section>
+
+  <section id="ledgerSummary" class="panel page hidden">
+    <div class="result-head"><div class="inline"><button id="closeLedgerSummary" type="button">← Back</button><h2 id="ledgerSummaryTitle">Ledger Summary</h2></div></div>
+    <div class="filter-grid"><label style="grid-column:span 3">Party / Ledger Search<input id="ledgerSummarySearch" type="search" placeholder="Type party or ledger name"></label><label>From<input id="summaryFrom" type="date"></label><label>To<input id="summaryTo" type="date"></label></div>
+    <p id="ledgerSummaryMsg" class="msg"></p><div id="ledgerSummaryResult"><div class="empty">Select an account group.</div></div>
+  </section>
+
+  <section id="reports" class="page hidden">
     <div class="report-grid">
       <section class="panel">
         <h2>Ask Reports</h2>
@@ -123,8 +147,67 @@
       <label style="grid-column:1/-1">Narration<input id="note"></label>
     </div>
     <div class="actions" style="margin-top:10px"><button class="primary" id="saveMoney" type="button">Preview</button><span id="mmsg" class="msg"></span></div>
+    <h3 style="margin-top:22px">Journal Entry</h3>
+    <div class="grid"><label>Debit Ledger<select id="journalDebit"></select></label><label>Credit Ledger<select id="journalCredit"></select></label><label>Amount<input id="journalAmount" type="number" value="0" step="0.01"></label><label>Reference<input id="journalRef"></label><label style="grid-column:1/-1">Narration<input id="journalNote" placeholder="Reason is mandatory"></label></div>
+    <div class="actions" style="margin-top:10px"><button class="primary" id="postJournal" type="button">Post Journal</button><span id="journalMsg" class="msg"></span></div>
+  </section>
+
+  <section id="creditors" class="panel page hidden">
+    <div class="result-head"><div><h2>Sundry Creditors</h2><p class="muted">Canonical Supplier ID → Supplier Ledger mapping and live payable balance.</p></div><button id="loadCreditors" class="primary" type="button">Load Creditors</button></div>
+    <div class="filter-grid"><label style="grid-column:span 3">Search supplier / ledger code<input id="creditorSearch" type="search" placeholder="Name or ledger code"></label></div>
+    <p id="creditorMsg" class="msg"></p><div id="creditorResult"><div class="empty">Load creditors to verify mapping.</div></div>
+    <div class="actions" style="margin-top:10px"><button id="creditorPrev" type="button">Previous</button><button id="creditorNext" type="button">Next</button></div>
+    <h3 style="margin-top:22px">Reverse Accounts Voucher</h3>
+    <p class="muted">Manual Receipt, Payment or Journal only. Purchase return/damage must reverse from its source document.</p>
+    <div class="grid"><label>Voucher No<input id="reverseVoucher" autocomplete="off"></label><label style="grid-column:span 2">Reason<input id="reverseReason"></label></div>
+    <div class="actions" style="margin-top:10px"><button id="reverseVoucherBtn" class="danger" type="button">Reverse Voucher</button><span id="reverseMsg" class="msg"></span></div>
+  </section>
+
+  <section id="accountsMap" class="panel page hidden">
+    <div class="result-head"><div><h2>Complete Chart of Accounts</h2><p class="muted">Balance Sheet + Profit &amp; Loss structure. Empty heads remain visible at ₹0.</p></div><button id="loadAccountsMap" class="primary" type="button">Refresh Structure</button></div>
+    <div class="filter-grid"><label style="grid-column:span 3">Search head / ledger<input id="accountsMapSearch" type="search" placeholder="salary, loan, stock, expense…"></label><label>Financial Group<select id="accountsMapGroup"><option value="">All Groups</option><option>ASSET</option><option>LIABILITY</option><option>EQUITY</option><option>INCOME</option><option>EXPENSE</option><option>PURCHASE</option><option>SALARY</option><option>TAX</option><option>SUSPENSE</option></select></label></div>
+    <div id="accountsMapSummary" class="cards" style="margin:12px 0"></div><p id="accountsMapMsg" class="msg"></p><div id="accountsMapResult"><div class="empty">Load complete accounts structure.</div></div>
   </section>
 </main>
+
+<aside id="accountsDrawer" class="hidden" aria-label="Accounts modules" style="position:fixed;inset:0 auto 0 0;width:min(360px,88vw);z-index:100;background:#0b111a;border-right:1px solid var(--line);padding:16px;overflow:auto;box-shadow:20px 0 60px #000b">
+  <div class="result-head"><div><small class="chip">ACCOUNTS HUB</small><h2>Easy Accounting</h2></div><button id="closeAccountsMenu" type="button">← Back</button></div>
+  <div class="suggestions" style="margin-top:18px">
+    <button class="suggestion" data-open-tab="reports"><b>Dashboard &amp; Reports</b><small>Trial Balance · P&amp;L · Balance Sheet</small></button>
+    <button class="suggestion" data-open-tab="accountsMap"><b>Complete Chart of Accounts</b><small>All Balance Sheet &amp; P&amp;L heads · zero-visible</small></button>
+    <button class="suggestion" data-ledger-scope="DEBTORS"><b>Sundry Debtors</b><small>Customer ledger · outstanding · receipts</small></button>
+    <button class="suggestion" data-ledger-scope="CREDITORS"><b>Sundry Creditors</b><small>Supplier ledger · payable · payments</small></button>
+    <button class="suggestion" data-open-tab="purchase"><b>Sales &amp; Purchase</b><small>Invoices · returns · damage claims</small></button>
+    <button class="suggestion" data-open-tab="money"><b>Receipts &amp; Payments</b><small>Cash · bank · party entries</small></button>
+    <button class="suggestion" data-open-tab="money" data-focus-id="journalDebit"><b>Journal Entries</b><small>Debit / Credit posting</small></button>
+    <button class="suggestion" data-ledger-scope="EXPENSE"><b>Expenses</b><small>Expense ledgers and P&amp;L effect</small></button>
+    <button class="suggestion" data-ledger-scope="SALARY"><b>Salary &amp; Wages</b><small>Salary · overtime · piece-rate</small></button>
+    <button class="suggestion" data-ledger-scope="LOAN_ADVANCE"><b>Loans &amp; Advances</b><small>Given · received · employee advances</small></button>
+    <button class="suggestion" data-open-tab="reports" data-report-query="stock"><b>Inventory &amp; Stock</b><small>Lots · quantity · value · returns</small></button>
+    <button class="suggestion" data-open-tab="ledgers"><b>Day Book &amp; Ledgers</b><small>Search · popup · share · export</small></button>
+  </div>
+</aside>
+
+<section id="ledgerStatementPage" class="hidden" aria-label="Ledger statement" style="position:fixed;inset:0;z-index:110;background:var(--bg);overflow:auto;padding:12px">
+  <header class="result-head" style="position:sticky;top:0;z-index:4;background:var(--bg);padding:4px 0 10px;border-bottom:1px solid var(--line)"><button id="closeLedgerStatement" type="button">← Back</button><div style="flex:1"><h2 id="statementLedgerName" style="margin:0">Ledger Statement</h2><small id="statementScope" class="muted"></small></div><div style="text-align:right"><button id="shareLedgerRealChat" class="primary" type="button">Share Ledger to Real Chat</button><small id="ledgerShareStatus" class="muted" style="display:block;margin-top:5px">Not shared yet</small></div></header>
+  <div class="filter-grid" style="margin:12px 0"><label style="grid-column:span 3">Search Particular / Voucher No.<input id="statementSearch" type="search" placeholder="Particular or voucher number"></label><label>From<input id="statementFrom" type="date"></label><label>To<input id="statementTo" type="date"></label></div>
+  <div id="statementTotals" class="cards"></div><p id="statementMsg" class="msg"></p><div id="statementResult"></div>
+</section>
+
+<section id="entryPopup" class="hidden" style="position:fixed;inset:0;background:#000c;z-index:130;padding:16px;place-items:center">
+  <div class="panel" style="width:min(760px,100%);max-height:90vh;overflow:auto">
+    <div class="result-head"><div><small class="chip">ENTRY DETAILS</small><h2>Accounts Entry</h2></div><button id="closeEntryPopup" type="button">← Back</button></div>
+    <div id="entryPopupBody"></div><div class="actions" style="margin-top:12px"><button id="sharePopupEntry" class="primary" type="button">Share to Real Chat</button><button id="exportPopupEntry" type="button">Export CSV</button><button id="printPopupEntry" type="button">Print</button></div>
+  </div>
+</section>
+
+<section id="realChatSharePopup" class="hidden" style="position:fixed;inset:0;background:#000c;z-index:150;padding:16px;place-items:center">
+  <div class="panel" style="width:min(620px,100%);max-height:92vh;overflow:auto">
+    <div class="result-head"><div><small class="chip">REAL CHAT</small><h2>Share Accounts</h2></div><button id="closeRealChatShare" type="button">← Back</button></div>
+    <p id="realChatLockedParty" class="muted">Recipient is locked to the open ledger party.</p>
+    <p id="realChatShareMsg" class="msg"></p><div id="realChatShareRows" class="suggestions"></div>
+  </div>
+</section>
 
 <section id="addMasterModal" class="hidden" style="position:fixed;inset:0;background:#000b;z-index:120;padding:16px;place-items:center">
   <div class="panel" style="width:min(720px,100%);max-height:92vh;overflow:auto">
@@ -157,6 +240,6 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="config.js"></script>
 <script src="real-common.js"></script>
-<script src="real-accounts-v805.js?v=8078"></script>
+<script src="real-accounts-v805.js?v=9787"></script>
 </body>
 </html>

@@ -95,6 +95,15 @@
             );
             if (!workspace?.owner_name)
               throw Error("Distributor workspace उपलब्ध नहीं है।");
+            const savedSession = JSON.parse(
+              localStorage.getItem("rr_customer_secure_session_v9592") || "{}",
+            );
+            if (savedSession.relation === "DISTRIBUTOR" && savedSession.share_token !== "") {
+              localStorage.setItem(
+                "rr_customer_secure_session_v9592",
+                JSON.stringify({ ...savedSession, share_token: "" }),
+              );
+            }
             status.textContent = "Verified ✓";
             location.replace("real-market-distributor-test67.html");
           } catch (error) {
@@ -103,7 +112,7 @@
             if(showFormOnFailure) form.hidden=false;
           }
         }
-        form.onsubmit=async(event)=>{event.preventDefault();const button=document.getElementById("loginButton");button.disabled=true;status.style.color="#8fe0b7";status.textContent="VERIFYING DISTRIBUTOR…";try{const result=await RF853.rpc("rr_market_partner_login_issue_v67",{p_name:document.getElementById("distributorName").value,p_mobile:document.getElementById("distributorMobile").value,p_device_id:device()});const ownerName=String(result.owner_name||document.getElementById("distributorName").value||"Distributor").trim();localStorage.setItem("rr_market_partner_owner_name_v67",ownerName);localStorage.setItem("rr_customer_secure_session_v9592",JSON.stringify({session_token:result.session_token,issued_at:new Date().toISOString(),relation:"DISTRIBUTOR",owner_name:ownerName}));await openWorkspace(false);}catch(error){status.style.color="#ff9da5";status.textContent=error.message||"Distributor verification failed.";button.disabled=false;}};
+        form.onsubmit=async(event)=>{event.preventDefault();const button=document.getElementById("loginButton");button.disabled=true;status.style.color="#8fe0b7";status.textContent="VERIFYING DISTRIBUTOR…";try{const result=await RF853.rpc("rr_market_partner_login_issue_v67",{p_name:document.getElementById("distributorName").value,p_mobile:document.getElementById("distributorMobile").value,p_device_id:device()});const ownerName=String(result.owner_name||document.getElementById("distributorName").value||"Distributor").trim();localStorage.setItem("rr_market_partner_owner_name_v67",ownerName);localStorage.setItem("rr_customer_secure_session_v9592",JSON.stringify({session_token:result.session_token,issued_at:new Date().toISOString(),share_token:"",relation:"DISTRIBUTOR",owner_name:ownerName}));await openWorkspace(false);}catch(error){status.style.color="#ff9da5";status.textContent=error.message||"Distributor verification failed.";button.disabled=false;}};
         if (!switchDistributor) openWorkspace(true);
       })();
     </script>

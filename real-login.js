@@ -6,13 +6,22 @@ form.addEventListener("submit", async (e) => {
 
   msg.textContent = "Signing in...";
 
-  const email = document.getElementById("email").value.trim();
+  const identifier = document.getElementById("identifier").value.trim();
   const password = document.getElementById("password").value;
-
-  const { data, error } = await supabaseClient.auth.signInWithPassword({
-    email,
-    password
-  });
+  const isEmail = identifier.includes("@");
+  let data, error;
+  if (isEmail) ({ data, error } = await supabaseClient.auth.signInWithPassword({ email: identifier, password }));
+  else {
+    try {
+      const response = await fetch(`${SUPABASE_URL}/functions/v1/rr-staff-login-v9750`, {
+        method: "POST", headers: { "Content-Type": "application/json", apikey: SUPABASE_ANON_KEY },
+        body: JSON.stringify({ action: "login", identifier, password })
+      });
+      const result = await response.json();
+      if (!response.ok || !result.session) throw new Error(result.error || "Invalid login credentials.");
+      ({ data, error } = await supabaseClient.auth.setSession({ access_token: result.session.access_token, refresh_token: result.session.refresh_token }));
+    } catch (requestError) { error = requestError; }
+  }
 
   if (error) {
     msg.innerHTML = `
@@ -47,17 +56,20 @@ form.addEventListener("submit", async (e) => {
 });
 
 async function sendRecovery() {
-  const email = document.getElementById("email").value.trim();
+  const identifier = document.getElementById("identifier").value.trim();
+
+  if (!identifier) { msg.textContent = "Enter your email, mobile or username first."; return; }
 
   msg.textContent = "Sending password reset email...";
 
-  const { error } = await supabaseClient.auth.resetPasswordForEmail(
-    email,
-    {
-      redirectTo:
-        "https://skbhati1977-a11y.github.io/redzed-store/reset-password.html"
-    }
-  );
+  let error = null;
+  if (identifier.includes("@")) ({ error } = await supabaseClient.auth.resetPasswordForEmail(identifier, { redirectTo: "https://skbhati1977-a11y.github.io/redzed-store/reset-password.html" }));
+  else {
+    try {
+      const response = await fetch(`${SUPABASE_URL}/functions/v1/rr-staff-login-v9750`, { method:"POST", headers:{"Content-Type":"application/json",apikey:SUPABASE_ANON_KEY}, body:JSON.stringify({action:"reset",identifier}) });
+      if (!response.ok) throw new Error("Reset request could not be processed.");
+    } catch (requestError) { error = requestError; }
+  }
 
   if (error) {
     msg.textContent = error.message;
@@ -65,5 +77,13 @@ async function sendRecovery() {
   }
 
   msg.textContent =
-    "Password reset email sent. Gmail, Spam और Promotions check करें।";
+    "If the account has a registered email, a reset link has been sent. Gmail, Spam और Promotions check करें।";
 }
+
+document.getElementById("forgotBtn").addEventListener("click", sendRecovery);
+document.getElementById("togglePassword").addEventListener("click", (event) => {
+  const password = document.getElementById("password"), showing = password.type === "text";
+  password.type = showing ? "password" : "text";
+  event.currentTarget.setAttribute("aria-pressed", String(!showing));
+  event.currentTarget.setAttribute("aria-label", showing ? "Show password" : "Hide password");
+});

@@ -9,6 +9,7 @@
   const identityKey = `${legacyIdentityKey}:${token || "unassigned"}`;
   const sessionKey = "rr_customer_secure_session_v9592";
   const deviceKey = "rr_customer_device_v9592";
+  const launchKey = "rr_customer_verified_launch_v9688";
 
   function parse(key) {
     try { return JSON.parse(localStorage.getItem(key) || "null"); } catch (_) { return null; }
@@ -41,6 +42,12 @@
     return value?.share_token === token ? value : null;
   }
   function save(value) { localStorage.setItem(sessionKey, JSON.stringify({ ...value, share_token: token })); }
+  function rememberVerifiedLaunch(validated) {
+    if (!token) return;
+    const relation = String(validated?.relation || validated?.relation_scope || "REDZED_CUSTOMER").toUpperCase();
+    if (relation && relation !== "REDZED_CUSTOMER") return;
+    localStorage.setItem(launchKey, JSON.stringify({ token, relation: "REDZED_CUSTOMER", verified_at: new Date().toISOString() }));
+  }
   function clear() {
     const value = parse(sessionKey);
     if (!value || value.share_token === token) localStorage.removeItem(sessionKey);
@@ -94,6 +101,7 @@
     remember(result.customer_name || identity.name, identity.mobile);
     const validated = await rpc("rr_customer_session_validate_v9590", { p_session_token: result.session_token, p_device_id: trustedDevice });
     window.RR_CUSTOMER_TRUSTED_SESSION = validated;
+    rememberVerifiedLaunch(validated);
     return validated;
   }
 
@@ -104,6 +112,7 @@
       try {
         const validated = await rpc("rr_customer_session_validate_v9590", { p_session_token: current.session_token, p_device_id: trustedDevice });
         window.RR_CUSTOMER_TRUSTED_SESSION = validated;
+        rememberVerifiedLaunch(validated);
         return validated;
       } catch (_) { clear(); }
     }

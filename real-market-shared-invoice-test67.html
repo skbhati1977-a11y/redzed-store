@@ -42,15 +42,18 @@
     @media print{.pricing-private,.rr-godown-view-only,.actions,.secure-note,.cancel-dialog{display:none!important}}
     @media(max-width:650px){
       .grid,.charges,.add-lot-grid{grid-template-columns:1fr}.top{display:block}.page{padding:7px}.totals{max-width:none}.decision{grid-template-columns:1fr 105px 82px}
-      .wrap{overflow:visible;padding:0;border:0;background:transparent;isolation:auto}
-      table{display:block;min-width:0;width:100%}thead{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
-      tbody{display:grid;gap:10px}tbody tr{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0;background:#111a25;border:1px solid #33445a;border-radius:12px;padding:10px;overflow:hidden}
-      tbody td{display:flex;min-width:0;align-items:center;justify-content:space-between;gap:10px;border:0;border-bottom:1px solid #29394c;padding:9px 6px;text-align:right;overflow-wrap:anywhere}
-      tbody td::before{content:attr(data-label);flex:0 0 auto;color:#94a3b8;font-size:11px;font-weight:800;text-align:left}
-      tbody td[data-label="Pic"],tbody td[data-label="Article / Lot"],tbody td[data-label="Source Requirement"],tbody td[data-label="Godown / Allocation"]{grid-column:1/-1}
-      tbody td[data-label="Pic"]{justify-content:flex-start}tbody td[data-label="Article / Lot"]{font-size:16px}
-      tbody td[data-label="Godown / Allocation"]{background:#172230;border-radius:8px;margin-top:5px}
-      tbody td:last-child{border-bottom:0}.pic{width:58px;height:68px}.num{width:92px}
+      .wrap{overflow-x:auto;overflow-y:visible;padding:7px;-webkit-overflow-scrolling:touch;scrollbar-gutter:stable}
+      table{display:table;width:1180px;min-width:1180px;table-layout:fixed;font-size:11px}
+      thead{position:static;width:auto;height:auto;padding:0;margin:0;overflow:visible;clip:auto;white-space:normal}
+      tbody{display:table-row-group}tbody tr{display:table-row;background:transparent;border:0;padding:0}
+      tbody td{display:table-cell;min-width:0;border:1px solid #33445a;padding:6px 5px;text-align:center;vertical-align:middle;word-break:normal;overflow-wrap:break-word}
+      tbody td::before{display:none;content:none}
+      th:nth-child(1),td:nth-child(1){width:52px}th:nth-child(2),td:nth-child(2){width:72px}th:nth-child(3),td:nth-child(3){width:122px}
+      th:nth-child(4),td:nth-child(4){width:105px}th:nth-child(5),td:nth-child(5){width:86px}th:nth-child(6),td:nth-child(6){width:148px}
+      th:nth-child(7),td:nth-child(7),th:nth-child(8),td:nth-child(8){width:94px}th:nth-child(9),td:nth-child(9){width:92px}
+      th:nth-child(10),td:nth-child(10),th:nth-child(11),td:nth-child(11),th:nth-child(12),td:nth-child(12){width:92px}
+      th:nth-child(13),td:nth-child(13){width:128px}th:nth-child(14),td:nth-child(14){width:82px}
+      .pic{width:48px;height:58px}.num{width:76px}
       .actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));justify-content:stretch}.actions .btn{min-height:58px;padding:11px 8px}
       .cancel-actions{grid-template-columns:1fr}.cancel-actions .btn{min-height:50px}
     }
@@ -78,5 +81,5 @@
     <div class="cancel-actions"><button id="keepCi" type="button" class="btn">KEEP CI</button><button type="submit" class="btn rollback">ROLLBACK TO PI</button></div>
   </form>
 </dialog>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script><script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.4/dist/jspdf.plugin.autotable.min.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script><script src="config.js?v=9462"></script><script src="real-market-anon-client-test67.js?v=2"></script><script src="real-common.js"></script><script src="rf-v853-core.js"></script><script src="real-market-shared-invoice-test67.js?v=31"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script><script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.4/dist/jspdf.plugin.autotable.min.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script><script src="config.js?v=9462"></script><script src="real-market-anon-client-test67.js?v=2"></script><script src="real-common.js"></script><script src="rf-v853-core.js"></script><script src="real-market-global-lifecycle-v9730.js?v=9730"></script><script src="real-market-shared-invoice-test67.js?v=9730"></script>
 </body></html>

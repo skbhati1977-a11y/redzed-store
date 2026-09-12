@@ -269,6 +269,17 @@
   }
   function wire() {
     $("#menuBtn").onclick = () => open("drawerBack");
+    $("#distributorHomeBtn").onclick = () =>
+      (location.href = "real-market-distributor-test67.html");
+    $("#myCustomersLane").onclick = () => {
+      $("#myCustomersLane").classList.add("on");
+      $("#customerSearch").focus();
+    };
+    $("#rzDistributorLane").onclick = () =>
+      (location.href =
+        "real-market-distributor-redzed-chat-test67.html?from=distributor_list&v=9721");
+    $("#rzDirectLane").onclick = () =>
+      (location.href = "s.html?from=distributor_direct&v=9721");
     $("#addBtn").onclick = () => {
       $("#contactKind").value = viewKind;
       $("#contactActive").checked = true;
@@ -306,11 +317,14 @@
   async function boot() {
     try {
       const session = await RR_CUSTOMER_SECURE_SESSION_V9592.ensure();
-      if (!session) return note("Valid distributor login से खोलें.", true);
+      if (!session) {
+        location.replace("real-market-distributor-login-test67.html");
+        return;
+      }
       wire();
       await load();
     } catch (e) {
-      note(e.message, true);
+      location.replace("real-market-distributor-login-test67.html");
     }
   }
   document.addEventListener("rr:customer-secure-session-ready", boot, {

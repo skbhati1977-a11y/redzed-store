@@ -205,6 +205,7 @@
             : actor === "REDZED"
               ? "REDZED"
               : owner;
+        const isMine = actor === "DISTRIBUTOR";
         return {
           id: message.id,
           channel:
@@ -213,6 +214,7 @@
               ? "SUPERADMIN_PRIVATE"
               : undefined,
           sender_name: sender,
+          sender_kind: actor,
           message_type: attachment
             ? String(attachment.type || "").startsWith("audio/")
               ? "VOICE"
@@ -225,8 +227,9 @@
                 file_name: attachment.name,
                 mime_type: attachment.type,
                 byte_size: attachment.byte_size,
+                __rr_is_mine: isMine,
               }
-            : {},
+            : { __rr_is_mine: isMine },
           reply_to_message_id: null,
           created_at: message.created_at,
         };
@@ -239,7 +242,10 @@
     const base = authArgs();
     const customer = selectedCustomer(data);
 
-    if (name === "rr_chat_staff_inbox_v9434") {
+    if (
+      name === "rr_chat_staff_inbox_v9434" ||
+      name === "rr_chat_staff_inbox_v9704"
+    ) {
       if (mode === "CUSTOMER" && (!customer || customer.status !== "ACTIVE"))
         return [];
       return [
@@ -425,7 +431,11 @@
       eq() {
         return chain;
       },
+      limit() {
+        return chain;
+      },
       single: async () => ({ data: profile, error: null }),
+      maybeSingle: async () => ({ data: profile, error: null }),
     };
     return chain;
   };
@@ -681,12 +691,13 @@
           rows.length
             ? rows
                 .map((order) => {
-                  const canPi = ["DRAFT", "READY"].includes(order.status);
+                  const lifecycle = window.RRMarketLifecycle.state(order);
+                  const canPi = lifecycle.canPreparePi && (["DRAFT", "READY"].includes(order.status) || lifecycle.piEditable);
                   const canSend =
                     order.status === "READY" && !order.redzed_pushed_at;
                   const queued =
                     order.status === "CONSOLIDATION_QUEUED" && !order.redzed_pushed_at;
-                  return `<article class="rrPartnerOrder82"><b>${esc(order.requirement_display_no || order.order_ref)}</b><small>${esc(statusText(order))} · linked ${esc(order.collection_display_no || "collection")}</small>${lineRows(order, canPi)}${canPi ? `<button class="good" data-make-pi="${esc(order.id)}">${order.distributor_pi_ref ? "UPDATE & RESEND PI" : "MAKE PI & SEND TO CUSTOMER"}</button>` : ""}${canSend ? `<button data-send-redzed="${esc(order.id)}">SEND TO REDZED NOW</button><button type="button" data-add-consolidated="${esc(order.id)}">ADD TO CONSOLIDATED LIST</button>` : ""}${queued ? `<button type="button" data-remove-consolidated="${esc(order.id)}">REMOVE FROM CONSOLIDATED LIST</button>` : ""}</article>`;
+                  return `<article class="rrPartnerOrder82"><b>${esc(order.requirement_display_no || order.order_ref)}</b><small>${esc(statusText(order))} · linked ${esc(order.collection_display_no || "collection")}</small>${lineRows(order, canPi)}${canPi ? `<button class="good" data-make-pi="${esc(order.id)}">${order.distributor_pi_ref ? "EDIT CURRENT PI" : "MAKE PI & SEND TO CUSTOMER"}</button>` : ""}${canSend ? `<button data-send-redzed="${esc(order.id)}">SEND TO REDZED NOW</button><button type="button" data-add-consolidated="${esc(order.id)}">ADD TO CONSOLIDATED LIST</button>` : ""}${queued ? `<button type="button" data-remove-consolidated="${esc(order.id)}">REMOVE FROM CONSOLIDATED LIST</button>` : ""}</article>`;
                 })
                 .join("")
             : '<div class="rrPartnerEmpty82">Customer requirement not received yet.</div>',
@@ -875,9 +886,10 @@
   }
 
   async function deleteMessage(messageId) {
-    if (!confirm("Delete this message from the private chat?")) return;
+    const all = confirm("DELETE FOR ALL?\n\nOK = Delete for all\nCancel = choose Delete for me");
+    if (!all && !confirm("DELETE FOR ME only?")) return;
     try {
-      await rawRpc("rr_market_partner_chat_delete_v67", {
+      await rawRpc("rr_market_partner_chat_delete_v9712", {
         ...authArgs(),
         p_lane: lane(
           $("privateTab")?.classList.contains("on")
@@ -886,9 +898,10 @@
         ),
         p_partner_customer_id: mode === "CUSTOMER" ? customerId : null,
         p_message_id: messageId,
+        p_scope: all ? "ALL" : "ME",
       });
       $("groupTab")?.click();
-      flash("Message deleted ✓");
+      flash(all ? "Deleted for all ✓" : "Deleted for me ✓");
     } catch (error) {
       flash(error.message, true);
     }

@@ -1,0 +1,12 @@
+"use strict";
+const assert=require("node:assert/strict"),fs=require("node:fs");
+const js=fs.readFileSync("real-role-permission-v777-4-final.js","utf8");
+const edge=fs.readFileSync("supabase/functions/rr-owner-user-admin/index.ts","utf8");
+const sql=fs.readFileSync("supabase/migrations/20260910132000_test69_superadmin_admin_control_v9755.sql","utf8");
+assert.match(js,/\["owner","super_admin","superadmin"\]\.includes\(actorRole\(\)\)/);
+assert.match(edge,/\["owner","super_admin","superadmin"\]\.includes\(actorRole\)/);
+assert.match(sql,/v_admin_controller.*in \('owner','super_admin','superadmin'\)/s);
+assert.match(sql,/OWNER security lock/);
+assert.match(js,/id:profile\.id,\s*profile_id:profile\.id,\s*auth_user_id:profile\.auth_user_id/s);
+assert.doesNotMatch(edge,/auth_user_id:u\.id,id:u\.id/);
+console.log("TEST69 V9755 Super Admin control with Owner protection checks passed");

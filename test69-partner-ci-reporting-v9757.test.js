@@ -1,0 +1,20 @@
+"use strict";
+const assert=require("node:assert/strict"),fs=require("node:fs");
+const sql=fs.readFileSync("supabase/migrations/20260910170000_test69_partner_ci_reporting_bridge_v9757.sql","utf8");
+const sync=fs.readFileSync("supabase/migrations/20260910173000_test69_ci_account_total_resync_v9758.sql","utf8");
+const serial=fs.readFileSync("supabase/migrations/20260910174500_test69_pi_serial_deferrable_v9759.sql","utf8");
+const source=fs.readFileSync("supabase/migrations/20260910180000_test69_direct_accounts_source_link_v9760.sql","utf8");
+for(const code of ["CHIT_CONTRIBUTION_ASSET","CHIT_FUTURE_LIABILITY","CHIT_AUCTION_LOSS","CHIT_DIVIDEND_INCOME","ROUND_OFF"])
+ assert.match(sql,new RegExp("'"+code+"'"));
+assert.match(sql,/set market_requirement_id=p_requirement_id/);
+assert.match(sql,/Requirement PI binding conflict/);
+assert.match(sql,/'requirement_bound'/);
+assert.match(sql,/rr_fg_save_pi_party_discount_v9557/);
+assert.match(sync,/new\.status='CI_FINAL'/);
+assert.match(sync,/new\.grand_total is distinct from old\.grand_total/);
+assert.match(sync,/rr_accounts_reverse_source_mirror_v806/);
+assert.match(sync,/rr_accounts_post_cpi_v847/);
+assert.match(serial,/unique\(pi_id,serial_no\) deferrable initially immediate/);
+assert.match(source,/new\.source_module in\('FG_CPI_V787','RCI_V9740'\)/);
+assert.match(source,/on conflict\(source_module,source_record_id,data_mode\) do update/);
+console.log("PASS TEST69 partner CI source + financial report bridge V9757");
