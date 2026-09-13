@@ -942,6 +942,7 @@ async function adminDecision(id,decision){
   const r = await state.client.rpc("rr_cutting_admin_decide_cb_action_v1",{p_action_id:id,p_action:decision,p_note:note || null});
   if(r.error){say(errorText(r.error),"error");return}
   await loadAddonData();renderLotActionPanel();say(`Admin ${decision.toLowerCase()} saved.`,"success");
+  if(window.RRActionReturn?.hasReturn?.()) window.RRActionReturn.success();
 }
 
 async function ownerDecision(id,decision){
@@ -954,6 +955,7 @@ async function ownerDecision(id,decision){
   await loadAddonData();
   await window.RRCuttingMasterPM?.refresh?.();
   say(decision === "APPROVE" ? "Owner approved. CB quantity और cost ledger update हो गया।" : "Owner rejected the report.","success");
+  if(window.RRActionReturn?.hasReturn?.()) window.RRActionReturn.success();
 }
 
 async function sendVendor(id){
@@ -1031,6 +1033,20 @@ async function boot(){
   const observer = new MutationObserver(scheduleDecorate);
   observer.observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:["class","aria-hidden"]});
   scheduleDecorate();
+  const requestedAction = new URLSearchParams(location.search).get("action_id");
+  if(requestedAction){
+    const openRequestedAction = () => {
+      const action = state.actions.find(x => String(x.id) === String(requestedAction));
+      if(!action) return false;
+      const core = window.RRCuttingMasterPM;
+      const cards = core?.state?.().galleryRows || [];
+      if(!cards.some(x => String(x.division_id || x.unit_id || x.id) === String(action.division_id))) return false;
+      core.openLotByDivision(action.division_id,"single");
+      window.setTimeout(() => document.querySelector(`[data-id="${CSS.escape(String(requestedAction))}"]`)?.scrollIntoView({block:"center",behavior:"smooth"}),180);
+      return true;
+    };
+    if(!openRequestedAction()) window.setTimeout(openRequestedAction,350);
+  }
   window.REAL_FACTORY_CUTTING_CB_ACTIONS = {refresh:loadAddonData,state:() => ({...state})};
 }
 
