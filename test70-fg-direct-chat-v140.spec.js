@@ -26,7 +26,7 @@ test('Packing and Despatch use existing authoritative engines in Real Chat', () 
     assert.match(js, new RegExp(rpc));
     assert.match(migration, new RegExp(rpc));
   }
-  assert.match(html, /test70-fg-direct-chat-v140\.js\?v=142/);
+  assert.match(html, /test70-fg-direct-chat-v140\.js\?v=143/);
 });
 
 test('photo-first and difference-hold gates stay explicit', () => {
@@ -41,8 +41,12 @@ test('photo-first and difference-hold gates stay explicit', () => {
 test('Packing lifecycle owns one canonical regular card per source state', () => {
   assert.match(js, /packingState/);
   assert.match(js, /SUBMITTED','COMPLETED','CLOSED','CANCELLED/);
-  assert.match(js, /function cleanLegacy\(root\)[\s\S]*?\.work-card[\s\S]*?x\.remove\(\)/);
+  assert.match(js, /function cleanLegacy\(root,status,canonicalLots\)[\s\S]*?\.work-card[\s\S]*?x\.remove\(\)/);
   assert.match(js, /activeLane\(\)!=='READY_TO_SUBMIT'/);
+  assert.match(js, /function legacyLot/);
+  assert.match(js, /function isPackingMilestone/);
+  assert.match(js, /legacyRegularCount/);
+  assert.match(js, /status!==['"]OPEN['"]/);
   assert.match(js, /SUBMITTED WORK/);
   assert.doesNotMatch(js, /NO CURRENT SOURCE ACTION/);
 });
