@@ -66,6 +66,11 @@ Source of truth: user-entered box capacity -> equal size split -> colour split -
 - Backend implementation: `rr_fg_generate_pack_v787(text,jsonb,text,integer)`, version `LOCKED_CAPACITY_SIZE_COLOUR_ACTUAL_LEFTOVER_V9365`.
 - Feasibility calculation: balanced-box count = minimum across sizes of floor(size stock / per-box size quota); actual leftover = total minus balanced-box count times capacity. Reserving the preceding box when leftover <= half produces the same merge without writing a partial failed box.
 - Frontend: `real-finished-goods-v787.js` displays backend `pack_mark` (FRESH/ASST/MIX), with existing stock-type fallback for legacy unmarked records.
+- Consignment display is a lossless presentation grouping over physical backend boxes; it never changes or regenerates the algorithm result.
+  - FRESH/REGULAR boxes with the same capacity and exact normalized colour-size composition render as one box-number range row.
+  - ASST boxes group only when capacity and exact normalized colour-size composition both match. Different assortments must remain separate rows; several ASST rows are valid.
+  - MIX is the actual-leftover result and renders as its own final box row. Never classify MIX from quantity alone.
+  - A grouped row must retain its exact physical box numbers, per-box PCS, box count, group PCS total, and colour-size composition so Despatch can still act on individual boxes.
 - Scope: no changes to photos, AI removal, approval, WhatsApp, submit, permissions, stock categories, despatch, or other departments. Existing plans are not automatically rewritten; normal authorized rerun applies the rule to an open lot.
 
 
