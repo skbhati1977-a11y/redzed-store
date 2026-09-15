@@ -26,7 +26,8 @@ test('Packing and Despatch use existing authoritative engines in Real Chat', () 
     assert.match(js, new RegExp(rpc));
     assert.match(migration, new RegExp(rpc));
   }
-  assert.match(html, /test70-fg-direct-chat-v140\.js\?v=155/);
+  assert.match(html, /test70-fg-direct-chat-v140\.js\?v=156/);
+  assert.match(js, /data-kind="challan"/);
   assert.match(html, /rrfg-boot/);
   assert.match(js, /classList\.remove\('rrfg-boot'\)/);
   assert.match(js, /new MutationObserver/);
