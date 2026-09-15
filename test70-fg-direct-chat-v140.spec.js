@@ -9,6 +9,7 @@ const html = fs.readFileSync(path.join(root, 'test70-cb-purchase-real-chat-pilot
 const appJs = fs.readFileSync(path.join(root, 'real-upm-department-view-v789.js'), 'utf8');
 const appHtml = fs.readFileSync(path.join(root, 'real-department-lite-v9127.html'), 'utf8');
 const globalViewAs = fs.readFileSync(path.join(root, 'real-superadmin-view-as-v176.js'), 'utf8');
+const live = fs.readFileSync(path.join(root, 'test70-real-chat-live-v70.js'), 'utf8');
 const identityMigration = fs.readFileSync(
   path.join(root, 'supabase/migrations/20260915161000_test70_upm_dangling_worker_identity_v162.sql'),
   'utf8'
@@ -112,20 +113,21 @@ test('cost visibility and Super Admin action identity follow the universal contr
   assert.match(js, /READ-ONLY ROLE PREVIEW/);
   assert.match(js, /ON BEHALF/);
   assert.match(js, /RR_VIEW_AS_ACTOR_NAME/);
-  assert.match(globalViewAs, /ON BEHALF · ADMIN/);
-  assert.match(globalViewAs, /PREVIEW · PACKING WORKER/);
+  assert.match(globalViewAs, /ACT AS/);
+  assert.match(globalViewAs, /Search worker/);
   assert.match(js, /body\.querySelectorAll\('button,input,select,textarea'\).*disabled=true/);
   assert.match(js, /location\.reload\(\)/);
-  assert.match(globalViewAs, /Global View As/);
+  assert.match(globalViewAs, /rr_worker_directory_unified_v1/);
   assert.match(globalViewAs, /RR_EFFECTIVE_ROLE/);
-  assert.match(globalViewAs, /READ-ONLY ROLE PREVIEW/);
-  assert.match(globalViewAs, /stopImmediatePropagation/);
+  assert.doesNotMatch(globalViewAs, /READ-ONLY ROLE PREVIEW/);
   assert.match(globalViewAs, /rr-view-handle/);
   assert.match(globalViewAs, /touchstart/);
   assert.match(globalViewAs, /translateX\(100%\)/);
   assert.match(globalViewAs, /rr_test_set_on_behalf_context_v176/);
-  assert.match(globalViewAs, /Mapped Person/);
+  assert.match(globalViewAs, /Worker name \/ code \/ department/);
   assert.match(globalViewAs, /RR_ON_BEHALF_ACTIVE/);
+  assert.match(live, /actAsScope/);
+  assert.match(live, /RR_VIEW_AS_DEPARTMENTS/);
   assert.match(js, /ON BEHALF/);
   assert.match(js, /rateSuggester=.*SALES.*ADMIN/);
   assert.match(js, /finalRateAdmin=.*OWNER.*SUPER_ADMIN/);

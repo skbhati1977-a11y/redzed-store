@@ -78,4 +78,31 @@ revoke all on function public.rr_real_chat_test_behalf_context_v176() from publi
 grant execute on function public.rr_test_set_on_behalf_context_v176(uuid) to authenticated;
 grant execute on function public.rr_test_clear_on_behalf_context_v176() to authenticated;
 
+create or replace function public.rr_pack_rate_suggest_v9340(p_lot_no text,p_suggested_rate numeric,p_data_mode text default 'TEST')
+returns jsonb language plpgsql security definer set search_path=public,pg_temp as $$
+declare v_role text:=lower(coalesce(public.rr_current_role(),''));v_kind text;
+begin
+ if upper(p_data_mode)='TEST' and v_role in('owner','super_admin')then
+  select lower(target_role) into v_role from public.rr_test_on_behalf_context_v176
+  where operator_user_id=auth.uid() and is_active and expires_at>now();
+ end if;
+ if v_role not in('admin','sales')then raise exception 'Sales/Admin suggestion access required';end if;
+ if p_suggested_rate is null or p_suggested_rate<=0 or p_suggested_rate<>round(p_suggested_rate,0)then raise exception 'Suggested rate must be whole rupee';end if;
+ v_kind:=case when v_role='sales'then'SALES'else'ADMIN'end;
+ update public.rr_pack_rate_approval_v9340 set
+  sales_suggested_rate=case when v_kind='SALES'then p_suggested_rate else sales_suggested_rate end,
+  sales_suggested_by=case when v_kind='SALES'then auth.uid()else sales_suggested_by end,
+  sales_suggested_at=case when v_kind='SALES'then now()else sales_suggested_at end,
+  admin_suggested_rate=case when v_kind='ADMIN'then p_suggested_rate else admin_suggested_rate end,
+  admin_suggested_by=case when v_kind='ADMIN'then auth.uid()else admin_suggested_by end,
+  admin_suggested_at=case when v_kind='ADMIN'then now()else admin_suggested_at end,
+  suggested_rate=p_suggested_rate,suggested_by=auth.uid(),suggested_at=now(),status='SUGGESTED',updated_at=now()
+ where data_mode=upper(p_data_mode)and lot_no=trim(p_lot_no)and status<>'APPROVED';
+ if not found then raise exception 'Rate request not found or already approved';end if;
+ return jsonb_build_object('ok',true,'suggestion_type',v_kind,'suggested_rate',p_suggested_rate,
+  'performed_by',auth.uid(),'on_behalf_worker_id',(select target_worker_id from public.rr_test_on_behalf_context_v176 where operator_user_id=auth.uid()));
+end $$;
+revoke all on function public.rr_pack_rate_suggest_v9340(text,numeric,text) from public,anon;
+grant execute on function public.rr_pack_rate_suggest_v9340(text,numeric,text) to authenticated;
+
 commit;
