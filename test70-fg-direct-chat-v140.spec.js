@@ -8,7 +8,7 @@ const js = fs.readFileSync(path.join(root, 'test70-fg-direct-chat-v140.js'), 'ut
 const html = fs.readFileSync(path.join(root, 'test70-cb-purchase-real-chat-pilot.html'), 'utf8');
 const appJs = fs.readFileSync(path.join(root, 'real-upm-department-view-v789.js'), 'utf8');
 const appHtml = fs.readFileSync(path.join(root, 'real-department-lite-v9127.html'), 'utf8');
-const globalViewAs = fs.readFileSync(path.join(root, 'real-superadmin-view-as-v173.js'), 'utf8');
+const globalViewAs = fs.readFileSync(path.join(root, 'real-superadmin-view-as-v174.js'), 'utf8');
 const identityMigration = fs.readFileSync(
   path.join(root, 'supabase/migrations/20260915161000_test70_upm_dangling_worker_identity_v162.sql'),
   'utf8'
@@ -119,6 +119,9 @@ test('cost visibility and Super Admin action identity follow the universal contr
   assert.match(globalViewAs, /RR_EFFECTIVE_ROLE/);
   assert.match(globalViewAs, /READ-ONLY ROLE PREVIEW/);
   assert.match(globalViewAs, /stopImmediatePropagation/);
+  assert.match(globalViewAs, /rr-view-handle/);
+  assert.match(globalViewAs, /touchstart/);
+  assert.match(globalViewAs, /translateX\(100%\)/);
   assert.match(js, /rateSuggester=.*SALES.*ADMIN/);
   assert.match(js, /finalRateAdmin=.*OWNER.*SUPER_ADMIN/);
   assert.match(js, /RRQ Total Impact/);
