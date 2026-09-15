@@ -26,10 +26,10 @@ test('Packing and Despatch use existing authoritative engines in Real Chat', () 
     assert.match(js, new RegExp(rpc));
     assert.match(migration, new RegExp(rpc));
   }
-  assert.match(html, /test70-fg-direct-chat-v140\.js\?v=158/);
-  assert.match(js, /assign_rows\)\.length>0&&qty\(x\)>0/);
-  assert.match(js, /rr_upm_department_colour_due_card_v9109/);
-  assert.match(js, /data-kind="upm-assign"/);
+  assert.match(html, /test70-fg-direct-chat-v140\.js\?v=159/);
+  assert.match(js, /rr_upm_dynamic_submit_history_v741/);
+  assert.match(js, /\.eq\('department_code','PRESS'\)\.gt\('good_qty',0\)/);
+  assert.doesNotMatch(js, /data-kind="upm-assign"/);
   assert.match(js, /data-kind="challan"/);
   assert.match(html, /rrfg-boot/);
   assert.match(js, /classList\.remove\('rrfg-boot'\)/);
