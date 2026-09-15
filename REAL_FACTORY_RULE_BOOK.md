@@ -75,7 +75,11 @@ Source of truth: user-entered box capacity -> equal size split -> colour split -
 
 ## Packing — final sale-rate review rule (V166)
 
-- Per-piece costing is: `(Regular Fabric + Matching Cloth + Print/Sticker/Metal inputs + Other Manufacturing Expense totals) / produced PCS` + the sum of applicable department rates per PCS.
+- Per-piece costing is: `(Main Fabric + Matching Cloth + every mapped input/accessory + Other Manufacturing Expense totals) / actual produced PCS` + the sum of applicable department rates per PCS.
+- Main Fabric uses actual Cutting usage for a single lot. A multi-lot sharing one CB unit receives the CB weight/value pro-rata by each child lot's actual cut PCS, so the full CB value is never charged repeatedly.
+- Matching Cloth uses the lot's mapped item, actual used quantity, weighted-average rate and amount. Zero is valid when the design does not require matching.
+- Every `rr_upm_costing_inputs_v9300` row except `OTHER_MFG_EXP` is material/accessory cost, including Print chemical, Sticker, Metal ID and future mapped inputs. `OTHER_MFG_EXP` remains separate.
+- Final Rate Review shows quantity, unit, rate and per-piece value for every material, with `MAPPED`, `NOT USED` or `MAPPING REQUIRED`. Missing required Main Fabric blocks approval.
 - Applicable department rates follow the lot's actual workflow assignments. Use the recorded actual rate; a standard rate is only a visible fallback before the required actual rate is recorded. Skipped/non-applicable departments contribute zero and must not be invented.
 - Department examples include Stitching, Overlock, Folding, Kaaj/Button, Teak/Tanki, Thread Cut, QC, Press and Packing, plus Print/Sticker/Metal ID only when that lot requires those paths.
 - The universal Owner Margin (currently ₹22/PCS) is added after total production cost. The calculated sale suggestion and its whole-rupee approval suggestion must both be shown.
