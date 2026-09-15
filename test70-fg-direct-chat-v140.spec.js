@@ -32,7 +32,7 @@ test('Packing and Despatch use existing authoritative engines in Real Chat', () 
     assert.match(js, new RegExp(rpc));
     assert.match(migration, new RegExp(rpc));
   }
-  assert.match(html, /test70-fg-direct-chat-v140\.js\?v=170/);
+  assert.match(html, /test70-fg-direct-chat-v140\.js\?v=171/);
   assert.match(js, /CONTINUE PACKING/);
   assert.match(js, /rr_upm_submit_with_actual_cost_gate_v9300/);
   assert.match(js, /rr_upm_set_department_rate_v760/);
@@ -106,5 +106,12 @@ test('cost visibility and Super Admin action identity follow the universal contr
   assert.match(js, /Signed in:/);
   assert.match(js, /Viewing:/);
   assert.match(js, /Action audit:/);
-  assert.match(html, /test70-fg-direct-chat-v140\.js\?v=170/);
+  assert.match(html, /test70-fg-direct-chat-v140\.js\?v=171/);
+  assert.match(js, /rr_superadmin_preview_role/);
+  assert.match(js, /READ-ONLY ROLE PREVIEW/);
+  assert.match(js, /PREVIEW · ADMIN/);
+  assert.match(js, /PREVIEW · SALESMAN/);
+  assert.match(js, /PREVIEW · PACKING WORKER/);
+  assert.match(js, /body\.querySelectorAll\('button,input,select,textarea'\).*disabled=true/);
+  assert.match(js, /location\.reload\(\)/);
 });
