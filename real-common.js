@@ -21,6 +21,7 @@
   document.addEventListener('rr:action-success',event=>RR.realChatActionComplete(event.detail||{}));
   document.addEventListener('rr:action-cancel',()=>RR.realChatActionCancel());
   RR.installHassleFreeNumberInputs();window.RR=RR;
+  const previewScript=document.createElement('script');previewScript.src=new URL('real-superadmin-view-as-v172.js',document.currentScript?.src||location.href).href;previewScript.async=false;document.head.appendChild(previewScript);
 })();
 
 /* REAL FACTORY GLOBAL TABLE PLATFORM V775.1 */

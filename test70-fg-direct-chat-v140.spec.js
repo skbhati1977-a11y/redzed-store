@@ -8,6 +8,7 @@ const js = fs.readFileSync(path.join(root, 'test70-fg-direct-chat-v140.js'), 'ut
 const html = fs.readFileSync(path.join(root, 'test70-cb-purchase-real-chat-pilot.html'), 'utf8');
 const appJs = fs.readFileSync(path.join(root, 'real-upm-department-view-v789.js'), 'utf8');
 const appHtml = fs.readFileSync(path.join(root, 'real-department-lite-v9127.html'), 'utf8');
+const globalViewAs = fs.readFileSync(path.join(root, 'real-superadmin-view-as-v172.js'), 'utf8');
 const identityMigration = fs.readFileSync(
   path.join(root, 'supabase/migrations/20260915161000_test70_upm_dangling_worker_identity_v162.sql'),
   'utf8'
@@ -32,13 +33,13 @@ test('Packing and Despatch use existing authoritative engines in Real Chat', () 
     assert.match(js, new RegExp(rpc));
     assert.match(migration, new RegExp(rpc));
   }
-  assert.match(html, /test70-fg-direct-chat-v140\.js\?v=171/);
+  assert.match(html, /test70-fg-direct-chat-v140\.js\?v=172/);
   assert.match(js, /CONTINUE PACKING/);
   assert.match(js, /rr_upm_submit_with_actual_cost_gate_v9300/);
   assert.match(js, /rr_upm_set_department_rate_v760/);
   assert.match(js, /rr_upm_dynamic_submit_history_v741/);
   assert.match(js, /FINALIZE PACKING/);
-  assert.match(js, /Final Sale Rate \/ PCS — Admin/);
+  assert.match(js, /Final Rate \/ PCS — Super Admin/);
   assert.match(js, /finalRateAdmin/);
   assert.match(js, /Gallery\/Camera से exactly 3 photos चुनें/);
   assert.doesNotMatch(js, /capture="environment"/);
@@ -99,14 +100,14 @@ test('cost visibility and Super Admin action identity follow the universal contr
   assert.match(js, /fullCostingViewer=.*OWNER.*SUPER_ADMIN/);
   assert.match(js, /costingViewer=.*OWNER.*SUPER_ADMIN.*ADMIN.*SALES/);
   assert.match(js, /if\(!fullCostingViewer\(\)\)/);
-  assert.match(js, /adminView=\['OWNER','ADMIN'\]/);
+  assert.match(js, /<span>Sale Rate<b>/);
   assert.match(js, /FINAL RATE REVIEW · SUPER ADMIN/);
   assert.match(js, /Owner Margin \/ PCS/);
   assert.match(js, /SUPER ADMIN VIEW/);
   assert.match(js, /Signed in:/);
   assert.match(js, /Viewing:/);
   assert.match(js, /Action audit:/);
-  assert.match(html, /test70-fg-direct-chat-v140\.js\?v=171/);
+  assert.match(html, /test70-fg-direct-chat-v140\.js\?v=172/);
   assert.match(js, /rr_superadmin_preview_role/);
   assert.match(js, /READ-ONLY ROLE PREVIEW/);
   assert.match(js, /PREVIEW · ADMIN/);
@@ -114,4 +115,11 @@ test('cost visibility and Super Admin action identity follow the universal contr
   assert.match(js, /PREVIEW · PACKING WORKER/);
   assert.match(js, /body\.querySelectorAll\('button,input,select,textarea'\).*disabled=true/);
   assert.match(js, /location\.reload\(\)/);
+  assert.match(globalViewAs, /Global View As/);
+  assert.match(globalViewAs, /RR_EFFECTIVE_ROLE/);
+  assert.match(globalViewAs, /READ-ONLY ROLE PREVIEW/);
+  assert.match(globalViewAs, /stopImmediatePropagation/);
+  assert.match(js, /rateSuggester=.*SALES.*ADMIN/);
+  assert.match(js, /finalRateAdmin=.*OWNER.*SUPER_ADMIN/);
+  assert.match(js, /RRQ Total Impact/);
 });
