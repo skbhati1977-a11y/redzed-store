@@ -8,6 +8,10 @@ const js = fs.readFileSync(path.join(root, 'test70-fg-direct-chat-v140.js'), 'ut
 const html = fs.readFileSync(path.join(root, 'test70-cb-purchase-real-chat-pilot.html'), 'utf8');
 const appJs = fs.readFileSync(path.join(root, 'real-upm-department-view-v789.js'), 'utf8');
 const appHtml = fs.readFileSync(path.join(root, 'real-department-lite-v9127.html'), 'utf8');
+const identityMigration = fs.readFileSync(
+  path.join(root, 'supabase/migrations/20260915161000_test70_upm_dangling_worker_identity_v162.sql'),
+  'utf8'
+);
 const migration = fs.readFileSync(
   path.join(root, 'supabase/migrations/20260915124500_test70_fg_direct_chat_action_contract_v140.sql'),
   'utf8'
@@ -42,6 +46,13 @@ test('Packing and Despatch use existing authoritative engines in Real Chat', () 
   assert.match(js, /new MutationObserver/);
   assert.match(js, /cachedCanonicalHtml/);
   assert.match(js, /querySelectorAll\('\.closed-row'\)/);
+});
+
+test('legacy Packing assignments reconcile only to one active canonical worker', () => {
+  assert.match(identityMigration, /having count\(\*\)=1/);
+  assert.match(identityMigration, /rr_upm_work_assignments_v8/);
+  assert.match(identityMigration, /rr_upm_dynamic_submit_history_v741/);
+  assert.match(identityMigration, /not exists/);
 });
 
 test('App and Real Chat share the guarded Packing completion contract', () => {
