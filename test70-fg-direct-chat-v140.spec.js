@@ -96,7 +96,7 @@ test('Packing lifecycle owns one canonical regular card per source state', () =>
 });
 
 test('cost visibility and Super Admin action identity follow the universal contract', () => {
-  assert.match(js, /fullCostingViewer=.*SUPER_ADMIN/);
+  assert.match(js, /fullCostingViewer=.*OWNER.*SUPER_ADMIN/);
   assert.match(js, /costingViewer=.*OWNER.*SUPER_ADMIN.*ADMIN.*SALES/);
   assert.match(js, /if\(!fullCostingViewer\(\)\)/);
   assert.match(js, /adminView=\['OWNER','ADMIN'\]/);
