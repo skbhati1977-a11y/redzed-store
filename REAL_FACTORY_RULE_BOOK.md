@@ -73,6 +73,16 @@ Source of truth: user-entered box capacity -> equal size split -> colour split -
   - A grouped row must retain its exact physical box numbers, per-box PCS, box count, group PCS total, and colour-size composition so Despatch can still act on individual boxes.
 - Scope: no changes to photos, AI removal, approval, WhatsApp, submit, permissions, stock categories, despatch, or other departments. Existing plans are not automatically rewritten; normal authorized rerun applies the rule to an open lot.
 
+## Packing — final sale-rate review rule (V166)
+
+- Per-piece costing is: `(Regular Fabric + Matching Cloth + Print/Sticker/Metal inputs + Other Manufacturing Expense totals) / produced PCS` + the sum of applicable department rates per PCS.
+- Applicable department rates follow the lot's actual workflow assignments. Use the recorded actual rate; a standard rate is only a visible fallback before the required actual rate is recorded. Skipped/non-applicable departments contribute zero and must not be invented.
+- Department examples include Stitching, Overlock, Folding, Kaaj/Button, Teak/Tanki, Thread Cut, QC, Press and Packing, plus Print/Sticker/Metal ID only when that lot requires those paths.
+- The universal Owner Margin (currently ₹22/PCS) is added after total production cost. The calculated sale suggestion and its whole-rupee approval suggestion must both be shown.
+- Regular Fabric is mandatory for a complete costing. When its mapping is pending, show the available provisional breakdown but block rate request/final approval; never present margin-only or incomplete costing as the mapped final rate.
+- Sales and Accounts/Admin suggestions remain separate. Only Owner/Super Admin locks the final whole-rupee sale rate through the existing RRQ approval engine.
+- Real Chat and the App must read/write the same approval, costing and RRQ records; frontend-only rates are forbidden.
+
 
 ## Customer Live Sales, Chat, Billing & Payment — LOCKED RULES (2026-08-29)
 
