@@ -45,12 +45,14 @@ test('Packing and Despatch use existing authoritative engines in Real Chat', () 
 });
 
 test('App and Real Chat share the guarded Packing completion contract', () => {
-  assert.match(appHtml, /real-upm-department-view-v789\.js\?v=9312/);
+  assert.match(appHtml, /real-upm-department-view-v789\.js\?v=9313/);
   assert.match(appJs, /COMPLETE PACKING STAGE/);
   assert.match(appJs, /COMPLETE STAGE · SAVE & HANDOVER/);
   assert.match(appJs, /rr_upm_submit_with_actual_cost_gate_v9300/);
   assert.match(appJs, /rr_upm_set_department_rate_v760/);
   assert.match(appJs, /ACTUAL PACKING RATE \/ PCS/);
+  assert.match(appJs, /rr_upm_dynamic_submit_history_v741/);
+  assert.match(appJs, /\.eq\('department_code','PRESS'\)\.gt\('good_qty',0\)/);
   assert.match(appJs, /PACKING STAGE COMPLETED · FG HANDOVER READY/);
 });
 
