@@ -126,6 +126,8 @@ test('cost visibility and Super Admin action identity follow the universal contr
   assert.match(globalViewAs, /rr_test_set_on_behalf_context_v176/);
   assert.match(globalViewAs, /Worker name \/ code \/ department/);
   assert.match(globalViewAs, /RR_ON_BEHALF_ACTIVE/);
+  assert.match(globalViewAs, /rr_departments_v1/);
+  assert.match(globalViewAs, /toUpperCase\(\)===['"]ADMIN['"]/);
   assert.match(live, /actAsScope/);
   assert.match(live, /RR_VIEW_AS_DEPARTMENTS/);
   assert.match(js, /ON BEHALF/);
