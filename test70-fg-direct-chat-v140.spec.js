@@ -1,0 +1,39 @@
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+
+const root = __dirname;
+const js = fs.readFileSync(path.join(root, 'test70-fg-direct-chat-v140.js'), 'utf8');
+const html = fs.readFileSync(path.join(root, 'test70-cb-purchase-real-chat-pilot.html'), 'utf8');
+const migration = fs.readFileSync(
+  path.join(root, 'supabase/migrations/20260915124500_test70_fg_direct_chat_action_contract_v140.sql'),
+  'utf8'
+);
+
+test('Packing and Despatch use existing authoritative engines in Real Chat', () => {
+  for (const rpc of [
+    'rr_fg_assign_packing_v788',
+    'rr_fg_accept_packing_v788',
+    'rr_fg_generate_assigned_pack_v788',
+    'rr_pack_save_media_v9332',
+    'rr_pack_request_rate_v9340',
+    'rr_pack_rate_approve_v9340',
+    'rr_fg_submit_assigned_pack_v788',
+    'rr_fg_create_despatch_lot_v9361',
+    'rr_fg_receive_accept_v9361'
+  ]) {
+    assert.match(js, new RegExp(rpc));
+    assert.match(migration, new RegExp(rpc));
+  }
+  assert.match(html, /test70-fg-direct-chat-v140\.js\?v=140/);
+});
+
+test('photo-first and difference-hold gates stay explicit', () => {
+  assert.match(js, /Exactly 3 final photos required/);
+  assert.match(js, /पहले exactly 3 final photos upload करें/);
+  assert.match(js, /Final rate approval pending/);
+  assert.match(js, /Difference Hold/);
+  assert.match(migration, /PACKING_FINAL_PHOTOS[\s\S]+PACKING_RATE_REQUEST/);
+  assert.match(migration, /DESPATCH_CREATE[\s\S]+STORE_RECEIVE/);
+});
