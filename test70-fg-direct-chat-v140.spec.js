@@ -26,7 +26,7 @@ test('Packing and Despatch use existing authoritative engines in Real Chat', () 
     assert.match(js, new RegExp(rpc));
     assert.match(migration, new RegExp(rpc));
   }
-  assert.match(html, /test70-fg-direct-chat-v140\.js\?v=148/);
+  assert.match(html, /test70-fg-direct-chat-v140\.js\?v=149/);
 });
 
 test('photo-first and difference-hold gates stay explicit', () => {
