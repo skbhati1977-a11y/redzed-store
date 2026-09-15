@@ -1,6 +1,6 @@
 (()=>{
 'use strict';
-if(window.__RR_SUPERADMIN_VIEW_AS_V174__)return;window.__RR_SUPERADMIN_VIEW_AS_V174__=true;
+if(window.__RR_SUPERADMIN_VIEW_AS_V176__)return;window.__RR_SUPERADMIN_VIEW_AS_V176__=true;
 const KEY='rr_superadmin_preview_role',GROUP='rr_superadmin_preview_group',ACTOR='rr_superadmin_preview_actor_id',ACTOR_NAME='rr_superadmin_preview_actor_name',ACTOR_ROLE='rr_superadmin_preview_actor_role',ACTOR_DEPTS='rr_superadmin_preview_actor_departments',ENABLE='rr_superadmin_preview_enabled',q=new URLSearchParams(location.search);
 if(/test70/i.test(location.pathname)||q.get('mode')==='TEST')sessionStorage.setItem(ENABLE,'1');
 if(sessionStorage.getItem(ENABLE)!=='1')return;
