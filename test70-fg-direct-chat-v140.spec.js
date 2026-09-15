@@ -32,13 +32,13 @@ test('Packing and Despatch use existing authoritative engines in Real Chat', () 
     assert.match(js, new RegExp(rpc));
     assert.match(migration, new RegExp(rpc));
   }
-  assert.match(html, /test70-fg-direct-chat-v140\.js\?v=163/);
+  assert.match(html, /test70-fg-direct-chat-v140\.js\?v=170/);
   assert.match(js, /CONTINUE PACKING/);
   assert.match(js, /rr_upm_submit_with_actual_cost_gate_v9300/);
   assert.match(js, /rr_upm_set_department_rate_v760/);
   assert.match(js, /rr_upm_dynamic_submit_history_v741/);
   assert.match(js, /FINALIZE PACKING/);
-  assert.match(js, /Final Rate — Admin only/);
+  assert.match(js, /Final Sale Rate \/ PCS — Admin/);
   assert.match(js, /finalRateAdmin/);
   assert.match(js, /Gallery\/Camera से exactly 3 photos चुनें/);
   assert.doesNotMatch(js, /capture="environment"/);
@@ -93,4 +93,18 @@ test('Packing lifecycle owns one canonical regular card per source state', () =>
   assert.match(js, /PERSONAL CHAT/);
   assert.match(js, /SUBMITTED WORK/);
   assert.doesNotMatch(js, /NO CURRENT SOURCE ACTION/);
+});
+
+test('cost visibility and Super Admin action identity follow the universal contract', () => {
+  assert.match(js, /fullCostingViewer=.*SUPER_ADMIN/);
+  assert.match(js, /costingViewer=.*OWNER.*SUPER_ADMIN.*ADMIN.*SALES/);
+  assert.match(js, /if\(!fullCostingViewer\(\)\)/);
+  assert.match(js, /adminView=\['OWNER','ADMIN'\]/);
+  assert.match(js, /FINAL RATE REVIEW · SUPER ADMIN/);
+  assert.match(js, /Owner Margin \/ PCS/);
+  assert.match(js, /SUPER ADMIN VIEW/);
+  assert.match(js, /Signed in:/);
+  assert.match(js, /Viewing:/);
+  assert.match(js, /Action audit:/);
+  assert.match(html, /test70-fg-direct-chat-v140\.js\?v=170/);
 });
