@@ -31,7 +31,7 @@
   function isExceptionLaneCard(x){return /\b(ALTER|RECTIFICATION|DAMAGE|REMAKE|GR)\b/i.test(String(x.textContent||''))}
   function legacyLot(x){return String(x.querySelector('h2')?.textContent||'').match(/\bLot\s+([^\s·]+)/i)?.[1]?.trim().toUpperCase()||''}
   function isPackingMilestone(x){return /\b(NOTIFICATION|MEDIA APPROVED|MEDIA SOURCE|MEDIA REGENERATE|PACK RATE APPROVED|PACKING FINAL RATE REVIEW|PACKING SUBMITTED|ASSIGNMENT RATE UPDATED|DEPARTMENT RATE UPDATED|ASSIGNMENT COMPLETED)\b/i.test(String(x.textContent||''))}
-  function cleanLegacy(root,status,canonicalLots){if(status==='CLOSE')root.querySelectorAll('.closed-row').forEach(x=>x.remove());root.querySelectorAll('.work-card').forEach(x=>{if(!isExceptionLaneCard(x)){x.remove();return}const lot=legacyLot(x);if(lot&&canonicalLots.has(lot))x.remove()})}
+  function cleanLegacy(root,status,canonicalLots){root.querySelectorAll(':scope > .empty').forEach(x=>x.remove());if(status==='CLOSE')root.querySelectorAll('.closed-row').forEach(x=>x.remove());root.querySelectorAll('.work-card').forEach(x=>{if(!isExceptionLaneCard(x)){x.remove();return}const lot=legacyLot(x);if(lot&&canonicalLots.has(lot))x.remove()})}
   function legacyRegularCount(root){const lots=new Set();root.querySelectorAll('.work-card').forEach(x=>{if(!isExceptionLaneCard(x)){const lot=legacyLot(x);if(lot)lots.add(lot)}});return lots.size}
   function syncCanonicalCount(count,status){const b=document.querySelector('[data-work-filter="READY_TO_SUBMIT"]');if(!b)return;b.textContent=`${status==='CLOSE'?'SUBMITTED WORK':'READY TO SUBMIT'} ${count}`}
   const contextKey=c=>`${c.dept}|${c.status}|${c.personal?'P:'+c.workerId:'G'}`;
