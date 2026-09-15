@@ -5,6 +5,7 @@
   const num = v => Number(v || 0);
   let inbox = {role:"WORKER",can_assign:false,items:[]};
   let active = null;
+  const requestedId = new URLSearchParams(location.search).get("rrSubmitRequest") || "";
 
   async function rpc(name,args={}) { const {data,error}=await sb().rpc(name,args); if(error) throw error; return data; }
   const rowsOf = item => Array.isArray(item.lm_count_rows) && item.lm_count_rows.length ? item.lm_count_rows : (item.colour_rows || []);
@@ -69,9 +70,10 @@
   }
   async function refresh(){try{inbox=await rpc("rr_upm_submit_inbox_v794")||inbox;renderBell();if(inbox.items.some(x=>x.kind==="WORKER_CONFIRM")&&!document.hidden)show(inbox.items.find(x=>x.kind==="WORKER_CONFIRM"));}catch(e){console.warn("V794 inbox",e);}}
   function install(){
-    document.body.insertAdjacentHTML("beforeend",`<div id="rf794Inbox"></div><div id="rf794Modal" class="modal hidden"><section id="rf794Sheet" class="sheet"></section></div>`);
+    const style=document.createElement("style");style.textContent=`.rf794-submit-ui{position:fixed;inset:0;background:#000c;z-index:100000;display:flex;align-items:flex-end;justify-content:center}.rf794-submit-ui.hidden{display:none}.rf794-submit-ui .sheet{width:min(680px,100%);max-height:96vh;overflow:auto;background:#10131a;border:1px solid #41516a;border-radius:18px 18px 0 0;padding:18px}.rf794-close{float:right;font-size:24px}.rf794-totals,.rf794-actions{display:grid;gap:8px;margin:12px 0}.rf794-matrix section{border:1px solid #34445a;border-radius:10px;padding:9px;margin:8px 0}.rf794-matrix section>div{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}.rf794-matrix label{display:grid;gap:4px}.rf794-matrix input,.rf794-next select{width:100%;min-height:44px}.rf794-actions button{min-height:50px}.rf794-actions .success{background:#174936}.rf794-actions .danger{background:#59222b}.rf794-actions .warning{background:#5a4314}#rf794Inbox{position:sticky;top:0;z-index:99;display:flex;gap:7px;margin:8px 0}#rf794Inbox button{min-height:42px}#rf794Bell.live{background:#7b4d0b}`;document.head.appendChild(style);
+    document.body.insertAdjacentHTML("beforeend",`<div id="rf794Inbox"></div><div id="rf794Modal" class="rf794-submit-ui hidden"><section id="rf794Sheet" class="sheet"></section></div>`);
     const title=document.getElementById("submitBtn");if(title)title.textContent="READY TO SUBMIT · SELECTED COLOURS";
-    refresh();setInterval(refresh,60000);document.addEventListener("visibilitychange",()=>{if(!document.hidden)refresh();});
+    refresh().then(()=>{const target=inbox.items.find(x=>String(x.request_id)===requestedId);if(target)show(target)});setInterval(refresh,60000);document.addEventListener("visibilitychange",()=>{if(!document.hidden)refresh();});
   }
   document.readyState==="loading"?document.addEventListener("DOMContentLoaded",install):install();
   console.info("REAL FACTORY SUBMIT CONFIRM V796 TEST LOCATION ROUTING");
