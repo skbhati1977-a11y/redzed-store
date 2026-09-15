@@ -32,12 +32,17 @@ test('Packing and Despatch use existing authoritative engines in Real Chat', () 
     assert.match(js, new RegExp(rpc));
     assert.match(migration, new RegExp(rpc));
   }
-  assert.match(html, /test70-fg-direct-chat-v140\.js\?v=161/);
+  assert.match(html, /test70-fg-direct-chat-v140\.js\?v=163/);
   assert.match(js, /CONTINUE PACKING/);
   assert.match(js, /rr_upm_submit_with_actual_cost_gate_v9300/);
   assert.match(js, /rr_upm_set_department_rate_v760/);
   assert.match(js, /rr_upm_dynamic_submit_history_v741/);
   assert.match(js, /FINALIZE PACKING/);
+  assert.match(js, /Final Rate — Admin only/);
+  assert.match(js, /finalRateAdmin/);
+  assert.match(js, /Gallery\/Camera से exactly 3 photos चुनें/);
+  assert.doesNotMatch(js, /capture="environment"/);
+  assert.match(js, /Composition/);
   assert.match(js, /\.eq\('department_code','PRESS'\)\.gt\('good_qty',0\)/);
   assert.doesNotMatch(js, /data-kind="upm-assign"/);
   assert.match(js, /data-kind="challan"/);
@@ -68,9 +73,9 @@ test('App and Real Chat share the guarded Packing completion contract', () => {
 });
 
 test('photo-first and difference-hold gates stay explicit', () => {
-  assert.match(js, /Exactly 3 final photos required/);
-  assert.match(js, /पहले exactly 3 final photos upload करें/);
-  assert.match(js, /Final rate approval pending/);
+  assert.match(js, /Gallery\/Camera से exactly 3 photos चुनें/);
+  assert.match(js, /photos\.length===3/);
+  assert.match(js, /Rate \$\{approved\?'APPROVED'/);
   assert.match(js, /Difference Hold/);
   assert.match(migration, /PACKING_FINAL_PHOTOS[\s\S]+PACKING_RATE_REQUEST/);
   assert.match(migration, /DESPATCH_CREATE[\s\S]+STORE_RECEIVE/);
