@@ -4,6 +4,7 @@ const fs=require('node:fs');
 const vm=require('node:vm');
 
 const sql=fs.readFileSync('supabase/migrations/20260916142546_test70_global_lot_department_open_consolidation_v202.sql','utf8');
+const mirrorSql=fs.readFileSync('supabase/migrations/20260916143454_test70_lineman_personal_open_mirror_v203.sql','utf8');
 const chat=fs.readFileSync('test70-real-chat-live-v70.js','utf8');
 const html=fs.readFileSync('test70-cb-purchase-real-chat-pilot.html','utf8');
 
@@ -57,7 +58,15 @@ test('client guard turns six 24 PCS colour cards into one 144 PCS Lot card',()=>
   assert.equal(result[0].actions.filter(x=>x.code==='ASSIGN_WORKER').length,1);
 });
 
-test('live chat calls V13 and cache-busts the V202 asset',()=>{
-  assert.match(chat,/rr_real_chat_work_search_v12'\]\.includes\(n\)\)n='rr_real_chat_work_search_v13'/);
-  assert.match(html,/test70-real-chat-live-v70\.js\?v=202/);
+test('Lineman personal projection mirrors the consolidated source Lot payload',()=>{
+  assert.match(mirrorSql,/create or replace function public\.rr_real_chat_work_search_v14/);
+  assert.match(mirrorSql,/public\.rr_real_chat_work_search_v13\([\s\S]*p_status,[\s\S]*null/);
+  assert.match(mirrorSql,/'qty',peer\.card->'qty'/);
+  assert.match(mirrorSql,/'colour_rows',peer\.card->'colour_rows'/);
+  assert.match(mirrorSql,/'consolidated_scope','LOT'/);
+});
+
+test('live chat calls V14 and cache-busts the V203 asset',()=>{
+  assert.match(chat,/rr_real_chat_work_search_v13'\]\.includes\(n\)\)n='rr_real_chat_work_search_v14'/);
+  assert.match(html,/test70-real-chat-live-v70\.js\?v=203/);
 });
