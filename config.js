@@ -14,6 +14,17 @@ const supabaseClient=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY
 const RR_REPO_BASE=location.hostname.toLowerCase().endsWith(".github.io")?"/redzed-store/":"/";
 const RR_TRAVEL_VERSION="9676";
 const RR_LATEST_DASHBOARD_URL=`${RR_REPO_BASE}real-dashboard-v9182.html?v=${RR_TRAVEL_VERSION}`;
+// TEST DATA mode owns one global Super Admin ACT AS control.  Loading it from
+// config keeps App and Real Chat mirrored even when an individual page is
+// rebuilt and forgets its page-level script tag.  REAL mode never enables it.
+const RR_ACT_AS_TEST_KEY="rr_superadmin_preview_enabled";
+const rrModeParam=String(new URLSearchParams(location.search).get("mode")||"").toUpperCase();
+const rrActAsTestMode=/test70/i.test(location.pathname)||rrModeParam==="TEST"||sessionStorage.getItem(RR_ACT_AS_TEST_KEY)==="1";
+if(rrActAsTestMode&&!window.__RR_GLOBAL_ACT_AS_LOADER_V187__){
+ sessionStorage.setItem(RR_ACT_AS_TEST_KEY,"1");
+ window.__RR_GLOBAL_ACT_AS_LOADER_V187__=true;
+ const actAs=document.createElement("script");actAs.src=`${RR_REPO_BASE}real-superadmin-view-as-v176.js?v=187`;actAs.async=false;(document.head||document.documentElement).appendChild(actAs);
+}
 const rrIsDashboardPath=path=>/\/real-dashboard(?:-v9182)?\.html$/i.test(path||"");
 const rrIsRealChatPath=path=>/\/real-sales-live-chat-v9434\.html$/i.test(path||"");
 if(!rrIsDashboardPath(window.location.pathname)){

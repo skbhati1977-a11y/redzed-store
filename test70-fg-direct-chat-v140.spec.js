@@ -8,6 +8,7 @@ const js = fs.readFileSync(path.join(root, 'test70-fg-direct-chat-v140.js'), 'ut
 const html = fs.readFileSync(path.join(root, 'test70-cb-purchase-real-chat-pilot.html'), 'utf8');
 const appJs = fs.readFileSync(path.join(root, 'real-upm-department-view-v789.js'), 'utf8');
 const appHtml = fs.readFileSync(path.join(root, 'real-department-lite-v9127.html'), 'utf8');
+const config = fs.readFileSync(path.join(root, 'config.js'), 'utf8');
 const globalViewAs = fs.readFileSync(path.join(root, 'real-superadmin-view-as-v176.js'), 'utf8');
 const live = fs.readFileSync(path.join(root, 'test70-real-chat-live-v70.js'), 'utf8');
 const identityMigration = fs.readFileSync(
@@ -129,8 +130,12 @@ test('cost visibility and Super Admin action identity follow the universal contr
   assert.match(globalViewAs, /window\.supabaseDb/);
   assert.match(globalViewAs, /for\(let i=0;i<24&&!db;i\+\+\)/);
   assert.match(globalViewAs, /replace\(\/\[\^A-Z0-9\]\/g,''\)/);
-  assert.match(html, /real-superadmin-view-as-v176\.js\?v=186/);
-  assert.match(appHtml, /real-superadmin-view-as-v176\.js\?v=186/);
+  assert.match(html, /real-superadmin-view-as-v176\.js\?v=187/);
+  assert.match(appHtml, /real-superadmin-view-as-v176\.js\?v=187/);
+  assert.match(config, /RR_GLOBAL_ACT_AS_LOADER_V187/);
+  assert.match(config, /rr_superadmin_preview_enabled/);
+  assert.match(config, /real-superadmin-view-as-v176\.js\?v=187/);
+  assert.match(config, /rrModeParam==="TEST"/);
   assert.match(globalViewAs, /rr_real_chat_directory_v85/);
   assert.match(globalViewAs, /toUpperCase\(\)===['"]ADMIN['"]/);
   assert.match(live, /actAsScope/);
