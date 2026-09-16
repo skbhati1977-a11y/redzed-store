@@ -3,6 +3,7 @@ const assert=require('node:assert/strict');
 const fs=require('node:fs');
 
 const migration=fs.readFileSync('supabase/migrations/20260916132600_test70_effective_worker_submit_gate_v200.sql','utf8');
+const transitionMigration=fs.readFileSync('supabase/migrations/20260916141000_test70_worker_transition_idempotency_v201.sql','utf8');
 const receiptMigration=fs.readFileSync('supabase/migrations/20260916001000_test70_custody_missing_owner_mirror_v185.sql','utf8');
 const app=fs.readFileSync('real-upm-department-view-v789.js','utf8');
 const actualCostGate=fs.readFileSync('real-upm-actual-cost-gate-v9300.js','utf8');
@@ -33,6 +34,15 @@ test('Line Man handoff remains the submit engine for worker lifecycle sheets',()
   assert.match(app,/rr_upm_ready_submit_to_lm_v184/);
   assert.match(actualCostGate,/if\(m\.querySelector\('#rfSubmitLM'\)\)\{m\.dataset\.rr9300='1';return\}/);
   assert.match(appHtml,/real-upm-actual-cost-gate-v9300\.js\?v=201/);
+});
+
+test('accept records WORKING and submitted assignments cannot be queued twice',()=>{
+  assert.match(transitionMigration,/set status='IN_PROGRESS'/);
+  assert.match(transitionMigration,/'work_status','WORKING'/);
+  assert.match(transitionMigration,/V201_IDEMPOTENT_SUBMIT_QUEUE/);
+  assert.match(transitionMigration,/active_submit_blocked_count/);
+  assert.match(transitionMigration,/This Colour is already submitted to Line Man/);
+  assert.match(transitionMigration,/pg_advisory_xact_lock/);
 });
 
 test('App, Chat and backend use the same assignment authority allowlist',()=>{
