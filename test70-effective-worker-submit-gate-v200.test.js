@@ -5,6 +5,7 @@ const fs=require('node:fs');
 const migration=fs.readFileSync('supabase/migrations/20260916132600_test70_effective_worker_submit_gate_v200.sql','utf8');
 const receiptMigration=fs.readFileSync('supabase/migrations/20260916001000_test70_custody_missing_owner_mirror_v185.sql','utf8');
 const app=fs.readFileSync('real-upm-department-view-v789.js','utf8');
+const actualCostGate=fs.readFileSync('real-upm-actual-cost-gate-v9300.js','utf8');
 const chat=fs.readFileSync('test70-real-chat-live-v70.js','utf8');
 const appHtml=fs.readFileSync('real-department-lite-v9127.html','utf8');
 const chatHtml=fs.readFileSync('test70-cb-purchase-real-chat-pilot.html','utf8');
@@ -26,6 +27,12 @@ test('PENDING or DISPUTED receipt is blocked in both queue and submit mutation',
   assert.match(migration,/upper\(receipt\.status\) in \('PENDING','DISPUTED'\)/);
   assert.match(migration,/ACCEPT WORK and confirm received PCS before READY TO SUBMIT/);
   assert.match(migration,/create or replace function public\.rr_upm_ready_submit_v794/);
+});
+
+test('Line Man handoff remains the submit engine for worker lifecycle sheets',()=>{
+  assert.match(app,/rr_upm_ready_submit_to_lm_v184/);
+  assert.match(actualCostGate,/if\(m\.querySelector\('#rfSubmitLM'\)\)\{m\.dataset\.rr9300='1';return\}/);
+  assert.match(appHtml,/real-upm-actual-cost-gate-v9300\.js\?v=201/);
 });
 
 test('App, Chat and backend use the same assignment authority allowlist',()=>{
