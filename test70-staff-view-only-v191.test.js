@@ -26,3 +26,10 @@ test('Nasim has explicit Fabrication Manager actions, independent from STAFF', (
 test('live page consumes the authorization-scoped V9 search', () => {
   assert.match(live,/rr_real_chat_work_search_v9/);
 });
+
+test('Act As exposes only the selected Lineman actions in group and personal chat', () => {
+  assert.match(live,/function actAsActionCard/);
+  assert.match(live,/visible\.includes\(selectedId\)/);
+  assert.match(live,/actions:\[\],requires_action:false,act_as_view_only:true/);
+  assert.match(live,/\.map\(x=>actAsActionCard\(x,selectedId,role,allowed,selectedName\)\)/);
+});
