@@ -64,7 +64,7 @@ test('legacy Packing assignments reconcile only to one active canonical worker',
 });
 
 test('App and Real Chat share the guarded Packing completion contract', () => {
-  assert.match(appHtml, /real-upm-department-view-v789\.js\?v=199/);
+  assert.match(appHtml, /real-upm-department-view-v789\.js\?v=200/);
   assert.match(appJs, /COMPLETE PACKING STAGE/);
   assert.match(appJs, /COMPLETE STAGE · SAVE & HANDOVER/);
   assert.match(appJs, /rr_upm_submit_with_actual_cost_gate_v9300/);

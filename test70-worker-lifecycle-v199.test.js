@@ -21,7 +21,7 @@ test('pending receipt cannot leak into worker WORKING lane',()=>{
 
 test('worker cannot assign in app, chat or guarded assignment RPC',()=>{
   assert.match(sql,/ACT AS % is view\/work scoped/);
-  assert.match(chat,/canAssignWorkV199/);
+  assert.match(chat,/canAssignWorkV200/);
   assert.match(chat,/ASSIGN_WORKER/);
   assert.match(app,/rr_superadmin_preview_actor_role/);
   assert.match(app,/assignTab\.hidden=!canAssign/);
