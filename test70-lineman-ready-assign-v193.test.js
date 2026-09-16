@@ -1,6 +1,7 @@
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs');
 const sql=fs.readFileSync('supabase/migrations/20260916090000_test70_lineman_ready_assign_projection_v193.sql','utf8')+fs.readFileSync('supabase/migrations/20260916091500_test70_lineman_ready_assign_projection_v194.sql','utf8')+fs.readFileSync('supabase/migrations/20260916093000_test70_fabrication_filter_projection_v195.sql','utf8')+fs.readFileSync('supabase/migrations/20260916094500_test70_lineman_consolidated_open_v197.sql','utf8');
 const live=fs.readFileSync('test70-real-chat-live-v70.js','utf8');
+const waitingSql=fs.readFileSync('supabase/migrations/20260916100000_test70_working_waiting_action_v198.sql','utf8');
 test('canonical Ready-to-Assign is consolidated to one card per lot',()=>{
  assert.match(sql,/distinct on\(coalesce\(x\.card->>'canonical_lot_id',x\.card->>'lot_no'\)\)x\.card/);
  assert.match(sql,/UPM_FABRICATION_ASSIGN:/);
@@ -38,4 +39,10 @@ test('consolidated Lot opens department chooser before colours and worker form',
  assert.match(sql,/Pending departments choose/);
  assert.match(live,/ASSIGN_DEPARTMENTS\.map/);
  assert.match(live,/rr_upm_department_colour_due_card_v9109/);
+});
+test('Lineman custody waiting card shows truthful non-duplicate status action',()=>{
+ assert.match(waitingSql,/CUSTODY_HANDOVER/);
+ assert.match(waitingSql,/WAITING FOR WORKER RECEIPT/);
+ assert.match(waitingSql,/jsonb_array_length\(coalesce\(card->'actions','\[\]'::jsonb\)\)=0/);
+ assert.match(live,/rr_real_chat_work_search_v11/);
 });
