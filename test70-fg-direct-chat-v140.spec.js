@@ -63,7 +63,7 @@ test('legacy Packing assignments reconcile only to one active canonical worker',
 });
 
 test('App and Real Chat share the guarded Packing completion contract', () => {
-  assert.match(appHtml, /real-upm-department-view-v789\.js\?v=9313/);
+  assert.match(appHtml, /real-upm-department-view-v789\.js\?v=9315/);
   assert.match(appJs, /COMPLETE PACKING STAGE/);
   assert.match(appJs, /COMPLETE STAGE · SAVE & HANDOVER/);
   assert.match(appJs, /rr_upm_submit_with_actual_cost_gate_v9300/);
@@ -126,6 +126,11 @@ test('cost visibility and Super Admin action identity follow the universal contr
   assert.match(globalViewAs, /rr_test_set_on_behalf_context_v176/);
   assert.match(globalViewAs, /Worker name \/ code \/ department/);
   assert.match(globalViewAs, /RR_ON_BEHALF_ACTIVE/);
+  assert.match(globalViewAs, /window\.supabaseDb/);
+  assert.match(globalViewAs, /for\(let i=0;i<24&&!db;i\+\+\)/);
+  assert.match(globalViewAs, /replace\(\/\[\^A-Z0-9\]\/g,''\)/);
+  assert.match(html, /real-superadmin-view-as-v176\.js\?v=186/);
+  assert.match(appHtml, /real-superadmin-view-as-v176\.js\?v=186/);
   assert.match(globalViewAs, /rr_real_chat_directory_v85/);
   assert.match(globalViewAs, /toUpperCase\(\)===['"]ADMIN['"]/);
   assert.match(live, /actAsScope/);
