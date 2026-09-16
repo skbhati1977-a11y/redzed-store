@@ -39,10 +39,10 @@ test('custody and missing lifecycle remain mirrored',()=>{
 });
 
 test('Real Chat uses the latest canonical queue and counts virtual group cards',()=>{
-  assert.match(live,/rr_real_chat_work_search_v7/);
+  assert.match(live,/rr_real_chat_work_search_v9/);
   assert.match(live,/rr_real_chat_work_search_v2','rr_real_chat_work_search_v5','rr_real_chat_work_search_v6/);
   assert.match(live,/visible_department_codes/);
-  assert.match(html,/test70-real-chat-live-v70\.js\?v=188/);
+  assert.match(html,/test70-real-chat-live-v70\.js\?v=191/);
 });
 
 test('active Alter and Remake forwarding is projected group-only',()=>{
