@@ -1,8 +1,8 @@
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs');
-const sql=fs.readFileSync('supabase/migrations/20260916090000_test70_lineman_ready_assign_projection_v193.sql','utf8')+fs.readFileSync('supabase/migrations/20260916091500_test70_lineman_ready_assign_projection_v194.sql','utf8')+fs.readFileSync('supabase/migrations/20260916093000_test70_fabrication_filter_projection_v195.sql','utf8');
+const sql=fs.readFileSync('supabase/migrations/20260916090000_test70_lineman_ready_assign_projection_v193.sql','utf8')+fs.readFileSync('supabase/migrations/20260916091500_test70_lineman_ready_assign_projection_v194.sql','utf8')+fs.readFileSync('supabase/migrations/20260916093000_test70_fabrication_filter_projection_v195.sql','utf8')+fs.readFileSync('supabase/migrations/20260916094500_test70_lineman_consolidated_open_v197.sql','utf8');
 const live=fs.readFileSync('test70-real-chat-live-v70.js','utf8');
-test('canonical Ready-to-Assign is projected once per lot and department',()=>{
- assert.match(sql,/distinct on\(coalesce\(x\.card->>'canonical_lot_id',x\.card->>'lot_no'\),x\.card->>'department_code'\)/);
+test('canonical Ready-to-Assign is consolidated to one card per lot',()=>{
+ assert.match(sql,/distinct on\(coalesce\(x\.card->>'canonical_lot_id',x\.card->>'lot_no'\)\)x\.card/);
  assert.match(sql,/UPM_FABRICATION_ASSIGN:/);
  assert.match(sql,/'work_category','READY_TO_ASSIGN'/);
  assert.match(sql,/'canonical_source','rr_upm_ready_to_assign_v9107'/);
@@ -31,4 +31,11 @@ test('Fabrication Ready-to-Assign opens the embedded canonical assignment form',
  assert.match(live,/rrOpenAssign=/);
  assert.match(live,/ASSIGN \/ REASSIGN/);
  assert.match(live,/stopImmediatePropagation\(\);openFabricationAssignForm/);
+});
+test('consolidated Lot opens department chooser before colours and worker form',()=>{
+ assert.match(sql,/'label','ASSIGN WORK'/);
+ assert.match(sql,/rrMode=ASSIGN&lot=/);
+ assert.match(sql,/Pending departments choose/);
+ assert.match(live,/ASSIGN_DEPARTMENTS\.map/);
+ assert.match(live,/rr_upm_department_colour_due_card_v9109/);
 });
