@@ -24,3 +24,11 @@ test('Fabrication group filtering happens after virtual projection',()=>{
  assert.match(sql,/case when v_fabrication then null else p_department_code end/);
  assert.match(sql,/not v_fabrication or upper\(coalesce\(card->>'department_code',''\)\)='FABRICATION'/);
 });
+test('Fabrication Ready-to-Assign opens the embedded canonical assignment form',()=>{
+ assert.match(live,/function openFabricationAssignForm/);
+ assert.match(live,/closest\('\.work-card'\).*querySelector\('h2'\)/);
+ assert.match(live,/real-department-lite-v9127\.html\?mode=TEST/);
+ assert.match(live,/rrOpenAssign=/);
+ assert.match(live,/ASSIGN \/ REASSIGN/);
+ assert.match(live,/stopImmediatePropagation\(\);openFabricationAssignForm/);
+});
