@@ -26,7 +26,7 @@
   function showReceipt(item){
     active={...item,kind:"ASSIGN_RECEIPT"};
     const sheet=document.getElementById("rf794Sheet");
-    sheet.innerHTML=`<button class="rf794-close" type="button">×</button><h2>RECEIVE ASSIGNED GOODS</h2><p>Lot <b>${esc(item.lot_no)}</b> · ${esc(item.department_code)} · ${esc(item.colour_code)}</p><div class="rf794-totals"><b>LINE MAN CUSTODY: ${esc(item.custody_line_man_name||"MAPPING REQUIRED")}</b><b>EXPECTED GOOD: ${num(item.expected_qty)} PCS</b></div><label class="rf794-next">PHYSICALLY RECEIVED GOOD PCS<input id="rf794ReceiptQty" inputmode="numeric" type="number" min="0" max="${num(item.expected_qty)}" step="1" value="${num(item.expected_qty)}"></label><label class="rf794-next">SHORT REMARKS<input id="rf794ReceiptNote" placeholder="Required only when short"></label><div class="rf794-actions"><button data-do="CONFIRM_RECEIPT" class="success">CONFIRM RECEIVED PCS</button></div><p id="rf794Msg">Short Qty होने पर claim selected Line Man custody owner पर HELD रहेगा.</p>`;
+    sheet.innerHTML=`<button class="rf794-close" type="button">×</button><h2>ACCEPT ASSIGNED WORK</h2><p>Lot <b>${esc(item.lot_no)}</b> · ${esc(item.department_code)} · ${esc(item.colour_code)}</p><div class="rf794-totals"><b>LINE MAN CUSTODY: ${esc(item.custody_line_man_name||"MAPPING REQUIRED")}</b><b>EXPECTED GOOD: ${num(item.expected_qty)} PCS</b></div><label class="rf794-next">PHYSICALLY RECEIVED GOOD PCS<input id="rf794ReceiptQty" inputmode="numeric" type="number" min="0" max="${num(item.expected_qty)}" step="1" value="${num(item.expected_qty)}"></label><label class="rf794-next">SHORT REMARKS<input id="rf794ReceiptNote" placeholder="Required only when short"></label><div class="rf794-actions"><button data-do="CONFIRM_RECEIPT" class="success">ACCEPT WORK · CONFIRM PCS</button></div><p id="rf794Msg">Short Qty होने पर claim selected Line Man custody owner पर HELD रहेगा.</p>`;
     document.getElementById("rf794Modal").classList.remove("hidden");bindSheet();
   }
   function departmentOptions(current){
@@ -54,6 +54,7 @@
         if(qty<num(active.expected_qty)&&!note)throw new Error("Short Qty पर remarks required.");
         await rpc("rr_upm_confirm_assignment_receipt_v9112",{p_assignment_id:active.assignment_id,p_confirmed_qty:qty,p_note:note||null});
       }
+      if(code==="CONFIRM_RECEIPT"&&window.RR?.realChatActionComplete?.({action:"CONFIRM_RECEIVED_PCS",assignment_id:active.assignment_id,lot_no:active.lot_no,department_code:active.department_code}))return;
       document.getElementById("rf794Modal").classList.add("hidden"); await refresh(); window.RealFactoryUPM?.refresh?.();
     }catch(e){message(e.message||String(e),true);}
   }
