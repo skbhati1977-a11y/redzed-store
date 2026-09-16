@@ -139,6 +139,8 @@ test('cost visibility and Super Admin action identity follow the universal contr
   assert.match(globalViewAs, /rr_real_chat_directory_v85/);
   assert.match(globalViewAs, /toUpperCase\(\)===['"]ADMIN['"]/);
   assert.match(live, /actAsScope/);
+  assert.match(live, /globalRole=\['OWNER','SUPER_ADMIN','ADMIN'\]\.includes\(role\)/);
+  assert.match(live, /worker_count:workers\.length,staff_count:staff\.length/);
   assert.match(live, /RR_VIEW_AS_DEPARTMENTS/);
   assert.match(js, /ON BEHALF/);
   assert.match(js, /rateSuggester=.*SALES.*ADMIN/);
