@@ -27,7 +27,7 @@ test('Fabrication cards retain virtual group but display source work',()=>{
   assert.match(sql,/rr_real_chat_work_inbox_v81/);
   assert.match(sql,/operational_group_name/);
   assert.match(sql,/source_department_code/);
-  assert.match(live,/rr_real_chat_work_search_v9/);
+  assert.match(live,/rr_real_chat_work_search_v10/);
   assert.match(statusOnly,/'actions',case when coalesce/);
   assert.match(statusOnly,/Action source worker chat में होगा/);
 });
