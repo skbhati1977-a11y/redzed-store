@@ -32,7 +32,13 @@
     sheet.innerHTML=`<button class="rf794-close" type="button">×</button><h2>ACCEPT & COUNT</h2><p>Lot <b>${esc(item.lot_no)}</b> · ${esc(item.department_code)}</p><div class="rf794-totals"><b>CUSTODY: ${esc(item.source_custodian_name||item.custody_line_man_name||"MAPPING REQUIRED")}</b><b>EXPECTED GOOD: ${expected} PCS</b></div>${colourInputs}<label class="rf794-next">SHORT REMARKS<input id="rf794ReceiptNote" placeholder="Required only when short"></label><div class="rf794-actions"><button data-do="CONFIRM_RECEIPT" class="success">ACCEPT WORK · CONFIRM PCS</button></div><p id="rf794Msg">Short Qty होने पर Missing previous custody owner पर HELD रहेगा; final debit केवल Despatch Finalized पर होगा.</p>`;
     document.getElementById("rf794Modal").classList.remove("hidden");bindSheet();
   }
-  function departmentOptions(current){
+  window.RR=window.RR||{};
+window.RR.openExactAssignmentReceipt=function(item){
+  if(!item) throw new Error("Exact assignment receipt missing.");
+  return showReceipt(item);
+};
+
+function departmentOptions(current){
     const list=window.RealFactoryUPM?.snapshot?.().departments||[];
     return list.filter(d=>String(d.department_code).toUpperCase()!==String(current).toUpperCase()&&String(d.department_code).toUpperCase()!=="CUTTING").map(d=>`<option value="${esc(d.department_code)}">${esc(d.department_name||d.department_code)}</option>`).join("");
   }

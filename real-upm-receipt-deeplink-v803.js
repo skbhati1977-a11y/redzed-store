@@ -6,29 +6,44 @@
   const client=window.supabaseClient||window.supabaseDb||window.redzedSupabase||window.sb;
   if(!client||typeof client.rpc!=="function")return;
 
-  // V796 renders the canonical V802 receipt UI from rr_upm_my_pending_receipts_v9112.
-  // Keep that engine untouched; only pin the deeplinked assignment's batch to row 0,
-  // because the existing RECEIVE GOODS bell opens receipts[0].
-  const originalRpc=client.rpc.bind(client);
-  client.rpc=function(name,args,options){
-    const out=originalRpc(name,args,options);
-    if(name!=="rr_upm_my_pending_receipts_v9112"||!out||typeof out.then!=="function")return out;
-    return out.then(result=>{
-      const rows=Array.isArray(result?.data?.rows)?result.data.rows:null;
-      if(!rows)return result;
-      const index=rows.findIndex(batch=>Array.isArray(batch?.colour_rows)&&batch.colour_rows.some(row=>String(row?.assignment_id||"")===requested));
-      if(index>0){const target=rows.splice(index,1)[0];rows.unshift(target);}
-      return result;
-    });
-  };
-
+  // Exact assignment -> exact canonical receipt.
+  // No receipts[0] reorder and no synthetic RECEIVE GOODS bell click.
   let opened=false,tries=0;
-  const timer=setInterval(()=>{
-    if(opened||++tries>80){clearInterval(timer);return;}
-    const bell=document.getElementById("rf794ReceiptBell");
-    if(!bell)return;
-    opened=true;
-    clearInterval(timer);
-    bell.click();
+
+  const timer=setInterval(async()=>{
+    if(opened||++tries>80){
+      clearInterval(timer);
+      return;
+    }
+
+    const bridge=window.RR&&window.RR.openExactAssignmentReceipt;
+    if(typeof bridge!=="function") return;
+
+    try{
+      const result=await client.rpc("rr_upm_my_pending_receipts_v9112");
+      if(result?.error) throw result.error;
+
+      const batches=Array.isArray(result?.data?.rows)
+        ? result.data.rows
+        : Array.isArray(result?.data)
+          ? result.data
+          : [];
+
+      const exact=batches.find(batch=>
+        Array.isArray(batch?.colour_rows) &&
+        batch.colour_rows.some(row=>
+          String(row?.assignment_id||"")===requested
+        )
+      );
+
+      if(!exact) return;
+
+      opened=true;
+      clearInterval(timer);
+      bridge(exact);
+    }catch(err){
+      console.warn("Exact receipt deeplink",err);
+    }
   },100);
+
 })();
