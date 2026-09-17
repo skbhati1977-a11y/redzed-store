@@ -110,6 +110,7 @@ if(requestedReceipt){
   if(exactReceipt && active?.receipt_batch_id!==exactReceipt.receipt_batch_id){
     showReceipt(exactReceipt);
   }
+  return;
 }
 
 if(inbox.items.some(x=>x.kind==="WORKER_CONFIRM")&&!document.hidden)show(inbox.items.find(x=>x.kind==="WORKER_CONFIRM"));}catch(e){console.warn("V802 canonical custody inbox",e);}}
