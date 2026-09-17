@@ -97,6 +97,21 @@ function departmentOptions(current){
       alert(`TEST attendance recorded\n${out.premise_code} · ${scenario.replaceAll("_"," ")}\nPhysical location allowed for TEST only. Salary/REAL attendance प्रभावित नहीं है.`);
     }catch(e){alert(e.message||String(e));}
   }
-  async function refresh(){try{const [submitData,receiptData]=await Promise.all([rpc("rr_upm_submit_inbox_v794"),rpc("rr_upm_my_pending_receipts_v9112")]);inbox=submitData||inbox;receipts=receiptData?.rows||[];renderBell();if(inbox.items.some(x=>x.kind==="WORKER_CONFIRM")&&!document.hidden)show(inbox.items.find(x=>x.kind==="WORKER_CONFIRM"));}catch(e){console.warn("V802 canonical custody inbox",e);}}
+  async function refresh(){try{const [submitData,receiptData]=await Promise.all([rpc("rr_upm_submit_inbox_v794"),rpc("rr_upm_my_pending_receipts_v9112")]);inbox=submitData||inbox;receipts=receiptData?.rows||[];renderBell();
+
+if(requestedReceipt){
+  const exactReceipt=receipts.find(batch=>
+    Array.isArray(batch?.colour_rows) &&
+    batch.colour_rows.some(row=>
+      String(row?.assignment_id||"")===String(requestedReceipt)
+    )
+  );
+
+  if(exactReceipt && active?.receipt_batch_id!==exactReceipt.receipt_batch_id){
+    showReceipt(exactReceipt);
+  }
+}
+
+if(inbox.items.some(x=>x.kind==="WORKER_CONFIRM")&&!document.hidden)show(inbox.items.find(x=>x.kind==="WORKER_CONFIRM"));}catch(e){console.warn("V802 canonical custody inbox",e);}}
   function install(){
     const style=document.createElement("style");style.textContent=`.rf794-submit-ui{position:fixed;inset:0;background:#000c;z-index:100000;display:flex;align-items:flex-end;justify-content:center}.rf794-submit-ui.hidden{display:none}.rf794-submit-ui .sheet{width:min(680px,100%);max-height:96vh;overflow:auto;background:#10131a;border:1px solid #41516a;border-radius:18px 18px 0 0;padding:18px}.rf794-close{float:right;font-size:24px}.rf794-totals,.rf794-actions{display:grid;gap:8px;margin:12px 0}.rf794-matrix section{border:1px solid #34445a;border-radius:10px;padding:9px;margin:8px 0}.rf794-matrix section>div{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}.rf794-matrix label{display:grid;gap:4px}.rf794-matrix input,.rf794-next input,.rf794
