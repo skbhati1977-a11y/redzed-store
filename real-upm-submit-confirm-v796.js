@@ -8,6 +8,8 @@
   let active = null;
   const requestedId = new URLSearchParams(location.search).get("rrSubmitRequest") || "";
   const requestedReceipt = new URLSearchParams(location.search).get("rrAssignmentReceipt") || "";
+  const requestedWorkerContext = new URLSearchParams(location.search).get("rrWorkerContext") || "";
+  let requestedWorkerContextApplied = false;
 
   async function rpc(name,args={}) { const {data,error}=await sb().rpc(name,args); if(error) throw error; return data; }
   const rowsOf = item => Array.isArray(item.lm_count_rows) && item.lm_count_rows.length ? item.lm_count_rows : (item.colour_rows || []);
@@ -97,7 +99,12 @@ function departmentOptions(current){
       alert(`TEST attendance recorded\n${out.premise_code} · ${scenario.replaceAll("_"," ")}\nPhysical location allowed for TEST only. Salary/REAL attendance प्रभावित नहीं है.`);
     }catch(e){alert(e.message||String(e));}
   }
-  async function refresh(){try{const [submitData,receiptData]=await Promise.all([rpc("rr_upm_submit_inbox_v794"),rpc("rr_upm_my_pending_receipts_v9112")]);inbox=submitData||inbox;receipts=receiptData?.rows||[];renderBell();
+  async function refresh(){try{
+if(requestedReceipt && requestedWorkerContext && !requestedWorkerContextApplied){
+  await rpc("rr_test_set_on_behalf_context_v176",{p_worker_id:requestedWorkerContext});
+  requestedWorkerContextApplied=true;
+}
+const [submitData,receiptData]=await Promise.all([rpc("rr_upm_submit_inbox_v794"),rpc("rr_upm_my_pending_receipts_v9112")]);inbox=submitData||inbox;receipts=receiptData?.rows||[];renderBell();
 
 if(requestedReceipt){
   const exactReceipt=receipts.find(batch=>
