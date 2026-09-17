@@ -26,7 +26,10 @@
   function showReceipt(item){
     active={...item,kind:"ASSIGN_RECEIPT"};
     const sheet=document.getElementById("rf794Sheet");
-    sheet.innerHTML=`<button class="rf794-close" type="button">×</button><h2>ACCEPT ASSIGNED WORK</h2><p>Lot <b>${esc(item.lot_no)}</b> · ${esc(item.department_code)} · ${esc(item.colour_code)}</p><div class="rf794-totals"><b>LINE MAN CUSTODY: ${esc(item.custody_line_man_name||"MAPPING REQUIRED")}</b><b>EXPECTED GOOD: ${num(item.expected_qty)} PCS</b></div><label class="rf794-next">PHYSICALLY RECEIVED GOOD PCS<input id="rf794ReceiptQty" inputmode="numeric" type="number" min="0" max="${num(item.expected_qty)}" step="1" value="${num(item.expected_qty)}"></label><label class="rf794-next">SHORT REMARKS<input id="rf794ReceiptNote" placeholder="Required only when short"></label><div class="rf794-actions"><button data-do="CONFIRM_RECEIPT" class="success">ACCEPT WORK · CONFIRM PCS</button></div><p id="rf794Msg">Short Qty होने पर claim selected Line Man custody owner पर HELD रहेगा.</p>`;
+    const rows=Array.isArray(item.colour_rows)&&item.colour_rows.length?item.colour_rows:[item];
+    const expected=rows.reduce((sum,row)=>sum+num(row.expected_qty),0);
+    const colourInputs=rows.map(row=>`<label class="rf794-next"><span>${esc(row.colour_code||"COLOUR")} · EXPECTED ${num(row.expected_qty)} PCS</span><input class="rf802ReceiptQty" data-assignment-id="${esc(row.assignment_id||"")}" data-event-id="${esc(row.responsibility_event_id||"")}" data-colour="${esc(row.colour_code||"")}" inputmode="numeric" type="number" min="0" max="${num(row.expected_qty)}" step="1" value="${num(row.expected_qty)}"></label>`).join("");
+    sheet.innerHTML=`<button class="rf794-close" type="button">×</button><h2>ACCEPT & COUNT</h2><p>Lot <b>${esc(item.lot_no)}</b> · ${esc(item.department_code)}</p><div class="rf794-totals"><b>CUSTODY: ${esc(item.source_custodian_name||item.custody_line_man_name||"MAPPING REQUIRED")}</b><b>EXPECTED GOOD: ${expected} PCS</b></div>${colourInputs}<label class="rf794-next">SHORT REMARKS<input id="rf794ReceiptNote" placeholder="Required only when short"></label><div class="rf794-actions"><button data-do="CONFIRM_RECEIPT" class="success">ACCEPT WORK · CONFIRM PCS</button></div><p id="rf794Msg">Short Qty होने पर Missing previous custody owner पर HELD रहेगा; final debit केवल Despatch Finalized पर होगा.</p>`;
     document.getElementById("rf794Modal").classList.remove("hidden");bindSheet();
   }
   function departmentOptions(current){
@@ -50,11 +53,16 @@
       if(code==="WORKER_ACCEPT") await rpc("rr_upm_worker_decide_submit_v794",{p_request_id:active.request_id,p_decision:"ACCEPT",p_note:null,p_next_department_code:document.getElementById("rf794Next")?.value||null});
       if(code==="DISPUTE") {const note=prompt("Qty mismatch साफ लिखें (कौन-सा Colour/Size और सही Qty):");if(!note)return;await rpc("rr_upm_worker_decide_submit_v794",{p_request_id:active.request_id,p_decision:"DISPUTE",p_note:note,p_next_department_code:null});}
       if(code==="CONFIRM_RECEIPT"){
-        const qty=num(document.getElementById("rf794ReceiptQty")?.value),note=String(document.getElementById("rf794ReceiptNote")?.value||"").trim();
-        if(qty<num(active.expected_qty)&&!note)throw new Error("Short Qty पर remarks required.");
-        await rpc("rr_upm_confirm_assignment_receipt_v9112",{p_assignment_id:active.assignment_id,p_confirmed_qty:qty,p_note:note||null});
+        const inputs=[...document.querySelectorAll("#rf794Sheet .rf802ReceiptQty")];
+        if(!inputs.length)throw new Error("Receipt colour rows नहीं मिलीं.");
+        const rows=inputs.map(input=>({assignment_id:input.dataset.assignmentId,confirmed_qty:num(input.value),expected_qty:num(input.max),colour_code:input.dataset.colour}));
+        if(rows.some(row=>!row.assignment_id||row.confirmed_qty<0||row.confirmed_qty>row.expected_qty))throw new Error("हर Colour की received Good Qty 0 से Expected Good तक भरें.");
+        const note=String(document.getElementById("rf794ReceiptNote")?.value||"").trim();
+        if(rows.some(row=>row.confirmed_qty<row.expected_qty)&&!note)throw new Error("Short Qty पर remarks required.");
+        if(!active.receipt_batch_id)throw new Error("Receipt batch context missing. Refresh करके दोबारा खोलें.");
+        await rpc("rr_upm_accept_physical_count_batch_v802",{p_receipt_batch_id:active.receipt_batch_id,p_rows:rows.map(row=>({assignment_id:row.assignment_id,confirmed_qty:row.confirmed_qty})),p_note:note||null});
       }
-      if(code==="CONFIRM_RECEIPT"&&window.RR?.realChatActionComplete?.({action:"CONFIRM_RECEIVED_PCS",assignment_id:active.assignment_id,lot_no:active.lot_no,department_code:active.department_code}))return;
+      if(code==="CONFIRM_RECEIPT"&&window.RR?.realChatActionComplete?.({action:"CONFIRM_RECEIVED_PCS",receipt_batch_id:active.receipt_batch_id,assignment_ids:(active.colour_rows||[]).map(row=>row.assignment_id),lot_no:active.lot_no,department_code:active.department_code,lifecycle:"OPEN"}))return;
       document.getElementById("rf794Modal").classList.add("hidden"); await refresh(); window.RealFactoryUPM?.refresh?.();
     }catch(e){message(e.message||String(e),true);}
   }
@@ -83,13 +91,6 @@
       alert(`TEST attendance recorded\n${out.premise_code} · ${scenario.replaceAll("_"," ")}\nPhysical location allowed for TEST only. Salary/REAL attendance प्रभावित नहीं है.`);
     }catch(e){alert(e.message||String(e));}
   }
-  async function refresh(){try{const [submitData,receiptData]=await Promise.all([rpc("rr_upm_submit_inbox_v794"),rpc("rr_upm_my_pending_receipts_v9112")]);inbox=submitData||inbox;receipts=receiptData?.rows||[];renderBell();if(inbox.items.some(x=>x.kind==="WORKER_CONFIRM")&&!document.hidden)show(inbox.items.find(x=>x.kind==="WORKER_CONFIRM"));}catch(e){console.warn("V185 custody inbox",e);}}
+  async function refresh(){try{const [submitData,receiptData]=await Promise.all([rpc("rr_upm_submit_inbox_v794"),rpc("rr_upm_my_pending_receipts_v9112")]);inbox=submitData||inbox;receipts=receiptData?.rows||[];renderBell();if(inbox.items.some(x=>x.kind==="WORKER_CONFIRM")&&!document.hidden)show(inbox.items.find(x=>x.kind==="WORKER_CONFIRM"));}catch(e){console.warn("V802 canonical custody inbox",e);}}
   function install(){
-    const style=document.createElement("style");style.textContent=`.rf794-submit-ui{position:fixed;inset:0;background:#000c;z-index:100000;display:flex;align-items:flex-end;justify-content:center}.rf794-submit-ui.hidden{display:none}.rf794-submit-ui .sheet{width:min(680px,100%);max-height:96vh;overflow:auto;background:#10131a;border:1px solid #41516a;border-radius:18px 18px 0 0;padding:18px}.rf794-close{float:right;font-size:24px}.rf794-totals,.rf794-actions{display:grid;gap:8px;margin:12px 0}.rf794-matrix section{border:1px solid #34445a;border-radius:10px;padding:9px;margin:8px 0}.rf794-matrix section>div{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}.rf794-matrix label{display:grid;gap:4px}.rf794-matrix input,.rf794-next select{width:100%;min-height:44px}.rf794-actions button{min-height:50px}.rf794-actions .success{background:#174936}.rf794-actions .danger{background:#59222b}.rf794-actions .warning{background:#5a4314}#rf794Inbox{position:sticky;top:0;z-index:99;display:flex;gap:7px;margin:8px 0}#rf794Inbox button{min-height:42px}#rf794Bell.live{background:#7b4d0b}`;document.head.appendChild(style);
-    document.body.insertAdjacentHTML("beforeend",`<div id="rf794Inbox"></div><div id="rf794Modal" class="rf794-submit-ui hidden"><section id="rf794Sheet" class="sheet"></section></div>`);
-    const title=document.getElementById("submitBtn");if(title)title.textContent="READY TO SUBMIT · SELECTED COLOURS";
-    refresh().then(()=>{const target=inbox.items.find(x=>String(x.request_id)===requestedId);if(target)show(target);const receipt=receipts.find(x=>String(x.assignment_id)===requestedReceipt);if(receipt)showReceipt(receipt)});setInterval(refresh,60000);document.addEventListener("visibilitychange",()=>{if(!document.hidden)refresh();});
-  }
-  document.readyState==="loading"?document.addEventListener("DOMContentLoaded",install):install();
-  console.info("REAL FACTORY SUBMIT CONFIRM V796 TEST LOCATION ROUTING");
-})();
+    const style=document.createElement("style");style.textContent=`.rf794-submit-ui{position:fixed;inset:0;background:#000c;z-index:100000;display:flex;align-items:flex-end;justify-content:center}.rf794-submit-ui.hidden{display:none}.rf794-submit-ui .sheet{width:min(680px,100%);max-height:96vh;overflow:auto;background:#10131a;border:1px solid #41516a;border-radius:18px 18px 0 0;padding:18px}.rf794-close{float:right;font-size:24px}.rf794-totals,.rf794-actions{display:grid;gap:8px;margin:12px 0}.rf794-matrix section{border:1px solid #34445a;border-radius:10px;padding:9px;margin:8px 0}.rf794-matrix section>div{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}.rf794-matrix label{display:grid;gap:4px}.rf794-matrix input,.rf794-next input,.rf794
