@@ -66,7 +66,7 @@ async function fetchMatrix(canonical, lotNo = "") {
   });
 
   if (error) throw error;
-  return Object.assign({},data,{weighted_costing:weighted});
+  return data;
 }
 
 async function fetchLotSizeRows(lotNo) {
@@ -264,7 +264,7 @@ async function fetchCostingPanelV760(canonical) {
   const client = getClient();
   if (!client) throw new Error("Connected Supabase client nahi mila.");
 
-  const [{ data, error }, weighted] = await Promise.all([client.rpc("rr_upm_costing_panel_safe_v260", {p_canonical_lot_id: canonical}),client.rpc("rr_upm_weighted_costing_projection_v261",{p_canonical_lot_id:canonical,p_data_mode:"TEST"}).then(r=>r.error?null:r.data).catch(()=>null)]);
+  const [{ data, error }, weighted] = await Promise.all([client.rpc("rr_upm_costing_panel_safe_v273", {p_canonical_lot_id: canonical})]);
 
   if (error) throw error;
   return data;
