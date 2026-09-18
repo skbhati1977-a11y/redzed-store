@@ -173,6 +173,7 @@ async function fetchWorkers(departmentCode) {
   return [];
 }
 
+function v260ExtraCostingHtml(panel){const sal=panel?.salaried_cost?.rows||[],box=Number(panel?.actual_box_cost_per_pc||0);if(!sal.length&&!box)return'';return '<div class="v760-cost-extra"><b>CANONICAL COSTING</b>'+(box?'<div>Actual Box Cost <b>₹'+box.toFixed(4)+'/pcs</b></div>':'')+(sal.length?'<details><summary>Salaried Cost · Department-wise</summary>'+sal.map(x=>'<div>'+esc(x.department_code)+' · '+(x.salaried_cost_per_pc==null?'—':'₹'+Number(x.salaried_cost_per_pc).toFixed(4)+'/pcs')+' · Production '+Number(x.production_pcs||0).toLocaleString('en-IN')+'</div>').join('')+'</details>':'')+'</div>'}
 function statusClass(row) {
   const status = upper(row?.ownership_status);
   if (status === "RUNNING") return "running";
@@ -263,7 +264,7 @@ async function fetchCostingPanelV760(canonical) {
   const client = getClient();
   if (!client) throw new Error("Connected Supabase client nahi mila.");
 
-  const { data, error } = await client.rpc("rr_upm_costing_panel_v760", {
+  const { data, error } = await client.rpc("rr_upm_costing_panel_safe_v260", {
     p_canonical_lot_id: canonical
   });
 
