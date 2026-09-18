@@ -173,7 +173,7 @@ async function fetchWorkers(departmentCode) {
   return [];
 }
 
-function v260ExtraCostingHtml(panel){const sal=panel?.salaried_cost?.rows||[],box=Number(panel?.actual_box_cost_per_pc||0),weighted=panel?.weighted_costing?.rows||[];if(!sal.length&&!box&&!weighted.length)return'';return '<div class="v760-cost-extra"><b>CANONICAL COSTING</b>'+(box?'<div>Actual Box Cost <b>₹'+box.toFixed(4)+'/pcs</b></div>':'')+(weighted.length?'<details><summary>Weighted Materials / Overheads</summary>'+weighted.map(x=>'<div>'+esc(x.label)+' · ₹'+Number(x.cost_per_pc||0).toFixed(4)+'/pcs</div>').join('')+'</details>':'')+(sal.length?'<details><summary>Salaried Cost · Department-wise</summary>'+sal.map(x=>'<div>'+esc(x.department_code)+' · '+(x.salaried_cost_per_pc==null?'—':'₹'+Number(x.salaried_cost_per_pc).toFixed(4)+'/pcs')+' · Production '+Number(x.production_pcs||0).toLocaleString('en-IN')+'</div>').join('')+'</details>':'')+'</div>'}
+function v260ExtraCostingHtml(panel){const sal=panel?.salaried_cost?.rows||[],box=Number(panel?.actual_box_cost_per_pc||0),weighted=panel?.weighted_costing?.rows||[],alerts=panel?.rate_alerts||[];if(!sal.length&&!box&&!weighted.length&&!alerts.length)return'';return '<div class="v760-cost-extra"><b>CANONICAL COSTING</b>'+(alerts.length?'<details open><summary>Mandatory Rate Alerts · '+alerts.length+'</summary>'+alerts.map(x=>'<div><b>Alert '+x.alert_no+' · '+esc(x.department_name)+'</b> · '+(x.actual_rate==null?'Actual Rate required':'₹'+Number(x.actual_rate).toFixed(2))+'</div>').join('')+'</details>':'')+(box?'<div>Actual Box Cost <b>₹'+box.toFixed(4)+'/pcs</b></div>':'')+(weighted.length?'<details><summary>Weighted Materials / Overheads</summary>'+weighted.map(x=>'<div>'+esc(x.label)+' · ₹'+Number(x.cost_per_pc||0).toFixed(4)+'/pcs</div>').join('')+'</details>':'')+(sal.length?'<details><summary>Salaried Cost · Department-wise</summary>'+sal.map(x=>'<div>'+esc(x.department_code)+' · '+(x.salaried_cost_per_pc==null?'—':'₹'+Number(x.salaried_cost_per_pc).toFixed(4)+'/pcs')+' · Production '+Number(x.production_pcs||0).toLocaleString('en-IN')+'</div>').join('')+'</details>':'')+'</div>'}
 function statusClass(row) {
   const status = upper(row?.ownership_status);
   if (status === "RUNNING") return "running";
@@ -264,7 +264,7 @@ async function fetchCostingPanelV760(canonical) {
   const client = getClient();
   if (!client) throw new Error("Connected Supabase client nahi mila.");
 
-  const [{ data, error }, weighted] = await Promise.all([client.rpc("rr_upm_costing_e2e_v275", {p_canonical_lot_id: canonical,p_data_mode:'TEST'})]);
+  const [{ data, error }, weighted] = await Promise.all([client.rpc("rr_upm_costing_e2e_v276", {p_canonical_lot_id: canonical,p_data_mode:'TEST'})]);
 
   if (error) throw error;
   return data;
