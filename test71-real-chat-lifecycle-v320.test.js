@@ -4,6 +4,7 @@ const fs=require('node:fs');
 
 const chat=fs.readFileSync('test70-real-chat-live-v70.js','utf8');
 const migration=fs.readFileSync('supabase/migrations/20260919164902_test71_real_chat_lifecycle_projection_v320.sql','utf8');
+const accept=fs.readFileSync('test70-accept-work-v205.html','utf8');
 
 test('V317 mirror resolves every emitted assignment key without a second search',()=>{
   assert.match(migration,/b:=public\.rr_real_chat_work_search_v14\(/);
@@ -41,4 +42,11 @@ test('personal cards render canonical lifecycle status and preserve action objec
 test('page boot relies on targeted projection triggers instead of full reconciliation',()=>{
   assert.doesNotMatch(chat,/Promise\.all\(\[rpc\('rr_real_chat_sync_upm_history_v71'/);
   assert.match(chat,/historySync:"TARGETED_TRIGGER_CANONICAL_LIFECYCLE"/);
+});
+
+test('Accept reuses an already-matching effective worker identity',()=>{
+  assert.match(accept,/rr_upm_effective_identity_v200/);
+  assert.match(accept,/effectiveWorker!==String\(worker\)/);
+  assert.match(accept,/rr_test_set_on_behalf_context_v176/);
+  assert.match(accept,/rr_upm_accept_physical_count_batch_v802/);
 });
