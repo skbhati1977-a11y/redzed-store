@@ -76,6 +76,7 @@ test('Printing Submit uses one proper popup and never browser prompt for Chemica
   assert.match(chat,/CHEMICAL KG/);
   assert.match(chat,/Chemical KG required\. Zero only when actual consumption is genuinely zero\./);
   assert.doesNotMatch(chat,/prompt\('Printing Chemical KG consumed'/);
+  assert.match(chat,/confirmed_qty\|\|assignment\?\.expected_qty\|\|assignment\?\.assigned_qty/);
   assert.match(chat,/rr_printing_finalize_costing_v307/);
   assert.match(chat,/rr_upm_ready_submit_to_receiver_v204/);
 });
