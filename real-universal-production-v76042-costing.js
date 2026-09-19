@@ -266,7 +266,7 @@ async function fetchCostingPanelV760(canonical) {
   const client = getClient();
   if (!client) throw new Error("Connected Supabase client nahi mila.");
 
-  const [{ data, error }, weighted] = await Promise.all([client.rpc("rr_upm_final_costing_v296", {p_canonical_lot_id: canonical,p_data_mode:'TEST'})]);
+  const [{ data, error }, weighted] = await Promise.all([client.rpc("rr_upm_final_costing_v297", {p_canonical_lot_id: canonical,p_data_mode:'TEST'})]);
 
   if (error) throw error;
   return data;
