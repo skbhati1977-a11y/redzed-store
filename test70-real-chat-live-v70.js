@@ -45,9 +45,18 @@ async function openChatSubmit(c){
  try{
    const context=await rpc('rr_upm_submit_context_v9112',{p_canonical_lot_id:canonical,p_department_code:dept}),mine=arr(context?.rows).filter(r=>String(r.worker_id||'')===String(c.worker_id||S.active?.id||'')&&['CONFIRMED','LEGACY_NO_RECEIPT'].includes(String(r.receipt_status||'').toUpperCase())),codes=[...new Set((mine.length?mine:arr(context?.rows)).map(r=>String(r.colour_code||'').trim()).filter(Boolean))];
    if(!codes.length)throw new Error('No canonical WORKING colour available for Submit.');
-   const gate=await rpc('rr_upm_first_submit_rate_gate_v760',{p_canonical_lot_id:canonical,p_department_code:dept,p_colour_code:codes[0]});
-   if(!gate?.allowed){rateState.textContent='⏳ Actual Rate required · Submit HOLD';state.textContent='Manager को canonical Actual Rate alert भेज दिया गया है. Rate fill होने के बाद फिर Submit दबाएँ.';select.innerHTML='<option>Waiting for Actual Rate</option>';return}
-   rateState.textContent='✓ Actual Rate verified'+(Number(gate.actual_rate)>0?' · ₹'+Number(gate.actual_rate).toLocaleString('en-IN'):'');
+   if(['PRINTING','PRINT'].includes(dept)){
+     const assignment=(mine.length?mine:arr(context?.rows)).find(r=>r.assignment_id||r.id),assignmentId=assignment?.assignment_id||assignment?.id,qty=Number(assignment?.assigned_qty||assignment?.confirmed_qty||assignment?.qty||0);
+     if(!assignmentId)throw new Error('Printing assignment mapping required.');
+     const pc=await rpc('rr_printing_submit_costing_context_v307',{p_canonical_lot_id:canonical,p_assignment_id:assignmentId,p_completed_qty:qty,p_data_mode:'TEST'}),h=pc?.heads||{},chem=h.chemical||{};
+     rateState.textContent='Printing Costing · Salary '+String(h.team_salary?.display??'—')+' · Frame '+String(h.frame_recovery?.display??'—')+' · Material '+String(chem.display??'—');
+     const kg=prompt('Printing Chemical KG consumed',String(chem.qty_kg??''));if(kg===null)return close();
+     await rpc('rr_printing_finalize_costing_v307',{p_canonical_lot_id:canonical,p_assignment_id:assignmentId,p_completed_qty:qty,p_chemical_kg:Number(kg||0),p_data_mode:'TEST'});
+   }else{
+     const gate=await rpc('rr_upm_first_submit_rate_gate_v760',{p_canonical_lot_id:canonical,p_department_code:dept,p_colour_code:codes[0]});
+     if(!gate?.allowed){rateState.textContent='⏳ Actual Rate required · Submit HOLD';state.textContent='Manager को canonical Actual Rate alert भेज दिया गया है. Rate fill होने के बाद फिर Submit दबाएँ.';select.innerHTML='<option>Waiting for Actual Rate</option>';return}
+     rateState.textContent='✓ Actual Rate verified'+(Number(gate.actual_rate)>0?' · ₹'+Number(gate.actual_rate).toLocaleString('en-IN'):'');
+   }
    const receiverRole=dept==='PRESS'?'PACKER':'LINE_MAN',receivers=dept==='PRESS'?arr((await rpc('rr_upm_worker_list_v8_4',{p_department_code:'PACKING'})).rows):await rpc('rr_upm_worker_candidates_v740',{p_role_code:'LINE_MAN',p_department_code:dept});
    const list=arr(receivers);if(!list.length)throw new Error(dept==='PRESS'?'No active Packing receiver found.':'No active Line Man receiver found.');
    select.innerHTML='<option value="">Select '+(dept==='PRESS'?'Packer':'Line Man')+'</option>'+list.map(x=>'<option value="'+safe(x.worker_id)+'">'+safe(x.worker_name)+(x.worker_code?' · '+safe(x.worker_code):'')+'</option>').join('');select.disabled=false;btn.disabled=false;state.textContent=codes.length+' working colour(s) · Receiver selection mandatory.';
