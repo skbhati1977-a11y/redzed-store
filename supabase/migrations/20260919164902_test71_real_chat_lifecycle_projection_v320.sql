@@ -24,7 +24,7 @@ begin
   b:=public.rr_real_chat_work_search_v14(want,p_search,p_department_code,p_limit);
   cards:=coalesce(b->'cards','[]'::jsonb);
 
-  with raw_cards as (
+  with raw_keys as (
     select
       ord,
       c,
@@ -41,6 +41,15 @@ begin
         nullif(c->>'original_record_id','')
       ) assignment_key
     from jsonb_array_elements(cards) with ordinality z(c,ord)
+  ), raw_cards as (
+    select
+      ord,
+      c,
+      case
+        when assignment_key ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$'
+          then assignment_key::uuid
+      end assignment_id
+    from raw_keys
   ), x as (
     select
       raw.ord,
@@ -60,7 +69,7 @@ begin
       end resolved
     from raw_cards raw
     left join public.rr_upm_work_assignments_v8 a
-      on a.id::text=raw.assignment_key
+      on a.id=raw.assignment_id
     left join public.rr_upm_assignment_receipts_v9112 r
       on r.assignment_id=a.id
     left join lateral (

@@ -12,6 +12,9 @@ test('V317 mirror resolves every emitted assignment key without a second search'
   assert.match(migration,/c->>'event_key'/);
   assert.match(migration,/c->>'canonical_key'/);
   assert.match(migration,/c->>'original_record_id'/);
+  assert.match(migration,/assignment_key::uuid/);
+  assert.match(migration,/a\.id=raw\.assignment_id/);
+  assert.doesNotMatch(migration,/a\.id::text=raw\.assignment_key/);
   assert.match(migration,/'resolved_work_state',resolved/);
   assert.match(migration,/'responsibility_event_id',eid/);
 });
