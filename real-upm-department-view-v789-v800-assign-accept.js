@@ -1492,6 +1492,9 @@ async function firstSubmitRateGateV760(rowData, rowElement) {
   const canonicalDepartment =
     String(rowData.department_code || "").toUpperCase();
 
+  // Printing V307/V308 owns costing; legacy first-submit Actual Rate gate is retired.
+  if (["PRINTING","PRINT"].includes(canonicalDepartment)) return true;
+
   if (
     v760SubmitBypassOnce
     && v760SubmitBypassOnce.canonical === canonical
