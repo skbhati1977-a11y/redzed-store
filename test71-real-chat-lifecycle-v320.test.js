@@ -4,7 +4,9 @@ const fs=require('node:fs');
 
 const chat=fs.readFileSync('test70-real-chat-live-v70.js','utf8');
 const migration=fs.readFileSync('supabase/migrations/20260919164902_test71_real_chat_lifecycle_projection_v320.sql','utf8');
+const receiptAlias=fs.readFileSync('supabase/migrations/20260919190500_test71_receipt_identity_alias_v321.sql','utf8');
 const accept=fs.readFileSync('test70-accept-work-v205.html','utf8');
+const acceptGuard=fs.readFileSync('test70-universal-accept-guard-v212.js','utf8');
 
 test('V317 mirror resolves every emitted assignment key without a second search',()=>{
   assert.match(migration,/b:=public\.rr_real_chat_work_search_v14\(/);
@@ -49,4 +51,19 @@ test('Accept reuses an already-matching effective worker identity',()=>{
   assert.match(accept,/effectiveWorker!==String\(worker\)/);
   assert.match(accept,/rr_test_set_on_behalf_context_v176/);
   assert.match(accept,/rr_upm_accept_physical_count_batch_v802/);
+});
+
+test('Accept guard keeps the canonical worker from the rendered card',()=>{
+  assert.match(acceptGuard,/source\.searchParams\.get\('worker'\)/);
+  assert.match(acceptGuard,/canonicalWorker/);
+  assert.match(acceptGuard,/worker='\+encodeURIComponent\(canonicalWorker\)/);
+  assert.doesNotMatch(acceptGuard,/worker='\+encodeURIComponent\(r\.worker_id\)/);
+});
+
+test('receipt fetch and confirmation compare historical IDs canonically',()=>{
+  assert.match(receiptAlias,/create or replace function public\.rr_upm_my_pending_receipts_v9112/);
+  assert.match(receiptAlias,/create or replace function public\.rr_upm_confirm_assignment_receipt_batch_v204/);
+  assert.ok((receiptAlias.match(/rr_canonical_worker_id_v264\(r\.worker_id\)/g)||[]).length>=4);
+  assert.match(receiptAlias,/'version','V321_CANONICAL_RECEIPT_IDENTITY'/);
+  assert.doesNotMatch(receiptAlias,/update public\.rr_upm_assignment_receipts_v9112\s+set worker_id=/);
 });
