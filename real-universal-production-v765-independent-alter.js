@@ -385,6 +385,7 @@ function statusClass(row) {
 }
 
 function userStatus(row) {
+  if (upper(row?.ownership_status) === "SUBMITTED") return "SUBMITTED · COUNT PENDING";
   return ["OPEN", "ASSIGNED", "RUNNING"].includes(upper(row?.ownership_status))
     ? "ACTIVE"
     : "CHECK";
