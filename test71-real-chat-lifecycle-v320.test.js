@@ -7,6 +7,8 @@ const migration=fs.readFileSync('supabase/migrations/20260919164902_test71_real_
 const receiptAlias=fs.readFileSync('supabase/migrations/20260919190500_test71_receipt_identity_alias_v321.sql','utf8');
 const workerSubmit=fs.readFileSync('supabase/migrations/20260919193000_test71_worker_submit_close_v322.sql','utf8');
 const departmentSubmit=fs.readFileSync('supabase/migrations/20260919194500_test71_department_submit_mirror_v324.sql','utf8');
+const appSubmit=fs.readFileSync('supabase/migrations/20260919195000_test71_app_submit_mirror_v325.sql','utf8');
+const appColourSubmit=fs.readFileSync('supabase/migrations/20260919195500_test71_app_colour_submit_status_v326.sql','utf8');
 const accept=fs.readFileSync('test70-accept-work-v205.html','utf8');
 const acceptGuard=fs.readFileSync('test70-universal-accept-guard-v212.js','utf8');
 
@@ -98,4 +100,18 @@ test('Department Group mirrors canonical Submit without another workflow engine'
   assert.match(departmentSubmit,/'resolved_work_state','CLOSE'/);
   assert.match(departmentSubmit,/revoke all on function/);
   assert.doesNotMatch(departmentSubmit,/insert into|update\s+public|delete from/i);
+});
+
+test('App board mirrors canonical Submit without completing the assignment',()=>{
+  assert.match(appSubmit,/rr_upm_board_lot_status_v743/);
+  assert.match(appSubmit,/rr_upm_submit_requests_v794/);
+  assert.match(appSubmit,/ALL COLOURS SUBMITTED/);
+  assert.doesNotMatch(appSubmit,/update\s+public\.rr_upm_work_assignments_v8/i);
+});
+
+test('App colour row displays canonical Submit count pending',()=>{
+  assert.match(appColourSubmit,/rr_upm_colour_owner_v755/);
+  assert.match(appColourSubmit,/then 'SUBMITTED'/);
+  assert.match(fs.readFileSync('real-universal-production-v765-independent-alter.js','utf8'),/SUBMITTED · COUNT PENDING/);
+  assert.doesNotMatch(appColourSubmit,/update\s+public\.rr_upm_work_assignments_v8/i);
 });
