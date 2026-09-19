@@ -164,7 +164,9 @@ async function openChat(kind,id,push=true,parentDepartment=null){
     S.status=S.searchExactStatuses[0]||(['WORKING','OPEN','CLOSE'].find(x=>available.has(x))||S.status);
     S.searchAutoSelect=false;
   }
-  const sourceRows=S.search?allRows.filter(c=>String(c.search_status||c.chat_status||'').toUpperCase()===S.status).sort((a,b)=>Number(directSearchMatch(b))-Number(directSearchMatch(a))):allRows;
+  let sourceRows=S.search?allRows.filter(c=>String(c.search_status||c.chat_status||'').toUpperCase()===S.status).sort((a,b)=>Number(directSearchMatch(b))-Number(directSearchMatch(a))):allRows;
+  // V318 presentation only: one backend state, different group/personal lanes.
+  sourceRows=sourceRows.filter(c=>{const r=String(c.resolved_work_state||'').toUpperCase();if(!r)return true;if(kind==='person'){if(S.status==='OPEN')return r==='ACCEPT_PENDING';if(S.status==='WORKING')return r==='WORKING';if(S.status==='CLOSE')return r==='CLOSE';}if(kind==='group'){if(S.status==='OPEN')return r!=='ACCEPT_PENDING'&&r!=='WORKING'&&r!=='CLOSE';if(S.status==='WORKING')return r==='ACCEPT_PENDING'||r==='WORKING';if(S.status==='CLOSE')return r==='CLOSE';}return true});
   const rows=filterWorking(sourceRows);
   syncStatusButtons();syncWorkFilters(sourceRows);
   $('chatName').textContent=kind==="group"?(name||id)+' Group':name||"Worker";
