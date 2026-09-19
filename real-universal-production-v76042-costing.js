@@ -695,6 +695,8 @@ async function askDirectSubmitConfirmationV7604(rowData) {
     });
   });
 }
+async function printingAssignmentForRowV307(canonical,rowData){const client=getClient();const {data,error}=await client.rpc('rr_upm_get_work_assign_context_v800',{p_canonical_lot_id:canonical,p_lot_no:rowData.lot_no||currentMatrix?.lot_no||null,p_department_code:'PRINTING'});if(error)throw error;const rows=Array.isArray(data)?data:(data?.assignments||data?.rows||[]);return rows.find(x=>upper(x.colour_code)===upper(rowData.colour_code)&&['ASSIGNED','IN_PROGRESS'].includes(upper(x.status)))||rows.find(x=>['ASSIGNED','IN_PROGRESS'].includes(upper(x.status)))||null}
+async function openPrintingSubmitCostingV307(canonical,rowData){const client=getClient(),a=await printingAssignmentForRowV307(canonical,rowData);if(!a?.id)throw new Error('Printing assignment mapping required.');const qty=Number(a.assigned_qty||rowData.good_qty||rowData.qty||0);const {data,error}=await client.rpc('rr_printing_submit_costing_context_v307',{p_canonical_lot_id:canonical,p_assignment_id:a.id,p_completed_qty:qty,p_data_mode:'TEST'});if(error)throw error;return new Promise(resolve=>{const h=data?.heads||{},chem=h.chemical||{},m=document.createElement('div');m.className='v7604-submit-overlay';m.innerHTML='<section class="v7604-submit-modal"><h2>PRINTING COSTING</h2><div class="v7604-submit-copy"><span>Team Salary <b>'+esc(h.team_salary?.display??'—')+' / PCS · AUTO</b></span><span>Frame Recovery <b>'+esc(h.frame_recovery?.display??'—')+' / PCS · AUTO</b></span><label>Chemical KG<input id="v307ChemicalKg" type="number" min="0" step="0.01" value="'+esc(chem.qty_kg??'')+'"></label><span>Printing Material <b>'+esc(chem.display??'—')+' / PCS · AUTO</b></span></div><div class="v7604-submit-actions"><button type="button" data-cancel>CANCEL</button><button type="button" data-save>SAVE & CONTINUE</button></div><small data-state>Head Boy केवल Chemical KG भरता है. Salary, Frame और weighted material AUTO हैं.</small></section>';document.body.appendChild(m);m.querySelector('[data-cancel]').onclick=()=>{m.remove();resolve(null)};m.querySelector('[data-save]').onclick=async e=>{e.currentTarget.disabled=true;try{const kg=Number(m.querySelector('#v307ChemicalKg').value||0),r=await client.rpc('rr_printing_finalize_costing_v307',{p_canonical_lot_id:canonical,p_assignment_id:a.id,p_completed_qty:qty,p_chemical_kg:kg,p_data_mode:'TEST'});if(r.error)throw r.error;m.remove();resolve({assignment:a,qty,kg,result:r.data})}catch(ex){m.querySelector('[data-state]').textContent=ex.message||String(ex);e.currentTarget.disabled=false}}})}
 async function directSubmitColourV7604(rowData, options = {}) {
   const canonical =
     currentMatrix?.canonical_lot_id
@@ -710,6 +712,8 @@ async function directSubmitColourV7604(rowData, options = {}) {
     throw new Error("Connected Supabase client nahi mila.");
   }
 
+  const isPrinting=['PRINTING','PRINT'].includes(upper(rowData.department_code));
+  if(isPrinting&&!options.printingCostingDone){const costing=await openPrintingSubmitCostingV307(canonical,rowData);if(!costing)return false;options={...options,printingCostingDone:true}}
   const answer = options.skipConfirmation
     ? { confirmed: true }
     : await askDirectSubmitConfirmationV7604(rowData);
@@ -832,6 +836,8 @@ async function firstSubmitRateGateV760(rowData, rowElement) {
 
   const canonicalDepartment =
     String(rowData.department_code || "").toUpperCase();
+
+  if (["PRINTING","PRINT"].includes(canonicalDepartment)) return true; // V307 replaces legacy actual-rate gate
 
   if (
     v760SubmitBypassOnce
