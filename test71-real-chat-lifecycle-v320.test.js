@@ -6,6 +6,7 @@ const chat=fs.readFileSync('test70-real-chat-live-v70.js','utf8');
 const migration=fs.readFileSync('supabase/migrations/20260919164902_test71_real_chat_lifecycle_projection_v320.sql','utf8');
 const receiptAlias=fs.readFileSync('supabase/migrations/20260919190500_test71_receipt_identity_alias_v321.sql','utf8');
 const workerSubmit=fs.readFileSync('supabase/migrations/20260919193000_test71_worker_submit_close_v322.sql','utf8');
+const departmentSubmit=fs.readFileSync('supabase/migrations/20260919194500_test71_department_submit_mirror_v324.sql','utf8');
 const accept=fs.readFileSync('test70-accept-work-v205.html','utf8');
 const acceptGuard=fs.readFileSync('test70-universal-accept-guard-v212.js','utf8');
 
@@ -88,4 +89,13 @@ test('canonical Worker Submit stops salary and projects Personal CLOSE',()=>{
   assert.match(workerSubmit,/'version','V322_PERSONAL_WORKER_SUBMIT_CLOSE'/);
   assert.match(workerSubmit,/काम जमा किया/);
   assert.doesNotMatch(workerSubmit,/create table/i);
+});
+
+test('Department Group mirrors canonical Submit without another workflow engine',()=>{
+  assert.match(chat,/rr_real_chat_department_submit_mirror_v324/);
+  assert.match(chat,/if\(S\.status==='CLOSE'\)allRows=allRows\.concat/);
+  assert.match(departmentSubmit,/rr_upm_submit_requests_v794/);
+  assert.match(departmentSubmit,/'resolved_work_state','CLOSE'/);
+  assert.match(departmentSubmit,/revoke all on function/);
+  assert.doesNotMatch(departmentSubmit,/insert into|update\s+public|delete from/i);
 });
