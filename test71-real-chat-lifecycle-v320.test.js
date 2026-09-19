@@ -37,3 +37,8 @@ test('personal cards render canonical lifecycle status and preserve action objec
   assert.match(chat,/source_status:x\.resolved_work_state\|\|x\.receipt_status/);
   assert.match(chat,/typeof action==='string'\?\{code:action,label:action\}:action/);
 });
+
+test('page boot relies on targeted projection triggers instead of full reconciliation',()=>{
+  assert.doesNotMatch(chat,/Promise\.all\(\[rpc\('rr_real_chat_sync_upm_history_v71'/);
+  assert.match(chat,/historySync:"TARGETED_TRIGGER_CANONICAL_LIFECYCLE"/);
+});

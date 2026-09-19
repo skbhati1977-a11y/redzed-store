@@ -106,7 +106,8 @@ const cbNew=fs.readFileSync("real-cb-new-v9130-fix2.html","utf8"),cutting=fs.rea
 for(const text of ["test70-action-return-v110.js?v=114","RRActionReturn?.hasReturn()","RRActionReturn.success()"])assert.ok(cbNew.includes(text),`Missing exact CB Purchase action return: ${text}`);
 for(const text of ["RRActionReturn?.hasReturn()","RRActionReturn.success()","openLotByDivision(requestedUnit, requestedMode)"])assert.ok(cutting.includes(text),`Missing exact Cutting action return: ${text}`);
 for(const text of ["success_return","target(\"return\")","location.replace(url)"])assert.ok(returnHelper.includes(text),`Missing shared exact-return contract: ${text}`);
-for(const text of ["cardsStatus","load(true)","loadSeq","hydrateCache","sessionStorage","Promise.all([rpc('rr_real_chat_sync_upm_history_v71')","status===S.cardsStatus"])assert.ok(js.includes(text),`Missing V109 fast-loading contract: ${text}`);
+for(const text of ["cardsStatus","load(true)","loadSeq","hydrateCache","sessionStorage","status===S.cardsStatus"])assert.ok(js.includes(text),`Missing V109 fast-loading contract: ${text}`);
+assert.ok(!js.includes("Promise.all([rpc('rr_real_chat_sync_upm_history_v71')"),"Full historical reconciliation must not run on page boot");
 for(const text of ["allNext=resolvedActions.length?resolvedActions:arr(p.next_actions)","next.length?next","source_status:isPurchase?status"])assert.ok(js.includes(text),`Missing exact multi-action renderer: ${text}`);
 for(const text of ["function cbLabel","replace(/^CB\\s+/i","cb_lot_numbers","cutting_pieces","closed-main","Lot '+highlighted(lotText)"])assert.ok(js.includes(text)||html.includes(text),`Missing two-line CB CLOSE row contract: ${text}`);
 assert.ok(!js.includes("for(const candidate of ['OPEN','WORKING','CLOSE'])"),"An empty lifecycle must remain empty instead of silently switching tabs");

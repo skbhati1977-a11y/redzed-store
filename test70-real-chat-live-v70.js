@@ -243,8 +243,10 @@ async function boot(){
   if(hydrateCache()){$('state').textContent='Opening saved Real Chat…';renderActive()}
   await load(false);
   if(resumeState.view==='chat')openChat(resumeState.kind,resumeState.id,false,resumeState.parentDepartment||null);else if(p.get('chat')==='personal'&&p.get('worker_id'))openChat('person',p.get('worker_id'),false);
-  Promise.all([rpc('rr_real_chat_sync_upm_history_v71'),rpc('rr_real_chat_sync_e2e_events_v71',{p_key:null})]).then(()=>!document.hidden&&load(false)).catch(()=>null);
+  // Canonical mutations already project through targeted database triggers.
+  // Full historical reconciliation takes longer than the authenticated query
+  // budget and must never run as a page-load side effect.
   let rt;S.realtime=S.db.channel('test70-real-chat-v71').on('postgres_changes',{event:'*',schema:'public',table:'rr_real_chat_message_bridge_v70'},()=>{clearTimeout(rt);rt=setTimeout(()=>!document.hidden&&load(false),250)}).subscribe();
   addEventListener('pageshow',e=>{if(e.persisted)load(true)});document.addEventListener('visibilitychange',()=>{if(!document.hidden)load(true)});setInterval(()=>!document.hidden&&load(true),60000)
 }
-document.readyState==="loading"?document.addEventListener("DOMContentLoaded",boot,{once:true}):boot();window.__TEST70_REAL_CHAT__={mode:"IDENTITY_FIRST_V85_HOME_WORKER_VISIBILITY",databaseWrites:"INLINE_ACTIONS_CALL_CANONICAL_ENGINES",historySync:"SERVER_FILTERED_CANONICAL_LIFECYCLE",sources:["rr_real_chat_directory_v85","rr_real_chat_membership_admin_v136","rr_real_chat_work_inbox_v75","rr_real_chat_work_search_v5","rr_real_chat_conversation_history_v83","rr_upm_work_assignments_v8","rr_upm_dynamic_submit_history_v741","rr_upm_actions_v726","rr_upm_alter_events_v740","rr_upm_rectification_cases_v9101"]};})();
+document.readyState==="loading"?document.addEventListener("DOMContentLoaded",boot,{once:true}):boot();window.__TEST70_REAL_CHAT__={mode:"IDENTITY_FIRST_V85_HOME_WORKER_VISIBILITY",databaseWrites:"INLINE_ACTIONS_CALL_CANONICAL_ENGINES",historySync:"TARGETED_TRIGGER_CANONICAL_LIFECYCLE",sources:["rr_real_chat_directory_v85","rr_real_chat_membership_admin_v136","rr_real_chat_work_inbox_v75","rr_real_chat_work_search_v5","rr_real_chat_conversation_history_v83","rr_upm_work_assignments_v8","rr_upm_dynamic_submit_history_v741","rr_upm_actions_v726","rr_upm_alter_events_v740","rr_upm_rectification_cases_v9101"]};})();
