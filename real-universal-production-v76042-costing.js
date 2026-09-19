@@ -260,6 +260,8 @@ function compactAlterStatus(row) {
   return [qtyText, responsible].filter(Boolean).join(" · ");
 }
 
+async function fetchDepartmentCostContextsV291(canonical){const client=getClient();if(!client)return[];const {data,error}=await client.rpc('rr_costing_lot_department_context_v291',{p_canonical_lot_id:canonical,p_data_mode:'TEST'});if(error)throw error;return data?.departments||[]}
+async function saveDepartmentCostInputV9300(canonical,department,type,qty,unit,rate,gsm=null,width=null){const client=getClient();const {data,error}=await client.rpc('rr_upm_save_cost_input_v9300',{p_canonical_lot_id:canonical,p_department_code:department,p_input_type:type,p_qty:Number(qty),p_unit:unit,p_weighted_rate:Number(rate),p_gsm:gsm==null?null:Number(gsm),p_roll_width_m:width==null?null:Number(width),p_source_note:'UPM APP · COSTING DEPARTMENT INPUT',p_data_mode:'TEST'});if(error)throw error;return data}
 async function fetchCostingPanelV760(canonical) {
   const client = getClient();
   if (!client) throw new Error("Connected Supabase client nahi mila.");
