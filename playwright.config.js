@@ -1,0 +1,33 @@
+const { defineConfig, devices } = require("@playwright/test");
+
+const baseURL = process.env.E2E_BASE_URL ||
+  "https://redzed-test65-inbjxm4ge-skbhati1977-4414.vercel.app";
+
+module.exports = defineConfig({
+  testDir: "./tests/e2e",
+  timeout: 60_000,
+  expect: { timeout: 15_000 },
+  fullyParallel: false,
+  forbidOnly: Boolean(process.env.CI),
+  retries: process.env.CI ? 1 : 0,
+  reporter: [["list"], ["html", { open: "never" }]],
+  use: {
+    baseURL,
+    trace: "retain-on-failure",
+    screenshot: "only-on-failure",
+    video: "retain-on-failure",
+    ...devices["Desktop Chrome"]
+  },
+  projects: [
+    {
+      name: "auth-setup",
+      testMatch: /auth\.setup\.js/
+    },
+    {
+      name: "checkpoint-0",
+      testMatch: /checkpoint-0\.spec\.js/,
+      dependencies: ["auth-setup"]
+    }
+  ]
+});
+

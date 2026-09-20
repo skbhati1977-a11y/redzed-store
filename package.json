@@ -1,0 +1,13 @@
+{
+  "name": "redzed-store-e2e",
+  "private": true,
+  "scripts": {
+    "e2e:env-status": "node scripts/e2e-env-status.js",
+    "test:e2e": "playwright test",
+    "test:e2e:auth": "playwright test --project=auth-setup",
+    "test:e2e:checkpoint0": "playwright test --project=checkpoint-0"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.55.0"
+  }
+}
