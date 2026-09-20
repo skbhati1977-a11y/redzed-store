@@ -8,6 +8,16 @@ const SUPABASE_URL="https://hruartsemierwhtzonei.supabase.co";
 const SUPABASE_ANON_KEY="sb_publishable_uo3dcrFuRvGsvRzPcdTV0A_5ZVwgzga";
 const CFG=Object.seal({SETTINGS:{},WHATSAPP:[],DEFAULT_WHATSAPP:null});
 const supabaseClient=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});window.supabaseClient=supabaseClient;window.supabaseDb=supabaseClient;window.redzedSupabase=supabaseClient;window.sb=supabaseClient;
+// Supabase may fall back to the configured Site URL when a recovery redirect is
+// not allow-listed.  Keep the verified recovery session, but move it to the
+// dedicated password form instead of leaving the user on the application shell.
+// This is a normal Auth recovery callback (not an authentication bypass): the
+// event is emitted only after Supabase has validated the one-time email link.
+if(!/\/reset-password\.html$/i.test(location.pathname)){
+  supabaseClient.auth.onAuthStateChange((event)=>{
+    if(event==="PASSWORD_RECOVERY")location.replace("reset-password.html");
+  });
+}
 // GitHub Pages serves this repository below /redzed-store/, while Vercel
 // previews serve the same files from /. Keep navigation portable so a tested
 // rehearsal build cannot redirect into a non-existent Vercel subdirectory.
