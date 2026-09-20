@@ -11,7 +11,14 @@ const loginSource = fs.readFileSync(
 test("TEST71 password recovery requests the exact preview reset page", () => {
   assert.match(
     loginSource,
-    /redirectTo:\s*\n?\s*["']https:\/\/redzed-test65-msk9oi43o-skbhati1977-4414\.vercel\.app\/reset-password\.html["']/
+    /redirectTo:\s*\n?\s*["']https:\/\/redzed-test65-git-test71-real-chat-e2e-6adad3-skbhati1977-4414\.vercel\.app\/reset-password\.html["']/
+  );
+});
+
+test("password recovery does not pin a single immutable Vercel deployment", () => {
+  assert.doesNotMatch(
+    loginSource,
+    /redirectTo:\s*\n?\s*["']https:\/\/redzed-test65-[a-z0-9]{9}-skbhati1977-4414\.vercel\.app\/reset-password\.html["']/
   );
 });
 
