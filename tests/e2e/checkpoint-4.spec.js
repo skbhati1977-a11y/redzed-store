@@ -103,6 +103,11 @@ test('Printing worker gets multi-design operational context without money payloa
 test('Checkpoint 4 live surfaces remain mobile-width safe', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/test70-cb-purchase-real-chat-pilot.html?mode=TEST');
+  await expect(page.locator('#inbox')).toBeVisible();
+  const printing = page.locator('[data-department="PRINTING"]');
+  await expect(printing).toBeVisible();
+  await printing.click();
+  await expect(page.locator('#chat')).toBeVisible();
   await expect(page.locator('#messages')).toBeVisible();
   const width = await page.evaluate(() => ({ body: document.body.scrollWidth, viewport: document.documentElement.clientWidth }));
   expect(width.body).toBeLessThanOrEqual(width.viewport + 2);
