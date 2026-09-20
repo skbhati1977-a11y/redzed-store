@@ -111,7 +111,7 @@ test('Add New persists, is immediately searchable, and prevents normalized dupli
 test('master search and selected-preview surfaces remain usable on mobile', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   const pages = [
-    ['/real-product-master-v804.html', '#artSearch'],
+    ['/real-art-master.html', '#artSearch'],
     ['/real-print-master.html', '#printSearch'],
     ['/real-sticker-master-v804.html', '#search'],
     ['/real-metal-id-master-v804.html', '#search']
