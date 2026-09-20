@@ -33,6 +33,7 @@ create or replace function public.rr_upm_add_worker_v8_3(
 returns table(worker_id uuid,worker_code text,worker_name text,department_code text,role_code text,worker_source text)
 language plpgsql security definer set search_path='public'
 as $$
+#variable_conflict use_column
 declare
   v_profile public.rr_user_profiles%rowtype;v_allowed boolean:=false;v_effective text;
   v_id uuid;v_code text;v_name text:=nullif(trim(p_worker_name),'');
