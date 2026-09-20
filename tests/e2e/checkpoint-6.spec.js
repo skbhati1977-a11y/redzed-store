@@ -74,6 +74,10 @@ test('Final Rate 75 maps RRQ once and rolls the live fixture back', async ({ pag
 
 test('backend rate payload and approval authority follow effective role', async ({ page }) => {
   const directory = await people(page);
+  const ownerCards = await rpc(page, 'rr_fg_ready_packing_cards_v788', { p_data_mode: 'TEST' });
+  expect(ownerCards.error).toBeNull();
+  expect(ownerCards.data.find((x) => String(x.lot_no) === '2614')).toBeTruthy();
+  expect((await rpc(page, 'rr_fg_is_pack_assigner_v788')).data).toBe(true);
   const ownerStatus = await rpc(page, 'rr_pack_rate_status_v9340', { p_lot_no: '2614', p_data_mode: 'TEST' });
   expect(ownerStatus.error).toBeNull();
   expect(ownerStatus.data.visibility).toBe('SUPER_ADMIN_PRIVATE');
@@ -90,6 +94,12 @@ test('backend rate payload and approval authority follow effective role', async 
   expect(raw?.message).toMatch(/permission denied/i);
 
   await setActAs(page, named(directory, 'singh ji'));
+  const workerCards = await rpc(page, 'rr_fg_ready_packing_cards_v788', { p_data_mode: 'TEST' });
+  expect(workerCards.error).toBeNull();
+  const worker2614 = workerCards.data.find((x) => String(x.lot_no) === '2614');
+  expect(worker2614).toBeTruthy();
+  expect(worker2614.is_mine).toBe(true);
+  expect((await rpc(page, 'rr_fg_is_pack_assigner_v788')).data).toBe(false);
   const workerStatus = await rpc(page, 'rr_pack_rate_status_v9340', { p_lot_no: '2614', p_data_mode: 'TEST' });
   expect(workerStatus.error).toBeNull();
   expect(workerStatus.data.visibility).toBe('PACKING_STATUS_ONLY');

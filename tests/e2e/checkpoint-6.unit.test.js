@@ -3,6 +3,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 
 const migration = fs.readFileSync('supabase/migrations/20260920231500_test71_checkpoint6_packing_final_rate_rrq_v333.sql', 'utf8');
+const identityMigration = fs.readFileSync('supabase/migrations/20260920235900_test71_checkpoint6_effective_packing_identity_v334.sql', 'utf8');
 const chat = fs.readFileSync('test70-fg-direct-chat-v140.js', 'utf8');
 const appHtml = fs.readFileSync('real-finished-goods-v787.html', 'utf8');
 const appJs = fs.readFileSync('real-finished-goods-v787.js', 'utf8');
@@ -53,4 +54,16 @@ test('Legacy Packing surface no longer reads or invokes raw RRQ internals', () =
   assert.doesNotMatch(legacy, /rpc\('rrq_apply_packing_rate_v9300'/);
   assert.match(legacy, /rpc\('rr_pack_rate_status_v9340'/);
   assert.match(legacy, /rpc\('rr_pack_rate_approve_v9340'/);
+});
+
+test('Finished Goods Packing reuses canonical effective Act As identity', () => {
+  assert.match(identityMigration, /rr_upm_effective_identity_v200\(\)/);
+  assert.match(identityMigration, /'OWNER','SUPER_ADMIN','ADMIN','MANAGER'/);
+  assert.match(identityMigration, /effective_auth_user_id/);
+  assert.match(identityMigration, /is_assigned_worker/);
+  assert.match(identityMigration, /create or replace function public\.rr_fg_ready_packing_cards_v788/);
+  assert.match(identityMigration, /create or replace function public\.rr_fg_accept_packing_v788/);
+  assert.match(identityMigration, /create or replace function public\.rr_fg_generate_assigned_pack_v788/);
+  assert.match(identityMigration, /create or replace function public\.rr_fg_submit_assigned_pack_v788/);
+  assert.doesNotMatch(identityMigration, /a\.worker_user_id\s*<>\s*auth\.uid\(\)/);
 });
