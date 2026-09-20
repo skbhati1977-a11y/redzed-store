@@ -42,6 +42,9 @@ async function openPacking2614(page) {
   await expect(page.locator('[data-department="PACKING"]')).toBeVisible();
   await page.locator('[data-department="PACKING"]').click();
   await expect(page.locator('#chat')).toBeVisible();
+  const group = page.locator('[data-dept-group="PACKING"]');
+  await expect(group).toBeVisible();
+  await group.click();
   await page.locator('[data-chat-status="WORKING"]').click();
   const open = page.locator('[data-fg-open][data-lot="2614"]').first();
   await expect(open).toBeVisible();
