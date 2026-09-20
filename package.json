@@ -10,7 +10,8 @@
     "test:e2e:checkpoint1": "playwright test --project=checkpoint-1",
     "test:e2e:checkpoint2": "playwright test --project=checkpoint-2",
     "test:e2e:checkpoint3": "playwright test --project=checkpoint-3",
-    "test:e2e:checkpoint4": "playwright test --project=checkpoint-4"
+    "test:e2e:checkpoint4": "playwright test --project=checkpoint-4",
+    "test:e2e:checkpoint5": "playwright test --project=checkpoint-5"
   },
   "devDependencies": {
     "@playwright/test": "1.55.0"
