@@ -52,6 +52,62 @@ test('all four canonical backend master catalogs return searchable identity and 
   }
 });
 
+test('Add New persists, is immediately searchable, and prevents normalized duplicates', async ({ page }) => {
+  const fixture = 'TEST71-CP3-E2E';
+  const result = await page.evaluate(async (fixture) => {
+    const db = window.supabaseClient;
+    const out = {};
+
+    // Art/Print fixtures are removed in finally. Accessory masters use their canonical
+    // upsert RPC and are returned to inactive state because those masters are archived,
+    // not hard-deleted, by design.
+    await db.from('rr_art_master').delete().eq('art_no', fixture + '-ART');
+    await db.from('rr_print_master').delete().eq('print_no', fixture + '-PRINT');
+    try {
+      const art = await db.from('rr_art_master').insert({
+        art_no: fixture + '-ART', item_name: 'TEST E2E Art', category: 'TEST E2E',
+        description: 'Reversible TEST71 Checkpoint 3 fixture', is_active: true
+      }).select('id,art_no,category').single();
+      if (art.error) throw art.error;
+      out.art = (await db.from('rr_art_master').select('id').eq('art_no', fixture + '-ART').single()).data;
+      out.artDuplicate = (await db.from('rr_art_master').insert({ art_no: '  ' + fixture.toLowerCase() + '-art  ' })).error?.code || null;
+
+      const print = await db.from('rr_print_master').insert({
+        print_no: fixture + '-PRINT', print_name: 'TEST E2E Print', design_colours: 2,
+        short_note: 'Reversible TEST71 Checkpoint 3 fixture', is_active: true
+      }).select('id,print_no,design_colours').single();
+      if (print.error) throw print.error;
+      out.print = (await db.from('rr_print_master').select('id').eq('print_no', fixture + '-PRINT').single()).data;
+      out.printDuplicate = (await db.from('rr_print_master').insert({ print_no: fixture.toLowerCase() + '-print', print_name: 'duplicate' })).error?.code || null;
+
+      for (const x of [
+        { key: 'sticker', rpc: 'rr_upsert_sticker_master_v804', type: 'STICKER', no: fixture + '-STICKER', args: { p_sticker_no: fixture + '-STICKER', p_sticker_name: 'TEST E2E Sticker', p_sticker_quality: 'HD' } },
+        { key: 'metal', rpc: 'rr_upsert_metal_id_master_v804', type: 'METAL_ID', no: fixture + '-METAL', args: { p_metal_id_no: fixture + '-METAL', p_metal_id_name: 'TEST E2E Metal ID', p_id_size: 'SMALL' } }
+      ]) {
+        const before = await db.rpc('rr_accessory_master_list_v804', { p_item_type: x.type, p_data_mode: 'TEST' });
+        const existing = (before.data || []).find((row) => row.item_no === x.no);
+        const saved = await db.rpc(x.rpc, { p_id: existing?.id || null, ...x.args, p_is_active: true });
+        if (saved.error) throw saved.error;
+        const after = await db.rpc('rr_accessory_master_list_v804', { p_item_type: x.type, p_data_mode: 'TEST' });
+        out[x.key] = (after.data || []).find((row) => row.item_no === x.no) || null;
+        const archived = await db.rpc(x.rpc, { p_id: saved.data, ...x.args, p_is_active: false });
+        if (archived.error) throw archived.error;
+      }
+      return out;
+    } finally {
+      await db.from('rr_art_master').delete().eq('art_no', fixture + '-ART');
+      await db.from('rr_print_master').delete().eq('print_no', fixture + '-PRINT');
+    }
+  }, fixture);
+
+  expect(result.art).toBeTruthy();
+  expect(result.print).toBeTruthy();
+  expect(result.sticker?.is_active).toBe(true);
+  expect(result.metal?.is_active).toBe(true);
+  expect(result.artDuplicate).toBe('23505');
+  expect(result.printDuplicate).toBe('23505');
+});
+
 test('master search and selected-preview surfaces remain usable on mobile', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   const pages = [
