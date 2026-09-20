@@ -72,6 +72,11 @@ begin
   insert into public.rr_worker_department_map_v1(worker_id,department_code,is_primary,is_active,assigned_by,updated_at)
   values(v_id,lower(public.rr_upm_core_department_v9077(v_dept)),true,true,auth.uid(),now())
   on conflict(worker_id,department_code) do update set is_primary=true,is_active=true,assigned_by=auth.uid(),updated_at=now();
+  insert into public.rr_real_chat_worker_membership_control_v136
+    (worker_id,manual_global_inactive,inactive_action,inactive_reason,updated_by)
+  values(v_id,false,null,null,auth.uid())
+  on conflict(worker_id) do update set manual_global_inactive=false,inactive_action=null,
+    inactive_reason=null,updated_by=auth.uid(),updated_at=now();
   insert into public.rr_real_chat_department_membership_v70
     (department_code,worker_id,membership_side,source_rule,is_active,updated_by,membership_scope,manual_lock,updated_at)
   values(upper(public.rr_upm_core_department_v9077(v_dept)),v_id,'WORKER','ADD_WORKER_CANONICAL_V321',true,auth.uid(),'DEPARTMENT',false,now())

@@ -103,9 +103,9 @@ test("Staff Manage add is real, idempotent, persistent, and removable", async ({
   expect((Array.isArray(second.data) ? second.data[0] : second.data).worker_id).toBe(row.worker_id);
 
   await page.reload({ waitUntil: "domcontentloaded" });
-  const consoleData = await rpc(page, "rr_owner_permission_console_v1", { p_module_code: null });
-  expect(consoleData.error).toBeNull();
-  expect((consoleData.data?.workers || []).filter((x) => x.worker_name === FIXTURE)).toHaveLength(1);
+  const roster = await rpc(page, "rr_real_chat_membership_roster_v136");
+  expect(roster.error).toBeNull();
+  expect((roster.data?.workers || []).filter((x) => x.worker_name === FIXTURE)).toHaveLength(1);
 
   const removed = await rpc(page, "rr_real_chat_membership_admin_v136", {
     p_worker_id: row.worker_id, p_action: "REMOVE", p_scope: "DEPARTMENT",
@@ -118,4 +118,8 @@ test("Staff Manage add is real, idempotent, persistent, and removable", async ({
   });
   expect(restored.error).toBeNull();
   expect((Array.isArray(restored.data) ? restored.data[0] : restored.data).worker_id).toBe(row.worker_id);
+  const restoredRoster = await rpc(page, "rr_real_chat_membership_roster_v136");
+  const restoredWorker = restoredRoster.data.workers.find((x) => x.worker_id === row.worker_id);
+  expect(restoredWorker.manual_global_inactive).toBe(false);
+  expect(restoredWorker.memberships.some((x) => x.department_code === "STITCHING" && x.is_active)).toBe(true);
 });
