@@ -6,7 +6,8 @@
     "test:e2e:static": "node --test tests/e2e/*.unit.test.js",
     "test:e2e": "playwright test",
     "test:e2e:auth": "playwright test --project=auth-setup",
-    "test:e2e:checkpoint0": "playwright test --project=checkpoint-0"
+    "test:e2e:checkpoint0": "playwright test --project=checkpoint-0",
+    "test:e2e:checkpoint1": "playwright test --project=checkpoint-1"
   },
   "devDependencies": {
     "@playwright/test": "1.55.0"
