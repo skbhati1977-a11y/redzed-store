@@ -48,7 +48,7 @@ test.afterEach(async ({ page }) => {
 test("canonical Act As mappings expose only configured departments", async ({ page }) => {
   const cases = [
     ["imamul", "KR KARIGER", ["STITCHING"], ["STICKER"]],
-    ["akhtar", "FLD KARIGER", ["FOLDING"], ["OVERLOCK"]],
+    ["akhtar", "FLD KARIGER", ["FOLDING", "OVERLOCK"], []],
     ["yashpal", "KAJ/BTN KARIGAR", ["KAJ_BUTTON"], []],
     ["baldev", "KAJ/BTN KARIGAR", ["KAJ_BUTTON"], []],
     ["balli", "ID KARIGER", ["METAL_ID"], []],

@@ -1,16 +1,22 @@
 -- TEST71 Checkpoint 1: canonical staff mapping and effective Act As authorization.
 
--- Keep historical rows for audit, but remove only the four reproduced accidental
+-- Keep historical rows for audit, but remove only the reproduced accidental
 -- cross-department skills.  Home departments and correct skills stay untouched.
 update public.rr_worker_department_map_v1 m
 set is_active=false,updated_at=now()
 from public.rr_worker_directory_unified_v1 d
 where d.worker_id=m.worker_id and m.is_active and (
   (lower(d.worker_name)='imamul' and lower(m.department_code)='sticker') or
-  (lower(d.worker_name)='akhtar' and lower(m.department_code)='overlock') or
   (lower(d.worker_name)='sharwan' and lower(m.department_code)='packing') or
   (lower(d.worker_name)='singh ji' and lower(m.department_code)='press')
 );
+
+-- Akhtar is intentionally multi-department: Folding primary + Overlock secondary.
+update public.rr_worker_department_map_v1 m
+set is_active=true,is_primary=false,updated_at=now()
+from public.rr_worker_directory_unified_v1 d
+where d.worker_id=m.worker_id and lower(d.worker_name)='akhtar'
+  and lower(m.department_code)='overlock';
 
 create or replace function public.rr_upm_assignment_allowed_v200()
 returns boolean language sql stable security definer set search_path=''
