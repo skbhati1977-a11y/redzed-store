@@ -3,6 +3,7 @@
   "private": true,
   "scripts": {
     "e2e:env-status": "node scripts/e2e-env-status.js",
+    "test:e2e:static": "node --test tests/e2e/e2e-session.unit.test.js",
     "test:e2e": "playwright test",
     "test:e2e:auth": "playwright test --project=auth-setup",
     "test:e2e:checkpoint0": "playwright test --project=checkpoint-0"
