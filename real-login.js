@@ -55,7 +55,7 @@ async function sendRecovery() {
     email,
     {
       redirectTo:
-        "https://skbhati1977-a11y.github.io/redzed-store/reset-password.html"
+        "https://redzed-test65-msk9oi43o-skbhati1977-4414.vercel.app/reset-password.html"
     }
   );
 
