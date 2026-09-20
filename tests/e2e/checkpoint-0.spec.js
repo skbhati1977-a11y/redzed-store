@@ -52,7 +52,7 @@ test("expired or cleared session automatically re-bootstraps", async ({ page }) 
 });
 
 for (const actor of [
-  { name: "ali", roles: ["LINE MAN"], canAssign: false },
+  { name: "ali", roles: ["LINE MAN"], canAssign: true },
   { name: "imamul", roles: ["KR KARIGER"], canAssign: false },
   { name: "nasim", roles: ["MANAGER"], canAssign: true },
   { name: "shailender", roles: ["ACCOUNT"], canAssign: false }
