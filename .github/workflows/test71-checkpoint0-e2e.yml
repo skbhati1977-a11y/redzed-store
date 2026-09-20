@@ -42,11 +42,12 @@ jobs:
       - run: npm run test:e2e:checkpoint3
       - run: npm run test:e2e:checkpoint4
       - run: npm run test:e2e:checkpoint5
+      - run: npm run test:e2e:checkpoint6
       - name: Upload Playwright evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: checkpoint0-5-playwright-evidence
+          name: checkpoint0-6-playwright-evidence
           path: |
             playwright-report/
             test-results/
