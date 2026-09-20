@@ -8,6 +8,7 @@ on:
       - api/e2e-session.js
       - api/_github-oidc.js
       - tests/e2e/**
+      - supabase/migrations/**
       - scripts/e2e-env-status.js
       - playwright.config.js
       - package.json
