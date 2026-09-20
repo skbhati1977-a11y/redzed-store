@@ -52,10 +52,10 @@ test("expired or cleared session automatically re-bootstraps", async ({ page }) 
 });
 
 for (const actor of [
-  { name: "ali", roles: ["LINE_MANAGER", "LINE_MAN"], canAssign: true },
-  { name: "imamul", roles: ["WORKER"], canAssign: false },
+  { name: "ali", roles: ["LINE MAN"], canAssign: false },
+  { name: "imamul", roles: ["KR KARIGER"], canAssign: false },
   { name: "nasim", roles: ["MANAGER"], canAssign: true },
-  { name: "shailender", roles: ["ADMIN"], canAssign: true }
+  { name: "shailender", roles: ["ACCOUNT"], canAssign: false }
 ]) {
   test(`Act As ${actor.name} propagates backend identity and authority`, async ({ page }) => {
     const result = await selectActAs(page, actor.name);
