@@ -30,10 +30,10 @@ test('PENDING or DISPUTED receipt is blocked in both queue and submit mutation',
   assert.match(migration,/create or replace function public\.rr_upm_ready_submit_v794/);
 });
 
-test('Line Man handoff remains the submit engine for worker lifecycle sheets',()=>{
-  assert.match(app,/rr_upm_ready_submit_to_lm_v184/);
+test('canonical receiver handoff remains the submit engine for worker lifecycle sheets',()=>{
+  assert.match(app,/rr_upm_ready_submit_canonical_v277/);
   assert.match(actualCostGate,/if\(m\.querySelector\('#rfSubmitLM'\)\)\{m\.dataset\.rr9300='1';return\}/);
-  assert.match(appHtml,/real-upm-actual-cost-gate-v9300\.js\?v=201/);
+  assert.match(appHtml,/real-upm-actual-cost-gate-v9300\.js\?v=400/);
 });
 
 test('accept records WORKING and submitted assignments cannot be queued twice',()=>{
@@ -57,6 +57,6 @@ test('App, Chat and backend use the same assignment authority allowlist',()=>{
 
 test('V200 assets are cache-busted for the live TEST70 flow',()=>{
   assert.match(appHtml,/real-upm-department-view-v789\.js\?v=200/);
-  assert.match(appHtml,/real-upm-submit-confirm-v796\.js\?v=200/);
-  assert.match(chatHtml,/test70-real-chat-live-v70\.js\?v=203/);
+  assert.match(appHtml,/real-upm-submit-confirm-v796\.js\?v=204/);
+  assert.match(chatHtml,/test70-real-chat-live-v70\.js\?v=400/);
 });

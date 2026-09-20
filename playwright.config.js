@@ -46,6 +46,12 @@ module.exports = defineConfig({
       testMatch: /checkpoint-3\.spec\.js/,
       dependencies: ["auth-setup"],
       use: { storageState: "playwright/.auth/super-admin.json" }
+    },
+    {
+      name: "checkpoint-4",
+      testMatch: /checkpoint-4\.spec\.js/,
+      dependencies: ["auth-setup"],
+      use: { storageState: "playwright/.auth/super-admin.json" }
     }
   ]
 });
