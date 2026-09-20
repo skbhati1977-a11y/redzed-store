@@ -8,8 +8,15 @@ async function selectActAs(page, name) {
   await page.locator("#rrGlobalViewAs172 [data-search]").fill(name);
   const button = page.locator("#rrGlobalViewAs172 [data-worker]").filter({ hasText: name }).first();
   await expect(button).toBeVisible();
-  await button.click();
-  await page.waitForLoadState("domcontentloaded");
+  const workerId = await button.getAttribute("data-worker");
+  const reloaded = page.waitForNavigation({ waitUntil: "domcontentloaded" });
+  await button.click({ noWaitAfter: true });
+  await reloaded;
+  await expect.poll(() => page.evaluate(async (expectedWorkerId) => {
+    const session = (await window.supabaseClient?.auth.getSession()).data?.session;
+    return Boolean(session && window.RR_ON_BEHALF_ACTIVE &&
+      String(window.RR_VIEW_AS_ACTOR_ID) === String(expectedWorkerId));
+  }, workerId)).toBe(true);
   return page.evaluate(async () => {
     const identity = await window.supabaseClient.rpc("rr_upm_effective_identity_v200");
     const canAssign = await window.supabaseClient.rpc("rr_upm_assignment_allowed_v200");
@@ -21,8 +28,13 @@ async function selectActAs(page, name) {
 
 async function restoreActual(page) {
   await page.locator("#rrGlobalViewAs172 .rr-view-handle").click();
-  await page.locator("#rrGlobalViewAs172 [data-actual]").click();
-  await page.waitForLoadState("domcontentloaded");
+  const reloaded = page.waitForNavigation({ waitUntil: "domcontentloaded" });
+  await page.locator("#rrGlobalViewAs172 [data-actual]").click({ noWaitAfter: true });
+  await reloaded;
+  await expect.poll(() => page.evaluate(async () => {
+    const session = (await window.supabaseClient?.auth.getSession()).data?.session;
+    return Boolean(session && !window.RR_ON_BEHALF_ACTIVE);
+  })).toBe(true);
 }
 
 test("reuses the stored Super Admin session", async ({ page }) => {
