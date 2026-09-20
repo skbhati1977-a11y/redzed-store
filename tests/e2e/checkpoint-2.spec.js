@@ -45,6 +45,45 @@ test("canonical department cases resolve from one operational projection", async
   }
 });
 
+test("all Checkpoint 2 departments remain queryable through canonical App/Group mirror", async ({ page }) => {
+  await directory(page);
+  for (const department of ["OVERLOCK", "FOLDING", "METAL_ID", "KAJ_BUTTON", "TEAK_TANKI", "THREAD_CUT", "QC", "PRESS"]) {
+    for (const status of ["OPEN", "WORKING", "CLOSE"]) {
+      const result = await rpc(page, "rr_real_chat_work_search_v10", {
+        p_status: status, p_search: null, p_department_code: department, p_limit: 500
+      });
+      expect(result.error, `${department} ${status}`).toBeNull();
+      expect(result.data.version).toBe("V324_CANONICAL_ACCEPTED_QTY_MIRROR");
+      for (const card of result.data.cards || []) {
+        if (!card.assignment_id) continue;
+        expect(Number(card.qty)).toBe(Number(card.good_qty));
+        if (card.variance) expect(card.variance.colour_code || card.colour_code).toBeTruthy();
+      }
+    }
+  }
+});
+
+test("Personal and App/Group mirrors agree on shared WORKING assignments", async ({ page }) => {
+  const data = await directory(page);
+  const app = await rpc(page, "rr_real_chat_work_search_v10", {
+    p_status: "WORKING", p_search: null, p_department_code: null, p_limit: 500
+  });
+  expect(app.error).toBeNull();
+  const appByAssignment = new Map((app.data.cards || []).filter((x) => x.assignment_id).map((x) => [x.assignment_id, x]));
+  for (const person of data.people.slice(0, 80)) {
+    const personal = await rpc(page, "rr_real_chat_operational_work_v319", {
+      p_worker_id: person.worker_id, p_status: "WORKING", p_department_code: null
+    });
+    expect(personal.error).toBeNull();
+    for (const card of personal.data.cards || []) {
+      const mirrored = appByAssignment.get(card.assignment_id);
+      if (!mirrored) continue;
+      expect(Number(mirrored.qty)).toBe(Number(card.good_qty));
+      expect(mirrored.colour_code).toBe(card.colour_code);
+    }
+  }
+});
+
 test("separate and atomic colour batches render exactly their canonical rows", async ({ page }) => {
   const data = await directory(page);
   for (const name of ["akhtar", "balli"]) {

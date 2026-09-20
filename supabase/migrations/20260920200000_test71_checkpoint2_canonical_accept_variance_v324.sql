@@ -204,3 +204,49 @@ $$;
 
 revoke all on function public.rr_real_chat_operational_work_v319(uuid,text,text) from public,anon;
 grant execute on function public.rr_real_chat_operational_work_v319(uuid,text,text) to authenticated;
+
+-- App and Department Group Chat keep the existing inbox engine, with quantity fields
+-- overlaid from the same canonical assignment projection used by Personal Chat.
+create or replace function public.rr_upm_card_assignment_id_v324(p_card jsonb)
+returns uuid language plpgsql immutable set search_path='' as $$
+declare v text:=coalesce(nullif(p_card->>'assignment_id',''),case when p_card->>'canonical_source'='rr_upm_work_assignments_v8' then nullif(p_card->>'original_record_id','') end);
+begin return v::uuid;exception when invalid_text_representation then return null;end$$;
+
+create or replace function public.rr_real_chat_work_search_v10(
+ p_status text default 'WORKING',p_search text default null,p_department_code text default null,p_limit integer default 500
+) returns jsonb language plpgsql stable security definer set search_path='' as $$
+declare v_base jsonb;v_find text:=lower(trim(coalesce(p_search,'')));
+ v_key text:=regexp_replace(lower(trim(coalesce(p_search,''))),'[^a-z0-9]','','g');
+ v_cards jsonb;v_counts jsonb;v_fabrication boolean:=upper(trim(coalesce(p_department_code,'')))='FABRICATION';
+begin
+ if auth.uid() is null then raise exception 'Login required.';end if;
+ v_base:=public.rr_real_chat_work_inbox_v83(p_status,null,case when v_fabrication then null else p_department_code end,p_limit);
+ select coalesce(jsonb_agg(case when public.rr_upm_card_assignment_id_v324(card) is not null then
+   card||jsonb_build_object('assignment_id',public.rr_upm_card_assignment_id_v324(card))||public.rr_upm_assignment_operational_qty_v280(public.rr_upm_card_assignment_id_v324(card))||jsonb_build_object(
+    'qty',coalesce((public.rr_upm_assignment_operational_qty_v280(public.rr_upm_card_assignment_id_v324(card))->>'good_qty')::numeric,0),
+    'pieces',coalesce((public.rr_upm_assignment_operational_qty_v280(public.rr_upm_card_assignment_id_v324(card))->>'good_qty')::numeric,0),
+    'variance',case
+     when coalesce((public.rr_upm_assignment_operational_qty_v280(public.rr_upm_card_assignment_id_v324(card))->>'excess_qty')::numeric,0)>0 then jsonb_build_object(
+      'type','EXCESS','qty',(public.rr_upm_assignment_operational_qty_v280(public.rr_upm_card_assignment_id_v324(card))->>'excess_qty')::numeric,
+      'expected',(public.rr_upm_assignment_operational_qty_v280(public.rr_upm_card_assignment_id_v324(card))->>'expected_qty')::numeric,
+      'accepted',(public.rr_upm_assignment_operational_qty_v280(public.rr_upm_card_assignment_id_v324(card))->>'accepted_qty')::numeric,
+      'colour_code',public.rr_upm_assignment_operational_qty_v280(public.rr_upm_card_assignment_id_v324(card))->>'colour_code')
+     when coalesce((public.rr_upm_assignment_operational_qty_v280(public.rr_upm_card_assignment_id_v324(card))->>'short_qty')::numeric,0)>0 then jsonb_build_object(
+      'type','SHORT','qty',(public.rr_upm_assignment_operational_qty_v280(public.rr_upm_card_assignment_id_v324(card))->>'short_qty')::numeric,
+      'expected',(public.rr_upm_assignment_operational_qty_v280(public.rr_upm_card_assignment_id_v324(card))->>'expected_qty')::numeric,
+      'accepted',(public.rr_upm_assignment_operational_qty_v280(public.rr_upm_card_assignment_id_v324(card))->>'accepted_qty')::numeric,
+      'colour_code',public.rr_upm_assignment_operational_qty_v280(public.rr_upm_card_assignment_id_v324(card))->>'colour_code') end)
+  else card end order by ord),'[]'::jsonb) into v_cards
+ from jsonb_array_elements(coalesce(v_base->'cards','[]'::jsonb))with ordinality x(card,ord)
+ where(not v_fabrication or upper(coalesce(card->>'department_code',''))='FABRICATION')
+ and(v_find='' or lower(card::text)like'%'||v_find||'%'or(v_key<>''and regexp_replace(lower(card::text),'[^a-z0-9]','','g')like'%'||v_key||'%'));
+ select coalesce(jsonb_object_agg(department_code,card_count),'{}'::jsonb)into v_counts from(
+  select coalesce(nullif(card->>'department_code',''),'UNKNOWN')department_code,count(*)card_count
+  from jsonb_array_elements(v_cards)x(card)group by 1)c;
+ return jsonb_set(jsonb_set(jsonb_set(v_base,'{version}',to_jsonb('V324_CANONICAL_ACCEPTED_QTY_MIRROR'::text),true),'{cards}',v_cards,true),'{department_counts}',v_counts,true);
+end$$;
+
+revoke all on function public.rr_real_chat_work_search_v10(text,text,text,integer) from public,anon;
+revoke all on function public.rr_upm_card_assignment_id_v324(jsonb) from public,anon;
+grant execute on function public.rr_real_chat_work_search_v10(text,text,text,integer) to authenticated;
+grant execute on function public.rr_upm_card_assignment_id_v324(jsonb) to authenticated;

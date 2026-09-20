@@ -40,4 +40,6 @@ test("Personal Chat shows main WORKING card and separate variance card", () => {
   assert.match(migration, /'variance'.*'type','EXCESS'/s);
   assert.match(chat, /event_key:'RECEIPT_VARIANCE:'/);
   assert.match(chat, /source_module:'UPM_RECEIPT_VARIANCE'/);
+  assert.match(migration, /V324_CANONICAL_ACCEPTED_QTY_MIRROR/);
+  assert.match(migration, /rr_upm_card_assignment_id_v324\(card\).*rr_upm_assignment_operational_qty_v280/s);
 });
