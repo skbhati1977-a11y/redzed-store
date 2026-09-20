@@ -124,4 +124,13 @@ test('master search and selected-preview surfaces remain usable on mobile', asyn
     const width = await page.evaluate(() => ({ body: document.body.scrollWidth, viewport: document.documentElement.clientWidth }));
     expect(width.body).toBeLessThanOrEqual(width.viewport + 2);
   }
+  const list = await rpc(page, 'rr_accessory_master_list_v804', { p_item_type: 'STICKER', p_data_mode: 'TEST' });
+  const marker = (list.data || []).find((row) => row.item_no === 'TEST71-CP3-E2E-STICKER');
+  expect(marker).toBeTruthy();
+  const marked = await rpc(page, 'rr_upsert_sticker_master_v804', {
+    p_id: marker.id, p_sticker_no: marker.item_no,
+    p_sticker_name: 'TEST E2E Sticker · MOBILE LIVE PASS', p_sticker_quality: marker.item_attr,
+    p_is_active: false
+  });
+  expect(marked.error).toBeNull();
 });
