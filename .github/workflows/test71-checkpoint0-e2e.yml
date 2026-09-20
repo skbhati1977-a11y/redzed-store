@@ -1,0 +1,38 @@
+name: TEST71 Checkpoint 0 E2E
+
+on:
+  push:
+    branches:
+      - test71-real-chat-e2e-finalization
+    paths:
+      - api/e2e-session.js
+      - api/_github-oidc.js
+      - tests/e2e/**
+      - scripts/e2e-env-status.js
+      - playwright.config.js
+      - package.json
+      - package-lock.json
+      - .github/workflows/test71-checkpoint0-e2e.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  checkpoint0:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      E2E_BASE_URL: https://redzed-test65-git-test71-real-chat-e2e-6adad3-skbhati1977-4414.vercel.app
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run e2e:env-status
+      - run: npm run test:e2e:static
+      - run: npm run test:e2e:checkpoint0

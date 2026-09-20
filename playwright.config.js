@@ -1,7 +1,7 @@
 const { defineConfig, devices } = require("@playwright/test");
 
 const baseURL = process.env.E2E_BASE_URL ||
-  "https://redzed-test65-inbjxm4ge-skbhati1977-4414.vercel.app";
+  "https://redzed-test65-git-test71-real-chat-e2e-6adad3-skbhati1977-4414.vercel.app";
 
 module.exports = defineConfig({
   testDir: "./tests/e2e",

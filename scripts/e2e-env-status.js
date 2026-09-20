@@ -1,8 +1,9 @@
-const names = [
-  "E2E_TEST_SUPER_ADMIN_EMAIL",
-  "E2E_TEST_SUPER_ADMIN_PASSWORD",
-  "E2E_TEST_BOOTSTRAP_SECRET"
-];
+const oidcAvailable = Boolean(
+  process.env.E2E_RUNNER_OIDC_TOKEN ||
+  (process.env.ACTIONS_ID_TOKEN_REQUEST_URL && process.env.ACTIONS_ID_TOKEN_REQUEST_TOKEN)
+);
 
-for (const name of names) console.log(`${name}: ${process.env[name] ? "CONFIGURED" : "MISSING"}`);
-if (names.some((name) => !process.env[name])) process.exitCode = 1;
+console.log("PERMANENT_E2E_CREDENTIALS: VERCEL_PREVIEW_RUNTIME_ONLY");
+console.log(`RUNNER_AUTHORIZATION: ${oidcAvailable ? "SHORT_LIVED_OIDC_CONFIGURED" : "SHORT_LIVED_OIDC_UNAVAILABLE"}`);
+console.log(`LOCAL_PERMANENT_SECRETS_REQUIRED: NO`);
+if (process.env.CI && !oidcAvailable) process.exitCode = 1;

@@ -1,4 +1,5 @@
 const crypto = require("node:crypto");
+const { verifyGithubOidc } = require("./_github-oidc");
 
 const TEST_BRANCH = "test71-real-chat-e2e-finalization";
 const SUPABASE_URL = "https://hruartsemierwhtzonei.supabase.co";
@@ -15,13 +16,25 @@ function safeEqual(left, right) {
   return a.length > 31 && a.length === b.length && crypto.timingSafeEqual(a, b);
 }
 
+async function authorizedRunner(request) {
+  const bootstrapSecret = process.env.E2E_TEST_BOOTSTRAP_SECRET;
+  if (bootstrapSecret && safeEqual(request.headers["x-e2e-bootstrap-secret"], bootstrapSecret)) return true;
+  const authorization = String(request.headers.authorization || "");
+  if (!authorization.startsWith("Bearer ")) return false;
+  try {
+    await verifyGithubOidc(authorization.slice(7));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 module.exports = async function handler(request, response) {
   response.setHeader("Cache-Control", "private, no-store, max-age=0");
   response.setHeader("Pragma", "no-cache");
   if (process.env.VERCEL_ENV !== "preview" || process.env.VERCEL_GIT_COMMIT_REF !== TEST_BRANCH) return deny(response);
   if (request.method !== "POST") return deny(response);
-  const bootstrapSecret = process.env.E2E_TEST_BOOTSTRAP_SECRET;
-  if (!bootstrapSecret || !safeEqual(request.headers["x-e2e-bootstrap-secret"], bootstrapSecret)) return deny(response);
+  if (!(await authorizedRunner(request))) return deny(response);
   const email = process.env.E2E_TEST_SUPER_ADMIN_EMAIL;
   const password = process.env.E2E_TEST_SUPER_ADMIN_PASSWORD;
   if (!email || !password) return deny(response, 503);

@@ -42,7 +42,7 @@ test("other preview branches always return a generic 404", async () => {
   assert.equal(result.code, 404);
 });
 
-test("TEST71 without a server-side bootstrap secret fails closed", async () => {
+test("TEST71 without an authorized runner identity fails closed", async () => {
   const result = await invoke("preview", "test71-real-chat-e2e-finalization");
   assert.equal(result.code, 404);
 });
