@@ -39,6 +39,7 @@ jobs:
       - run: npm run test:e2e:checkpoint0
       - run: npm run test:e2e:checkpoint1
       - run: npm run test:e2e:checkpoint2
+      - run: npm run test:e2e:checkpoint3
       - name: Upload Playwright evidence
         if: always()
         uses: actions/upload-artifact@v4
