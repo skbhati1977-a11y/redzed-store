@@ -35,6 +35,16 @@ async function bootstrap(page) {
   const result = await page.evaluate(async (tokens) => {
     const set = await window.supabaseClient.auth.setSession(tokens);
     if (set.error) throw new Error(set.error.message);
+    const cleared = await window.supabaseClient.rpc("rr_test_clear_on_behalf_context_v176");
+    if (cleared.error) throw new Error(cleared.error.message);
+    [
+      "rr_superadmin_preview_actor_id",
+      "rr_superadmin_preview_actor_name",
+      "rr_superadmin_preview_actor_role",
+      "rr_superadmin_preview_actor_departments",
+      "rr_superadmin_preview_role",
+      "rr_superadmin_preview_group"
+    ].forEach((key) => sessionStorage.removeItem(key));
     return Boolean(set.data?.session?.user);
   }, { access_token: session.access_token, refresh_token: session.refresh_token });
   if (!result) throw new Error("Supabase session was not established");
