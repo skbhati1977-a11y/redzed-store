@@ -16,6 +16,33 @@ async function person(page, name) {
   return row;
 }
 
+async function e2eDcardSnapshot(page) {
+  return page.evaluate(async () => {
+    const unitId = 'a2000000-0000-4000-8000-000000000013';
+    const [gallery, lot, history] = await Promise.all([
+      window.supabaseClient
+        .from('rr_product_gallery_production_v719')
+        .select('division_id,division_code,division_status,lot_no')
+        .eq('division_id', unitId)
+        .maybeSingle(),
+      window.supabaseClient
+        .from('rr_cutting_lots_v3')
+        .select('id,lot_no,status,cb_unit_id')
+        .eq('cb_unit_id', unitId)
+        .maybeSingle(),
+      window.supabaseClient.rpc('rr_real_chat_conversation_history_v83', { p_limit: 5000 })
+    ]);
+    return {
+      gallery: gallery.data,
+      lot: lot.data,
+      history: history.data,
+      errors: [gallery.error, lot.error, history.error]
+        .filter(Boolean)
+        .map((x) => ({ message: x.message, code: x.code }))
+    };
+  });
+}
+
 test.beforeEach(async ({ page }) => { await ensureSession(page); });
 test.afterEach(async ({ page }) => {
   if (!page.isClosed()) await rpc(page, 'rr_test_clear_on_behalf_context_v176').catch(() => null);
@@ -93,4 +120,85 @@ test('mobile Sales, Costing and Accounts group projections stay inside viewport'
     await page.locator('#back').click();
     await page.locator('#back').click();
   }
+});
+
+test('released D-card succeeds once, closes action state and rolls its fixture back', async ({ page }) => {
+  const proof = await rpc(page, 'rr_test_released_dcard_regression_v502');
+  expect(proof.error).toBeNull();
+  expect(proof.data.first_release_count).toBe(1);
+  expect(proof.data.retry_blocked).toBe(true);
+  expect(proof.data.cross_mode_retry_blocked).toBe(true);
+  expect(proof.data.gallery_state).toBe('released');
+  expect(proof.data.actionable_ready_count).toBe(0);
+  expect(proof.data.history_count).toBe(1);
+  expect(proof.data.real_chat_state).toBe('CLOSE');
+  expect(proof.data.real_chat_action).toBeNull();
+  expect(proof.data.real_chat_next_actions).toEqual([]);
+  expect(proof.data.rolled_back).toBe(true);
+  expect(proof.data.fixture_residue).toBe(0);
+});
+
+test('E2E-CB-3 is retained RELEASED history across backend, App and Real Chat', async ({ page }) => {
+  const snapshot = await e2eDcardSnapshot(page);
+  expect(snapshot.errors).toEqual([]);
+  expect(snapshot.gallery).toMatchObject({
+    division_code: 'E2E-CB-3',
+    division_status: 'released'
+  });
+  expect(snapshot.gallery.lot_no).toContain('E2E-FRESH-03');
+  expect(snapshot.lot).toMatchObject({ lot_no: 'E2E-FRESH-03', status: 'released' });
+
+  const release = snapshot.history.find((row) =>
+    row.source_event_type === 'CUTTING_RELEASE_SUCCEEDED' &&
+    String(row.personal_payload?.lot_no || row.group_payload?.lot_no || '').toUpperCase() === 'E2E-FRESH-03'
+  );
+  expect(release).toBeTruthy();
+  expect(release.canonical_state).toBe('CLOSE');
+  expect(release.personal_payload.canonical_state).toBe('CLOSE');
+  expect(release.action_code).toBeNull();
+  expect(release.personal_payload.next_actions).toEqual([]);
+
+  const purchase = snapshot.history.find((row) =>
+    row.source_module === 'CB_PURCHASE' &&
+    (row.personal_payload?.cb_children || []).some((child) => child.cb_unit_id === snapshot.lot.cb_unit_id)
+  );
+  expect(purchase).toBeTruthy();
+  const child = purchase.personal_payload.cb_children.find((row) => row.cb_unit_id === snapshot.lot.cb_unit_id);
+  expect(child.state).toBe('RELEASED');
+  expect(purchase.personal_payload.canonical_state).toBe('CLOSE');
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  const dialogMessages = [];
+  page.on('dialog', async (dialog) => {
+    dialogMessages.push(dialog.message());
+    await dialog.dismiss();
+  });
+  const url = '/real-cutting-master.html?mode=TEST&embed=1&cb_unit_id=a2000000-0000-4000-8000-000000000013&lot_mode=single';
+  await page.goto(url);
+  const card = page.locator('[data-division-id="a2000000-0000-4000-8000-000000000013"]');
+  await expect(card).toBeVisible({ timeout: 30_000 });
+  await expect(page.locator('#divisionGallery .cm-card')).toHaveCount(1);
+  await expect(card).toContainText('E2E-CB-3');
+  await expect(card).toContainText(/released/i);
+  await expect(card.locator('[data-single]')).toBeDisabled();
+  await expect(card.locator('[data-multi]')).toBeDisabled();
+  await expect(page.locator('#cmMessage')).toContainText(/history/i);
+  expect(dialogMessages).toEqual([]);
+
+  await page.reload();
+  await expect(card).toBeVisible({ timeout: 30_000 });
+  await expect(page.locator('#divisionGallery .cm-card')).toHaveCount(1);
+  await expect(card.locator('[data-single]')).toBeDisabled();
+  await expect(card.locator('[data-multi]')).toBeDisabled();
+  expect(dialogMessages).toEqual([]);
+
+  await page.goto('/test70-cb-purchase-real-chat-pilot.html?mode=TEST&rc_status=CLOSE');
+  await expect(page.locator('#state')).toContainText(/departments · .* people/, { timeout: 30_000 });
+  await page.locator('[data-department="CUTTING"]').click();
+  await page.locator('[data-dept-group="CUTTING"]').click();
+  await page.locator('[data-chat-status="CLOSE"]').click();
+  await page.locator('#chatFind').fill('E2E-FRESH-03');
+  await page.locator('#chatFind').press('Enter');
+  await expect(page.locator('#messages')).toContainText('E2E-FRESH-03', { timeout: 30_000 });
+  await expect(page.locator('#messages')).not.toContainText(/SINGLE LOT|MULTI LOT/);
 });

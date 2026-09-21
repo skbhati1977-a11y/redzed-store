@@ -22,6 +22,8 @@ const message = $("cmMessage");
 const lotSheet = $("lotSheet");
 const splitSheet = $("splitSheet");
 const costSheet = $("costSheet");
+const pageParams = new URLSearchParams(window.location.search);
+const requestedDivisionId = String(pageParams.get("cb_unit_id") || "").trim();
 
 let galleryRows = [];
 let purchaseRows = [];
@@ -1324,6 +1326,17 @@ function filterMatches(card) {
   return true;
 }
 
+function syncFilterSelection() {
+  $("cmFilters")
+    ?.querySelectorAll("[data-filter]")
+    .forEach(item => {
+      item.classList.toggle(
+        "is-active",
+        item.dataset.filter === currentFilter
+      );
+    });
+}
+
 function injectStyles() {
   if ($("cmPmStyle")) return;
 
@@ -1491,7 +1504,10 @@ function renderGallery() {
     .trim()
     .toLowerCase();
 
-  const allCards = divisionCards();
+  const allCards = divisionCards().filter(card =>
+    !requestedDivisionId ||
+    String(card.division.division_id) === requestedDivisionId
+  );
 
   const cards = allCards.filter(card => {
     return (
@@ -1835,6 +1851,16 @@ function openLotByDivision(divisionId, requestedMode = "single") {
       );
     }
 
+    if (lotsForDivision(divisionId).length) {
+      currentFilter = cardState(card) === "completed"
+        ? "completed"
+        : "released";
+      syncFilterSelection();
+      renderGallery();
+      say("यह D-card पहले ही RELEASED है — history view दिख रही है.", "success");
+      return;
+    }
+
     const decision = cardDecision(card);
 
     if (!decision.ready) {
@@ -1843,10 +1869,6 @@ function openLotByDivision(divisionId, requestedMode = "single") {
           ? "Print assign करें या No Print Required final करें."
           : "Product Master में Art decide करें."
       );
-    }
-
-    if (lotsForDivision(divisionId).length) {
-      throw new Error("इस D card का Lot पहले ही release हो चुका है.");
     }
 
     activeCard = card;
@@ -3263,6 +3285,8 @@ async function createLot(event = {}) {
     const releasedNos = valid.lots.map(row => row.lot_no);
     lastReleasedLotNo = releasedNos[0] || "";
     lastReleasedDivisionId = activeCard.division.division_id;
+    currentFilter = "released";
+    syncFilterSelection();
 
     closeSheet(lotSheet);
     activeCard = null;
@@ -3657,15 +3681,34 @@ loadMatchingLotSource(client)
 
   await loadCostSettings(client);
   refreshMatchingStockControls();
+
+  const requestedCard = requestedDivisionId
+    ? divisionCards().find(card =>
+        String(card.division.division_id) === requestedDivisionId
+      )
+    : null;
+  const requestedState = requestedCard ? cardState(requestedCard) : "";
+
+  if (requestedState) {
+    currentFilter = requestedState;
+    syncFilterSelection();
+  }
   renderGallery();
 
-  if (!loadAllData.deepLinkOpened) {
-    const params = new URLSearchParams(location.search);
-    const requestedUnit = params.get("cb_unit_id");
-    const requestedMode = params.get("lot_mode") === "multi" ? "multi" : "single";
-    if (requestedUnit && divisionCards().some(card => String(card.division.division_id) === String(requestedUnit))) {
-      loadAllData.deepLinkOpened = true;
-      window.setTimeout(() => openLotByDivision(requestedUnit, requestedMode), 0);
+  if (!loadAllData.deepLinkOpened && requestedDivisionId) {
+    loadAllData.deepLinkOpened = true;
+    const requestedMode = pageParams.get("lot_mode") === "multi" ? "multi" : "single";
+    if (requestedState === "ready") {
+      window.setTimeout(
+        () => openLotByDivision(requestedDivisionId, requestedMode),
+        0
+      );
+    } else if (["released", "completed"].includes(requestedState)) {
+      say("यह D-card पहले ही RELEASED है — केवल history उपलब्ध है.", "success");
+    } else if (requestedCard) {
+      say("यह D-card अभी release-ready नहीं है.", "info");
+    } else {
+      say("Requested Cutting D-card नहीं मिला.", "error");
     }
   }
 
@@ -3768,13 +3811,7 @@ function bindEvents() {
     .forEach(button => {
       button.addEventListener("click", () => {
         currentFilter = button.dataset.filter || "all";
-
-        $("cmFilters")
-          ?.querySelectorAll("[data-filter]")
-          .forEach(item => {
-            item.classList.toggle("is-active", item === button);
-          });
-
+        syncFilterSelection();
         renderGallery();
       });
     });
