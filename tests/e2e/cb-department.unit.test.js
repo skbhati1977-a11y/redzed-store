@@ -24,6 +24,10 @@ const v713Authority = fs.readFileSync(
   'supabase/migrations/20260921160647_test71_cb_v713_effective_authority_v604.sql',
   'utf8'
 );
+const generatedAmount = fs.readFileSync(
+  'supabase/migrations/20260921161124_test71_cb_generated_amount_contract_v605.sql',
+  'utf8'
+);
 
 test('CB Department extends the existing canonical engines', () => {
   assert.match(migration, /alter table public\.rr_fabric_purchases/);
@@ -85,4 +89,10 @@ test('reused V713 creator resolves canonical effective authority', () => {
   assert.match(v713Authority, /create or replace function public\.rr_is_owner_or_admin\(\)/);
   assert.match(v713Authority, /rr_upm_effective_identity_v200\(\)/);
   assert.match(v713Authority, /OWNER','SUPER_ADMIN','ADMIN/);
+});
+
+test('CB save respects canonical generated purchase amount', () => {
+  assert.match(generatedAmount, /amount is GENERATED ALWAYS/);
+  assert.match(generatedAmount, /database-generated from Qty × Rate/);
+  assert.match(generatedAmount, /rr_cb_department_save_v600/);
 });
