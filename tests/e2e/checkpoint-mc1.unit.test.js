@@ -52,5 +52,5 @@ test('canonical consumption mirrors its frozen amount into Lot costing once', ()
 });
 
 test('deployed Real Chat loads the MC1 integration asset version', () => {
-  assert.match(html, /test70-real-chat-live-v70\.js\?v=504/);
+  assert.match(html, /test70-real-chat-live-v70\.js\?v=608/);
 });

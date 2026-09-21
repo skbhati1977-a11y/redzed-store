@@ -79,7 +79,8 @@ test('deployed Unit dropdown, creation, Material persistence, CB mirror and Work
 
     // Real Chat renderer uses the same unit field without a second selector.
     await page.goto('/test70-cb-purchase-real-chat-pilot.html?mode=TEST&v=607');
-    const rendered = await page.evaluate(({ materialName, unitCode }) => cbDepartmentCard({
+    await page.waitForFunction(() => typeof window.__TEST70_REAL_CHAT__?.renderCbDepartmentCard === 'function');
+    const rendered = await page.evaluate(({ materialName, unitCode }) => window.__TEST70_REAL_CHAT__.renderCbDepartmentCard({
       source_status: 'WORKING', cb_no: 'TEST71-UNIT', quantity: 1, materials: [
         { name: materialName, state: 'CONFIRMED', qty: 250, unit: unitCode }
       ]
