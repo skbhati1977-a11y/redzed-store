@@ -43,6 +43,15 @@ async function lot2624(page) {
   });
 }
 
+async function releasedPrintingLot(page) {
+  return page.evaluate(async () => {
+    const lot = await window.supabaseClient.from('rr_upm_lot_registry')
+      .select('canonical_lot_id,lot_no,print_no').eq('lot_no', '2606').single();
+    if (lot.error) throw new Error(lot.error.message);
+    return lot.data;
+  });
+}
+
 test.beforeEach(async ({ page }) => { await ensureSession(page); });
 test.afterEach(async ({ page }) => {
   if (!page.isClosed()) await rpc(page, 'rr_test_clear_on_behalf_context_v176').catch(() => null);
@@ -65,6 +74,7 @@ test('Super Admin gets private costing while raw salary sources remain inaccessi
 
 test('worker Act As receives no private cost and cannot edit rate', async ({ page }) => {
   const lot = await lot2624(page);
+  const formLot = await releasedPrintingLot(page);
   const imamul = await actor(page, 'imamul');
   expect((await rpc(page, 'rr_test_set_on_behalf_context_v176', { p_worker_id: imamul.worker_id })).error).toBeNull();
   const costing = await rpc(page, 'rr_upm_final_costing_v308', { p_canonical_lot_id: lot.canonical_lot_id, p_data_mode: 'TEST' });
@@ -79,7 +89,7 @@ test('worker Act As receives no private cost and cannot edit rate', async ({ pag
   expect(denied.error?.message).toMatch(/Only eligible Manager\/Admin\/Owner/i);
 
   const form = await rpc(page, 'rr_upm_universal_form_v741', {
-    p_canonical_lot_id: lot.canonical_lot_id, p_department_code: 'PRINTING'
+    p_canonical_lot_id: formLot.canonical_lot_id, p_department_code: 'PRINTING'
   });
   expect(form.error).toBeNull();
   expect(privateKeys(form.data)).toEqual([]);
@@ -105,15 +115,19 @@ test('worker Act As receives no private cost and cannot edit rate', async ({ pag
   expect(raw.every((message) => /permission denied|does not exist/i.test(message || ''))).toBe(true);
 });
 
-test('Owner can edit canonical rate but receives no private costing or margin', async ({ page }) => {
+test('Sales cannot edit canonical rate and receives no private costing or margin', async ({ page }) => {
   const lot = await lot2624(page);
-  const owner = await actor(page, 'Sudesh Bhati');
-  expect((await rpc(page, 'rr_test_set_on_behalf_context_v176', { p_worker_id: owner.worker_id })).error).toBeNull();
+  const sales = await actor(page, 'lukman');
+  expect((await rpc(page, 'rr_test_set_on_behalf_context_v176', { p_worker_id: sales.worker_id })).error).toBeNull();
   const scope = await rpc(page, 'rr_costing_user_scope_v760', { p_department_code: 'PRINTING' });
   expect(scope.error).toBeNull();
-  expect(scope.data.effective_role).toBe('OWNER');
-  expect(scope.data.can_edit_rate).toBe(true);
+  expect(scope.data.effective_role).toBe('SALES');
+  expect(scope.data.can_edit_rate).toBe(false);
   expect(scope.data.can_view_private_cost).toBe(false);
+  const denied = await rpc(page, 'rr_upm_set_department_rate_v760', {
+    p_canonical_lot_id: lot.canonical_lot_id, p_department_code: 'PRINTING', p_actual_rate: 1, p_request_id: null
+  });
+  expect(denied.error?.message).toMatch(/Only eligible Manager\/Admin\/Owner/i);
   const costing = await rpc(page, 'rr_upm_final_costing_v308', {
     p_canonical_lot_id: lot.canonical_lot_id, p_data_mode: 'TEST'
   });
