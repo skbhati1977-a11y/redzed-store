@@ -2,7 +2,10 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 
-const sql = fs.readFileSync('supabase/migrations/20260921085732_test71_commercial_real_chat_canonical_v500.sql', 'utf8');
+const sql = [
+  'supabase/migrations/20260921085732_test71_commercial_real_chat_canonical_v500.sql',
+  'supabase/migrations/20260921091621_test71_commercial_effective_authority_v502.sql'
+].map((file) => fs.readFileSync(file, 'utf8')).join('\n');
 const chat = fs.readFileSync('test70-real-chat-live-v70.js', 'utf8');
 const pi = fs.readFileSync('real-pi-specimen-v9514.js', 'utf8');
 const rci = fs.readFileSync('real-rci-v9740.js', 'utf8');
@@ -27,6 +30,8 @@ test('accounts FIFO extends canonical vouchers without replacing them', () => {
   assert.match(sql, /PART_PAID/);
   assert.match(sql, /aging_90_plus/);
   assert.match(sql, /revoke all on public\.rr_account_bills_v500 from anon,authenticated/);
+  assert.match(sql, /rr_upm_effective_identity_v200/);
+  assert.match(sql, /effective_role not in\('OWNER','SUPER_ADMIN','ADMIN','ACCOUNT','ACCOUNTS'\)/);
 });
 
 test('sales PI reopen and RCI use canonical RPCs', () => {

@@ -422,7 +422,7 @@ begin
       and (nullif(trim(p_search),'') is null or concat_ws(' ',cy.customer_name,cy.collection_no,cy.requirement_no) ilike '%'||trim(p_search)||'%');
   elsif s='WORKING' then
     select coalesce(jsonb_agg(jsonb_build_object('id',p.id,'card_type','PI_CI_READY','customer',p.buyer_snapshot->>'buyer_name',
-      'pi_no',p.pi_no,'date',p.created_at::date,'qty',coalesce(x.qty,0),'amount',p.grand_total,'salesman',coalesce(u.display_name,u.full_name),
+      'pi_no',p.pi_no,'date',p.created_at::date,'qty',coalesce(x.qty,0),'amount',p.grand_total,'salesman',u.full_name,
       'current_status','CI READY','market_requirement_id',p.market_requirement_id) order by p.updated_at desc),'[]'::jsonb) into rows_json
     from public.rr_fg_pi_v787 p left join lateral(select sum(qty) qty from public.rr_fg_pi_lines_v787 where pi_id=p.id)x on true
     left join public.rr_user_profiles u on u.auth_user_id=p.created_by
