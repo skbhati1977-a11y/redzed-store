@@ -4,7 +4,8 @@ const fs = require('node:fs');
 
 const sql = [
   'supabase/migrations/20260921085732_test71_commercial_real_chat_canonical_v500.sql',
-  'supabase/migrations/20260921091621_test71_commercial_effective_authority_v502.sql'
+  'supabase/migrations/20260921091621_test71_commercial_effective_authority_v502.sql',
+  'supabase/migrations/20260921093041_test71_rci_effective_authority_v503.sql'
 ].map((file) => fs.readFileSync(file, 'utf8')).join('\n');
 const chat = fs.readFileSync('test70-real-chat-live-v70.js', 'utf8');
 const pi = fs.readFileSync('real-pi-specimen-v9514.js', 'utf8');
@@ -40,6 +41,8 @@ test('sales PI reopen and RCI use canonical RPCs', () => {
   assert.match(rci, /rr_rci_context_v9740/);
   assert.match(rci, /rr_rci_save_draft_v9740/);
   assert.match(rci, /rr_rci_post_linked_final_v9741/);
+  assert.match(sql, /function public\.rr_rci_assert_role_v9746/);
+  assert.match(sql, /'OWNER','SUPER_ADMIN','ADMIN','SALES','ACCOUNTS'/);
   assert.doesNotMatch(rci, /\.from\(/);
 });
 
