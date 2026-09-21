@@ -55,6 +55,7 @@ test('MC1 purchase, consumption, costing, close and idempotency stay canonical',
   const idempotencyKey = await page.evaluate(() => JSON.parse(localStorage.getItem('RR_MC1_PURCHASE_DRAFT_V504')).idempotency_key);
   await page.locator('[data-mc-confirm]').click();
   await expect(page.locator('#messages')).toContainText(bill, { timeout: 20_000 });
+  await expect(page.locator('[data-mc-confirm]')).toHaveCount(0, { timeout: 20_000 });
 
   const duplicate = await rpc(page, 'rr_confirm_mc_purchase_v504', {
     p_idempotency_key: idempotencyKey,
@@ -115,8 +116,9 @@ test('MC1 purchase, consumption, costing, close and idempotency stay canonical',
   expect(Number(close.cards[0].closing_qty)).toBeCloseTo(beforeQty + 0.001, 3);
 
   await page.reload();
-  await page.locator('#menu').click();
-  await page.locator('[data-workflow="1:1"]').click();
+  await expect(page.locator('#state')).not.toContainText('Secure mapping loading', { timeout: 30_000 });
+  await page.locator('#menu').evaluate((button) => button.click());
+  await page.locator('[data-workflow="1:1"]').evaluate((button) => button.click());
   await expect(page.locator('#kind')).toContainText('Closing Stock');
   await expect(page.locator('#messages')).toContainText(seed.fabric.fabric_name);
 });
