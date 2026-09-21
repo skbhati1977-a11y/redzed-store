@@ -16,6 +16,10 @@ const directoryVolatility = fs.readFileSync(
   'supabase/migrations/20260921155116_test71_cb_department_directory_volatility_v602.sql',
   'utf8'
 );
+const authorityBridge = fs.readFileSync(
+  'supabase/migrations/20260921160242_test71_cb_effective_authority_bridge_v603.sql',
+  'utf8'
+);
 
 test('CB Department extends the existing canonical engines', () => {
   assert.match(migration, /alter table public\.rr_fabric_purchases/);
@@ -67,4 +71,11 @@ test('authority, idempotency and audit remain server enforced', () => {
 test('CB directory preserves the canonical V85 volatility contract', () => {
   assert.match(directoryVolatility, /alter function public\.rr_real_chat_directory_v600\(\) volatile/);
   assert.match(directoryVolatility, /V85 retains its existing session\/identity mutation contract/);
+});
+
+test('reused V713 creator resolves canonical effective authority', () => {
+  assert.match(authorityBridge, /rr_upm_effective_identity_v200\(\)/);
+  assert.match(authorityBridge, /OWNER','SUPER_ADMIN','ADMIN/);
+  assert.match(authorityBridge, /Act As authority is enforced/);
+  assert.doesNotMatch(authorityBridge, /rr_current_role\(\)/);
 });
