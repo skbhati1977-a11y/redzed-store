@@ -50,7 +50,9 @@ test('MC1 purchase, consumption, costing, close and idempotency stay canonical',
   expect(prePost.filter((x) => x.bill_no === `${bill}-DRAFT`)).toHaveLength(0);
 
   await page.locator('[data-mc-edit]').click();
+  await page.locator('[data-mc-bill]').fill('');
   await page.locator('[data-mc-bill]').fill(bill);
+  await expect(page.locator('[data-mc-bill]')).toHaveValue(bill);
   await page.locator('[data-mc-save-draft]').click();
   const idempotencyKey = await page.evaluate(() => JSON.parse(localStorage.getItem('RR_MC1_PURCHASE_DRAFT_V504')).idempotency_key);
   await page.locator('[data-mc-confirm]').click();
