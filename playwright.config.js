@@ -82,6 +82,12 @@ module.exports = defineConfig({
       testMatch: /mc1-real-chat\.spec\.js/,
       dependencies: ["auth-setup"],
       use: { storageState: "playwright/.auth/super-admin.json" }
+    },
+    {
+      name: "cb-department",
+      testMatch: /cb-department\.spec\.js/,
+      dependencies: ["auth-setup"],
+      use: { storageState: "playwright/.auth/super-admin.json" }
     }
   ]
 });
