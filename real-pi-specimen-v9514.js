@@ -26,7 +26,19 @@
   }
   async function loadRequirementUrl() {
     if (lines.length) return;
-    const id = new URLSearchParams(location.search).get("requirement_id");
+    const query = new URLSearchParams(location.search);
+    const savedPiId = query.get("pi_id");
+    if (savedPiId) {
+      ctx = await rpc("rr_sales_pi_detail_v500", { p_pi_id: savedPiId });
+      lines = (ctx.lines || []).map((x) => ({
+        ...x,
+        size: x.size || x.size_text || "",
+      }));
+      piId = ctx.pi_id;
+      piNo = ctx.pi_no || "";
+      return;
+    }
+    const id = query.get("requirement_id");
     if (!id) return;
     ctx = await rpc("rr_pi_requirement_bootstrap_v9541", {
       p_requirement_id: id,
@@ -177,7 +189,8 @@
       $("customer").value = ctx.customer_name || "";
       $("dispatch").value = ctx.dispatch_details || "";
       $("piDate").textContent = new Date().toLocaleDateString("en-IN");
-      await contexts(false);
+      await contexts(!!piId);
+      if (piNo) $("piNo").textContent = "PI No. " + piNo;
       bindDelete();
       render();
       ["value", "freight", "other"].forEach((id) => ($(id).oninput = render));
