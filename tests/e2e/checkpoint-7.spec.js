@@ -29,10 +29,11 @@ async function setActAs(page, worker) {
 
 async function openDespatch(page, status) {
   await page.goto('/test70-cb-purchase-real-chat-pilot.html?mode=TEST');
-  await expect(page.locator('[data-department="DESPATCH"]')).toBeVisible();
-  await page.locator('[data-department="DESPATCH"]').click();
+  await expect(page.locator('#state')).toContainText(/departments · .* people/, { timeout: 30_000 });
+  await expect(page.locator('[data-department="DISPATCH"]')).toBeVisible({ timeout: 30_000 });
+  await page.locator('[data-department="DISPATCH"]').click();
   await expect(page.locator('#chat')).toBeVisible();
-  const group = page.locator('[data-dept-group="DESPATCH"]');
+  const group = page.locator('[data-dept-group="DISPATCH"]');
   await expect(group).toBeVisible();
   await group.click();
   await page.locator(`[data-chat-status="${status}"]`).click();

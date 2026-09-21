@@ -3,7 +3,14 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 
 const chat = fs.readFileSync('test70-fg-direct-chat-v140.js', 'utf8');
+const liveSpec = fs.readFileSync('tests/e2e/checkpoint-7.spec.js', 'utf8');
 const migrationPath = 'supabase/migrations/20260920224530_test71_checkpoint7_chat_native_despatch_receive_v335.sql';
+
+test('Checkpoint 7 opens the canonical DISPATCH directory group', () => {
+  assert.match(liveSpec, /data-department="DISPATCH"/);
+  assert.match(liveSpec, /data-dept-group="DISPATCH"/);
+  assert.doesNotMatch(liveSpec, /data-(?:department|dept-group)="DESPATCH"/);
+});
 
 test('Despatch partial and full actions stay inside the canonical Real Chat sheet', () => {
   assert.match(chat, /rr_fg_create_despatch_chat_v335/);
