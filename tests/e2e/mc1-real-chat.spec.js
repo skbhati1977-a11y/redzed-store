@@ -89,13 +89,15 @@ test('MC1 purchase, consumption, costing, close and idempotency stay canonical',
   expect(Number(consumption.qty)).toBe(10);
   expect(Number(consumption.value)).toBe(3250);
 
-  const costing = await rpc(page, 'rr_upm_cloth_cost_context_v9300', {
-    p_canonical_lot_id: 'rr_cutting_lots_v3:2f9001de-ff41-4ceb-ae5d-8f6b6054151c'
+  const costing = await rpc(page, 'rr_upm_final_costing_v308', {
+    p_canonical_lot_id: 'rr_cutting_lots_v3:2f9001de-ff41-4ceb-ae5d-8f6b6054151c',
+    p_data_mode: 'TEST'
   });
-  expect(Number(costing.matching_qty_kg)).toBe(10);
-  expect(Number(costing.matching_rate_per_kg)).toBe(325);
-  expect(Number(costing.matching_total)).toBe(3250);
-  expect(costing.components.find((x) => x.category === 'MATCHING_CLOTH').source).toBe('LOT_MATCHING_ACTUAL');
+  expect(costing.security).toBe('SUPER_ADMIN_PRIVATE');
+  expect(Number(costing.cloth.matching_qty_kg)).toBe(10);
+  expect(Number(costing.cloth.matching_rate_per_kg)).toBe(325);
+  expect(Number(costing.cloth.matching_total)).toBe(3250);
+  expect(costing.cloth.components.find((x) => x.category === 'MATCHING_CLOTH').source).toBe('LOT_MATCHING_ACTUAL');
 
   const beforeRetry = await rpc(page, 'rr_get_mc1_fabric_options_v9134');
   const retryResult = await rpc(page, 'rr_confirm_lot_matching_v2', { p_lot_no: '2622', p_source_id: null });
