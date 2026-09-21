@@ -40,8 +40,8 @@ jobs:
       - run: npx playwright install --with-deps chromium
       - run: npm run e2e:env-status
       - run: npm run test:e2e:static
-      - run: npx playwright test --project=cb-department
       - run: npm run test:e2e:mc1
+      - run: npx playwright test --project=cb-department
       - run: npm run test:e2e:checkpoint8
       - name: Upload Playwright evidence
         if: always()
