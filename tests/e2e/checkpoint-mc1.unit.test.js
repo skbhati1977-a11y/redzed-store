@@ -11,6 +11,8 @@ const migration = fs.readFileSync(
   'utf8'
 );
 
+// This static gate runs before the live MC1 browser scenario in TEST71 CI.
+
 test('MC1 Real Chat uses business views rather than worker lifecycle', () => {
   assert.match(chat, /OPEN:'Purchase \/ Stock IN'/);
   assert.match(chat, /WORKING:'Lot Consumption'/);
