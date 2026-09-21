@@ -67,6 +67,7 @@ test('deployed Unit dropdown, creation, Material persistence, CB mirror and Work
 
     // CB reads the linked category projection and keeps Unit read-only while Qty changes.
     await page.goto('/real-cb-new-v9130-fix2.html?mode=TEST&v=607');
+    await expect(page.locator('#bootMsg')).toBeHidden({ timeout: 30_000 });
     await page.locator('#addMaterial').click();
     const material = page.locator('#materialList [data-m="1"]');
     await material.locator('.cat').selectOption({ label: materialName });
