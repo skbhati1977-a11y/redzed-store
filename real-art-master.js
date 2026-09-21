@@ -19,6 +19,9 @@ let categories=[],arts=[],summaries=[],mediaMap={},queued=[],selectedIcon=null,b
 let manualMaterialRequirements=[];
 let categoryHasCosts=false;
 let basicRatesUnlocked=false;
+const ART_SAFE_COLUMNS="id,art_no,item_name,product_name,category,art_category_id,description,other_material_note,material_requirements,is_active,caption_text,caption_items,created_at,updated_at";
+document.querySelector(".art-cost-summary")?.closest(".rr-subpanel")?.setAttribute("hidden","");
+document.querySelector(".art-margin-section")?.setAttribute("hidden","");
 
 function refreshBasicLockIcon(){
  const lock=$("basicLockToggle");
@@ -151,14 +154,10 @@ async function loadCategories(selected=""){
  if(selected)$("artCategory").value=selected;
 }
 async function loadCategoryCosts(id){
- if(!id){categoryHasCosts=false;basicRatesUnlocked=false;$("firstCategoryNotice").classList.add("rr-hidden");renderCostRows({});return}
- const r=await supabaseClient.rpc("rr_get_art_category_costs",{p_category_id:id});
- if(r.error)throw r.error;
- categoryHasCosts=(r.data||[]).length>0;
- basicRatesUnlocked=!categoryHasCosts;
- const basics={};(r.data||[]).forEach(x=>basics[x.process_code]=x.basic_rate);
- $("firstCategoryNotice").classList.toggle("rr-hidden",categoryHasCosts);
- renderCostRows(basics);
+ categoryHasCosts=false;
+ basicRatesUnlocked=false;
+ $("firstCategoryNotice").classList.add("rr-hidden");
+ renderCostRows({});
  const c=categories.find(x=>x.id===id);
  if(c?.default_design_name&&!$("itemName").value.trim())$("itemName").value=c.default_design_name;
 }
@@ -373,17 +372,15 @@ async function loadData(){
  }
 
  try{
-  const [a,s,m]=await Promise.all([
-   supabaseClient.from("rr_art_master").select("*").order("created_at",{ascending:false}),
-   supabaseClient.from("rr_art_process_cost_summary").select("*"),
+  const [a,m]=await Promise.all([
+   supabaseClient.from("rr_art_master").select(ART_SAFE_COLUMNS).order("created_at",{ascending:false}),
    RR.getMediaMap("art","reference")
   ]);
 
   if(a.error)throw a.error;
-  if(s.error)throw s.error;
 
   arts=a.data||[];
-  summaries=s.data||[];
+  summaries=[];
   mediaMap=m||{};
   renderCards();
  }finally{
@@ -396,16 +393,14 @@ async function loadData(){
 const sum=id=>summaries.find(x=>String(x.art_id)===String(id))||{};
 function renderCards(){
  cards.innerHTML=arts.length?arts.map(a=>{const imgs=mediaMap[String(a.id)]||[],ico=imgs.find(x=>x.is_cover)||imgs[0],s=sum(a.id),items=Array.isArray(a.caption_items)?a.caption_items:[];
- return `<article class="art-master-card"><button class="art-card-image" data-view="${a.id}">${ico?`<img src="${RR.safeText(ico.file_url)}"><span class="art-card-icon-badge">★ ICON</span>`:'<div class="art-placeholder">ART</div>'}</button><div class="art-card-body"><small>${RR.safeText(s.category_name||a.category||"")}</small><h3>${RR.safeText(a.art_no)} · ${RR.safeText(a.item_name||a.product_name||"")}</h3><div class="art-feature-badges">${items.slice(0,3).map(i=>`<span>${RR.safeText(i.text)}</span>`).join("")}</div><div class="art-card-metrics"><span><small>Process Cost</small><b>${money(s.total_process_cost)}</b></span><span><small>Other Margin</small><b>${money(a.default_margin)}</b></span></div><button class="rr-btn rr-btn-secondary" data-edit="${a.id}">Edit</button></div></article>`}).join(""):"<p>No Art saved yet.</p>";
+ return `<article class="art-master-card"><button class="art-card-image" data-view="${a.id}">${ico?`<img src="${RR.safeText(ico.file_url)}"><span class="art-card-icon-badge">★ ICON</span>`:'<div class="art-placeholder">ART</div>'}</button><div class="art-card-body"><small>${RR.safeText(s.category_name||a.category||"")}</small><h3>${RR.safeText(a.art_no)} · ${RR.safeText(a.item_name||a.product_name||"")}</h3><div class="art-feature-badges">${items.slice(0,3).map(i=>`<span>${RR.safeText(i.text)}</span>`).join("")}</div><button class="rr-btn rr-btn-secondary" data-edit="${a.id}">Edit</button></div></article>`}).join(""):"<p>No Art saved yet.</p>";
  cards.querySelectorAll("[data-edit]").forEach(b=>b.onclick=()=>editArt(b.dataset.edit));cards.querySelectorAll("[data-view]").forEach(b=>b.onclick=()=>openSavedViewer(b.dataset.view));
 }
 async function editArt(id){
  const a=arts.find(x=>String(x.id)===String(id));if(!a)return;
- $("artId").value=a.id;$("artNo").value=a.art_no||"";$("itemName").value=a.item_name||a.product_name||"";$("defaultMargin").value=a.default_margin??22;$("designNotes").value=a.other_material_note||"";
+ $("artId").value=a.id;$("artNo").value=a.art_no||"";$("itemName").value=a.item_name||a.product_name||"";$("defaultMargin").value=0;$("designNotes").value=a.other_material_note||"";
  await loadCategories(a.art_category_id||"");
- const r=await supabaseClient.from("rr_art_process_costs").select("*").eq("art_id",id).order("sort_order");
- if(r.error)throw r.error;categoryHasCosts=true;basicRatesUnlocked=false;$("firstCategoryNotice").classList.add("rr-hidden");
- const basics={};(r.data||[]).forEach(x=>basics[x.process_code]=x.basic_rate);renderCostRows(basics);(r.data||[]).forEach(x=>{const i=rowInput(x.process_code,"extra");if(i)i.value=x.extra_rate});updateCostTotals();
+ categoryHasCosts=false;basicRatesUnlocked=false;$("firstCategoryNotice").classList.add("rr-hidden");renderCostRows({});updateCostTotals();
  queued=[];const cover=saved().find(x=>x.is_cover)||saved()[0];selectedIcon=cover?{type:"saved",id:cover.id}:null;renderImages();
  await builder.load(Array.isArray(a.caption_items)?a.caption_items:[]);
  restoreArtMaterials(a.material_requirements);
@@ -414,7 +409,7 @@ async function editArt(id){
 async function reset(){
  form.reset();
  $("artId").value="";
- $("defaultMargin").value=22;
+ $("defaultMargin").value=0;
  queued=[];
  selectedIcon=null;
  manualMaterialRequirements=[];
@@ -437,31 +432,6 @@ $("cancelEdit").onclick=()=>reset();
 $("reloadArts").onclick=()=>loadData().catch(e=>{say(e.message||"Could not refresh Arts","error");$("reloadArts").disabled=false;$("reloadArts").textContent="Refresh";});
 
 
-async function updateCategoryBasicDefaults(categoryId){
- const rows=costRows();
-
- const { error: deleteError } = await supabaseClient
-  .from("rr_art_category_costs")
-  .delete()
-  .eq("category_id",categoryId);
-
- if(deleteError)throw deleteError;
-
- const payload=rows.map(row=>({
-  category_id:categoryId,
-  process_code:row.process_code,
-  process_name:row.process_name,
-  basic_rate:row.basic_rate,
-  sort_order:row.sort_order
- }));
-
- const { error } = await supabaseClient
-  .from("rr_art_category_costs")
-  .insert(payload);
-
- if(error)throw error;
-}
-
 form.onsubmit=async e=>{
  e.preventDefault();const btn=$("saveArtBtn");btn.disabled=true;btn.textContent="Saving...";say("");
  try{
@@ -482,13 +452,9 @@ form.onsubmit=async e=>{
   if(duplicate)throw new Error(`Art No ${enteredArtNo} already exists`);
   const cols=await RR.getTableColumns("rr_art_master"),existing=artId();
   const category=categories.find(x=>x.id===categoryId);
-  const payload=RR.filterPayload({art_no:enteredArtNo,art_category_id:categoryId,category:category?.category_name,item_name:$("itemName").value.trim(),product_name:$("itemName").value.trim(),description:$("description").value.trim(),other_material_note:$("designNotes").value.trim(),material_requirements:currentArtMaterials(),default_margin:RR.number($("defaultMargin").value),is_active:true},cols);
-  const r=existing?await supabaseClient.from("rr_art_master").update(payload).eq("id",existing).select().single():await supabaseClient.from("rr_art_master").insert(payload).select().single();if(r.error)throw r.error;
-  if(basicRatesUnlocked&&categoryHasCosts){
-   await updateCategoryBasicDefaults(categoryId);
-  }
-  let x=await supabaseClient.rpc("rr_save_art_process_costs",{p_art_id:r.data.id,p_category_id:categoryId,p_rows:costRows()});if(x.error)throw x.error;
-  x=await supabaseClient.rpc("rr_save_art_captions",{p_art_id:r.data.id,p_items:builder.getItems()});if(x.error)throw x.error;
+  const payload=RR.filterPayload({art_no:enteredArtNo,art_category_id:categoryId,category:category?.category_name,item_name:$("itemName").value.trim(),product_name:$("itemName").value.trim(),description:$("description").value.trim(),other_material_note:$("designNotes").value.trim(),material_requirements:currentArtMaterials(),is_active:true},cols);
+  const r=existing?await supabaseClient.from("rr_art_master").update(payload).eq("id",existing).select(ART_SAFE_COLUMNS).single():await supabaseClient.from("rr_art_master").insert(payload).select(ART_SAFE_COLUMNS).single();if(r.error)throw r.error;
+  let x=await supabaseClient.rpc("rr_save_art_captions",{p_art_id:r.data.id,p_items:builder.getItems()});if(x.error)throw x.error;
   const uploaded=[];for(const q of queued){const media=await RR.uploadMedia({file:q.file,entityType:"art",entityId:r.data.id,mediaCategory:"reference",sourceType:q.sourceType,visibilityScope:"factory",caption:`${r.data.art_no} artwork`});uploaded.push({tempId:q.tempId,media})}
   let iconId=selectedIcon?.type==="saved"?selectedIcon.id:uploaded.find(u=>u.tempId===selectedIcon?.id)?.media?.id;if(iconId){await supabaseClient.from("rr_media").update({is_cover:false}).eq("entity_type","art").eq("entity_id",r.data.id);await supabaseClient.from("rr_media").update({is_cover:true}).eq("id",iconId)}
   say("Art saved successfully.","success");

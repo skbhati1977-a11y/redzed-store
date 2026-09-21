@@ -434,11 +434,10 @@ async function loadAssignments(options={}){
     state.client=getClient();
     if(!state.client)throw new Error('Supabase client unavailable. Check config.js.');
 
-    const result=await state.client
-      .from('rr_upm_work_assignments_v8')
-      .select('id,canonical_lot_id,lot_no,department_code,worker_id,worker_code,worker_name_snapshot,colour_code,colour_name,assigned_qty,status,actual_rate,rate_filled_by_name,rate_filled_at,assigned_at')
-      .order('assigned_at',{ascending:false})
-      .limit(5000);
+    const result=await state.client.rpc(
+      'rr_upm_rate_assignment_list_v401',
+      {p_limit:5000}
+    );
 
     if(result.error)throw result.error;
     state.rows=result.data||[];

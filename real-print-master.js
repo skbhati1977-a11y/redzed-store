@@ -218,7 +218,8 @@ form.onsubmit=async e=>{
   await confirmFrameReassignments(frames,id);
 
   const payload={print_no:no,print_name:name,design_colours:colours,short_note:$("shortNote").value.trim(),is_active:true};
-  const r=id?await supabaseClient.from("rr_print_master").update(payload).eq("id",id).select().single():await supabaseClient.from("rr_print_master").insert(payload).select().single();if(r.error)throw r.error;
+  const safeColumns="id,print_no,print_name,artwork_url,garment_preview_url,frame_base,colours,frame_labels,placement,print_type,notes,is_active,created_by,created_at,updated_at,caption_text,caption_items,design_colours,short_note";
+  const r=id?await supabaseClient.from("rr_print_master").update(payload).eq("id",id).select(safeColumns).single():await supabaseClient.from("rr_print_master").insert(payload).select(safeColumns).single();if(r.error)throw r.error;
   const fr=await supabaseClient.rpc("rr_save_print_frames",{p_print_id:r.data.id,p_rows:frames});if(fr.error)throw fr.error;
   const uploaded=[];for(const item of queued){const media=await RR.uploadMedia({file:item.file,entityType:"printing",entityId:r.data.id,mediaCategory:"print",sourceType:item.sourceType,visibilityScope:"factory",caption:`${r.data.print_no} print image`});uploaded.push({tempId:item.tempId,media})}
   const iconId=selectedIcon?.type==="saved"?selectedIcon.id:uploaded.find(x=>x.tempId===selectedIcon?.id)?.media?.id;

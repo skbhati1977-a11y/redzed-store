@@ -536,11 +536,8 @@ function costingRateRowsV760(data) {
           value="${rate.actual_rate ?? ""}"
           ${rate.editable ? "" : "disabled"}>
       </label>
-      <label>Standard
-        <input value="${esc(rate.standard_rate ?? 0)}" disabled>
-      </label>
       <span class="v760-rate-source ${String(rate.rate_source || "").toLowerCase()}">
-        ${esc(rate.rate_source)}
+        ${esc(rate.actual_rate > 0 ? "ACTUAL" : "MISSING")}
       </span>
     </div>
   `).join("");
@@ -559,6 +556,8 @@ async function openCostingPanelV760(canonical, focusDepartment = "") {
   const scope = data?.scope || {};
   const costing = data?.costing || {};
   const loss = data?.company_loss || {};
+  const privateCost = scope.can_view_private_cost === true;
+  const canEditRate = scope.can_edit_rate === true;
 
   const overlay = document.createElement("div");
   overlay.id = "v760CostingOverlay";
@@ -573,9 +572,9 @@ async function openCostingPanelV760(canonical, focusDepartment = "") {
         <button type="button" class="v760-close">CLOSE</button>
       </div>
 
-      ${scope.can_view_material ? `
+      ${privateCost && scope.can_view_material ? `
         <section class="v760-section">
-          <h3>Material Cost · Owner Only</h3>
+          <h3>Material Cost · Super Admin Only</h3>
           <div class="v760-material-grid">
             <label>Regular Fabric / PCS
               <input type="number" min="0" step="0.01"
@@ -614,7 +613,7 @@ async function openCostingPanelV760(canonical, focusDepartment = "") {
           </div>
         </section>` : ""}
 
-      <section class="v760-section v760-top-summary">
+      ${privateCost ? `<section class="v760-section v760-top-summary">
         <h3>Live Cost Summary</h3>
         <div class="v760-summary-grid">
           <span>Material <b>₹${esc(costing.material_total ?? 0)}</b></span>
@@ -630,9 +629,9 @@ async function openCostingPanelV760(canonical, focusDepartment = "") {
               : costing.final_sale_price
           )}</b></span>
         </div>
-      </section>
+      </section>` : `<section class="v760-section"><h3>Rate Workflow</h3><p>Private costing is available only to Super Admin.</p></section>`}
 
-      <section class="v760-section">
+      ${canEditRate ? `<section class="v760-section">
         <h3>Department Actual Rates</h3>
         <div class="v760-rate-list">
           ${costingRateRowsV760(data)}
@@ -643,9 +642,9 @@ async function openCostingPanelV760(canonical, focusDepartment = "") {
           </button>
           <small id="v760RateSaveStatus"></small>
         </div>
-      </section>
+      </section>` : ""}
 
-      <section class="v760-section">
+      ${privateCost ? `<section class="v760-section">
         <h3>Cost Summary</h3>
         <div class="v760-summary-grid">
           <span>Material <b>₹${esc(costing.material_total ?? 0)}</b></span>
@@ -671,9 +670,9 @@ async function openCostingPanelV760(canonical, focusDepartment = "") {
           <span>Net Company Loss <b>₹${esc(loss.net_company_loss ?? 0)}</b></span>
         </div>
         <small>Har Damage costing level par Company Loss hai. Recovery alag count hogi.</small>
-      </section>
+      </section>` : ""}
 
-      ${scope.is_owner || scope.role === "admin" ? `
+      ${privateCost && scope.can_edit_material ? `
         <section class="v760-section">
           <button type="button" id="v760LockStorePrice"
             ${costing.store_price_locked ? "disabled" : ""}>
@@ -704,12 +703,8 @@ async function openCostingPanelV760(canonical, focusDepartment = "") {
         source.textContent = value === original ? "ACTUAL" : "UNSAVED ACTUAL";
         source.className = "v760-rate-source actual";
       } else {
-        const standard = Number(
-          row.querySelector('label:nth-of-type(2) input')?.value || 0
-        );
-        source.textContent = standard > 0 ? "STANDARD FALLBACK" : "MISSING";
-        source.className =
-          `v760-rate-source ${standard > 0 ? "standard_fallback" : "missing"}`;
+        source.textContent = "MISSING";
+        source.className = "v760-rate-source missing";
       }
     });
   });

@@ -93,6 +93,17 @@ test('backend rate payload and approval authority follow effective role', async 
   });
   expect(raw?.message).toMatch(/permission denied/i);
 
+  await setActAs(page, named(directory, 'Sudesh Bhati'));
+  const effectiveOwner = await rpc(page, 'rr_pack_rate_context_public_v333', { p_lot_no: '2614', p_data_mode: 'TEST' });
+  expect(effectiveOwner.error).toBeNull();
+  expect(effectiveOwner.data.visibility).toBe('ADMIN_RATE');
+  expect(effectiveOwner.data).toHaveProperty('source_rate');
+  for (const key of ['base_cost_per_pc','mapped_cost_per_pc','reserve_delta_per_pc','reserve_quota_impact','owner_margin_per_pc']) {
+    expect(effectiveOwner.data).not.toHaveProperty(key);
+  }
+
+  await rpc(page, 'rr_test_clear_on_behalf_context_v176');
+
   await setActAs(page, named(directory, 'singh ji'));
   const workerCards = await rpc(page, 'rr_fg_ready_packing_cards_v788', { p_data_mode: 'TEST' });
   expect(workerCards.error).toBeNull();

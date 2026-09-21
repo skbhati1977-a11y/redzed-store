@@ -56,7 +56,7 @@ test('App, Chat and backend use the same assignment authority allowlist',()=>{
 });
 
 test('V200 assets are cache-busted for the live TEST70 flow',()=>{
-  assert.match(appHtml,/real-upm-department-view-v789\.js\?v=200/);
+  assert.match(appHtml,/real-upm-department-view-v789\.js\?v=201-cp4-v401/);
   assert.match(appHtml,/real-upm-submit-confirm-v796\.js\?v=204/);
-  assert.match(chatHtml,/test70-real-chat-live-v70\.js\?v=400/);
+  assert.match(chatHtml,/test70-real-chat-live-v70\.js\?v=501/);
 });

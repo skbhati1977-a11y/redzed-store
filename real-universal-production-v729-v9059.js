@@ -258,7 +258,11 @@ async function loadContext() {
       const existingMeta = boardMeta(state.lot) || {};
       state.boardMeta.set(state.lot.canonical_lot_id, {...existingMeta, identity: {...(existingMeta.identity||{}), ...identity}});
     }
-    $("actualRate").value = state.context.actual_rate ?? 0;
+    const canEditRate = state.context.can_edit_rate === true;
+    $("actualRate").value = canEditRate ? (state.context.actual_rate ?? 0) : "";
+    $("actualRate").disabled = !canEditRate;
+    $("actualRateWrap")?.classList.toggle("hidden", !canEditRate);
+    $("saveRates")?.classList.toggle("hidden", !canEditRate);
     $("standardRate").value = state.context.standard_rate ?? "";
     $("ownerMargin").value = state.context.owner_margin ?? "";
     const showOwner = Boolean(state.context.can_view_standard);
@@ -684,11 +688,18 @@ async function submitSelectedColours(){
   const allRunning=groups().filter(g=>g.is_locked && !g.completedHere);
   const codes=valid.map(({group})=>group.colour_code);
   const full=allRunning.length>0 && valid.length===allRunning.length;
-  const actualRate=Number($("actualRate")?.value);
-  if(!Number.isFinite(actualRate)||actualRate<=0){
-    setFormMessage("Is Lot ka Actual Rate fill kiye bina Submit nahi hoga.","error");
-    $("actualRate")?.focus();
-    return;
+  const canEditRate=state.context?.can_edit_rate===true;
+  const actualRate=canEditRate?Number($("actualRate")?.value):0;
+  if(!canEditRate||!Number.isFinite(actualRate)||actualRate<=0){
+    const gate=await rpc("rr_upm_first_submit_rate_gate_v760",{
+      p_canonical_lot_id:state.lot.canonical_lot_id,
+      p_department_code:backendDepartmentCode($("dept").value),
+      p_colour_code:codes[0]||null
+    });
+    if(!gate?.allowed){
+      setFormMessage("Fill rate first · eligible Manager/Admin/Owner/Super Admin ko canonical alert bheja gaya hai.","error");
+      return;
+    }
   }
   const answer=await askActionConfirmation({mode:"SUBMIT",codes,full,department:$("dept").options[$("dept").selectedIndex]?.textContent||$("dept").value});
   if(!answer)return;
@@ -696,11 +707,14 @@ async function submitSelectedColours(){
   if(!nextDepartment){setFormMessage("Next Department select करें या Cancel दबाएँ.","error");return;}
   const rows=valid.map(({group})=>({colour_id:group.colour_id,colour_code:group.colour_code}));
   const result=await runBusy(async()=>{
-    await rpc("rr_upm_set_department_rate_v2",{
-      p_canonical_lot_id:state.lot.canonical_lot_id,
-      p_department_code:backendDepartmentCode($("dept").value),
-      p_actual_rate:actualRate
-    });
+    if(canEditRate&&Number.isFinite(actualRate)&&actualRate>0){
+      await rpc("rr_upm_set_department_rate_v760",{
+        p_canonical_lot_id:state.lot.canonical_lot_id,
+        p_department_code:backendDepartmentCode($("dept").value),
+        p_actual_rate:actualRate,
+        p_request_id:null
+      });
+    }
     return rpc("rr_upm_submit_colours_v741",{
       p_canonical_lot_id:state.lot.canonical_lot_id,
       p_department_code: backendDepartmentCode($("dept").value),

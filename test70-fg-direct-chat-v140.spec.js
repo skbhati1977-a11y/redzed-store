@@ -29,13 +29,14 @@ test('Packing and Despatch use existing authoritative engines in Real Chat', () 
     'rr_pack_request_rate_v9340',
     'rr_pack_rate_approve_v9340',
     'rr_fg_submit_assigned_pack_v788',
-    'rr_fg_create_despatch_lot_v9361',
     'rr_fg_receive_accept_v9361'
   ]) {
     assert.match(js, new RegExp(rpc));
     assert.match(migration, new RegExp(rpc));
   }
-  assert.match(html, /test70-fg-direct-chat-v140\.js\?v=176/);
+  assert.match(js, /rr_fg_create_despatch_chat_v335/);
+  assert.match(migration, /rr_fg_create_despatch_lot_v9361/);
+  assert.match(html, /test70-fg-direct-chat-v140\.js\?v=336/);
   assert.match(js, /CONTINUE PACKING/);
   assert.match(js, /rr_upm_submit_with_actual_cost_gate_v9300/);
   assert.match(js, /rr_upm_set_department_rate_v760/);
@@ -49,8 +50,8 @@ test('Packing and Despatch use existing authoritative engines in Real Chat', () 
   assert.match(js, /\.eq\('department_code','PRESS'\)\.gt\('good_qty',0\)/);
   assert.doesNotMatch(js, /data-kind="upm-assign"/);
   assert.match(js, /data-kind="challan"/);
-  assert.match(html, /rrfg-boot/);
-  assert.match(js, /classList\.remove\('rrfg-boot'\)/);
+  assert.match(js, /classList\.add\('rrfg-loading'\)/);
+  assert.match(js, /classList\.remove\('rrfg-loading'\)/);
   assert.match(js, /new MutationObserver/);
   assert.match(js, /cachedCanonicalHtml/);
   assert.match(js, /querySelectorAll\('\.closed-row'\)/);
@@ -64,10 +65,11 @@ test('legacy Packing assignments reconcile only to one active canonical worker',
 });
 
 test('App and Real Chat share the guarded Packing completion contract', () => {
-  assert.match(appHtml, /real-upm-department-view-v789\.js\?v=200/);
+  assert.match(appHtml, /real-upm-department-view-v789\.js\?v=201-cp4-v401/);
   assert.match(appJs, /COMPLETE PACKING STAGE/);
   assert.match(appJs, /COMPLETE STAGE · SAVE & HANDOVER/);
-  assert.match(appJs, /rr_upm_submit_with_actual_cost_gate_v9300/);
+  assert.match(appJs, /rr_upm_submit_gate_v277/);
+  assert.match(appJs, /rr_upm_ready_submit_canonical_v277/);
   assert.match(appJs, /rr_upm_set_department_rate_v760/);
   assert.match(appJs, /ACTUAL PACKING RATE \/ PCS/);
   assert.match(appJs, /rr_upm_dynamic_submit_history_v741/);
@@ -77,9 +79,9 @@ test('App and Real Chat share the guarded Packing completion contract', () => {
 
 test('photo-first and difference-hold gates stay explicit', () => {
   assert.match(js, /Gallery\/Camera से exactly 3 photos चुनें/);
-  assert.match(js, /photos\.length===3/);
+  assert.match(js, /photos\.length!==3/);
   assert.match(js, /Rate \$\{approved\?'APPROVED'/);
-  assert.match(js, /Difference Hold/);
+  assert.match(migration, /Difference Hold/);
   assert.match(migration, /PACKING_FINAL_PHOTOS[\s\S]+PACKING_RATE_REQUEST/);
   assert.match(migration, /DESPATCH_CREATE[\s\S]+STORE_RECEIVE/);
 });
@@ -99,7 +101,8 @@ test('Packing lifecycle owns one canonical regular card per source state', () =>
 });
 
 test('cost visibility and Super Admin action identity follow the universal contract', () => {
-  assert.match(js, /fullCostingViewer=.*OWNER.*SUPER_ADMIN/);
+  assert.match(js, /fullCostingViewer=\(\)=>role\(\)==='SUPER_ADMIN'/);
+  assert.doesNotMatch(js, /fullCostingViewer=.*OWNER/);
   assert.match(js, /costingViewer=.*OWNER.*SUPER_ADMIN.*ADMIN.*SALES/);
   assert.match(js, /if\(!fullCostingViewer\(\)\)/);
   assert.match(js, /<span>Sale Rate<b>/);
@@ -109,7 +112,7 @@ test('cost visibility and Super Admin action identity follow the universal contr
   assert.match(js, /Signed in:/);
   assert.match(js, /Viewing:/);
   assert.match(js, /Action audit:/);
-  assert.match(html, /test70-fg-direct-chat-v140\.js\?v=176/);
+  assert.match(html, /test70-fg-direct-chat-v140\.js\?v=336/);
   assert.match(js, /rr_superadmin_preview_role/);
   assert.match(js, /READ-ONLY ROLE PREVIEW/);
   assert.match(js, /ON BEHALF/);

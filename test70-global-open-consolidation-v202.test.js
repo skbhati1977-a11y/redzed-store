@@ -68,5 +68,5 @@ test('Lineman personal projection mirrors the consolidated source Lot payload',(
 
 test('live chat calls latest canonical search and cache-busts its asset',()=>{
   assert.match(chat,/rr_real_chat_work_search_v13'\]\.includes\(n\)\)n='rr_real_chat_work_search_v317'/);
-  assert.match(html,/test70-real-chat-live-v70\.js\?v=400/);
+  assert.match(html,/test70-real-chat-live-v70\.js\?v=501/);
 });

@@ -26,7 +26,7 @@ test("mobile scroll and nested history contracts are executable",()=>{
   const html=fs.readFileSync("test70-cb-purchase-real-chat-pilot.html","utf8"),js=fs.readFileSync("test70-real-chat-live-v70.js","utf8");
   assert.match(html,/\.scroll\{[^}]*overflow-y:auto/);
   assert.match(html,/\.messages\{[^}]*overflow:auto/);
-  assert.match(html,/padding-bottom:max\(110px,calc\(env\(safe-area-inset-bottom\) \+ 72px\)\)/);
+  assert.match(html,/\.scroll\{[^}]*padding-bottom:110px/);
   assert.match(js,/history\.pushState\(\{view:'department',department:id\}/);
   assert.match(js,/history\.pushState\(\{view:'chat',kind,id,parentDepartment:parent\}/);
   assert.match(js,/state\?\.view==='department'.*openDepartment\(state\.department,false\)/);

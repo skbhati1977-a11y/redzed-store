@@ -45,7 +45,7 @@
 <div id="traveller" class="modal hidden">
 <section class="sheet">
   <div class="sticky"><div class="top"><h2 style="margin:0">Universal Lot Form</h2><button data-close>Close</button></div><div id="identity" class="identity"></div><div id="entryThumbs" class="entry-images"></div></div>
-  <div class="formbar"><div class="field"><label>Department</label><select id="dept"></select></div><div class="field"><label>Actual Rate</label><input id="actualRate" type="number" min="0" step="0.01"></div><div class="field" id="stdWrap"><label>Standard Rate — Owner/Admin</label><input id="standardRate" type="number" min="0" step="0.01"></div><div class="field" id="marginWrap"><label>Owner Margin / PCS</label><input id="ownerMargin" type="number" min="0" step="0.01"></div></div>
+  <div class="formbar"><div class="field"><label>Department</label><select id="dept"></select></div><div class="field" id="actualRateWrap"><label>Actual Rate</label><input id="actualRate" type="number" min="0" step="0.01"></div><div class="field" id="stdWrap"><label>Standard Rate — Super Admin</label><input id="standardRate" type="number" min="0" step="0.01"></div><div class="field" id="marginWrap"><label>Private Margin / PCS — Super Admin</label><input id="ownerMargin" type="number" min="0" step="0.01"></div></div>
   <div id="summary" class="summary"></div><div id="freezeSummary" class="freeze-summary"></div>
   <div class="legend"><span><b>Assignment lock:</b> पूरा Colour + Cutting के सभी Sizes एक Worker</span><span><b>Good Qty:</b> Main − Alter Pending − Line Man Pending − Worker Remake Pending − Damage</span><span><b>Responsibility:</b> केवल database में mapped person का नाम और department दिखेगा</span></div>
   <div class="bulk-assign">
@@ -96,13 +96,13 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="config.js"></script>
 <script src="real-common.js"></script>
-<script src="real-universal-production-v729-v9059.js?v=9291-actual-rate-gate"></script>
-<script src="real-universal-production-v765-independent-alter.js?v=7652"></script>
+<script src="real-universal-production-v729-v9059.js?v=9292-cp4-v401"></script>
+<script src="real-universal-production-v765-independent-alter.js?v=7653-cp4-v401"></script>
 <script src="real-universal-production-v770-alter-routing-fix.js?v=7701"></script>
 <script src="real-universal-production-v768-damage-balance-fix.js?v=7681"></script>
 <script src="real-universal-production-v769-worker-claim-warning-fix.js?v=7691"></script>
 <script src="real-upm-submit-confirm-v796.js?v=857"></script>
-<script src="real-upm-department-view-v789.js?v=9278-kaaj-btn"></script>
+<script src="real-upm-department-view-v789.js?v=9279-cp4-v401"></script>
 <script src="REAL_FACTORY_QUEUE_SCROLL_FIX_V9058.js?v=9058"></script>
 <script>
 (function(){

@@ -43,7 +43,7 @@ test('Real Chat uses the latest canonical queue and counts virtual group cards',
   assert.match(live,/rr_real_chat_work_search_v2','rr_real_chat_work_search_v5','rr_real_chat_work_search_v6/);
   assert.match(live,/visible_department_codes/);
   assert.match(live,/n='rr_real_chat_work_search_v317'/);
-  assert.match(html,/test70-real-chat-live-v70\.js\?v=400/);
+  assert.match(html,/test70-real-chat-live-v70\.js\?v=501/);
 });
 
 test('active Alter and Remake forwarding is projected group-only',()=>{

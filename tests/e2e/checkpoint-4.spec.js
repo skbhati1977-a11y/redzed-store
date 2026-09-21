@@ -16,6 +16,17 @@ async function actor(page, name) {
   return row;
 }
 
+function privateKeys(value, out = []) {
+  if (Array.isArray(value)) value.forEach((item) => privateKeys(item, out));
+  else if (value && typeof value === 'object') {
+    for (const [key, item] of Object.entries(value)) {
+      if (/^(actual_rate|standard_rate|owner_margin|owner_margin_per_pc|base_cost_per_pc|team_salary|salary|materials_resolved|material_breakdown|department_breakdown|company_loss|weighted_rate|weighted_rate_per_kg|print_cost|rate_per_colour)$/i.test(key)) out.push(key);
+      privateKeys(item, out);
+    }
+  }
+  return out;
+}
+
 async function lot2624(page) {
   return page.evaluate(async () => {
     const lot = await window.supabaseClient.from('rr_upm_lot_registry')
@@ -66,6 +77,57 @@ test('worker Act As receives no private cost and cannot edit rate', async ({ pag
     p_canonical_lot_id: lot.canonical_lot_id, p_department_code: 'PRINTING', p_actual_rate: 1, p_request_id: null
   });
   expect(denied.error?.message).toMatch(/Only eligible Manager\/Admin\/Owner/i);
+
+  const form = await rpc(page, 'rr_upm_universal_form_v741', {
+    p_canonical_lot_id: lot.canonical_lot_id, p_department_code: 'PRINTING'
+  });
+  expect(form.error).toBeNull();
+  expect(privateKeys(form.data)).toEqual([]);
+
+  const chat = await rpc(page, 'rr_real_chat_work_search_v317', {
+    p_status: 'WORKING', p_search: lot.lot_no, p_department_code: null, p_limit: 100
+  });
+  expect(chat.error).toBeNull();
+  expect(privateKeys(chat.data)).toEqual([]);
+
+  const raw = await page.evaluate(async () => {
+    const rates = await window.supabaseClient.from('rr_upm_department_rates_v2').select('actual_rate').limit(1);
+    const costingRows = await window.supabaseClient.from('rr_upm_lot_costing_v760').select('*').limit(1);
+    const assignmentRate = await window.supabaseClient.from('rr_upm_work_assignments_v8').select('actual_rate').limit(1);
+    const legacyCost = await window.supabaseClient.from('rr_art_process_cost_summary').select('*').limit(1);
+    const legacyMargin = await window.supabaseClient.from('rr_art_master').select('default_margin').limit(1);
+    const renamedMargin = await window.supabaseClient.from('rr_art_master_core_v402').select('default_margin').limit(1);
+    const renamedLotCost = await window.supabaseClient.from('rr_lots_core_v403').select('factory_cost_snapshot').limit(1);
+    return [rates.error?.message, costingRows.error?.message, assignmentRate.error?.message,
+      legacyCost.error?.message, legacyMargin.error?.message,
+      renamedMargin.error?.message, renamedLotCost.error?.message];
+  });
+  expect(raw.every((message) => /permission denied|does not exist/i.test(message || ''))).toBe(true);
+});
+
+test('Owner can edit canonical rate but receives no private costing or margin', async ({ page }) => {
+  const lot = await lot2624(page);
+  const owner = await actor(page, 'Sudesh Bhati');
+  expect((await rpc(page, 'rr_test_set_on_behalf_context_v176', { p_worker_id: owner.worker_id })).error).toBeNull();
+  const scope = await rpc(page, 'rr_costing_user_scope_v760', { p_department_code: 'PRINTING' });
+  expect(scope.error).toBeNull();
+  expect(scope.data.effective_role).toBe('OWNER');
+  expect(scope.data.can_edit_rate).toBe(true);
+  expect(scope.data.can_view_private_cost).toBe(false);
+  const costing = await rpc(page, 'rr_upm_final_costing_v308', {
+    p_canonical_lot_id: lot.canonical_lot_id, p_data_mode: 'TEST'
+  });
+  expect(costing.error).toBeNull();
+  expect(costing.data.security).toBe('PRIVATE_COST_OMITTED');
+  expect(privateKeys(costing.data)).toEqual([]);
+  const legacy = await page.evaluate(async () => {
+    const cost = await window.supabaseClient.from('rr_art_process_cost_summary').select('*').limit(1);
+    const margin = await window.supabaseClient.from('rr_art_master').select('default_margin').limit(1);
+    const renamedMargin = await window.supabaseClient.from('rr_art_master_core_v402').select('default_margin').limit(1);
+    const renamedLotCost = await window.supabaseClient.from('rr_lots_core_v403').select('factory_cost_snapshot').limit(1);
+    return [cost.error?.message, margin.error?.message, renamedMargin.error?.message, renamedLotCost.error?.message];
+  });
+  expect(legacy.every((message) => /permission denied|does not exist/i.test(message || ''))).toBe(true);
 });
 
 test('Manager can resolve canonical rate event but still receives no private cost', async ({ page }) => {
@@ -80,6 +142,11 @@ test('Manager can resolve canonical rate event but still receives no private cos
   const costing = await rpc(page, 'rr_upm_final_costing_v308', { p_canonical_lot_id: lot.canonical_lot_id, p_data_mode: 'TEST' });
   expect(costing.data).not.toHaveProperty('base_cost_per_pc');
   expect(costing.data).not.toHaveProperty('owner_margin_per_pc');
+  const authority = await rpc(page, 'rr_test_checkpoint4_rate_authority_v401');
+  expect(authority.error).toBeNull();
+  expect(authority.data.single_event_during).toBe(true);
+  expect(authority.data.rolled_back).toBe(true);
+  expect(authority.data.persisted).toBe(false);
 });
 
 test('Printing worker gets multi-design operational context without money payload', async ({ page }) => {
@@ -113,4 +180,3 @@ test('Checkpoint 4 live surfaces remain mobile-width safe', async ({ page }) => 
   expect(width.body).toBeLessThanOrEqual(width.viewport + 2);
   expect(await page.locator('body').evaluate((el) => el.textContent.includes('undefined'))).toBe(false);
 });
-
