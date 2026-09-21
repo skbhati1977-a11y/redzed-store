@@ -14,7 +14,7 @@ test('deployed Unit dropdown, creation, Material persistence, CB mirror and Work
 
   // Do not race the Git push against the immutable preview rollout.
   await expect.poll(async () => {
-    const response = await page.request.get(`/real-material-master-v805.js?v=606-${Date.now()}`);
+    const response = await page.request.get(`/real-material-master-v805.js?v=607-${Date.now()}`);
     return response.ok() && (await response.text()).includes('rr_unit_master_list_v606');
   }, { timeout: 240_000, intervals: [5_000, 10_000, 15_000] }).toBe(true);
 
@@ -25,7 +25,7 @@ test('deployed Unit dropdown, creation, Material persistence, CB mirror and Work
 
   try {
     await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto('/real-material-master-v805.html?mode=TEST&v=606');
+    await page.goto('/real-material-master-v805.html?mode=TEST&v=607');
     await expect(page.locator('#who')).toContainText(/Super Admin|OWNER/i, { timeout: 30_000 });
     await page.locator('#type').selectOption('OTHER_MATERIAL');
     await page.locator('#addMaterial').click();
@@ -35,7 +35,9 @@ test('deployed Unit dropdown, creation, Material persistence, CB mirror and Work
     await page.locator('#newPurchaseUnit').selectOption('__NEW_UNIT__');
     await expect(page.locator('#unitModal')).toBeVisible();
     await page.locator('#newUnitName').fill(unitName);
-    await page.locator('#newUnitCode').fill(unitCode);
+    // Unit Code is canonically normalized from Unit Name. Re-entering it here
+    // races the app-wide mobile fill helper and does not model the user flow.
+    await expect(page.locator('#newUnitCode')).toHaveValue(unitCode);
     await page.locator('#saveNewUnit').click();
     await expect(page.locator('#unitModal')).toBeHidden({ timeout: 15_000 });
     await expect(page.locator('#newPurchaseUnit')).toHaveValue(unitCode);
@@ -64,7 +66,7 @@ test('deployed Unit dropdown, creation, Material persistence, CB mirror and Work
     await expect(page.locator('#purchaseUnit')).toHaveValue(unitCode);
 
     // CB reads the linked category projection and keeps Unit read-only while Qty changes.
-    await page.goto('/real-cb-new-v9130-fix2.html?mode=TEST&v=606');
+    await page.goto('/real-cb-new-v9130-fix2.html?mode=TEST&v=607');
     await page.locator('#addMaterial').click();
     const material = page.locator('#materialList [data-m="1"]');
     await material.locator('.cat').selectOption({ label: materialName });
@@ -75,7 +77,7 @@ test('deployed Unit dropdown, creation, Material persistence, CB mirror and Work
     await expect(material.locator('.unit-readonly')).toHaveValue(unitCode);
 
     // Real Chat renderer uses the same unit field without a second selector.
-    await page.goto('/test70-cb-purchase-real-chat-pilot.html?mode=TEST&v=606');
+    await page.goto('/test70-cb-purchase-real-chat-pilot.html?mode=TEST&v=607');
     const rendered = await page.evaluate(({ materialName, unitCode }) => cbDepartmentCard({
       source_status: 'WORKING', cb_no: 'TEST71-UNIT', quantity: 1, materials: [
         { name: materialName, state: 'CONFIRMED', qty: 250, unit: unitCode }
@@ -102,4 +104,3 @@ test('deployed Unit dropdown, creation, Material persistence, CB mirror and Work
     }
   }
 });
-
