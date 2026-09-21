@@ -71,4 +71,10 @@
 <div class="modal-grid"><label class="field"><span>Type Name</span><input id="newTypeName"></label><label class="field"><span>Type Code</span><input id="newTypeCode"></label><label class="field"><span>Default Purchase Unit</span><select id="newTypePU"></select></label><label class="field"><span>Default Consumption Unit</span><select id="newTypeCU"></select></label></div>
 <div class="modal-actions"><button type="button" data-close="typeModal">Cancel</button><button id="saveNewType" class="primary" type="button">Save Type</button></div><div id="newTypeMsg"></div></section></div>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="config.js"></script><script src="real-common.js"></script><script src="real-material-master-v805.js?v=80531"></script></main></body></html>
+<div id="unitModal" class="modal hidden"><section class="modal-card" style="width:min(520px,100%)">
+<div class="head"><div><div class="k">CANONICAL UNIT MASTER</div><h2>Add New Unit</h2></div><button type="button" data-close="unitModal">Close</button></div>
+<div class="modal-grid"><label class="field"><span>Unit Name</span><input id="newUnitName" autocomplete="off" placeholder="Bundle"></label><label class="field"><span>Unit Code</span><input id="newUnitCode" autocomplete="off" autocapitalize="characters" placeholder="BUNDLE"></label></div>
+<div class="backend-note">Duplicate spelling and aliases are checked against the same backend Unit Master before save.</div>
+<div class="modal-actions"><button type="button" data-close="unitModal">Cancel</button><button id="saveNewUnit" class="primary" type="button">Save Unit</button></div><div id="newUnitMsg"></div></section></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="config.js"></script><script src="real-common.js"></script><script src="real-material-master-v805.js?v=606"></script></main></body></html>

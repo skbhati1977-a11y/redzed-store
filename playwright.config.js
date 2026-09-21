@@ -88,6 +88,12 @@ module.exports = defineConfig({
       testMatch: /cb-department\.spec\.js/,
       dependencies: ["auth-setup"],
       use: { storageState: "playwright/.auth/super-admin.json" }
+    },
+    {
+      name: "material-unit",
+      testMatch: /material-unit\.spec\.js/,
+      dependencies: ["auth-setup"],
+      use: { storageState: "playwright/.auth/super-admin.json" }
     }
   ]
 });

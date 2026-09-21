@@ -1,12 +1,15 @@
 (()=>{
 const $=id=>document.getElementById(id);
-const UNITS=["PCS","KG","MTR","ROLL","BOX","PACKET","PKT","GADDI","SET","CONE"];
-let client,state={material_types:[],materials:[],ledgers:[]},selected=null,timer=null,supplierTimer=null;
+const FALLBACK_UNITS=["PCS","KG","MTR","ROLL","BOX","PACKET","PKT","GADDI","SET","CONE"];
+const UNIT_SELECT_IDS=["purchaseUnit","stockUnit","consumptionUnit","newPurchaseUnit","newStockUnit","newConsumptionUnit","newTypePU","newTypeCU"];
+const EDITABLE_UNIT_SELECT_IDS=new Set(["newPurchaseUnit","newStockUnit","newConsumptionUnit","newTypePU","newTypeCU"]);
+let client,state={material_types:[],materials:[],ledgers:[],units:FALLBACK_UNITS.map(unit_code=>({unit_code,unit_name:unit_code})),canManageUnits:false},selected=null,timer=null,supplierTimer=null,activeUnitSelect=null;
 const esc=s=>String(s??"").replace(/[&<>\"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const money=n=>new Intl.NumberFormat("en-IN",{style:"currency",currency:"INR",maximumFractionDigits:2}).format(Number(n||0));
 const num=(n,d=3)=>Number(n||0).toLocaleString("en-IN",{maximumFractionDigits:d});
-const unitOptions=v=>UNITS.map(u=>`<option value="${u}" ${u===v?"selected":""}>${u}</option>`).join("");
-for(const id of ["purchaseUnit","stockUnit","consumptionUnit","newPurchaseUnit","newStockUnit","newConsumptionUnit","newTypePU","newTypeCU"]) if($(id)) $(id).innerHTML=unitOptions();
+const unitOptions=(v,editable=false)=>state.units.map(u=>`<option value="${esc(u.unit_code)}" ${u.unit_code===v?"selected":""}>${esc(u.unit_code)}${u.unit_name&&u.unit_name!==u.unit_code?` · ${esc(u.unit_name)}`:""}</option>`).join("")+(editable&&state.canManageUnits?'<option value="__NEW_UNIT__">+ NEW UNIT</option>':"");
+function refreshUnitSelects(preferred={}){for(const id of UNIT_SELECT_IDS){const el=$(id);if(!el)continue;const value=preferred[id]||el.value||"PCS";el.innerHTML=unitOptions(value,EDITABLE_UNIT_SELECT_IDS.has(id));if([...el.options].some(o=>o.value===value))el.value=value;else el.value="PCS"}}
+refreshUnitSelects();
 
 function ledgerOptions(rows){return `<option value="">Select…</option>`+rows.map(x=>`<option value="${esc(x.id)}">${esc(x.ledger_name)}</option>`).join("")}
 function supplierRows(){return (state.ledgers||[]).filter(x=>["SUPPLIER","PARTY","GENERAL"].includes(String(x.ledger_kind||"").toUpperCase()))}
@@ -41,9 +44,15 @@ async function loadPreferredSupplier(){
 async function load(){
  client=client||(window.RR?.getClient?RR.getClient():window.supabaseClient);
  if(!client)throw Error("Supabase client not available.");
- const {data,error}=await client.rpc("rr_material_purchase_bootstrap_v805_1",{p_data_mode:$("dataMode").value});
- if(error)throw error;
- state=data||state;
+ const [boot,unitMaster,identity]=await Promise.all([
+  client.rpc("rr_material_purchase_bootstrap_v805_1",{p_data_mode:$("dataMode").value}),
+  client.rpc("rr_unit_master_list_v606"),
+  client.rpc("rr_upm_effective_identity_v200")
+ ]);
+ if(boot.error)throw boot.error;if(unitMaster.error)throw unitMaster.error;if(identity.error)throw identity.error;
+ const role=String(identity.data?.role_code||identity.data?.resolved_role||"").toUpperCase();
+ state={...(boot.data||state),units:Array.isArray(unitMaster.data)&&unitMaster.data.length?unitMaster.data:state.units,canManageUnits:["OWNER","SUPER_ADMIN"].includes(role)};
+ refreshUnitSelects();
  const types=(state.material_types||[]).filter(t=>String(t.type_code||"").toUpperCase()!=="REGULAR_CLOTH");
  $("type").innerHTML=`<option value="">Select…</option>`+types.map(t=>`<option value="${esc(t.type_code)}">${esc(t.type_name)}</option>`).join("");
  $("newMaterialType").innerHTML=`<option value="">Select…</option>`+types.filter(t=>!["MATCHING_CLOTH","STICKER","METAL_ID","REGULAR_CLOTH"].includes(String(t.type_code||"").toUpperCase())).map(t=>`<option value="${esc(t.type_code)}">${esc(t.type_name)}</option>`).join("");
@@ -100,6 +109,20 @@ function calc(){
  if(selected&&!selected.source_managed){$("floatAfter").textContent=q>0?"Backend calc on post":$("floatBefore").textContent}
 }
 function modal(id,show){$(id).classList.toggle("hidden",!show)}
+function openNewUnit(selectId){
+ if(!state.canManageUnits){$("msg").className="err";$("msg").textContent="Super Admin Unit Master authority required.";return}
+ activeUnitSelect=selectId;$("newUnitName").value="";$("newUnitCode").value="";delete $("newUnitCode").dataset.edited;$("newUnitMsg").textContent="";modal("unitModal",true);setTimeout(()=>$("newUnitName").focus(),30)
+}
+async function saveNewUnit(){
+ const name=$("newUnitName").value.trim(),code=$("newUnitCode").value.trim();
+ if(!name)throw Error("Unit Name required.");if(!code)throw Error("Unit Code required.");
+ const {data,error}=await client.rpc("rr_unit_master_create_v606",{p_unit_name:name,p_unit_code:code});if(error)throw error;
+ const unit=data?.unit;if(!unit?.unit_code)throw Error("Unit Master did not return a canonical Unit.");
+ const list=await client.rpc("rr_unit_master_list_v606");if(list.error)throw list.error;state.units=list.data||state.units;
+ const target=activeUnitSelect;refreshUnitSelects(target?{[target]:unit.unit_code}:{});if(target&&$(target))$(target).value=unit.unit_code;
+ $("newUnitMsg").className="ok";$("newUnitMsg").textContent=data.message||"Unit ready.";
+ setTimeout(()=>modal("unitModal",false),250)
+}
 function currentTypeRow(){return (state.material_types||[]).find(x=>x.type_code===$("type").value)||null}
 function openNewMaterial(){
  const t=$("type").value;
@@ -162,6 +185,10 @@ $("addType").onclick=()=>{$("newTypeName").value="";$("newTypeCode").value="";$(
 $("saveNewMaterial").onclick=()=>saveNewMaterial().catch(e=>{$("newMaterialMsg").className="err";$("newMaterialMsg").textContent=e.message});
 $("saveNewSupplier").onclick=()=>saveNewSupplier().catch(e=>{$("newSupplierMsg").className="err";$("newSupplierMsg").textContent=e.message});
 $("saveNewType").onclick=()=>saveNewType().catch(e=>{$("newTypeMsg").className="err";$("newTypeMsg").textContent=e.message});
+$("saveNewUnit").onclick=()=>saveNewUnit().catch(e=>{$("newUnitMsg").className="err";$("newUnitMsg").textContent=e.message});
+$("newUnitName").addEventListener("input",()=>{if(!$("newUnitCode").dataset.edited)$("newUnitCode").value=$("newUnitName").value.trim().toUpperCase().replace(/[^A-Z0-9]+/g,"_").replace(/^_+|_+$/g,"")});
+$("newUnitCode").addEventListener("input",e=>{e.target.dataset.edited="1";e.target.value=e.target.value.toUpperCase().replace(/[^A-Z0-9_]+/g,"")});
+for(const id of EDITABLE_UNIT_SELECT_IDS){const el=$(id);if(!el)continue;el.addEventListener("focus",()=>{el.dataset.previousUnit=el.value});el.addEventListener("change",()=>{if(el.value!=="__NEW_UNIT__")return;const previous=el.dataset.previousUnit||"PCS";el.value=previous;openNewUnit(id)})}
 $("savePost").onclick=()=>savePost().catch(e=>{$("msg").className="err";$("msg").textContent=e.message});
 $("refresh").onclick=()=>load().catch(e=>alert(e.message));$("dataMode").onchange=()=>{clearSelection();load().catch(e=>alert(e.message))};
 $("billDate").value=new Date().toISOString().slice(0,10);
