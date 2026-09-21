@@ -2,7 +2,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 
-const sql = fs.readFileSync('supabase/migrations/20260921120000_test71_commercial_real_chat_canonical_v500.sql', 'utf8');
+const sql = fs.readFileSync('supabase/migrations/20260921085732_test71_commercial_real_chat_canonical_v500.sql', 'utf8');
 const chat = fs.readFileSync('test70-real-chat-live-v70.js', 'utf8');
 const pi = fs.readFileSync('real-pi-specimen-v9514.js', 'utf8');
 const rci = fs.readFileSync('real-rci-v9740.js', 'utf8');
