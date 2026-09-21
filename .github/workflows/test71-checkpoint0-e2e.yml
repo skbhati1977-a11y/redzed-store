@@ -20,6 +20,10 @@ permissions:
   contents: read
   id-token: write
 
+concurrency:
+  group: test71-e2e-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   checkpoint0:
     runs-on: ubuntu-latest

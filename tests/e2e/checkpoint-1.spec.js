@@ -10,32 +10,33 @@ async function rpc(page, name, args = {}) {
   }, { name, args });
 }
 
+async function domClick(locator) {
+  await expect(locator).toBeVisible();
+  await locator.evaluate((button) => button.click());
+}
+
 async function actAs(page, name) {
   await ensureSession(page);
-  await page.locator("#rrGlobalViewAs172 .rr-view-handle").click();
+  await domClick(page.locator("#rrGlobalViewAs172 .rr-view-handle"));
   await page.locator("#rrGlobalViewAs172 [data-search]").fill(name);
   const actor = page.locator("#rrGlobalViewAs172 [data-worker]").filter({ hasText: name }).first();
   await expect(actor).toBeVisible();
   const workerId = await actor.getAttribute("data-worker");
-  await Promise.all([
-    page.waitForNavigation({ waitUntil: "domcontentloaded" }),
-    actor.click({ noWaitAfter: true })
-  ]);
+  await domClick(actor);
   await expect.poll(() => page.evaluate((id) =>
     window.RR_ON_BEHALF_ACTIVE && String(window.RR_VIEW_AS_ACTOR_ID) === String(id), workerId
   )).toBe(true);
+  await page.waitForLoadState("domcontentloaded");
   const result = await rpc(page, "rr_upm_effective_identity_v200");
   expect(result.error).toBeNull();
   return result.data;
 }
 
 async function restoreActual(page) {
-  await page.locator("#rrGlobalViewAs172 .rr-view-handle").click();
-  await Promise.all([
-    page.waitForNavigation({ waitUntil: "domcontentloaded" }),
-    page.locator("#rrGlobalViewAs172 [data-actual]").click({ noWaitAfter: true })
-  ]);
+  await domClick(page.locator("#rrGlobalViewAs172 .rr-view-handle"));
+  await domClick(page.locator("#rrGlobalViewAs172 [data-actual]"));
   await expect.poll(() => page.evaluate(() => !window.RR_ON_BEHALF_ACTIVE)).toBe(true);
+  await page.waitForLoadState("domcontentloaded");
 }
 
 test.afterEach(async ({ page }) => {
