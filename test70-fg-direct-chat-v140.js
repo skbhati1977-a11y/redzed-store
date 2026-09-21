@@ -4,7 +4,7 @@
   window.__TEST70_FG_DIRECT_CHAT_V140__=true;
   const $=id=>document.getElementById(id),esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const db=()=>window.supabaseClient||window.supabaseDb||window.redzedSupabase||window.sb;
-  const rpc=async(name,args={})=>{const c=db();if(!c?.rpc)throw Error('Supabase unavailable.');const{data,error}=await c.rpc(name,args);if(error)throw error;return data};
+  const rpc=async(name,args={})=>{const c=db();if(!c?.rpc)throw Error('Supabase unavailable.');const{data,error}=name==='rr_real_chat_directory_v85'&&typeof window.RR_REAL_CHAT_DIRECTORY_V85_QUERY==='function'?await window.RR_REAL_CHAT_DIRECTORY_V85_QUERY(c):await c.rpc(name,args);if(error)throw error;return data};
   let actorRole='',actorProfile={},previewRole=sessionStorage.getItem('rr_superadmin_preview_role')||'';
   const arr=v=>Array.isArray(v)?v:[],actualRole=()=>String(actorRole||window.RR_CURRENT_PROFILE?.role_code||window.__rrProfile?.role_code||'').toUpperCase(),role=()=>String((mode()==='TEST'&&window.RR_ON_BEHALF_ACTIVE&&window.RR_VIEW_AS_ROLE)||previewRole||actualRole()).toUpperCase();
   const superAdminAuthority=()=>['OWNER','SUPER_ADMIN'].includes(actualRole());

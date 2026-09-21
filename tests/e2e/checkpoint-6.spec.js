@@ -36,10 +36,12 @@ async function actAsUi(page, name) {
     actor.click({ noWaitAfter: true })
   ]);
   await expect.poll(() => page.evaluate(() => Boolean(window.RR_ON_BEHALF_ACTIVE))).toBe(true);
+  await expect.poll(() => page.evaluate(() => window.RR_VIEW_AS_DEPARTMENTS || [])).toContain('PACKING');
 }
 
 async function openPacking2614(page) {
-  await expect(page.locator('[data-department="PACKING"]')).toBeVisible();
+  await expect(page.locator('#state')).toContainText(/departments · .* people/, { timeout: 30_000 });
+  await expect(page.locator('[data-department="PACKING"]')).toBeVisible({ timeout: 30_000 });
   await page.locator('[data-department="PACKING"]').click();
   await expect(page.locator('#chat')).toBeVisible();
   const group = page.locator('[data-dept-group="PACKING"]');
@@ -74,18 +76,18 @@ test('Final Rate 75 maps RRQ once and rolls the live fixture back', async ({ pag
 
 test('backend rate payload and approval authority follow effective role', async ({ page }) => {
   const directory = await people(page);
-  const ownerCards = await rpc(page, 'rr_fg_ready_packing_cards_v788', { p_data_mode: 'TEST' });
-  expect(ownerCards.error).toBeNull();
-  expect(ownerCards.data.find((x) => String(x.lot_no) === '2614')).toBeTruthy();
+  const superAdminCards = await rpc(page, 'rr_fg_ready_packing_cards_v788', { p_data_mode: 'TEST' });
+  expect(superAdminCards.error).toBeNull();
+  expect(superAdminCards.data.find((x) => String(x.lot_no) === '2614')).toBeTruthy();
   expect((await rpc(page, 'rr_fg_is_pack_assigner_v788')).data).toBe(true);
-  const ownerStatus = await rpc(page, 'rr_pack_rate_status_v9340', { p_lot_no: '2614', p_data_mode: 'TEST' });
-  expect(ownerStatus.error).toBeNull();
-  expect(ownerStatus.data.visibility).toBe('SUPER_ADMIN_PRIVATE');
-  expect(ownerStatus.data).toHaveProperty('source_rate');
-  const ownerContext = await rpc(page, 'rr_pack_rate_context_public_v333', { p_lot_no: '2614', p_data_mode: 'TEST' });
-  expect(ownerContext.error).toBeNull();
-  expect(ownerContext.data.visibility).toBe('SUPER_ADMIN_PRIVATE');
-  expect(ownerContext.data).toHaveProperty('base_cost_per_pc');
+  const superAdminStatus = await rpc(page, 'rr_pack_rate_status_v9340', { p_lot_no: '2614', p_data_mode: 'TEST' });
+  expect(superAdminStatus.error).toBeNull();
+  expect(superAdminStatus.data.visibility).toBe('SUPER_ADMIN_PRIVATE');
+  expect(superAdminStatus.data).toHaveProperty('source_rate');
+  const superAdminContext = await rpc(page, 'rr_pack_rate_context_public_v333', { p_lot_no: '2614', p_data_mode: 'TEST' });
+  expect(superAdminContext.error).toBeNull();
+  expect(superAdminContext.data.visibility).toBe('SUPER_ADMIN_PRIVATE');
+  expect(superAdminContext.data).toHaveProperty('base_cost_per_pc');
 
   const raw = await page.evaluate(async () => {
     const r = await window.supabaseClient.from('rrq_rate_ledger_v9300').select('*').limit(1);
@@ -93,13 +95,15 @@ test('backend rate payload and approval authority follow effective role', async 
   });
   expect(raw?.message).toMatch(/permission denied/i);
 
-  await setActAs(page, named(directory, 'Sudesh Bhati'));
-  const effectiveOwner = await rpc(page, 'rr_pack_rate_context_public_v333', { p_lot_no: '2614', p_data_mode: 'TEST' });
-  expect(effectiveOwner.error).toBeNull();
-  expect(effectiveOwner.data.visibility).toBe('ADMIN_RATE');
-  expect(effectiveOwner.data).toHaveProperty('source_rate');
+  const manager = named(directory, 'nasim');
+  expect(manager.role_code).toBe('manager');
+  await setActAs(page, manager);
+  const effectiveManager = await rpc(page, 'rr_pack_rate_context_public_v333', { p_lot_no: '2614', p_data_mode: 'TEST' });
+  expect(effectiveManager.error).toBeNull();
+  expect(effectiveManager.data.visibility).toBe('ADMIN_RATE');
+  expect(effectiveManager.data).toHaveProperty('source_rate');
   for (const key of ['base_cost_per_pc','mapped_cost_per_pc','reserve_delta_per_pc','reserve_quota_impact','owner_margin_per_pc']) {
-    expect(effectiveOwner.data).not.toHaveProperty(key);
+    expect(effectiveManager.data).not.toHaveProperty(key);
   }
 
   await rpc(page, 'rr_test_clear_on_behalf_context_v176');

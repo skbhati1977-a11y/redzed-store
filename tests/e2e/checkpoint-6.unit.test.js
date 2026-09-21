@@ -5,6 +5,8 @@ const fs = require('node:fs');
 const migration = fs.readFileSync('supabase/migrations/20260920231500_test71_checkpoint6_packing_final_rate_rrq_v333.sql', 'utf8');
 const identityMigration = fs.readFileSync('supabase/migrations/20260920235900_test71_checkpoint6_effective_packing_identity_v334.sql', 'utf8');
 const chat = fs.readFileSync('test70-fg-direct-chat-v140.js', 'utf8');
+const liveChat = fs.readFileSync('test70-real-chat-live-v70.js', 'utf8');
+const viewAs = fs.readFileSync('real-superadmin-view-as-v176.js', 'utf8');
 const appHtml = fs.readFileSync('real-finished-goods-v787.html', 'utf8');
 const appJs = fs.readFileSync('real-finished-goods-v787.js', 'utf8');
 const appCss = fs.readFileSync('real-finished-goods-v787.css', 'utf8');
@@ -66,4 +68,16 @@ test('Finished Goods Packing reuses canonical effective Act As identity', () => 
   assert.match(identityMigration, /create or replace function public\.rr_fg_generate_assigned_pack_v788/);
   assert.match(identityMigration, /create or replace function public\.rr_fg_submit_assigned_pack_v788/);
   assert.doesNotMatch(identityMigration, /a\.worker_user_id\s*<>\s*auth\.uid\(\)/);
+});
+
+test('Real Chat coalesces directory reads and avoids supplemental read fan-out', () => {
+  assert.match(viewAs, /RR_REAL_CHAT_DIRECTORY_V85_QUERY/);
+  assert.match(liveChat, /RR_REAL_CHAT_DIRECTORY_V85_QUERY/);
+  assert.match(chat, /RR_REAL_CHAT_DIRECTORY_V85_QUERY/);
+  assert.match(liveChat, /READ_TIMEOUT_RETRY/);
+  const bridge = liveChat.match(/async function loadBridge\(\)\{[\s\S]*?\nasync function load\(/)?.[0] || '';
+  assert.match(bridge, /history=await rpc\('rr_real_chat_conversation_history_v83'/);
+  assert.match(bridge, /eligible=await rpc\('rr_real_chat_assignable_lots_v125'/);
+  assert.match(bridge, /mediaMap=await rpc\('rr_real_chat_media_map_v1'/);
+  assert.doesNotMatch(bridge, /Promise\.all/);
 });
