@@ -1,6 +1,11 @@
 const { test, expect } = require('@playwright/test');
-const { randomUUID } = require('node:crypto');
+const { createHash } = require('node:crypto');
 const { ensureSession } = require('./session');
+
+const fixtureRunKey = process.env.TEST71_FIXTURE_RUN_KEY
+  || [process.env.GITHUB_RUN_ID, process.env.GITHUB_RUN_ATTEMPT, process.env.GITHUB_JOB]
+    .filter(Boolean).join('-')
+  || `local-${process.pid}-${Date.now()}`;
 
 async function rpc(page, name, args = {}) {
   return page.evaluate(async ({ name, args }) => {
@@ -12,10 +17,99 @@ async function rpc(page, name, args = {}) {
 async function fixtureRpc(page, action, key) {
   let result;
   for (let attempt = 0; attempt < 2; attempt += 1) {
-    result = await rpc(page, 'rr_test_cb_ui_fixture_v619', { p_action: action, p_fixture_key: key });
+    result = await rpc(page, 'rr_test_cb_ui_fixture_v619', {
+      p_action: action,
+      p_fixture_key: key
+    });
     if (!result.error || result.error.code !== '57014') return result;
   }
   return result;
+}
+
+function fixtureKey(label, testInfo) {
+  const seed = [
+    fixtureRunKey,
+    label,
+    testInfo.project.name,
+    testInfo.workerIndex,
+    testInfo.repeatEachIndex,
+    testInfo.retry
+  ].join(':');
+  const hex = createHash('sha256').update(seed).digest('hex').slice(0, 32);
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+}
+
+async function setupCbUiFixture(page, label, testInfo, makeReady = false) {
+  const key = fixtureKey(label, testInfo);
+  const first = await fixtureRpc(page, 'SETUP', key);
+  expect(first.error).toBeNull();
+  expect(first.data).toMatchObject({ ok: true, fixture_rows: 1 });
+
+  const setupRetry = await fixtureRpc(page, 'SETUP', key);
+  expect(setupRetry.error).toBeNull();
+  expect(setupRetry.data).toMatchObject({
+    ok: true,
+    cb_id: first.data.cb_id,
+    setup_duplicate_blocked: true,
+    fixture_rows: 1
+  });
+
+  if (!makeReady) return { key, data: setupRetry.data };
+
+  const ready = await fixtureRpc(page, 'READY', key);
+  expect(ready.error).toBeNull();
+  expect(ready.data.ready_lifecycle).toMatchObject({
+    state: 'READY_FOR_CUTTING',
+    canonical_state: 'WORKING'
+  });
+
+  const readyRetry = await fixtureRpc(page, 'READY', key);
+  expect(readyRetry.error).toBeNull();
+  expect(readyRetry.data).toMatchObject({
+    ok: true,
+    cb_id: first.data.cb_id,
+    ready_duplicate_blocked: true,
+    fixture_rows: 1
+  });
+  expect(readyRetry.data.art_due_lifecycle).toMatchObject({
+    state: 'ART_DUE',
+    canonical_state: 'OPEN'
+  });
+  expect(readyRetry.data.ready_lifecycle).toMatchObject({
+    state: 'READY_FOR_CUTTING',
+    canonical_state: 'WORKING'
+  });
+  return { key, data: readyRetry.data };
+}
+
+async function retireCbUiFixture(page, key) {
+  await rpc(page, 'rr_test_clear_on_behalf_context_v176').catch(() => null);
+  const retired = await fixtureRpc(page, 'RETIRE', key);
+  expect(retired.error).toBeNull();
+  expect(retired.data).toMatchObject({
+    ok: true,
+    active_fixture_rows: 0,
+    active_unit_count: 0,
+    art_due_count: 0,
+    actionable_cutting_count: 0,
+    active_chat_projection_count: 0,
+    retained_history_rows: 1,
+    retained_purchase_return_count: 1
+  });
+
+  const retry = await fixtureRpc(page, 'RETIRE', key);
+  expect(retry.error).toBeNull();
+  expect(retry.data).toMatchObject({
+    ok: true,
+    duplicate_blocked: true,
+    active_fixture_rows: 0,
+    active_unit_count: 0,
+    art_due_count: 0,
+    actionable_cutting_count: 0,
+    active_chat_projection_count: 0,
+    retained_history_rows: 1,
+    retained_purchase_return_count: 1
+  });
 }
 
 test.beforeEach(async ({ page }) => {
@@ -130,15 +224,9 @@ test('the seven read-only evidence CBs no longer remain in CB WORKING and mobile
   expect(width.body).toBeLessThanOrEqual(width.viewport + 2);
 });
 
-test('deployed mobile Art picker retains image/no-name records without mutating evidence', async ({ page }) => {
-  const key = randomUUID();
+test('deployed mobile Art picker retains image/no-name records on an isolated canonical fixture', async ({ page }, testInfo) => {
+  const fixture = await setupCbUiFixture(page, 'art-picker', testInfo);
   try {
-    const fixture = await fixtureRpc(page, 'SETUP', key);
-    expect(fixture.error).toBeNull();
-    const retry = await fixtureRpc(page, 'SETUP', key);
-    expect(retry.error).toBeNull();
-    expect(retry.data.art_due_unit_id).toBe(fixture.data.art_due_unit_id);
-    expect(retry.data.fixture_rows).toBe(1);
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto(`/real-art-decide-master.html?mode=TEST&cb_unit_id=${encodeURIComponent(fixture.data.art_due_unit_id)}&v=619`);
     await expect(page.locator('#decisionSheet')).not.toHaveClass(/hidden/, { timeout: 30_000 });
@@ -154,9 +242,7 @@ test('deployed mobile Art picker retains image/no-name records without mutating 
     expect(layout.rows).toBeGreaterThan(0);
     expect(layout.body).toBeLessThanOrEqual(layout.viewport + 2);
   } finally {
-    const clean = await rpc(page, 'rr_test_cb_ui_fixture_v619', { p_action: 'CLEANUP', p_fixture_key: key });
-    expect(clean.error).toBeNull();
-    expect(clean.data.fixture_residue).toBe(0);
+    if (!page.isClosed()) await retireCbUiFixture(page, fixture.key);
   }
 });
 
@@ -358,59 +444,50 @@ test('TTT1-S2 read-only evidence is CLOSE and cannot resurrect a multi-art actio
   expect(lookup.bridge.filter((row) => row.archived_at === null)).toHaveLength(0);
 });
 
-test('mobile Cutting App opens exact Art child and Ready child remains WORKING after reload', async ({ page }) => {
-  const key = randomUUID();
+test('mobile Cutting App opens exact isolated Art child and Ready child remains WORKING after reload', async ({ page }, testInfo) => {
+  const fixture = await setupCbUiFixture(page, 'cutting-mobile', testInfo, true);
+  const artDue = fixture.data.art_due_unit_id;
+  const ready = fixture.data.ready_unit_id;
   try {
-    const setup = await fixtureRpc(page, 'SETUP', key);
-    expect(setup.error).toBeNull();
-    const fixture = await fixtureRpc(page, 'READY', key);
-    expect(fixture.error).toBeNull();
-    expect(fixture.data.art_due_lifecycle.state).toBe('ART_DUE');
-    expect(fixture.data.ready_lifecycle.state).toBe('READY_FOR_CUTTING');
-    const rows = { artDue: fixture.data.art_due_unit_id, ready: fixture.data.ready_unit_id };
     await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto(`/real-cutting-master.html?mode=TEST&cb_unit_id=${encodeURIComponent(rows.artDue)}&v=619`);
-    const artAction = page.locator(`[data-art-decision="${rows.artDue}"]`);
+    await page.goto(`/real-cutting-master.html?mode=TEST&cb_unit_id=${encodeURIComponent(artDue)}&v=619`);
+    const artAction = page.locator(`[data-art-decision="${artDue}"]`);
     await expect(artAction).toBeVisible({ timeout: 30_000 });
     await artAction.click();
-    await expect(page).toHaveURL(new RegExp(`real-art-decide-master\\.html.*cb_unit_id=${rows.artDue}`));
+    await expect(page).toHaveURL(new RegExp(`real-art-decide-master\\.html.*cb_unit_id=${artDue}`));
     await expect(page.locator('#decisionSheet')).not.toHaveClass(/hidden/, { timeout: 30_000 });
 
-    await page.goto(`/real-cutting-master.html?mode=TEST&cb_unit_id=${encodeURIComponent(rows.ready)}&v=619`);
+    await page.goto(`/real-cutting-master.html?mode=TEST&cb_unit_id=${encodeURIComponent(ready)}&v=619`);
     await expect(page.locator('#lotSheet')).not.toHaveClass(/cm-hidden/, { timeout: 30_000 });
     await page.locator('#lotSheet [data-close-lot]').last().click();
     await expect(page.locator('.chip-ready')).toBeVisible({ timeout: 30_000 });
-    await expect(page.locator(`[data-single="${rows.ready}"]`)).toBeEnabled();
+    await expect(page.locator(`[data-single="${ready}"]`)).toBeEnabled();
     await page.reload();
     await expect(page.locator('#lotSheet')).not.toHaveClass(/cm-hidden/, { timeout: 30_000 });
     await page.locator('#lotSheet [data-close-lot]').last().click();
     await expect(page.locator('.chip-ready')).toBeVisible({ timeout: 30_000 });
-    await expect(page.locator(`[data-single="${rows.ready}"]`)).toBeEnabled();
+    await expect(page.locator(`[data-single="${ready}"]`)).toBeEnabled();
     const width = await page.evaluate(() => ({ body: document.body.scrollWidth, viewport: document.documentElement.clientWidth }));
     expect(width.body).toBeLessThanOrEqual(width.viewport + 2);
   } finally {
-    const clean = await rpc(page, 'rr_test_cb_ui_fixture_v619', { p_action: 'CLEANUP', p_fixture_key: key });
-    expect(clean.error).toBeNull();
-    expect(clean.data.fixture_residue).toBe(0);
+    if (!page.isClosed()) await retireCbUiFixture(page, fixture.key);
   }
 });
 
-test('Act As Worker is rejected by the shared Cutting backend authority gate', async ({ page }) => {
+test('Act As Worker is rejected by the shared Cutting backend authority gate', async ({ page }, testInfo) => {
+  const fixture = await setupCbUiFixture(page, 'cutting-worker-authority', testInfo, true);
   const directory = await rpc(page, 'rr_real_chat_directory_v600');
   expect(directory.error).toBeNull();
   const worker = directory.data.people.find((x) => String(x.role_code).toUpperCase() === 'WORKER');
   expect(worker).toBeTruthy();
-  const ready = await page.evaluate(async () => {
-    const all = await window.supabaseClient.rpc('rr_pm_decision_filter_v802', { p_filter: 'ALL' });
-    for (const row of all.data || []) {
-      const state = await window.supabaseClient.rpc('rr_cutting_child_lifecycle_v615', { p_cb_unit_id: row.cb_unit_id });
-      if (state.data?.state === 'READY_FOR_CUTTING') return row.cb_unit_id;
-    }
-    return null;
-  });
-  expect(ready).toBeTruthy();
-  expect((await rpc(page, 'rr_test_set_on_behalf_context_v176', { p_worker_id: worker.worker_id })).error).toBeNull();
-  const denied = await rpc(page, 'rr_cutting_request_multi_art_decision_v1', { p_cb_unit_id: ready });
-  expect(denied.error).not.toBeNull();
-  expect(denied.error.message).toMatch(/Cutting release authority required/i);
+  try {
+    expect((await rpc(page, 'rr_test_set_on_behalf_context_v176', { p_worker_id: worker.worker_id })).error).toBeNull();
+    const denied = await rpc(page, 'rr_cutting_request_multi_art_decision_v1', {
+      p_cb_unit_id: fixture.data.ready_unit_id
+    });
+    expect(denied.error).not.toBeNull();
+    expect(denied.error.message).toMatch(/Cutting release authority required/i);
+  } finally {
+    if (!page.isClosed()) await retireCbUiFixture(page, fixture.key);
+  }
 });

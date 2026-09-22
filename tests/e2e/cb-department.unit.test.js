@@ -52,16 +52,8 @@ const workingCanonicalProjection = fs.readFileSync(
   'supabase/migrations/20260922220000_test71_cb_working_canonical_projection_v618.sql',
   'utf8'
 );
-const uiFixture = fs.readFileSync(
-  'supabase/migrations/20260922203000_test71_cb_ui_fixture_v619.sql',
-  'utf8'
-);
-const uiFixtureCleanup = fs.readFileSync(
-  'supabase/migrations/20260922203500_test71_cb_ui_fixture_cleanup_v620.sql',
-  'utf8'
-);
-const uiFixturePhases = fs.readFileSync(
-  'supabase/migrations/20260922204000_test71_cb_ui_fixture_phases_v621.sql',
+const isolatedUiFixture = fs.readFileSync(
+  'supabase/migrations/20260922220500_test71_cb_ui_fixture_retirement_v622.sql',
   'utf8'
 );
 const artPage = fs.readFileSync('real-art-decide-master-v9231.js', 'utf8');
@@ -146,22 +138,6 @@ test('CB completion and Cutting readiness are separate canonical dimensions', ()
   assert.match(chat, /if\(!fast&&S\.returnFocusCb\)focusCbCard\(S\.returnFocusCb,true\)/);
 });
 
-test('mobile CB proof fixture is uniquely addressed, canonical and exactly reversible', () => {
-  assert.match(uiFixture, /TEST71 E2E Super Admin/);
-  assert.match(uiFixture, /p_fixture_key uuid/);
-  assert.match(uiFixture, /rr_cb_department_save_v600/);
-  assert.match(uiFixture, /rr_pm_save_decision_bundle_v804/);
-  assert.match(uiFixture, /v_action='READY'/);
-  assert.doesNotMatch(uiFixture, /rr_cb_department_save_v600\(v_cb,gen_random_uuid\(\),true/);
-  assert.match(uiFixture, /V619 cleanup refused: fixture marker mismatch/);
-  assert.match(uiFixture, /rr_cb_material_allocations/);
-  assert.match(uiFixture, /fixture_residue/);
-  assert.match(uiFixtureCleanup, /delete from public\.rr_cb_material_allocations/);
-  assert.match(uiFixturePhases, /phased canonical writes/);
-  assert.match(uiFixturePhases, /Run SETUP before READY/);
-  assert.doesNotMatch(uiFixture, /CB111TST|CBTST11|CB4TST|CB1TSTY|CB1MTC|1002|TST1/);
-});
-
 test('Art picker uses effective authority, canonical media thumbnails and No Name fallback', () => {
   assert.match(artPage, /rr_upm_effective_identity_v200/);
   assert.doesNotMatch(artPage, /rpc\("rr_current_role"\)/);
@@ -172,6 +148,24 @@ test('Art picker uses effective authority, canonical media thumbnails and No Nam
   assert.match(artHtml, /\.pick-media img/);
   assert.match(chat, /arr\(c\.next_actions\)/);
   assert.match(workingCanonicalProjection, /real-art-decide-master\.html/);
+});
+
+test('deployed CB/Cutting UI fixtures are isolated, retry-safe and retire through canonical history', () => {
+  assert.match(isolatedUiFixture, /TEST71 V622/);
+  assert.match(isolatedUiFixture, /rr_test_cb_ui_fixture_v619/);
+  assert.match(isolatedUiFixture, /TEST71 E2E Super Admin/);
+  assert.match(isolatedUiFixture, /rr_upm_effective_identity_v200/);
+  assert.match(isolatedUiFixture, /pg_advisory_xact_lock/);
+  assert.match(isolatedUiFixture, /rr_cb_department_save_v600/);
+  assert.match(isolatedUiFixture, /rr_pm_save_decision_bundle_v804/);
+  assert.match(isolatedUiFixture, /rr_cb_purchase_return_v806/);
+  assert.match(isolatedUiFixture, /operation_status='TEST_RETIRED'/);
+  assert.match(isolatedUiFixture, /archived_at=coalesce/);
+  assert.match(isolatedUiFixture, /retained_purchase_return_count/);
+  assert.match(isolatedUiFixture, /set statement_timeout='30s'/);
+  assert.match(isolatedUiFixture, /from public,anon,authenticated,service_role/);
+  assert.doesNotMatch(isolatedUiFixture, /\bdelete\s+from\b/i);
+  assert.doesNotMatch(isolatedUiFixture, /\b(TST1|TTT1-S2|1002S1|CB 1004)\b/);
 });
 
 test('authority, idempotency and audit remain server enforced', () => {
