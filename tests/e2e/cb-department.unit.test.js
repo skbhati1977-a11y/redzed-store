@@ -28,6 +28,10 @@ const generatedAmount = fs.readFileSync(
   'supabase/migrations/20260921161124_test71_cb_generated_amount_contract_v605.sql',
   'utf8'
 );
+const openDraftInvariants = fs.readFileSync(
+  'supabase/migrations/20260922052840_test71_cb_open_draft_invariants_v608.sql',
+  'utf8'
+);
 
 test('CB Department extends the existing canonical engines', () => {
   assert.match(migration, /alter table public\.rr_fabric_purchases/);
@@ -95,4 +99,43 @@ test('CB save respects canonical generated purchase amount', () => {
   assert.match(generatedAmount, /amount is GENERATED ALWAYS/);
   assert.match(generatedAmount, /database-generated from Qty × Rate/);
   assert.match(generatedAmount, /rr_cb_department_save_v600/);
+});
+
+test('CB OPEN preserves canonical Qty, Value and exact Roll identity', () => {
+  assert.match(form, /function entryQty\(m\)\{return Number\(m\?\.qty\|\|0\)\}/);
+  assert.match(form, /function hydrateRegularRolls\(/);
+  assert.match(form, /ri=Number\(x\.roll_no\)-1/);
+  assert.match(form, /qtySource:'manual'/);
+  assert.match(form, /Purchase Qty \*/);
+  assert.match(form, /m\.type==='regular'\?\(q>0&&r>0\?q\*r:0\)/);
+  assert.match(form, /window\.__CB_DEPARTMENT_TEST__=\{draftInvariantPreview,hydrateRegularRolls\}/);
+});
+
+test('CB create and Draft retry are backend serialized and identity guarded', () => {
+  assert.match(openDraftInvariants, /rr_guard_cb_number_identity_v608/);
+  assert.match(openDraftInvariants, /pg_advisory_xact_lock\(hashtextextended\('RR_CB_NO:'/);
+  assert.match(openDraftInvariants, /before insert or update of cb_no,operation_status/);
+  assert.match(openDraftInvariants, /pg_advisory_xact_lock\(hashtextextended\('RR_CB_ACTION:'/);
+  assert.match(openDraftInvariants, /rr_test_cb_open_draft_invariants_v608/);
+  assert.match(openDraftInvariants, /'qty',120/);
+  assert.match(openDraftInvariants, /'rate',365/);
+  assert.match(openDraftInvariants, /'amount',43800/);
+  assert.match(openDraftInvariants, /'roll_no',1,'qty',120/);
+  assert.match(openDraftInvariants, /'same_action_audits'/);
+  assert.match(openDraftInvariants, /fixture_residue/);
+  assert.match(form, /RR_CB_PENDING_ACTION_V608/);
+  assert.match(form, /localStorage\.removeItem\(pending\.key\)/);
+  assert.match(form, /materials\[0\]\.clientKey=cbClientKey/);
+});
+
+test('CB 1004 audit is read-only and mobile messages clear the sticky footer', () => {
+  assert.match(openDraftInvariants, /rr_test_cb_1004_snapshot_v608/);
+  assert.match(openDraftInvariants, /language plpgsql\s+stable\s+security definer/);
+  assert.doesNotMatch(
+    openDraftInvariants.match(/create or replace function public\.rr_test_cb_1004_snapshot_v608\(\)[\s\S]*?\$function\$;/)?.[0] || '',
+    /\b(insert|update|delete)\b/i
+  );
+  assert.match(form, /calc\(156px \+ env\(safe-area-inset-bottom\)\)/);
+  assert.match(form, /function revealAboveFooter\(/);
+  assert.match(form, /scrollIntoView\(\{behavior:'smooth',block:'center'\}\)/);
 });
