@@ -52,6 +52,14 @@ const workingCanonicalProjection = fs.readFileSync(
   'supabase/migrations/20260922220000_test71_cb_working_canonical_projection_v618.sql',
   'utf8'
 );
+const uiFixture = fs.readFileSync(
+  'supabase/migrations/20260922203000_test71_cb_ui_fixture_v619.sql',
+  'utf8'
+);
+const uiFixtureCleanup = fs.readFileSync(
+  'supabase/migrations/20260922203500_test71_cb_ui_fixture_cleanup_v620.sql',
+  'utf8'
+);
 const artPage = fs.readFileSync('real-art-decide-master-v9231.js', 'utf8');
 const artHtml = fs.readFileSync('real-art-decide-master.html', 'utf8');
 
@@ -130,6 +138,18 @@ test('CB completion and Cutting readiness are separate canonical dimensions', ()
   assert.match(chat, /Cutting Status/);
   assert.match(chat, /function cbDepartmentContext/);
   assert.match(chat, /if\(cbDepartmentContext\(\)\)\{box\.hidden=true;return\}/);
+});
+
+test('mobile CB proof fixture is uniquely addressed, canonical and exactly reversible', () => {
+  assert.match(uiFixture, /TEST71 E2E Super Admin/);
+  assert.match(uiFixture, /p_fixture_key uuid/);
+  assert.match(uiFixture, /rr_cb_department_save_v600/);
+  assert.match(uiFixture, /rr_pm_save_decision_bundle_v804/);
+  assert.match(uiFixture, /V619 cleanup refused: fixture marker mismatch/);
+  assert.match(uiFixture, /rr_cb_material_allocations/);
+  assert.match(uiFixture, /fixture_residue/);
+  assert.match(uiFixtureCleanup, /delete from public\.rr_cb_material_allocations/);
+  assert.doesNotMatch(uiFixture, /CB111TST|CBTST11|CB4TST|CB1TSTY|CB1MTC|1002|TST1/);
 });
 
 test('Art picker uses effective authority, canonical media thumbnails and No Name fallback', () => {

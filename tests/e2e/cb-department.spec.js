@@ -1,4 +1,5 @@
 const { test, expect } = require('@playwright/test');
+const { randomUUID } = require('node:crypto');
 const { ensureSession } = require('./session');
 
 async function rpc(page, name, args = {}) {
@@ -121,25 +122,33 @@ test('the seven read-only evidence CBs no longer remain in CB WORKING and mobile
 });
 
 test('deployed mobile Art picker retains image/no-name records without mutating evidence', async ({ page }) => {
-  const pending = await rpc(page, 'rr_pm_decision_filter_v802', { p_filter: 'ART_DUE' });
-  expect(pending.error).toBeNull();
-  const row = pending.data.find((item) => item.cb_unit_id);
-  expect(row, 'an existing read-only Art-due evidence child is required').toBeTruthy();
-
-  await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto(`/real-art-decide-master.html?mode=TEST&cb_unit_id=${encodeURIComponent(row.cb_unit_id)}&v=611`);
-  await expect(page.locator('#decisionSheet')).not.toHaveClass(/hidden/, { timeout: 30_000 });
-  await expect(page.locator('#picker .pick').first()).toBeVisible();
-  await expect(page.locator('#picker .pick-media').first()).toBeVisible();
-  const layout = await page.evaluate(() => ({
-    body: document.body.scrollWidth,
-    viewport: document.documentElement.clientWidth,
-    namedFallbacks: [...document.querySelectorAll('#picker .pick small')]
-      .filter((node) => node.textContent.trim() === 'No Name').length,
-    rows: document.querySelectorAll('#picker .pick').length
-  }));
-  expect(layout.rows).toBeGreaterThan(0);
-  expect(layout.body).toBeLessThanOrEqual(layout.viewport + 2);
+  const key = randomUUID();
+  const fixture = await rpc(page, 'rr_test_cb_ui_fixture_v619', { p_action: 'SETUP', p_fixture_key: key });
+  expect(fixture.error).toBeNull();
+  const retry = await rpc(page, 'rr_test_cb_ui_fixture_v619', { p_action: 'SETUP', p_fixture_key: key });
+  expect(retry.error).toBeNull();
+  expect(retry.data.art_due_unit_id).toBe(fixture.data.art_due_unit_id);
+  expect(retry.data.fixture_rows).toBe(1);
+  try {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto(`/real-art-decide-master.html?mode=TEST&cb_unit_id=${encodeURIComponent(fixture.data.art_due_unit_id)}&v=619`);
+    await expect(page.locator('#decisionSheet')).not.toHaveClass(/hidden/, { timeout: 30_000 });
+    await expect(page.locator('#picker .pick').first()).toBeVisible();
+    await expect(page.locator('#picker .pick-media').first()).toBeVisible();
+    const layout = await page.evaluate(() => ({
+      body: document.body.scrollWidth,
+      viewport: document.documentElement.clientWidth,
+      namedFallbacks: [...document.querySelectorAll('#picker .pick small')]
+        .filter((node) => node.textContent.trim() === 'No Name').length,
+      rows: document.querySelectorAll('#picker .pick').length
+    }));
+    expect(layout.rows).toBeGreaterThan(0);
+    expect(layout.body).toBeLessThanOrEqual(layout.viewport + 2);
+  } finally {
+    const clean = await rpc(page, 'rr_test_cb_ui_fixture_v619', { p_action: 'CLEANUP', p_fixture_key: key });
+    expect(clean.error).toBeNull();
+    expect(clean.data.fixture_residue).toBe(0);
+  }
 });
 
 test('CB 1004 remains read-only while backend and frontend projections agree', async ({ page }) => {
@@ -341,42 +350,38 @@ test('TTT1-S2 read-only evidence is CLOSE and cannot resurrect a multi-art actio
 });
 
 test('mobile Cutting App opens exact Art child and Ready child remains WORKING after reload', async ({ page }) => {
-  const rows = await page.evaluate(async () => {
-    const due = await window.supabaseClient.rpc('rr_pm_decision_filter_v802', { p_filter: 'ART_DUE' });
-    const all = await window.supabaseClient.rpc('rr_pm_decision_filter_v802', { p_filter: 'ALL' });
-    if (due.error || all.error) return { error: due.error?.message || all.error?.message };
-    for (const row of all.data || []) {
-      const state = await window.supabaseClient.rpc('rr_cutting_child_lifecycle_v615', { p_cb_unit_id: row.cb_unit_id });
-      if (!state.error && state.data?.state === 'READY_FOR_CUTTING') {
-        return { artDue: (due.data || []).find((x) => x.cb_unit_id)?.cb_unit_id || null, ready: row.cb_unit_id };
-      }
-    }
-    return { artDue: (due.data || []).find((x) => x.cb_unit_id)?.cb_unit_id || null, ready: null };
-  });
-  expect(rows.error).toBeUndefined();
-  expect(rows.artDue).toBeTruthy();
-  expect(rows.ready).toBeTruthy();
+  const key = randomUUID();
+  const fixture = await rpc(page, 'rr_test_cb_ui_fixture_v619', { p_action: 'SETUP', p_fixture_key: key });
+  expect(fixture.error).toBeNull();
+  expect(fixture.data.art_due_lifecycle.state).toBe('ART_DUE');
+  expect(fixture.data.ready_lifecycle.state).toBe('READY_FOR_CUTTING');
+  try {
+    const rows = { artDue: fixture.data.art_due_unit_id, ready: fixture.data.ready_unit_id };
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto(`/real-cutting-master.html?mode=TEST&cb_unit_id=${encodeURIComponent(rows.artDue)}&v=619`);
+    const artAction = page.locator(`[data-art-decision="${rows.artDue}"]`);
+    await expect(artAction).toBeVisible({ timeout: 30_000 });
+    await artAction.click();
+    await expect(page).toHaveURL(new RegExp(`real-art-decide-master\\.html.*cb_unit_id=${rows.artDue}`));
+    await expect(page.locator('#decisionSheet')).not.toHaveClass(/hidden/, { timeout: 30_000 });
 
-  await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto(`/real-cutting-master.html?mode=TEST&cb_unit_id=${encodeURIComponent(rows.artDue)}&v=615`);
-  const artAction = page.locator(`[data-art-decision="${rows.artDue}"]`);
-  await expect(artAction).toBeVisible({ timeout: 30_000 });
-  await artAction.click();
-  await expect(page).toHaveURL(new RegExp(`real-art-decide-master\\.html.*cb_unit_id=${rows.artDue}`));
-  await expect(page.locator('#decisionSheet')).not.toHaveClass(/hidden/, { timeout: 30_000 });
-
-  await page.goto(`/real-cutting-master.html?mode=TEST&cb_unit_id=${encodeURIComponent(rows.ready)}&v=615`);
-  await expect(page.locator('#lotSheet')).not.toHaveClass(/cm-hidden/, { timeout: 30_000 });
-  await page.locator('#lotSheet [data-close-lot]').last().click();
-  await expect(page.locator('.chip-ready')).toBeVisible({ timeout: 30_000 });
-  await expect(page.locator(`[data-single="${rows.ready}"]`)).toBeEnabled();
-  await page.reload();
-  await expect(page.locator('#lotSheet')).not.toHaveClass(/cm-hidden/, { timeout: 30_000 });
-  await page.locator('#lotSheet [data-close-lot]').last().click();
-  await expect(page.locator('.chip-ready')).toBeVisible({ timeout: 30_000 });
-  await expect(page.locator(`[data-single="${rows.ready}"]`)).toBeEnabled();
-  const width = await page.evaluate(() => ({ body: document.body.scrollWidth, viewport: document.documentElement.clientWidth }));
-  expect(width.body).toBeLessThanOrEqual(width.viewport + 2);
+    await page.goto(`/real-cutting-master.html?mode=TEST&cb_unit_id=${encodeURIComponent(rows.ready)}&v=619`);
+    await expect(page.locator('#lotSheet')).not.toHaveClass(/cm-hidden/, { timeout: 30_000 });
+    await page.locator('#lotSheet [data-close-lot]').last().click();
+    await expect(page.locator('.chip-ready')).toBeVisible({ timeout: 30_000 });
+    await expect(page.locator(`[data-single="${rows.ready}"]`)).toBeEnabled();
+    await page.reload();
+    await expect(page.locator('#lotSheet')).not.toHaveClass(/cm-hidden/, { timeout: 30_000 });
+    await page.locator('#lotSheet [data-close-lot]').last().click();
+    await expect(page.locator('.chip-ready')).toBeVisible({ timeout: 30_000 });
+    await expect(page.locator(`[data-single="${rows.ready}"]`)).toBeEnabled();
+    const width = await page.evaluate(() => ({ body: document.body.scrollWidth, viewport: document.documentElement.clientWidth }));
+    expect(width.body).toBeLessThanOrEqual(width.viewport + 2);
+  } finally {
+    const clean = await rpc(page, 'rr_test_cb_ui_fixture_v619', { p_action: 'CLEANUP', p_fixture_key: key });
+    expect(clean.error).toBeNull();
+    expect(clean.data.fixture_residue).toBe(0);
+  }
 });
 
 test('Act As Worker is rejected by the shared Cutting backend authority gate', async ({ page }) => {
