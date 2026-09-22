@@ -6,6 +6,10 @@ const sql = fs.readFileSync(
   'supabase/migrations/20260922103000_test71_cutting_department_lifecycle_v615.sql',
   'utf8'
 );
+const availabilitySql = fs.readFileSync(
+  'supabase/migrations/20260922114500_test71_cutting_projection_availability_v616.sql',
+  'utf8'
+);
 const cutting = fs.readFileSync('real-cutting-master-pm.V719.3.js', 'utf8');
 const chat = fs.readFileSync('test70-real-chat-live-v70.js', 'utf8');
 const art = fs.readFileSync('real-art-decide-master-v9231.js', 'utf8');
@@ -36,6 +40,12 @@ test('Real Chat maps Ready to WORKING and release to CLOSE without stale actions
   assert.match(chat, /\['ART_DUE','CUTTING_HOLD'\]\.includes\(x\.state\)\?'OPEN'/);
   assert.match(chat, /status!=='WORKING'.*READY_FOR_CUTTING/);
   assert.match(chat, /status==='WORKING'\?e==='READY_FOR_CUTTING'/);
+});
+
+test('reconciliation archives every non-ready Cutting projection, including unavailable children', () => {
+  assert.match(availabilitySql, /not exists\(select 1 from pg_temp\.rr_cb_child_truth_v615 c[\s\S]*c\.child_state='READY_FOR_CUTTING'/i);
+  assert.match(availabilitySql, /archive_reason='CHILD_NOT_READY_V616'/i);
+  assert.match(availabilitySql, /select public\.rr_real_chat_reconcile_cb_children_v105\(\)/i);
 });
 
 test('Cutting App derives Material Hold and opens exact Art child identity', () => {
