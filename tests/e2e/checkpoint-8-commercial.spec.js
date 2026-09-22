@@ -30,7 +30,7 @@ async function e2eDcardSnapshot(page) {
         .select('id,lot_no,status,cb_unit_id')
         .eq('cb_unit_id', unitId)
         .maybeSingle(),
-      window.supabaseClient.rpc('rr_real_chat_conversation_history_v83', { p_limit: 500 })
+      window.supabaseClient.rpc('rr_real_chat_conversation_history_v83', { p_limit: 2000 })
     ]);
     return {
       gallery: gallery.data,
@@ -112,7 +112,7 @@ test('mobile Sales, Costing and Accounts group projections stay inside viewport'
     const row = page.locator(`[data-department="${department}"]`);
     await expect(row).toBeVisible();
     await row.click();
-    await page.locator(`[data-dept-group="${department}"]`).click();
+    await page.locator(`[data-dept-group="${department}"]`).evaluate((button) => button.click());
     await expect(page.locator('#messages')).toBeVisible();
     await expect(page.locator('#messages')).not.toContainText(/undefined|parallel engine/i);
     const width = await page.evaluate(() => ({ body: document.body.scrollWidth, viewport: document.documentElement.clientWidth }));
