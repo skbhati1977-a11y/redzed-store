@@ -683,7 +683,58 @@ function normalizeGalleryRow(row) {
   };
 }
 
+async function galleryRowsFromDivisions(client, divisions = []) {
+  const purchaseIds = [...new Set(divisions.map(row => row.purchase_id).filter(Boolean))];
+  if (!purchaseIds.length) return [];
+
+  const purchaseResult = await client
+    .from("rr_fabric_purchases")
+    .select("*")
+    .in("id", purchaseIds);
+  if (purchaseResult.error) throw purchaseResult.error;
+
+  const purchaseMap = new Map(
+    (purchaseResult.data || []).map(row => [String(row.id), row])
+  );
+  const statusMap = {
+    available: "planning",
+    art_assigned: "ready_for_cutting",
+    material_pending: "material_pending",
+    cutting: "ready_for_cutting",
+    completed: "ready_for_cutting",
+    cancelled: "hold"
+  };
+
+  return divisions.map(division => {
+    const purchase = purchaseMap.get(String(division.purchase_id)) || {};
+    return normalizeGalleryRow({
+      cb_id: division.purchase_id,
+      division_id: division.id,
+      division_index: division.division_index,
+      division_code: division.cb_code,
+      division_status: statusMap[division.status] || "planning",
+      allocated_qty: division.divided_weight,
+      allocated_amount: division.divided_amount,
+      base_qty: division.divided_weight,
+      base_amount: division.divided_amount,
+      cb_no: purchase.cb_no || division.cb_base_no,
+      created_at: division.created_at || purchase.created_at
+    });
+  });
+}
+
 async function loadGallerySource(client) {
+  if (requestedDivisionId) {
+    const exactDivision = await client
+      .from("rr_cb_units")
+      .select("*")
+      .eq("id", requestedDivisionId);
+    if (!exactDivision.error) {
+      return galleryRowsFromDivisions(client, exactDivision.data || []);
+    }
+    console.warn("Exact Cutting child lookup unavailable; using gallery views.", exactDivision.error);
+  }
+
   let productionQuery = client
     .from("rr_product_gallery_production_v719")
     .select("*");
@@ -721,61 +772,7 @@ async function loadGallerySource(client) {
   const divisionResult = await divisionQuery;
   if (divisionResult.error) throw divisionResult.error;
 
-  const purchaseIds = [...new Set((divisionResult.data || []).map(row => row.purchase_id).filter(Boolean))];
-  let purchaseQuery = client.from("rr_fabric_purchases").select("*");
-  if (requestedDivisionId) {
-    if (!purchaseIds.length) return [];
-    purchaseQuery = purchaseQuery.in("id", purchaseIds);
-  }
-  const purchaseResult = await purchaseQuery;
-
-  if (purchaseResult.error) throw purchaseResult.error;
-
-  const purchaseMap = new Map(
-    (purchaseResult.data || []).map(row => [
-      String(row.id),
-      row
-    ])
-  );
-
-  const statusMap = {
-    available: "planning",
-    art_assigned: "ready_for_cutting",
-    material_pending: "material_pending",
-    cutting: "ready_for_cutting",
-    completed: "ready_for_cutting",
-    cancelled: "hold"
-  };
-
-  return (divisionResult.data || []).map(division => {
-    const purchase =
-      purchaseMap.get(String(division.purchase_id)) ||
-      {};
-
-    return normalizeGalleryRow({
-      cb_id: division.purchase_id,
-      division_id: division.id,
-      division_index: division.division_index,
-      division_code: division.cb_code,
-
-      division_status:
-        statusMap[division.status] ||
-        "planning",
-
-      allocated_qty: division.divided_weight,
-      allocated_amount: division.divided_amount,
-      base_qty: division.divided_weight,
-      base_amount: division.divided_amount,
-
-      cb_no:
-        purchase.cb_no ||
-        division.cb_base_no,
-
-      created_at:
-        division.created_at ||
-        purchase.created_at
-    });
-  });
+  return galleryRowsFromDivisions(client, divisionResult.data || []);
 }
 
 async function loadPrintSource(client) {

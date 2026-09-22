@@ -180,16 +180,18 @@ test('E2E-CB-3 is retained RELEASED history across backend, App and Real Chat', 
   await expect(page.locator('#divisionGallery .cm-card')).toHaveCount(1);
   await expect(card).toContainText('E2E-CB-3');
   await expect(card).toContainText(/released/i);
-  await expect(card.locator('[data-single]')).toBeDisabled();
-  await expect(card.locator('[data-multi]')).toBeDisabled();
+  await expect(card.locator('[data-single], [data-multi]')).toHaveCount(0);
+  await expect(card.getByRole('button', { name: 'RELEASED' })).toBeDisabled();
+  await expect(card.getByRole('button', { name: 'HISTORY ONLY' })).toBeDisabled();
   await expect(page.locator('#cmMessage')).toContainText(/history/i);
   expect(dialogMessages).toEqual([]);
 
   await page.reload();
   await expect(card).toBeVisible({ timeout: 30_000 });
   await expect(page.locator('#divisionGallery .cm-card')).toHaveCount(1);
-  await expect(card.locator('[data-single]')).toBeDisabled();
-  await expect(card.locator('[data-multi]')).toBeDisabled();
+  await expect(card.locator('[data-single], [data-multi]')).toHaveCount(0);
+  await expect(card.getByRole('button', { name: 'RELEASED' })).toBeDisabled();
+  await expect(card.getByRole('button', { name: 'HISTORY ONLY' })).toBeDisabled();
   expect(dialogMessages).toEqual([]);
 
   await page.goto('/test70-cb-purchase-real-chat-pilot.html?mode=TEST&rc_status=CLOSE');

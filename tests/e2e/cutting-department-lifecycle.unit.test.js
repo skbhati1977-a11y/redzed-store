@@ -58,6 +58,9 @@ test('Cutting App derives Material Hold and opens exact Art child identity', () 
   assert.match(cutting, /data-art-decision=/);
   assert.match(cutting, /cb_unit_id=\$\{encodeURIComponent\(unitId\)\}/);
   assert.match(cutting, /Material Due — confirm material before Cutting/);
+  const exactLookup = cutting.indexOf('if (requestedDivisionId) {\n    const exactDivision');
+  const productionLookup = cutting.indexOf('let productionQuery = client');
+  assert.ok(exactLookup >= 0 && exactLookup < productionLookup, 'deep links must resolve the exact child before the full gallery view');
 });
 
 test('Art deep link resolves the exact requested child before rendering', () => {
