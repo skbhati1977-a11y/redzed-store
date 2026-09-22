@@ -10,6 +10,11 @@ const migration = fs.readFileSync(
   path.join(root, 'supabase/migrations/20260921153108_test71_mc1_real_chat_canonical_v504.sql'),
   'utf8'
 );
+const lifecycle = fs.readFileSync(
+  path.join(root, 'supabase/migrations/20260922083000_test71_mc1_e2e_lifecycle_v613.sql'),
+  'utf8'
+);
+const browser = fs.readFileSync(path.join(root, 'tests/e2e/mc1-real-chat.spec.js'), 'utf8');
 
 // This static gate runs before the live MC1 browser scenario in TEST71 CI.
 
@@ -51,6 +56,32 @@ test('canonical consumption mirrors its frozen amount into Lot costing once', ()
   assert.match(migration, /'LOT_CONSUMPTION_OUT'/);
 });
 
+test('MC1 status navigation ignores stale async projections', () => {
+  assert.match(chat, /mc1LoadSeq:0/);
+  assert.match(chat, /const seq=\+\+S\.mc1LoadSeq,status=S\.status/);
+  assert.match(chat, /seq!==S\.mc1LoadSeq\|\|status!==S\.status/);
+  assert.match(chat, /p_status:status/);
+});
+
+test('MC1 E2E uses a canonical rollback proof and creates no retry residue', () => {
+  assert.match(lifecycle, /TEST71 E2E Super Admin session required/);
+  assert.match(lifecycle, /pg_advisory_xact_lock/);
+  assert.match(lifecycle, /rr_confirm_mc_purchase_v504/);
+  assert.match(lifecycle, /rr_reserve_lot_matching_v2/);
+  assert.match(lifecycle, /rr_confirm_lot_matching_v2/);
+  assert.match(lifecycle, /rr_upm_final_costing_v308/);
+  assert.match(lifecycle, /rr_mc1_real_chat_queue_v504/);
+  assert.match(lifecycle, /TEST71_MC1_E2E_ROLLBACK/);
+  assert.match(lifecycle, /'fixture_residue',v_residue/);
+  assert.doesNotMatch(lifecycle, /MC1-E2E-179|E2E-FRESH-0[123]|2f9001de/);
+  assert.match(browser, /rr_test_mc1_e2e_invariants_v613/);
+  assert.doesNotMatch(browser, /Date\.now\(\)/);
+  assert.doesNotMatch(browser, /\[data-mc-confirm\][^\n]*\.click/);
+  assert.doesNotMatch(browser, /LOT 2622|p_lot_no: '2622'|2f9001de/);
+  assert.match(browser, /const workingBefore = await rpc/);
+  assert.match(browser, /String\(x\.lot_no\) === String\(consumption\.lot_no\)/);
+});
+
 test('deployed Real Chat loads the MC1 integration asset version', () => {
-  assert.match(html, /test70-real-chat-live-v70\.js\?v=608/);
+  assert.match(html, /test70-real-chat-live-v70\.js\?v=613/);
 });
