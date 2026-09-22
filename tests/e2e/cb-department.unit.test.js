@@ -44,6 +44,10 @@ const workingArtProjection = fs.readFileSync(
   'supabase/migrations/20260922073000_test71_cb_working_art_projection_v611.sql',
   'utf8'
 );
+const proofTimeout = fs.readFileSync(
+  'supabase/migrations/20260922083605_test71_cb_proof_timeout_v614.sql',
+  'utf8'
+);
 const artPage = fs.readFileSync('real-art-decide-master-v9231.js', 'utf8');
 const artHtml = fs.readFileSync('real-art-decide-master.html', 'utf8');
 
@@ -85,6 +89,15 @@ test('one CB supports draft, confirm, late DUE material and rollback proof', () 
   assert.match(workingArtProjection, /rr_pm_decision_status_v802 d on d\.cb_unit_id=u\.id/);
   assert.match(workingArtProjection, /not coalesce\(d\.all_decisions_complete,false\)/);
   assert.doesNotMatch(chat, /real-art-decide-master\.html\?cb_id=/);
+});
+
+test('rollback-only CB proofs have a bounded CI timeout without changing production writers', () => {
+  assert.match(proofTimeout, /alter function public\.rr_test_cb_department_flow_v600\(\)/);
+  assert.match(proofTimeout, /alter function public\.rr_test_cb_open_draft_invariants_v608\(\)/);
+  assert.match(proofTimeout, /alter function public\.rr_test_cb_working_art_v611\(\)/);
+  assert.equal((proofTimeout.match(/set statement_timeout='30s'/g) || []).length, 3);
+  assert.doesNotMatch(proofTimeout, /alter function public\.rr_cb_department_save_v600/);
+  assert.doesNotMatch(proofTimeout, /alter role|set lock_timeout/);
 });
 
 test('WORKING Art actions follow canonical complete status and retries serialize', () => {
