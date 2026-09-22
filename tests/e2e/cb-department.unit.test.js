@@ -112,6 +112,9 @@ test('CB OPEN preserves canonical Qty, Value and exact Roll identity', () => {
 });
 
 test('CB create and Draft retry are backend serialized and identity guarded', () => {
+  assert.match(openDraftInvariants, /rr_fabric_purchases_active_cb_no_v608_uq/);
+  assert.match(openDraftInvariants, /create unique index if not exists/);
+  assert.match(openDraftInvariants, /where upper\(coalesce\(operation_status,'ACTIVE'\)\)='ACTIVE'/);
   assert.match(openDraftInvariants, /rr_guard_cb_number_identity_v608/);
   assert.match(openDraftInvariants, /pg_advisory_xact_lock\(hashtextextended\('RR_CB_NO:'/);
   assert.match(openDraftInvariants, /before insert or update of cb_no,operation_status/);
@@ -129,10 +132,11 @@ test('CB create and Draft retry are backend serialized and identity guarded', ()
 });
 
 test('CB 1004 audit is read-only and mobile messages clear the sticky footer', () => {
-  assert.match(openDraftInvariants, /rr_test_cb_1004_snapshot_v608/);
+  assert.match(openDraftInvariants, /rr_test_cb_snapshot_v608\(p_cb_no text\)/);
+  assert.doesNotMatch(openDraftInvariants, /like '%1004%'/i);
   assert.match(openDraftInvariants, /language plpgsql\s+stable\s+security definer/);
   assert.doesNotMatch(
-    openDraftInvariants.match(/create or replace function public\.rr_test_cb_1004_snapshot_v608\(\)[\s\S]*?\$function\$;/)?.[0] || '',
+    openDraftInvariants.match(/create or replace function public\.rr_test_cb_snapshot_v608\(p_cb_no text\)[\s\S]*?\$function\$;/)?.[0] || '',
     /\b(insert|update|delete)\b/i
   );
   assert.match(form, /calc\(156px \+ env\(safe-area-inset-bottom\)\)/);

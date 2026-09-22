@@ -40,7 +40,7 @@ test('canonical CB draft, confirm, DUE completion and retry proof roll back', as
 });
 
 test('CB 1004 remains read-only while backend and frontend projections agree', async ({ page }) => {
-  const snapshot = await rpc(page, 'rr_test_cb_1004_snapshot_v608');
+  const snapshot = await rpc(page, 'rr_test_cb_snapshot_v608', { p_cb_no: '1004' });
   expect(snapshot.error).toBeNull();
   expect(snapshot.data.read_only).toBe(true);
   expect(snapshot.data.found_count).toBeGreaterThan(0);

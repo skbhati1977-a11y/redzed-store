@@ -5,6 +5,16 @@
 
 begin;
 
+-- One active canonical CB identity. The partial expression index is the final
+-- concurrency backstop; the trigger below adds transaction serialization and a
+-- clear business error without creating a second CB engine.
+create unique index if not exists rr_fabric_purchases_active_cb_no_v608_uq
+  on public.rr_fabric_purchases(
+    (regexp_replace(upper(trim(coalesce(cb_no,''))),'\s+','','g'))
+  )
+  where upper(coalesce(operation_status,'ACTIVE'))='ACTIVE'
+    and trim(coalesce(cb_no,''))<>'';
+
 create or replace function public.rr_guard_cb_number_identity_v608()
 returns trigger
 language plpgsql
@@ -71,9 +81,10 @@ $do$;
 comment on function public.rr_cb_department_save_v600(uuid,uuid,boolean,jsonb) is
   'Canonical same-CB Draft/Confirm/late-DUE mutation; V608 serializes logical action retries before mutation.';
 
--- Read-only evidence for the manual CB 1004 report. It deliberately performs
--- no UPDATE/INSERT/DELETE and is callable only by the reusable TEST E2E owner.
-create or replace function public.rr_test_cb_1004_snapshot_v608()
+-- Parameterized read-only evidence for any reported CB. It deliberately
+-- performs no UPDATE/INSERT/DELETE and is callable only by the reusable TEST
+-- E2E owner. No named CB receives special business behavior.
+create or replace function public.rr_test_cb_snapshot_v608(p_cb_no text)
 returns jsonb
 language plpgsql
 stable
@@ -93,6 +104,9 @@ begin
   limit 1;
   if v_role not in('OWNER','SUPER_ADMIN') or lower(v_name) not like '%test%e2e%' then
     raise exception 'TEST71 E2E Super Admin session required.' using errcode='42501';
+  end if;
+  if nullif(regexp_replace(upper(trim(coalesce(p_cb_no,''))),'\s+','','g'),'') is null then
+    raise exception 'CB No. required.';
   end if;
 
   select coalesce(jsonb_agg(jsonb_build_object(
@@ -136,7 +150,8 @@ begin
   ) order by fp.updated_at desc),'[]'::jsonb)
   into v_rows
   from public.rr_fabric_purchases fp
-  where upper(coalesce(fp.cb_no,'')) like '%1004%';
+  where regexp_replace(upper(trim(coalesce(fp.cb_no,''))),'\s+','','g')
+    =regexp_replace(upper(trim(p_cb_no)),'\s+','','g');
 
   return jsonb_build_object(
     'read_only',true,
@@ -146,8 +161,8 @@ begin
 end
 $function$;
 
-revoke all on function public.rr_test_cb_1004_snapshot_v608() from public,anon;
-grant execute on function public.rr_test_cb_1004_snapshot_v608() to authenticated,service_role;
+revoke all on function public.rr_test_cb_snapshot_v608(text) from public,anon;
+grant execute on function public.rr_test_cb_snapshot_v608(text) to authenticated,service_role;
 
 -- Transactional proof: Roll 1 / Qty 120, Rate 365 and Value 43,800
 -- survive an identical retry plus a second intentional Draft Save. The fixture
@@ -286,8 +301,8 @@ $function$;
 revoke all on function public.rr_test_cb_open_draft_invariants_v608() from public,anon;
 grant execute on function public.rr_test_cb_open_draft_invariants_v608() to authenticated,service_role;
 
-comment on function public.rr_test_cb_1004_snapshot_v608() is
-  'Read-only TEST71 audit of CB 1004 raw purchase/roll values and current frontend projection.';
+comment on function public.rr_test_cb_snapshot_v608(text) is
+  'Parameterized read-only TEST71 audit of raw CB purchase/roll values and current frontend projection.';
 comment on function public.rr_test_cb_open_draft_invariants_v608() is
   'Rollback-only TEST71 proof for exact Qty/Rate/Value, Roll identity and retry idempotency.';
 
