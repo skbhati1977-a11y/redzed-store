@@ -22,7 +22,6 @@ declare
   v_units uuid[];
   v_assignments uuid[];
   v_payload jsonb;
-  v_draft jsonb;
   v_confirm jsonb;
   v_profile public.rr_user_profiles%rowtype;
   v_residue integer:=0;
@@ -82,16 +81,16 @@ begin
     return jsonb_build_object('ok',v_residue=0,'cleaned',true,'fixture_residue',v_residue,'cb_no',v_cb_no);
   end if;
 
-  if v_action<>'SETUP' then raise exception 'Use SETUP or CLEANUP.'; end if;
+  if v_action not in('SETUP','READY') then raise exception 'Use SETUP, READY or CLEANUP.'; end if;
   if v_cb is not null then
     if not exists(select 1 from public.rr_fabric_purchases where id=v_cb and notes=v_marker) then
       raise exception 'V619 setup refused: CB identity collision.' using errcode='23505';
     end if;
   else
+    if v_action='READY' then raise exception 'Run SETUP before READY.'; end if;
     select id into v_regular from public.rr_material_categories
     where lower(category_code)='regular-cloth' and is_active limit 1;
-    select id into v_art from public.rr_art_master where is_active order by created_at,id limit 1;
-    if v_regular is null or v_art is null then raise exception 'V619 requires Regular Cloth and one active Art.'; end if;
+    if v_regular is null then raise exception 'V619 requires Regular Cloth.'; end if;
     v_payload:=jsonb_build_object(
       'cb_no',v_cb_no,'division_count',2,'colour_count',1,'remarks',v_marker,
       'colours',jsonb_build_array(jsonb_build_object(
@@ -105,9 +104,16 @@ begin
       ),
       'materials','[]'::jsonb
     );
-    v_draft:=public.rr_cb_department_save_v600(null,p_fixture_key,false,v_payload);
-    v_cb:=(v_draft->>'cb_id')::uuid;
-    v_confirm:=public.rr_cb_department_save_v600(v_cb,gen_random_uuid(),true,v_payload);
+    v_confirm:=public.rr_cb_department_save_v600(null,p_fixture_key,true,v_payload);
+    v_cb:=(v_confirm->>'cb_id')::uuid;
+    select array_agg(id order by division_index) into v_units
+    from public.rr_cb_units where purchase_id=v_cb and coalesce(is_final,true);
+    if coalesce(array_length(v_units,1),0)<>2 then raise exception 'V619 expected two canonical CB children.'; end if;
+  end if;
+
+  if v_action='READY' then
+    select id into v_art from public.rr_art_master where is_active order by created_at,id limit 1;
+    if v_art is null then raise exception 'V619 requires one active Art.'; end if;
     select array_agg(id order by division_index) into v_units
     from public.rr_cb_units where purchase_id=v_cb and coalesce(is_final,true);
     if coalesce(array_length(v_units,1),0)<>2 then raise exception 'V619 expected two canonical CB children.'; end if;
@@ -132,7 +138,7 @@ revoke all on function public.rr_test_cb_ui_fixture_v619(text,uuid) from public,
 grant execute on function public.rr_test_cb_ui_fixture_v619(text,uuid) to authenticated,service_role;
 
 comment on function public.rr_test_cb_ui_fixture_v619(text,uuid) is
-  'Dedicated TEST71 E2E fixture: canonical two-child CB setup (one Art due, one Cutting ready), idempotent UUID namespace, and exact marker-guarded cleanup.';
+  'Dedicated TEST71 E2E fixture: phased canonical two-child CB setup/ready actions, idempotent UUID namespace, and exact marker-guarded cleanup.';
 
 notify pgrst,'reload schema';
 commit;

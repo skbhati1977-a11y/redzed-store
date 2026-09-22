@@ -60,6 +60,10 @@ const uiFixtureCleanup = fs.readFileSync(
   'supabase/migrations/20260922203500_test71_cb_ui_fixture_cleanup_v620.sql',
   'utf8'
 );
+const uiFixturePhases = fs.readFileSync(
+  'supabase/migrations/20260922204000_test71_cb_ui_fixture_phases_v621.sql',
+  'utf8'
+);
 const artPage = fs.readFileSync('real-art-decide-master-v9231.js', 'utf8');
 const artHtml = fs.readFileSync('real-art-decide-master.html', 'utf8');
 
@@ -145,10 +149,14 @@ test('mobile CB proof fixture is uniquely addressed, canonical and exactly rever
   assert.match(uiFixture, /p_fixture_key uuid/);
   assert.match(uiFixture, /rr_cb_department_save_v600/);
   assert.match(uiFixture, /rr_pm_save_decision_bundle_v804/);
+  assert.match(uiFixture, /v_action='READY'/);
+  assert.doesNotMatch(uiFixture, /rr_cb_department_save_v600\(v_cb,gen_random_uuid\(\),true/);
   assert.match(uiFixture, /V619 cleanup refused: fixture marker mismatch/);
   assert.match(uiFixture, /rr_cb_material_allocations/);
   assert.match(uiFixture, /fixture_residue/);
   assert.match(uiFixtureCleanup, /delete from public\.rr_cb_material_allocations/);
+  assert.match(uiFixturePhases, /phased canonical writes/);
+  assert.match(uiFixturePhases, /Run SETUP before READY/);
   assert.doesNotMatch(uiFixture, /CB111TST|CBTST11|CB4TST|CB1TSTY|CB1MTC|1002|TST1/);
 });
 

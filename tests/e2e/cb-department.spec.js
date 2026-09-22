@@ -123,13 +123,13 @@ test('the seven read-only evidence CBs no longer remain in CB WORKING and mobile
 
 test('deployed mobile Art picker retains image/no-name records without mutating evidence', async ({ page }) => {
   const key = randomUUID();
-  const fixture = await rpc(page, 'rr_test_cb_ui_fixture_v619', { p_action: 'SETUP', p_fixture_key: key });
-  expect(fixture.error).toBeNull();
-  const retry = await rpc(page, 'rr_test_cb_ui_fixture_v619', { p_action: 'SETUP', p_fixture_key: key });
-  expect(retry.error).toBeNull();
-  expect(retry.data.art_due_unit_id).toBe(fixture.data.art_due_unit_id);
-  expect(retry.data.fixture_rows).toBe(1);
   try {
+    const fixture = await rpc(page, 'rr_test_cb_ui_fixture_v619', { p_action: 'SETUP', p_fixture_key: key });
+    expect(fixture.error).toBeNull();
+    const retry = await rpc(page, 'rr_test_cb_ui_fixture_v619', { p_action: 'SETUP', p_fixture_key: key });
+    expect(retry.error).toBeNull();
+    expect(retry.data.art_due_unit_id).toBe(fixture.data.art_due_unit_id);
+    expect(retry.data.fixture_rows).toBe(1);
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto(`/real-art-decide-master.html?mode=TEST&cb_unit_id=${encodeURIComponent(fixture.data.art_due_unit_id)}&v=619`);
     await expect(page.locator('#decisionSheet')).not.toHaveClass(/hidden/, { timeout: 30_000 });
@@ -351,11 +351,13 @@ test('TTT1-S2 read-only evidence is CLOSE and cannot resurrect a multi-art actio
 
 test('mobile Cutting App opens exact Art child and Ready child remains WORKING after reload', async ({ page }) => {
   const key = randomUUID();
-  const fixture = await rpc(page, 'rr_test_cb_ui_fixture_v619', { p_action: 'SETUP', p_fixture_key: key });
-  expect(fixture.error).toBeNull();
-  expect(fixture.data.art_due_lifecycle.state).toBe('ART_DUE');
-  expect(fixture.data.ready_lifecycle.state).toBe('READY_FOR_CUTTING');
   try {
+    const setup = await rpc(page, 'rr_test_cb_ui_fixture_v619', { p_action: 'SETUP', p_fixture_key: key });
+    expect(setup.error).toBeNull();
+    const fixture = await rpc(page, 'rr_test_cb_ui_fixture_v619', { p_action: 'READY', p_fixture_key: key });
+    expect(fixture.error).toBeNull();
+    expect(fixture.data.art_due_lifecycle.state).toBe('ART_DUE');
+    expect(fixture.data.ready_lifecycle.state).toBe('READY_FOR_CUTTING');
     const rows = { artDue: fixture.data.art_due_unit_id, ready: fixture.data.ready_unit_id };
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto(`/real-cutting-master.html?mode=TEST&cb_unit_id=${encodeURIComponent(rows.artDue)}&v=619`);
