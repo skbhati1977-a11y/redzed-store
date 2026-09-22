@@ -115,6 +115,7 @@ test('mobile Sales, Costing and Accounts group projections stay inside viewport'
     const group = page.locator(`[data-dept-group="${department}"]`);
     await expect(group).toBeVisible();
     await group.evaluate((button) => button.click());
+    await expect(page).toHaveURL(new RegExp(`rc_view=chat.*rc_id=${department}`));
     await expect(page.locator('#messages')).toBeVisible();
     await expect(page.locator('#messages')).not.toContainText(/undefined|parallel engine/i);
     const width = await page.evaluate(() => ({ body: document.body.scrollWidth, viewport: document.documentElement.clientWidth }));
@@ -139,6 +140,27 @@ test('released D-card succeeds once, closes action state and rolls its fixture b
 });
 
 test('E2E-CB-3 is retained RELEASED history across backend, App and Real Chat', async ({ page }) => {
+  const mirror = await rpc(page, 'rr_test_real_chat_state_mirror_v624');
+  expect(mirror.error).toBeNull();
+  expect(mirror.data).toMatchObject({ ok: true });
+  expect(mirror.data.original_case).toMatchObject({
+    envelope_state: 'CLOSE',
+    personal_state: 'CLOSE',
+    group_state: 'CLOSE',
+    personal_next_actions: [],
+    group_next_actions: []
+  });
+  expect(mirror.data.future_close).toMatchObject({
+    canonical_state: 'CLOSE',
+    next_actions: []
+  });
+  expect(mirror.data.future_close).not.toHaveProperty('action_href');
+  expect(mirror.data.future_close).not.toHaveProperty('action_engine');
+  expect(mirror.data.future_working).toMatchObject({
+    canonical_state: 'WORKING',
+    next_actions: [{ code: 'SUBMIT' }]
+  });
+
   const snapshot = await e2eDcardSnapshot(page);
   expect(snapshot.errors).toEqual([]);
   expect(snapshot.gallery).toMatchObject({

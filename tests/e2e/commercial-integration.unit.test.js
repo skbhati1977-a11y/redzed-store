@@ -10,6 +10,10 @@ const sql = [
 const chat = fs.readFileSync('test70-real-chat-live-v70.js', 'utf8');
 const pi = fs.readFileSync('real-pi-specimen-v9514.js', 'utf8');
 const rci = fs.readFileSync('real-rci-v9740.js', 'utf8');
+const stateMirror = fs.readFileSync(
+  'supabase/migrations/20260922224500_test71_real_chat_state_mirror_v624.sql',
+  'utf8'
+);
 
 test('commercial bridge projects existing canonical engines', () => {
   for (const name of ['rr_sales_real_chat_queue_v500', 'rr_costing_real_chat_queue_v500', 'rr_accounts_real_chat_home_v500']) {
@@ -52,4 +56,18 @@ test('costing projection carries context and excludes private cost payload', () 
   }
   assert.match(sql, /'private_cost_included',false/);
   assert.doesNotMatch(chat.match(/async function openCommercialChat[\s\S]+?async function openChat/)?.[0] || '', /owner_margin|base_cost_per_pc|team_salary|material_breakdown/);
+});
+
+test('Real Chat route and lifecycle state survive reload without stale cross-department context', () => {
+  assert.match(chat, /function pushCurrentView\(state=currentViewState\(\)\)/);
+  assert.match(chat, /history\.pushState\(state,'',viewUrl\(state\.status\|\|S\.status\)\)/);
+  assert.match(chat, /const resumeState=initialState/);
+  assert.doesNotMatch(chat, /requestedView==='chat'\?initialState:\(history\.state\|\|initialState\)/);
+  assert.match(stateMirror, /rr_real_chat_state_payload_v624/);
+  assert.match(stateMirror, /'personal_payload',public\.rr_real_chat_state_payload_v624/);
+  assert.match(stateMirror, /'group_payload',public\.rr_real_chat_state_payload_v624/);
+  assert.match(stateMirror, /then[\s\S]*-'action_href'-'action_engine'-'next_actions'/);
+  assert.match(stateMirror, /rr_real_chat_redact_v401\(v_synced\)/);
+  assert.match(stateMirror, /rr_test_real_chat_state_mirror_v624/);
+  assert.doesNotMatch(stateMirror, /update public\.rr_real_chat_message_bridge_v70/i);
 });
