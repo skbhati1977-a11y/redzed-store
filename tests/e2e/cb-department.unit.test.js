@@ -36,6 +36,10 @@ const openDraftProof = fs.readFileSync(
   'supabase/migrations/20260922064000_test71_cb_open_draft_proof_v609.sql',
   'utf8'
 );
+const materialUnitSelection = fs.readFileSync(
+  'supabase/migrations/20260922070000_test71_cb_material_unit_selection_v610.sql',
+  'utf8'
+);
 
 test('CB Department extends the existing canonical engines', () => {
   assert.match(migration, /alter table public\.rr_fabric_purchases/);
@@ -53,7 +57,10 @@ test('material unit and requirement states are backend authoritative', () => {
   assert.match(migration, /set unit='roll'/);
   assert.match(migration, /Cutting-blocking DUE Material must be confirmed first/);
   assert.match(form, /DUE Qty blank/);
-  assert.match(form, /DEFINE IN MATERIAL MASTER/);
+  assert.match(form, /class="unitSelect"/);
+  assert.match(form, /rr_unit_master_list_v606/);
+  assert.match(materialUnitSelection, /rr_unit_require_code_v606/);
+  assert.match(materialUnitSelection, /nullif\(entry_row->>'unit',''\),nullif\(cat\.unit,''\),'PCS'/);
 });
 
 test('one CB supports draft, confirm, late DUE material and rollback proof', () => {
@@ -111,7 +118,7 @@ test('CB OPEN preserves canonical Qty, Value and exact Roll identity', () => {
   assert.match(form, /ri=Number\(x\.roll_no\)-1/);
   assert.match(form, /qtySource:'manual'/);
   assert.match(form, /Purchase Qty \*/);
-  assert.match(form, /m\.type==='regular'\?\(q>0&&r>0\?q\*r:0\)/);
+  assert.match(form, /return q>0&&r>0\?q\*r:0/);
   assert.match(form, /window\.__CB_DEPARTMENT_TEST__=\{draftInvariantPreview,hydrateRegularRolls,showMessage:setMessage\}/);
 });
 

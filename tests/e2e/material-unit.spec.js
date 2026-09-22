@@ -25,27 +25,45 @@ test('deployed Unit dropdown, creation, Material persistence, CB mirror and Work
 
   try {
     await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto('/real-material-master-v805.html?mode=TEST&v=607');
-    await expect(page.locator('#who')).toContainText(/Super Admin|OWNER/i, { timeout: 30_000 });
-    await page.locator('#type').selectOption('OTHER_MATERIAL');
+    await page.goto('/real-cb-new-v9130-fix2.html?mode=TEST&v=610');
+    await expect(page.locator('#bootMsg')).toBeHidden({ timeout: 30_000 });
     await page.locator('#addMaterial').click();
-    await expect(page.locator('#materialModal')).toBeVisible();
-    await expect(page.locator('#newPurchaseUnit')).toHaveValue('PCS');
+    const material = page.locator('#materialList [data-m="1"]');
+    await expect(material.locator('.unitSelect')).toHaveValue('PCS');
+    await material.locator('.newMaterial').click();
+    await expect(page.locator('#cbMaterialModal')).toBeVisible();
+    await expect(page.locator('#cbNewPurchaseUnit')).toHaveValue('PCS');
 
-    await page.locator('#newPurchaseUnit').selectOption('__NEW_UNIT__');
-    await expect(page.locator('#unitModal')).toBeVisible();
-    await page.locator('#newUnitName').fill(unitName);
+    await page.locator('#cbNewPurchaseUnit').selectOption('__NEW_UNIT__');
+    await expect(page.locator('#cbUnitModal')).toBeVisible();
+    await page.locator('#cbNewUnitName').fill(unitName);
     // Unit Code is canonically normalized from Unit Name. Re-entering it here
     // races the app-wide mobile fill helper and does not model the user flow.
-    await expect(page.locator('#newUnitCode')).toHaveValue(unitCode);
-    await page.locator('#saveNewUnit').click();
-    await expect(page.locator('#unitModal')).toBeHidden({ timeout: 15_000 });
-    await expect(page.locator('#newPurchaseUnit')).toHaveValue(unitCode);
-    await page.locator('#newStockUnit').selectOption(unitCode);
-    await page.locator('#newConsumptionUnit').selectOption(unitCode);
-    await page.locator('#newMaterialName').fill(materialName);
-    await page.locator('#saveNewMaterial').click();
-    await expect(page.locator('#materialModal')).toBeHidden({ timeout: 20_000 });
+    await expect(page.locator('#cbNewUnitCode')).toHaveValue(unitCode);
+    await page.locator('#saveCbUnit').click();
+    await expect(page.locator('#cbUnitModal')).toBeHidden({ timeout: 15_000 });
+    await expect(page.locator('#cbNewPurchaseUnit')).toHaveValue(unitCode);
+    await page.locator('#cbNewStockUnit').selectOption(unitCode);
+    await page.locator('#cbNewConsumptionUnit').selectOption(unitCode);
+    await page.locator('#cbNewMaterialName').fill(materialName);
+    await page.locator('#saveCbMaterial').click();
+    await expect(page.locator('#cbMaterialModal')).toBeHidden({ timeout: 20_000 });
+    await expect(material.locator('.cat')).toHaveValue(/.+/);
+    await expect(material.locator('.unitSelect')).toHaveValue(unitCode);
+
+    const materialArgs = {
+      p_type_code: 'OTHER_MATERIAL', p_material_name: materialName, p_material_no: null,
+      p_purchase_unit: unitCode, p_stock_unit: unitCode, p_purchase_to_stock: 1,
+      p_consumption_unit: unitCode, p_consumption_to_stock: 1,
+      p_consumption_basis: 'MANUAL', p_consumption_per_good_piece: null,
+      p_auto_consumption_event: null, p_preferred_supplier_ledger_id: null,
+      p_applicable_to: { source: 'CB_DEPARTMENT_E2E' }
+    };
+    const materialRetry1 = await rpc(page, 'rr_material_create_v805_31', materialArgs);
+    const materialRetry2 = await rpc(page, 'rr_material_create_v805_31', materialArgs);
+    expect(materialRetry1.error).toBeNull();
+    expect(materialRetry2.error).toBeNull();
+    expect(materialRetry2.data).toBe(materialRetry1.data);
 
     // Retry/double-tap and close spelling both resolve safely to existing Units.
     const retry = await rpc(page, 'rr_unit_master_create_v606', { p_unit_name: unitName, p_unit_code: unitCode });
@@ -57,28 +75,34 @@ test('deployed Unit dropdown, creation, Material persistence, CB mirror and Work
     expect(alias.data).toMatchObject({ created: false, existing_match: true });
     expect(alias.data.unit.unit_code).toBe('MTR');
 
-    // Reload proves exact canonical persistence, not transient select state.
-    await page.reload();
+    // The existing Material Master reads the same canonical identity after reload.
+    await page.goto('/real-material-master-v805.html?mode=TEST&v=610');
+    await expect(page.locator('#who')).toContainText(/Super Admin|OWNER/i, { timeout: 30_000 });
     await page.locator('#type').selectOption('OTHER_MATERIAL');
     await page.locator('#name').fill(materialName);
     await expect(page.locator('#suggestions .suggestion')).toHaveCount(1, { timeout: 15_000 });
     await page.locator('#suggestions .suggestion').first().click();
     await expect(page.locator('#purchaseUnit')).toHaveValue(unitCode);
 
-    // CB reads the linked category projection and keeps Unit read-only while Qty changes.
-    await page.goto('/real-cb-new-v9130-fix2.html?mode=TEST&v=607');
+    // A fresh CB projection reads the linked category and allows an authorized Unit override.
+    await page.goto('/real-cb-new-v9130-fix2.html?mode=TEST&v=610');
     await expect(page.locator('#bootMsg')).toBeHidden({ timeout: 30_000 });
     await page.locator('#addMaterial').click();
-    const material = page.locator('#materialList [data-m="1"]');
-    await material.locator('.cat').selectOption({ label: materialName });
-    await expect(material.locator('.unit-readonly')).toHaveValue(unitCode);
-    await material.locator('.reqState').selectOption('CONFIRMED');
-    await material.locator('.materialQty').fill('250');
-    await expect(material.locator('.materialQty')).toHaveValue('250');
-    await expect(material.locator('.unit-readonly')).toHaveValue(unitCode);
+    const freshMaterial = page.locator('#materialList [data-m="1"]');
+    await freshMaterial.locator('.cat').selectOption({ label: materialName });
+    await expect(freshMaterial.locator('.unitSelect')).toHaveValue(unitCode);
+    await freshMaterial.locator('.reqState').selectOption('DUE');
+    await expect(freshMaterial.locator('.materialQty')).toHaveValue('');
+
+    const backendProof = await rpc(page, 'rr_test_cb_material_unit_v610');
+    expect(backendProof.error).toBeNull();
+    expect(backendProof.data).toMatchObject({
+      exact_invariant: true, rolled_back: true, fixture_residue: 0,
+      additional_unit: 'MTR', additional_state: 'DUE', same_action_audits: 1
+    });
 
     // Real Chat renderer uses the same unit field without a second selector.
-    await page.goto('/test70-cb-purchase-real-chat-pilot.html?mode=TEST&v=607');
+    await page.goto('/test70-cb-purchase-real-chat-pilot.html?mode=TEST&v=610');
     await page.waitForFunction(() => typeof window.__TEST70_REAL_CHAT__?.renderCbDepartmentCard === 'function');
     const rendered = await page.evaluate(({ materialName, unitCode }) => window.__TEST70_REAL_CHAT__.renderCbDepartmentCard({
       source_status: 'WORKING', cb_no: 'TEST71-UNIT', quantity: 1, materials: [

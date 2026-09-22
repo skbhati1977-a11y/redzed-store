@@ -6,6 +6,10 @@ const migration = fs.readFileSync(
   'supabase/migrations/20260921175214_test71_canonical_material_unit_master_v606.sql',
   'utf8'
 );
+const cbSelection = fs.readFileSync(
+  'supabase/migrations/20260922070000_test71_cb_material_unit_selection_v610.sql',
+  'utf8'
+);
 const html = fs.readFileSync('real-material-master-v805.html', 'utf8');
 const app = fs.readFileSync('real-material-master-v805.js', 'utf8');
 const cb = fs.readFileSync('real-cb-new-v9130-fix2.html', 'utf8');
@@ -41,13 +45,17 @@ test('duplicates, authority and retries are protected in backend', () => {
   assert.match(migration, /exception when unique_violation/);
 });
 
-test('Material purchase Unit is the linked CB and Real Chat Unit', () => {
+test('Material purchase Unit is selectable in CB and remains the Real Chat Unit', () => {
   assert.match(migration, /material_master_id uuid references public\.rr_material_master_v805/);
   assert.match(migration, /rr_sync_material_category_unit_v606/);
   assert.match(migration, /new\.purchase_unit/);
   assert.match(migration, /rr_cb_department_save_v600/);
-  assert.match(cb, /categoryFor\(m\)\?\.unit/);
-  assert.match(cb, /unit-readonly/);
+  assert.match(cb, /class="unitSelect"/);
+  assert.match(cb, /id="cbMaterialModal"/);
+  assert.match(cb, /id="cbUnitModal"/);
+  assert.match(cb, /rr_material_create_v805_31/);
+  assert.match(cb, /rr_unit_master_create_v606/);
+  assert.match(cbSelection, /nullif\(entry_row->>'unit',''\),nullif\(cat\.unit,''\),'PCS'/);
+  assert.match(cbSelection, /RR_MATERIAL:/);
   assert.match(chat, /safe\(m\.unit\|\|'UNIT DUE'\)/);
 });
-
