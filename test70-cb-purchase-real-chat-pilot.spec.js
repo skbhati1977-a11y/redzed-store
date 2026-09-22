@@ -103,9 +103,10 @@ for(const text of ["function purchaseChildren","CB CHILDREN","Ready for Cutting"
 for(const text of ["function childStatus","function historyStatuses","historyInStatus(b,status)","filter(x=>childStatus(x)===status)"])assert.ok(js.includes(text),`Missing mixed-child tab projection: ${text}`);
 for(const text of ["data-chat-status=\"OPEN\"","data-chat-status=\"WORKING\"","data-chat-status=\"CLOSE\"","function changeStatus","chatClose"])assert.ok(js.includes(text)||html.includes(text),`Missing in-chat lifecycle navigation: ${text}`);
 const cbNew=fs.readFileSync("real-cb-new-v9130-fix2.html","utf8"),cutting=fs.readFileSync("real-cutting-master-pm.V719.3.js","utf8"),returnHelper=fs.readFileSync("test70-action-return-v110.js","utf8");
-for(const text of ["test70-action-return-v110.js?v=618","RRActionReturn?.hasReturn()","RRActionReturn.success({status:returnStatus,focus})"])assert.ok(cbNew.includes(text),`Missing exact CB Purchase action return: ${text}`);
+for(const text of ["test70-action-return-v110.js?v=626","RRActionReturn?.hasReturn()","RRActionReturn.success({status:returnStatus,focus})"])assert.ok(cbNew.includes(text),`Missing exact CB Purchase action return: ${text}`);
 for(const text of ["RRActionReturn?.hasReturn()","RRActionReturn.success()","openLotByDivision(requestedDivisionId, requestedMode)"])assert.ok(cutting.includes(text),`Missing exact Cutting action return: ${text}`);
-for(const text of ["success_return","target(\"return\")","location.replace(url)"])assert.ok(returnHelper.includes(text),`Missing shared exact-return contract: ${text}`);
+for(const text of ["success_return","initialParams","successTarget||returnTarget","location.replace(url)"])assert.ok(returnHelper.includes(text),`Missing shared exact-return contract: ${text}`);
+assert.ok(returnHelper.includes('const embedded=window.parent!==window&&initialParams.get("embed")==="1"'),"Embedded return mode must survive action-form replaceState");
 for(const text of ["cardsStatus","load(true)","loadSeq","hydrateCache","sessionStorage","status===S.cardsStatus"])assert.ok(js.includes(text),`Missing V109 fast-loading contract: ${text}`);
 assert.ok(!js.includes("Promise.all([rpc('rr_real_chat_sync_upm_history_v71')"),"Full historical reconciliation must not run on page boot");
 for(const text of ["allNext=resolvedActions.length?resolvedActions:arr(p.next_actions)","next.length?next","source_status:isPurchase?status"])assert.ok(js.includes(text),`Missing exact multi-action renderer: ${text}`);

@@ -235,15 +235,16 @@ async function retrySave(page, body, expectedId) {
   expect(retry.data.duplicate_blocked).toBe(true);
 }
 
-async function draftAuditCount(page, cbId) {
-  return page.evaluate(async (id) => {
-    const rows = await window.supabaseClient.from('rr_cb_department_audit_v600')
-      .select('id')
-      .eq('cb_id', id)
-      .eq('action_code', 'DRAFT_SAVE');
-    if (rows.error) throw new Error(rows.error.message);
-    return (rows.data || []).length;
-  }, cbId);
+async function proofSnapshot(page, cbNo) {
+  const result = await rpc(page, 'rr_test_cb_snapshot_v608', { p_cb_no: cbNo });
+  if (result.error) throw new Error(result.error.message);
+  if (result.data?.found_count !== 1) throw new Error(`Expected one canonical CB proof row for ${cbNo}`);
+  return result.data.rows[0];
+}
+
+async function draftAuditCount(page, cbNo) {
+  const snapshot = await proofSnapshot(page, cbNo);
+  return (snapshot.audit || []).filter((row) => row.action_code === 'DRAFT_SAVE').length;
 }
 
 async function createAndConfirm(page, fixture) {
@@ -260,7 +261,7 @@ async function createAndConfirm(page, fixture) {
     await assertDraftInvariants(form, fixture);
   }
 
-  let draftCount = cbId ? await draftAuditCount(page, cbId) : 0;
+  let draftCount = cbId ? await draftAuditCount(page, fixture.cbNo) : 0;
   while (draftCount < 2) {
     const draftBody = await saveForm(page, form, false);
     const snapshot = await lookupCb(page, fixture.cbNo);
@@ -270,7 +271,7 @@ async function createAndConfirm(page, fixture) {
     const card = await assertSameCardFocus(page, fixture.cbNo);
     await expect(card).toContainText('CB Status OPEN');
     await retrySave(page, draftBody, cbId);
-    draftCount = await draftAuditCount(page, cbId);
+    draftCount = await draftAuditCount(page, fixture.cbNo);
     if (draftCount < 2) {
       form = await openCbEdit(page, fixture.cbNo, 'OPEN');
       await assertDraftInvariants(form, fixture);
@@ -295,22 +296,21 @@ async function createAndConfirm(page, fixture) {
 }
 
 async function canonicalSnapshot(page, cbNo) {
-  return page.evaluate(async (name) => {
-    const purchase = await window.supabaseClient.from('rr_fabric_purchases')
-      .select('id,cb_no,cb_department_state,operation_status,status,total_weight,total_amount')
-      .eq('cb_no', name);
-    if (purchase.error) throw new Error(purchase.error.message);
-    const row = purchase.data?.[0];
-    if (!row) throw new Error(`CB not found: ${name}`);
-    const [detail, units, audit] = await Promise.all([
-      window.supabaseClient.rpc('rr_cb_department_detail_v600', { p_cb_id: row.id }),
-      window.supabaseClient.from('rr_cb_units').select('id,cb_code,division_index,status,operation_status').eq('purchase_id', row.id).order('division_index'),
-      window.supabaseClient.from('rr_cb_department_audit_v600').select('id,action_id,action_code,previous_state,new_state,actual_actor_id,effective_actor_id,effective_name,effective_role,created_at').eq('cb_id', row.id).order('created_at')
-    ]);
-    const error = detail.error || units.error || audit.error;
-    if (error) throw new Error(error.message);
-    return { purchase: row, detail: detail.data, units: units.data || [], audit: audit.data || [] };
-  }, cbNo);
+  const row = await proofSnapshot(page, cbNo);
+  return {
+    purchase: {
+      id: row.cb_id,
+      cb_no: row.cb_no,
+      cb_department_state: row.department_state,
+      operation_status: row.operation_status,
+      status: row.status,
+      total_weight: row.total_weight,
+      total_amount: row.total_amount
+    },
+    detail: row.frontend_detail,
+    units: row.units || [],
+    audit: row.audit || []
+  };
 }
 
 test('three new TEST71 CBs complete deployed New/Open/Draft/Confirm invariants', async ({ page }, testInfo) => {
