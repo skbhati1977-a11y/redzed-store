@@ -46,7 +46,7 @@ function getClient(){
   return [window.supabaseDb,window.redzedSupabase,window.sb].find(x=>x?.from)||null
 }
 async function waitForClient(){const started=Date.now();while(Date.now()-started<12000){const c=getClient();if(c)return c;await new Promise(r=>setTimeout(r,100))}return null}
-async function loadRole(){const r=await state.client.rpc("rr_current_role");if(!r.error&&r.data){state.role=String(r.data).toLowerCase();return}if(window.RR?.requireOwner){await RR.requireOwner();state.role="owner";return}throw new Error(`User role could not be verified: ${textError(r.error)}`)}
+async function loadRole(){const r=await state.client.rpc("rr_upm_effective_identity_v200");if(r.error)throw new Error(`Effective role could not be verified: ${textError(r.error)}`);state.role=String(r.data?.role_code||r.data?.resolved_role||"").toUpperCase();if(!state.role)throw new Error("Effective role could not be verified.")}
 async function currentDataMode(){try{const r=await state.client.rpc("rr_app_data_mode_state_v786");if(!r.error&&r.data?.default_mode)return String(r.data.default_mode).toUpperCase()}catch(_e){}return "TEST"}
 async function rows(table){const r=await state.client.from(table).select("*");if(r.error)throw new Error(`${table}: ${textError(r.error)}`);return r.data||[]}
 async function optionalRows(table){try{return await rows(table)}catch(e){console.warn(e);return[]}}
@@ -152,10 +152,10 @@ function itemImage(kind,row){
   return row.image_url||mediaImage("metal_id_master_v803",row.id)
 }
 function previewMeta(kind,row){
-  if(kind==="art")return{no:row?.art_no||row?.art_code||"ART",name:row?.product_name||row?.item_name||row?.description||"Art"};
-  if(kind==="print")return{no:row?.print_no||row?.print_code||"PRINT",name:row?.print_name||row?.short_note||"Print"};
-  if(kind==="sticker")return{no:row?.sticker_no||"STICKER",name:[row?.sticker_name,row?.sticker_quality].filter(Boolean).join(" · ")||"Sticker"};
-  return{no:row?.metal_id_no||"METAL ID",name:[row?.metal_id_name,row?.id_size].filter(Boolean).join(" · ")||"Metal ID"}
+  if(kind==="art")return{no:row?.art_no||row?.art_code||row?.id||"ART",name:row?.product_name||row?.item_name||row?.description||"No Name"};
+  if(kind==="print")return{no:row?.print_no||row?.print_code||row?.id||"PRINT",name:row?.print_name||row?.short_note||"No Name"};
+  if(kind==="sticker")return{no:row?.sticker_no||row?.id||"STICKER",name:[row?.sticker_name,row?.sticker_quality].filter(Boolean).join(" · ")||"No Name"};
+  return{no:row?.metal_id_no||row?.id||"METAL ID",name:[row?.metal_id_name,row?.id_size].filter(Boolean).join(" · ")||"No Name"}
 }
 function decisionPreview(unitId){
   const a=assignmentFor(unitId);
@@ -245,10 +245,10 @@ function closeDecision(){if(!$("masterSheet").classList.contains("hidden"))retur
 function currentMode(){return state.step==="print"?state.printMode:state.step==="sticker"?state.stickerMode:state.step==="metal"?state.metalMode:null}
 function setMode(mode){if(state.step==="print"){state.printMode=mode;if(mode!=="SELECTED")state.printIds=[]}else if(state.step==="sticker"){state.stickerMode=mode;if(mode!=="SELECTED")state.stickerIds=[]}else if(state.step==="metal"){state.metalMode=mode;if(mode!=="SELECTED")state.metalIds=[]}renderPicker()}
 function itemMeta(step,row){
-  if(step==="art")return{id:row.id,no:row.art_no||row.art_code||"ART",name:row.product_name||row.item_name||row.description||"Art"};
-  if(step==="print")return{id:row.id,no:row.print_no||row.print_code||"PRINT",name:row.print_name||row.short_note||"Print"};
-  if(step==="sticker")return{id:row.id,no:row.sticker_no||"STICKER",name:[row.sticker_name,row.sticker_quality].filter(Boolean).join(" · ")||"Sticker"};
-  return{id:row.id,no:row.metal_id_no||"METAL ID",name:[row.metal_id_name,row.id_size].filter(Boolean).join(" · ")||"Metal ID"}
+  if(step==="art")return{id:row.id,no:row.art_no||row.art_code||row.id||"ART",name:row.product_name||row.item_name||row.description||"No Name"};
+  if(step==="print")return{id:row.id,no:row.print_no||row.print_code||row.id||"PRINT",name:row.print_name||row.short_note||"No Name"};
+  if(step==="sticker")return{id:row.id,no:row.sticker_no||row.id||"STICKER",name:[row.sticker_name,row.sticker_quality].filter(Boolean).join(" · ")||"No Name"};
+  return{id:row.id,no:row.metal_id_no||row.id||"METAL ID",name:[row.metal_id_name,row.id_size].filter(Boolean).join(" · ")||"No Name"}
 }
 function sourceForStep(step=state.step){return step==="art"?state.arts:step==="print"?state.prints:step==="sticker"?state.stickers:state.metals}
 function selectedIds(){return state.step==="print"?state.printIds:state.step==="sticker"?state.stickerIds:state.metalIds}
@@ -260,7 +260,7 @@ function renderPicker(){
   let list=sourceForStep();if(step!=="art"&&currentMode()!=="SELECTED")list=[];
   list=list.filter(row=>{const m=itemMeta(step,row);return !q||`${m.no} ${m.name}`.toLowerCase().includes(q)});
   const selected=selectedIds();
-  $("picker").innerHTML=list.map(row=>{const m=itemMeta(step,row),on=step==="art"?String(state.artId)===String(m.id):selected.includes(String(m.id));return `<button class="pick ${on?"selected":""}" type="button" data-pick="${esc(m.id)}"><strong>${esc(m.no)}</strong><small>${esc(m.name)}</small></button>`}).join("")||`<article class="empty" style="padding:22px"><p>${step!=="art"&&currentMode()!=="SELECTED"?"N.A. / DUE selected. Continue karein.":"No matching master found. + Add New use kar sakte hain."}</p></article>`;
+  $("picker").innerHTML=list.map(row=>{const m=itemMeta(step,row),on=step==="art"?String(state.artId)===String(m.id):selected.includes(String(m.id)),image=itemImage(step,row);return `<button class="pick ${on?"selected":""}" type="button" data-pick="${esc(m.id)}"><span class="pick-media">${image?`<img src="${esc(image)}" alt="${esc(`${m.no} thumbnail`)}" loading="lazy">`:`<span>NO IMAGE</span>`}</span><span class="pick-copy"><strong>${esc(m.no)}</strong><small>${esc(m.name)}</small></span></button>`}).join("")||`<article class="empty" style="padding:22px"><p>${step!=="art"&&currentMode()!=="SELECTED"?"N.A. / DUE selected. Continue karein.":"No matching master found. + Add New use kar sakte hain."}</p></article>`;
   $("picker").querySelectorAll("[data-pick]").forEach(b=>b.onclick=()=>togglePick(b.dataset.pick))
 }
 function togglePick(id){id=String(id);if(state.step==="art")state.artId=id;else if(state.step==="print"){state.printMode="SELECTED";state.printIds=state.printIds.includes(id)?state.printIds.filter(x=>x!==id):[...state.printIds,id]}else if(state.step==="sticker"){state.stickerMode="SELECTED";state.stickerIds=state.stickerIds.includes(id)?state.stickerIds.filter(x=>x!==id):[...state.stickerIds,id]}else{state.metalMode="SELECTED";state.metalIds=state.metalIds.includes(id)?state.metalIds.filter(x=>x!==id):[...state.metalIds,id]}renderPicker()}
@@ -355,6 +355,6 @@ function bind(){
     else if(!$("decisionSheet").classList.contains("hidden"))closeDecision()
   })
 }
-async function boot(){try{state.client=await waitForClient();if(!state.client)throw new Error("Supabase client unavailable.");await loadRole();if(!["owner","admin"].includes(state.role))throw new Error("Art Decide Master requires Owner/Admin role.");bind();await loadData();const requested=new URLSearchParams(location.search).get("cb_unit_id");if(requested&&unitFor(requested))openDecision(requested)}catch(e){console.error(e);$("gallery").innerHTML=`<article class="empty"><h3>Art Decide Master start failed</h3><p>${esc(textError(e))}</p></article>`;say(textError(e),"error")}}
+async function boot(){try{state.client=await waitForClient();if(!state.client)throw new Error("Supabase client unavailable.");await loadRole();if(!["OWNER","SUPER_ADMIN","ADMIN"].includes(state.role))throw new Error("Art Decide Master requires Owner/Admin role.");bind();await loadData();const requested=new URLSearchParams(location.search).get("cb_unit_id");if(requested&&unitFor(requested))openDecision(requested)}catch(e){console.error(e);$("gallery").innerHTML=`<article class="empty"><h3>Art Decide Master start failed</h3><p>${esc(textError(e))}</p></article>`;say(textError(e),"error")}}
 boot();
 })();

@@ -40,6 +40,12 @@ const materialUnitSelection = fs.readFileSync(
   'supabase/migrations/20260922070000_test71_cb_material_unit_selection_v610.sql',
   'utf8'
 );
+const workingArtProjection = fs.readFileSync(
+  'supabase/migrations/20260922073000_test71_cb_working_art_projection_v611.sql',
+  'utf8'
+);
+const artPage = fs.readFileSync('real-art-decide-master-v9231.js', 'utf8');
+const artHtml = fs.readFileSync('real-art-decide-master.html', 'utf8');
 
 test('CB Department extends the existing canonical engines', () => {
   assert.match(migration, /alter table public\.rr_fabric_purchases/);
@@ -55,7 +61,8 @@ test('material unit and requirement states are backend authoritative', () => {
   assert.match(migration, /set unit='pcs'/);
   assert.match(migration, /lower\(category_code\) in\('elastic','tape'\)/);
   assert.match(migration, /set unit='roll'/);
-  assert.match(migration, /Cutting-blocking DUE Material must be confirmed first/);
+  assert.match(workingArtProjection, /DUE Materials block Cutting, not OPEN -> WORKING Art decisions/);
+  assert.match(workingArtProjection, /Cutting-blocking DUE Material must be confirmed first/);
   assert.match(form, /DUE Qty blank/);
   assert.match(form, /class="unitSelect"/);
   assert.match(form, /rr_unit_master_list_v606/);
@@ -75,8 +82,31 @@ test('one CB supports draft, confirm, late DUE material and rollback proof', () 
   assert.match(chat, /Pending Material/);
   assert.match(chat, /SENT TO CUTTING/);
   assert.match(artProjection, /real-art-decide-master\.html\?cb_unit_id=/);
-  assert.match(artProjection, /rr_cb_art_assignments a where a\.cb_id=u\.id/);
+  assert.match(workingArtProjection, /rr_pm_decision_status_v802 d on d\.cb_unit_id=u\.id/);
+  assert.match(workingArtProjection, /not coalesce\(d\.all_decisions_complete,false\)/);
   assert.doesNotMatch(chat, /real-art-decide-master\.html\?cb_id=/);
+});
+
+test('WORKING Art actions follow canonical complete status and retries serialize', () => {
+  assert.match(workingArtProjection, /RR_ART_DECISION:/);
+  assert.match(workingArtProjection, /pg_advisory_xact_lock/);
+  assert.match(workingArtProjection, /rr_pm_save_decision_bundle_v804/);
+  assert.match(workingArtProjection, /rr_test_cb_working_art_v611/);
+  assert.match(workingArtProjection, /'partial_action_count'/);
+  assert.match(workingArtProjection, /'complete_action_count'/);
+  assert.match(workingArtProjection, /fixture_residue/);
+  assert.match(workingArtProjection, /ART COMPLETE · MATERIAL DUE 1 · CUTTING HOLD/);
+});
+
+test('Art picker uses effective authority, canonical media thumbnails and No Name fallback', () => {
+  assert.match(artPage, /rr_upm_effective_identity_v200/);
+  assert.doesNotMatch(artPage, /rpc\("rr_current_role"\)/);
+  assert.match(artPage, /\["OWNER","SUPER_ADMIN","ADMIN"\]/);
+  assert.match(artPage, /itemImage\(step,row\)/);
+  assert.match(artPage, /class="pick-media"/);
+  assert.match(artPage, /\|\|"No Name"/);
+  assert.match(artHtml, /\.pick-media img/);
+  assert.match(chat, /art=canEdit&&state==='WORKING'/);
 });
 
 test('authority, idempotency and audit remain server enforced', () => {

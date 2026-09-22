@@ -39,6 +39,47 @@ test('canonical CB draft, confirm, DUE completion and retry proof roll back', as
   });
 });
 
+test('DUE allows Art, partial decisions stay actionable, retry is single, and completion projects immediately', async ({ page }) => {
+  const proof = await rpc(page, 'rr_test_cb_working_art_v611');
+  expect(proof.error).toBeNull();
+  expect(proof.data).toMatchObject({
+    exact_invariant: true,
+    rolled_back: true,
+    fixture_residue: 0,
+    partial_art_status: 'DUE',
+    partial_action_count: 1,
+    complete_art_status: 'COMPLETE',
+    complete_action_count: 0,
+    complete_message: 'ART COMPLETE · MATERIAL DUE 1 · CUTTING HOLD',
+    assignment_rows: 1,
+    due_rows: 1
+  });
+  expect(proof.data.confirm.state).toBe('WORKING');
+  expect(proof.data.partial.assignment_id).toBe(proof.data.retry.assignment_id);
+});
+
+test('deployed mobile Art picker retains image/no-name records without mutating evidence', async ({ page }) => {
+  const pending = await rpc(page, 'rr_pm_decision_filter_v802', { p_filter: 'ART_DUE' });
+  expect(pending.error).toBeNull();
+  const row = pending.data.find((item) => item.cb_unit_id);
+  expect(row, 'an existing read-only Art-due evidence child is required').toBeTruthy();
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto(`/real-art-decide-master.html?mode=TEST&cb_unit_id=${encodeURIComponent(row.cb_unit_id)}&v=611`);
+  await expect(page.locator('#decisionSheet')).not.toHaveClass(/hidden/, { timeout: 30_000 });
+  await expect(page.locator('#picker .pick').first()).toBeVisible();
+  await expect(page.locator('#picker .pick-media').first()).toBeVisible();
+  const layout = await page.evaluate(() => ({
+    body: document.body.scrollWidth,
+    viewport: document.documentElement.clientWidth,
+    namedFallbacks: [...document.querySelectorAll('#picker .pick small')]
+      .filter((node) => node.textContent.trim() === 'No Name').length,
+    rows: document.querySelectorAll('#picker .pick').length
+  }));
+  expect(layout.rows).toBeGreaterThan(0);
+  expect(layout.body).toBeLessThanOrEqual(layout.viewport + 2);
+});
+
 test('CB 1004 remains read-only while backend and frontend projections agree', async ({ page }) => {
   const snapshot = await rpc(page, 'rr_test_cb_snapshot_v608', { p_cb_no: '1004' });
   expect(snapshot.error).toBeNull();
