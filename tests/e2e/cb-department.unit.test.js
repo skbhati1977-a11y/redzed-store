@@ -32,6 +32,10 @@ const openDraftInvariants = fs.readFileSync(
   'supabase/migrations/20260922052840_test71_cb_open_draft_invariants_v608.sql',
   'utf8'
 );
+const openDraftProof = fs.readFileSync(
+  'supabase/migrations/20260922064000_test71_cb_open_draft_proof_v609.sql',
+  'utf8'
+);
 
 test('CB Department extends the existing canonical engines', () => {
   assert.match(migration, /alter table public\.rr_fabric_purchases/);
@@ -108,7 +112,7 @@ test('CB OPEN preserves canonical Qty, Value and exact Roll identity', () => {
   assert.match(form, /qtySource:'manual'/);
   assert.match(form, /Purchase Qty \*/);
   assert.match(form, /m\.type==='regular'\?\(q>0&&r>0\?q\*r:0\)/);
-  assert.match(form, /window\.__CB_DEPARTMENT_TEST__=\{draftInvariantPreview,hydrateRegularRolls\}/);
+  assert.match(form, /window\.__CB_DEPARTMENT_TEST__=\{draftInvariantPreview,hydrateRegularRolls,showMessage:setMessage\}/);
 });
 
 test('CB create and Draft retry are backend serialized and identity guarded', () => {
@@ -126,6 +130,10 @@ test('CB create and Draft retry are backend serialized and identity guarded', ()
   assert.match(openDraftInvariants, /'roll_no',1,'qty',120/);
   assert.match(openDraftInvariants, /'same_action_audits'/);
   assert.match(openDraftInvariants, /fixture_residue/);
+  assert.match(openDraftProof, /when raise_exception then/);
+  assert.match(openDraftProof, /position\(v_cb_no in sqlerrm\)>0/);
+  assert.match(openDraftProof, /lower\(sqlerrm\) like '%already exists%'/);
+  assert.match(openDraftProof, /No business row, duplicate guard, or canonical save behavior is changed/);
   assert.match(form, /RR_CB_PENDING_ACTION_V608/);
   assert.match(form, /localStorage\.removeItem\(pending\.key\)/);
   assert.match(form, /materials\[0\]\.clientKey=cbClientKey/);

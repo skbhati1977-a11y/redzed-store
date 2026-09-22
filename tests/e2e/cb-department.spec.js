@@ -116,6 +116,7 @@ test('deployed mobile hydration and sticky-footer invariants are exact', async (
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/real-cb-new-v9130-fix2.html?mode=TEST&v=608');
   await page.waitForFunction(() => Boolean(window.__CB_DEPARTMENT_TEST__));
+  await expect(page.locator('#bootMsg')).toBeHidden({ timeout: 30_000 });
   const preview = await page.evaluate(() => window.__CB_DEPARTMENT_TEST__.draftInvariantPreview({
     division_count: 2,
     colour_count: 1,
@@ -137,12 +138,14 @@ test('deployed mobile hydration and sticky-footer invariants are exact', async (
   });
   expect(preview.rolls[0]).toHaveLength(2);
 
-  await page.locator('#msg').evaluate((node) => {
-    node.textContent = 'Draft saved · remains OPEN';
-    node.className = 'message ok';
-    window.scrollTo(0, document.documentElement.scrollHeight);
+  await page.evaluate(() => {
+    window.__CB_DEPARTMENT_TEST__.showMessage('Draft saved · remains OPEN', true);
   });
-  await page.waitForTimeout(100);
+  await expect.poll(async () => page.evaluate(() => {
+    const message = document.querySelector('#msg').getBoundingClientRect();
+    const footer = document.querySelector('.actions').getBoundingClientRect();
+    return message.bottom < footer.top - 4;
+  }), { timeout: 5_000 }).toBe(true);
   const layout = await page.evaluate(() => {
     const message = document.querySelector('#msg').getBoundingClientRect();
     const footer = document.querySelector('.actions').getBoundingClientRect();
