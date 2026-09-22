@@ -106,19 +106,19 @@ test('worker cannot open commercial authority RPCs and receives no cost data', a
 
 test('mobile Sales, Costing and Accounts group projections stay inside viewport', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto('/test70-cb-purchase-real-chat-pilot.html?mode=TEST');
-  await expect(page.locator('#state')).toContainText(/departments · .* people/, { timeout: 30_000 });
   for (const department of ['SALES','COSTING','ACCOUNTS']) {
+    await page.goto('/test70-cb-purchase-real-chat-pilot.html?mode=TEST');
+    await expect(page.locator('#state')).toContainText(/departments · .* people/, { timeout: 30_000 });
     const row = page.locator(`[data-department="${department}"]`);
     await expect(row).toBeVisible();
     await row.click();
-    await page.locator(`[data-dept-group="${department}"]`).evaluate((button) => button.click());
+    const group = page.locator(`[data-dept-group="${department}"]`);
+    await expect(group).toBeVisible();
+    await group.evaluate((button) => button.click());
     await expect(page.locator('#messages')).toBeVisible();
     await expect(page.locator('#messages')).not.toContainText(/undefined|parallel engine/i);
     const width = await page.evaluate(() => ({ body: document.body.scrollWidth, viewport: document.documentElement.clientWidth }));
     expect(width.body).toBeLessThanOrEqual(width.viewport + 2);
-    await page.locator('#back').click();
-    await page.locator('#back').click();
   }
 });
 

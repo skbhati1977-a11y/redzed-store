@@ -9,6 +9,15 @@ async function rpc(page, name, args = {}) {
   }, { name, args });
 }
 
+async function fixtureRpc(page, action, key) {
+  let result;
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    result = await rpc(page, 'rr_test_cb_ui_fixture_v619', { p_action: action, p_fixture_key: key });
+    if (!result.error || result.error.code !== '57014') return result;
+  }
+  return result;
+}
+
 test.beforeEach(async ({ page }) => {
   await ensureSession(page);
   await rpc(page, 'rr_test_clear_on_behalf_context_v176').catch(() => null);
@@ -124,9 +133,9 @@ test('the seven read-only evidence CBs no longer remain in CB WORKING and mobile
 test('deployed mobile Art picker retains image/no-name records without mutating evidence', async ({ page }) => {
   const key = randomUUID();
   try {
-    const fixture = await rpc(page, 'rr_test_cb_ui_fixture_v619', { p_action: 'SETUP', p_fixture_key: key });
+    const fixture = await fixtureRpc(page, 'SETUP', key);
     expect(fixture.error).toBeNull();
-    const retry = await rpc(page, 'rr_test_cb_ui_fixture_v619', { p_action: 'SETUP', p_fixture_key: key });
+    const retry = await fixtureRpc(page, 'SETUP', key);
     expect(retry.error).toBeNull();
     expect(retry.data.art_due_unit_id).toBe(fixture.data.art_due_unit_id);
     expect(retry.data.fixture_rows).toBe(1);
@@ -352,9 +361,9 @@ test('TTT1-S2 read-only evidence is CLOSE and cannot resurrect a multi-art actio
 test('mobile Cutting App opens exact Art child and Ready child remains WORKING after reload', async ({ page }) => {
   const key = randomUUID();
   try {
-    const setup = await rpc(page, 'rr_test_cb_ui_fixture_v619', { p_action: 'SETUP', p_fixture_key: key });
+    const setup = await fixtureRpc(page, 'SETUP', key);
     expect(setup.error).toBeNull();
-    const fixture = await rpc(page, 'rr_test_cb_ui_fixture_v619', { p_action: 'READY', p_fixture_key: key });
+    const fixture = await fixtureRpc(page, 'READY', key);
     expect(fixture.error).toBeNull();
     expect(fixture.data.art_due_lifecycle.state).toBe('ART_DUE');
     expect(fixture.data.ready_lifecycle.state).toBe('READY_FOR_CUTTING');

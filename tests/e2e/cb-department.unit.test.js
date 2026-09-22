@@ -142,6 +142,8 @@ test('CB completion and Cutting readiness are separate canonical dimensions', ()
   assert.match(chat, /Cutting Status/);
   assert.match(chat, /function cbDepartmentContext/);
   assert.match(chat, /if\(cbDepartmentContext\(\)\)\{box\.hidden=true;return\}/);
+  assert.match(chat, /focusCbCard\(cbNo,consume=false\)/);
+  assert.match(chat, /if\(!fast&&S\.returnFocusCb\)focusCbCard\(S\.returnFocusCb,true\)/);
 });
 
 test('mobile CB proof fixture is uniquely addressed, canonical and exactly reversible', () => {
