@@ -59,5 +59,16 @@ module.exports = async function handler(request, response) {
     await fetch(`${SUPABASE_URL}/auth/v1/logout`, { method: "POST", headers: { apikey: SUPABASE_PUBLISHABLE_KEY, Authorization: `Bearer ${session.access_token}` } }).catch(() => null);
     return deny(response, 403);
   }
-  return response.status(200).json({ access_token: session.access_token, refresh_token: session.refresh_token, expires_at: session.expires_at, token_type: "bearer" });
+  return response.status(200).json({
+    access_token: session.access_token,
+    refresh_token: session.refresh_token,
+    expires_at: session.expires_at,
+    token_type: "bearer",
+    deployment: {
+      environment: process.env.VERCEL_ENV || null,
+      branch: process.env.VERCEL_GIT_COMMIT_REF || null,
+      commit_sha: process.env.VERCEL_GIT_COMMIT_SHA || null,
+      url: process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null
+    }
+  });
 };

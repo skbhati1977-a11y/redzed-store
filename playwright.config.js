@@ -94,6 +94,12 @@ module.exports = defineConfig({
       testMatch: /material-unit\.spec\.js/,
       dependencies: ["auth-setup"],
       use: { storageState: "playwright/.auth/super-admin.json" }
+    },
+    {
+      name: "full-factory",
+      testMatch: /full-factory-journey\.spec\.js/,
+      dependencies: ["auth-setup"],
+      use: { storageState: "playwright/.auth/super-admin.json" }
     }
   ]
 });

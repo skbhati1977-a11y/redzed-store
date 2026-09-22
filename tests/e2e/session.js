@@ -23,14 +23,27 @@ async function runnerHeaders() {
 async function bootstrap(page) {
   const headers = await runnerHeaders();
   let response;
+  let session;
+  const expectedSha = process.env.GITHUB_SHA || null;
   for (let attempt = 0; attempt < 24; attempt += 1) {
     response = await page.request.post("/api/e2e-session", { headers });
-    if (response.ok()) break;
+    if (response.ok()) {
+      const candidate = await response.json();
+      if (!expectedSha || candidate?.deployment?.commit_sha === expectedSha) {
+        session = candidate;
+        break;
+      }
+      if (attempt === 23) {
+        throw new Error(`TEST71 deployment SHA mismatch: expected ${expectedSha}, received ${candidate?.deployment?.commit_sha || "missing"}`);
+      }
+      await new Promise((resolve) => setTimeout(resolve, 10_000));
+      continue;
+    }
     if (![404, 503].includes(response.status()) || attempt === 23) break;
     await new Promise((resolve) => setTimeout(resolve, 10_000));
   }
   if (!response.ok()) throw new Error(`TEST71 bootstrap failed (${response.status()})`);
-  const session = await response.json();
+  if (!session) throw new Error("TEST71 exact deployment metadata missing");
   await page.goto("/real-login.html");
   const result = await page.evaluate(async (tokens) => {
     const set = await window.supabaseClient.auth.setSession(tokens);

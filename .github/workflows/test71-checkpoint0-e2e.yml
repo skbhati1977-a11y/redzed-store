@@ -27,7 +27,7 @@ concurrency:
 jobs:
   checkpoint0:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 30
     env:
       E2E_BASE_URL: https://redzed-test65-git-test71-real-chat-e2e-6adad3-skbhati1977-4414.vercel.app
     steps:
@@ -46,6 +46,7 @@ jobs:
       - run: npx playwright test --project=cb-department --no-deps
       - run: npx playwright test --project=material-unit --no-deps
       - run: npx playwright test --project=checkpoint-8 --no-deps
+      - run: npx playwright test --project=full-factory --no-deps
       - name: Upload Playwright evidence
         if: always()
         uses: actions/upload-artifact@v4
