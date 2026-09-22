@@ -10,6 +10,10 @@ const safeLegacyViews = fs.readFileSync('supabase/migrations/20260921073500_test
 const chat = fs.readFileSync('test70-real-chat-live-v70.js', 'utf8');
 const appGuard = fs.readFileSync('real-sticker-metal-print-guard-v9160.js', 'utf8');
 const artMaster = fs.readFileSync('real-art-master.js', 'utf8');
+const historyFastPath = fs.readFileSync(
+  'supabase/migrations/20260922080000_test71_real_chat_redaction_fast_path_v612.sql',
+  'utf8'
+);
 
 test('cost privacy uses canonical effective Act As identity', () => {
   assert.match(migration, /rr_upm_effective_identity_v200\(\)/);
@@ -77,4 +81,12 @@ test('rate editor is backend restricted and UI focus is enforced', () => {
   assert.match(chat, /Fill rate first/);
   assert.match(chat, /scrollIntoView\(\{behavior:'smooth',block:'center'\}\)/);
   assert.match(chat, /departments=\[\.\.\.new Set\(pending\.map/);
+});
+
+test('Real Chat history fast path preserves the canonical privacy boundary', () => {
+  assert.match(historyFastPath, /rr_costing_user_scope_v760\(null\)/);
+  assert.match(historyFastPath, /if v_allow_private and v_allow_rate then/);
+  assert.match(historyFastPath, /rr_costing_redact_payload_v401/);
+  assert.match(historyFastPath, /All other roles still use the recursive redactor/);
+  assert.doesNotMatch(historyFastPath, /E2E-CB-3|a2000000-0000-4000-8000-000000000013/);
 });
