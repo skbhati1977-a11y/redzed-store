@@ -235,3 +235,104 @@ test('Act As Worker cannot mutate CB purchase or material state', async ({ page 
   expect(denied.error).not.toBeNull();
   expect(denied.error.message).toMatch(/Owner\/Admin authority/i);
 });
+
+test('Cutting lifecycle proof is canonical, retry-safe and rollback-only', async ({ page }) => {
+  const proof = await rpc(page, 'rr_test_cutting_department_lifecycle_v615');
+  expect(proof.error).toBeNull();
+  expect(proof.data).toMatchObject({
+    exact_invariant: true,
+    rolled_back: true,
+    fixture_residue: 0,
+    due_release_blocked: true,
+    release_retry_blocked: true,
+    multi_request_final_status: 'CONSUMED',
+    actionable_ready_count: 0,
+    release_history_count: 1
+  });
+  expect(proof.data.art_due).toMatchObject({ state: 'ART_DUE', canonical_state: 'OPEN' });
+  expect(proof.data.cutting_hold).toMatchObject({ state: 'CUTTING_HOLD', canonical_state: 'OPEN', material_due_count: 1 });
+  expect(proof.data.ready).toMatchObject({ state: 'READY_FOR_CUTTING', canonical_state: 'WORKING', material_due_count: 0 });
+  expect(proof.data.close).toMatchObject({ state: 'RELEASED', canonical_state: 'CLOSE' });
+  expect(proof.data.request_retry.request_id).toBe(proof.data.request_first.request_id);
+  expect(proof.data.request_retry.duplicate_blocked).toBe(true);
+  expect(proof.data.decision_retry.duplicate_blocked).toBe(true);
+});
+
+test('TTT1-S2 read-only evidence is CLOSE and cannot resurrect a multi-art action', async ({ page }) => {
+  const lookup = await page.evaluate(async () => {
+    const unit = await window.supabaseClient.from('rr_cb_units').select('id,cb_code').eq('cb_code', 'TTT1-S2').maybeSingle();
+    if (unit.error) return { error: unit.error.message };
+    if (!unit.data) return { skipped: true };
+    const lifecycle = await window.supabaseClient.rpc('rr_cutting_child_lifecycle_v615', { p_cb_unit_id: unit.data.id });
+    const multi = await window.supabaseClient.rpc('rr_cutting_get_multi_art_decision_v1', { p_cb_unit_id: unit.data.id });
+    const bridge = await window.supabaseClient.from('rr_real_chat_message_bridge_v70')
+      .select('canonical_key,archived_at,archive_reason')
+      .eq('source_event_type', 'MULTI_ART_DECISION_REQUIRED')
+      .contains('personal_payload', { cb_unit_id: unit.data.id });
+    return { unit: unit.data, lifecycle: lifecycle.data, multi: multi.data, bridge: bridge.data || [], error: lifecycle.error?.message || multi.error?.message || bridge.error?.message || null };
+  });
+  expect(lookup.error).toBeNull();
+  test.skip(lookup.skipped, 'TTT1-S2 evidence is not present on this TEST database');
+  expect(lookup.lifecycle).toMatchObject({ state: 'RELEASED', canonical_state: 'CLOSE' });
+  expect(lookup.multi).toMatchObject({ status: 'RELEASED', ineligible: true });
+  expect(lookup.bridge.filter((row) => row.archived_at === null)).toHaveLength(0);
+});
+
+test('mobile Cutting App opens exact Art child and Ready child remains WORKING after reload', async ({ page }) => {
+  const rows = await page.evaluate(async () => {
+    const due = await window.supabaseClient.rpc('rr_pm_decision_filter_v802', { p_filter: 'ART_DUE' });
+    const all = await window.supabaseClient.rpc('rr_pm_decision_filter_v802', { p_filter: 'ALL' });
+    if (due.error || all.error) return { error: due.error?.message || all.error?.message };
+    for (const row of all.data || []) {
+      const state = await window.supabaseClient.rpc('rr_cutting_child_lifecycle_v615', { p_cb_unit_id: row.cb_unit_id });
+      if (!state.error && state.data?.state === 'READY_FOR_CUTTING') {
+        return { artDue: (due.data || []).find((x) => x.cb_unit_id)?.cb_unit_id || null, ready: row.cb_unit_id };
+      }
+    }
+    return { artDue: (due.data || []).find((x) => x.cb_unit_id)?.cb_unit_id || null, ready: null };
+  });
+  expect(rows.error).toBeUndefined();
+  expect(rows.artDue).toBeTruthy();
+  expect(rows.ready).toBeTruthy();
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto(`/real-cutting-master.html?mode=TEST&cb_unit_id=${encodeURIComponent(rows.artDue)}&v=615`);
+  const artAction = page.locator(`[data-art-decision="${rows.artDue}"]`);
+  await expect(artAction).toBeVisible({ timeout: 30_000 });
+  await artAction.click();
+  await expect(page).toHaveURL(new RegExp(`real-art-decide-master\\.html.*cb_unit_id=${rows.artDue}`));
+  await expect(page.locator('#decisionSheet')).not.toHaveClass(/hidden/, { timeout: 30_000 });
+
+  await page.goto(`/real-cutting-master.html?mode=TEST&cb_unit_id=${encodeURIComponent(rows.ready)}&v=615`);
+  await expect(page.locator('#lotSheet')).not.toHaveClass(/cm-hidden/, { timeout: 30_000 });
+  await page.locator('#lotSheet [data-close-lot]').last().click();
+  await expect(page.locator('.chip-ready')).toBeVisible({ timeout: 30_000 });
+  await expect(page.locator(`[data-single="${rows.ready}"]`)).toBeEnabled();
+  await page.reload();
+  await expect(page.locator('#lotSheet')).not.toHaveClass(/cm-hidden/, { timeout: 30_000 });
+  await page.locator('#lotSheet [data-close-lot]').last().click();
+  await expect(page.locator('.chip-ready')).toBeVisible({ timeout: 30_000 });
+  await expect(page.locator(`[data-single="${rows.ready}"]`)).toBeEnabled();
+  const width = await page.evaluate(() => ({ body: document.body.scrollWidth, viewport: document.documentElement.clientWidth }));
+  expect(width.body).toBeLessThanOrEqual(width.viewport + 2);
+});
+
+test('Act As Worker is rejected by the shared Cutting backend authority gate', async ({ page }) => {
+  const directory = await rpc(page, 'rr_real_chat_directory_v600');
+  expect(directory.error).toBeNull();
+  const worker = directory.data.people.find((x) => String(x.role_code).toUpperCase() === 'WORKER');
+  expect(worker).toBeTruthy();
+  const ready = await page.evaluate(async () => {
+    const all = await window.supabaseClient.rpc('rr_pm_decision_filter_v802', { p_filter: 'ALL' });
+    for (const row of all.data || []) {
+      const state = await window.supabaseClient.rpc('rr_cutting_child_lifecycle_v615', { p_cb_unit_id: row.cb_unit_id });
+      if (state.data?.state === 'READY_FOR_CUTTING') return row.cb_unit_id;
+    }
+    return null;
+  });
+  expect(ready).toBeTruthy();
+  expect((await rpc(page, 'rr_test_set_on_behalf_context_v176', { p_worker_id: worker.worker_id })).error).toBeNull();
+  const denied = await rpc(page, 'rr_cutting_request_multi_art_decision_v1', { p_cb_unit_id: ready });
+  expect(denied.error).not.toBeNull();
+  expect(denied.error.message).toMatch(/Cutting release authority required/i);
+});

@@ -90,6 +90,7 @@ function derivedCounts(){
 async function loadData(){
   const refresh=$("refresh");setBusy(refresh,true,"Loading…");$("gallery").setAttribute("aria-busy","true");
   try{
+    const requestedId=String(new URLSearchParams(location.search).get("cb_unit_id")||"").trim();
     const [allR,countR,arts,prints,stickers,metals,media,assignments,printAssignments,stickerAssignments,metalAssignments,stickerInstructions,metalInstructions]=await Promise.all([
       state.client.rpc("rr_pm_decision_filter_v802",{p_filter:"ALL"}),
       state.client.rpc("rr_pm_decision_tab_counts_v802"),
@@ -99,6 +100,11 @@ async function loadData(){
     ]);
     if(allR.error)throw new Error(`CB decision list: ${textError(allR.error)}`);
     state.decisions=Array.isArray(allR.data)?allR.data:[];
+    if(requestedId&&!state.decisions.some(x=>String(x.cb_unit_id)===requestedId)){
+      const exact=await state.client.from("rr_pm_decision_status_v802").select("*").eq("cb_unit_id",requestedId).maybeSingle();
+      if(exact.error)throw new Error(`Requested Art Decision: ${textError(exact.error)}`);
+      if(exact.data)state.decisions=[exact.data,...state.decisions]
+    }
     const ids=state.decisions.map(x=>x.cb_unit_id).filter(Boolean);
     let units=[];
     if(ids.length){const u=await state.client.from("rr_cb_units").select("*").in("id",ids);if(u.error)throw new Error(`CB children: ${textError(u.error)}`);units=u.data||[]}
@@ -355,6 +361,6 @@ function bind(){
     else if(!$("decisionSheet").classList.contains("hidden"))closeDecision()
   })
 }
-async function boot(){try{state.client=await waitForClient();if(!state.client)throw new Error("Supabase client unavailable.");await loadRole();if(!["OWNER","SUPER_ADMIN","ADMIN"].includes(state.role))throw new Error("Art Decide Master requires Owner/Admin role.");bind();await loadData();const requested=new URLSearchParams(location.search).get("cb_unit_id");if(requested&&unitFor(requested))openDecision(requested)}catch(e){console.error(e);$("gallery").innerHTML=`<article class="empty"><h3>Art Decide Master start failed</h3><p>${esc(textError(e))}</p></article>`;say(textError(e),"error")}}
+async function boot(){try{state.client=await waitForClient();if(!state.client)throw new Error("Supabase client unavailable.");await loadRole();if(!["OWNER","SUPER_ADMIN","ADMIN"].includes(state.role))throw new Error("Art Decide Master requires Owner/Admin role.");bind();await loadData();const requested=new URLSearchParams(location.search).get("cb_unit_id");if(requested){if(!unitFor(requested))throw new Error("Requested Art Decision child is not available. Refresh the source queue.");openDecision(requested)}}catch(e){console.error(e);$("gallery").innerHTML=`<article class="empty"><h3>Art Decide Master start failed</h3><p>${esc(textError(e))}</p></article>`;say(textError(e),"error")}}
 boot();
 })();

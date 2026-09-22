@@ -84,5 +84,5 @@ test('MC1 E2E uses a canonical rollback proof and creates no retry residue', () 
 });
 
 test('deployed Real Chat loads the MC1 integration asset version', () => {
-  assert.match(html, /test70-real-chat-live-v70\.js\?v=613/);
+  assert.match(html, /test70-real-chat-live-v70\.js\?v=615/);
 });

@@ -898,6 +898,12 @@ function purchasesFor(cbId) {
   );
 }
 
+function materialDueCount(cbId) {
+  return purchasesFor(cbId).filter(
+    row => String(row.requirement_state || "").trim().toUpperCase() === "DUE"
+  ).length;
+}
+
 function meaningfulProductionPurchase(row = {}) {
   const quantity = Number(
     row.quantity ??
@@ -1297,6 +1303,10 @@ function cardState(card) {
 
   if (!decision.ready) return "art_due";
 
+  if (materialDueCount(card.group.cb_id) > 0) {
+    return "cutting_hold";
+  }
+
   return "ready";
 }
 
@@ -1330,8 +1340,8 @@ function filterMatches(card) {
   if (currentFilter === "ready") return state === "ready";
   if (currentFilter === "released") return state === "released";
   if (currentFilter === "completed") return state === "completed";
-  if (currentFilter === "art_due") return state === "art_due";
-  if (currentFilter === "planning") return state === "art_due";
+  if (currentFilter === "art_due") return ["art_due", "cutting_hold"].includes(state);
+  if (currentFilter === "planning") return ["art_due", "cutting_hold"].includes(state);
   if (currentFilter === "child") return true;
   if (currentFilter === "child_batches") return true;
 
@@ -1433,8 +1443,8 @@ function renderStats(cards) {
     card => cardState(card) === "completed"
   ).length;
 
-  const artDue = cards.filter(
-    card => cardState(card) === "art_due"
+  const openHold = cards.filter(
+    card => ["art_due", "cutting_hold"].includes(cardState(card))
   ).length;
 
   stats.innerHTML = `
@@ -1454,8 +1464,8 @@ function renderStats(cards) {
     </article>
 
     <article>
-      <small>Art Due</small>
-      <strong>${artDue}</strong>
+      <small>Open / Hold</small>
+      <strong>${openHold}</strong>
     </article>
 
     <article>
@@ -1550,6 +1560,7 @@ function renderGallery() {
     .map(card => {
       const decision = cardDecision(card);
       const state = cardState(card);
+      const dueCount = materialDueCount(card.group.cb_id);
       const lots = lotsForDivision(card.division.division_id);
       const lot = lots[0] || null;
       const colours = coloursFor(card.group.cb_id);
@@ -1752,25 +1763,21 @@ function renderGallery() {
           }
 
           <div class="cm-actions cm-actions-two">
-            <button
-              class="cm-primary"
-              type="button"
-              data-single="${safe(card.division.division_id)}"
-              data-lot-mode="single"
-              ${!decision.ready || lots.length ? "disabled" : ""}
-            >
-              Single Lot
-            </button>
-
-            <button
-              class="cm-secondary"
-              type="button"
-              data-multi="${safe(card.division.division_id)}"
-              data-lot-mode="multi"
-              ${!decision.ready || lots.length ? "disabled" : ""}
-            >
-              Multi Lot
-            </button>
+            ${state === "art_due" ? `
+              <button class="cm-primary" type="button" data-art-decision="${safe(card.division.division_id)}">
+                ART DECISION
+              </button>
+              <button class="cm-secondary" type="button" disabled>Cutting waits for Art</button>
+            ` : state === "cutting_hold" ? `
+              <button class="cm-primary" type="button" disabled>MATERIAL DUE ${dueCount}</button>
+              <button class="cm-secondary" type="button" disabled>CUTTING HOLD</button>
+            ` : state === "ready" ? `
+              <button class="cm-primary" type="button" data-single="${safe(card.division.division_id)}" data-lot-mode="single">Single Lot</button>
+              <button class="cm-secondary" type="button" data-multi="${safe(card.division.division_id)}" data-lot-mode="multi">Multi Lot</button>
+            ` : `
+              <button class="cm-primary" type="button" disabled>RELEASED</button>
+              <button class="cm-secondary" type="button" disabled>HISTORY ONLY</button>
+            `}
           </div>
         </article>
       `;
@@ -1874,6 +1881,11 @@ function openLotByDivision(divisionId, requestedMode = "single") {
     }
 
     const decision = cardDecision(card);
+
+    const dueCount = materialDueCount(card.group.cb_id);
+    if (dueCount > 0) {
+      throw new Error(`${dueCount} Material Due — confirm material before Cutting.`);
+    }
 
     if (!decision.ready) {
       throw new Error(
@@ -3758,6 +3770,16 @@ function bindEvents() {
   $("lotForm")?.addEventListener("submit", createLot);
 
   gallery?.addEventListener("click", event => {
+    const artButton = event.target?.closest?.("[data-art-decision]");
+    if (artButton && gallery.contains(artButton)) {
+      event.preventDefault();
+      const unitId = String(artButton.dataset.artDecision || "").trim();
+      if (!unitId) return say("Exact CB child mapping missing.", "error");
+      const back = `${location.pathname}${location.search}`;
+      location.href = `real-art-decide-master.html?cb_unit_id=${encodeURIComponent(unitId)}&from=CUTTING_DEPARTMENT&return=${encodeURIComponent(back)}`;
+      return;
+    }
+
     const button = event.target?.closest?.(
       "[data-single], [data-multi], [data-release-lot]"
     );
