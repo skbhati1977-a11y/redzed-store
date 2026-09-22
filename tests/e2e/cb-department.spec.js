@@ -50,12 +50,74 @@ test('DUE allows Art, partial decisions stay actionable, retry is single, and co
     partial_action_count: 1,
     complete_art_status: 'COMPLETE',
     complete_action_count: 0,
-    complete_message: 'ART COMPLETE · MATERIAL DUE 1 · CUTTING HOLD',
+    complete_message: 'CB COMPLETE · CUTTING HOLD · 1 MATERIAL DUE',
     assignment_rows: 1,
     due_rows: 1
   });
   expect(proof.data.confirm.state).toBe('WORKING');
   expect(proof.data.partial.assignment_id).toBe(proof.data.retry.assignment_id);
+});
+
+test('CB parent closes after Art while Cutting HOLD/READY remains separate and reversible proof leaves zero residue', async ({ page }) => {
+  const proof = await rpc(page, 'rr_test_cb_working_projection_v618');
+  expect(proof.error).toBeNull();
+  expect(proof.data).toMatchObject({
+    exact_invariant: true,
+    rolled_back: true,
+    fixture_residue: 0,
+    open_state: 'OPEN',
+    initial_art_status: 'DUE',
+    initial_art_actions: 2,
+    mid_art_status: '1/2 COMPLETE',
+    mid_art_actions: 1,
+    ready_art_status: 'COMPLETE',
+    ready_count: 2,
+    ready_actions: 2,
+    ready_message: 'CB COMPLETE · READY FOR CUTTING · 2 D CARDS',
+    bridge_state: 'CLOSE',
+    bridge_actions: 2,
+    assignment_rows: 2
+  });
+  expect(proof.data.draft_retry.duplicate_blocked).toBe(true);
+  expect(proof.data.open_cb_id).toBe(proof.data.draft.cb_id);
+});
+
+test('the seven read-only evidence CBs no longer remain in CB WORKING and mobile cards show both status dimensions', async ({ page }) => {
+  const evidence = ['CB111TST', 'CBTST11', 'CB4TST', 'CB1TSTY', 'CB1MTC', '1002', 'TST1'];
+  const states = await page.evaluate(async (names) => {
+    const working = await window.supabaseClient.rpc('rr_cb_department_cards_v600', { p_state: 'WORKING', p_search: null });
+    const close = await window.supabaseClient.rpc('rr_cb_department_cards_v600', { p_state: 'CLOSE', p_search: null });
+    return {
+      error: working.error?.message || close.error?.message || null,
+      working: (working.data?.cards || []).filter((x) => names.includes(x.cb_no)),
+      close: (close.data?.cards || []).filter((x) => names.includes(x.cb_no))
+    };
+  }, evidence);
+  expect(states.error).toBeNull();
+  expect(states.working).toHaveLength(0);
+  expect(states.close.map((x) => x.cb_no).sort()).toEqual([...evidence].sort());
+  for (const card of states.close) {
+    expect(card.source_status).toBe('CLOSE');
+    if (['CB111TST', 'CBTST11', 'CB1TSTY', 'CB1MTC'].includes(card.cb_no)) {
+      expect(card.history_reason).toBe('INCOMPLETE_LEGACY_HISTORY');
+      expect(card.message).toBe('INCOMPLETE LEGACY CB · READ-ONLY HISTORY');
+      expect(card.available_child_count).toBe(0);
+    } else {
+      expect(card.art_status).toBe('COMPLETE');
+      expect(card.cutting_ready_count + card.released_child_count).toBeGreaterThan(0);
+    }
+  }
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/test70-cb-purchase-real-chat-pilot.html?mode=TEST&rc_status=CLOSE&rc_view=chat&rc_kind=group&rc_id=PURCHASE&rc_focus_cb=1002');
+  await expect(page.locator('#chatName')).toContainText('CB Department', { timeout: 30_000 });
+  const card = page.locator('[data-cb-no="1002"]');
+  await expect(card).toBeVisible();
+  await expect(card).toContainText('CB Status CLOSE');
+  await expect(card).toContainText('Cutting Status READY FOR CUTTING');
+  await expect(page.locator('#workFilters')).toBeHidden();
+  const width = await page.evaluate(() => ({ body: document.body.scrollWidth, viewport: document.documentElement.clientWidth }));
+  expect(width.body).toBeLessThanOrEqual(width.viewport + 2);
 });
 
 test('deployed mobile Art picker retains image/no-name records without mutating evidence', async ({ page }) => {

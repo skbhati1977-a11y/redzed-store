@@ -48,6 +48,10 @@ const proofTimeout = fs.readFileSync(
   'supabase/migrations/20260922083605_test71_cb_proof_timeout_v614.sql',
   'utf8'
 );
+const workingCanonicalProjection = fs.readFileSync(
+  'supabase/migrations/20260922220000_test71_cb_working_canonical_projection_v618.sql',
+  'utf8'
+);
 const artPage = fs.readFileSync('real-art-decide-master-v9231.js', 'utf8');
 const artHtml = fs.readFileSync('real-art-decide-master.html', 'utf8');
 
@@ -84,7 +88,7 @@ test('one CB supports draft, confirm, late DUE material and rollback proof', () 
   assert.match(form, /SAVE &amp; CONFIRM/);
   assert.match(form, /SAVE DUE MATERIAL/);
   assert.match(chat, /Pending Material/);
-  assert.match(chat, /SENT TO CUTTING/);
+  assert.match(workingCanonicalProjection, /SENT TO CUTTING/);
   assert.match(artProjection, /real-art-decide-master\.html\?cb_unit_id=/);
   assert.match(workingArtProjection, /rr_pm_decision_status_v802 d on d\.cb_unit_id=u\.id/);
   assert.match(workingArtProjection, /not coalesce\(d\.all_decisions_complete,false\)/);
@@ -111,6 +115,23 @@ test('WORKING Art actions follow canonical complete status and retries serialize
   assert.match(workingArtProjection, /ART COMPLETE · MATERIAL DUE 1 · CUTTING HOLD/);
 });
 
+test('CB completion and Cutting readiness are separate canonical dimensions', () => {
+  assert.match(workingCanonicalProjection, /rr_cb_reconcile_department_states_v618/);
+  assert.match(workingCanonicalProjection, /when coalesce\(x\.art_due_count,0\)>0 then 'WORKING'/);
+  assert.match(workingCanonicalProjection, /else 'CLOSE'/);
+  assert.match(workingCanonicalProjection, /CB COMPLETE · CUTTING HOLD/);
+  assert.match(workingCanonicalProjection, /CB COMPLETE · READY FOR CUTTING/);
+  assert.match(workingCanonicalProjection, /rr_cutting_child_lifecycle_v615/);
+  assert.match(workingCanonicalProjection, /lower\(coalesce\(mc\.category_code,''\)\)='regular-cloth'/);
+  assert.match(workingCanonicalProjection, /INCOMPLETE LEGACY CB · READ-ONLY HISTORY/);
+  assert.match(workingCanonicalProjection, /rr_test_cb_working_projection_v618/);
+  assert.match(workingCanonicalProjection, /fixture_residue/);
+  assert.match(chat, /CB Status/);
+  assert.match(chat, /Cutting Status/);
+  assert.match(chat, /function cbDepartmentContext/);
+  assert.match(chat, /if\(cbDepartmentContext\(\)\)\{box\.hidden=true;return\}/);
+});
+
 test('Art picker uses effective authority, canonical media thumbnails and No Name fallback', () => {
   assert.match(artPage, /rr_upm_effective_identity_v200/);
   assert.doesNotMatch(artPage, /rpc\("rr_current_role"\)/);
@@ -119,7 +140,8 @@ test('Art picker uses effective authority, canonical media thumbnails and No Nam
   assert.match(artPage, /class="pick-media"/);
   assert.match(artPage, /\|\|"No Name"/);
   assert.match(artHtml, /\.pick-media img/);
-  assert.match(chat, /art=canEdit&&state==='WORKING'/);
+  assert.match(chat, /arr\(c\.next_actions\)/);
+  assert.match(workingCanonicalProjection, /real-art-decide-master\.html/);
 });
 
 test('authority, idempotency and audit remain server enforced', () => {

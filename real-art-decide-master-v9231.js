@@ -335,12 +335,16 @@ async function saveDecision(){
   const err=allError();if(err){decisionSay(err,"error");return}
   const btn=$("decisionNext");setBusy(btn,true,"Saving…");
   try{
+    const savedCb=cbNo(state.active);
     const mode=await currentDataMode();
     const r=await state.client.rpc("rr_pm_save_decision_bundle_v804",{p_cb_unit_id:state.active.id,p_art_id:state.artId,p_print_mode:state.printMode,p_print_ids:state.printIds,p_sticker_mode:state.stickerMode,p_sticker_master_ids:state.stickerIds,p_metal_id_mode:state.metalMode,p_metal_id_master_ids:state.metalIds,p_data_mode:mode});
     if(r.error)throw r.error;
     const savedLabel=`${cbNo(state.active)} · ${dNo(state.active)}`;
+    const projected=await state.client.rpc("rr_cb_department_cards_v600",{p_state:null,p_search:savedCb});
+    if(projected.error)throw projected.error;
+    const parent=(projected.data?.cards||[]).find(x=>String(x.cb_no||"").trim().toUpperCase()===String(savedCb).trim().toUpperCase());
     closeDecision();await loadData();say(`${savedLabel} Art / Crafting decision saved.`,"success");
-    if(window.RRActionReturn?.hasReturn())window.setTimeout(()=>window.RRActionReturn.success(),250)
+    if(window.RRActionReturn?.hasReturn())window.setTimeout(()=>window.RRActionReturn.success({status:parent?.source_status||"WORKING",focus:savedCb}),250)
   }catch(e){console.error(e);decisionSay(textError(e),"error")}
   finally{setBusy(btn,false)}
 }
