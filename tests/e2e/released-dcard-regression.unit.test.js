@@ -29,6 +29,10 @@ test('database serializes release modes and rollback proof covers retry and resi
 
 test('deep-linked Cutting action renders one exact history card and never reopens release', () => {
   assert.match(cutting, /const requestedDivisionId/);
+  assert.match(cutting, /productionQuery\.eq\("division_id", requestedDivisionId\)/);
+  assert.match(cutting, /galleryQuery\.eq\("division_id", requestedDivisionId\)/);
+  assert.match(cutting, /divisionQuery\.eq\("id", requestedDivisionId\)/);
+  assert.match(cutting, /purchaseQuery\.in\("id", purchaseIds\)/);
   assert.match(cutting, /!requestedDivisionId \|\|/);
   assert.match(cutting, /requestedState === "ready"/);
   assert.match(cutting, /\["released", "completed"\]\.includes\(requestedState\)/);

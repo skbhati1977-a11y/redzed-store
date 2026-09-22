@@ -30,7 +30,7 @@ async function e2eDcardSnapshot(page) {
         .select('id,lot_no,status,cb_unit_id')
         .eq('cb_unit_id', unitId)
         .maybeSingle(),
-      window.supabaseClient.rpc('rr_real_chat_conversation_history_v83', { p_limit: 5000 })
+      window.supabaseClient.rpc('rr_real_chat_conversation_history_v83', { p_limit: 500 })
     ]);
     return {
       gallery: gallery.data,

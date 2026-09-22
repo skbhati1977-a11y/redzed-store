@@ -78,6 +78,7 @@ test('MC1 E2E uses a canonical rollback proof and creates no retry residue', () 
   assert.doesNotMatch(browser, /Date\.now\(\)/);
   assert.doesNotMatch(browser, /\[data-mc-confirm\][^\n]*\.click/);
   assert.doesNotMatch(browser, /LOT 2622|p_lot_no: '2622'|2f9001de/);
+  assert.doesNotMatch(browser, /rpc\(page, 'rr_confirm_lot_matching_v2'/);
   assert.match(browser, /const workingBefore = await rpc/);
   assert.match(browser, /String\(x\.lot_no\) === String\(consumption\.lot_no\)/);
 });

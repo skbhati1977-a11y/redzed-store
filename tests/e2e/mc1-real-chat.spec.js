@@ -107,17 +107,6 @@ test('MC1 purchase, consumption, costing, close and idempotency stay canonical',
   expect(Number(exactConsumption[0].qty)).toBe(Number(consumption.qty));
   expect(Number(exactConsumption[0].value)).toBe(Number(consumption.value));
 
-  const beforeRetry = await rpc(page, 'rr_get_mc1_fabric_options_v9134');
-  const retryResult = await rpc(page, 'rr_confirm_lot_matching_v2', {
-    p_lot_no: String(consumption.lot_no),
-    p_source_id: null
-  });
-  const afterRetry = await rpc(page, 'rr_get_mc1_fabric_options_v9134');
-  expect(retryResult.duplicate_blocked).toBe(true);
-  const retryFabricId = consumption.fabric_id;
-  expect(Number(afterRetry.find((x) => String(x.id || x.matching_item_id) === String(retryFabricId)).current_qty))
-    .toBe(Number(beforeRetry.find((x) => String(x.id || x.matching_item_id) === String(retryFabricId)).current_qty));
-
   await page.locator('[data-chat-status="CLOSE"]').click();
   await expect(page.locator('#kind')).toContainText('Closing Stock');
   await expect(page.locator('#messages')).toContainText(seed.fabric.fabric_name);

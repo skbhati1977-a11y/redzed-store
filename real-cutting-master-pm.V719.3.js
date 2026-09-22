@@ -684,17 +684,25 @@ function normalizeGalleryRow(row) {
 }
 
 async function loadGallerySource(client) {
-  const productionView = await client
+  let productionQuery = client
     .from("rr_product_gallery_production_v719")
     .select("*");
+  if (requestedDivisionId) {
+    productionQuery = productionQuery.eq("division_id", requestedDivisionId);
+  }
+  const productionView = await productionQuery;
 
   if (!productionView.error) {
     return (productionView.data || []).map(normalizeGalleryRow);
   }
 
-  const viewResult = await client
+  let galleryQuery = client
     .from("rr_product_gallery_view")
     .select("*");
+  if (requestedDivisionId) {
+    galleryQuery = galleryQuery.eq("division_id", requestedDivisionId);
+  }
+  const viewResult = await galleryQuery;
 
   if (!viewResult.error) {
     return (viewResult.data || []).map(normalizeGalleryRow);
@@ -706,17 +714,21 @@ async function loadGallerySource(client) {
     viewResult.error
   );
 
-  const [divisionResult, purchaseResult] = await Promise.all([
-    client
-      .from("rr_cb_units")
-      .select("*"),
-
-    client
-      .from("rr_fabric_purchases")
-      .select("*")
-  ]);
-
+  let divisionQuery = client.from("rr_cb_units").select("*");
+  if (requestedDivisionId) {
+    divisionQuery = divisionQuery.eq("id", requestedDivisionId);
+  }
+  const divisionResult = await divisionQuery;
   if (divisionResult.error) throw divisionResult.error;
+
+  const purchaseIds = [...new Set((divisionResult.data || []).map(row => row.purchase_id).filter(Boolean))];
+  let purchaseQuery = client.from("rr_fabric_purchases").select("*");
+  if (requestedDivisionId) {
+    if (!purchaseIds.length) return [];
+    purchaseQuery = purchaseQuery.in("id", purchaseIds);
+  }
+  const purchaseResult = await purchaseQuery;
+
   if (purchaseResult.error) throw purchaseResult.error;
 
   const purchaseMap = new Map(
