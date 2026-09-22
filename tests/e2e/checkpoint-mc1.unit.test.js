@@ -11,7 +11,7 @@ const migration = fs.readFileSync(
   'utf8'
 );
 const lifecycle = fs.readFileSync(
-  path.join(root, 'supabase/migrations/20260922083000_test71_mc1_e2e_lifecycle_v613.sql'),
+  path.join(root, 'supabase/migrations/20260922080811_test71_mc1_e2e_lifecycle_v613.sql'),
   'utf8'
 );
 const browser = fs.readFileSync(path.join(root, 'tests/e2e/mc1-real-chat.spec.js'), 'utf8');
