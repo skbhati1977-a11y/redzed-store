@@ -43,7 +43,7 @@ async function e2eDcardSnapshot(page) {
   });
 }
 
-test.beforeEach(async ({ page }) => { await ensureSession(page); });
+test.beforeEach(async ({ page }) => { await ensureSession(page, { quiet: true }); });
 test.afterEach(async ({ page }) => {
   if (!page.isClosed()) await rpc(page, 'rr_test_clear_on_behalf_context_v176').catch(() => null);
 });

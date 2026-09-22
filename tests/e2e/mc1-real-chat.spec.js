@@ -19,7 +19,7 @@ async function openMc1(page, status = 'OPEN') {
 }
 
 test('MC1 purchase, consumption, costing, close and idempotency stay canonical', async ({ page }) => {
-  await ensureSession(page);
+  await ensureSession(page, { quiet: true });
 
   const beforeRows = await rpc(page, 'rr_get_mc1_purchase_account_v9076');
   const retainedBefore = beforeRows.filter((x) => String(x.bill_no || '').startsWith('MC1-E2E-')).length;

@@ -9,7 +9,7 @@ async function rpc(page, name, args = {}) {
 }
 
 test('deployed Unit dropdown, creation, Material persistence, CB mirror and Worker denial', async ({ page }) => {
-  await ensureSession(page);
+  await ensureSession(page, { quiet: true });
   await rpc(page, 'rr_test_clear_on_behalf_context_v176').catch(() => null);
 
   // Do not race the Git push against the immutable preview rollout.

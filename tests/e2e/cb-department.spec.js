@@ -113,7 +113,7 @@ async function retireCbUiFixture(page, key) {
 }
 
 test.beforeEach(async ({ page }) => {
-  await ensureSession(page);
+  await ensureSession(page, { quiet: true });
   await rpc(page, 'rr_test_clear_on_behalf_context_v176').catch(() => null);
 });
 

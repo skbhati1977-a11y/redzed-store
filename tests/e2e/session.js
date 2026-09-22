@@ -51,12 +51,16 @@ async function bootstrap(page) {
   return session;
 }
 
-async function ensureSession(page) {
-  await page.goto("/real-dashboard-v9182.html?mode=TEST");
+async function ensureSession(page, options = {}) {
+  const quiet = options.quiet === true;
+  const landing = quiet
+    ? "/real-login.html?e2e=quiet"
+    : "/real-dashboard-v9182.html?mode=TEST";
+  await page.goto(landing);
   const active = await page.evaluate(async () => Boolean((await window.supabaseClient.auth.getSession()).data?.session));
   if (!active) {
     await bootstrap(page);
-    await page.goto("/real-dashboard-v9182.html?mode=TEST");
+    if (!quiet) await page.goto(landing);
   }
 }
 
