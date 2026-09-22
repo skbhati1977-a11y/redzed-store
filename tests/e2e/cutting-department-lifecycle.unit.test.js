@@ -10,6 +10,10 @@ const availabilitySql = fs.readFileSync(
   'supabase/migrations/20260922114500_test71_cutting_projection_availability_v616.sql',
   'utf8'
 );
+const timeoutSql = fs.readFileSync(
+  'supabase/migrations/20260922121000_test71_cutting_proof_timeout_v617.sql',
+  'utf8'
+);
 const cutting = fs.readFileSync('real-cutting-master-pm.V719.3.js', 'utf8');
 const chat = fs.readFileSync('test70-real-chat-live-v70.js', 'utf8');
 const art = fs.readFileSync('real-art-decide-master-v9231.js', 'utf8');
@@ -68,4 +72,6 @@ test('rollback-only lifecycle proof covers every transition and leaves zero resi
   assert.match(sql, /'due_release_blocked',v_due_release_blocked/i);
   assert.match(sql, /'release_retry_blocked',v_retry_blocked/i);
   assert.match(sql, /'fixture_residue',v_residue/i);
+  assert.match(timeoutSql, /alter function public\.rr_test_cutting_department_lifecycle_v615\(\)[\s\S]*statement_timeout='45s'/i);
+  assert.match(timeoutSql, /alter function public\.rr_test_released_dcard_regression_v502\(\)[\s\S]*statement_timeout='30s'/i);
 });
