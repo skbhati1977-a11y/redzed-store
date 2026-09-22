@@ -53,7 +53,7 @@ const workingCanonicalProjection = fs.readFileSync(
   'utf8'
 );
 const isolatedUiFixture = fs.readFileSync(
-  'supabase/migrations/20260922220500_test71_cb_ui_fixture_retirement_v622.sql',
+  'supabase/migrations/20260922222500_test71_cb_ui_fixture_colour_evidence_v623.sql',
   'utf8'
 );
 const artPage = fs.readFileSync('real-art-decide-master-v9231.js', 'utf8');
@@ -151,12 +151,13 @@ test('Art picker uses effective authority, canonical media thumbnails and No Nam
 });
 
 test('deployed CB/Cutting UI fixtures are isolated, retry-safe and retire through canonical history', () => {
-  assert.match(isolatedUiFixture, /TEST71 V622/);
+  assert.match(isolatedUiFixture, /TEST71 V623/);
   assert.match(isolatedUiFixture, /rr_test_cb_ui_fixture_v619/);
   assert.match(isolatedUiFixture, /TEST71 E2E Super Admin/);
   assert.match(isolatedUiFixture, /rr_upm_effective_identity_v200/);
   assert.match(isolatedUiFixture, /pg_advisory_xact_lock/);
   assert.match(isolatedUiFixture, /rr_cb_department_save_v600/);
+  assert.match(isolatedUiFixture, /'image_url','https:\/\/example\.invalid\/test71-v623\.jpg'/);
   assert.match(isolatedUiFixture, /rr_pm_save_decision_bundle_v804/);
   assert.match(isolatedUiFixture, /rr_cb_purchase_return_v806/);
   assert.match(isolatedUiFixture, /operation_status='TEST_RETIRED'/);
