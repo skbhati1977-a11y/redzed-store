@@ -508,6 +508,26 @@ test('three new TEST71 CBs complete deployed New/Open/Draft/Confirm invariants',
     contentType: 'application/json'
   });
   expect(productionCard).toContain(firstLot);
+  const assignCard = page.locator('#messages .work-card').filter({ hasText: firstLot }).first();
+  await expect(assignCard).toBeVisible();
+  const assignAction = assignCard.locator('[data-assign-action]').first();
+  await expect(assignAction).toBeVisible();
+  await assignAction.click();
+  await expect(page.locator('#actionSheet')).toBeVisible();
+  const department = page.frameLocator('#actionFrame');
+  await expect(department.locator('#rfAssignModal')).toBeVisible({ timeout: 60_000 });
+  const workerOptions = await department.locator('#rfWorker option').allTextContents();
+  await testInfo.attach('first-production-worker-options.json', {
+    body: Buffer.from(JSON.stringify({ firstLot, workerOptions }, null, 2)),
+    contentType: 'application/json'
+  });
+  await department.locator('#rfAll').check();
+  const worker = department.locator('#rfWorker option[value]:not([value=""])').first();
+  const workerId = await worker.getAttribute('value');
+  expect(workerId, 'Canonical department worker required').toBeTruthy();
+  await department.locator('#rfWorker').selectOption(workerId);
+  await department.locator('#rfDoAssign').click();
+  await expect(department.locator('#rfAssignMsg')).toContainText(/ASSIGN|success|worker/i, { timeout: 60_000 });
   const width = await page.evaluate(() => ({ body: document.body.scrollWidth, viewport: document.documentElement.clientWidth }));
   expect(width.body).toBeLessThanOrEqual(width.viewport + 2);
   expect(runtimeErrors).toEqual([]);
