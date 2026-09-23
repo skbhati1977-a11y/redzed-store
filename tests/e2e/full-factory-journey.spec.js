@@ -411,8 +411,13 @@ async function releaseRetainedCuttingChildren(page) {
     await expect(cuttingCard).toBeVisible({ timeout: 30_000 });
     await cuttingCard.click();
     await expect(page.locator('#lotSheet')).not.toHaveClass(/cm-hidden/, { timeout: 30_000 });
-    const lotNo = 'T71-' + Date.now().toString(36).toUpperCase() + '-' + child.unit.cb_code.replace(/[^A-Z0-9]/gi, '').slice(-4);
-    await page.locator('#cmManualLotNo').fill(lotNo);
+    const manualLot = page.locator('#cmManualLotNo');
+    if (await manualLot.isVisible().catch(() => false)) {
+      await manualLot.fill('');
+    } else {
+      const multiLots = page.locator('#cmDevRows .cm-dev-lot-no');
+      for (let n = 0; n < await multiLots.count(); n += 1) await multiLots.nth(n).fill('');
+    }
     const colourInputs = page.locator('#cuttingMatrix input[type="number"]:not([readonly]):not([disabled])');
     if (await colourInputs.count()) {
       for (let n = 0; n < await colourInputs.count(); n += 1) {
