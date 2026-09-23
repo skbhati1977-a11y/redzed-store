@@ -21,7 +21,7 @@ permissions:
   id-token: write
 
 concurrency:
-  group: test71-e2e-${{ github.ref }}
+  group: test71-full-factory-${{ github.sha }}
   cancel-in-progress: false
 
 jobs:
