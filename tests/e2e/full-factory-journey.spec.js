@@ -498,8 +498,8 @@ test('three new TEST71 CBs complete deployed New/Open/Draft/Confirm invariants',
   // Inspect the next real production card for the same released Lot.
   const firstLot = cutting.flatMap(x => x.lifecycle.lots || [])[0]?.lot_no;
   expect(firstLot).toBeTruthy();
-  await page.goto('/test70-cb-purchase-real-chat-pilot.html?mode=TEST&rc_status=OPEN&rc_view=workflow&rc_id=3%3A0');
-  await expect(page.locator('#chatName')).toContainText(/UPM · All Departments/i, { timeout: 30_000 });
+  await page.goto('/test70-cb-purchase-real-chat-pilot.html?mode=TEST&rc_status=OPEN&rc_view=chat&rc_kind=group&rc_id=STITCHING');
+  await expect(page.locator('#chatName')).toContainText(/STITCHING/i, { timeout: 30_000 });
   await page.locator('#chatFind').fill(firstLot);
   await page.locator('#chatFind').press('Enter');
   const productionCard = await page.locator('#messages').innerText();
