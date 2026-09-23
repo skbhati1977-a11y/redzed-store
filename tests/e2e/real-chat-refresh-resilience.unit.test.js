@@ -9,7 +9,7 @@ test('Real Chat requests the canonical bounded history window', () => {
   const bridge = chat.match(/async function loadBridge\(\)\{[\s\S]*?\nasync function load\(/)?.[0] || '';
   assert.match(bridge, /rr_real_chat_conversation_history_v83',\{p_limit:2000\}/);
   assert.doesNotMatch(bridge, /p_limit:5000/);
-  assert.match(shell, /test70-real-chat-live-v70\.js\?v=629/);
+  assert.match(shell, /test70-real-chat-live-v70\.js\?v=630/);
 });
 
 test('auxiliary projection timeouts cannot discard canonical CB cards', () => {
@@ -56,4 +56,7 @@ test('embedded action close is single-flight and restores same-card focus around
   assert.match(close, /await load\(false\);restoreActionOrigin\(origin\)/);
   assert.match(chat, /getAttribute\('src'\)===\'about:blank\'/);
   assert.match(chat, /S\.actionClosing\)return/);
+  assert.match(chat, /S\.returnFocusCb=event\.data\.focus/);
+  assert.match(chat, /const focusedCb=S\.returnFocusCb\|\|document\.activeElement\?\.closest\?\.\('\[data-cb-no\]'\)/);
+  assert.match(chat, /if\(focusedCb\)focusCbCard\(focusedCb,focusedCb===S\.returnFocusCb\)/);
 });

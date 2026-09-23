@@ -179,6 +179,9 @@ test('authority, idempotency and audit remain server enforced', () => {
   assert.match(migration, /previous_state/);
   assert.match(migration, /new_state/);
   assert.match(form, /if\(saving\)return/);
+  assert.match(form, /params=\{p_cb_id:cbId,p_action_id:pending\.actionId/);
+  assert.equal((form.match(/rr_cb_department_save_v600',params/g) || []).length, 2);
+  assert.match(form, /statement timeout\|57014\|canceling statement\|failed to fetch\|network/);
 });
 
 test('CB directory preserves the canonical V85 volatility contract', () => {
