@@ -527,7 +527,7 @@ test('three new TEST71 CBs complete deployed New/Open/Draft/Confirm invariants',
   expect(workerId, 'Canonical department worker required').toBeTruthy();
   await department.locator('#rfWorker').selectOption(workerId);
   await department.locator('#rfDoAssign').click();
-  await expect(department.locator('#rfAssignMsg')).toContainText(/ASSIGN|success|worker/i, { timeout: 60_000 });
+  await expect(page.locator('#actionSheet')).toBeHidden({ timeout: 60_000 });
   const width = await page.evaluate(() => ({ body: document.body.scrollWidth, viewport: document.documentElement.clientWidth }));
   expect(width.body).toBeLessThanOrEqual(width.viewport + 2);
   expect(runtimeErrors).toEqual([]);
