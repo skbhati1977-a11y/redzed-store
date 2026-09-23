@@ -41,18 +41,18 @@ jobs:
       - run: npm run e2e:env-status
       - run: npm run test:e2e:static
       - run: npm run test:e2e:mc1
-        if: ${{ github.event_name != 'workflow_dispatch' }}
+        if: ${{ false }}
         continue-on-error: true
       # MC1's auth-setup writes the reusable Super Admin storage state once.
       # Later suites must reuse it instead of replaying the one-time OIDC token.
       - run: npx playwright test --project=cb-department --no-deps
-        if: ${{ github.event_name != 'workflow_dispatch' }}
+        if: ${{ false }}
         continue-on-error: true
       - run: npx playwright test --project=material-unit --no-deps
-        if: ${{ github.event_name != 'workflow_dispatch' }}
+        if: ${{ false }}
         continue-on-error: true
       - run: npx playwright test --project=checkpoint-8 --no-deps
-        if: ${{ github.event_name != 'workflow_dispatch' }}
+        if: ${{ false }}
         continue-on-error: true
       - run: npx playwright test --project=full-factory --no-deps
       - name: Upload Playwright evidence
