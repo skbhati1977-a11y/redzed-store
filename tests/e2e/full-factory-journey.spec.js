@@ -295,6 +295,42 @@ async function createAndConfirm(page, fixture) {
   return { resumed: Boolean(existing), cbId };
 }
 
+async function completeArtDecisions(page, fixture) {
+  for (let completed = 0; completed < fixture.divisions; completed += 1) {
+    const current = await lookupCb(page, fixture.cbNo);
+    if (current.detail.state === 'CLOSE') break;
+    await openCbGroup(page, 'WORKING');
+    const card = page.locator(`[data-cb-no="${fixture.cbNo}"]`);
+    await expect(card).toBeVisible({ timeout: 30_000 });
+    const action = card.locator('[data-action="ART_DECISION"]').first();
+    await expect(action).toBeVisible();
+    await action.click();
+    await expect(page.locator('#actionSheet')).toBeVisible();
+    const art = page.frameLocator('#actionFrame');
+    await expect(art.locator('#decisionSheet')).not.toHaveClass(/hidden/, { timeout: 30_000 });
+    await art.locator('#picker .pick').first().click();
+    await art.locator('#decisionNext').click();
+    await expect(art.locator('[data-step="print"]')).toHaveClass(/active/);
+    await art.locator('#decisionNext').click();
+    await expect(art.locator('[data-step="sticker"]')).toHaveClass(/active/);
+    await art.locator('#decisionNext').click();
+    await expect(art.locator('[data-step="metal"]')).toHaveClass(/active/);
+    await art.locator('#decisionNext').click();
+    await expect(page.locator('#actionSheet')).toBeHidden({ timeout: 60_000 });
+  }
+
+  const snapshot = await lookupCb(page, fixture.cbNo);
+  expect(snapshot.detail.state).toBe('CLOSE');
+  await openCbGroup(page, 'WORKING');
+  await expect(page.locator(`[data-cb-no="${fixture.cbNo}"]`)).toHaveCount(0);
+  await page.locator('[data-chat-status="CLOSE"]').click();
+  const closed = page.locator(`[data-cb-no="${fixture.cbNo}"]`);
+  await expect(closed).toBeVisible();
+  await expect(closed).toContainText('CB Status CLOSE');
+  if (fixture.material === 'due-rope') await expect(closed).toContainText(/Cutting Status HOLD · 1 MATERIAL DUE/i);
+  else await expect(closed).toContainText(/Cutting Status READY FOR CUTTING/i);
+}
+
 async function canonicalSnapshot(page, cbNo) {
   const row = await proofSnapshot(page, cbNo);
   return {
@@ -351,7 +387,7 @@ test('three new TEST71 CBs complete deployed New/Open/Draft/Confirm invariants',
   const evidence = [];
   for (const fixture of FIXTURES) {
     const snapshot = await canonicalSnapshot(page, fixture.cbNo);
-    expect(snapshot.purchase.cb_department_state).toBe('WORKING');
+    expect(['WORKING', 'CLOSE']).toContain(snapshot.purchase.cb_department_state);
     const expectedWeight = snapshot.detail.entries
       .filter((row) => row.state !== 'DUE')
       .reduce((total, row) => total + Number(row.qty || 0), 0);
@@ -378,7 +414,7 @@ test('three new TEST71 CBs complete deployed New/Open/Draft/Confirm invariants',
       cb_no: fixture.cbNo,
       cb_id: snapshot.purchase.id,
       starting_state: 'NEW',
-      expected_state: 'WORKING',
+      expected_state: snapshot.purchase.cb_department_state,
       actual_backend_state: snapshot.purchase.cb_department_state,
       divisions: snapshot.units.map((row) => ({ id: row.id, code: row.cb_code })),
       materials: snapshot.detail.entries.map((row) => ({ id: row.id, name: row.fabric_name, state: row.state, qty: row.qty, unit: row.unit })),
@@ -388,8 +424,13 @@ test('three new TEST71 CBs complete deployed New/Open/Draft/Confirm invariants',
     });
   }
 
-  await openCbGroup(page, 'WORKING');
-  for (const fixture of FIXTURES) await expect(page.locator(`[data-cb-no="${fixture.cbNo}"]`)).toBeVisible();
+  for (const fixture of FIXTURES) {
+    const current = await lookupCb(page, fixture.cbNo);
+    await openCbGroup(page, current.detail.state === 'CLOSE' ? 'CLOSE' : 'WORKING');
+    await expect(page.locator(`[data-cb-no="${fixture.cbNo}"]`)).toBeVisible();
+  }
+
+  for (const fixture of FIXTURES) await completeArtDecisions(page, fixture);
   const width = await page.evaluate(() => ({ body: document.body.scrollWidth, viewport: document.documentElement.clientWidth }));
   expect(width.body).toBeLessThanOrEqual(width.viewport + 2);
   expect(runtimeErrors).toEqual([]);

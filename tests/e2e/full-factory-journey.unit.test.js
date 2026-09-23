@@ -36,6 +36,16 @@ test('purchase total weight follows all confirmed canonical entries, excluding D
   assert.doesNotMatch(source, /total_weight\)\)\.toBe\(365\)/);
 });
 
+test('the retained journeys use canonical Art UI and separate CB close from Cutting readiness', () => {
+  assert.match(source, /\[data-action="ART_DECISION"\]/);
+  assert.match(source, /#decisionSheet/);
+  assert.match(source, /#picker \.pick/);
+  assert.match(source, /CB Status CLOSE/);
+  assert.match(source, /Cutting Status HOLD · 1 MATERIAL DUE/);
+  assert.match(source, /Cutting Status READY FOR CUTTING/);
+  assert.doesNotMatch(source, /rr_pm_save_decision_bundle_v804/);
+});
+
 test('deployed proof uses the existing parameterized read-only snapshot', () => {
   const definition = snapshotMigration.match(
     /create or replace function public\.rr_test_cb_snapshot_v608\(p_cb_no text\)[\s\S]*?\$function\$;/
