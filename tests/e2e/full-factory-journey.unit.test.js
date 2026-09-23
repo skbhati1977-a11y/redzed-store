@@ -21,13 +21,10 @@ test('three full-factory identities are fixed, isolated and driven through deplo
   assert.doesNotMatch(source, /\.update\s*\(/);
 });
 
-test('fixture retries reuse canonical action payloads and preserve audit identity', () => {
-  assert.match(source, /duplicate_blocked/);
-  assert.match(source, /rr_test_cb_snapshot_v608/);
-  assert.doesNotMatch(source, /from\('rr_cb_department_audit_v600'\)/);
-  assert.match(source, /new Set\(snapshot\.audit\.map/);
-  assert.match(source, /DRAFT_SAVE/);
-  assert.match(source, /SAVE_CONFIRM/);
+test('retained Cutting runner resumes without replaying purchase actions', () => {
+  assert.match(source, /const ready = await cuttingChildren\(page\)/);
+  assert.match(source, /releaseRetainedCuttingChildren\(page\)/);
+  assert.match(source, /if \(child.lifecycle.state === 'RELEASED'\) continue/);
 });
 
 test('retained Cutting readiness checks canonical DUE entries and child lifecycle', () => {
