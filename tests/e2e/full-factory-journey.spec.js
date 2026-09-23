@@ -331,6 +331,43 @@ async function completeArtDecisions(page, fixture) {
   else await expect(closed).toContainText(/Cutting Status READY FOR CUTTING/i);
 }
 
+async function confirmRetainedDueMaterial(page, fixture) {
+  const before = await lookupCb(page, fixture.cbNo);
+  expect(before.detail.state).toBe('CLOSE');
+  const dueBefore = before.detail.entries.filter((row) => row.state === 'DUE');
+  if (!dueBefore.length) return { resumed: true, materialId: null };
+  expect(dueBefore).toHaveLength(1);
+
+  await openCbGroup(page, 'CLOSE');
+  const closed = page.locator(`[data-cb-no="${fixture.cbNo}"]`);
+  await expect(closed).toBeVisible();
+  await closed.locator('summary').click();
+  const edit = closed.locator('[data-action="CB_EDIT"]');
+  await expect(edit).toContainText(/UPDATE DUE MATERIAL/i);
+  await edit.click();
+  const form = await waitForForm(page);
+  const material = form.locator('#materialList [data-m="1"]');
+  await expect(material.locator('.reqState')).toHaveValue('DUE');
+  await material.locator('.reqState').selectOption('CONFIRMED');
+  await material.locator('.materialQty').fill('250');
+  await material.locator('.vendor').fill(SUPPLIER);
+  await material.locator('.fabric').fill(ROPE);
+  await material.locator('.bill').fill('TEST71-C-DUE-260922');
+  await material.locator('.date').fill(new Date().toISOString().slice(0, 10));
+  await material.locator('.rate').fill('5');
+  const saveBody = await saveForm(page, form, false);
+  const after = await lookupCb(page, fixture.cbNo);
+  expect(after.row.id).toBe(before.row.id);
+  expect(after.detail.state).toBe('CLOSE');
+  expect(after.detail.entries.filter((row) => row.state === 'DUE')).toHaveLength(0);
+  expect(after.detail.entries.find((row) => row.id === dueBefore[0].id)?.state).toBe('CONFIRMED');
+  await retrySave(page, saveBody, before.row.id);
+  const card = await assertSameCardFocus(page, fixture.cbNo);
+  await expect(card).toContainText('CB Status CLOSE');
+  await expect(card).toContainText(/Cutting Status READY FOR CUTTING/i);
+  return { resumed: false, materialId: dueBefore[0].id };
+}
+
 async function canonicalSnapshot(page, cbNo) {
   const row = await proofSnapshot(page, cbNo);
   return {
@@ -431,12 +468,13 @@ test('three new TEST71 CBs complete deployed New/Open/Draft/Confirm invariants',
   }
 
   for (const fixture of FIXTURES) await completeArtDecisions(page, fixture);
+  const dueMaterial = await confirmRetainedDueMaterial(page, FIXTURES.find((fixture) => fixture.key === 'C'));
   const width = await page.evaluate(() => ({ body: document.body.scrollWidth, viewport: document.documentElement.clientWidth }));
   expect(width.body).toBeLessThanOrEqual(width.viewport + 2);
   expect(runtimeErrors).toEqual([]);
 
   await testInfo.attach('checkpoint-1-three-cb-evidence.json', {
-    body: Buffer.from(JSON.stringify({ exact_preview_origin: new URL(page.url()).origin, before, results, evidence }, null, 2)),
+    body: Buffer.from(JSON.stringify({ exact_preview_origin: new URL(page.url()).origin, before, results, evidence, dueMaterial }, null, 2)),
     contentType: 'application/json'
   });
   await testInfo.attach('checkpoint-1-three-cb-working-mobile.png', {

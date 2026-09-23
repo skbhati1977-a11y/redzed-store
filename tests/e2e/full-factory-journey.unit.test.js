@@ -46,6 +46,15 @@ test('the retained journeys use canonical Art UI and separate CB close from Cutt
   assert.doesNotMatch(source, /rr_pm_save_decision_bundle_v804/);
 });
 
+test('retained C confirms its existing DUE material only through the Real Chat action sheet', () => {
+  assert.match(source, /confirmRetainedDueMaterial/);
+  assert.match(source, /UPDATE DUE MATERIAL/);
+  assert.match(source, /\.reqState'\)\.selectOption\('CONFIRMED'\)/);
+  assert.match(source, /expect\(after\.row\.id\)\.toBe\(before\.row\.id\)/);
+  assert.match(source, /expect\(after\.detail\.state\)\.toBe\('CLOSE'\)/);
+  assert.match(source, /Cutting Status READY FOR CUTTING/);
+});
+
 test('deployed proof uses the existing parameterized read-only snapshot', () => {
   const definition = snapshotMigration.match(
     /create or replace function public\.rr_test_cb_snapshot_v608\(p_cb_no text\)[\s\S]*?\$function\$;/
