@@ -402,8 +402,10 @@ async function releaseRetainedCuttingChildren(page) {
     const card = page.locator('[data-cb-unit-id="' + child.unit.id + '"], [data-source-record-id="' + child.unit.id + '"]').first();
     await expect(card).toBeVisible({ timeout: 30_000 });
     const single = card.locator('a[data-action="CUTTING_SINGLE_LOT"], a:has-text("SINGLE LOT")').first();
-    await expect(single).toBeVisible();
-    await single.click();
+    const multi = card.locator('a[data-action="CUTTING_MULTI_LOT"], a:has-text("MULTI LOT")').first();
+    const action = await single.isVisible().catch(() => false) ? single : multi;
+    await expect(action).toBeVisible();
+    await action.click();
     await expect(page).toHaveURL(/real-cutting-master\.html/);
     const cuttingCard = page.locator('[data-single="' + child.unit.id + '"]').first();
     await expect(cuttingCard).toBeVisible({ timeout: 30_000 });
