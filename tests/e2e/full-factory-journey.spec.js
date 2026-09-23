@@ -63,11 +63,15 @@ async function openCbGroup(page, status = 'OPEN') {
   await expect(page).toHaveURL(/rc_id=PURCHASE/);
 }
 
-async function waitForForm(page) {
+async function waitForForm(page, { allowReadOnlyHistory = false } = {}) {
   await expect(page.locator('#actionSheet')).toBeVisible();
   const form = page.frameLocator('#actionFrame');
   await expect(form.locator('#cbForm')).toBeVisible({ timeout: 30_000 });
-  await expect(form.locator('#bootMsg')).toBeHidden({ timeout: 30_000 });
+  if (allowReadOnlyHistory) {
+    await expect(form.locator('#bootMsg')).toContainText(/SENT TO CUTTING.*Read-only history/i, { timeout: 30_000 });
+  } else {
+    await expect(form.locator('#bootMsg')).toBeHidden({ timeout: 30_000 });
+  }
   return form;
 }
 
@@ -345,7 +349,7 @@ async function confirmRetainedDueMaterial(page, fixture) {
   const edit = closed.locator('[data-action="CB_EDIT"]');
   await expect(edit).toContainText(/UPDATE DUE MATERIAL/i);
   await edit.click();
-  const form = await waitForForm(page);
+  const form = await waitForForm(page, { allowReadOnlyHistory: true });
   const material = form.locator('#materialList [data-m="1"]');
   await expect(material.locator('.reqState')).toHaveValue('DUE');
   await material.locator('.reqState').selectOption('CONFIRMED');
