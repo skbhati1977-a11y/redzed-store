@@ -1,6 +1,7 @@
 name: TEST71 Current Checkpoint E2E
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - test71-real-chat-e2e-finalization
@@ -14,7 +15,6 @@ on:
       - package.json
       - package-lock.json
       - .github/workflows/test71-checkpoint0-e2e.yml
-  workflow_dispatch:
 
 permissions:
   contents: read
