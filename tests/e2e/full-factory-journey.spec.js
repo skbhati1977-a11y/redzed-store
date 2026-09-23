@@ -406,28 +406,29 @@ async function releaseRetainedCuttingChildren(page) {
     const action = await single.isVisible().catch(() => false) ? single : multi;
     await expect(action).toBeVisible();
     await action.click();
-    await expect(page).toHaveURL(/real-cutting-master\.html/);
-    const cuttingCard = page.locator('[data-single="' + child.unit.id + '"]').first();
+    await expect(page.locator('#actionSheet')).toBeVisible();
+    await expect(page.locator('#actionFrame')).toHaveAttribute('src', /real-cutting-master\.html/);
+    const form = page.frameLocator('#actionFrame');
+    const cuttingCard = form.locator('[data-single="' + child.unit.id + '"]').first();
     await expect(cuttingCard).toBeVisible({ timeout: 30_000 });
     await cuttingCard.click();
-    await expect(page.locator('#lotSheet')).not.toHaveClass(/cm-hidden/, { timeout: 30_000 });
-    const manualLot = page.locator('#cmManualLotNo');
+    await expect(form.locator('#lotSheet')).not.toHaveClass(/cm-hidden/, { timeout: 30_000 });
+    const manualLot = form.locator('#cmManualLotNo');
     if (await manualLot.isVisible().catch(() => false)) {
       await manualLot.fill('');
     } else {
-      const multiLots = page.locator('#cmDevRows .cm-dev-lot-no');
+      const multiLots = form.locator('#cmDevRows .cm-dev-lot-no');
       for (let n = 0; n < await multiLots.count(); n += 1) await multiLots.nth(n).fill('');
     }
-    const colourInputs = page.locator('#cuttingMatrix input[type="number"]:not([readonly]):not([disabled])');
+    const colourInputs = form.locator('#cuttingMatrix input[type="number"]:not([readonly]):not([disabled])');
     if (await colourInputs.count()) {
       for (let n = 0; n < await colourInputs.count(); n += 1) {
         const input = colourInputs.nth(n);
         if (!(await input.inputValue())) await input.fill('1');
       }
     }
-    if (!(await page.locator('#baseCost').inputValue())) await page.locator('#baseCost').fill('2.5');
-    await page.locator('#releaseLotBtn').click();
-    await expect(page.locator('#lotSheet')).toHaveClass(/cm-hidden/, { timeout: 60_000 });
+    if (!(await form.locator('#baseCost').inputValue())) await form.locator('#baseCost').fill('2.5');
+    await form.locator('#releaseLotBtn').click();
     await expect.poll(async () => (await cuttingChildren(page)).find(x => x.unit.id === child.unit.id)?.lifecycle.state, { timeout: 60_000 }).toBe('RELEASED');
   }
   return cuttingChildren(page);
