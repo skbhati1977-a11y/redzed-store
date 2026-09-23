@@ -397,7 +397,7 @@ async function releaseRetainedCuttingChildren(page) {
   for (const child of before) {
     if (child.lifecycle.state === 'RELEASED') continue;
     expect(child.lifecycle.state).toBe('READY_FOR_CUTTING');
-    await page.goto('/test70-cb-purchase-real-chat-pilot.html?mode=TEST&rc_status=WORKING&rc_view=workflow&rc_workflow=2%3A0');
+    await page.goto('/test70-cb-purchase-real-chat-pilot.html?mode=TEST&rc_status=WORKING&rc_view=workflow&rc_id=2%3A0');
     await expect(page.locator('#chatName')).toContainText(/Ready \/ Release \/ All Lot/i, { timeout: 30_000 });
     const card = page.locator('[data-cb-unit-id="' + child.unit.id + '"], [data-source-record-id="' + child.unit.id + '"]').first();
     await expect(card).toBeVisible({ timeout: 30_000 });
