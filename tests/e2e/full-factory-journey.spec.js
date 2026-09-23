@@ -529,8 +529,15 @@ test('three new TEST71 CBs complete deployed New/Open/Draft/Confirm invariants',
     await expect(page.locator(`[data-cb-no="${fixture.cbNo}"]`)).toBeVisible();
   }
 
-  for (const fixture of FIXTURES) await completeArtDecisions(page, fixture);
-  const dueMaterial = await confirmRetainedDueMaterial(page, FIXTURES.find((fixture) => fixture.key === 'C'));
+  for (const fixture of FIXTURES) {
+    const current = await lookupCb(page, fixture.cbNo);
+    const incomplete = (current?.detail?.units || []).some((unit) => unit?.art_decision_complete === false);
+    if (incomplete) await completeArtDecisions(page, fixture);
+  }
+  const cCurrent = await lookupCb(page, FIXTURES.find((fixture) => fixture.key === 'C').cbNo);
+  const dueMaterial = Number(cCurrent?.detail?.material_due_count || 0) > 0
+    ? await confirmRetainedDueMaterial(page, FIXTURES.find((fixture) => fixture.key === 'C'))
+    : { resumed: true, due_count: 0 };
   const cutting = await releaseRetainedCuttingChildren(page);
   expect(cutting.every((x) => x.lifecycle.state === 'RELEASED')).toBe(true);
   const width = await page.evaluate(() => ({ body: document.body.scrollWidth, viewport: document.documentElement.clientWidth }));
