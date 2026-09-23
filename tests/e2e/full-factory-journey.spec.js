@@ -548,7 +548,13 @@ test('three new TEST71 CBs complete deployed New/Open/Draft/Confirm invariants',
     expect((await rpc(page, 'rr_test_set_on_behalf_context_v176', { p_worker_id: workerIds[0] })).error).toBeNull();
     await page.goto('/test70-cb-purchase-real-chat-pilot.html?mode=TEST&rc_status=WORKING&rc_view=chat&rc_kind=group&rc_id=STITCHING');
     await expect(page.locator('#chatName')).toContainText(/STITCHING/i, { timeout: 30_000 });
-    console.log('TEST71_ACCEPT_PROBE', JSON.stringify(await page.evaluate((lotNo) => ({ actor: S.actor, cards: S.cards.filter(c => c.lot_no === lotNo).map(c => ({ worker_id:c.worker_id,assignment_id:c.assignment_id,responsibility_event_id:c.responsibility_event_id,receipt_status:c.receipt_status,actions:c.actions,event_key:c.event_key,department_code:c.department_code })), visible:document.querySelector('#messages')?.innerText.slice(0,1200) }), lot)));
+    console.log('TEST71_ACCEPT_PROBE', JSON.stringify(await page.evaluate(async (lotNo) => {
+      const [dir,work] = await Promise.all([
+        window.supabaseClient.rpc('rr_real_chat_directory_v85'),
+        window.supabaseClient.rpc('rr_real_chat_work_search_v10', { p_status:'WORKING',p_search:null,p_department_code:null,p_limit:500 })
+      ]);
+      return { actor:dir.data?.actor, workActor:work.data?.actor, error:work.error?.message, cards:(work.data?.cards||[]).filter(c=>c.lot_no===lotNo).map(c=>({ worker_id:c.worker_id,assignment_id:c.assignment_id,responsibility_event_id:c.responsibility_event_id,receipt_status:c.receipt_status,actions:c.actions,event_key:c.event_key,department_code:c.department_code })), visible:document.querySelector('#messages')?.innerText.slice(0,1200) };
+    }, lot)));
     const card = page.locator('#messages .work-card').filter({ hasText: lot }).filter({ has: page.locator('a[data-action="CONFIRM_RECEIVED_PCS"]') }).first();
     await expect(card).toBeVisible({ timeout: 30_000 });
     await card.locator('a[data-action="CONFIRM_RECEIVED_PCS"]').click();
