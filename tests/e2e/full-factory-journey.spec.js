@@ -372,6 +372,60 @@ async function confirmRetainedDueMaterial(page, fixture) {
   return { resumed: false, materialId: dueBefore[0].id };
 }
 
+
+async function cuttingChildren(page) {
+  return page.evaluate(async (cbNos) => {
+    const purchases = await window.supabaseClient.from('rr_fabric_purchases').select('id,cb_no').in('cb_no', cbNos);
+    if (purchases.error) throw new Error(purchases.error.message);
+    const out = [];
+    for (const purchase of purchases.data || []) {
+      const units = await window.supabaseClient.from('rr_cb_units').select('id,cb_code').eq('purchase_id', purchase.id).eq('is_final', true).eq('is_cutting_enabled', true).order('created_at');
+      if (units.error) throw new Error(units.error.message);
+      for (const unit of units.data || []) {
+        const life = await window.supabaseClient.rpc('rr_cutting_child_lifecycle_v615', { p_cb_unit_id: unit.id });
+        if (life.error) throw new Error(life.error.message);
+        out.push({ fixture: purchase.cb_no, unit, lifecycle: life.data });
+      }
+    }
+    return out;
+  }, FIXTURES.map((x) => x.cbNo));
+}
+
+async function releaseRetainedCuttingChildren(page) {
+  const before = await cuttingChildren(page);
+  expect(before).toHaveLength(5);
+  for (const child of before) {
+    if (child.lifecycle.state === 'RELEASED') continue;
+    expect(child.lifecycle.state).toBe('READY_FOR_CUTTING');
+    await page.goto('/test70-cb-purchase-real-chat-pilot.html?mode=TEST&rc_status=WORKING&rc_view=workflow&rc_workflow=2%3A0');
+    await expect(page.locator('#chatName')).toContainText(/Ready \/ Release \/ All Lot/i, { timeout: 30_000 });
+    const card = page.locator('[data-cb-unit-id="' + child.unit.id + '"], [data-source-record-id="' + child.unit.id + '"]').first();
+    await expect(card).toBeVisible({ timeout: 30_000 });
+    const single = card.locator('a[data-action="CUTTING_RELEASE"], a:has-text("READY FOR CUTTING")').first();
+    await expect(single).toBeVisible();
+    await single.click();
+    await expect(page).toHaveURL(/real-cutting-master\.html/);
+    const cuttingCard = page.locator('[data-single="' + child.unit.id + '"]').first();
+    await expect(cuttingCard).toBeVisible({ timeout: 30_000 });
+    await cuttingCard.click();
+    await expect(page.locator('#lotSheet')).not.toHaveClass(/cm-hidden/, { timeout: 30_000 });
+    const lotNo = 'T71-' + child.unit.cb_code.replace(/[^A-Z0-9]/gi, '').slice(-10);
+    await page.locator('#cmManualLotNo').fill(lotNo);
+    const colourInputs = page.locator('#cuttingMatrix input[type="number"]:not([readonly]):not([disabled])');
+    if (await colourInputs.count()) {
+      for (let n = 0; n < await colourInputs.count(); n += 1) {
+        const input = colourInputs.nth(n);
+        if (!(await input.inputValue())) await input.fill('1');
+      }
+    }
+    if (!(await page.locator('#baseCost').inputValue())) await page.locator('#baseCost').fill('2.5');
+    await page.locator('#releaseLotBtn').click();
+    await expect(page.locator('#lotSheet')).toHaveClass(/cm-hidden/, { timeout: 60_000 });
+    await expect.poll(async () => (await cuttingChildren(page)).find(x => x.unit.id === child.unit.id)?.lifecycle.state, { timeout: 60_000 }).toBe('RELEASED');
+  }
+  return cuttingChildren(page);
+}
+
 async function canonicalSnapshot(page, cbNo) {
   const row = await proofSnapshot(page, cbNo);
   return {
@@ -473,12 +527,12 @@ test('three new TEST71 CBs complete deployed New/Open/Draft/Confirm invariants',
 
   for (const fixture of FIXTURES) await completeArtDecisions(page, fixture);
   const dueMaterial = await confirmRetainedDueMaterial(page, FIXTURES.find((fixture) => fixture.key === 'C'));
-  const width = await page.evaluate(() => ({ body: document.body.scrollWidth, viewport: document.documentElement.clientWidth }));
+  const cutting = await releaseRetainedCuttingChildren(page);\n  expect(cutting.every((x) => x.lifecycle.state === 'RELEASED')).toBe(true);\n  const width = await page.evaluate(() => ({ body: document.body.scrollWidth, viewport: document.documentElement.clientWidth }));
   expect(width.body).toBeLessThanOrEqual(width.viewport + 2);
   expect(runtimeErrors).toEqual([]);
 
   await testInfo.attach('checkpoint-1-three-cb-evidence.json', {
-    body: Buffer.from(JSON.stringify({ exact_preview_origin: new URL(page.url()).origin, before, results, evidence, dueMaterial }, null, 2)),
+    body: Buffer.from(JSON.stringify({ exact_preview_origin: new URL(page.url()).origin, before, results, evidence, dueMaterial, cutting }, null, 2)),
     contentType: 'application/json'
   });
   await testInfo.attach('checkpoint-1-three-cb-working-mobile.png', {
