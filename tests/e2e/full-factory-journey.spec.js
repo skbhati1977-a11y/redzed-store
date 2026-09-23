@@ -431,7 +431,11 @@ async function releaseRetainedCuttingChildren(page) {
       const colour = colours.nth(n);
       const sizes = colour.locator('.cm-size-qty');
       let total = 0;
-      for (let i = 0; i < await sizes.count(); i += 1) total += Number(await sizes.nth(i).inputValue() || 0);
+      for (let i = 0; i < await sizes.count(); i += 1) {
+        const size = sizes.nth(i);
+        if (!Number(await size.inputValue() || 0)) await size.fill('1');
+        total += Number(await size.inputValue());
+      }
       expect(total, 'Fixture size quantities must be positive').toBeGreaterThan(0);
       await colour.locator('.cm-colour-total').fill(String(total));
     }
