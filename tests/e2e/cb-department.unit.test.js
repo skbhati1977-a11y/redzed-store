@@ -135,7 +135,7 @@ test('CB completion and Cutting readiness are separate canonical dimensions', ()
   assert.match(chat, /function cbDepartmentContext/);
   assert.match(chat, /if\(cbDepartmentContext\(\)\)\{box\.hidden=true;return\}/);
   assert.match(chat, /focusCbCard\(cbNo,consume=false\)/);
-  assert.match(chat, /<details class="closed-row"'\+identity/);
+  assert.match(chat, /<details class="closed-row" data-closed-key=/);
   assert.match(chat, /inner\.replace\(\/ data-cb-no=/);
   assert.match(chat, /if\(!fast&&S\.returnFocusCb\)focusCbCard\(S\.returnFocusCb,true\)/);
 });
