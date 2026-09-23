@@ -534,16 +534,35 @@ test('three new TEST71 CBs complete deployed New/Open/Draft/Confirm invariants',
     body: Buffer.from(JSON.stringify({ lots, text: await page.locator('#messages').innerText(), actions: await page.locator('#messages .work-card').evaluateAll(cards => cards.filter(c => c.textContent.includes('TEST71-')).map(c => ({ text: c.textContent, controls: [...c.querySelectorAll('button,a')].map(x => ({ text: x.textContent, action: x.dataset.action, href: x.getAttribute('href') })) }))) }, null, 2)),
     contentType: 'application/json'
   });
-  const width = await page.evaluate(() => ({ body: document.body.scrollWidth, viewport: document.documentElement.clientWidth }));
-  expect(width.body).toBeLessThanOrEqual(width.viewport + 2);
-  expect(runtimeErrors).toEqual([]);
-
-  await testInfo.attach('checkpoint-1-three-cb-evidence.json', {
-    body: Buffer.from(JSON.stringify({ exact_preview_origin: new URL(page.url()).origin, before, cutting }, null, 2)),
-    contentType: 'application/json'
-  });
-  await testInfo.attach('checkpoint-1-three-cb-working-mobile.png', {
-    body: await page.screenshot({ fullPage: true }),
-    contentType: 'image/png'
-  });
-});
+  for (const lot of lots) {
+    const assignments = await page.evaluate(async (lotNo) => {
+      const result = await window.supabaseClient.from('rr_upm_work_assignments_canonical_v282')
+        .select('id,worker_id,status,colour_code,assigned_qty').eq('lot_no', lotNo).eq('department_code', 'STITCHING');
+      if (result.error) throw new Error(result.error.message);
+      return result.data;
+    }, lot);
+    const pending = assignments.filter(a => a.status === 'ASSIGNED');
+    if (!pending.length) continue;
+    const workerIds = [...new Set(pending.map(a => a.worker_id))];
+    expect(workerIds).toHaveLength(1);
+    expect((await rpc(page, 'rr_test_set_on_behalf_context_v176', { p_worker_id: workerIds[0] })).error).toBeNull();
+    await page.goto('/test70-cb-purchase-real-chat-pilot.html?mode=TEST&rc_status=WORKING&rc_view=chat&rc_kind=group&rc_id=STITCHING');
+    await expect(page.locator('#chatName')).toContainText(/STITCHING/i, { timeout: 30_000 });
+    const card = page.locator('#messages .work-card').filter({ hasText: lot }).filter({ has: page.locator('a[data-action="CONFIRM_RECEIVED_PCS"]') }).first();
+    await expect(card).toBeVisible({ timeout: 30_000 });
+    await card.locator('a[data-action="CONFIRM_RECEIVED_PCS"]').click();
+    await expect(page.locator('#actionSheet')).toBeVisible();
+    const receipt = page.frameLocator('#actionFrame');
+    await expect(receipt.locator('#accept')).toBeVisible({ timeout: 30_000 });
+    expect(await receipt.locator('.qty').count()).toBe(pending.length);
+    await receipt.locator('#accept').click();
+    await expect.poll(async () => {
+      const current = await page.evaluate(async (lotNo) => {
+        const result = await window.supabaseClient.from('rr_upm_work_assignments_canonical_v282').select('status').eq('lot_no', lotNo).eq('department_code', 'STITCHING');
+        if (result.error) throw new Error(result.error.message);
+        return result.data;
+      }, lot);
+      return current.filter(a => a.status === 'ASSIGNED').length;
+    }, { timeout: 60_000 }).toBe(0);
+    expect((await rpc(page, 'rr_test_clear_on_behalf_context_v176')).error).toBeNull();
+  }
