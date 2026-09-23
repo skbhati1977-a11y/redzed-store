@@ -527,7 +527,9 @@ test('three new TEST71 CBs complete deployed New/Open/Draft/Confirm invariants',
 
   for (const fixture of FIXTURES) await completeArtDecisions(page, fixture);
   const dueMaterial = await confirmRetainedDueMaterial(page, FIXTURES.find((fixture) => fixture.key === 'C'));
-  const cutting = await releaseRetainedCuttingChildren(page);\n  expect(cutting.every((x) => x.lifecycle.state === 'RELEASED')).toBe(true);\n  const width = await page.evaluate(() => ({ body: document.body.scrollWidth, viewport: document.documentElement.clientWidth }));
+  const cutting = await releaseRetainedCuttingChildren(page);
+  expect(cutting.every((x) => x.lifecycle.state === 'RELEASED')).toBe(true);
+  const width = await page.evaluate(() => ({ body: document.body.scrollWidth, viewport: document.documentElement.clientWidth }));
   expect(width.body).toBeLessThanOrEqual(width.viewport + 2);
   expect(runtimeErrors).toEqual([]);
 
