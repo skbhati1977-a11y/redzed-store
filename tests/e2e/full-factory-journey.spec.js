@@ -529,6 +529,7 @@ test('three new TEST71 CBs complete deployed New/Open/Draft/Confirm invariants',
   });
   await page.goto('/test70-cb-purchase-real-chat-pilot.html?mode=TEST&rc_status=WORKING&rc_view=chat&rc_kind=group&rc_id=STITCHING');
   await expect(page.locator('#chatName')).toContainText(/STITCHING/i, { timeout: 30_000 });
+  console.log('TEST71_WORKING_CARDS', JSON.stringify(await page.locator('#messages .work-card').evaluateAll(cards => cards.filter(c => c.textContent.includes('TEST71-')).map(c => ({ text: c.textContent, controls: [...c.querySelectorAll('button,a')].map(x => ({ text: x.textContent, action: x.dataset.action, href: x.getAttribute('href') })) })))));
   await testInfo.attach('production-stitching-working-card.json', {
     body: Buffer.from(JSON.stringify({ lots, text: await page.locator('#messages').innerText(), actions: await page.locator('#messages .work-card').evaluateAll(cards => cards.filter(c => c.textContent.includes('TEST71-')).map(c => ({ text: c.textContent, controls: [...c.querySelectorAll('button,a')].map(x => ({ text: x.textContent, action: x.dataset.action, href: x.getAttribute('href') })) }))) }, null, 2)),
     contentType: 'application/json'
