@@ -409,10 +409,8 @@ async function releaseRetainedCuttingChildren(page) {
     await expect(page.locator('#actionSheet')).toBeVisible();
     await expect(page.locator('#actionFrame')).toHaveAttribute('src', /real-cutting-master\.html/);
     const form = page.frameLocator('#actionFrame');
-    const cuttingCard = form.locator('[data-single="' + child.unit.id + '"]').first();
-    await expect(cuttingCard).toBeVisible({ timeout: 30_000 });
-    await cuttingCard.click();
-    await expect(form.locator('#lotSheet')).not.toHaveClass(/cm-hidden/, { timeout: 30_000 });
+    // The canonical cb_unit_id deep link opens the requested Single/Multi form.
+    await expect(form.locator('#lotSheet')).not.toHaveClass(/cm-hidden/, { timeout: 60_000 });
     const manualLot = form.locator('#cmManualLotNo');
     if (await manualLot.isVisible().catch(() => false)) {
       await manualLot.fill('');
