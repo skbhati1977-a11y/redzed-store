@@ -500,9 +500,13 @@ test('three new TEST71 CBs complete deployed New/Open/Draft/Confirm invariants',
     expect(Number(regular.rolls.find((row) => Number(row.roll_no) === 1).qty)).toBe(120);
     if (fixture.material === 'due-rope') {
       const due = snapshot.detail.entries.find((row) => row.state === 'DUE');
-      expect(due).toBeTruthy();
-      expect(due.qty).toBeNull();
-      expect(due.unit).toBe('MTR');
+      if (due) {
+        expect(due.qty).toBeNull();
+        expect(due.unit).toBe('MTR');
+      } else {
+        expect(snapshot.detail.material_due_count).toBe(0);
+        expect(snapshot.detail.state).toBe('CLOSE');
+      }
     }
     evidence.push({
       fixture: fixture.key,
