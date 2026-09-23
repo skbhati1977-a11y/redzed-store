@@ -495,39 +495,38 @@ test('three new TEST71 CBs complete deployed New/Open/Draft/Confirm invariants',
   }
   const cutting = await releaseRetainedCuttingChildren(page);
   expect(cutting.every((x) => x.lifecycle.state === 'RELEASED')).toBe(true);
-  // Inspect the next real production card for the same released Lot.
-  const firstLot = cutting.flatMap(x => x.lifecycle.lots || [])[0]?.lot_no;
-  expect(firstLot).toBeTruthy();
-  await page.goto('/test70-cb-purchase-real-chat-pilot.html?mode=TEST&rc_status=OPEN&rc_view=chat&rc_kind=group&rc_id=STITCHING');
-  await expect(page.locator('#chatName')).toContainText(/STITCHING/i, { timeout: 30_000 });
-  await page.locator('#chatFind').fill(firstLot);
-  await page.locator('#chatFind').press('Enter');
-  const productionCard = await page.locator('#messages').innerText();
-  await testInfo.attach('first-production-real-chat-card.json', {
-    body: Buffer.from(JSON.stringify({ firstLot, productionCard }, null, 2)),
+  // Resume each retained Lot at its canonical UPM queue state.
+  const lots = cutting.flatMap(x => x.lifecycle.lots || []).map(x => x.lot_no);
+  expect(lots).toHaveLength(5);
+  const productionQueue = async () => page.evaluate(async (lotNumbers) => {
+    const registry = await window.supabaseClient.from('rr_upm_lot_registry').select('canonical_lot_id,lot_no').in('lot_no', lotNumbers);
+    if (registry.error) throw new Error(registry.error.message);
+    const queue = await window.supabaseClient.from('rr_upm_colour_queue_v741').select('canonical_lot_id,colour_code,queue_state,owner_department_code,owner_assignment_id').in('canonical_lot_id', registry.data.map(x => x.canonical_lot_id));
+    if (queue.error) throw new Error(queue.error.message);
+    return registry.data.flatMap(lot => queue.data.filter(q => q.canonical_lot_id === lot.canonical_lot_id).map(q => ({ ...q, lot_no: lot.lot_no })));
+  }, lots);
+  for (const lot of lots) {
+    const pending = (await productionQueue()).filter(q => q.lot_no === lot && q.queue_state === 'OPEN');
+    if (!pending.length) continue;
+    await page.goto('/test70-cb-purchase-real-chat-pilot.html?mode=TEST&rc_status=OPEN&rc_view=chat&rc_kind=group&rc_id=STITCHING');
+    await expect(page.locator('#chatName')).toContainText(/STITCHING/i, { timeout: 30_000 });
+    const card = page.locator('#messages .work-card').filter({ hasText: lot }).first();
+    await expect(card).toBeVisible({ timeout: 30_000 });
+    await card.locator('[data-assign-action]').first().click();
+    await expect(page.locator('#actionSheet')).toBeVisible();
+    const department = page.frameLocator('#actionFrame');
+    await expect(department.locator('#rfAssignModal')).toBeVisible({ timeout: 60_000 });
+    await department.locator('#rfAll').check();
+    const workerId = await department.locator('#rfWorker option[value]:not([value=""])').first().getAttribute('value');
+    expect(workerId, 'Canonical Stitching worker required').toBeTruthy();
+    await department.locator('#rfWorker').selectOption(workerId);
+    await department.locator('#rfDoAssign').click();
+    await expect.poll(async () => (await productionQueue()).filter(q => q.lot_no === lot && q.queue_state === 'RUNNING').length, { timeout: 60_000 }).toBe(pending.length);
+  }
+  await testInfo.attach('production-queue-after-real-chat-assignment.json', {
+    body: Buffer.from(JSON.stringify(await productionQueue(), null, 2)),
     contentType: 'application/json'
   });
-  expect(productionCard).toContain(firstLot);
-  const assignCard = page.locator('#messages .work-card').filter({ hasText: firstLot }).first();
-  await expect(assignCard).toBeVisible();
-  const assignAction = assignCard.locator('[data-assign-action]').first();
-  await expect(assignAction).toBeVisible();
-  await assignAction.click();
-  await expect(page.locator('#actionSheet')).toBeVisible();
-  const department = page.frameLocator('#actionFrame');
-  await expect(department.locator('#rfAssignModal')).toBeVisible({ timeout: 60_000 });
-  const workerOptions = await department.locator('#rfWorker option').allTextContents();
-  await testInfo.attach('first-production-worker-options.json', {
-    body: Buffer.from(JSON.stringify({ firstLot, workerOptions }, null, 2)),
-    contentType: 'application/json'
-  });
-  await department.locator('#rfAll').check();
-  const worker = department.locator('#rfWorker option[value]:not([value=""])').first();
-  const workerId = await worker.getAttribute('value');
-  expect(workerId, 'Canonical department worker required').toBeTruthy();
-  await department.locator('#rfWorker').selectOption(workerId);
-  await department.locator('#rfDoAssign').click();
-  await expect(page.locator('#actionSheet')).toBeHidden({ timeout: 60_000 });
   const width = await page.evaluate(() => ({ body: document.body.scrollWidth, viewport: document.documentElement.clientWidth }));
   expect(width.body).toBeLessThanOrEqual(width.viewport + 2);
   expect(runtimeErrors).toEqual([]);
