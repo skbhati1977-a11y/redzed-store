@@ -566,3 +566,16 @@ test('three new TEST71 CBs complete deployed New/Open/Draft/Confirm invariants',
     }, { timeout: 60_000 }).toBe(0);
     expect((await rpc(page, 'rr_test_clear_on_behalf_context_v176')).error).toBeNull();
   }
+  const width = await page.evaluate(() => ({ body: document.body.scrollWidth, viewport: document.documentElement.clientWidth }));
+  expect(width.body).toBeLessThanOrEqual(width.viewport + 2);
+  expect(runtimeErrors).toEqual([]);
+
+  await testInfo.attach('checkpoint-1-three-cb-evidence.json', {
+    body: Buffer.from(JSON.stringify({ exact_preview_origin: new URL(page.url()).origin, before, cutting }, null, 2)),
+    contentType: 'application/json'
+  });
+  await testInfo.attach('checkpoint-1-three-cb-working-mobile.png', {
+    body: await page.screenshot({ fullPage: true }),
+    contentType: 'image/png'
+  });
+});
