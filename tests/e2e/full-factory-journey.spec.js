@@ -399,7 +399,7 @@ async function releaseRetainedCuttingChildren(page) {
     expect(child.lifecycle.state).toBe('READY_FOR_CUTTING');
     await page.goto('/test70-cb-purchase-real-chat-pilot.html?mode=TEST&rc_status=WORKING&rc_view=workflow&rc_id=2%3A0');
     await expect(page.locator('#chatName')).toContainText(/Ready \/ Release \/ All Lot/i, { timeout: 30_000 });
-    const card = page.locator('[data-cb-unit-id="' + child.unit.id + '"], [data-source-record-id="' + child.unit.id + '"]').first();
+    const card = page.locator('#messages .work-card').filter({ hasText: child.unit.cb_code }).first();
     await expect(card).toBeVisible({ timeout: 30_000 });
     const single = card.locator('a[data-action="CUTTING_SINGLE_LOT"], a:has-text("SINGLE LOT")').first();
     const multi = card.locator('a[data-action="CUTTING_MULTI_LOT"], a:has-text("MULTI LOT")').first();
