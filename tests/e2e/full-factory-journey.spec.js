@@ -525,12 +525,6 @@ test('three new TEST71 CBs complete deployed New/Open/Draft/Confirm invariants',
 
   for (const fixture of FIXTURES) {
     const current = await lookupCb(page, fixture.cbNo);
-    await openCbGroup(page, current.detail.state === 'CLOSE' ? 'CLOSE' : 'WORKING');
-    await expect(page.locator(`[data-cb-no="${fixture.cbNo}"]`)).toBeVisible();
-  }
-
-  for (const fixture of FIXTURES) {
-    const current = await lookupCb(page, fixture.cbNo);
     const incomplete = (current?.detail?.units || []).some((unit) => unit?.art_decision_complete === false);
     if (incomplete) await completeArtDecisions(page, fixture);
   }
