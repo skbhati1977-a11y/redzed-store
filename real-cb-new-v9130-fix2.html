@@ -134,7 +134,7 @@ async function capturePhoto(){
 }
 function saveEditedPhoto(){
  if(cam.index==null||!cam.image)return;const canvas=$('cropCanvas');
- const idx=cam.index;canvas.toBlob(blob=>{if(!blob){setMessage('Photo save failed. Retake करें.');return}const colour=colours[idx];if(colour.previewUrl?.startsWith('blob:'))URL.revokeObjectURL(colour.previewUrl);colour.file=new File([blob],`colour-${idx+1}-${Date.now()}.jpg`,{type:'image/jpeg'});colour.previewUrl=URL.createObjectURL(blob);colour.photoSaved=true;lastPhotoFlash=idx;closeLiveCamera();renderColours();setTimeout(()=>{if(lastPhotoFlash===idx){lastPhotoFlash=-1;renderColours()}},1400);setMessage(`Colour ${idx+1} photo saved.`,true)},'image/jpeg',.9);
+ const idx=cam.index;canvas.toBlob(blob=>{if(!blob){setMessage('Photo save failed. Retake करें.');return}const colour=colours[idx];if(colour.previewUrl?.startsWith('blob:'))URL.revokeObjectURL(colour.previewUrl);colour.file=new File([blob],`colour-${idx+1}-${Date.now()}.jpg`,{type:'image/jpeg'});colour.previewUrl=URL.createObjectURL(blob);colour.photoSaved=true;lastPhotoFlash=idx;closeLiveCamera();renderColours();requestAnimationFrame(()=>{const row=$('colourList').querySelector(`[data-c="${idx}"]`);const next=row?.querySelector('.qty:not(:disabled),select:not(:disabled),input:not(:disabled),button.addRoll:not(:disabled)');if(next){next.scrollIntoView({behavior:'smooth',block:'center'});setTimeout(()=>{try{next.focus({preventScroll:true})}catch{}},280)}});setTimeout(()=>{if(lastPhotoFlash===idx){lastPhotoFlash=-1;renderColours()}},1400);$('msg').className='message ok';$('msg').textContent=`Colour ${idx+1} photo saved.`},'image/jpeg',.9);
 }
 function renderColours(){
  const regular=materials[0];
