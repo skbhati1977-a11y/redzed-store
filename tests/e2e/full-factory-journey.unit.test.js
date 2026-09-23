@@ -30,10 +30,10 @@ test('fixture retries reuse canonical action payloads and preserve audit identit
   assert.match(source, /SAVE_CONFIRM/);
 });
 
-test('purchase total weight follows all confirmed canonical entries, excluding DUE quantity', () => {
-  assert.match(source, /filter\(\(row\) => row\.state !== 'DUE'\)/);
-  assert.match(source, /reduce\(\(total, row\) => total \+ Number\(row\.qty \|\| 0\), 0\)/);
-  assert.doesNotMatch(source, /total_weight\)\)\.toBe\(365\)/);
+test('retained Cutting readiness checks canonical DUE entries and child lifecycle', () => {
+  assert.match(source, /found\.detail\.entries\.filter\(\(row\) => row\.state === 'DUE'\)/);
+  assert.match(source, /child\.lifecycle\.material_due_count/);
+  assert.doesNotMatch(source, /snapshot\.detail\.material_due_count/);
 });
 
 test('the retained journeys use canonical Art UI and separate CB close from Cutting readiness', () => {

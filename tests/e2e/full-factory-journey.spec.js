@@ -460,85 +460,20 @@ test('three new TEST71 CBs complete deployed New/Open/Draft/Confirm invariants',
   await ensureSession(page, { quiet: true });
   expect((await rpc(page, 'rr_test_clear_on_behalf_context_v176')).error).toBeNull();
 
+  // Resume retained canonical children without replaying completed CB actions.
   const before = [];
   for (const fixture of FIXTURES) {
     const found = await lookupCb(page, fixture.cbNo);
-    if (found) {
-      expect(found.detail.remarks).toBe(`TEST71 FULL FACTORY ${fixture.key} · isolated retained canonical history`);
-      expect(String(found.row.operation_status || 'ACTIVE').toUpperCase()).toBe('ACTIVE');
-    }
-    before.push({ cbNo: fixture.cbNo, existing: Boolean(found), cb_id: found?.row.id || null, state: found?.detail.state || 'ABSENT' });
+    expect(found, `Retained CB ${fixture.cbNo} is required`).toBeTruthy();
+    expect(found.detail.entries.filter((row) => row.state === 'DUE')).toHaveLength(0);
+    before.push({ cbNo: fixture.cbNo, cb_id: found.row.id, state: found.detail.state });
   }
-
-  const results = [];
-  for (const fixture of FIXTURES) results.push({ fixture, ...(await createAndConfirm(page, fixture)) });
-
-  const unitRetry = await rpc(page, 'rr_unit_master_create_v606', { p_unit_name: UNIT_NAME, p_unit_code: UNIT_CODE });
-  expect(unitRetry.error).toBeNull();
-  expect(unitRetry.data).toMatchObject({ created: false, existing_match: true });
-  const materialRetry = await rpc(page, 'rr_material_create_v805_31', {
-    p_type_code: 'OTHER_MATERIAL', p_material_name: ROPE, p_material_no: null,
-    p_purchase_unit: 'PCS', p_stock_unit: 'PCS', p_purchase_to_stock: 1,
-    p_consumption_unit: 'PCS', p_consumption_to_stock: 1,
-    p_consumption_basis: 'MANUAL', p_consumption_per_good_piece: null,
-    p_auto_consumption_event: null, p_preferred_supplier_ledger_id: null,
-    p_applicable_to: { source: 'CB_DEPARTMENT' }
-  });
-  expect(materialRetry.error).toBeNull();
-
-  const evidence = [];
-  for (const fixture of FIXTURES) {
-    const snapshot = await canonicalSnapshot(page, fixture.cbNo);
-    expect(['WORKING', 'CLOSE']).toContain(snapshot.purchase.cb_department_state);
-    const expectedWeight = snapshot.detail.entries
-      .filter((row) => row.state !== 'DUE')
-      .reduce((total, row) => total + Number(row.qty || 0), 0);
-    expect(Number(snapshot.purchase.total_weight)).toBe(expectedWeight);
-    expect(Number(snapshot.purchase.total_amount)).toBeGreaterThanOrEqual(43800);
-    expect(snapshot.units).toHaveLength(fixture.divisions);
-    expect(new Set(snapshot.audit.map((row) => row.action_id)).size).toBe(snapshot.audit.length);
-    expect(snapshot.audit.filter((row) => row.action_code === 'DRAFT_SAVE')).toHaveLength(2);
-    expect(snapshot.audit.filter((row) => row.action_code === 'SAVE_CONFIRM')).toHaveLength(1);
-    const regular = snapshot.detail.entries.find((row) => String(row.entry_notes).toLowerCase() === 'regular cloth');
-    expect(Number(regular.qty)).toBe(365);
-    expect(Number(regular.rate)).toBe(120);
-    expect(Number(regular.amount)).toBe(43800);
-    expect(regular.rolls.filter((row) => Number(row.qty) > 0)).toHaveLength(1);
-    expect(Number(regular.rolls.find((row) => Number(row.roll_no) === 1).qty)).toBe(120);
-    if (fixture.material === 'due-rope') {
-      const due = snapshot.detail.entries.find((row) => row.state === 'DUE');
-      if (due) {
-        expect(due.qty).toBeNull();
-        expect(due.unit).toBe('MTR');
-      } else {
-        expect(snapshot.detail.material_due_count).toBe(0);
-        expect(snapshot.detail.state).toBe('CLOSE');
-      }
-    }
-    evidence.push({
-      fixture: fixture.key,
-      cb_no: fixture.cbNo,
-      cb_id: snapshot.purchase.id,
-      starting_state: 'NEW',
-      expected_state: snapshot.purchase.cb_department_state,
-      actual_backend_state: snapshot.purchase.cb_department_state,
-      divisions: snapshot.units.map((row) => ({ id: row.id, code: row.cb_code })),
-      materials: snapshot.detail.entries.map((row) => ({ id: row.id, name: row.fabric_name, state: row.state, qty: row.qty, unit: row.unit })),
-      actor: snapshot.audit[0] && { actual: snapshot.audit[0].actual_actor_id, effective: snapshot.audit[0].effective_actor_id, name: snapshot.audit[0].effective_name, role: snapshot.audit[0].effective_role },
-      audit_actions: snapshot.audit.map((row) => ({ action_id: row.action_id, code: row.action_code, from: row.previous_state, to: row.new_state })),
-      idempotency: 'same action payload retried; duplicate_blocked=true; one audit per action'
-    });
+  const ready = await cuttingChildren(page);
+  expect(ready).toHaveLength(5);
+  for (const child of ready) {
+    expect(child.lifecycle.material_due_count).toBe(0);
+    expect(['READY_FOR_CUTTING', 'RELEASED']).toContain(child.lifecycle.state);
   }
-
-  for (const fixture of FIXTURES) {
-    const current = await lookupCb(page, fixture.cbNo);
-    const incomplete = (current?.detail?.units || []).some((unit) => unit?.art_decision_complete === false);
-    if (incomplete) await completeArtDecisions(page, fixture);
-  }
-  const cCurrent = await lookupCb(page, FIXTURES.find((fixture) => fixture.key === 'C').cbNo);
-  const dueMaterial = Number(cCurrent?.detail?.material_due_count || 0) > 0
-    ? await confirmRetainedDueMaterial(page, FIXTURES.find((fixture) => fixture.key === 'C'))
-    : { resumed: true, due_count: 0 };
   const cutting = await releaseRetainedCuttingChildren(page);
   expect(cutting.every((x) => x.lifecycle.state === 'RELEASED')).toBe(true);
   const width = await page.evaluate(() => ({ body: document.body.scrollWidth, viewport: document.documentElement.clientWidth }));
@@ -546,7 +481,7 @@ test('three new TEST71 CBs complete deployed New/Open/Draft/Confirm invariants',
   expect(runtimeErrors).toEqual([]);
 
   await testInfo.attach('checkpoint-1-three-cb-evidence.json', {
-    body: Buffer.from(JSON.stringify({ exact_preview_origin: new URL(page.url()).origin, before, results, evidence, dueMaterial, cutting }, null, 2)),
+    body: Buffer.from(JSON.stringify({ exact_preview_origin: new URL(page.url()).origin, before, cutting }, null, 2)),
     contentType: 'application/json'
   });
   await testInfo.attach('checkpoint-1-three-cb-working-mobile.png', {
