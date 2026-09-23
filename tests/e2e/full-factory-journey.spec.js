@@ -495,6 +495,19 @@ test('three new TEST71 CBs complete deployed New/Open/Draft/Confirm invariants',
   }
   const cutting = await releaseRetainedCuttingChildren(page);
   expect(cutting.every((x) => x.lifecycle.state === 'RELEASED')).toBe(true);
+  // Inspect the next real production card for the same released Lot.
+  const firstLot = cutting.flatMap(x => x.lifecycle.lots || [])[0]?.lot_no;
+  expect(firstLot).toBeTruthy();
+  await page.goto('/test70-cb-purchase-real-chat-pilot.html?mode=TEST&rc_status=OPEN&rc_view=workflow&rc_id=3%3A0');
+  await expect(page.locator('#chatName')).toContainText(/UPM · All Departments/i, { timeout: 30_000 });
+  await page.locator('#chatFind').fill(firstLot);
+  await page.locator('#chatFind').press('Enter');
+  const productionCard = await page.locator('#messages').innerText();
+  await testInfo.attach('first-production-real-chat-card.json', {
+    body: Buffer.from(JSON.stringify({ firstLot, productionCard }, null, 2)),
+    contentType: 'application/json'
+  });
+  expect(productionCard).toContain(firstLot);
   const width = await page.evaluate(() => ({ body: document.body.scrollWidth, viewport: document.documentElement.clientWidth }));
   expect(width.body).toBeLessThanOrEqual(width.viewport + 2);
   expect(runtimeErrors).toEqual([]);
