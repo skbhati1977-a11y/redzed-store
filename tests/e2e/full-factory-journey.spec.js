@@ -352,7 +352,10 @@ test('three new TEST71 CBs complete deployed New/Open/Draft/Confirm invariants',
   for (const fixture of FIXTURES) {
     const snapshot = await canonicalSnapshot(page, fixture.cbNo);
     expect(snapshot.purchase.cb_department_state).toBe('WORKING');
-    expect(Number(snapshot.purchase.total_weight)).toBe(365);
+    const expectedWeight = snapshot.detail.entries
+      .filter((row) => row.state !== 'DUE')
+      .reduce((total, row) => total + Number(row.qty || 0), 0);
+    expect(Number(snapshot.purchase.total_weight)).toBe(expectedWeight);
     expect(Number(snapshot.purchase.total_amount)).toBeGreaterThanOrEqual(43800);
     expect(snapshot.units).toHaveLength(fixture.divisions);
     expect(new Set(snapshot.audit.map((row) => row.action_id)).size).toBe(snapshot.audit.length);

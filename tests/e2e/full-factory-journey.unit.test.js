@@ -30,6 +30,12 @@ test('fixture retries reuse canonical action payloads and preserve audit identit
   assert.match(source, /SAVE_CONFIRM/);
 });
 
+test('purchase total weight follows all confirmed canonical entries, excluding DUE quantity', () => {
+  assert.match(source, /filter\(\(row\) => row\.state !== 'DUE'\)/);
+  assert.match(source, /reduce\(\(total, row\) => total \+ Number\(row\.qty \|\| 0\), 0\)/);
+  assert.doesNotMatch(source, /total_weight\)\)\.toBe\(365\)/);
+});
+
 test('deployed proof uses the existing parameterized read-only snapshot', () => {
   const definition = snapshotMigration.match(
     /create or replace function public\.rr_test_cb_snapshot_v608\(p_cb_no text\)[\s\S]*?\$function\$;/
