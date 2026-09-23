@@ -411,21 +411,32 @@ async function releaseRetainedCuttingChildren(page) {
     const form = page.frameLocator('#actionFrame');
     // The canonical cb_unit_id deep link opens the requested Single/Multi form.
     await expect(form.locator('#lotSheet')).not.toHaveClass(/cm-hidden/, { timeout: 60_000 });
-    const manualLot = form.locator('#cmManualLotNo');
-    if (await manualLot.isVisible().catch(() => false)) {
-      await manualLot.fill('');
-    } else {
-      const multiLots = form.locator('#cmDevRows .cm-dev-lot-no');
-      for (let n = 0; n < await multiLots.count(); n += 1) await multiLots.nth(n).fill('');
-    }
-    const colourInputs = form.locator('#cuttingMatrix input[type="number"]:not([readonly]):not([disabled])');
-    if (await colourInputs.count()) {
-      for (let n = 0; n < await colourInputs.count(); n += 1) {
-        const input = colourInputs.nth(n);
-        if (!(await input.inputValue())) await input.fill('1');
+    // Normal Cutting Master requires a manual permanent Lot identity.
+    const lotNo = `TEST71-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).slice(2, 7).toUpperCase()}`;
+    const existing = await page.evaluate(async (lot) => {
+      for (const table of ['rr_cutting_lots_v3', 'rr_production_lots', 'rr_upm_lot_registry']) {
+        const result = await window.supabaseClient.from(table).select('lot_no').eq('lot_no', lot).limit(1);
+        if (result.error) throw new Error(result.error.message);
+        if (result.data.length) return true;
       }
+      return false;
+    }, lotNo);
+    expect(existing, `Lot ${lotNo} must be unique`).toBe(false);
+    const manualLot = form.locator('#cmManualLotNo');
+    if (await manualLot.isVisible()) await manualLot.fill(lotNo);
+    else throw new Error('Multi Lot needs separate manually entered Lot numbers and quantities');
+    // Colour total must equal its existing size quantities.
+    const colours = form.locator('#cuttingMatrix .cm-colour-cut-card');
+    for (let n = 0; n < await colours.count(); n += 1) {
+      const colour = colours.nth(n);
+      const sizes = colour.locator('.cm-size-qty');
+      let total = 0;
+      for (let i = 0; i < await sizes.count(); i += 1) total += Number(await sizes.nth(i).inputValue() || 0);
+      expect(total, 'Fixture size quantities must be positive').toBeGreaterThan(0);
+      await colour.locator('.cm-colour-total').fill(String(total));
     }
-    if (!(await form.locator('#baseCost').inputValue())) await form.locator('#baseCost').fill('2.5');
+    expect(Number(await form.locator('#cmPieceBalance').innerText())).toBe(0);
+    expect(Number(await form.locator('#baseCost').inputValue())).toBeGreaterThan(0);
     await form.locator('#releaseLotBtn').click();
     await expect.poll(async () => (await cuttingChildren(page)).find(x => x.unit.id === child.unit.id)?.lifecycle.state, { timeout: 60_000 }).toBe('RELEASED');
   }
