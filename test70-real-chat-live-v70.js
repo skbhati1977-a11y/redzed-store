@@ -298,7 +298,7 @@ async function load(fast=false){
     const bridgeNeeded=fast&&(!!search||!S.history.length),bridgeBarrier=bridgeNeeded?refreshBridgeProjection(!!search):Promise.resolve({cached:true});
     const actDept=actWorker?String(arr(window.RR_VIEW_AS_DEPARTMENTS)[0]||"").toUpperCase()||null:null,workRequest=search?bridgeBarrier.then(()=>loadSearchWork(search,status)):rpc("rr_real_chat_work_search_v10",{p_status:status,p_search:null,p_department_code:actDept,p_limit:500});
     const workJob=workRequest.then(data=>({data})).catch(error=>({error}));
-    const [d,workResult,cb]=await Promise.all([directory,workJob,cbJob]);
+    const [d,workResult,cb]=await Promise.all([directory,workJob,Promise.race([cbJob,new Promise(resolve=>setTimeout(()=>resolve({cards:[],timeout:true}),4500))])]);
     if(seq!==S.loadSeq||status!==S.status)return;
     if(workResult.error)console.error(workResult.error);
     const w=workResult.error?{cards:[],related_terms:[],actor:d.actor||{}}:workResult.data;
@@ -314,7 +314,7 @@ async function load(fast=false){
   }catch(e){console.error(e);if(!fast||!S.history.length){$('state').textContent=err(e);$('rows').innerHTML='<div class="empty bad">Live mapping unavailable. No fallback or cross-worker data shown.</div>'}else $('state').textContent='Cached view · refresh pending'}
 }
 async function openFabricationAssignForm(button){let u;try{u=new URL(button.dataset.assignHref||'',location.href)}catch{return openAssignSelector(button)}const title=String(button.closest('.work-card')?.querySelector('h2')?.textContent||''),lot=String(u.searchParams.get('rrOpenAssign')||u.searchParams.get('lot')||(title.match(/Lot\s+([^\s·]+)/i)||[])[1]||'').trim(),dept=String(u.searchParams.get('dept')||'').trim().toUpperCase();if(!lot||!dept)return openAssignSelector(button);const label=dept.replaceAll('_',' '),href='real-department-lite-v9127.html?mode=TEST&from=TEST70_REAL_CHAT&rrMode=ASSIGN&rrOpenAssign='+encodeURIComponent(lot)+'&dept='+encodeURIComponent(dept)+'&label='+encodeURIComponent(label);openActionForm({code:'ASSIGN_WORKER',label:'ASSIGN / REASSIGN · '+label,href})}
-const ASSIGN_ROLES_V200=new Set(['OWNER','SUPER_ADMIN','ADMIN','MANAGER','LINE_MANAGER','LINE_MAN']);
+const ASSIGN_ROLES_V200=new Set(['OWNER','SUPER_ADMIN','ADMIN','MANAGER','LINE_MANAGER','LINE_MAN','LINE MAN','CUTTING_MASTER','DEPARTMENT_HEAD']);
 const canAssignWorkV200=()=>ASSIGN_ROLES_V200.has(String(S.actor?.role||S.actor?.role_code||'').toUpperCase());
 const actionButtonsV198=actionButtons;
 actionButtons=function(c){if(canAssignWorkV200())return actionButtonsV198(c);const clean={...c,actions:arr(c.actions).filter(a=>String(a.code||'').toUpperCase()!=='ASSIGN_WORKER')};return actionButtonsV198(clean)};
