@@ -247,7 +247,7 @@ async function openChat(kind,id,push=true,parentDepartment=null){
   let sourceRows=S.search?allRows.filter(c=>String(c.search_status||c.chat_status||'').toUpperCase()===S.status).sort((a,b)=>Number(directSearchMatch(b))-Number(directSearchMatch(a))):allRows;
   // V318 presentation only: one backend state, different group/personal lanes.
   sourceRows=sourceRows.filter(c=>{const r=String(c.resolved_work_state||'').toUpperCase();if(!r)return true;if(kind==='person'){if(S.status==='OPEN')return r==='ACCEPT_PENDING';if(S.status==='WORKING')return r==='WORKING';if(S.status==='CLOSE')return r==='CLOSE';}if(kind==='group'){if(S.status==='OPEN')return r!=='ACCEPT_PENDING'&&r!=='WORKING'&&r!=='CLOSE';if(S.status==='WORKING')return r==='ACCEPT_PENDING'||r==='WORKING';if(S.status==='CLOSE')return r==='CLOSE';}return true});
-  const rows=filterWorking(sourceRows);
+  if(S.status==='OPEN'&&kind==='group'&&String(id).toUpperCase()==='CUTTING'){const moved=new Set(arr(S.cards).filter(x=>String(x.department_code||'').toUpperCase()!=='CUTTING'&&['ASSIGNED','IN_PROGRESS','WORKING','ACCEPT_PENDING'].includes(String(x.assignment_status||x.status||x.resolved_work_state||'').toUpperCase())).map(x=>String(x.lot_no||'').toUpperCase()).filter(Boolean));sourceRows=sourceRows.filter(x=>!(String(x.department_code||'').toUpperCase()==='CUTTING'&&moved.has(String(x.lot_no||'').toUpperCase())))}const rows=filterWorking(sourceRows);
   syncStatusButtons();syncWorkFilters(sourceRows);
   $('chatName').textContent=kind==="group"?(String(id).toUpperCase()==='PURCHASE'?'CB Department':(name||id))+' Group':name||"Worker";
   $('kind').textContent=(kind==="group"?String(id).toUpperCase()+' · GROUP CHAT':'PERSONAL CHAT')+' · '+S.status;
