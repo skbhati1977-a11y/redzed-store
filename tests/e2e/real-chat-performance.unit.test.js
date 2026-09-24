@@ -47,3 +47,27 @@ test('status switch clears previous cards before canonical request and scopes th
   S.active = { kind: 'group', id: 'CUTTING' };
   assert.notEqual(scope.statusProjectionKey('CLOSE'), key);
 });
+
+test('Alter mirror bounds canonical reads, deduplicates retries, and preserves Lot order', async () => {
+  let inFlight = 0, peak = 0, calls = 0;
+  const cards = Array.from({ length: 9 }, (_, i) => ({ canonical_lot_id: `uuid-${i}`, lot_no: String(i + 1) }));
+  const S = { userId: 'one', actor: { role: 'ADMIN', id: 'admin' }, status: 'WORKING', search: '', cards, alterCustodyCache: new Map() };
+  const scope = { S, window: {}, arr: x => Array.isArray(x) ? x : [], friendlyStatus: x => x, console, rpc: async (_, { p_canonical_lot_id }) => {
+    calls++; inFlight++; peak = Math.max(peak, inFlight);
+    await new Promise(resolve => setTimeout(resolve, 3)); inFlight--;
+    return { rows: [{ journey_id: p_canonical_lot_id, lot_no: p_canonical_lot_id, colour_code: 'C1', size_code: 'M', open_qty: 2, stage: 'ALTER_LM_ACCEPT_PENDING', next_action: 'LM_ACCEPT', enrolled_lm_id: 'admin' }] };
+  } };
+  vm.createContext(scope);
+  vm.runInContext(source.slice(source.indexOf('function alterCustodyForLotV684'), source.indexOf('\nasync function fabricationReceiptMirrorV325')), scope);
+  const first = await scope.alterMirrorV684('group', 'FABRICATION', 'FABRICATION');
+  const again = await scope.alterMirrorV684('group', 'FABRICATION', 'FABRICATION');
+  assert.equal(calls, 9);
+  assert.ok(peak <= 6 && peak > 1);
+  assert.deepEqual(JSON.parse(JSON.stringify(first.map(x => x.journey_id))), cards.map(x => x.canonical_lot_id));
+  assert.equal(first[0].actions[0].code, 'LM_ACCEPT');
+  assert.equal(first[0].qty, 2);
+  assert.deepEqual(JSON.parse(JSON.stringify(again)), JSON.parse(JSON.stringify(first)));
+  scope.window.RR_VIEW_AS_ACTOR_ID = 'different';
+  await scope.alterMirrorV684('group', 'FABRICATION', 'FABRICATION');
+  assert.equal(calls, 18);
+});
