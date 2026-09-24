@@ -349,7 +349,8 @@ async function boot(){
   stage.onpointerdown=e=>{stage.setPointerCapture(e.pointerId);points.set(e.pointerId,{x:e.clientX,y:e.clientY});if(points.size===1){startX=lastX=e.clientX;startY=lastY=e.clientY}else if(points.size===2){const p=[...points.values()];startDistance=Math.hypot(p[0].x-p[1].x,p[0].y-p[1].y);startZoom=S.zoom}};
   stage.onpointermove=e=>{if(!points.has(e.pointerId))return;points.set(e.pointerId,{x:e.clientX,y:e.clientY});if(points.size===2){const p=[...points.values()],distance=Math.hypot(p[0].x-p[1].x,p[0].y-p[1].y);S.zoom=Math.max(1,Math.min(5,startZoom*distance/Math.max(1,startDistance)));applyViewerTransform()}else if(S.zoom>1){S.panX+=e.clientX-lastX;S.panY+=e.clientY-lastY;lastX=e.clientX;lastY=e.clientY;applyViewerTransform()}};
   stage.onpointerup=e=>{const dx=e.clientX-startX,dy=e.clientY-startY;points.delete(e.pointerId);if(S.zoom===1&&Math.abs(dy)>90&&dy>Math.abs(dx)){closeViewer();return}if(S.zoom===1&&Math.abs(dx)>55&&Math.abs(dx)>Math.abs(dy)){S.image=(S.image+(dx<0?1:-1)+S.media.length)%S.media.length;showImage()}};
-  stage.onpointercancel=e=>points.delete(e.pointerId);stage.ondblclick=()=>{S.zoom=S.zoom>1?1:2;S.panX=S.panY=0;applyViewerTransform()};
+  stage.onpointercancel=e=>points.delete(e.pointerId);stage.onclick=e=>{if(S.zoom!==1||S.media.length<2)return;const r=stage.getBoundingClientRect();S.image=(S.image+(e.clientX<r.left+r.width/2?-1:1)+S.media.length)%S.media.length;showImage()};
+  stage.ondblclick=()=>{S.zoom=S.zoom>1?1:2;S.panX=S.panY=0;applyViewerTransform()};
   if(hydrateCache()){$('state').textContent='Opening saved Real Chat…';renderActive()}
   await load(false);
   if(resumeState.view!=='inbox')restoreView(resumeState);else if(p.get('chat')==='personal'&&p.get('worker_id'))openChat('person',p.get('worker_id'),false);
