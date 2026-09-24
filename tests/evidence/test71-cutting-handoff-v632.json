@@ -1,0 +1,77 @@
+{
+  "recovered_head": "668ead1b67c69df1a636d357d7a2d2a75adf0b52",
+  "migrations": [
+    {
+      "version": "20260924012151",
+      "name": "test71_cutting_canonical_handoff_v632"
+    },
+    {
+      "version": "20260924012320",
+      "name": "test71_cutting_handoff_proof_v633"
+    }
+  ],
+  "proof": {
+    "ready": "OPEN",
+    "released": "WORKING",
+    "assigned": "CLOSE",
+    "fabrication_open_mirror": true,
+    "release_retry_blocked": true,
+    "assignment_retry_blocked": true,
+    "assignment_count": 1,
+    "rolled_back": true,
+    "fixture_residue": 0
+  },
+  "evidence_children": [
+    {
+      "cb_code": "1007-S1",
+      "state": "OPEN",
+      "lots": []
+    },
+    {
+      "cb_code": "1008-S1",
+      "state": "OPEN",
+      "lots": []
+    },
+    {
+      "cb_code": "1009-S2",
+      "state": "OPEN",
+      "lots": []
+    },
+    {
+      "cb_code": "1009-S1",
+      "state": "WORKING",
+      "lots": [
+        {
+          "lot_no": "2640",
+          "source": "rr_cutting_lots_v3",
+          "cutting_pieces": 108,
+          "canonical_lot_id": "rr_cutting_lots_v3:a3d3f456-d9ff-479b-9b44-910f7a6bc779",
+          "production_assigned": false
+        }
+      ]
+    },
+    {
+      "cb_code": "1010-S1",
+      "state": "OPEN",
+      "lots": []
+    }
+  ],
+  "lot_2640": {
+    "cutting_working_count": 1,
+    "cutting_close_count": 0,
+    "fabrication_open_count": 1,
+    "canonical_id_match": true
+  },
+  "frontend_checks": {
+    "static_tests": 107,
+    "worker_lifecycle_tests": 13,
+    "deployed_browser_checked": false
+  },
+  "existing_full_factory_blocker": {
+    "run": 35938966895,
+    "step": "worker ACCEPT locator",
+    "file": "tests/e2e/full-factory-journey.spec.js:559",
+    "replayed": false
+  },
+  "named_records_modified": false
+}

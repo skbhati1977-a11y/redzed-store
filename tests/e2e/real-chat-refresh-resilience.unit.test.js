@@ -9,7 +9,7 @@ test('Real Chat requests the canonical bounded history window', () => {
   const bridge = chat.match(/async function loadBridge\(\)\{[\s\S]*?\nasync function load\(/)?.[0] || '';
   assert.match(bridge, /rr_real_chat_conversation_history_v83',\{p_limit:2000\}/);
   assert.doesNotMatch(bridge, /p_limit:5000/);
-  assert.match(shell, /test70-real-chat-live-v70\.js\?v=632/);
+  assert.match(shell, /test70-real-chat-live-v70\.js\?v=633/);
 });
 
 test('auxiliary projection timeouts cannot discard canonical CB cards', () => {

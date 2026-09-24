@@ -37,13 +37,10 @@ test('backend release and multi-art paths are authority, DUE and retry guarded',
   assert.match(sql, /status=case when r\.status='DECIDED' then 'CONSUMED' else 'CANCELLED' end/i);
 });
 
-test('Real Chat maps Ready to WORKING and release to CLOSE without stale actions', () => {
-  assert.match(sql, /when e='READY_FOR_CUTTING' then 'WORKING'/i);
-  assert.match(sql, /when e='CUTTING_RELEASE_SUCCEEDED' then 'CLOSE'/i);
-  assert.match(sql, /'status','WORKING','canonical_state','WORKING','cutting_state','READY_FOR_CUTTING'/i);
-  assert.match(chat, /\['ART_DUE','CUTTING_HOLD'\]\.includes\(x\.state\)\?'OPEN'/);
-  assert.match(chat, /status!=='WORKING'.*READY_FOR_CUTTING/);
-  assert.match(chat, /status==='WORKING'\?e==='READY_FOR_CUTTING'/);
+test('Real Chat uses canonical Cutting state for released lots and OPEN for ready children', () => {
+  assert.match(chat, /if\(event==='READY_FOR_CUTTING'\)return status==='OPEN'/);
+  assert.match(chat, /c\.canonical_state\|\|c\.chat_status/);
+  assert.match(chat, /status!=='OPEN'.*READY_FOR_CUTTING/);
 });
 
 test('reconciliation archives every non-ready Cutting projection, including unavailable children', () => {
@@ -54,7 +51,7 @@ test('reconciliation archives every non-ready Cutting projection, including unav
 
 test('Cutting App derives Material Hold and opens exact Art child identity', () => {
   assert.match(cutting, /function materialDueCount\(cbId\)/);
-  assert.match(cutting, /return "cutting_hold"/);
+  assert.match(cutting, /rr_cutting_lifecycle_batch_v632/);
   assert.match(cutting, /data-art-decision=/);
   assert.match(cutting, /cb_unit_id=\$\{encodeURIComponent\(unitId\)\}/);
   assert.match(cutting, /Material Due — confirm material before Cutting/);

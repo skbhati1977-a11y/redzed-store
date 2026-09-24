@@ -60,7 +60,7 @@ async function setupCbUiFixture(page, label, testInfo, makeReady = false) {
   expect(ready.error).toBeNull();
   expect(ready.data.ready_lifecycle).toMatchObject({
     state: 'READY_FOR_CUTTING',
-    canonical_state: 'WORKING'
+    canonical_state: 'OPEN'
   });
 
   const readyRetry = await fixtureRpc(page, 'READY', key);
@@ -77,7 +77,7 @@ async function setupCbUiFixture(page, label, testInfo, makeReady = false) {
   });
   expect(readyRetry.data.ready_lifecycle).toMatchObject({
     state: 'READY_FOR_CUTTING',
-    canonical_state: 'WORKING'
+    canonical_state: 'OPEN'
   });
   return { key, data: readyRetry.data };
 }
@@ -403,7 +403,7 @@ test('Act As Worker cannot mutate CB purchase or material state', async ({ page 
 });
 
 test('Cutting lifecycle proof is canonical, retry-safe and rollback-only', async ({ page }) => {
-  const proof = await rpc(page, 'rr_test_cutting_department_lifecycle_v615');
+  const proof = await rpc(page, 'rr_test_cutting_department_lifecycle_v632');
   expect(proof.error).toBeNull();
   expect(proof.data).toMatchObject({
     exact_invariant: true,
@@ -417,14 +417,17 @@ test('Cutting lifecycle proof is canonical, retry-safe and rollback-only', async
   });
   expect(proof.data.art_due).toMatchObject({ state: 'ART_DUE', canonical_state: 'OPEN' });
   expect(proof.data.cutting_hold).toMatchObject({ state: 'CUTTING_HOLD', canonical_state: 'OPEN', material_due_count: 1 });
-  expect(proof.data.ready).toMatchObject({ state: 'READY_FOR_CUTTING', canonical_state: 'WORKING', material_due_count: 0 });
-  expect(proof.data.close).toMatchObject({ state: 'RELEASED', canonical_state: 'CLOSE' });
+  expect(proof.data.ready).toMatchObject({ state: 'READY_FOR_CUTTING', canonical_state: 'OPEN', material_due_count: 0 });
+  expect(proof.data.released_working).toMatchObject({ state: 'RELEASED', canonical_state: 'WORKING' });
+  expect(proof.data.assigned_close).toMatchObject({ state: 'RELEASED', canonical_state: 'CLOSE' });
+  expect(proof.data.fabrication_open_mirror).toBe(true);
+  expect(proof.data.assignment_retry_blocked).toBe(true);
   expect(proof.data.request_retry.request_id).toBe(proof.data.request_first.request_id);
   expect(proof.data.request_retry.duplicate_blocked).toBe(true);
   expect(proof.data.decision_retry.duplicate_blocked).toBe(true);
 });
 
-test('TTT1-S2 read-only evidence is CLOSE and cannot resurrect a multi-art action', async ({ page }) => {
+test('TTT1-S2 read-only evidence follows assignment state and cannot resurrect multi-art', async ({ page }) => {
   const lookup = await page.evaluate(async () => {
     const unit = await window.supabaseClient.from('rr_cb_units').select('id,cb_code').eq('cb_code', 'TTT1-S2').maybeSingle();
     if (unit.error) return { error: unit.error.message };
@@ -439,7 +442,7 @@ test('TTT1-S2 read-only evidence is CLOSE and cannot resurrect a multi-art actio
   });
   expect(lookup.error).toBeNull();
   test.skip(lookup.skipped, 'TTT1-S2 evidence is not present on this TEST database');
-  expect(lookup.lifecycle).toMatchObject({ state: 'RELEASED', canonical_state: 'CLOSE' });
+  expect(lookup.lifecycle).toMatchObject({ state: 'RELEASED', canonical_state: lookup.lifecycle.production_assigned ? 'CLOSE' : 'WORKING' });
   expect(lookup.multi).toMatchObject({ status: 'RELEASED', ineligible: true });
   expect(lookup.bridge.filter((row) => row.archived_at === null)).toHaveLength(0);
 });

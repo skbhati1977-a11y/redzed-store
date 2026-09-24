@@ -41,11 +41,11 @@ test('deep-linked Cutting action renders one exact history card and never reopen
   assert.match(cutting, /केवल history उपलब्ध है/);
 });
 
-test('Cutting release is terminal history in both database and Real Chat client', () => {
+test('Cutting release uses assignment state and close remains read-only', () => {
   assert.match(sql, /source_event_type='CUTTING_RELEASE_SUCCEEDED'/);
   assert.match(sql, /'canonical_state','CLOSE'/);
   assert.match(sql, /'next_actions','\[\]'::jsonb/);
-  assert.match(chat, /if\(released\)return\['CLOSE'\]/);
+  assert.match(chat, /if\(released\)return\[p\.canonical_state/);
   assert.match(chat, /function cuttingReleasedActions\(\)\{return\[\]\}/);
-  assert.match(chat, /x\.includes\('CUTTING'\).*return'CLOSE'/);
+  assert.match(chat, /x\.includes\('CUTTING'\).*return'WORKING'/);
 });

@@ -41,6 +41,7 @@ let breakupRows = [];
 let matchingStockRows = [];
 let matchingLotRows = [];
 let currentRole = "";
+let cuttingLifecycle = new Map();
 
 let currentFilter = "all";
 let activeCard = null;
@@ -1286,25 +1287,21 @@ function cardDecision(card) {
 }
 
 function cardState(card) {
-  const lots = lotsForDivision(
-    card.division.division_id
-  );
+  const life = cuttingLifecycle.get(String(card.division.division_id));
+  if (!life) return "unavailable";
+  if (life.state === "RELEASED") return life.canonical_state === "CLOSE" ? "completed" : "released";
+  return ({READY_FOR_CUTTING:"ready", ART_DUE:"art_due", CUTTING_HOLD:"cutting_hold"})[life.state] || "unavailable";
+}
 
-  if (lots.some(lot => lot?.status === "completed")) {
-    return "completed";
+async function loadCuttingLifecycle(client) {
+  const ids = [...new Set(divisionCards().map(card => String(card.division.division_id)))];
+  const next = new Map();
+  for (let start = 0; start < ids.length; start += 500) {
+    const result = await client.rpc("rr_cutting_lifecycle_batch_v632", {p_cb_unit_ids: ids.slice(start, start + 500)});
+    if (result.error) throw result.error;
+    for (const life of result.data || []) next.set(String(life.cb_unit_id), life);
   }
-
-  if (lots.length) return "released";
-
-  const decision = cardDecision(card);
-
-  if (!decision.ready) return "art_due";
-
-  if (materialDueCount(card.group.cb_id) > 0) {
-    return "cutting_hold";
-  }
-
-  return "ready";
+  cuttingLifecycle = next;
 }
 
 function cardSearchText(card) {
@@ -1451,12 +1448,12 @@ function renderStats(cards) {
     </article>
 
     <article>
-      <small>Ready</small>
+      <small>Cutting OPEN</small>
       <strong>${ready}</strong>
     </article>
 
     <article>
-      <small>Released</small>
+      <small>Cutting WORKING</small>
       <strong>${released}</strong>
     </article>
 
@@ -1466,7 +1463,7 @@ function renderStats(cards) {
     </article>
 
     <article>
-      <small>Completed</small>
+      <small>Cutting CLOSE</small>
       <strong>${completed}</strong>
     </article>
   `;
@@ -1600,7 +1597,7 @@ function renderGallery() {
           ${lotNos.length ? `data-lot-no="${safe(lotNos.join(","))}"` : ""}
         >
           <span class="cm-chip chip-${safe(state)}">
-            ${safe(state)}
+            ${safe(({ready:"OPEN",released:"WORKING",completed:"CLOSE"})[state] || state)}
           </span>
 
           <h3>${safe(card.group.cb_no || "CB")}</h3>
@@ -1771,8 +1768,10 @@ function renderGallery() {
             ` : state === "ready" ? `
               <button class="cm-primary" type="button" data-single="${safe(card.division.division_id)}" data-lot-mode="single">Single Lot</button>
               <button class="cm-secondary" type="button" data-multi="${safe(card.division.division_id)}" data-lot-mode="multi">Multi Lot</button>
+            ` : state === "released" ? `
+              ${(cuttingLifecycle.get(String(card.division.division_id))?.lots || []).filter(row => !row.production_assigned).map(row => `<a class="cm-primary" href="real-universal-production-v770-v9059.html?mode=TEST&rrMode=ASSIGN&lot=${encodeURIComponent(row.lot_no)}">ASSIGN WORK · ${safe(row.lot_no)}</a>`).join("")}
             ` : `
-              <button class="cm-primary" type="button" disabled>RELEASED</button>
+              <button class="cm-primary" type="button" disabled>${state === "completed" ? "CUTTING CLOSE" : "UNAVAILABLE"}</button>
               <button class="cm-secondary" type="button" disabled>HISTORY ONLY</button>
             `}
           </div>
@@ -3700,6 +3699,7 @@ loadMatchingLotSource(client)
   matchingStockRows = (matchingStockResult || []).map(normalizeMatchingStockRow);
   matchingLotRows = matchingLotResult || [];
 
+  await loadCuttingLifecycle(client);
   await loadCostSettings(client);
   refreshMatchingStockControls();
 
@@ -3725,7 +3725,7 @@ loadMatchingLotSource(client)
         0
       );
     } else if (["released", "completed"].includes(requestedState)) {
-      say("यह D-card पहले ही RELEASED है — केवल history उपलब्ध है.", "success");
+      say("यह D-card RELEASED है — pending Lot का ASSIGN WORK खोलें; assigned Lot में केवल history उपलब्ध है.", "success");
     } else if (requestedCard) {
       say("यह D-card अभी release-ready नहीं है.", "info");
     } else {
