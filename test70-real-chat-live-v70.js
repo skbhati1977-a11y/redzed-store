@@ -218,7 +218,7 @@ async function openChat(kind,id,push=true,parentDepartment=null){
   const name=kind==="group"?meta?.department_name:meta?.worker_name;
   if(kind==='group'&&['SALES','ACCOUNTS','COSTING'].includes(String(id).toUpperCase()))return openCommercialChat(id,name,push,parent);
   let allRows;
-  if(kind==='group'&&String(id).toUpperCase()==='FABRICATION'&&!S.search){allRows=await mergeCraftIdentityV634(await fabricationMirrorV667(S.status));}
+  if((kind==='group'&&String(id).toUpperCase()==='FABRICATION'||kind==='person'&&String(parentDepartment||'').toUpperCase()==='FABRICATION'&&S.departments.some(d=>String(d.department_code).toUpperCase()==='FABRICATION'&&[...arr(d.workers),...arr(d.staff)].some(x=>String(x.worker_id)===String(id)&&x.membership_active!==false)))&&!S.search){allRows=await mergeCraftIdentityV634(await fabricationMirrorV667(S.status));}
   else if(kind==='person'&&!S.search&&String(parent||meta?.department_code||'').toUpperCase()!=='PURCHASE'){
     const op=await operationalWorkV283(id,S.status,parent||meta?.department_code||null);
     allRows=arr(op?.cards).map(x=>({...x,qty:Number(x.good_qty||0),pieces:Number(x.good_qty||0),chat_status:S.status,search_status:S.status,worker_id:id,worker_name:name,message:x.message||'Good '+Number(x.good_qty||0)+' PCS',source_module:'UPM_OPERATIONAL_V283',source_status:x.resolved_work_state||x.receipt_status||'RESOLVED',actions:arr(x.actions).map(action=>typeof action==='string'?{code:action,label:action}:action),message_side:'incoming'}));
