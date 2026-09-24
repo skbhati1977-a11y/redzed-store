@@ -6,7 +6,7 @@ const ALIAS={KR:'STITCHING',KARIGAR:'STITCHING',STITCH:'STITCHING',STITCHING:'ST
 const dept=KAAJ_KEYS.includes(rawKey)?'KAAJ_BUTTON':(ALIAS[raw]||ALIAS[rawKey]||raw),backendDept=dept==='KAAJ_BUTTON'?'KAAJ':dept,label=(qs.get('label')||raw).trim(),submitLabel=dept==='PACKING'?'COMPLETE PACKING STAGE':'READY TO SUBMIT',submitButton=dept==='PACKING'?'COMPLETE STAGE · SAVE & HANDOVER':'SUBMIT · SAVE & EXIT';
 const up=v=>String(v||'').trim().toUpperCase(),esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const sb=()=>window.supabaseClient||window.supabaseDb||window.redzedSupabase||window.sb;
-const allowed=new Set(['OWNER','SUPER_ADMIN','ADMIN','MANAGER','LINE_MANAGER','LINE_MAN']);
+const allowed=new Set(['OWNER','SUPER_ADMIN','ADMIN','MANAGER','LINE_MANAGER','LINE_MAN','LINE MAN','CUTTING_MASTER','DEPARTMENT_HEAD']);
 const rateEditors=new Set(['OWNER','SUPER_ADMIN','ADMIN','MANAGER']);
 const exactReceiptMode=!!String(qs.get('rrAssignmentReceipt')||'').trim();
 let payload=null,mode=qs.get('rrMode')==='SUBMIT'?'SUBMIT':'ASSIGN',workers=[],lineMen=[],ctx=null,busy=false,saveBusy=false,autoSubmitLot=qs.get('rrOpenSubmit')||'',autoSubmitDone=false,autoAssignLot=qs.get('rrOpenAssign')||'',autoAssignDone=false;
@@ -20,7 +20,7 @@ const style=document.createElement('style');style.id='rf9110style';style.textCon
 
 async function rpc(name,args={}){const c=sb();if(!c)throw new Error('Supabase client not ready.');const {data,error}=await c.rpc(name,args);if(error)throw error;return data}
 async function loadCtx(){if(ctx)return ctx;ctx=await rpc('rr_upm_effective_identity_v200');return ctx||{}}
-function roleOf(c){const effective=up(c?.resolved_role||c?.user_category||c?.role_code||''),preview=up(window.RR_VIEW_AS_ROLE||sessionStorage.getItem('rr_superadmin_preview_actor_role')||'');return effective||preview||'WORKER'}
+function roleOf(c){const effective=up(c?.resolved_role||c?.user_category||c?.role_code||''),preview=up(window.RR_VIEW_AS_ROLE||sessionStorage.getItem('rr_superadmin_preview_actor_role')||'');return preview||effective||'WORKER'}
 async function loadWorkers(){if(workers.length)return workers;try{workers=(await rpc('rr_upm_assignment_targets_v299',{p_department_code:backendDept})||[]).filter(x=>x.worker_id)}catch(_){try{workers=(await rpc('rr_upm_worker_list_v731',{p_department_code:backendDept})||[]).filter(x=>x.worker_id)}catch(_e){workers=(await rpc('rr_upm_worker_list_v8_4',{p_department_code:backendDept})||[]).filter(x=>x.worker_id)}}return workers}
 async function loadLineMen(){if(lineMen.length)return lineMen;try{lineMen=(await rpc('rr_upm_worker_candidates_v740',{p_role_code:'LINE_MAN',p_department_code:backendDept})||[])}catch(_){try{lineMen=(await rpc('rr_upm_department_line_men_v9110',{p_department_code:backendDept})||[])}catch(_e){lineMen=[]}}return lineMen}
 
