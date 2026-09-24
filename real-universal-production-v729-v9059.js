@@ -562,11 +562,13 @@ async function assignWork() {
         actual_rate: num($("actualRate").value)
       };
     });
-    await rpc("rr_upm_claim_colours_v741", {
+    const dept=backendDepartmentCode($("dept").value),workerIds=[...new Set(rows.map(r=>String(r.worker_id||'')))];
+    if(workerIds.length!==1)throw new Error("Selected colours must use one worker per canonical assignment batch.");
+    await rpc("rr_upm_ready_to_assign_shared_v205", {
       p_canonical_lot_id: state.lot.canonical_lot_id,
-      p_lot_no: state.lot.lot_no,
-      p_department_code: backendDepartmentCode($("dept").value),
-      p_rows: rows,
+      p_department_code: dept,
+      p_worker_id: workerIds[0],
+      p_rows: rows.map(r=>({colour_code:r.colour_code})),
       p_remarks: full ? "Universal Lot Form FULL available colour assignment" : "Universal Lot Form selected colour assignment"
     });
   }, `${full ? "पूरा available Lot" : codes.join(" ")} successfully assigned.`);
