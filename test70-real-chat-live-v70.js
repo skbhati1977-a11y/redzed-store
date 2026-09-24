@@ -282,7 +282,10 @@ async function load(fast=false){
     const bridgeNeeded=fast&&(!!search||!S.history.length),bridgeBarrier=bridgeNeeded?refreshBridgeProjection(!!search):Promise.resolve({cached:true});
     const workRequest=search?bridgeBarrier.then(()=>loadSearchWork(search,status)):rpc("rr_real_chat_work_search_v10",{p_status:status,p_search:null,p_department_code:null,p_limit:500});
     const workJob=workRequest.then(data=>({data})).catch(error=>({error}));
-    const timeout=new Promise(resolve=>setTimeout(()=>resolve({__timeout:true}),7000));\n    const bundle=await Promise.race([Promise.all([directory,workJob,cbJob]),timeout]);\n    if(bundle?.__timeout){if(hydrateCache()){S.cardsStatus=status;renderActive();$('state').textContent='Saved Real Chat opened · live refresh pending';return}throw new Error('Live mapping timed out. Retry Refresh.')}\n    const [d,workResult,cb]=bundle;
+    const timeout=new Promise(resolve=>setTimeout(()=>resolve({__timeout:true}),7000));
+    const bundle=await Promise.race([Promise.all([directory,workJob,cbJob]),timeout]);
+    if(bundle?.__timeout){if(hydrateCache()){S.cardsStatus=status;renderActive();$('state').textContent='Saved Real Chat opened · live refresh pending';return}throw new Error('Live mapping timed out. Retry Refresh.')}
+    const [d,workResult,cb]=bundle;
     if(seq!==S.loadSeq||status!==S.status)return;
     if(workResult.error)console.error(workResult.error);
     const w=workResult.error?{cards:[],related_terms:[],actor:d.actor||{}}:workResult.data;
