@@ -290,7 +290,7 @@ async function load(fast=false){
   try{
     if(!fast&&!S.history.length)$('state').textContent="Loading canonical directory…";
     const directory=fast?Promise.resolve({departments:S.departments,people:S.people,actor:S.actor}):rpc("rr_real_chat_directory_v85");
-    const cbJob=rpc('rr_cb_department_cards_v600',{p_state:search?null:status,p_search:search||null}).then(cb=>projectCanonicalCbCards(cb,status,seq));
+    const cbJob=(window.RR_ON_BEHALF_ACTIVE&&String(window.RR_VIEW_AS_ROLE||'').toUpperCase().includes('WORKER')?Promise.resolve({cards:[]}):rpc('rr_cb_department_cards_v600',{p_state:search?null:status,p_search:search||null})).then(cb=>projectCanonicalCbCards(cb,status,seq));
     const bridgeNeeded=fast&&(!!search||!S.history.length),bridgeBarrier=bridgeNeeded?refreshBridgeProjection(!!search):Promise.resolve({cached:true});
     const workRequest=search?bridgeBarrier.then(()=>loadSearchWork(search,status)):rpc("rr_real_chat_work_search_v10",{p_status:status,p_search:null,p_department_code:null,p_limit:500});
     const workJob=workRequest.then(data=>({data})).catch(error=>({error}));
