@@ -278,11 +278,11 @@ async function load(fast=false){
   try{
     if(!fast&&!S.history.length)$('state').textContent="Loading canonical directory…";
     const directory=fast?Promise.resolve({departments:S.departments,people:S.people,actor:S.actor}):rpc("rr_real_chat_directory_v85");
-    const cbJob=rpc('rr_cb_department_cards_v600',{p_state:search?null:status,p_search:search||null}).then(cb=>projectCanonicalCbCards(cb,status,seq));
+    const cbJob=rpc('rr_cb_department_cards_v600',{p_state:search?null:status,p_search:search||null}).then(cb=>projectCanonicalCbCards(cb,status,seq)).catch(error=>({cards:[],error}));
     const bridgeNeeded=fast&&(!!search||!S.history.length),bridgeBarrier=bridgeNeeded?refreshBridgeProjection(!!search):Promise.resolve({cached:true});
     const workRequest=search?bridgeBarrier.then(()=>loadSearchWork(search,status)):rpc("rr_real_chat_work_search_v10",{p_status:status,p_search:null,p_department_code:null,p_limit:500});
     const workJob=workRequest.then(data=>({data})).catch(error=>({error}));
-    const [d,workResult,cb]=await Promise.all([directory,workJob,cbJob]);
+    const timeout=new Promise(resolve=>setTimeout(()=>resolve({__timeout:true}),7000));\n    const bundle=await Promise.race([Promise.all([directory,workJob,cbJob]),timeout]);\n    if(bundle?.__timeout){if(hydrateCache()){S.cardsStatus=status;renderActive();$('state').textContent='Saved Real Chat opened · live refresh pending';return}throw new Error('Live mapping timed out. Retry Refresh.')}\n    const [d,workResult,cb]=bundle;
     if(seq!==S.loadSeq||status!==S.status)return;
     if(workResult.error)console.error(workResult.error);
     const w=workResult.error?{cards:[],related_terms:[],actor:d.actor||{}}:workResult.data;
