@@ -1,13 +1,15 @@
 const form = document.getElementById("loginForm");
 const msg = document.getElementById("loginMessage");
+const emailInput = document.getElementById("email");
+const passwordInput = document.getElementById("password");
 
 form.addEventListener("submit", async (e) => {
   e.preventDefault();
 
   msg.textContent = "Signing in...";
 
-  const email = document.getElementById("email").value.trim();
-  const password = document.getElementById("password").value;
+  const email = emailInput.value.trim();
+  const password = passwordInput.value;
 
   const { data, error } = await supabaseClient.auth.signInWithPassword({
     email,
@@ -37,7 +39,11 @@ form.addEventListener("submit", async (e) => {
     msg.textContent = verified.error?.message || "Login verification failed.";
     return;
   }
-  await new Promise((resolve) => setTimeout(resolve, 250));
+  // Keep the credential fields intact briefly after successful authentication so
+  // Android/Chrome password managers can observe a successful username/password form.
+  form.dataset.loginSuccess = "true";
+  msg.textContent = "Login successful…";
+  await new Promise((resolve) => setTimeout(resolve, 900));
 
   const requested = new URLSearchParams(location.search).get("next") || "";
   const safeNext = /^(?:real-[a-z0-9._-]+\.html)(?:\?[a-z0-9_=&.%+-]*)?$/i.test(requested)
@@ -55,7 +61,7 @@ async function sendRecovery() {
     email,
     {
       redirectTo:
-        "https://redzed-test65-git-test71-real-chat-e2e-6adad3-skbhati1977-4414.vercel.app/reset-password.html"
+        location.origin + "/reset-password.html"
     }
   );
 
