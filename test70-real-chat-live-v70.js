@@ -1,6 +1,6 @@
 (()=>{"use strict";
 const $=id=>document.getElementById(id),safe=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-const S={db:null,status:"WORKING",workFilter:"READY_TO_SUBMIT",search:"",searchTerms:[],searchAutoSelect:false,searchFocusPending:false,searchFocusIndex:-1,searchExactStatuses:[],searchCounts:{OPEN:0,WORKING:0,CLOSE:0},searchBaseCards:[],searchBaseCbCards:[],searchRequestSeq:0,searchServerTimer:null,searchSnapshotByStatus:new Map(),searchMasterCards:[],searchMasterCbCards:[],searchMasterReady:false,cards:[],cbCards:[],cardsStatus:null,history:[],departments:[],people:[],staff:[],actor:{},active:null,actionOrigin:null,actionClosing:false,returnFocusCb:new URLSearchParams(location.search).get('rc_focus_cb')||'',returnFocusAssignment:'',media:[],mediaIndex:new Map(),image:0,zoom:1,panX:0,panY:0,bridge:new Map(),assignableLots:null,mediaByLot:new Map(),mediaByCb:new Map(),mediaByUnit:new Map(),bridgeRefresh:null,bridgeAuxRefresh:null,bridgeLoadedAt:0,bridgeWarning:'',userId:null,workCounts:{},realtime:null,loadSeq:0,chatSeq:0,statusCache:new Map(),craftIdentityCache:new Map(),alterCustodyCache:new Map(),mc1LoadSeq:0,rateFocusHandler:null,rateFocusKey:null,rateFocusTimer:null};
+const S={db:null,status:"WORKING",workFilter:"READY_TO_SUBMIT",search:"",searchTerms:[],searchAutoSelect:false,searchFocusPending:false,searchFocusIndex:-1,searchExactStatuses:[],searchCounts:{OPEN:0,WORKING:0,CLOSE:0},searchBaseCards:[],searchBaseCbCards:[],searchRequestSeq:0,searchServerTimer:null,searchSnapshotByStatus:new Map(),searchMasterCards:[],searchMasterCbCards:[],searchMasterReady:false,activeRenderedSearchRows:[],activeRenderedSearchKey:'',cards:[],cbCards:[],cardsStatus:null,history:[],departments:[],people:[],staff:[],actor:{},active:null,actionOrigin:null,actionClosing:false,returnFocusCb:new URLSearchParams(location.search).get('rc_focus_cb')||'',returnFocusAssignment:'',media:[],mediaIndex:new Map(),image:0,zoom:1,panX:0,panY:0,bridge:new Map(),assignableLots:null,mediaByLot:new Map(),mediaByCb:new Map(),mediaByUnit:new Map(),bridgeRefresh:null,bridgeAuxRefresh:null,bridgeLoadedAt:0,bridgeWarning:'',userId:null,workCounts:{},realtime:null,loadSeq:0,chatSeq:0,statusCache:new Map(),craftIdentityCache:new Map(),alterCustodyCache:new Map(),mc1LoadSeq:0,rateFocusHandler:null,rateFocusKey:null,rateFocusTimer:null};
 const arr=v=>Array.isArray(v)?v:[],err=e=>[e?.message,e?.details,e?.hint].filter(Boolean).join(" — ")||String(e);
 function whatsappNumber(value){let n=String(value||'').replace(/[^0-9]/g,'');if(n.length===11&&n.startsWith('0'))n=n.slice(1);if(n.length===10)n='91'+n;return /^[1-9][0-9]{7,14}$/.test(n)?n:''}
 function vendorProofRows(d){const raw=[...arr(d?.media),...arr(d?.evidence_urls),...arr(d?.proof_urls),...arr(d?.damage_images),...arr(d?.proof_images)],seen=new Set();return raw.map(x=>{const url=typeof x==='string'?x:(x?.file_url||x?.url||x?.src||x?.path||x?.image_url),hint=String(typeof x==='object'?(x?.media_type||x?.type||x?.mime_type||''):'').toUpperCase(),video=hint.includes('VIDEO')||/\.(mp4|mov|webm|3gp)(\?|$)/i.test(String(url||''));return url&&!seen.has(url)&&(seen.add(url),true)?{url:String(url),type:video?'Video':'Image'}:null}).filter(Boolean)}
@@ -279,6 +279,7 @@ async function openChat(kind,id,push=true,parentDepartment=null){
   create.href='real-cb-new-v9130-fix2.html?from=TEST70_REAL_CHAT&return='+encodeURIComponent(location.pathname+location.search);
   const emptyType=['WORKING','CLOSE'].includes(S.status)&&S.workFilter!=='ALL'?S.workFilter.toLowerCase():'mapped';
   const expandedClosed=expandedClosedCardKeys();
+  if(!S.search){S.activeRenderedSearchRows=rows.slice();S.activeRenderedSearchKey=[kind,String(id),S.status].join('|').toUpperCase()}
   $('messages').innerHTML=rows.length?rows.map(x=>card(x,kind==="group")).join(""):'<div class="empty">No '+safe(S.status)+' '+safe(emptyType)+' work in this chat.</div>';
   restoreExpandedClosedCards(expandedClosed);
   highlightMatches($('messages'));
@@ -387,18 +388,18 @@ async function boot(){
     S.searchMasterCards=cards;S.searchMasterCbCards=cb;S.searchMasterReady=true;
   };
   const frontendSearchRender=value=>{
-    hideSearchNotice();const q=String(value||'').trim().toLowerCase();
-    if(!q){const cached=S.statusCache.get(statusProjectionKey(S.status));if(cached){S.cards=arr(cached.cards);S.cbCards=arr(cached.cbCards);S.cardsStatus=cached.cardsStatus;S.workCounts={...cached.workCounts}}S.searchCounts={OPEN:0,WORKING:0,CLOSE:0};S.searchTerms=[];syncStatusButtons();renderActive(actAsActive(S.active));return}
-    if(!S.searchMasterReady)rebuildSearchMaster();
-    const activeKey=[String(S.active?.kind||''),String(S.active?.id||''),S.status].join('|').toUpperCase(),visibleSnapshot=S.searchSnapshotByStatus.get(activeKey);
-    if(visibleSnapshot?.cards?.length){
-      const known=new Set(S.searchMasterCards.map(x=>String(x.event_key||x.canonical_key||x.assignment_id||[x.lot_no,x.department_code,x.worker_id,x.source_module,x.source_status].join('|'))));
-      for(const row of visibleSnapshot.cards){const key=String(row.event_key||row.canonical_key||row.assignment_id||[row.lot_no,row.department_code,row.worker_id,row.source_module,row.source_status].join('|'));if(!known.has(key)){known.add(key);S.searchMasterCards.push({...row,search_status:S.status,_search_text:searchText(row)})}}
+    hideSearchNotice();const q=String(value||'').trim().toLowerCase(),activeKey=[String(S.active?.kind||''),String(S.active?.id||''),S.status].join('|').toUpperCase();
+    if(!q){syncStatusButtons();renderActive(actAsActive(S.active));return}
+    const base=S.activeRenderedSearchKey===activeKey?S.activeRenderedSearchRows:[];
+    const hits=base.filter(c=>searchText(c).includes(q));
+    S.searchCounts={OPEN:0,WORKING:0,CLOSE:0};S.searchCounts[S.status]=hits.length;
+    syncStatusButtons();syncWorkFilters(hits);
+    const messages=$('messages'),kind=String(S.active?.kind||'');
+    if(messages){
+      const expandedClosed=expandedClosedCardKeys();
+      messages.innerHTML=hits.length?hits.map(x=>card(x,kind==='group')).join(''):'';
+      restoreExpandedClosedCards(expandedClosed);highlightMatches(messages);bindMedia();installRateFocusGuard(hits);
     }
-    const hits=S.searchMasterCards.filter(c=>String(c._search_text||searchText(c)).includes(q)),cbHits=S.searchMasterCbCards.filter(c=>String(c._search_text||searchText(c)).includes(q));
-    S.searchCounts={OPEN:0,WORKING:0,CLOSE:0};
-    [...hits,...cbHits].forEach(c=>{const st=String(c.search_status||c.chat_status||'').toUpperCase();if(st in S.searchCounts)S.searchCounts[st]++});
-    S.cards=hits;S.cbCards=cbHits;S.cardsStatus='SEARCH_FRONTEND';syncStatusButtons();renderActive(actAsActive(S.active));hideSearchNotice();
   };
   const queueSearch=(e,immediate=false)=>{
     const value=e.target.value.trim(),changed=value!==S.search;searchInputs.forEach(x=>{if(x!==e.target&&x.value!==value)x.value=value});
