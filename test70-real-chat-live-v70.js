@@ -242,6 +242,13 @@ async function openChat(kind,id,push=true,parentDepartment=null){
   }if(kind==='person'&&!S.search&&['OPEN','WORKING'].includes(S.status)&&parent){try{const pending=await pendingJob,seen=new Set(allRows.map(x=>String(x.assignment_id||'')));allRows=allRows.concat(await mergeCraftIdentityV634(pending.filter(x=>!seen.has(String(x.assignment_id||''))).map(x=>({...x,chat_status:S.status,search_status:S.status}))))}catch(e){console.error(e)}}
   if(kind==='person'){const belongs=c=>arr(c.visible_worker_ids).map(String).includes(String(id))||String(c.worker_id||'')===String(id)||String(c.receiver_worker_id||'')===String(id),recovery=c=>belongs(c)&&/UPM_MISSING_CLAIM|SHORT[ _/-]*EXCESS|MISSING[ _/-]*CLAIM|RECOVERY/.test([c.source_module,c.card_type,c.source_event_type,c.source_status,c.message].join(' ').toUpperCase()),recoveryLots=new Set(S.cards.filter(recovery).map(c=>String(c.lot_no||'').trim().toUpperCase()).filter(Boolean));allRows=allRows.filter(c=>{const lot=String(c.lot_no||'').trim().toUpperCase(),stale=/WORKER RECEIPT PENDING|WAITING FOR WORKER RECEIPT|DISPUTED/.test([c.message,c.source_status,c.receipt_status,c.action_label,c.source_event_type,c.card_type].join(' ').toUpperCase());return !(lot&&recoveryLots.has(lot)&&stale&&!recovery(c))})}
   allRows=await mergeCraftIdentityV634(allRows);
+  // V633 lifecycle authority: once a non-cancelled submit handover exists for an
+  // assignment, that handover supersedes stale assignment/receipt projections.
+  // Keep the handover card; hide older mirrors of the same canonical assignment.
+  if(allRows.some(x=>String(x.source_module||'').toUpperCase()==='UPM_SUBMIT_HANDOFF')){
+    const handoffAssignments=new Set(allRows.filter(x=>String(x.source_module||'').toUpperCase()==='UPM_SUBMIT_HANDOFF'&&!['CANCELLED','CANCELED','REJECTED','VOID','COMPLETED'].includes(String(x.source_status||x.status||'').toUpperCase())).flatMap(x=>[x.assignment_id,...arr(x.assignment_ids)]).map(String).filter(Boolean));
+    if(handoffAssignments.size)allRows=allRows.filter(x=>String(x.source_module||'').toUpperCase()==='UPM_SUBMIT_HANDOFF'||(!handoffAssignments.has(String(x.assignment_id||''))&&!arr(x.assignment_ids).map(String).some(id=>handoffAssignments.has(id))));
+  }
   if(renderSeq!==S.chatSeq||renderStatus!==S.status||S.active?.kind!==kind||String(S.active?.id)!==String(id))return;
   const searchRows=S.search?allRows.filter(directSearchMatch):allRows;
   S.searchCounts={OPEN:0,WORKING:0,CLOSE:0};
