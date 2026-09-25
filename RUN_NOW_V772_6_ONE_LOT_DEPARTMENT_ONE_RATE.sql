@@ -862,3 +862,79 @@ select
       and missing_assignments>0
   ) as groups_waiting_for_first_rate
 from groups;
+
+
+-- =========================================================
+-- G. V402 SOURCE GATE: NO FABRICATION RECEIPT BEFORE ACTUAL RATE
+-- Submit request is the source of Real Chat ACCEPT & COUNT cards.
+-- Therefore block request publication itself until the canonical
+-- Lot+Department Assignment Actual Rate is complete and consistent.
+-- =========================================================
+create or replace function public.rr_upm_submit_request_require_actual_rate_v402()
+returns trigger
+language plpgsql
+security invoker
+set search_path=public
+as $$
+declare
+  v_assignment public.rr_upm_work_assignments_v8%rowtype;
+  v_id uuid;
+  v_distinct_rates integer:=0;
+  v_missing integer:=0;
+begin
+  if coalesce(array_length(new.assignment_ids,1),0)=0 then
+    raise exception 'Submit blocked: Active Assignment is required before receiver handover.';
+  end if;
+
+  foreach v_id in array new.assignment_ids loop
+    select * into v_assignment
+    from public.rr_upm_work_assignments_v8
+    where id=v_id
+    limit 1;
+
+    if not found then
+      raise exception 'Submit blocked: Assignment % not found.',v_id;
+    end if;
+
+    if v_assignment.canonical_lot_id is distinct from new.canonical_lot_id
+       or public.rr_costing_canonical_department_v760(v_assignment.department_code)
+          is distinct from public.rr_costing_canonical_department_v760(new.department_code) then
+      raise exception 'Submit blocked: Assignment does not belong to this Lot / Department handover.';
+    end if;
+
+    if coalesce(v_assignment.actual_rate,0)<=0 then
+      raise exception
+        'Submit blocked: Assignment Actual Rate required. Lot %, Department %, Worker %, Colour %.',
+        coalesce(v_assignment.lot_no,'—'),coalesce(v_assignment.department_code,'—'),
+        coalesce(v_assignment.worker_name_snapshot,'—'),coalesce(v_assignment.colour_code,'—');
+    end if;
+  end loop;
+
+  select count(distinct round(a.actual_rate,4)) filter(where coalesce(a.actual_rate,0)>0)::integer,
+         count(*) filter(where coalesce(a.actual_rate,0)<=0)::integer
+  into v_distinct_rates,v_missing
+  from public.rr_upm_work_assignments_v8 a
+  where a.canonical_lot_id=new.canonical_lot_id
+    and public.rr_costing_canonical_department_v760(a.department_code)
+        =public.rr_costing_canonical_department_v760(new.department_code)
+    and upper(coalesce(a.status,'')) not in('CANCELLED','CANCELED','VOID','REJECTED');
+
+  if v_missing>0 then
+    raise exception 'Submit blocked: Lot % / Department % still has % assignment(s) without Actual Rate. Save the canonical rate first.',
+      coalesce(new.lot_no,new.canonical_lot_id),new.department_code,v_missing;
+  end if;
+  if v_distinct_rates>1 then
+    raise exception 'Submit blocked: Lot % / Department % has conflicting Assignment Actual Rates. Normalize the complete group first.',
+      coalesce(new.lot_no,new.canonical_lot_id),new.department_code;
+  end if;
+  return new;
+end
+$$;
+
+drop trigger if exists rr_upm_submit_request_require_actual_rate_v402 on public.rr_upm_submit_requests_v794;
+create trigger rr_upm_submit_request_require_actual_rate_v402
+before insert on public.rr_upm_submit_requests_v794
+for each row execute function public.rr_upm_submit_request_require_actual_rate_v402();
+
+comment on function public.rr_upm_submit_request_require_actual_rate_v402() is
+'V402: blocks submit-request/receiver-queue publication until canonical Lot+Department Assignment Actual Rate is positive and consistent. Universal; evidence lots are never special-cased.';
