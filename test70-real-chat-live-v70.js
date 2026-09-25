@@ -390,6 +390,11 @@ async function boot(){
     hideSearchNotice();const q=String(value||'').trim().toLowerCase();
     if(!q){const cached=S.statusCache.get(statusProjectionKey(S.status));if(cached){S.cards=arr(cached.cards);S.cbCards=arr(cached.cbCards);S.cardsStatus=cached.cardsStatus;S.workCounts={...cached.workCounts}}S.searchCounts={OPEN:0,WORKING:0,CLOSE:0};S.searchTerms=[];syncStatusButtons();renderActive(actAsActive(S.active));return}
     if(!S.searchMasterReady)rebuildSearchMaster();
+    const activeKey=[String(S.active?.kind||''),String(S.active?.id||''),S.status].join('|').toUpperCase(),visibleSnapshot=S.searchSnapshotByStatus.get(activeKey);
+    if(visibleSnapshot?.cards?.length){
+      const known=new Set(S.searchMasterCards.map(x=>String(x.event_key||x.canonical_key||x.assignment_id||[x.lot_no,x.department_code,x.worker_id,x.source_module,x.source_status].join('|'))));
+      for(const row of visibleSnapshot.cards){const key=String(row.event_key||row.canonical_key||row.assignment_id||[row.lot_no,row.department_code,row.worker_id,row.source_module,row.source_status].join('|'));if(!known.has(key)){known.add(key);S.searchMasterCards.push({...row,search_status:S.status,_search_text:searchText(row)})}}
+    }
     const hits=S.searchMasterCards.filter(c=>String(c._search_text||searchText(c)).includes(q)),cbHits=S.searchMasterCbCards.filter(c=>String(c._search_text||searchText(c)).includes(q));
     S.searchCounts={OPEN:0,WORKING:0,CLOSE:0};
     [...hits,...cbHits].forEach(c=>{const st=String(c.search_status||c.chat_status||'').toUpperCase();if(st in S.searchCounts)S.searchCounts[st]++});
