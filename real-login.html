@@ -27,16 +27,19 @@
         Real Factory. Real Control.
       </p>
 
-      <form id="loginForm" class="rr-form">
+      <form id="loginForm" class="rr-form" method="post" action="real-login.html">
 
         <label>
           Email
 
           <input
             id="email"
+            name="username"
             type="email"
-            autocomplete="email"
-            value="skbhati1977@gmail.com"
+            inputmode="email"
+            autocapitalize="none"
+            spellcheck="false"
+            autocomplete="username"
             required
           >
         </label>
@@ -46,6 +49,7 @@
 
           <input
             id="password"
+            name="password"
             type="password"
             autocomplete="current-password"
             required
