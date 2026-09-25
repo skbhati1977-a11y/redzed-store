@@ -1,6 +1,6 @@
 (()=>{"use strict";
 const $=id=>document.getElementById(id),safe=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-const S={db:null,status:"WORKING",workFilter:"READY_TO_SUBMIT",search:"",searchTerms:[],searchAutoSelect:false,searchFocusPending:false,searchFocusIndex:-1,searchExactStatuses:[],searchCounts:{OPEN:0,WORKING:0,CLOSE:0},cards:[],cbCards:[],cardsStatus:null,history:[],departments:[],people:[],staff:[],actor:{},active:null,actionOrigin:null,actionClosing:false,returnFocusCb:new URLSearchParams(location.search).get('rc_focus_cb')||'',returnFocusAssignment:'',media:[],mediaIndex:new Map(),image:0,zoom:1,panX:0,panY:0,bridge:new Map(),assignableLots:null,mediaByLot:new Map(),mediaByCb:new Map(),mediaByUnit:new Map(),bridgeRefresh:null,bridgeAuxRefresh:null,bridgeLoadedAt:0,bridgeWarning:'',userId:null,workCounts:{},realtime:null,loadSeq:0,chatSeq:0,statusCache:new Map(),craftIdentityCache:new Map(),alterCustodyCache:new Map(),mc1LoadSeq:0,rateFocusHandler:null,rateFocusKey:null,rateFocusTimer:null};
+const S={db:null,status:"WORKING",workFilter:"READY_TO_SUBMIT",search:"",searchTerms:[],searchAutoSelect:false,searchFocusPending:false,searchFocusIndex:-1,searchExactStatuses:[],searchCounts:{OPEN:0,WORKING:0,CLOSE:0},searchBaseCards:[],searchBaseCbCards:[],searchRequestSeq:0,cards:[],cbCards:[],cardsStatus:null,history:[],departments:[],people:[],staff:[],actor:{},active:null,actionOrigin:null,actionClosing:false,returnFocusCb:new URLSearchParams(location.search).get('rc_focus_cb')||'',returnFocusAssignment:'',media:[],mediaIndex:new Map(),image:0,zoom:1,panX:0,panY:0,bridge:new Map(),assignableLots:null,mediaByLot:new Map(),mediaByCb:new Map(),mediaByUnit:new Map(),bridgeRefresh:null,bridgeAuxRefresh:null,bridgeLoadedAt:0,bridgeWarning:'',userId:null,workCounts:{},realtime:null,loadSeq:0,chatSeq:0,statusCache:new Map(),craftIdentityCache:new Map(),alterCustodyCache:new Map(),mc1LoadSeq:0,rateFocusHandler:null,rateFocusKey:null,rateFocusTimer:null};
 const arr=v=>Array.isArray(v)?v:[],err=e=>[e?.message,e?.details,e?.hint].filter(Boolean).join(" — ")||String(e);
 function whatsappNumber(value){let n=String(value||'').replace(/[^0-9]/g,'');if(n.length===11&&n.startsWith('0'))n=n.slice(1);if(n.length===10)n='91'+n;return /^[1-9][0-9]{7,14}$/.test(n)?n:''}
 function vendorProofRows(d){const raw=[...arr(d?.media),...arr(d?.evidence_urls),...arr(d?.proof_urls),...arr(d?.damage_images),...arr(d?.proof_images)],seen=new Set();return raw.map(x=>{const url=typeof x==='string'?x:(x?.file_url||x?.url||x?.src||x?.path||x?.image_url),hint=String(typeof x==='object'?(x?.media_type||x?.type||x?.mime_type||''):'').toUpperCase(),video=hint.includes('VIDEO')||/\.(mp4|mov|webm|3gp)(\?|$)/i.test(String(url||''));return url&&!seen.has(url)&&(seen.add(url),true)?{url:String(url),type:video?'Video':'Image'}:null}).filter(Boolean)}
@@ -365,7 +365,36 @@ async function boot(){
   $('menu').onclick=()=>$('drawer').hidden=false;$('menuClose').onclick=()=>$('drawer').hidden=true;$('drawer').onclick=e=>{if(e.target===$('drawer'))$('drawer').hidden=true};
   document.querySelectorAll('[data-status]').forEach(b=>b.onclick=()=>changeStatus(b.dataset.status));document.querySelectorAll('[data-chat-status]').forEach(b=>b.onclick=()=>changeStatus(b.dataset.chatStatus));
   document.querySelectorAll('[data-work-filter]').forEach(b=>b.onclick=()=>{S.workFilter=b.dataset.workFilter;renderActive();});
-  const searchInputs=[$('find'),$('chatFind')].filter(Boolean),queueSearch=(e,immediate=false)=>{const value=e.target.value.trim(),changed=value!==S.search;searchInputs.forEach(x=>{if(x!==e.target&&x.value!==value)x.value=value});if(changed)S.searchFocusIndex=-1;S.searchAutoSelect=!!value&&changed;S.searchFocusPending=!!value;clearTimeout(boot.t);const run=()=>{if(!changed&&immediate){advanceSearchResult();return}S.search=value;load(true)};immediate?run():boot.t=setTimeout(run,250)};searchInputs.forEach(x=>{x.oninput=queueSearch;x.onkeydown=e=>{if(e.key!=='Enter')return;e.preventDefault();queueSearch({target:x},true);x.blur()}});[['searchGo','find'],['chatSearchGo','chatFind']].forEach(([button,input])=>{$(button).onclick=()=>{const field=$(input);field.focus();queueSearch({target:field},true)}});
+  const searchInputs=[$('find'),$('chatFind')].filter(Boolean);
+  const instantSearchRender=(value)=>{
+    const q=String(value||'').trim().toLowerCase();
+    if(!q){
+      if(S.searchBaseCards.length||S.searchBaseCbCards.length){S.cards=S.searchBaseCards;S.cbCards=S.searchBaseCbCards;}
+      S.searchCounts={OPEN:0,WORKING:0,CLOSE:0};S.cardsStatus=S.status;renderActive(actAsActive(S.active));syncStatusButtons();return;
+    }
+    const base=S.searchBaseCards.length?S.searchBaseCards:S.cards;
+    const cbBase=S.searchBaseCbCards.length?S.searchBaseCbCards:S.cbCards;
+    const match=c=>[c.lot_no,c.cb_code,c.cb_no,c.art_no,c.worker_name,c.department_name,c.colour_name,c.source_status,c.message].some(v=>String(v||'').toLowerCase().includes(q));
+    const hits=base.filter(match),cbHits=cbBase.filter(match);
+    S.searchCounts={OPEN:0,WORKING:0,CLOSE:0};
+    hits.forEach(c=>{const st=String(c.search_status||c.chat_status||c.resolved_work_state||'').toUpperCase();if(st in S.searchCounts)S.searchCounts[st]++});
+    S.cards=hits;S.cbCards=cbHits;S.cardsStatus='SEARCH_LOCAL';renderActive(actAsActive(S.active));syncStatusButtons();
+  };
+  const queueSearch=(e,immediate=false)=>{
+    const value=e.target.value.trim(),changed=value!==S.search;
+    searchInputs.forEach(x=>{if(x!==e.target&&x.value!==value)x.value=value});
+    if(changed){
+      if(!S.search){S.searchBaseCards=S.cards.slice();S.searchBaseCbCards=S.cbCards.slice();}
+      S.search=value;S.searchFocusIndex=-1;S.searchAutoSelect=!!value;S.searchFocusPending=!!value;
+      instantSearchRender(value);
+    }
+    clearTimeout(boot.t);
+    const requestSeq=++S.searchRequestSeq;
+    const run=async()=>{if(!changed&&immediate){advanceSearchResult();return}await load(true);if(requestSeq!==S.searchRequestSeq)return;if(!S.search){S.searchBaseCards=[];S.searchBaseCbCards=[];}};
+    immediate?run():boot.t=setTimeout(run,180);
+  };
+  searchInputs.forEach(x=>{x.oninput=queueSearch;x.onkeydown=e=>{if(e.key!=='Enter')return;e.preventDefault();queueSearch({target:x},true);x.blur()}});
+  [['searchGo','find'],['chatSearchGo','chatFind']].forEach(([button,input])=>{$(button).onclick=()=>{const field=$(input);field.focus();queueSearch({target:field},true)}});
   $('back').onclick=()=>history.back();$('chatClose').onclick=()=>{S.active=null;inbox();history.pushState({view:'inbox',status:S.status},'',viewUrl())};onpopstate=e=>{const target=e.state?.status||new URLSearchParams(location.search).get('rc_status');if(target&&target!==S.status){S.status=target;++S.chatSeq;++S.loadSeq;}syncStatusButtons();restoreView(e.state)};
   $('viewerClose').onclick=closeViewer;$('actionSheetClose').onclick=()=>closeActionForm(false);$('actionFrame').onload=()=>{try{const frame=$('actionFrame');if(frame.getAttribute('src')==='about:blank'||S.actionClosing)return;const w=frame.contentWindow;if(w.location.href==='about:blank')return;if(w.location.pathname===location.pathname)closeActionForm(true)}catch{}};window.addEventListener('message',receiveActionResult);
   const stage=$('viewerStage'),points=new Map();let startX=0,startY=0,lastX=0,lastY=0,startDistance=0,startZoom=1;
