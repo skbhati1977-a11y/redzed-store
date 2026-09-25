@@ -664,7 +664,7 @@ function openWorkerSkills(workerId){
     || worker.department_code;
 
   $("workerSkillRows").innerHTML=allDepartments()
-    .filter(d=>d.worker_assignment_enabled!==false)
+    .filter(d=>d.worker_assignment_enabled!==false||String(d.department_code).toUpperCase()==='COSTING')
     .map(d=>{
       const selected=current.some(x=>x.department_code===d.department_code)
         || d.department_code===worker.department_code;
