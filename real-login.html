@@ -27,7 +27,7 @@
         Real Factory. Real Control.
       </p>
 
-      <form id="loginForm" class="rr-form" method="post" action="real-login.html">
+      <form id="loginForm" class="rr-form" method="post" action="real-login.html" autocomplete="on">
 
         <label>
           Email
@@ -35,6 +35,7 @@
           <input
             id="email"
             name="username"
+            aria-label="Email or username"
             type="email"
             inputmode="email"
             autocapitalize="none"
@@ -50,6 +51,7 @@
           <input
             id="password"
             name="password"
+            aria-label="Password"
             type="password"
             autocomplete="current-password"
             required
@@ -84,7 +86,7 @@
 
   <script src="config.js?v=9462"></script>
 
-  <script src="real-login.js?v=3"></script>
+  <script src="real-login.js?v=4"></script>
 
 </body>
 </html>
