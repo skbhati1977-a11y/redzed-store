@@ -259,15 +259,15 @@ async function openChat(kind,id,push=true,parentDepartment=null){
     S.status=S.searchExactStatuses[0]||(['WORKING','OPEN','CLOSE'].find(x=>available.has(x))||S.status);
     S.searchAutoSelect=false;
   }
-  const projectedSearchKey=[kind,String(id),S.status].join('|').toUpperCase();
-  if(!S.search){
-    S.searchSnapshotByStatus.set(projectedSearchKey,{cards:allRows.slice(),cbCards:[]});
-    S.searchMasterReady=false;
-  }
   let sourceRows=S.search?searchRows.filter(c=>String(c.search_status||c.chat_status||'').toUpperCase()===S.status):allRows;
   // V318 presentation only: one backend state, different group/personal lanes.
   sourceRows=sourceRows.filter(c=>{const r=String(c.resolved_work_state||'').toUpperCase();if(!r)return true;if(kind==='person'){if(S.status==='OPEN')return r==='ACCEPT_PENDING';if(S.status==='WORKING')return r==='WORKING';if(S.status==='CLOSE')return r==='CLOSE';}if(kind==='group'){if(S.status==='OPEN')return r!=='ACCEPT_PENDING'&&r!=='WORKING'&&r!=='CLOSE';if(S.status==='WORKING')return r==='ACCEPT_PENDING'||r==='WORKING';if(S.status==='CLOSE')return r==='CLOSE';}return true});
   if(S.status==='OPEN'&&kind==='group'&&String(id).toUpperCase()==='CUTTING'){const moved=new Set(arr(S.cards).filter(x=>String(x.department_code||'').toUpperCase()!=='CUTTING'&&['ASSIGNED','IN_PROGRESS','WORKING','ACCEPT_PENDING'].includes(String(x.assignment_status||x.status||x.resolved_work_state||'').toUpperCase())).map(x=>String(x.lot_no||'').toUpperCase()).filter(Boolean));for(const row of sourceRows){const lot=String(row.lot_no||'').toUpperCase();if(!lot)continue;const related=arr(S.cards).filter(x=>String(x.lot_no||'').toUpperCase()===lot&&String(x.department_code||'').toUpperCase()!=='CUTTING');if(related.some(x=>['ASSIGNED','IN_PROGRESS','WORKING','ACCEPT_PENDING'].includes(String(x.assignment_status||x.status||x.resolved_work_state||'').toUpperCase())))moved.add(lot)}sourceRows=sourceRows.filter(x=>!(String(x.department_code||'').toUpperCase()==='CUTTING'&&moved.has(String(x.lot_no||'').toUpperCase())))}const rows=filterWorking(sourceRows);
+  if(!S.search){
+    const finalSearchKey=[kind,String(id),S.status].join('|').toUpperCase();
+    S.searchSnapshotByStatus.set(finalSearchKey,{cards:rows.slice(),cbCards:[]});
+    S.searchMasterReady=false;
+  }
   syncStatusButtons();syncWorkFilters(sourceRows);
   $('chatName').textContent=kind==="group"?(String(id).toUpperCase()==='PURCHASE'?'CB Department':(name||id))+' Group':name||"Worker";
   $('kind').textContent=(kind==="group"?String(id).toUpperCase()+' · GROUP CHAT':'PERSONAL CHAT')+' · '+S.status;
@@ -318,17 +318,19 @@ async function load(fast=false){
     if(!fast&&!S.history.length)$('state').textContent="Loading canonical directory…";
     const viewRole=String(window.RR_VIEW_AS_ROLE||"WORKER").toUpperCase(),actWorker=window.RR_ON_BEHALF_ACTIVE&&!["OWNER","SUPER_ADMIN","ADMIN","MANAGER","DEPARTMENT_HEAD","CUTTING_MASTER","LINE_MANAGER","LINE_MAN"].includes(viewRole),directory=fast?Promise.resolve({departments:S.departments,people:S.people,actor:S.actor}):rpc("rr_real_chat_directory_v85");
     const cuttingActive=String(active?.id||active?.parentDepartment||'').toUpperCase()==='CUTTING',cbJob=(actWorker||fast&&!cuttingActive?Promise.resolve({cards:[]}):rpc('rr_cb_department_cards_v600',{p_state:search?null:status,p_search:search||null})).then(cb=>projectCanonicalCbCards(cb,status,seq));
-    const bridgeNeeded=fast&&(!!search||!S.history.length),bridgeBarrier=bridgeNeeded?refreshBridgeProjection(!!search):Promise.resolve({cached:true});
-    const actDept=actWorker?String(arr(window.RR_VIEW_AS_DEPARTMENTS)[0]||"").toUpperCase()||null:null,workRequest=search?bridgeBarrier.then(()=>loadSearchWork(search,status)):rpc("rr_real_chat_work_search_v10",{p_status:status,p_search:null,p_department_code:actDept,p_limit:500});
+    const bridgeNeeded=fast&&!search&&!S.history.length,bridgeBarrier=bridgeNeeded?refreshBridgeProjection(false):Promise.resolve({cached:true});
+    const actDept=actWorker?String(arr(window.RR_VIEW_AS_DEPARTMENTS)[0]||"").toUpperCase()||null:null;
+    const workRequest=search?Promise.resolve({cards:S.cards,related_terms:S.searchTerms,actor:S.actor,frontend_search:true}):rpc("rr_real_chat_work_search_v10",{p_status:status,p_search:null,p_department_code:actDept,p_limit:500});
     const workJob=workRequest.then(data=>({data})).catch(error=>({error}));
     const [d,workResult,cb]=await Promise.all([directory,workJob,cbJob]);
     if(seq!==S.loadSeq||status!==S.status)return;
     if(workResult.error)console.error(workResult.error);
     const w=workResult.error?{cards:[],related_terms:[],actor:d.actor||{}}:workResult.data;
     const scoped=actAsScope(d,w);
-    S.departments=scoped.departments;S.people=scoped.people;S.staff=S.departments.flatMap(x=>arr(x.staff));if(!fast){S.craftIdentityCache.clear();S.alterCustodyCache.clear();S.statusCache.clear()}S.cards=arr(scoped.cards);S.cbCards=arr(cb?.cards);S.searchTerms=S.search?arr(w.related_terms):[];S.cardsStatus=S.search?'SEARCH':status;
+    S.departments=scoped.departments;S.people=scoped.people;S.staff=S.departments.flatMap(x=>arr(x.staff));if(!fast&&!search){S.craftIdentityCache.clear();S.alterCustodyCache.clear();S.statusCache.clear()}
+    if(!search){S.cards=arr(scoped.cards);S.cbCards=arr(cb?.cards);S.searchTerms=[];S.cardsStatus=status}else{S.cardsStatus='SEARCH_FRONTEND'}
     [$('find'),$('chatFind')].filter(Boolean).forEach(x=>{if(x.value!==S.search)x.value=S.search});
-    S.actor=scoped.actor;rebuildWorkCounts(status);const cacheKey=statusProjectionKey(status,S.active||active);S.statusCache.set(cacheKey,{cards:S.cards,cbCards:S.cbCards,cardsStatus:S.cardsStatus,workCounts:{...S.workCounts},at:Date.now()});if(!S.search)S.searchMasterReady=false;
+    S.actor=scoped.actor;rebuildWorkCounts(status);if(!search){const cacheKey=statusProjectionKey(status,S.active||active);S.statusCache.set(cacheKey,{cards:S.cards,cbCards:S.cbCards,cardsStatus:S.cardsStatus,workCounts:{...S.workCounts},at:Date.now()});S.searchMasterReady=false;}
     const role=String(S.actor.role||S.actor.role_code||'WORKER').toUpperCase(),staff=['OWNER','SUPER_ADMIN','ADMIN','MANAGER','LINE_MANAGER','LINE_MAN','DEPARTMENT_HEAD','CUTTING_MASTER'].includes(role);
     document.querySelectorAll('[data-status="OPEN"],[data-chat-status="OPEN"]').forEach(x=>x.hidden=!staff);if(!staff&&S.status==='OPEN')S.status='WORKING';
     syncStatusButtons();const warnings=workResult.error?['work projection temporarily unavailable']:w.partial_error?['partial search projection']:[];updateProjectionState(warnings);saveCache();renderActive(actAsActive(S.active||active));if(!fast&&S.returnFocusCb)focusCbCard(S.returnFocusCb,true);
