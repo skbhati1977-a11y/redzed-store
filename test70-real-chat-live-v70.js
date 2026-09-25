@@ -259,6 +259,11 @@ async function openChat(kind,id,push=true,parentDepartment=null){
     S.status=S.searchExactStatuses[0]||(['WORKING','OPEN','CLOSE'].find(x=>available.has(x))||S.status);
     S.searchAutoSelect=false;
   }
+  const projectedSearchKey=[kind,String(id),S.status].join('|').toUpperCase();
+  if(!S.search){
+    S.searchSnapshotByStatus.set(projectedSearchKey,{cards:allRows.slice(),cbCards:[]});
+    S.searchMasterReady=false;
+  }
   let sourceRows=S.search?searchRows.filter(c=>String(c.search_status||c.chat_status||'').toUpperCase()===S.status):allRows;
   // V318 presentation only: one backend state, different group/personal lanes.
   sourceRows=sourceRows.filter(c=>{const r=String(c.resolved_work_state||'').toUpperCase();if(!r)return true;if(kind==='person'){if(S.status==='OPEN')return r==='ACCEPT_PENDING';if(S.status==='WORKING')return r==='WORKING';if(S.status==='CLOSE')return r==='CLOSE';}if(kind==='group'){if(S.status==='OPEN')return r!=='ACCEPT_PENDING'&&r!=='WORKING'&&r!=='CLOSE';if(S.status==='WORKING')return r==='ACCEPT_PENDING'||r==='WORKING';if(S.status==='CLOSE')return r==='CLOSE';}return true});
@@ -369,13 +374,14 @@ async function boot(){
   const hideSearchNotice=()=>{const n=$('searchNotice');if(n){n.hidden=true;n.innerHTML=''}};
   const searchText=c=>[c.lot_no,c.cb_code,c.cb_no,c.art_no,c.worker_name,c.department_name,c.colour_code,c.colour_name,c.source_status,c.message].map(v=>String(v||'').toLowerCase()).join(' ');
   const rebuildSearchMaster=()=>{
-    const cards=[],cb=[],seen=new Set(),seenCb=new Set();
+    const cards=[],cb=[],seen=new Set(),seenCb=new Set(),activeKind=String(S.active?.kind||''),activeId=String(S.active?.id||'');
     for(const status of ['OPEN','WORKING','CLOSE']){
+      const projected=S.searchSnapshotByStatus.get([activeKind,activeId,status].join('|').toUpperCase());
       const cached=S.statusCache.get(statusProjectionKey(status));
-      for(const row of arr(cached?.cards)){const key=String(row.event_key||row.canonical_key||row.assignment_id||[row.lot_no,row.department_code,row.worker_id,row.source_module,row.source_status].join('|'));if(!seen.has(key)){seen.add(key);cards.push({...row,search_status:row.search_status||row.chat_status||status,_search_text:searchText(row)})}}
-      for(const row of arr(cached?.cbCards)){const key=String(row.event_key||row.canonical_key||row.cb_unit_id||[row.cb_no,row.source_status].join('|'));if(!seenCb.has(key)){seenCb.add(key);cb.push({...row,search_status:row.search_status||row.chat_status||status,_search_text:searchText(row)})}}
+      const source=projected?.cards?.length?projected.cards:arr(cached?.cards);
+      for(const row of arr(source)){const key=String(row.event_key||row.canonical_key||row.assignment_id||[row.lot_no,row.department_code,row.worker_id,row.source_module,row.source_status].join('|'));if(!seen.has(key)){seen.add(key);cards.push({...row,search_status:status,_search_text:searchText(row)})}}
+      for(const row of arr(projected?.cbCards?.length?projected.cbCards:cached?.cbCards)){const key=String(row.event_key||row.canonical_key||row.cb_unit_id||[row.cb_no,row.source_status].join('|'));if(!seenCb.has(key)){seenCb.add(key);cb.push({...row,search_status:status,_search_text:searchText(row)})}}
     }
-    for(const row of arr(S.cards)){const key=String(row.event_key||row.canonical_key||row.assignment_id||[row.lot_no,row.department_code,row.worker_id,row.source_module,row.source_status].join('|'));if(!seen.has(key)){seen.add(key);cards.push({...row,search_status:row.search_status||row.chat_status||S.status,_search_text:searchText(row)})}}
     S.searchMasterCards=cards;S.searchMasterCbCards=cb;S.searchMasterReady=true;
   };
   const frontendSearchRender=value=>{
