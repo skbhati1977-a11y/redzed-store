@@ -60,6 +60,6 @@ function injectCostingIntoSubmit(){
 */
 function injectCostingIntoSubmit(){}
 
-function boot(){masterLibraryOnly();if(/real-department-lite-v9127\.html$/i.test(path)){if(dept==='STICKER')renderRequirementPanel('STICKER');if(dept==='METAL_ID')renderRequirementPanel('METAL_ID');injectCostingIntoSubmit()}}
+function boot(){masterLibraryOnly();if(/real-department-lite-v9127\.html$/i.test(path)){const exactAssign=String(qs.get('rrMode')||'').toUpperCase()==='ASSIGN'&&!!String(qs.get('rrOpenAssign')||'').trim();if(!exactAssign){if(dept==='STICKER')renderRequirementPanel('STICKER');if(dept==='METAL_ID')renderRequirementPanel('METAL_ID')}injectCostingIntoSubmit()}}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
 })();
