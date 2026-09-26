@@ -316,12 +316,12 @@ async function load(fast=false){
   try{
     if(!fast&&!S.history.length)$('state').textContent="Loading canonical directory…";
     const viewRole=String(window.RR_VIEW_AS_ROLE||"WORKER").toUpperCase(),actWorker=window.RR_ON_BEHALF_ACTIVE&&!["OWNER","SUPER_ADMIN","ADMIN","MANAGER","DEPARTMENT_HEAD","CUTTING_MASTER","LINE_MANAGER","LINE_MAN"].includes(viewRole),directory=fast?Promise.resolve({departments:S.departments,people:S.people,actor:S.actor}):rpc("rr_real_chat_directory_v85");
-    const cuttingActive=String(active?.id||active?.parentDepartment||'').toUpperCase()==='CUTTING',cbAllowed=!window.RR_ON_BEHALF_ACTIVE||['OWNER','SUPER_ADMIN','ADMIN'].includes(viewRole)||arr(window.RR_VIEW_AS_DEPARTMENTS).map(x=>String(x).toUpperCase()).some(x=>['PURCHASE','CB_DEPARTMENT'].includes(x)),cbJob=(!cbAllowed||actWorker||fast&&!cuttingActive?Promise.resolve({cards:[]}):rpc('rr_cb_department_cards_v600',{p_state:search?null:status,p_search:search||null})).then(cb=>projectCanonicalCbCards(cb,status,seq));
+    const cuttingActive=String(active?.id||active?.parentDepartment||'').toUpperCase()==='CUTTING',cbAllowed=!window.RR_ON_BEHALF_ACTIVE||['OWNER','SUPER_ADMIN','ADMIN'].includes(viewRole)||arr(window.RR_VIEW_AS_DEPARTMENTS).map(x=>String(x).toUpperCase()).some(x=>['PURCHASE','CB_DEPARTMENT'].includes(x)),cbJob=(!cbAllowed||actWorker||fast&&!cuttingActive?Promise.resolve({cards:[]}):rpc('rr_cb_department_cards_v600',{p_state:search?null:status,p_search:search||null})).then(cb=>projectCanonicalCbCards(cb,status,seq)).then(data=>({data})).catch(error=>({error}));
     const bridgeNeeded=fast&&!search&&!S.history.length,bridgeBarrier=bridgeNeeded?refreshBridgeProjection(false):Promise.resolve({cached:true});
     const actDept=actWorker?String(arr(window.RR_VIEW_AS_DEPARTMENTS)[0]||"").toUpperCase()||null:null;
     const workRequest=search?Promise.resolve({cards:S.cards,related_terms:S.searchTerms,actor:S.actor,frontend_search:true}):rpc("rr_real_chat_work_search_v10",{p_status:status,p_search:null,p_department_code:actDept,p_limit:500});
     const workJob=workRequest.then(data=>({data})).catch(error=>({error}));
-    const [d,workResult,cb]=await Promise.all([directory,workJob,cbJob]);
+    const [d,workResult,cbResult]=await Promise.all([directory,workJob,cbJob]);const cb=cbResult?.error?{cards:[]}:cbResult?.data;if(cbResult?.error)console.error('CB projection isolated',cbResult.error);
     if(seq!==S.loadSeq||status!==S.status)return;
     if(workResult.error)console.error(workResult.error);
     const w=workResult.error?{cards:[],related_terms:[],actor:d.actor||{}}:workResult.data;
@@ -332,7 +332,7 @@ async function load(fast=false){
     S.actor=scoped.actor;rebuildWorkCounts(status);if(!search){const cacheKey=statusProjectionKey(status,S.active||active);S.statusCache.set(cacheKey,{cards:S.cards,cbCards:S.cbCards,cardsStatus:S.cardsStatus,workCounts:{...S.workCounts},at:Date.now()});}
     const role=String(S.actor.role||S.actor.role_code||'WORKER').toUpperCase(),staff=['OWNER','SUPER_ADMIN','ADMIN','MANAGER','LINE_MANAGER','LINE_MAN','DEPARTMENT_HEAD','CUTTING_MASTER'].includes(role);
     document.querySelectorAll('[data-status="OPEN"],[data-chat-status="OPEN"]').forEach(x=>x.hidden=!staff);const canClose=['OWNER','SUPER_ADMIN','ADMIN','MANAGER'].includes(role);document.querySelectorAll('[data-status="CLOSE"],[data-chat-status="CLOSE"]').forEach(x=>x.hidden=!canClose);if((!staff&&S.status==='OPEN')||(!canClose&&S.status==='CLOSE'))S.status='WORKING';
-    syncStatusButtons();const warnings=workResult.error?['work projection temporarily unavailable']:w.partial_error?['partial search projection']:[];updateProjectionState(warnings);saveCache();renderActive(actAsActive(S.active||active));if(!fast&&S.returnFocusCb)focusCbCard(S.returnFocusCb,true);
+    syncStatusButtons();const warnings=[];if(workResult.error)warnings.push('work projection temporarily unavailable');else if(w.partial_error)warnings.push('partial search projection');if(cbResult?.error)warnings.push('CB projection temporarily unavailable');updateProjectionState(warnings);saveCache();renderActive(actAsActive(S.active||active));if(!fast&&S.returnFocusCb)focusCbCard(S.returnFocusCb,true);
     if(fast)return;
     await refreshBridgeProjection();
   }catch(e){console.error(e);if(!fast||!S.history.length){$('state').textContent=err(e);$('rows').innerHTML='<div class="empty bad">Live mapping unavailable. No fallback or cross-worker data shown.</div>'}else $('state').textContent='Cached view · refresh pending'}
