@@ -398,7 +398,7 @@ async function boot(){
     const value=e.target.value.trim(),changed=value!==S.search;searchInputs.forEach(x=>{if(x!==e.target&&x.value!==value)x.value=value});
     if(!changed&&immediate){advanceSearchResult();return}
     S.search=value;S.searchFocusIndex=-1;S.searchAutoSelect=false;S.searchFocusPending=!!value;++S.searchRequestSeq;
-    if(!value){S.mirrorSearch=null;S.searchCounts={OPEN:0,WORKING:0,CLOSE:0};document.querySelectorAll('[data-status],[data-chat-status]').forEach(x=>x.hidden=false);frontendSearchRender(value);load(false);return}
+    if(!value){++S.mirrorSearchSeq;S.mirrorSearch=null;S.searchCounts={OPEN:0,WORKING:0,CLOSE:0};S.searchTerms=[];document.querySelectorAll('[data-status],[data-chat-status]').forEach(x=>x.hidden=false);load(false);return}
     buildMirrorSearch(value).then(()=>{syncStatusButtons();renderActive(actAsActive(S.active));}).catch(console.error);
   };
   searchInputs.forEach(x=>{x.oninput=queueSearch;x.onkeydown=e=>{if(e.key!=='Enter')return;e.preventDefault();queueSearch({target:x},true);x.blur()}});
