@@ -939,66 +939,16 @@ async function resumePendingSubmitV760(pending) {
   // never depend on hidden legacy cards or hidden submit button.
   await directSubmitColourV7604(latestRow);
 }
-async function firstSubmitRateGateV760(rowData, rowElement) {
-  const client = getClient();
-  if (!client) throw new Error("Connected Supabase client nahi mila.");
-
-  const canonical =
-    currentMatrix?.canonical_lot_id
-    || activeCanonical
-    || locateActiveCanonical();
-
-  if (!canonical) throw new Error("Canonical Lot ID nahi mila.");
-
-  const canonicalDepartment =
-    String(rowData.department_code || "").toUpperCase();
-
-  if (
-    v760SubmitBypassOnce
-    && v760SubmitBypassOnce.canonical === canonical
-    && upper(v760SubmitBypassOnce.colourCode) === upper(rowData.colour_code)
-    && (
-      upper(v760SubmitBypassOnce.departmentCode) === canonicalDepartment
-      || upper(v760SubmitBypassOnce.departmentCode) === "PRINTING"
-        && canonicalDepartment === "PRINT"
-      || upper(v760SubmitBypassOnce.departmentCode) === "STITCHING"
-        && ["KR","KARIGAR","STITCHING"].includes(canonicalDepartment)
-    )
-  ) {
-    v760SubmitBypassOnce = null;
-    return true;
-  }
-
-  const { data, error } = await client.rpc(
-    "rr_upm_first_submit_rate_gate_v760",
-    {
-      p_canonical_lot_id: canonical,
-      p_department_code: rowData.department_code,
-      p_colour_code: rowData.colour_code
-    }
-  );
-
-  if (error) throw error;
-  if (data?.allowed) return true;
-
-  pendingV760Submit = {
-    canonical,
-    departmentCode: data.department_code,
-    requestId: data.request_id,
-    rowData,
-    rowElement
-  };
-
-  alert(
-    `First Submit hold hai.\n\n` +
-    `Lot: ${data.lot_no}\n` +
-    `Colour: ${data.colour_code}\n` +
-    `Department: ${data.department_name}\n\n` +
-    `Actual Rate fill karne ke baad Submit automatically continue hoga.`
-  );
-
-  await openCostingPanelV760(canonical, data.department_code);
-  return false;
+async function firstSubmitRateGateV760(rowData,rowElement) {
+  const client=getClient();
+  if(!client) throw new Error("Connected Supabase client nahi mila.");
+  const canonical=currentMatrix?.canonical_lot_id||activeCanonical||locateActiveCanonical();
+  if(!canonical) throw new Error("Canonical Lot ID nahi mila.");
+  const {error}=await client.rpc("rr_upm_first_submit_rate_gate_v760",{p_canonical_lot_id:canonical,p_department_code:rowData.department_code,p_colour_code:rowData.colour_code});
+  if(error) throw error;
+  // TEST71 V661: Actual Cost request is advisory during production.
+  // The hard canonical gate is Packing -> Despatch.
+  return true;
 }
 
 function rowActionButtons(row) {
