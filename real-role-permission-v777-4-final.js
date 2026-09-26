@@ -1521,6 +1521,6 @@ function bind(){document.querySelectorAll("[data-close]").forEach(x=>x.onclick=(
     }
     updatePayrollFieldsV777();
   };$("workerIdentityForm").onsubmit=saveWorkerIdentityV773;$("departmentWitnessForm").onsubmit=saveDepartmentPrimaryWitnessV774;$("rerollDepartmentSecondary").onclick=rerollDepartmentSecondaryV774;$("identityDeviceMode").onchange=updateIdentityModeFieldsV773;$("unlinkWorkerLogin").onclick=unlinkWorkerLoginV773;document.addEventListener("keydown",e=>{if(e.key==="Escape"){const sheet=document.querySelector(".sheet:not(.hidden)");if(sheet)closeSheet(sheet.id)}})}
-async function boot(){try{state.client=window.supabaseClient||window.supabaseDb||window.redzedSupabase||window.sb;if(!state.client)throw new Error("Supabase client unavailable.");state.auth=await RR.requireRoles(["owner","admin"]);bind();await loadConsole();RR.startAccessGuard?.()}catch(e){console.error(e);say(err(e),"error")}}
+async function boot(){try{state.client=window.supabaseClient||window.supabaseDb||window.redzedSupabase||window.sb;if(!state.client)throw new Error("Supabase client unavailable.");state.auth=await RR.requireRoles(["owner","admin"]);const {data:scope,error:scopeError}=await state.client.rpc("rr_dashboard_scope_v665");if(scopeError)throw scopeError;if(!scope?.security_admin)throw new Error("Role & Permission access denied.");bind();await loadConsole();RR.startAccessGuard?.()}catch(e){console.error(e);say(err(e),"error")}}
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",boot);else boot();
 })();
