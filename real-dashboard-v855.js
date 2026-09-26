@@ -41,6 +41,8 @@
   ];
 
   const coreIds = ["product","upm","packing","sale","accounts","salarypay","reports","communication"];
+  let scope={modules:["*"],security_admin:false};
+  const visible=m=>scope.modules.includes('*')||scope.modules.includes(m.id);
   const $ = id => document.getElementById(id);
 
   function card(m){
@@ -54,7 +56,7 @@
   function render(){
     document.querySelectorAll("[data-card-host]").forEach(host=>{
       const group=host.dataset.cardHost;
-      const rows=group==="core" ? coreIds.map(id=>modules.find(m=>m.id===id)).filter(Boolean) : modules.filter(m=>m.group===group);
+      const rows=(group==="core" ? coreIds.map(id=>modules.find(m=>m.id===id)).filter(Boolean) : modules.filter(m=>m.group===group)).filter(visible);
       host.innerHTML=rows.map(card).join("");
     });
   }
@@ -73,7 +75,7 @@
     if(!q){render();document.querySelector(".section-head h2").textContent="Core Control Modules";document.querySelector(".module-count").textContent=`${coreIds.length} shortcuts`;return}
     setView("home");
     const host=document.querySelector('[data-card-host="core"]');
-    const rows=modules.filter(m=>(m.title+" "+m.desc+" "+m.tag+" "+m.group).toLowerCase().includes(q));
+    const rows=modules.filter(m=>visible(m)&&(m.title+" "+m.desc+" "+m.tag+" "+m.group).toLowerCase().includes(q));
     host.innerHTML=rows.length?rows.map(card).join(""):`<div class="empty">No matching module found.</div>`;
     document.querySelector(".section-head h2").textContent="Search Results";
     document.querySelector(".module-count").textContent=`${rows.length} found`;
@@ -85,7 +87,7 @@
       const client=RR.getClient();
       const {data:{user}}=await client.auth.getUser();
       if(!user)return;
-      const {data}=await client.from("rr_user_profiles").select("full_name,role_code").eq("auth_user_id",user.id).maybeSingle();
+      const [{data},{data:scopeData}]=await Promise.all([client.from("rr_user_profiles").select("full_name,role_code").eq("auth_user_id",user.id).maybeSingle(),client.rpc('rr_dashboard_scope_v665')]);scope={modules:Array.isArray(scopeData?.modules)?scopeData.modules:['*'],security_admin:!!scopeData?.security_admin};render();document.querySelectorAll('[data-view="control"]').forEach(x=>x.hidden=!scope.security_admin);
       if(data){
         const rawName=String(data.full_name||"").trim();
         const role=String(data.role_code||"").toLowerCase();
