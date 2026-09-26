@@ -17,8 +17,8 @@ function ensureRealChatMenu(){
  const a=document.createElement('a');
  a.id='rrRealChatMenu9436';
  a.className='direct';
- a.href='real-sales-live-chat-v9434.html?v=9435';
- a.innerHTML='<span class="gi">💬</span><span class="gt">Real Chat</span><span>›</span>';
+ a.href='test70-cb-purchase-real-chat-pilot.html?v=TEST71';
+ a.innerHTML='<span class="gi">💬</span><span class="gt">Worker Real Chat</span><span>›</span>';
  webStore.insertAdjacentElement('afterend',a);
 }
 
