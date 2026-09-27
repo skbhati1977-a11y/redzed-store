@@ -11,3 +11,5 @@ Setup:
 2. In Supabase Project Settings > API, copy Project URL and anon public key.
 3. Edit config.js and paste values.
 4. Open admin.html, login with ADMIN_PIN, add products.
+
+<!-- TEST71 preview redeploy marker: BOM canonical rename + duplicate validation -->
