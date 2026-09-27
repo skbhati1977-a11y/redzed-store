@@ -1140,6 +1140,7 @@ async function askDirectSubmitConfirmationV7604(rowData) {
     });
   });
 }
+async function stickerMaterialCaptureV687(rowData){if(canonicalDepartmentV762(rowData.department_code)!=='STICKER')return true;const client=getClient();const assignmentId=rowData.assignment_id||rowData.work_assignment_id;if(!assignmentId)return true;const {data:ctx,error}=await client.rpc('rr_sticker_submit_context_v647',{p_assignment_id:assignmentId,p_data_mode:'TEST'});if(error)throw error;const mats=ctx?.raw_materials||[];if(!mats.length)return true;const chosen=[];for(const m of mats){if(!confirm('Use '+(m.material_name||m.material_no)+' for this Sticker job?'))continue;const v=prompt((m.material_name||m.material_no)+' actual consumption (MTR)','');if(v==null)continue;const q=Number(v);if(q>0)chosen.push({material_id:m.material_id,consumed_mtr:q})}if(!chosen.length){if(!confirm('No raw material consumption selected. Continue Submit?'))return false;return true}const {error:postError}=await client.rpc('rr_sticker_post_multi_material_v687',{p_assignment_id:assignmentId,p_lines:chosen,p_data_mode:'TEST'});if(postError)throw postError;return true}
 async function directSubmitColourV7604(rowData, options = {}) {
   const canonical =
     currentMatrix?.canonical_lot_id
@@ -1173,6 +1174,7 @@ async function directSubmitColourV7604(rowData, options = {}) {
   }
 
   try {
+    if(!(await stickerMaterialCaptureV687(rowData)))return false;
     const { data, error } = await client.rpc("rr_upm_submit_colours_v741", {
       p_canonical_lot_id: canonical,
       p_department_code: rowData.department_code,
