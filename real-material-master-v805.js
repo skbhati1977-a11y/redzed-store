@@ -83,7 +83,7 @@ async function searchMapped(){
  $("suggestions").querySelectorAll("[data-i]").forEach(b=>b.onclick=()=>selectMapped(rows[Number(b.dataset.i)]));
 }
 async function selectMapped(r){
- selected=r;$("name").value=r.material_name||"";$("no").value=r.material_no||"";
+ selected=r;$("name").value=r.material_name||"";$("editMaterialName").disabled=false;$("no").value=r.material_no||"";
  $("purchaseUnit").value=r.purchase_unit||"PCS";$("stockUnit").value=r.stock_unit||"PCS";$("consumptionUnit").value=r.consumption_unit||"PCS";
  $("suggestions").classList.add("hidden");
  $("floatMaterial").textContent=[r.material_no,r.material_name].filter(Boolean).join(" · ");
@@ -140,6 +140,7 @@ function openNewMaterial(){
 }
 async function saveNewMaterial(){
  $("newMaterialMsg").textContent="";
+ const materialNo=$("newMaterialNo").value.trim();if(materialNo){const {data:existingNo,error:noError}=await client.rpc("rr_material_no_existing_v667",{p_material_no:materialNo});if(noError)throw noError;if(existingNo?.exists)throw Error("Material No. "+materialNo+" already exists as "+existingNo.material_name+". Select existing material or edit its name.");}
  const payload={
    p_type_code:$("newMaterialType").value,p_material_name:$("newMaterialName").value.trim(),p_material_no:$("newMaterialNo").value.trim()||null,
    p_purchase_unit:$("newPurchaseUnit").value,p_stock_unit:$("newStockUnit").value,p_purchase_to_stock:Number($("newPurchaseToStock").value||0),
@@ -184,7 +185,7 @@ $("supplierSearch").oninput=()=>{clearTimeout(supplierTimer);$("supplier").value
 document.addEventListener("click",e=>{if(!e.target.closest(".mapped"))$("suggestions").classList.add("hidden");if(!e.target.closest(".combo"))$("supplierSuggestions").classList.add("hidden");const c=e.target.closest("[data-close]");if(c)modal(c.dataset.close,false)});
 $("purchaseQty").addEventListener("input",calc);$("rate").addEventListener("input",calc);$("purchaseUnit").addEventListener("change",updatePurchaseConversionUi);
 $("paymentStatus").onchange=()=>{const s=$("paymentStatus").value!=="CREDIT";$("paidWrap").classList.toggle("hidden",!s);$("cashWrap").classList.toggle("hidden",!s)};
-$("addMaterial").onclick=openNewMaterial;$("addSupplier").onclick=()=>{$("newSupplierName").value=$("supplierSearch").value.trim();$("newSupplierMsg").textContent="";modal("supplierModal",true)};
+$("addMaterial").onclick=openNewMaterial;$("editMaterialName").onclick=()=>{if(!selected)return;$("renameMaterialName").value=selected.material_name||"";$("renameMaterialMsg").textContent="";modal("renameMaterialModal",true)};$("saveMaterialRename").onclick=async()=>{try{if(!selected)throw Error("Select Material.");const {data,error}=await client.rpc("rr_material_rename_v667",{p_material_id:selected.existing_material_id||selected.material_id,p_material_name:$("renameMaterialName").value.trim()});if(error)throw error;selected.material_name=data.material_name;$("name").value=data.material_name;$("floatMaterial").textContent=[selected.material_no,data.material_name].filter(Boolean).join(" · ");modal("renameMaterialModal",false);await load()}catch(e){$("renameMaterialMsg").className="err";$("renameMaterialMsg").textContent=e.message}};$("addSupplier").onclick=()=>{$("newSupplierName").value=$("supplierSearch").value.trim();$("newSupplierMsg").textContent="";modal("supplierModal",true)};
 $("addType").onclick=()=>{$("newTypeName").value="";$("newTypeCode").value="";$("newTypeMsg").textContent="";modal("typeModal",true)};
 $("newPurchaseUnit").onchange=updateNewMaterialConversion;$("newConsumptionUnit").onchange=updateNewMaterialConversion;
 $("saveNewMaterial").onclick=()=>saveNewMaterial().catch(e=>{$("newMaterialMsg").className="err";$("newMaterialMsg").textContent=e.message});
