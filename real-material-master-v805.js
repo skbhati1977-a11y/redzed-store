@@ -126,6 +126,7 @@ async function saveNewUnit(){
  $("newUnitMsg").className="ok";$("newUnitMsg").textContent=data.message||"Unit ready.";
  setTimeout(()=>modal("unitModal",false),250)
 }
+function updateNewMaterialConversion(){const pu=$("newPurchaseUnit").value||"PCS",cu=$("newConsumptionUnit").value||"PCS",same=pu===cu;$("newStockUnit").value=cu;$("newConsumptionToStock").value="1";$("newConversionLeft").textContent="1 "+pu+" =";$("newConversionRight").textContent=cu;if(same)$("newPurchaseToStock").value="1";else if($("newPurchaseToStock").value==="1")$("newPurchaseToStock").value="";$("newConversionHint").textContent=same?"1 "+pu+" = 1 "+cu:"Enter how many "+cu+" equal 1 "+pu;}
 function currentTypeRow(){return (state.material_types||[]).find(x=>x.type_code===$("type").value)||null}
 function openNewMaterial(){
  const t=$("type").value;
@@ -135,7 +136,7 @@ function openNewMaterial(){
  }
  $("newMaterialType").value=t;$("newMaterialName").value=$("name").value.trim();$("newMaterialNo").value=$("no").value.trim();
  const tr=currentTypeRow();$("newPurchaseUnit").value=tr?.default_purchase_unit||"PCS";$("newStockUnit").value=tr?.default_consumption_unit||tr?.default_purchase_unit||"PCS";$("newConsumptionUnit").value=tr?.default_consumption_unit||"PCS";
- $("newPreferredSupplier").value=$("supplier").value||"";$("newMaterialMsg").textContent="";modal("materialModal",true)
+ $("newPreferredSupplier").value=$("supplier").value||"";updateNewMaterialConversion();$("newMaterialMsg").textContent="";modal("materialModal",true)
 }
 async function saveNewMaterial(){
  $("newMaterialMsg").textContent="";
@@ -185,6 +186,7 @@ $("purchaseQty").addEventListener("input",calc);$("rate").addEventListener("inpu
 $("paymentStatus").onchange=()=>{const s=$("paymentStatus").value!=="CREDIT";$("paidWrap").classList.toggle("hidden",!s);$("cashWrap").classList.toggle("hidden",!s)};
 $("addMaterial").onclick=openNewMaterial;$("addSupplier").onclick=()=>{$("newSupplierName").value=$("supplierSearch").value.trim();$("newSupplierMsg").textContent="";modal("supplierModal",true)};
 $("addType").onclick=()=>{$("newTypeName").value="";$("newTypeCode").value="";$("newTypeMsg").textContent="";modal("typeModal",true)};
+$("newPurchaseUnit").onchange=updateNewMaterialConversion;$("newConsumptionUnit").onchange=updateNewMaterialConversion;
 $("saveNewMaterial").onclick=()=>saveNewMaterial().catch(e=>{$("newMaterialMsg").className="err";$("newMaterialMsg").textContent=e.message});
 $("saveNewSupplier").onclick=()=>saveNewSupplier().catch(e=>{$("newSupplierMsg").className="err";$("newSupplierMsg").textContent=e.message});
 $("saveNewType").onclick=()=>saveNewType().catch(e=>{$("newTypeMsg").className="err";$("newTypeMsg").textContent=e.message});
