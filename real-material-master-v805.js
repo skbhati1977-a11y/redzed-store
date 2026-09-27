@@ -64,6 +64,7 @@ async function load(){
  $("newPreferredSupplier").innerHTML=ledgerOptions(suppliers);
  $("cashBank").innerHTML=ledgerOptions((state.ledgers||[]).filter(x=>["CASH","BANK"].includes(String(x.ledger_kind||"").toUpperCase())));
  $("purchaseLedger").innerHTML=ledgerOptions(state.ledgers||[]);
+}
 
 function clearSelection(){
  selected=null;$("no").value="";$("balanceStrip").classList.remove("show");$("sourceNotice").classList.add("hidden");$("savePost").disabled=false;
