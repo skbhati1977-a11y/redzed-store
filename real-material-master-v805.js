@@ -44,6 +44,8 @@ async function loadPreferredSupplier(){
 async function load(){
  client=client||(window.RR?.getClient?RR.getClient():window.supabaseClient);
  if(!client)throw Error("Supabase client not available.");
+ if(!window.RR?.requireOwner)throw Error("Authorization guard unavailable.");
+ await RR.requireOwner();
  const [boot,unitMaster,identity]=await Promise.all([
   client.rpc("rr_material_purchase_bootstrap_v805_1",{p_data_mode:$("dataMode").value}),
   client.rpc("rr_unit_master_list_v606"),
