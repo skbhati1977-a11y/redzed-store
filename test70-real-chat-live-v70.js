@@ -386,7 +386,7 @@ async function boot(){
   $('menu').onclick=()=>$('drawer').hidden=false;$('menuClose').onclick=()=>$('drawer').hidden=true;$('drawer').onclick=e=>{if(e.target===$('drawer'))$('drawer').hidden=true};
   document.querySelectorAll('[data-status]').forEach(b=>b.onclick=()=>changeStatus(b.dataset.status));document.querySelectorAll('[data-chat-status]').forEach(b=>b.onclick=()=>changeStatus(b.dataset.chatStatus));
   document.querySelectorAll('[data-work-filter]').forEach(b=>b.onclick=()=>{S.workFilter=b.dataset.workFilter;renderActive();});
-  if($('messages')&&!$('messages').dataset.accessorySendBound){$('messages').dataset.accessorySendBound='1';$('messages').addEventListener('click',e=>{const b=e.target.closest('[data-accessory-send]');if(!b)return;e.preventDefault();const r=(window.__rrAccessoryOpenAlerts||[]).find(x=>String(x.alert_id)===String(b.dataset.accessorySend));if(!r)return alert('Requirement mapping missing. Refresh Real Chat.');const q=$('messages').querySelector('[data-accessory-qty="'+CSS.escape(String(b.dataset.accessorySend))+'"]');sendAccessoryRequirementV693(r,Number(q?.value||r.short_qty||0))})}
+  /* V694 canonical requirement actions bind after render; legacy delegated V693 handler retired. */
   const searchInputs=[$('find'),$('chatFind')].filter(Boolean);
   const hideSearchNotice=()=>{const n=$('searchNotice');if(n){n.hidden=true;n.innerHTML=''}};
   const searchText=c=>[c.lot_no,c.cb_code,c.cb_no,c.art_no,c.worker_name,c.department_name,c.colour_code,c.colour_name,c.source_status,c.message].map(v=>String(v||'').toLowerCase()).join(' ');
