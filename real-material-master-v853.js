@@ -1,11 +1,12 @@
 (()=>{'use strict';
 const $=id=>document.getElementById(id),money=n=>new Intl.NumberFormat('en-IN',{style:'currency',currency:'INR'}).format(Number(n||0));
-let S={material_types:[],materials:[],ledgers:[],purchase_pi:[]},B={rows:[]};
+let S={material_types:[],materials:[],ledgers:[],purchase_pi:[]},B={rows:[]},C=[];
 async function rpc(n,a={}){const r=await supabaseClient.rpc(n,a);if(r.error)throw r.error;return r.data}
 function cur(){return S.materials.find(x=>x.material_id===$('material').value)}
-async function load(){[S,B]=await Promise.all([rpc('rr_material_purchase_bootstrap_v805_2',{p_data_mode:$('mode').value}),rpc('rr_material_mapping_list_v656')]);
+async function load(){const categoryReq=supabaseClient.from('rr_material_categories').select('id,category_code,category_name').order('category_name',{ascending:true});[S,B,C]=await Promise.all([rpc('rr_material_purchase_bootstrap_v805_2',{p_data_mode:$('mode').value}),rpc('rr_material_mapping_list_v656'),categoryReq.then(r=>{if(r.error)throw r.error;return r.data||[]})]);
  $('type').innerHTML='<option value="">Select…</option>'+S.material_types.map(x=>`<option value="${x.type_code}">${x.type_name}</option>`).join('');
  $('supplier').innerHTML='<option value="">Select…</option>'+S.ledgers.filter(x=>['SUPPLIER','PARTY','GENERAL'].includes(String(x.ledger_kind||'').toUpperCase())).map(x=>`<option value="${x.id}">${x.ledger_name}</option>`).join('');
+ $('bomCategory').innerHTML='<option value="ALL">ALL</option>'+C.filter(c=>c.category_code).map(c=>`<option value="${c.category_code}">${c.category_name||c.category_code}</option>`).join('');
  drawStock();drawPi();drawMaterials();drawBom();}
 function drawMaterials(){const t=$('type').value,rows=S.materials.filter(x=>x.material_type===t);$('material').innerHTML='<option value="">Select…</option>'+rows.map(x=>`<option value="${x.material_id}">${[x.material_no,x.material_name].filter(Boolean).join(' · ')}</option>`).join('');fill()}
 function fill(){const m=cur();if(!m)return;$('no').value=m.material_no||'';$('pu').innerHTML=`<option>${m.purchase_unit}</option>`;$('su').innerHTML=`<option>${m.base_stock_unit}</option>`;$('cu').innerHTML=`<option>${m.consumption_unit}</option>`;
