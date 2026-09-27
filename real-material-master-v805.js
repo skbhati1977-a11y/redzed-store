@@ -126,6 +126,7 @@ async function saveNewUnit(){
  $("newUnitMsg").className="ok";$("newUnitMsg").textContent=data.message||"Unit ready.";
  setTimeout(()=>modal("unitModal",false),250)
 }
+function newMaterialMethodUi(){const overhead=$("newConsumptionMethod").value==="OVERHEAD";$("newConsumptionUnitWrap").classList.toggle("hidden",overhead);$("newConversionWrap").classList.toggle("hidden",overhead);$("newOverheadInfo").classList.toggle("hidden",!overhead);if(overhead){const pu=$("newPurchaseUnit").value||"PCS";$("newStockUnit").value=pu;$("newConsumptionUnit").value=pu;$("newPurchaseToStock").value="1";$("newConsumptionToStock").value="1"}}
 function updateNewMaterialConversion(){const pu=$("newPurchaseUnit").value||"PCS",cu=$("newConsumptionUnit").value||"PCS",same=pu===cu;$("newStockUnit").value=cu;$("newConsumptionToStock").value="1";$("newConversionLeft").textContent="1 "+pu+" =";$("newConversionRight").textContent=cu;if(same)$("newPurchaseToStock").value="1";else if($("newPurchaseToStock").value==="1")$("newPurchaseToStock").value="";$("newConversionHint").textContent=same?"1 "+pu+" = 1 "+cu:"Enter how many "+cu+" equal 1 "+pu;}
 function currentTypeRow(){return (state.material_types||[]).find(x=>x.type_code===$("type").value)||null}
 function openNewMaterial(){
@@ -136,7 +137,7 @@ function openNewMaterial(){
  }
  $("newMaterialType").value=t;$("newMaterialName").value=$("name").value.trim();$("newMaterialNo").value=$("no").value.trim();
  const tr=currentTypeRow();$("newPurchaseUnit").value=tr?.default_purchase_unit||"PCS";$("newStockUnit").value=tr?.default_consumption_unit||tr?.default_purchase_unit||"PCS";$("newConsumptionUnit").value=tr?.default_consumption_unit||"PCS";
- $("newPreferredSupplier").value=$("supplier").value||"";updateNewMaterialConversion();$("newMaterialMsg").textContent="";modal("materialModal",true)
+ $("newPreferredSupplier").value=$("supplier").value||"";$("newConsumptionMethod").value="BOM_AUTO";newMaterialMethodUi();updateNewMaterialConversion();$("newMaterialMsg").textContent="";modal("materialModal",true)
 }
 async function saveNewMaterial(){if(!(await validateNewMaterialDuplicate(true)))return;
  $("newMaterialMsg").textContent="";
@@ -149,9 +150,9 @@ async function saveNewMaterial(){if(!(await validateNewMaterialDuplicate(true)))
    p_auto_consumption_event:$("newAutoEvent").value.trim()||null,p_preferred_supplier_ledger_id:$("newPreferredSupplier").value||null,
    p_applicable_to:{tags:$("newApplicableTo").value.split(",").map(x=>x.trim()).filter(Boolean)}
  };
- const {error}=await client.rpc("rr_material_create_v805_31",payload);if(error)throw error;
+ const {data:materialId,error}=await client.rpc("rr_material_create_v805_31",payload);if(error)throw error;const method=$("newConsumptionMethod").value;if(method==="OVERHEAD"){const {error:mapError}=await client.rpc("rr_material_mapping_save_v660",{p_material_id:materialId,p_method:"OVERHEAD",p_category_code:null,p_department_code:null,p_execution_decision:false,p_qty_per_piece:null,p_effective_from:new Date().toISOString().slice(0,10),p_consumption_unit:null});if(mapError)throw mapError}
  modal("materialModal",false);await load();$("type").value=payload.p_type_code;$("name").value=payload.p_material_name;
- $("msg").className="ok";$("msg").textContent="New material saved in backend. Type its name and select the mapped result.";
+ $("msg").className="ok";$("msg").textContent=method==="OVERHEAD"?"New material saved and mapped to global OVERHEAD · WEIGHTED COST / PCS.":"New material saved. Complete its "+method+" mapping in BOM Mapping.";
 }
 async function saveNewSupplier(){
  const name=$("newSupplierName").value.trim();if(!name)throw Error("Supplier name required.");
@@ -189,7 +190,7 @@ $("addMaterial").onclick=openNewMaterial;$("editMaterialName").onclick=()=>{if(!
 $("addType").onclick=()=>{$("newTypeName").value="";$("newTypeCode").value="";$("newTypeMsg").textContent="";modal("typeModal",true)};
 async function validateNewMaterialDuplicate(focusOnError=false){const name=$("newMaterialName").value.trim(),no=$("newMaterialNo").value.trim();if(!name&&!no)return true;const {data,error}=await client.rpc("rr_material_duplicate_check_v668",{p_type_code:$("newMaterialType").value,p_material_name:name,p_material_no:no||null,p_exclude_material_id:null});if(error)throw error;if(!data?.duplicate){$("newMaterialMsg").textContent="";return true}const byNo=data.material_no_duplicate,msg=(byNo?"Duplicate Material No.":"Duplicate Material Name.")+" Existing: "+[data.match?.material_no,data.match?.material_name].filter(Boolean).join(" · ");$("newMaterialMsg").className="err";$("newMaterialMsg").textContent=msg;const el=byNo?$("newMaterialNo"):$("newMaterialName");el.setCustomValidity(msg);el.scrollIntoView({behavior:"smooth",block:"center"});if(focusOnError)setTimeout(()=>el.focus(),250);return false}
 $("newMaterialName").addEventListener("input",()=>$("newMaterialName").setCustomValidity(""));$("newMaterialNo").addEventListener("input",()=>$("newMaterialNo").setCustomValidity(""));$("newMaterialName").addEventListener("blur",()=>validateNewMaterialDuplicate(false).catch(()=>{}));$("newMaterialNo").addEventListener("blur",()=>validateNewMaterialDuplicate(false).catch(()=>{}));
-$("newPurchaseUnit").onchange=updateNewMaterialConversion;$("newConsumptionUnit").onchange=updateNewMaterialConversion;
+$("newConsumptionMethod").onchange=()=>{newMaterialMethodUi();if($("newConsumptionMethod").value!=="OVERHEAD")updateNewMaterialConversion()};$("newPurchaseUnit").onchange=()=>{if($("newConsumptionMethod").value==="OVERHEAD")newMaterialMethodUi();else updateNewMaterialConversion()};$("newConsumptionUnit").onchange=updateNewMaterialConversion;
 $("saveNewMaterial").onclick=()=>saveNewMaterial().catch(e=>{$("newMaterialMsg").className="err";$("newMaterialMsg").textContent=e.message});
 $("saveNewSupplier").onclick=()=>saveNewSupplier().catch(e=>{$("newSupplierMsg").className="err";$("newSupplierMsg").textContent=e.message});
 $("saveNewType").onclick=()=>saveNewType().catch(e=>{$("newTypeMsg").className="err";$("newTypeMsg").textContent=e.message});
