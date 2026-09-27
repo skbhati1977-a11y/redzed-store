@@ -2,6 +2,7 @@
 'use strict';
 if(window.__RR_SLICE_MENU_9676__)return;window.__RR_SLICE_MENU_9676__=true;
 const V='9676',BASE=location.hostname.toLowerCase().endsWith('.github.io')?'/redzed-store/':'/',RAIL=64;
+if(location.hostname.endsWith('.app.github.dev')){fetch(BASE+'.codespace-test71-head',{cache:'no-store'}).then(r=>r.ok?r.text():'').then(s=>{s=s.trim();if(!s||new URLSearchParams(location.search).get('sync')===s)return;const u=new URL(location.href);u.searchParams.set('sync',s);history.replaceState(history.state,'',u)}).catch(()=>{})}
 if(/\/real-cutting-master\.html$/i.test(location.pathname)&&!window.__RR_CUTTING_UI_LOADER_9190__){window.__RR_CUTTING_UI_LOADER_9190__=true;const s=document.createElement('script');s.src=`${BASE}real-cutting-ui-v9190.js?v=${V}`;s.async=false;(document.head||document.documentElement).appendChild(s)}
 const links=[
  {title:'Product Master',icon:'▣',items:[['CB New','CB',`real-cb-new-v9130-loader.html?v=${V}&fix=20260817`],['Matching Cloth','MC',`real-matching-cloth-master.html?v=9235`],['Art Master','AR',`art-v9148/?v=${V}`],['Art Decide Master','AD',`real-art-decide-master.html?v=9231`],['Print Master','PR',`real-print-master.html?v=${V}`],['Sticker Master','ST',`real-sticker-master-v804.html?v=${V}`],['Metal ID Master','ID',`real-metal-id-master-v804.html?v=${V}`],['Material Master','MT',`real-material-master-v805.html?v=${V}`]]},
