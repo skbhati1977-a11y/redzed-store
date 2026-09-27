@@ -46,7 +46,7 @@ form.addEventListener("submit", async (e) => {
   await new Promise((resolve) => setTimeout(resolve, 900));
 
   const requested = new URLSearchParams(location.search).get("next") || "";
-  const safeNext = /^(?:real-[a-z0-9._-]+\.html)(?:\?[a-z0-9_=&.%+-]*)?$/i.test(requested)
+  const safeNext = /^(?:real-[a-z0-9._-]+\.html|test70-cb-purchase-real-chat-pilot\.html)(?:\?[a-z0-9_=&.%+-]*)?$/i.test(requested)
     ? requested
     : "real-dashboard.html";
   location.href = safeNext;
