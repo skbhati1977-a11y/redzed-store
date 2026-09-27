@@ -103,8 +103,9 @@ async function selectMapped(r){
  }else{
    $("sourceNotice").classList.add("hidden");$("savePost").disabled=false;
  }
- await loadPreferredSupplier();calc();
+ await loadPreferredSupplier();updatePurchaseConversionUi();calc();
 }
+function updatePurchaseConversionUi(){const pu=String($("purchaseUnit").value||"").toUpperCase(),cu=String(selected?.consumption_unit||$("consumptionUnit").value||"").toUpperCase(),same=pu&&cu&&pu===cu;$("purchaseConversionWrap").classList.toggle("hidden",!pu||!cu||same);if(same)$("purchaseConversion").value="1";else if(pu&&cu){$("purchaseConversionLabel").textContent=pu+" → "+cu+" Conversion";$("purchaseConversionHint").textContent="Enter how many "+cu+" are received from 1 "+pu+".";if($("purchaseConversion").value==="1")$("purchaseConversion").value=""}}
 function calc(){
  const q=Number($("purchaseQty").value||0),r=Number($("rate").value||0),val=q*r;
  $("currentValue").textContent=money(val);
@@ -163,12 +164,12 @@ async function saveNewType(){
 }
 async function savePost(){
  $("msg").textContent="";const t=$("type").value;if(!t)throw Error("Select Material Type.");if(!selected)throw Error("Select mapped Material.");
- const pq=Number($("purchaseQty").value||0),rate=Number($("rate").value||0);if(pq<=0)throw Error("Purchase Qty required.");
+ const pq=Number($("purchaseQty").value||0),rate=Number($("rate").value||0),purchaseUnit=$("purchaseUnit").value,consumptionUnit=selected?.consumption_unit||$("consumptionUnit").value,conversion=purchaseUnit===consumptionUnit?1:Number($("purchaseConversion").value||0);if(pq<=0)throw Error("Purchase Qty required.");if(purchaseUnit!==consumptionUnit&&conversion<=0)throw Error("Purchase to Consumption conversion required when units differ.");
  if(!$("supplier").value)throw Error("Select Supplier / Party.");
  if(selected.source_managed)throw Error("Source-managed Material must be purchased in its canonical module. Mapping remains locked here.");
- const {data,error}=await client.rpc("rr_material_post_purchase_auto_v805_31",{
+ const {data,error}=await client.rpc("rr_material_post_purchase_txn_v661",{
    p_supplier_ledger_id:$("supplier").value||null,p_material_id:selected.existing_material_id,p_purchase_ledger_id:$("purchaseLedger").value||null,
-   p_purchase_qty:pq,p_rate:rate,p_bill_no:$("billNo").value||null,p_bill_date:$("billDate").value||null,p_gst_amount:Number($("gst").value||0),
+   p_purchase_qty:pq,p_purchase_unit:purchaseUnit,p_purchase_to_consumption:conversion,p_rate:rate,p_bill_no:$("billNo").value||null,p_bill_date:$("billDate").value||null,p_gst_amount:Number($("gst").value||0),
    p_payment_status:$("paymentStatus").value,p_paid_amount:Number($("paidAmount").value||0),p_cash_bank_ledger_id:$("cashBank").value||null,p_data_mode:$("dataMode").value
  });
  if(error)throw error;
@@ -176,11 +177,11 @@ async function savePost(){
  await client.rpc("rr_material_source_supplier_set_v805_31",{p_source_type:selected.source_type,p_source_id:selected.source_id,p_supplier_ledger_id:$("supplier").value});
  await load();
 }
-$("type").onchange=()=>{clearSelection();$("name").value="";$("supplierSearch").value="";$("supplier").value="";const t=currentTypeRow();if(t)$("purchaseUnit").value=t.default_purchase_unit||"PCS";const pl=purchaseLedgerForType($("type").value);if(pl)$("purchaseLedger").value=pl.id;$("suggestions").classList.add("hidden")};
+$("type").onchange=()=>{clearSelection();$("name").value="";$("supplierSearch").value="";$("supplier").value="";const t=currentTypeRow();if(t)$("purchaseUnit").value=t.default_purchase_unit||"PCS";$("purchaseConversion").value="";updatePurchaseConversionUi();const pl=purchaseLedgerForType($("type").value);if(pl)$("purchaseLedger").value=pl.id;$("suggestions").classList.add("hidden")};
 $("name").oninput=()=>{clearTimeout(timer);clearSelection();timer=setTimeout(()=>searchMapped().catch(e=>{$("msg").className="err";$("msg").textContent=e.message}),160)};
 $("supplierSearch").oninput=()=>{clearTimeout(supplierTimer);$("supplier").value="";supplierTimer=setTimeout(renderSupplierSuggestions,100)};
 document.addEventListener("click",e=>{if(!e.target.closest(".mapped"))$("suggestions").classList.add("hidden");if(!e.target.closest(".combo"))$("supplierSuggestions").classList.add("hidden");const c=e.target.closest("[data-close]");if(c)modal(c.dataset.close,false)});
-$("purchaseQty").addEventListener("input",calc);$("rate").addEventListener("input",calc);
+$("purchaseQty").addEventListener("input",calc);$("rate").addEventListener("input",calc);$("purchaseUnit").addEventListener("change",updatePurchaseConversionUi);
 $("paymentStatus").onchange=()=>{const s=$("paymentStatus").value!=="CREDIT";$("paidWrap").classList.toggle("hidden",!s);$("cashWrap").classList.toggle("hidden",!s)};
 $("addMaterial").onclick=openNewMaterial;$("addSupplier").onclick=()=>{$("newSupplierName").value=$("supplierSearch").value.trim();$("newSupplierMsg").textContent="";modal("supplierModal",true)};
 $("addType").onclick=()=>{$("newTypeName").value="";$("newTypeCode").value="";$("newTypeMsg").textContent="";modal("typeModal",true)};
