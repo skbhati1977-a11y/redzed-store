@@ -1,0 +1,11 @@
+{
+  "name": "REDZED TEST71 Preview",
+  "postStartCommand": "bash scripts/codespace-test71-start.sh",
+  "forwardPorts": [8000],
+  "portsAttributes": {
+    "8000": {
+      "label": "REDZED TEST71 Preview",
+      "onAutoForward": "openBrowser"
+    }
+  }
+}
