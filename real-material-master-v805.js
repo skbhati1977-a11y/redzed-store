@@ -44,8 +44,9 @@ async function loadPreferredSupplier(){
 async function load(){
  client=client||(window.RR?.getClient?RR.getClient():window.supabaseClient);
  if(!client)throw Error("Supabase client not available.");
- if(!window.RR?.requireOwner)throw Error("Authorization guard unavailable.");
- await RR.requireOwner();
+ if(!window.RR?.requireRoles)throw Error("Authorization guard unavailable.");
+ const auth=await RR.requireRoles(["owner","admin","super_admin"]);
+ $("who").textContent=(auth.profile?.full_name||auth.user?.email||"User")+" · "+(String(auth.profile?.role_code||"").toLowerCase()==="owner"?"Super Admin":String(auth.profile?.role_code||""));
  const [boot,unitMaster,identity]=await Promise.all([
   client.rpc("rr_material_purchase_bootstrap_v805_1",{p_data_mode:$("dataMode").value}),
   client.rpc("rr_unit_master_list_v606"),
@@ -63,11 +64,7 @@ async function load(){
  $("newPreferredSupplier").innerHTML=ledgerOptions(suppliers);
  $("cashBank").innerHTML=ledgerOptions((state.ledgers||[]).filter(x=>["CASH","BANK"].includes(String(x.ledger_kind||"").toUpperCase())));
  $("purchaseLedger").innerHTML=ledgerOptions(state.ledgers||[]);
- try{
-  const {data:{user}}=await client.auth.getUser();
-  if(user){const {data:p}=await client.from("rr_user_profiles").select("full_name,role_code").eq("auth_user_id",user.id).maybeSingle();$("who").textContent=p?`${p.full_name||"User"} · ${String(p.role_code||"").toLowerCase()==="owner"?"Super Admin":p.role_code}`:(user.email||"User")}
- }catch{}
-}
+
 function clearSelection(){
  selected=null;$("no").value="";$("balanceStrip").classList.remove("show");$("sourceNotice").classList.add("hidden");$("savePost").disabled=false;
  $("stockQty").value=0;$("consumptionQty").value=0;calc();
