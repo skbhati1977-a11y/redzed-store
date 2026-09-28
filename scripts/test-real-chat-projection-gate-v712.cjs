@@ -1,8 +1,10 @@
 #!/usr/bin/env node
 const fs=require('fs');
+const vm=require('vm');
 const p='test70-real-chat-live-v70.js';
 const s=fs.readFileSync(p,'utf8');
 const fail=[];
+try{new vm.Script(s)}catch(e){fail.push('main Real Chat JavaScript parse failure: '+e.message)}
 const must=[
  ['V709 projection helper','async function departmentProjectionV709'],
  ['Cutting single adapter','async function cuttingProjectionV712'],
