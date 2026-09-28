@@ -20,5 +20,11 @@ if(!s.includes("allRows=await cuttingProjectionV712(S.status)"))fail.push('Cutti
 if(!s.includes('async function inbox(){const nav=++S.navigationSeq'))fail.push('inbox navigation token missing');
 if(!s.includes("async function openDepartment(id,push=true){const nav=++S.navigationSeq"))fail.push('department navigation token missing');
 if(!s.includes("async function openChat(kind,id,push=true,parentDepartment=null){const navigationSeq=++S.navigationSeq"))fail.push('chat navigation token missing');
+if(!s.includes('const S={rootRenderSeq:0,navigationSeq:0,'))fail.push('navigation/root generation state missing');
+if(!s.includes("const sts=S.search?mirrorSearchStatuses(d.department_code):[]"))fail.push('root still depends on mirror search when search is empty');
+if(s.includes("if(nav!==S.navigationSeq||S.active)return;$('rows').innerHTML=h"))fail.push('root directory paint can still be silently cancelled');
+if(s.includes("Object.values(S.workCounts).reduce"))fail.push('legacy root card total authority returned');
+if(!s.includes("if(resumeState.view==='inbox'&&cacheReady"))fail.push('deterministic boot cache rule missing');
+if(!s.includes("if(resumeState.view!=='inbox')restoreView(resumeState);else{S.active=null;await inbox()}"))fail.push('boot final root render missing');
 if(fail.length){console.error('REAL CHAT PROJECTION GATE FAIL\n'+fail.join('\n'));process.exit(1)}
 console.log('REAL CHAT PROJECTION GATE PASS: V709 generic + Fabrication, V712 Cutting; retired UI forks absent.');
