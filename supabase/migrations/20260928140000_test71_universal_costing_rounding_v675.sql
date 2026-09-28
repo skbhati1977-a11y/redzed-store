@@ -1,0 +1,2 @@
+create or replace function public.rr_cost_component_round_v675(p_amount numeric) returns numeric language sql immutable as $function$ select case when p_amount is null then null else round(p_amount*2)/2 end $function$;
+create or replace function public.rr_cost_final_rate_round_v675(p_amount numeric) returns numeric language sql immutable as $function$ select case when p_amount is null then null else round(p_amount) end $function$;
