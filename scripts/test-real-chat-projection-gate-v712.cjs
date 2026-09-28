@@ -51,6 +51,9 @@ if(/\$\('back'\)\.onclick=\(\)=>history\.back\(\)/.test(s))fail.push('browser-hi
 if(!/rr_upm_confirm_worker_lot_receipts_v692/.test(s))fail.push('canonical worker Accept & Count receipt confirmation missing');
 if(!/rr_upm_ready_submit_to_receiver_v204/.test(s))fail.push('worker submit request/receiver handover path missing');
 if(!/\$\('back'\)\.onclick=\(\)=>canonicalBackV767\(\)/.test(s))fail.push('back button is not bound to canonical parent navigation');
+if(!/rr_upm_assignment_action_route_v769/.test(s))fail.push('Accept route is not canonical TEAM\/INDIVIDUAL');
+if(!/route\?\.mode==='TEAM'[\s\S]{0,180}rr_upm_claim_team_assignment_v694/.test(s))fail.push('team claim is not gated to TEAM assignments');
+if(!/rr_upm_accept_submit_authorized_v770/.test(s)||!/rr_upm_lm_count_submit_v328/.test(s))fail.push('Real Chat Lineman receive/count path is not canonical V770\/V328');
 if(!/rr_upm_assignment_action_route_v769/.test(s))fail.push('Accept claim is not assignment-authority routed');
 if(/rr_upm_salaried_team_context_v694[^\n]{0,220}rr_upm_claim_team_assignment_v694/.test(s))fail.push('Accept still relies on UI department team context');
 if(!/rr_upm_accept_submit_authorized_v770/.test(s))fail.push('Fabrication receive authority wrapper missing');
