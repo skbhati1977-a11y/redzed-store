@@ -435,7 +435,7 @@ async function boot(){
   stage.ondblclick=()=>{S.zoom=S.zoom>1?1:2;S.panX=S.panY=0;applyViewerTransform()};
   const cacheReady=hydrateCache();if(resumeState.view==='inbox'&&cacheReady){$('state').textContent='Opening saved Real Chat…';await inbox()}
   await load(false);
-  if(resumeState.view!=='inbox')restoreView(resumeState);else{S.active=null;await inbox()}else if(p.get('chat')==='personal'&&p.get('worker_id'))openChat('person',p.get('worker_id'),false);setTimeout(()=>ensureEmptyStateV708(S.status),80);
+  if(resumeState.view!=='inbox')restoreView(resumeState);else if(p.get('chat')==='personal'&&p.get('worker_id'))openChat('person',p.get('worker_id'),false);else{S.active=null;await inbox()}setTimeout(()=>ensureEmptyStateV708(S.status),80);
   // Canonical mutations already project through targeted database triggers.
   // Full historical reconciliation takes longer than the authenticated query
   // budget and must never run as a page-load side effect.
