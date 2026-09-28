@@ -1,8 +1,9 @@
 (()=>{'use strict';if(window.__RR_PUSH_DEEP_LINK_FOCUS_V731__)return;window.__RR_PUSH_DEEP_LINK_FOCUS_V731__=true;
 const q=new URLSearchParams(location.search),action=String(q.get('rc_action')||'').toUpperCase(),lot=String(q.get('rc_lot')||''),dept=String(q.get('rc_id')||q.get('rc_parent')||'').toUpperCase();if(!action||!lot||!dept)return;
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
-(async()=>{let opened=false;for(let i=0;i<50;i++){const row=[...document.querySelectorAll('[data-department]')].find(x=>String(x.dataset.department||'').toUpperCase()===dept);if(row){row.click();opened=true;break}await sleep(200)}if(!opened)return;
-for(let i=0;i<50;i++){const group=document.querySelector('[data-dept-group="'+CSS.escape(dept)+'"]');if(group){group.click();break}await sleep(200)}
+try{sessionStorage.removeItem('rr_real_chat_view');sessionStorage.removeItem('RR_REAL_CHAT_VIEW');}catch(_){}
+(async()=>{let opened=false;for(let i=0;i<50;i++){const row=document.querySelector('[data-department="'+CSS.escape(dept)+'"]');if(row){row.click();opened=true;break}await sleep(200)}if(!opened)return;
+for(let i=0;i<50;i++){const group=document.querySelector('[data-dept-group="'+CSS.escape(dept)+'"]');if(group&&String(group.dataset.deptGroup||'').toUpperCase()!==dept)continue;if(group){group.click();break}await sleep(200)}
 for(let i=0;i<60;i++){const input=document.getElementById('chatFind');if(input&&!document.getElementById('chat')?.hidden){document.querySelector('[data-chat-status="OPEN"]')?.click();input.value=lot;input.dispatchEvent(new Event('input',{bubbles:true}));document.getElementById('chatSearchGo')?.click();break}await sleep(200)}
 if(action==='ACTUAL_RATE_REQUIRED'){for(let i=0;i<60;i++){const nodes=[...document.querySelectorAll('#messages button,#messages [role="button"],#messages .work-card,#messages .alert-card')];const target=nodes.find(n=>/ACTUAL RATE|RATE REQUIRED|FILL.*RATE|RATE APPROVAL/i.test((n.innerText||n.textContent||'')+' '+(n.getAttribute?.('aria-label')||'')));if(target){target.scrollIntoView({behavior:'smooth',block:'center'});target.style.outline='3px solid #f5b942';target.style.outlineOffset='3px';const btn=target.matches('button,[role="button"]')?target:target.querySelector('button');btn?.click();return}await sleep(250)}}
 })().catch(()=>{});})();
