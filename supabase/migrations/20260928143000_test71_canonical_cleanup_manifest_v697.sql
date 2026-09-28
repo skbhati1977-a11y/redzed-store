@@ -1,0 +1,11 @@
+-- TEST71 canonical cleanup manifest (backend applied migrations V688-V697).
+-- Canonical authorities:
+-- rounding: rr_cost_component_round_v675 / rr_cost_final_rate_round_v675
+-- product cost: rr_upm_final_costing_v691 -> rr_upm_product_cost_actual_v687
+-- management only: lapse/general overhead impact=0
+-- gatta category: rr_lot_category_canonical_v682 -> rr_bom_gatta_rule_v681
+-- gatta+panni: rr_bom_gatta_panni_context_v684; legacy combined impact=0
+-- packing: rr_fg_bind_pack_plan_box_split_v686; old first-box binder retired
+-- lifecycle: rr_upm_lm_count_submit_v690 -> rr_upm_finalize_submit_handover_v689 -> rr_upm_advance_completed_colour_v688
+-- This manifest exists to prevent reintroduction of retired authorities.
+select 1;
