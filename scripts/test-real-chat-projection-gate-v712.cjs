@@ -56,6 +56,8 @@ if(/not mapped to this worker\|effective worker identity[\s\S]{0,220}rr_upm_clai
 if(!/\$\('back'\)\.onclick=\(\)=>canonicalBackV767\(\)/.test(s))fail.push('back button is not bound to canonical parent navigation');
 if(!/rr_upm_salaried_team_context_v694/.test(s)||!/team\?\.is_team===true/.test(s))fail.push('receipt fallback is not gated by canonical team context');
 if(!/rr_upm_claim_team_assignment_v694/.test(s))fail.push('canonical team claim path missing');
+if(/Submit destination · FABRICATION TEAM/.test(s))fail.push('generic submit still labels Fabrication team instead of receiver role');
+if(!/LINE MAN \/ FABRICATION RECEIVER/.test(s))fail.push('generic submit receiver role label missing');
 if(!/rr_upm_salaried_team_context_v694/.test(s)||!/team\?\.is_team===true/.test(s)||!/rr_upm_claim_team_assignment_v694/.test(s))fail.push('team claim is not guarded by canonical team context');
 if(/not mapped to this worker\|effective worker identity[^\n]{0,500}rr_upm_claim_team_assignment_v694/.test(s)&&!/team\?\.is_team===true/.test(s))fail.push('piece-rate receipt can still fall through to team claim');
 if(!/rr_upm_ready_submit_to_receiver_v204/.test(s))fail.push('worker submit is not using shared ready-to-receiver lifecycle');
