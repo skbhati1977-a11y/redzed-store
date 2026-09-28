@@ -48,6 +48,8 @@ if(!/TEST70_REAL_CHAT_FAST_V110:[^\n]*RR_ON_BEHALF_ACTIVE/.test(s)&&!/function c
 if(!/people=globalRole\?arr\(directory\.people\):arr\(directory\.people\)\.filter\(x=>String\(x\.worker_id\)===selectedId\|\|visiblePeople\.has/.test(s))fail.push('Act As still collapses department roster to selected actor');
 if(!/function canonicalBackV767\(\)/.test(s))fail.push('canonical parent back navigation missing');
 if(/\$\('back'\)\.onclick=\(\)=>history\.back\(\)/.test(s))fail.push('browser-history back regression returned');
+if(!/rr_upm_salaried_team_context_v694/.test(s)||!/team\?\.is_team===true/.test(s))fail.push('Accept fallback is not gated by canonical salaried-team context');
+if(/not mapped to this worker\|effective worker identity[\s\S]{0,220}rr_upm_claim_team_assignment_v694/.test(s)&&!/team\?\.is_team===true/.test(s))fail.push('piece-rate Accept can still enter team claim path');
 if(!/\$\('back'\)\.onclick=\(\)=>canonicalBackV767\(\)/.test(s))fail.push('back button is not bound to canonical parent navigation');
 if(!/rr_upm_salaried_team_context_v694/.test(s)||!/team\?\.is_team===true/.test(s)||!/rr_upm_claim_team_assignment_v694/.test(s))fail.push('team claim is not guarded by canonical team context');
 if(/not mapped to this worker\|effective worker identity[^\n]{0,500}rr_upm_claim_team_assignment_v694/.test(s)&&!/team\?\.is_team===true/.test(s))fail.push('piece-rate receipt can still fall through to team claim');
