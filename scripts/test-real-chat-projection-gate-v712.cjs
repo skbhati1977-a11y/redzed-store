@@ -17,7 +17,7 @@ const retired=[
 for(const [n,x] of retired)if(s.includes(x))fail.push('retired path returned: '+n);
 if(!s.includes("departmentProjectionV709('FABRICATION',S.status)"))fail.push('Fabrication group is not on V709');
 if(!s.includes("allRows=await cuttingProjectionV712(S.status)"))fail.push('Cutting group is not on V712 adapter');
-if(!s.includes('async function inbox(){const nav=++S.navigationSeq'))fail.push('inbox navigation token missing');
+if(!s.includes('async function inbox(){S.active=null;syncStatusButtons();const rootGen=++S.rootRenderSeq'))fail.push('inbox root generation guard missing');
 if(!s.includes("async function openDepartment(id,push=true){const nav=++S.navigationSeq"))fail.push('department navigation token missing');
 if(!s.includes("async function openChat(kind,id,push=true,parentDepartment=null){const navigationSeq=++S.navigationSeq"))fail.push('chat navigation token missing');
 if(!s.includes('const S={rootRenderSeq:0,navigationSeq:0,'))fail.push('navigation/root generation state missing');
@@ -27,4 +27,4 @@ if(s.includes("Object.values(S.workCounts).reduce"))fail.push('legacy root card 
 if(!s.includes("if(resumeState.view==='inbox'&&cacheReady"))fail.push('deterministic boot cache rule missing');
 if(!s.includes("if(resumeState.view!=='inbox')restoreView(resumeState);else{S.active=null;await inbox()}"))fail.push('boot final root render missing');
 if(fail.length){console.error('REAL CHAT PROJECTION GATE FAIL\n'+fail.join('\n'));process.exit(1)}
-console.log('REAL CHAT PROJECTION GATE PASS: V709 generic + Fabrication, V712 Cutting; retired UI forks absent.');
+console.log('REAL CHAT PROJECTION GATE PASS: V709 generic + Fabrication, V712 Cutting; root generation + navigation guards active; retired UI forks absent.');
