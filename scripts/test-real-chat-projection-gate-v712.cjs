@@ -39,6 +39,12 @@ if(!/purchaseVisibleCountsV763[\s\S]*MATCHING_PURCHASE/.test(s))fail.push('purch
 if(!/function syncStatusButtons\(\)\{[\s\S]{0,260}const root=!S\.active[\s\S]{0,320}if\(root\|\|status==='CLOSE'\)/.test(s))fail.push('root status controls are not hard hidden');
 if(!/function changeStatus\(status\)\{if\(S\.costEditorActive\|\|!S\.active\)return/.test(s))fail.push('root status change guard missing');
 if(!/if\(rootGen!==S\.rootRenderSeq\|\|S\.active\)return/.test(s))fail.push('late root count navigation guard missing');
+if(!/departmentCountCache:new Map\(\)/.test(s))fail.push('confirmed department count cache missing');
+if(!/departmentCounts:Object\.fromEntries\(S\.departmentCountCache\)/.test(s)||!/S\.departmentCountCache=new Map\(Object\.entries\(c\.departmentCounts\|\|\{\}\)\)/.test(s))fail.push('confirmed counts are not persisted/restored');
+if(!/cachedCount=S\.departmentCountCache\.get/.test(s))fail.push('root does not paint last confirmed counts');
+if(/Department count batch hydrate[\s\S]{0,260}count unavailable/.test(s))fail.push('refresh failure still destroys confirmed count');
+if(!/if\(!prev\|\|Number\(prev\.OPEN\)!==next\.OPEN\|\|Number\(prev\.WORKING\)!==next\.WORKING\)/.test(s))fail.push('unchanged counts still repaint');
+if(!/TEST70_REAL_CHAT_FAST_V110:[^\n]*RR_ON_BEHALF_ACTIVE/.test(s)&&!/function cacheKey\(\)\{const actor=window\.RR_ON_BEHALF_ACTIVE/.test(s))fail.push('count cache is not actor scoped');
 if(!/if\(!active&&!search&&!fast\)[\s\S]{0,700}await inbox\(\);return/.test(s))fail.push('root is not decoupled from projection lifecycle');
 if(/departmentGroupVisibleCountsV730[\s\S]{0,1800}rr_real_chat_department_operational_v685/.test(s))fail.push('legacy V685 count fallback returned');
 
