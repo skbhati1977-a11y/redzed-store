@@ -26,5 +26,6 @@ if(s.includes("if(nav!==S.navigationSeq||S.active)return;$('rows').innerHTML=h")
 if(s.includes("Object.values(S.workCounts).reduce"))fail.push('legacy root card total authority returned');
 if(!s.includes("if(resumeState.view==='inbox'&&cacheReady"))fail.push('deterministic boot cache rule missing');
 if(!s.includes("if(resumeState.view!=='inbox')restoreView(resumeState);else{S.active=null;await inbox()}"))fail.push('boot final root render missing');
+if(!s.includes("async function inbox(){S.active=null;syncStatusButtons();const rootGen=++S.rootRenderSeq"))fail.push('standalone root render contract missing');
 if(fail.length){console.error('REAL CHAT PROJECTION GATE FAIL\n'+fail.join('\n'));process.exit(1)}
 console.log('REAL CHAT PROJECTION GATE PASS: V709 generic + Fabrication, V712 Cutting; root generation + navigation guards active; retired UI forks absent.');
