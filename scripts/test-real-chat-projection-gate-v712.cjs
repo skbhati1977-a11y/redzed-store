@@ -51,6 +51,9 @@ if(/\$\('back'\)\.onclick=\(\)=>history\.back\(\)/.test(s))fail.push('browser-hi
 if(!/rr_upm_confirm_worker_lot_receipts_v692/.test(s))fail.push('canonical worker Accept & Count receipt confirmation missing');
 if(!/rr_upm_ready_submit_to_receiver_v204/.test(s))fail.push('worker submit request/receiver handover path missing');
 if(!/\$\('back'\)\.onclick=\(\)=>canonicalBackV767\(\)/.test(s))fail.push('back button is not bound to canonical parent navigation');
+if(!/rr_upm_assignment_action_route_v769/.test(s))fail.push('canonical TEAM\/INDIVIDUAL assignment action router missing');
+if(!/route\?\.mode==='TEAM'/.test(s))fail.push('team claim is not gated by canonical assignment route');
+if(/not mapped to this worker[\s\S]{0,260}rr_upm_claim_team_assignment_v694/.test(s)&&!/rr_upm_assignment_action_route_v769[\s\S]{0,260}rr_upm_claim_team_assignment_v694/.test(s))fail.push('piece-rate receipt can fall through to team claim');
 if(!/rr_upm_assignment_action_route_v769/.test(s))fail.push('Accept & Count is not routed by canonical TEAM\/INDIVIDUAL authority');
 if(!/route\?\.mode==='TEAM'/.test(s)||!/rr_upm_claim_team_assignment_v694/.test(s))fail.push('team claim is not guarded by TEAM route');
 if(/not mapped to this worker\|effective worker identity[\\s\\S]{0,180}rr_upm_claim_team_assignment_v694/.test(s)&&!/rr_upm_assignment_action_route_v769/.test(s))fail.push('piece-rate can still fall through to team claim');
