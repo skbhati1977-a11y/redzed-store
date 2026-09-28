@@ -347,7 +347,8 @@ async function load(fast=false){
     const actDept=actWorker?String(arr(window.RR_VIEW_AS_DEPARTMENTS)[0]||"").toUpperCase()||null:null;
     const workRequest=search?Promise.resolve({cards:S.cards,related_terms:S.searchTerms,actor:S.actor,frontend_search:true}):rpc("rr_real_chat_work_search_v10",{p_status:status,p_search:null,p_department_code:actDept,p_limit:500});
     const workJob=workRequest.then(data=>({data})).catch(error=>({error}));
-    const [d,workResult,cbResult]=await Promise.all([directory,workJob,cbJob]);const cb=cbResult?.error?{cards:[]}:cbResult?.data;if(cbResult?.error)console.error('CB projection isolated',cbResult.error);
+    let d;if(!active&&!search&&!fast){d=await directory;if(seq!==S.loadSeq||status!==S.status)return;const scopedDirectory=actAsScope(d,{cards:[],actor:d.actor||{}});S.departments=scopedDirectory.departments;S.people=scopedDirectory.people;S.staff=S.departments.flatMap(x=>arr(x.staff));S.actor=scopedDirectory.actor;updateProjectionState();saveCache();await inbox()}else d=await directory;
+    const [workResult,cbResult]=await Promise.all([workJob,cbJob]);const cb=cbResult?.error?{cards:[]}:cbResult?.data;if(cbResult?.error)console.error('CB projection isolated',cbResult.error);
     if(seq!==S.loadSeq||status!==S.status)return;
     if(workResult.error)console.error(workResult.error);
     const w=workResult.error?{cards:[],related_terms:[],actor:d.actor||{}}:workResult.data;
