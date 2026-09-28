@@ -1,0 +1,8 @@
+-- Final costing wrapper replaces legacy lapse/staff component exactly once with payroll-reconciled V403 authority.
+create or replace function public.rr_upm_final_costing_salary_v404(p_canonical_lot_id text,p_data_mode text default 'TEST')
+returns jsonb language plpgsql stable security definer set search_path to 'public' as $function$
+declare c jsonb:=public.rr_upm_final_costing_private_v400(p_canonical_lot_id,p_data_mode);s jsonb:=public.rr_costing_salary_final_v403(p_canonical_lot_id,p_data_mode);cut numeric:=coalesce((c->>'cut_qty')::numeric,0);oldls numeric:=coalesce((c->>'lapse_staff_per_pc')::numeric,0);newls numeric:=0;base numeric;delta numeric;margin numeric:=coalesce((c->>'owner_margin_per_pc')::numeric,0);
+begin
+ newls:=case when cut>0 then (coalesce((s->>'department_lapse_lot')::numeric,0)+coalesce((s->>'fabrication_staff_lot')::numeric,0))/cut else 0 end;delta:=newls-oldls;base:=round(coalesce((c->>'base_cost_per_pc')::numeric,0)+delta,4);
+ return c||jsonb_build_object('version','V404_PAYROLL_RECONCILED_FINAL_COSTING','salary',s,'salary_cost_state',s->>'payroll_reconciliation_state','salary_final_actual',coalesce((s->>'final_actual_salary_cost')::boolean,false),'lapse_staff_per_pc',round(newls,4),'base_cost_per_pc',base,'final_sale_rate',round(base+margin,2),'costing_complete',coalesce((c->>'costing_complete')::boolean,false) and coalesce((s->>'final_actual_salary_cost')::boolean,false),'rule','FINAL COST USES V403 PAYROLL-RECONCILED SALARY; LEGACY V400 SALARY DELTA REPLACED ONCE');
+end $function$;
