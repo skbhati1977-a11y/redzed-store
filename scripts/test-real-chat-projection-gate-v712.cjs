@@ -45,6 +45,10 @@ if(!/cachedCount=S\.departmentCountCache\.get/.test(s))fail.push('root does not 
 if(/Department count batch hydrate[\s\S]{0,260}count unavailable/.test(s))fail.push('refresh failure still destroys confirmed count');
 if(!/if\(!prev\|\|Number\(prev\.OPEN\)!==next\.OPEN\|\|Number\(prev\.WORKING\)!==next\.WORKING\)/.test(s))fail.push('unchanged counts still repaint');
 if(!/TEST70_REAL_CHAT_FAST_V110:[^\n]*RR_ON_BEHALF_ACTIVE/.test(s)&&!/function cacheKey\(\)\{const actor=window\.RR_ON_BEHALF_ACTIVE/.test(s))fail.push('count cache is not actor scoped');
+if(!/people=globalRole\?arr\(directory\.people\):arr\(directory\.people\)\.filter\(x=>String\(x\.worker_id\)===selectedId\|\|visiblePeople\.has/.test(s))fail.push('Act As still collapses department roster to selected actor');
+if(!/function canonicalBackV767\(\)/.test(s))fail.push('canonical parent back navigation missing');
+if(/\$\('back'\)\.onclick=\(\)=>history\.back\(\)/.test(s))fail.push('browser-history back regression returned');
+if(!/\$\('back'\)\.onclick=\(\)=>canonicalBackV767\(\)/.test(s))fail.push('back button is not bound to canonical parent navigation');
 if(!/if\(!active&&!search&&!fast\)[\s\S]{0,700}await inbox\(\);return/.test(s))fail.push('root is not decoupled from projection lifecycle');
 if(/departmentGroupVisibleCountsV730[\s\S]{0,1800}rr_real_chat_department_operational_v685/.test(s))fail.push('legacy V685 count fallback returned');
 
