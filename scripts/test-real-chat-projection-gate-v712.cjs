@@ -36,6 +36,9 @@ for(const dep of allDepartments){const covered=dep==='ADMIN'?/dep==='ADMIN'/.tes
 if(!/Promise\.all\(countRows\.map/.test(s)||!/rootGen!==S\.rootRenderSeq\|\|S\.active/.test(s))fail.push('atomic generation-scoped root count hydration missing');
 if(!/function costingVisibleCardsV764/.test(s)||!/commercialVisibleCountsV763[\s\S]*costingVisibleCardsV764/.test(s))fail.push('shared costing visible semantics missing');
 if(!/purchaseVisibleCountsV763[\s\S]*MATCHING_PURCHASE/.test(s))fail.push('purchase CB + matching parity missing');
+if(!/function syncStatusButtons\(\)\{[\s\S]{0,260}const root=!S\.active[\s\S]{0,320}if\(root\|\|status==='CLOSE'\)/.test(s))fail.push('root status controls are not hard hidden');
+if(!/function changeStatus\(status\)\{if\(S\.costEditorActive\|\|!S\.active\)return/.test(s))fail.push('root status change guard missing');
+if(!/if\(rootGen!==S\.rootRenderSeq\|\|S\.active\)return/.test(s))fail.push('late root count navigation guard missing');
 if(!/if\(!active&&!search&&!fast\)[\s\S]{0,700}await inbox\(\);return/.test(s))fail.push('root is not decoupled from projection lifecycle');
 if(/departmentGroupVisibleCountsV730[\s\S]{0,1800}rr_real_chat_department_operational_v685/.test(s))fail.push('legacy V685 count fallback returned');
 
