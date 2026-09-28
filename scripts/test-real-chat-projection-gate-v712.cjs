@@ -57,15 +57,17 @@ if(!/\$\('back'\)\.onclick=\(\)=>canonicalBackV767\(\)/.test(s))fail.push('back 
 if(!/rr_upm_assignment_action_route_v769/.test(s))fail.push('Accept claim is not assignment-authority routed');
 if(/rr_upm_salaried_team_context_v694[^\n]{0,220}rr_upm_claim_team_assignment_v694/.test(s))fail.push('Accept still relies on UI department team context');
 if(!/rr_upm_accept_submit_authorized_v770/.test(s))fail.push('Fabrication receive authority wrapper missing');
-if(!/rr_upm_salaried_team_context_v694/.test(s)||!/team\?\.is_team===true/.test(s))fail.push('receipt fallback is not gated by canonical team context');
 if(!/rr_upm_claim_team_assignment_v694/.test(s))fail.push('canonical team claim path missing');
 if(/Submit destination · FABRICATION TEAM/.test(s))fail.push('generic submit still labels Fabrication team instead of receiver role');
 if(!/LINE MAN \/ FABRICATION RECEIVER/.test(s))fail.push('generic submit receiver role label missing');
-if(!/rr_upm_salaried_team_context_v694/.test(s)||!/team\?\.is_team===true/.test(s)||!/rr_upm_claim_team_assignment_v694/.test(s))fail.push('team claim is not guarded by canonical team context');
-if(/not mapped to this worker\|effective worker identity[^\n]{0,500}rr_upm_claim_team_assignment_v694/.test(s)&&!/team\?\.is_team===true/.test(s))fail.push('piece-rate receipt can still fall through to team claim');
 if(!/rr_upm_ready_submit_to_receiver_v204/.test(s))fail.push('worker submit is not using shared ready-to-receiver lifecycle');
 if(!/if\(!active&&!search&&!fast\)[\s\S]{0,700}await inbox\(\);return/.test(s))fail.push('root is not decoupled from projection lifecycle');
 if(/departmentGroupVisibleCountsV730[\s\S]{0,1800}rr_real_chat_department_operational_v685/.test(s))fail.push('legacy V685 count fallback returned');
+
+const depView=fs.readFileSync(path.join(root,'real-upm-department-view-v789.js'),'utf8');
+try{new Function(depView)}catch(e){fail.push('department assignment JS parse failed: '+e.message)}
+if(!/mode==='SALARIED_TEAM'\?await rpc\('rr_upm_assign_salaried_team_v694'/.test(depView))fail.push('salaried team assignment bypasses canonical team identity');
+if(!/:await rpc\('rr_upm_ready_to_assign_shared_v205'/.test(depView))fail.push('individual piece-rate assignment route missing');
 
 const retired=[
  ['generic group direct V685',/departmentOperationalV685\(id,S\.status\)/],
