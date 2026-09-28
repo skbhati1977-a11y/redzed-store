@@ -80,5 +80,8 @@ const retired=[
 ];
 for(const [n,re] of retired)if(re.test(s))fail.push('retired path returned: '+n);
 if(!/const sts=S\.search\?mirrorSearchStatuses\(d\.department_code\):\[\]/.test(s))fail.push('root normal render still depends on mirror search');
+// V773 lifecycle authority gate: runtime must never claim team authority without canonical route.
+if(!/rr_upm_assignment_action_route_v769/.test(s))fail.push('V773 canonical assignment action route missing');
+if(!/rr_upm_claim_team_assignment_v694/.test(s))fail.push('V773 team claim engine missing');
 if(fail.length){console.error('REAL CHAT PROJECTION GATE FAIL\n'+fail.join('\n'));process.exit(1)}
 console.log('REAL CHAT PROJECTION GATE PASS: JavaScript parses; V709 generic/Fabrication + V712 Cutting active; root/navigation generation guards active; deterministic boot present; retired UI forks absent.');
