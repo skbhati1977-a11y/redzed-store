@@ -1,0 +1,7 @@
+(()=>{'use strict';if(window.__RR_PUSH_DEEP_LINK_FOCUS_V729__)return;window.__RR_PUSH_DEEP_LINK_FOCUS_V729__=true;
+const q=new URLSearchParams(location.search),action=String(q.get('rc_action')||'').toUpperCase(),lot=String(q.get('rc_lot')||''),dept=String(q.get('rc_id')||q.get('rc_parent')||'').toUpperCase();if(!action||!lot)return;
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+(async()=>{for(let i=0;i<40;i++){const input=document.getElementById('chatFind');if(input){input.value=lot;input.dispatchEvent(new Event('input',{bubbles:true}));document.getElementById('chatSearchGo')?.click();break}await sleep(250)}
+if(action==='ACTUAL_RATE_REQUIRED'){for(let i=0;i<50;i++){const nodes=[...document.querySelectorAll('button,[role="button"],.alert-card,.message-card,.work-card,.card')];const target=nodes.find(n=>/ACTUAL RATE|RATE REQUIRED|FILL.*RATE|RATE APPROVAL/i.test((n.innerText||n.textContent||'')+' '+(n.getAttribute?.('aria-label')||'')));if(target){target.scrollIntoView({behavior:'smooth',block:'center'});target.style.outline='3px solid #f5b942';target.style.outlineOffset='3px';if(/button/i.test(target.tagName)||target.getAttribute?.('role')==='button')target.click();else target.querySelector?.('button')?.click();return}await sleep(300)}
+const note=document.getElementById('searchNotice');if(note){note.hidden=false;note.textContent='Actual Rate Required · Lot '+lot+' · '+dept+' · Open the highlighted rate alert.'}}
+})().catch(()=>{});})();
