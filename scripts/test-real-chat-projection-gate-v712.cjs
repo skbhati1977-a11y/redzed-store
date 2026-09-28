@@ -31,6 +31,10 @@ const universal=[
  ['department directory uses universal dispatcher',/departmentGroupVisibleCountsV730\(id\)/]
 ];
 for(const [n,re] of universal)if(!re.test(s))fail.push('missing '+n);
+const allDepartments=['PURCHASE','CUTTING','PRINTING','STICKER','METAL_ID','STITCHING','OVERLOCK','COSTING','FOLDING','KAAJ_BUTTON','TEAK_TANKI','THREAD_CUT','QC','PRESS','PACKING','DISPATCH','FABRICATION','SALES','ACCOUNTS','ADMIN'];
+for(const dep of allDepartments){const covered=dep==='ADMIN'?/dep==='ADMIN'/.test(s):dep==='PURCHASE'?/dep==='PURCHASE'/.test(s):['SALES','ACCOUNTS','COSTING'].includes(dep)?/\['SALES','ACCOUNTS','COSTING'\]\.includes\(dep\)/.test(s):dep==='CUTTING'?/dep==='CUTTING'/.test(s):dep==='FABRICATION'?/dep==='FABRICATION'/.test(s):new RegExp("RR_PRODUCTION_DEPARTMENTS_V763=new Set\\(\\[[^\\]]*'"+dep+"'","s").test(s);if(!covered)fail.push('department adapter coverage missing: '+dep)}
+if(!/Promise\.all\(countRows\.map/.test(s)||!/rootGen!==S\.rootRenderSeq\|\|S\.active/.test(s))fail.push('atomic generation-scoped root count hydration missing');
+if(!/function costingVisibleCardsV764/.test(s)||!/commercialVisibleCountsV763[\s\S]*costingVisibleCardsV764/.test(s))fail.push('shared costing visible semantics missing');
 if(/departmentGroupVisibleCountsV730[\s\S]{0,1800}rr_real_chat_department_operational_v685/.test(s))fail.push('legacy V685 count fallback returned');
 
 const retired=[
