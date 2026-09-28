@@ -7,6 +7,8 @@
 <aside id="drawer" class="drawer" hidden><div class="drawer-panel"><div><b>REAL CHAT BACKBONE</b><button id="menuClose" class="back">×</button></div><div id="drawerRows"></div></div></aside>
 <script>
 (()=>{try{if(window.top!==window.self){const u=new URL('test70-cb-purchase-real-chat-pilot.html',window.top.location.href);u.search=location.search;u.searchParams.set('standalone','1');window.top.location.replace(u.href)}}catch(_){try{window.top.location.href=location.href}catch(__){}}})();
+</script><script>
+(()=>{const enforce=()=>{const head=document.querySelector('.top');if(!head)return;const h1=head.querySelector('h1'),h2=head.querySelector('h2');if(h1&&h1.textContent.trim()!=='💬 Real Chat')h1.textContent='💬 Real Chat';if(h2)h2.remove();if(!window.__RR_REAL_CHAT_ACTIVE_VIEW__){document.querySelectorAll('[data-status],[data-chat-status]').forEach(x=>x.hidden=true)}};addEventListener('DOMContentLoaded',()=>{enforce();new MutationObserver(enforce).observe(document.querySelector('.top')||document.body,{subtree:true,childList:true,characterData:true})},{once:true})})();
 </script><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="config.js?v=9780"></script><script>
 (async()=>{try{const c=window.supabaseClient;if(!c?.auth?.getSession)throw new Error('Auth unavailable');const {data,error}=await c.auth.getSession();if(error||!data?.session){const next=location.pathname.split('/').pop()+location.search;location.replace('real-login.html?next='+encodeURIComponent(next));}}catch(_){const next=location.pathname.split('/').pop()+location.search;location.replace('real-login.html?next='+encodeURIComponent(next));}})();
 </script><script>
