@@ -1,0 +1,4 @@
+const test=require('node:test');const assert=require('node:assert/strict');const fs=require('node:fs');
+const manifest=fs.readFileSync('supabase/migrations/20260928143000_test71_canonical_cleanup_manifest_v697.sql','utf8');
+test('canonical cleanup manifest locks authorities',()=>{for(const s of ['rr_cost_component_round_v675','rr_upm_final_costing_v691','rr_upm_product_cost_actual_v687','rr_bom_gatta_rule_v681','rr_bom_gatta_panni_context_v684','rr_fg_bind_pack_plan_box_split_v686','rr_upm_lm_count_submit_v690','rr_upm_finalize_submit_handover_v689','rr_upm_advance_completed_colour_v688'])assert.match(manifest,new RegExp(s));});
+test('retired behavior is documented',()=>{assert.match(manifest,/legacy combined impact=0/);assert.match(manifest,/old first-box binder retired/);assert.match(manifest,/lapse\/general overhead impact=0/);});
