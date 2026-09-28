@@ -17,6 +17,22 @@ const need=[
  ['Cutting V712 render',/allRows=await cuttingProjectionV712\(S\.status\)/]
 ];
 for(const [n,re] of need)if(!re.test(s))fail.push('missing '+n);
+
+const universal=[
+ ['universal visible projection dispatcher',/async function departmentVisibleProjectionV763\s*\(/],
+ ['Admin visible adapter',/dep==='ADMIN'.*adminVisibleCountsV762/s],
+ ['Purchase visible adapter',/dep==='PURCHASE'.*purchaseVisibleCountsV763/s],
+ ['Commercial visible adapter',/\['SALES','ACCOUNTS','COSTING'\]\.includes\(dep\).*commercialVisibleCountsV763/s],
+ ['Cutting visible adapter',/dep==='CUTTING'.*cuttingProjectionV712/s],
+ ['Fabrication visible adapter',/dep==='FABRICATION'.*departmentProjectionV709/s],
+ ['Production visible adapter',/RR_PRODUCTION_DEPARTMENTS_V763\.has\(dep\).*departmentProjectionV709/s],
+ ['Dispatch covered by production adapter',/RR_PRODUCTION_DEPARTMENTS_V763=new Set\(\[[^\]]*'DISPATCH'/s],
+ ['directory uses universal dispatcher',/departmentGroupVisibleCountsV730\(d\.department_code\)/],
+ ['department directory uses universal dispatcher',/departmentGroupVisibleCountsV730\(id\)/]
+];
+for(const [n,re] of universal)if(!re.test(s))fail.push('missing '+n);
+if(/departmentGroupVisibleCountsV730[\s\S]{0,1800}rr_real_chat_department_operational_v685/.test(s))fail.push('legacy V685 count fallback returned');
+
 const retired=[
  ['generic group direct V685',/departmentOperationalV685\(id,S\.status\)/],
  ['fabrication old render mirror',/fabricationMirrorV667\(S\.status\)/],
