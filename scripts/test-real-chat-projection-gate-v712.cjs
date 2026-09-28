@@ -49,6 +49,9 @@ if(!/people=globalRole\?arr\(directory\.people\):arr\(directory\.people\)\.filte
 if(!/function canonicalBackV767\(\)/.test(s))fail.push('canonical parent back navigation missing');
 if(/\$\('back'\)\.onclick=\(\)=>history\.back\(\)/.test(s))fail.push('browser-history back regression returned');
 if(!/\$\('back'\)\.onclick=\(\)=>canonicalBackV767\(\)/.test(s))fail.push('back button is not bound to canonical parent navigation');
+if(!/rr_upm_salaried_team_context_v694/.test(s)||!/team\?\.is_team===true/.test(s)||!/rr_upm_claim_team_assignment_v694/.test(s))fail.push('team claim is not guarded by canonical team context');
+if(/not mapped to this worker\|effective worker identity[^\n]{0,500}rr_upm_claim_team_assignment_v694/.test(s)&&!/team\?\.is_team===true/.test(s))fail.push('piece-rate receipt can still fall through to team claim');
+if(!/rr_upm_ready_submit_to_receiver_v204/.test(s))fail.push('worker submit is not using shared ready-to-receiver lifecycle');
 if(!/if\(!active&&!search&&!fast\)[\s\S]{0,700}await inbox\(\);return/.test(s))fail.push('root is not decoupled from projection lifecycle');
 if(/departmentGroupVisibleCountsV730[\s\S]{0,1800}rr_real_chat_department_operational_v685/.test(s))fail.push('legacy V685 count fallback returned');
 
