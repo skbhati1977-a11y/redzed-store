@@ -382,9 +382,11 @@ async function boot(){
   enforceSearchControls();enforceFactoryEdgeLine();bindFactoryEdgeSwipe();
   S.db=window.supabaseClient||window.supabaseDb||window.redzedSupabase||window.sb;
   if(!S.db)return $('state').textContent="Supabase unavailable.";
-  const u=await S.db.auth.getUser();
-  if(u.error||!u.data?.user)return location.href='real-login.html?return='+encodeURIComponent(location.pathname+location.search);
-  S.userId=u.data.user.id;
+  const sessionResult=await Promise.race([S.db.auth.getSession(),new Promise(resolve=>setTimeout(()=>resolve({data:{session:null},error:new Error('Auth session timeout')}),2500))]);
+  const sessionUser=sessionResult?.data?.session?.user;
+  if(!sessionUser)return location.href='real-login.html?return='+encodeURIComponent(location.pathname+location.search);
+  S.userId=sessionUser.id;
+  S.db.auth.getUser().then(({error,data})=>{if(error||!data?.user)console.warn('Background auth verification pending/failed',error?.message||'no user')}).catch(e=>console.warn('Background auth verification failed',e));
   const p=new URLSearchParams(location.search),requestedStatus=p.get('rc_status');
   if(['OPEN','WORKING','CLOSE'].includes(requestedStatus))S.status=requestedStatus;
   const requestedView=p.get('rc_view'),requestedId=p.get('rc_id'),requestedKind=p.get('rc_kind'),requestedParent=p.get('rc_parent');
