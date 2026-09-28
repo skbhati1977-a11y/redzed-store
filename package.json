@@ -15,7 +15,8 @@
     "test:e2e:checkpoint6": "playwright test --project=checkpoint-6",
     "test:e2e:checkpoint7": "playwright test --project=checkpoint-7",
     "test:e2e:checkpoint8": "playwright test --project=checkpoint-8",
-    "test:e2e:mc1": "playwright test --project=mc1"
+    "test:e2e:mc1": "playwright test --project=mc1",
+    "test:real-chat-projection": "node scripts/test-real-chat-projection-gate-v712.cjs"
   },
   "devDependencies": {
     "@playwright/test": "1.55.0"
