@@ -207,8 +207,9 @@ async function confirmFrameReassignments(frames,currentPrintId){
  if(!ok)throw new Error("Frame reassignment cancelled");
 }
 
+let rrPrintDirty=false,rrPrintSaved=false;form.addEventListener("input",()=>{rrPrintDirty=true;rrPrintSaved=false});form.addEventListener("change",()=>{rrPrintDirty=true;rrPrintSaved=false});window.RR_PRINT_MASTER_CAN_CLOSE=()=>!rrPrintDirty||rrPrintSaved;
 form.onsubmit=async e=>{
- e.preventDefault();const btn=$("savePrintBtn");btn.disabled=true;btn.textContent="Saving...";say("");
+ e.preventDefault();const btn=$("savePrintBtn");if(btn.disabled)return;btn.disabled=true;btn.textContent="Saving...";say("");
  try{
   const no=$("printNo").value.trim().toUpperCase(),name=$("printName").value.trim(),colours=Math.max(1,Number($("designColours").value||1)),id=printId();
   if(!no)throw new Error("Enter Print No");if(!name)throw new Error("Enter Print Name");if(!id&&allImages().length===0)throw new Error("Select at least one Print image");
@@ -224,7 +225,7 @@ form.onsubmit=async e=>{
   const uploaded=[];for(const item of queued){const media=await RR.uploadMedia({file:item.file,entityType:"printing",entityId:r.data.id,mediaCategory:"print",sourceType:item.sourceType,visibilityScope:"factory",caption:`${r.data.print_no} print image`});uploaded.push({tempId:item.tempId,media})}
   const iconId=selectedIcon?.type==="saved"?selectedIcon.id:uploaded.find(x=>x.tempId===selectedIcon?.id)?.media?.id;
   if(iconId){await supabaseClient.from("rr_media").update({is_cover:false}).eq("entity_type","printing").eq("entity_id",r.data.id);await supabaseClient.from("rr_media").update({is_cover:true}).eq("id",iconId)}
-  say("Print saved successfully.","success");resetForm();await loadData();
+  rrPrintSaved=true;rrPrintDirty=false;say("Print saved successfully.","success");await loadData();window.parent?.postMessage?.({type:"RR_PRINT_MASTER_SAVED",print_id:r.data.id,print_no:r.data.print_no},"*");resetForm();
  }catch(err){console.error(err);say(err.message||"Print could not be saved.","error")}finally{btn.disabled=false;btn.textContent=printId()?"Update Print":"Save Print"}
 };
 
