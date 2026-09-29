@@ -1,0 +1,85 @@
+name: TEST71 Verified Fix Finalization
+on:
+  push:
+    branches: [test71-real-chat-e2e-finalization]
+    paths:
+      - scripts/test71-finalize-fix.py
+      - .github/workflows/test71-finalize-fix.yml
+permissions:
+  contents: write
+concurrency:
+  group: test71-verified-fix-finalization
+  cancel-in-progress: false
+jobs:
+  verify-and-publish:
+    if: github.repository == 'skbhati1977-a11y/redzed-store' && github.ref == 'refs/heads/test71-real-chat-e2e-finalization'
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Apply exact locally verified source with before-and-after checksums
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('scripts/test71-finalize-fix.py')
+          s=p.read_text()
+          # Repair two identified transport transcription errors; the full payload checksum remains mandatory.
+          s=s.replace('Ihm89T0weZ','Ihm89QweZ').replace('wd3NSZZkej','wd3NSZkej')
+          p.write_text(s)
+          PY
+          python3 scripts/test71-finalize-fix.py
+      - name: Install test dependencies without lifecycle scripts
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Check syntax and retained static suite
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check real-print-master.js
+          node --check test70-real-chat-live-v70.js
+          npm run test:e2e:static | tee "${RUNNER_TEMP}/test71-static.log"
+          npm run test:real-chat-projection | tee "${RUNNER_TEMP}/test71-projection.log"
+      - name: Install isolated browser
+        run: npx playwright install --with-deps chromium
+      - name: Verify actual UI with mocked external I/O and no live data writes
+        env:
+          TEST71_EVIDENCE_DIR: ${{ runner.temp }}/test71-browser-evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/test71-print-navigation-browser.cjs | tee "${RUNNER_TEMP}/test71-browser.log"
+      - name: Publish verified files to TEST71 without force or merge
+        shell: bash
+        run: |
+          set -euo pipefail
+          branch=test71-real-chat-e2e-finalization
+          remote_head=$(git ls-remote origin "refs/heads/$branch" | cut -f1)
+          test "$remote_head" = "$GITHUB_SHA" || { echo 'Branch advanced; refusing to overwrite concurrent work.'; exit 1; }
+          xargs -d '\n' git add -- < "${RUNNER_TEMP}/test71-paths.txt"
+          git diff --cached --check
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'fix(test71): complete independent frame save and progressive count navigation'
+          git push origin "HEAD:refs/heads/$branch"
+          git rev-parse HEAD | tee "${RUNNER_TEMP}/test71-verified-fix-sha.txt"
+      - name: Retain verification and transport evidence
+        if: always()
+        run: cp scripts/test71-finalize-fix.py "${RUNNER_TEMP}/test71-installer-source.py"
+      - name: Retain verification evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test71-verified-fix-evidence
+          path: |
+            ${{ runner.temp }}/test71-static.log
+            ${{ runner.temp }}/test71-projection.log
+            ${{ runner.temp }}/test71-browser.log
+            ${{ runner.temp }}/test71-browser-evidence/
+            ${{ runner.temp }}/test71-verified-fix-sha.txt
+            ${{ runner.temp }}/test71-installer-source.py
+          retention-days: 7
