@@ -214,7 +214,7 @@ form.onsubmit=async e=>{
   const no=$("printNo").value.trim().toUpperCase(),name=$("printName").value.trim(),colours=Math.max(1,Number($("designColours").value||1)),id=printId();
   if(!no)throw new Error("Enter Print No");if(!name)throw new Error("Enter Print Name");if(!id&&allImages().length===0)throw new Error("Select at least one Print image");
   if(prints.some(p=>String(p.print_no||"").trim().toUpperCase()===no&&String(p.id)!==String(id||"")))throw new Error(`Print No ${no} already exists`);
-  const frames=getFrameRows();if(frames.length!==colours)throw new Error(`Design has ${colours} colour(s), so enter exactly ${colours} Frame No(s)`);
+  const frames=getFrameRows();if(!frames.length)throw new Error("Enter at least one Frame No");
   const dup=frames.map(x=>x.frame_no).find((x,i,a)=>a.indexOf(x)!==i);if(dup)throw new Error(`Duplicate Frame No: ${dup}`);
   await confirmFrameReassignments(frames,id);
 
