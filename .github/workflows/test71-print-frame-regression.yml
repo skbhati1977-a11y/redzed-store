@@ -40,6 +40,31 @@ jobs:
           node --check real-print-master.js
           node --check test70-real-chat-live-v70.js
       - name: Retained static suite including print frame independence
-        run: npm run test:e2e:static
+        run: |
+          python3 - <<'PY'
+          import os, pathlib, re, subprocess, sys
+          result = subprocess.run(['npm', 'run', 'test:e2e:static'], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+          log = pathlib.Path(os.environ['RUNNER_TEMP']) / 'test71-static.log'
+          log.write_text(result.stdout)
+          lines = result.stdout.splitlines()
+          for i, line in enumerate(lines):
+              if re.match(r'^(?:not ok|ok |# (?:tests|pass|fail|cancelled|skipped|duration_ms)|1\.\.)', line):
+                  print(line[:600])
+              if line.startswith('not ok'):
+                  for detail in lines[i+1:i+13]:
+                      print(detail[:500])
+          if result.returncode and not any(line.startswith('not ok') for line in lines):
+              print('\n'.join(line[:500] for line in lines[-25:]))
+          print('STATIC_EXIT_CODE=' + str(result.returncode))
+          sys.exit(result.returncode)
+          PY
       - name: Retained Real Chat projection gate
+        if: ${{ !cancelled() }}
         run: npm run test:real-chat-projection
+      - name: Preserve complete static test diagnostics
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: test71-static-diagnostics
+          path: ${{ runner.temp }}/test71-static.log
+          retention-days: 7
