@@ -1,0 +1,45 @@
+name: TEST71 Print and Projection Regression
+
+on:
+  push:
+    branches: [test71-real-chat-e2e-finalization]
+    paths:
+      - real-print-master.html
+      - real-print-master.js
+      - test70-real-chat-live-v70.js
+      - tests/e2e/**
+      - scripts/test-real-chat-projection-gate-v712.cjs
+      - package.json
+      - package-lock.json
+      - .github/workflows/test71-print-frame-regression.yml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: test71-print-frame-regression-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  regression:
+    if: github.ref == 'refs/heads/test71-real-chat-e2e-finalization'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Install test dependencies without lifecycle scripts
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Check touched runtime syntax
+        run: |
+          node --check real-print-master.js
+          node --check test70-real-chat-live-v70.js
+      - name: Retained static suite including print frame independence
+        run: npm run test:e2e:static
+      - name: Retained Real Chat projection gate
+        run: npm run test:real-chat-projection
