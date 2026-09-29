@@ -65,6 +65,8 @@ $("basicLockToggle")?.addEventListener("click",()=>{
 });
 
 const form=$("artForm"),message=$("artMessage"),cards=$("artCards");
+async function loadCategoryDepartmentMap(){const id=$("artCategory")?.value,box=$("categoryDepartmentMap");if(!box)return;if(!id){box.innerHTML='<span class="rr-muted">Select category first.</span>';return}const {data,error}=await RR.sb.rpc('rr_category_department_map_get_v754',{p_category_id:id});if(error){box.textContent=error.message;return}box.innerHTML=(data?.departments||[]).map(d=>'<label style="border:1px solid #42556a;border-radius:10px;padding:8px 10px"><input type="checkbox" data-category-dept="'+d.department_code+'" '+(d.applicable?'checked':'')+'> '+d.department_name+'</label>').join('')+'<button type="button" id="saveCategoryDepartments" class="rr-btn rr-btn-secondary">Save Departments</button>';$("saveCategoryDepartments").onclick=async()=>{const codes=[...box.querySelectorAll('[data-category-dept]:checked')].map(x=>x.dataset.categoryDept);const {error:e}=await RR.sb.rpc('rr_category_department_map_save_v754',{p_category_id:id,p_department_codes:codes});say(e?e.message:'Category departments saved.',e?'error':'success')}}
+$("artCategory")?.addEventListener("change",loadCategoryDepartmentMap);
 
 const say=(t,k="")=>{message.textContent=t||"";message.className=`rr-message ${k}`.trim()};
 const money=v=>RR.money(Number(v||0));
