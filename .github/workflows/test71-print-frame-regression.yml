@@ -7,8 +7,10 @@ on:
       - real-print-master.html
       - real-print-master.js
       - test70-real-chat-live-v70.js
+      - test70-cb-purchase-real-chat-pilot.html
       - tests/e2e/**
       - scripts/test-real-chat-projection-gate-v712.cjs
+      - scripts/test71-print-navigation-browser.cjs
       - package.json
       - package-lock.json
       - .github/workflows/test71-print-frame-regression.yml
@@ -22,9 +24,9 @@ concurrency:
 
 jobs:
   regression:
-    if: github.ref == 'refs/heads/test71-real-chat-e2e-finalization'
+    if: github.repository == 'skbhati1977-a11y/redzed-store' && github.ref == 'refs/heads/test71-real-chat-e2e-finalization'
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 12
     steps:
       - uses: actions/checkout@v4
         with:
@@ -39,37 +41,42 @@ jobs:
         run: |
           node --check real-print-master.js
           node --check test70-real-chat-live-v70.js
+          node --check scripts/test71-print-navigation-browser.cjs
       - name: Retained static suite including print frame independence
+        shell: bash
         run: |
-          python3 - <<'PY'
-          import os, pathlib, re, subprocess, sys
-          result = subprocess.run(['npm', 'run', 'test:e2e:static'], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
-          log = pathlib.Path(os.environ['RUNNER_TEMP']) / 'test71-static.log'
-          log.write_text(result.stdout)
-          lines = result.stdout.splitlines()
-          for i, line in enumerate(lines):
-              if re.match(r'^(?:not ok|ok |# (?:tests|pass|fail|cancelled|skipped|duration_ms)|1\.\.)', line):
-                  print(line[:600])
-              if line.startswith('not ok'):
-                  for detail in lines[i+1:i+13]:
-                      print(detail[:500])
-          if result.returncode and not any(line.startswith('not ok') for line in lines):
-              print('\n'.join(line[:500] for line in lines[-25:]))
-          print('STATIC_EXIT_CODE=' + str(result.returncode))
-          sys.exit(result.returncode)
-          PY
+          set -euo pipefail
+          npm run test:e2e:static | tee "${RUNNER_TEMP}/test71-static.log"
       - name: Retained Real Chat projection gate
         if: ${{ !cancelled() }}
-        run: npm run test:real-chat-projection
-      - name: Archive tracked source for reproducible diagnostics
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run test:real-chat-projection | tee "${RUNNER_TEMP}/test71-projection.log"
+      - name: Install browser for isolated UI regression
+        run: npx playwright install --with-deps chromium
+      - name: Real Print and Real Chat browser regression without live database writes
+        env:
+          TEST71_EVIDENCE_DIR: ${{ runner.temp }}/test71-browser-evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/test71-print-navigation-browser.cjs | tee "${RUNNER_TEMP}/test71-browser.log"
+      - name: Archive exact tested source and commit
         if: ${{ !cancelled() }}
-        run: git archive --format=tar.gz --output="${RUNNER_TEMP}/test71-source.tar.gz" HEAD
-      - name: Preserve complete static test diagnostics
+        run: |
+          git rev-parse HEAD > "${RUNNER_TEMP}/test71-tested-sha.txt"
+          git archive --format=tar.gz --output="${RUNNER_TEMP}/test71-source.tar.gz" HEAD
+      - name: Preserve static and browser diagnostics
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4
         with:
           name: test71-static-diagnostics
           path: |
             ${{ runner.temp }}/test71-static.log
+            ${{ runner.temp }}/test71-projection.log
+            ${{ runner.temp }}/test71-browser.log
+            ${{ runner.temp }}/test71-browser-evidence/
+            ${{ runner.temp }}/test71-tested-sha.txt
             ${{ runner.temp }}/test71-source.tar.gz
           retention-days: 7
