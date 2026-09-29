@@ -93,6 +93,8 @@
 
         <div class="rr-subpanel" style="grid-column:1/-1"><strong>Applicable Departments</strong><p class="rr-muted" style="margin:4px 0 8px">Category default · select/unselect departments. Lot/Art exceptions can override later.</p><div id="categoryDepartmentMap" style="display:flex;flex-wrap:wrap;gap:8px"><span class="rr-muted">Select category first.</span></div></div>
 
+        <div id="artDepartmentOverrideBox" class="rr-subpanel" style="grid-column:1/-1" hidden><strong>Art / Design Department Exception</strong><p class="rr-muted" style="margin:4px 0 8px">Overrides Category default for this Art and its future Lots.</p><div style="display:flex;gap:8px;flex-wrap:wrap;align-items:end"><label>Department<select id="artOverrideDepartment"><option value="KAAJ_BUTTON">Kaaj / Btn</option></select></label><label>Mode<select id="artOverrideMode"><option value="DEFAULT">DEFAULT</option><option value="ENROLL">ENROLL</option><option value="SKIP">SKIP</option></select></label><label style="flex:1;min-width:180px">Reason<input id="artOverrideReason" placeholder="Required for ENROLL / SKIP"></label><button id="saveArtDepartmentOverride" type="button" class="rr-btn rr-btn-secondary">Save Exception</button></div><div id="artOverrideState" class="rr-muted"></div></div>
+
         <label>Design Name *
           <input id="itemName" required placeholder="Self Collar Polo">
         </label>
