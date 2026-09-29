@@ -61,10 +61,15 @@ jobs:
       - name: Retained Real Chat projection gate
         if: ${{ !cancelled() }}
         run: npm run test:real-chat-projection
+      - name: Archive tracked source for reproducible diagnostics
+        if: ${{ !cancelled() }}
+        run: git archive --format=tar.gz --output="${RUNNER_TEMP}/test71-source.tar.gz" HEAD
       - name: Preserve complete static test diagnostics
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4
         with:
           name: test71-static-diagnostics
-          path: ${{ runner.temp }}/test71-static.log
+          path: |
+            ${{ runner.temp }}/test71-static.log
+            ${{ runner.temp }}/test71-source.tar.gz
           retention-days: 7
