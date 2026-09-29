@@ -319,7 +319,8 @@ function openMasterCreate(step){
   const frame=$("masterFrame");frame.onload=prepareEmbeddedMaster;frame.src=meta.url
 }
 async function closeMasterSheet(sync=true){
-  const ctx=state.createContext;clearCreateTimers();
+  const ctx=state.createContext,frame=$("masterFrame");clearCreateTimers();
+  if(ctx?.step==="print"&&sync){try{const canClose=frame?.contentWindow?.RR_PRINT_MASTER_CAN_CLOSE;if(typeof canClose==="function"&&!canClose()){if(!confirm("Print अभी SAVE नहीं हुआ है। बिना save किए Back to Decision करना है?"))return}}catch(e){console.warn("Print unsaved guard unavailable",e)}}
   if(sync&&ctx){await detectCreated(false)}
   state.createContext=null;
   const sheet=$("masterSheet");sheet.classList.add("hidden");sheet.setAttribute("aria-hidden","true");
@@ -349,8 +350,9 @@ async function saveDecision(){
   finally{setBusy(btn,false)}
 }
 
+function onMasterSaved(event){if(event.source!==$("masterFrame")?.contentWindow||event.data?.type!=="RR_PRINT_MASTER_SAVED")return;scheduleCreateDetection()}
 function bind(){
-  $("refresh").onclick=loadData;$("search").oninput=renderGallery;$("pickerSearch").oninput=renderPicker;$("decisionNext").onclick=advance;
+  window.addEventListener("message",onMasterSaved);$("refresh").onclick=loadData;$("search").oninput=renderGallery;$("pickerSearch").oninput=renderPicker;$("decisionNext").onclick=advance;
   $("decisionTabs").querySelectorAll("[data-step]").forEach(b=>b.onclick=()=>showStep(b.dataset.step));
   document.querySelectorAll("[data-close]").forEach(b=>b.onclick=closeDecision);
   document.querySelectorAll("[data-master-close]").forEach(b=>b.onclick=()=>closeMasterSheet(true));
