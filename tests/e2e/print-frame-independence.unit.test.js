@@ -20,6 +20,7 @@ function harness(options = {}) {
   const rows = options.frames || ['F1', 'F2', 'F3', 'F4'];
   const calls = {writes: [], rpc: [], messages: [], saved: [], resets: 0};
   const elements = {
+    printId: {value: options.id || ''},
     printNo: {value: options.no === undefined ? 'UNIT-PRINT' : options.no},
     printName: {value: 'Unit print'}, designColours: {value: String(options.colours || 2)},
     shortNote: {value: ''}, savePrintBtn: {disabled: false, textContent: 'Save Print'},
@@ -28,7 +29,7 @@ function harness(options = {}) {
     })}))}
   };
   const context = {
-    form: {}, $: id => elements[id], printId: () => options.id || '',
+    form: {}, $: id => elements[id], printId: () => elements.printId.value,
     prints: options.prints || [], allImages: () => options.hasImage === false ? [] : [{}],
     queued: [], selectedIcon: null, rrPrintDirty: true, rrPrintSaved: false,
     say: (message, type) => calls.messages.push({message, type}),
@@ -37,6 +38,7 @@ function harness(options = {}) {
     window: {parent: {postMessage: message => calls.saved.push(message)}},
     confirmFrameReassignments: async () => {
       if (options.cancelReassign) throw new Error('Frame reassignment cancelled');
+      return options.allowReassign === true;
     },
     supabaseClient: {
       from(table) {

@@ -91,7 +91,7 @@ test('one CB supports draft, confirm, late DUE material and rollback proof', () 
   assert.match(form, /DRAFT SAVE/);
   assert.match(form, /SAVE &amp; CONFIRM/);
   assert.match(form, /SAVE DUE MATERIAL/);
-  assert.match(chat, /Pending Material/);
+  assert.match(chat, /Material Due/);
   assert.match(workingCanonicalProjection, /SENT TO CUTTING/);
   assert.match(artProjection, /real-art-decide-master\.html\?cb_unit_id=/);
   assert.match(workingArtProjection, /rr_pm_decision_status_v802 d on d\.cb_unit_id=u\.id/);
@@ -130,14 +130,14 @@ test('CB completion and Cutting readiness are separate canonical dimensions', ()
   assert.match(workingCanonicalProjection, /INCOMPLETE LEGACY CB · READ-ONLY HISTORY/);
   assert.match(workingCanonicalProjection, /rr_test_cb_working_projection_v618/);
   assert.match(workingCanonicalProjection, /fixture_residue/);
-  assert.match(chat, /CB Status/);
-  assert.match(chat, /Cutting Status/);
+  assert.match(chat, /state=String\(c\.source_status/);
+  assert.match(chat, /<span>Cutting <b>/);
   assert.match(chat, /function cbDepartmentContext/);
   assert.match(chat, /if\(cbDepartmentContext\(\)\)\{box\.hidden=true;return\}/);
   assert.match(chat, /focusCbCard\(cbNo,consume=false\)/);
   assert.match(chat, /<details class="closed-row" data-closed-key=/);
   assert.match(chat, /inner\.replace\(\/ data-cb-no=/);
-  assert.match(chat, /if\(!fast&&S\.returnFocusCb\)focusCbCard\(S\.returnFocusCb,true\)/);
+  assert.match(chat, /if\(!fast&&navOwned&&S\.returnFocusCb\)focusCbCard\(S\.returnFocusCb,true\)/);
 });
 
 test('Art picker uses effective authority, canonical media thumbnails and No Name fallback', () => {

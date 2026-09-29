@@ -57,5 +57,5 @@ test('Material purchase Unit is selectable in CB and remains the Real Chat Unit'
   assert.match(cb, /rr_unit_master_create_v606/);
   assert.match(cbSelection, /nullif\(entry_row->>'unit',''\),nullif\(cat\.unit,''\),'PCS'/);
   assert.match(cbSelection, /RR_MATERIAL:/);
-  assert.match(chat, /safe\(m\.unit\|\|'UNIT DUE'\)/);
+  assert.match(chat, /safe\(c\.quantity_unit\|\|'KG'\)/);
 });

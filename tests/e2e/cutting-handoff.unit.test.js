@@ -9,7 +9,7 @@ function chatFunction(name, context = {}) {
   const line = chat.split('\n').find(line => line.startsWith(`function ${name}(`));
   return vm.runInNewContext(`(${line})`, context);
 }
-const matches = chatFunction('currentMatchesStatus');
+const matches = chatFunction('currentMatchesStatus', { S: { cards: [] } });
 for (const [event, state, assigned] of [
   ['READY_FOR_CUTTING', 'OPEN', false],
   ['CUTTING_RELEASE_SUCCEEDED', 'WORKING', false],

@@ -1,5 +1,6 @@
 #!/usr/bin/env node
-const fs=require('fs'),vm=require('vm');
+const fs=require('fs'),vm=require('vm'),path=require('path');
+const root=path.resolve(__dirname,'..');
 const p='test70-real-chat-live-v70.js',s=fs.readFileSync(p,'utf8'),fail=[];
 try{new vm.Script(s)}catch(e){fail.push('main Real Chat JavaScript parse failure: '+e.message)}
 const need=[
@@ -43,7 +44,8 @@ if(!/departmentCountCache:new Map\(\)/.test(s))fail.push('confirmed department c
 if(!/departmentCounts:Object\.fromEntries\(S\.departmentCountCache\)/.test(s)||!/S\.departmentCountCache=new Map\(Object\.entries\(c\.departmentCounts\|\|\{\}\)\)/.test(s))fail.push('confirmed counts are not persisted/restored');
 if(!/cachedCount=S\.departmentCountCache\.get/.test(s))fail.push('root does not paint last confirmed counts');
 if(/Department count batch hydrate[\s\S]{0,260}count unavailable/.test(s))fail.push('refresh failure still destroys confirmed count');
-if(!/if\(!prev\|\|Number\(prev\.OPEN\)!==next\.OPEN\|\|Number\(prev\.WORKING\)!==next\.WORKING\)/.test(s))fail.push('unchanged counts still repaint');
+if(!/if\(el&&el\.textContent!==text\)el\.textContent=text/.test(s))fail.push('unchanged counts still repaint');
+if(!/if\(!counts\)return/.test(s))fail.push('failed projection can paint a false zero');
 if(!/TEST70_REAL_CHAT_FAST_V110:[^\n]*RR_ON_BEHALF_ACTIVE/.test(s)&&!/function cacheKey\(\)\{const actor=window\.RR_ON_BEHALF_ACTIVE/.test(s))fail.push('count cache is not actor scoped');
 if(!/people=globalRole\?arr\(directory\.people\):arr\(directory\.people\)\.filter\(x=>String\(x\.worker_id\)===selectedId\|\|visiblePeople\.has/.test(s))fail.push('Act As still collapses department roster to selected actor');
 if(!/function canonicalBackV767\(\)/.test(s))fail.push('canonical parent back navigation missing');

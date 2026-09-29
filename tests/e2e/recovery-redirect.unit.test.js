@@ -1,30 +1,20 @@
-const assert = require("node:assert/strict");
-const fs = require("node:fs");
-const path = require("node:path");
-const { test } = require("node:test");
-
-const loginSource = fs.readFileSync(
-  path.join(__dirname, "..", "..", "real-login.js"),
-  "utf8"
-);
-
-test("TEST71 password recovery requests the exact preview reset page", () => {
-  assert.match(
-    loginSource,
-    /redirectTo:\s*\n?\s*["']https:\/\/redzed-test65-git-test71-real-chat-e2e-6adad3-skbhati1977-4414\.vercel\.app\/reset-password\.html["']/
-  );
-});
-
-test("password recovery does not pin a single immutable Vercel deployment", () => {
-  assert.doesNotMatch(
-    loginSource,
-    /redirectTo:\s*\n?\s*["']https:\/\/redzed-test65-[a-z0-9]{9}-skbhati1977-4414\.vercel\.app\/reset-password\.html["']/
-  );
-});
-
-test("password recovery no longer requests the GitHub Pages callback", () => {
-  assert.doesNotMatch(
-    loginSource,
-    /redirectTo:\s*\n?\s*["']https:\/\/skbhati1977-a11y\.github\.io\/redzed-store\/reset-password\.html["']/
-  );
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const { test } = require('node:test');
+const { installFunctions } = require('./helpers/source-functions');
+const loginSource = fs.readFileSync('real-login.js', 'utf8');
+for (const origin of ['https://test71-8000.app.github.dev', 'https://test71-preview.vercel.app']) {
+  test('password recovery stays on its current authorized origin: ' + origin, async () => {
+    const calls = [];
+    const scope = { location: {origin}, msg: {}, document: {getElementById: () => ({value:' unit@example.invalid '})},
+      supabaseClient: {auth: {resetPasswordForEmail: async (...args) => {calls.push(args); return {error:null};}}} };
+    installFunctions(loginSource, scope, ['sendRecovery']);
+    await scope.sendRecovery();
+    assert.equal(calls.length, 1);
+    assert.equal(calls[0][0], 'unit@example.invalid');
+    assert.equal(calls[0][1].redirectTo, origin + '/reset-password.html');
+  });
+}
+test('password recovery does not pin Vercel or GitHub Pages callbacks', () => {
+  assert.doesNotMatch(loginSource, /redirectTo:\s*["']https:\/\//);
 });

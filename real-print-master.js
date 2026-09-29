@@ -178,7 +178,7 @@ $("cancelEdit").onclick=resetForm;
 
 async function confirmFrameReassignments(frames,currentPrintId){
  const frameNos=frames.map(x=>x.frame_no).filter(Boolean);
- if(!frameNos.length)return;
+ if(!frameNos.length)return false;
 
  const {data,error}=await supabaseClient
   .from("rr_print_frames")
@@ -192,7 +192,7 @@ async function confirmFrameReassignments(frames,currentPrintId){
   String(row.print_id)!==String(currentPrintId||"")
  );
 
- if(!conflicts.length)return;
+ if(!conflicts.length)return false;
 
  const lines=conflicts.map(row=>{
   const p=row.rr_print_master||{};
@@ -205,6 +205,7 @@ async function confirmFrameReassignments(frames,currentPrintId){
  );
 
  if(!ok)throw new Error("Frame reassignment cancelled");
+ return true;
 }
 
 let rrPrintDirty=false,rrPrintSaved=false;form.addEventListener("input",()=>{rrPrintDirty=true;rrPrintSaved=false});form.addEventListener("change",()=>{rrPrintDirty=true;rrPrintSaved=false});window.RR_PRINT_MASTER_CAN_CLOSE=()=>!rrPrintDirty||rrPrintSaved;
@@ -216,12 +217,14 @@ form.onsubmit=async e=>{
   if(prints.some(p=>String(p.print_no||"").trim().toUpperCase()===no&&String(p.id)!==String(id||"")))throw new Error(`Print No ${no} already exists`);
   const frames=getFrameRows();if(!frames.length)throw new Error("Enter at least one Frame No");
   const dup=frames.map(x=>x.frame_no).find((x,i,a)=>a.indexOf(x)!==i);if(dup)throw new Error(`Duplicate Frame No: ${dup}`);
-  await confirmFrameReassignments(frames,id);
+  const allowReassign=await confirmFrameReassignments(frames,id);
 
   const payload={print_no:no,print_name:name,design_colours:colours,short_note:$("shortNote").value.trim(),is_active:true};
   const safeColumns="id,print_no,print_name,artwork_url,garment_preview_url,frame_base,colours,frame_labels,placement,print_type,notes,is_active,created_by,created_at,updated_at,caption_text,caption_items,design_colours,short_note";
   const r=id?await supabaseClient.from("rr_print_master").update(payload).eq("id",id).select(safeColumns).single():await supabaseClient.from("rr_print_master").insert(payload).select(safeColumns).single();if(r.error)throw r.error;
-  const fr=await supabaseClient.rpc("rr_save_print_frames",{p_print_id:r.data.id,p_rows:frames});if(fr.error)throw fr.error;
+  // Preserve the saved master identity if a later frame/media request fails: retry updates, never inserts a duplicate.
+  $("printId").value=r.data.id;
+  const fr=await supabaseClient.rpc("rr_save_print_frames",{p_print_id:r.data.id,p_rows:frames,p_allow_reassign:allowReassign===true});if(fr.error)throw fr.error;
   const uploaded=[];for(const item of queued){const media=await RR.uploadMedia({file:item.file,entityType:"printing",entityId:r.data.id,mediaCategory:"print",sourceType:item.sourceType,visibilityScope:"factory",caption:`${r.data.print_no} print image`});uploaded.push({tempId:item.tempId,media})}
   const iconId=selectedIcon?.type==="saved"?selectedIcon.id:uploaded.find(x=>x.tempId===selectedIcon?.id)?.media?.id;
   if(iconId){await supabaseClient.from("rr_media").update({is_cover:false}).eq("entity_type","printing").eq("entity_id",r.data.id);await supabaseClient.from("rr_media").update({is_cover:true}).eq("id",iconId)}

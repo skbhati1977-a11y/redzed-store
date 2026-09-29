@@ -4,6 +4,7 @@ const fs = require('node:fs');
 const vm = require('node:vm');
 
 const source = fs.readFileSync('test70-real-chat-live-v70.js', 'utf8');
+const { installFunctions } = require('./helpers/source-functions');
 const extract = (name, next) => source.slice(source.indexOf(`function ${name}(`), source.indexOf(next, source.indexOf(`function ${name}(`)));
 
 test('craft identity is fetched once per visible Lot and preserves every existing field', async () => {
@@ -14,7 +15,7 @@ test('craft identity is fetched once per visible Lot and preserves every existin
     return { art_no: 'A1', print_no: 'P1', frame_no: 'F1', sticker_no: 'S1', sticker_name: 'Sticker', metal_id_no: 'M1', metal_id_name: 'Metal', print_images: ['print.png'] };
   } };
   vm.createContext(scope);
-  vm.runInContext('async ' + extract('mergeCraftIdentityV634', '\nasync function operationalWorkV283'), scope);
+  installFunctions(source, scope, ['sanitizeOperationalCraftV689', 'mergeCraftIdentityV634']);
   const cards = [{ canonical_lot_id: 'lot-1', lot_no: '101', print_images: ['existing.png'] }, { canonical_lot_id: 'lot-1', lot_no: '101', print_images: [] }];
   const first = await scope.mergeCraftIdentityV634(cards);
   const second = await scope.mergeCraftIdentityV634(cards);
@@ -33,7 +34,8 @@ test('status switch clears previous cards before canonical request and scopes th
   const S = { userId: 'one', actor: { id: 'admin', role: 'ADMIN' }, status: 'WORKING', search: '', searchFocusIndex: 0, active: { kind: 'group', id: 'CUTTING' }, statusCache: new Map(), chatSeq: 0 };
   const scope = { S, window: {}, arr: x => Array.isArray(x) ? x : [], $: id => elements[id], history: { state: {}, replaceState() {}, pushState() {} }, viewUrl: () => '/', syncStatusButtons() {}, safe: x => x, renderActive() { rendered++; }, load() { requested++; } };
   vm.createContext(scope);
-  vm.runInContext(extract('statusProjectionKey', '\nfunction inbox()'), scope);
+  scope.currentViewState = () => ({view:'chat', kind:'group', id:'CUTTING'});
+  installFunctions(source, scope, ['statusProjectionKey', 'changeStatus']);
   scope.changeStatus('OPEN');
   assert.equal(requested, 1);
   assert.equal(rendered, 0);

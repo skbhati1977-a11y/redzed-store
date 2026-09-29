@@ -30,7 +30,7 @@ test("only a genuine receipt batch requires all colours", () => {
 
 test("first tap is pending and excess is allowed", () => {
   assert.match(accept, /btn\.disabled=true;btn\.textContent='ACCEPTING…'/);
-  assert.match(accept, /type="number" min="0" value=/);
+  assert.match(accept, /<input[^>]*type="number"[^>]*min="0"/);
   assert.doesNotMatch(accept, /type="number"[^>]*max=/);
   assert.match(accept, /Short \/ Excess remarks required/);
 });
