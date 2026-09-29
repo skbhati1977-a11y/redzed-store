@@ -308,7 +308,7 @@ async function openChat(kind,id,push=true,parentDepartment=null){window.__RR_REA
   const role=String(S.actor?.role||S.actor?.role_code||'').toUpperCase(),create=$('contextAction'),manage=$('manageStaffAction');
   manage.hidden=!(kind==='group'&&membershipAdminRole());manage.onclick=()=>openMembershipAdmin(id);
   create.hidden=!(kind==='group'&&id==='PURCHASE'&&['OWNER','SUPER_ADMIN','ADMIN'].includes(role));
-  create.href='real-cb-new-v9130-fix2.html?from=TEST70_REAL_CHAT&return='+encodeURIComponent(location.pathname+location.search);
+  create.href='real-cb-new-v9130-loader.html?from=TEST70_REAL_CHAT&return='+encodeURIComponent(location.pathname+location.search)+'&fix=20260817';
   const emptyType=['WORKING','CLOSE'].includes(S.status)&&S.workFilter!=='ALL'?S.workFilter.toLowerCase():'mapped';
   const expandedClosed=expandedClosedCardKeys();
   if(!S.search){S.activeRenderedSearchRows=rows.slice();S.activeRenderedSearchKey=[kind,String(id),S.status].join('|').toUpperCase()}
