@@ -258,7 +258,10 @@ async function openChat(kind,id,push=true,parentDepartment=null){window.__RR_REA
   const alterJob=kind==='person'&&!S.search&&String(parent||meta?.department_code||'').toUpperCase()!=='PURCHASE'?alterMirrorV684(kind,id,parent||meta?.department_code||null):null;
   if(kind==='group'&&['SALES','ACCOUNTS','COSTING'].includes(String(id).toUpperCase()))return openCommercialChat(id,name,push,parent);
   let allRows;
-  if(S.search&&kind==='group'&&S.mirrorSearch?.query===String(S.search||'').trim()){allRows=arr(S.mirrorSearch.cards?.[S.status]).filter(c=>mirrorSearchDeptCodes(c).includes(String(id).toUpperCase()));}
+  if(kind==='group'&&String(id).toUpperCase()==='PURCHASE'&&!S.search){
+    try{const cb=await rpc('rr_cb_department_cards_v600',{p_state:S.status,p_search:null});allRows=arr(cb?.cards);S.cbCards=allRows.slice()}catch(e){console.error('CB group projection',e);allRows=arr(S.cbCards).filter(c=>String(c.source_status||c.canonical_state||'').toUpperCase()===S.status)}
+  }
+  else if(S.search&&kind==='group'&&S.mirrorSearch?.query===String(S.search||'').trim()){allRows=arr(S.mirrorSearch.cards?.[S.status]).filter(c=>mirrorSearchDeptCodes(c).includes(String(id).toUpperCase()));}
   else if(kind==='group'&&String(id).toUpperCase()==='CUTTING'&&!S.search){allRows=await cuttingProjectionV712(S.status);}
   else if((kind==='group'&&String(id).toUpperCase()==='FABRICATION'||kind==='person'&&String(parentDepartment||'').toUpperCase()==='FABRICATION'&&S.departments.some(d=>String(d.department_code).toUpperCase()==='FABRICATION'&&[...arr(d.workers),...arr(d.staff)].some(x=>String(x.worker_id)===String(id)&&x.membership_active!==false)))&&!S.search){allRows=await mergeCraftIdentityV634(await departmentProjectionV709('FABRICATION',S.status));allRows=allRows.concat(await (alterJob||alterMirrorV684(kind,id,parentDepartment)));}
   else if(kind==='person'&&!S.search&&String(parent||meta?.department_code||'').toUpperCase()!=='PURCHASE'){
