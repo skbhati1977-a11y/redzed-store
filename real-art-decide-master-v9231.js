@@ -66,7 +66,7 @@ async function mediaRows(){
 
 function unitFor(id){return state.units.find(x=>String(x.id)===String(id))||null}
 function purchaseFor(unit){return state.purchases.find(x=>String(x.id)===String(unit?.purchase_id))||null}
-function dNo(unit){return `D${Number(unit?.division_index||1)}`}
+function dNo(unit){return `S${Number(unit?.division_index||1)}`}
 function cbNo(unit){return purchaseFor(unit)?.cb_no||unit?.cb_base_no||String(unit?.cb_code||"CB").replace(/[-\s]S\d+.*$/i,"")||"CB"}
 function decisionFor(id){return state.decisions.find(x=>String(x.cb_unit_id)===String(id))||null}
 function assignmentFor(id){return state.assignments.find(x=>String(x.cb_id)===String(id))||null}
