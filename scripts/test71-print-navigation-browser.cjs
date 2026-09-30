@@ -26,7 +26,8 @@ async function printPage(){
     const db=window.__printDb={masters:[],frames:[],media:{},writes:[],rpcCalls:[],failFrames:0,holdFrames:false};
     window.RR={safeText:v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])),requireOwner:async()=>({}),getMediaMap:async()=>db.media,
       uploadMedia:async({entityId})=>{const m={id:'media-'+entityId,file_url:'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+a5wAAAABJRU5ErkJggg==',file_name:'unit.png'};db.media[entityId]=[m];return m;}};
-    window.supabaseClient={from(table){let payload,operation,id;const chain={select(){return chain;},eq(k,v){if(k==='id')id=v;return chain;},insert(p){payload=p;operation='insert';return chain;},update(p){payload=p;operation='update';return chain;},
+    window.supabaseClient={from(table){let payload,operation,id,entityType,entityId,mediaCategory;const chain={select(){return chain;},eq(k,v){if(k==='id')id=v;if(k==='entity_type')entityType=v;if(k==='entity_id')entityId=v;if(k==='media_category')mediaCategory=v;return chain;},insert(p){payload=p;operation='insert';return chain;},update(p){payload=p;operation='update';return chain;},
+      then(resolve){if(table==='rr_media'){const rows=(db.media[String(entityId)]||[]).filter(m=>(!entityType||entityType==='printing')&&(!mediaCategory||mediaCategory==='print'));return Promise.resolve({error:null,data:rows}).then(resolve)}return Promise.resolve({error:null,data:[]}).then(resolve);},
       async order(){return{error:null,data:db.masters.map(p=>({...p,frames:db.frames.filter(f=>f.print_id===p.id)}))};},
       async in(k,vals){return{error:null,data:db.frames.filter(f=>vals.includes(f.frame_no))};},
       async single(){db.writes.push({operation,payload});let row;if(operation==='insert'){row={...payload,id:'print-'+(db.masters.length+1)};db.masters.push(row);}else{row=db.masters.find(p=>p.id===id);Object.assign(row,payload);}return{data:{...row},error:null};}};return chain;},
@@ -60,7 +61,7 @@ async function chatPage(){
    const p=await printPage();await fillPrint(p);await p.locator('#savePrintBtn').click();await p.waitForSelector('[data-edit]');await p.locator('[data-edit]').click();
    assert.equal(await p.locator('#designColours').inputValue(),'2');assert.equal(await p.locator('.frame-no').count(),4);
    assert.deepEqual(await p.locator('.frame-no').evaluateAll(ns=>ns.map(n=>n.value)),['F1','F2','F3','F4']);
-   assert.equal(await p.evaluate(()=>__printDb.masters.length),1);assert.equal(await p.evaluate(()=>__printDb.rpcCalls[0].args.p_allow_reassign),false);
+   assert.equal(await p.evaluate(()=>__printDb.masters.length),1);assert.equal(await p.evaluate(()=>__printDb.rpcCalls[0].args.p_allow_reassign),false);assert.equal(await p.evaluate(()=>__printDb.media['print-1']?.length),1);
    if(process.env.TEST71_EVIDENCE_DIR){fs.mkdirSync(process.env.TEST71_EVIDENCE_DIR,{recursive:true});await p.screenshot({path:path.join(process.env.TEST71_EVIDENCE_DIR,'print-two-colours-four-frames.png'),fullPage:true});}await p.close();
   });
   await run('Print: duplicate Frame Nos stay blocked without a master write',async()=>{
