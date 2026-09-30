@@ -54,9 +54,9 @@ function renderImages(){
  $("iconStatus").innerHTML=icon?`<img src="${RR.safeText(icon.url)}"><div><small>PRINT ICON</small><strong>${RR.safeText(icon.label)}</strong></div>`:`<span class="print-icon-star">★</span><div><small>PRINT ICON</small><strong>No icon selected</strong></div>`;
  $("imagePreview").innerHTML=list.map(item=>{
   const isIcon=icon&&item.type===icon.type&&item.id===icon.id;
-  return `<figure class="print-media-item ${isIcon?"is-icon":""}" data-type="${item.type}" data-id="${RR.safeText(item.id)}"><div class="print-media-thumb"><img src="${RR.safeText(item.url)}">${isIcon?'<span class="print-icon-badge">★ PRINT ICON</span>':""}<span class="print-hold-hint">Hold</span></div><figcaption>${RR.safeText(item.label)}</figcaption></figure>`;
+  return `<figure class="print-media-item ${isIcon?"is-icon":""}" data-type="${item.type}" data-id="${RR.safeText(item.id)}"><div class="print-media-thumb"><img src="${RR.safeText(item.url)}">${isIcon?'<span class="print-icon-badge">★ PRINT ICON</span>':""}<span class="print-hold-hint">Hold</span></div><figcaption>${RR.safeText(item.label)}</figcaption>${printId()?`<div class="print-media-actions"><button type="button" data-image-view>View</button><button type="button" data-image-icon>Set Icon</button><button type="button" data-image-delete>Delete</button></div>`:""}</figure>`;
  }).join("");
- list.forEach(item=>bindLongPress($("imagePreview").querySelector(`[data-type="${item.type}"][data-id="${CSS.escape(String(item.id))}"]`),item));
+ list.forEach(item=>{const el=$("imagePreview").querySelector(`[data-type="${item.type}"][data-id="${CSS.escape(String(item.id))}"]`);bindLongPress(el,item);el?.querySelector("[data-image-view]")?.addEventListener("click",e=>{e.stopPropagation();openViewer(item)});el?.querySelector("[data-image-icon]")?.addEventListener("click",async e=>{e.stopPropagation();selectedIcon={type:item.type,id:item.id};renderImages();if(item.type==="saved")await setSavedIcon(item.id);say("Print Icon updated.","success")});el?.querySelector("[data-image-delete]")?.addEventListener("click",e=>{e.stopPropagation();activeImage=item;$("actionRemove").click()})});
 }
 
 function updateFiles(){
