@@ -83,7 +83,10 @@ async function saveItem(ev){
   state.editing=null;closeSheet('itemSheet');await load();say(`${C.label} ${wasEditing?'updated':'saved'}.`,'success');
  }catch(e){
   console.error(e);
-  const msg=err(e);say(msg,'error');
+  const raw=err(e),duplicate=/23505|duplicate key value|already exists/i.test(raw);
+  const msg=duplicate?`${C.label} No ${$('itemNo').value.trim()} already exists.`:raw;
+  say(msg,'error');
+  if(duplicate){$('itemNo').focus();try{$('itemNo').select()}catch(_e){}}
   let inline=$('itemSaveError');
   if(!inline){inline=document.createElement('div');inline.id='itemSaveError';inline.className='message error';inline.style.margin='10px 20px';$('itemForm').querySelector('.sticky')?.before(inline)}
   inline.textContent=msg;inline.scrollIntoView({block:'nearest'});
