@@ -340,7 +340,7 @@ async function closeMasterSheet(sync=true){
   if(sync&&ctx){await detectCreated(false)}
   state.createContext=null;
   const sheet=$("masterSheet");sheet.classList.add("hidden");sheet.setAttribute("aria-hidden","true");
-  const frame=$("masterFrame");frame.onload=null;frame.src="about:blank";
+  frame.onload=null;frame.src="about:blank";
   renderPicker()
 }
 
