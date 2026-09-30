@@ -46,7 +46,12 @@ function getClient(){
   return [window.supabaseDb,window.redzedSupabase,window.sb].find(x=>x?.from)||null
 }
 async function waitForClient(){const started=Date.now();while(Date.now()-started<12000){const c=getClient();if(c)return c;await new Promise(r=>setTimeout(r,100))}return null}
-async function loadRole(){const r=await state.client.rpc("rr_upm_effective_identity_v200");if(r.error)throw new Error(`Effective role could not be verified: ${textError(r.error)}`);state.role=String(r.data?.role_code||r.data?.resolved_role||"").toUpperCase();if(!state.role)throw new Error("Effective role could not be verified.")}
+async function withTimeout(promise,label,ms=8000){
+  let timer;
+  try{return await Promise.race([promise,new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error(`${label} timed out after ${ms/1000}s`)),ms)})])}
+  finally{clearTimeout(timer)}
+}
+async function loadRole(){const r=await withTimeout(state.client.rpc("rr_upm_effective_identity_v200"),"Effective role",8000);if(r.error)throw new Error(`Effective role could not be verified: ${textError(r.error)}`);state.role=String(r.data?.role_code||r.data?.resolved_role||"").toUpperCase();if(!state.role)throw new Error("Effective role could not be verified.")}
 async function currentDataMode(){try{const r=await state.client.rpc("rr_app_data_mode_state_v786");if(!r.error&&r.data?.default_mode)return String(r.data.default_mode).toUpperCase()}catch(_e){}return "TEST"}
 async function rows(table){const r=await state.client.from(table).select("*");if(r.error)throw new Error(`${table}: ${textError(r.error)}`);return r.data||[]}
 async function optionalRows(table){try{return await rows(table)}catch(e){console.warn(e);return[]}}
@@ -94,20 +99,20 @@ async function loadData(){
 
     // Render the actionable CB queue first. Master/library enrichment must never
     // hold the whole Art Decision screen on its initial spinner.
-    const allR=await state.client.rpc("rr_pm_decision_filter_v802",{p_filter:"ALL"});
+    const allR=await withTimeout(state.client.rpc("rr_pm_decision_filter_v802",{p_filter:"ALL"}),"CB decision list",8000);
     if(allR.error)throw new Error(`CB decision list: ${textError(allR.error)}`);
     state.decisions=Array.isArray(allR.data)?allR.data:[];
     if(requestedId&&!state.decisions.some(x=>String(x.cb_unit_id)===requestedId)){
-      const exact=await state.client.from("rr_pm_decision_status_v802").select("*").eq("cb_unit_id",requestedId).maybeSingle();
+      const exact=await withTimeout(state.client.from("rr_pm_decision_status_v802").select("*").eq("cb_unit_id",requestedId).maybeSingle(),"Requested Art Decision",8000);
       if(exact.error)throw new Error(`Requested Art Decision: ${textError(exact.error)}`);
       if(exact.data)state.decisions=[exact.data,...state.decisions]
     }
     const ids=state.decisions.map(x=>x.cb_unit_id).filter(Boolean);
     let units=[];
-    if(ids.length){const u=await state.client.from("rr_cb_units").select("*").in("id",ids);if(u.error)throw new Error(`CB children: ${textError(u.error)}`);units=u.data||[]}
+    if(ids.length){const u=await withTimeout(state.client.from("rr_cb_units").select("*").in("id",ids),"CB children",8000);if(u.error)throw new Error(`CB children: ${textError(u.error)}`);units=u.data||[]}
     const purchaseIds=[...new Set(units.map(x=>x.purchase_id).filter(Boolean))];
     let purchases=[];
-    if(purchaseIds.length){const p=await state.client.from("rr_fabric_purchases").select("*").in("id",purchaseIds);if(p.error)throw new Error(`CB purchases: ${textError(p.error)}`);purchases=p.data||[]}
+    if(purchaseIds.length){const p=await withTimeout(state.client.from("rr_fabric_purchases").select("*").in("id",purchaseIds),"CB purchases",8000);if(p.error)throw new Error(`CB purchases: ${textError(p.error)}`);purchases=p.data||[]}
 
     Object.assign(state,{units,purchases});
     state.counts=derivedCounts();
