@@ -115,17 +115,22 @@ async function loadData(){
     $("gallery").setAttribute("aria-busy","false");
     say(`${state.decisions.length} CB child decision records loaded.`,"success");
 
-    // Enrich previews/pickers after the queue is already usable. Optional
-    // assignment tables stay optional; a slow one can no longer pin the gallery.
-    const [countR,arts,prints,stickers,metals,media,assignments,printAssignments,stickerAssignments,metalAssignments,stickerInstructions,metalInstructions]=await Promise.all([
-      state.client.rpc("rr_pm_decision_tab_counts_v802"),
-      rows("rr_art_master"),printRows(),rows("rr_sticker_master_library_v803"),rows("rr_metal_id_master_library_v803"),mediaRows(),
-      optionalRows("rr_cb_art_assignments"),optionalRows("rr_cb_print_assignments"),optionalRows("rr_cb_sticker_assignments"),optionalRows("rr_cb_metal_id_assignments_v801"),
-      optionalRows("rr_art_sticker_instructions"),optionalRows("rr_art_metal_id_instructions_v801")
-    ]);
-    Object.assign(state,{arts:activeOnly(arts),prints:activeOnly(prints),stickers:activeOnly(stickers),metals:activeOnly(metals),media,assignments,printAssignments,stickerAssignments,metalAssignments,stickerInstructions,metalInstructions});
-    state.counts=!countR.error&&countR.data?countR.data:derivedCounts();
-    renderStatusTabs();renderGallery();
+    // Enrich previews/pickers after the queue is already usable. A secondary
+    // failure must not replace the already-rendered CB queue with an error card.
+    try{
+      const [countR,arts,prints,stickers,metals,media,assignments,printAssignments,stickerAssignments,metalAssignments,stickerInstructions,metalInstructions]=await Promise.all([
+        state.client.rpc("rr_pm_decision_tab_counts_v802"),
+        rows("rr_art_master"),printRows(),rows("rr_sticker_master_library_v803"),rows("rr_metal_id_master_library_v803"),mediaRows(),
+        optionalRows("rr_cb_art_assignments"),optionalRows("rr_cb_print_assignments"),optionalRows("rr_cb_sticker_assignments"),optionalRows("rr_cb_metal_id_assignments_v801"),
+        optionalRows("rr_art_sticker_instructions"),optionalRows("rr_art_metal_id_instructions_v801")
+      ]);
+      Object.assign(state,{arts:activeOnly(arts),prints:activeOnly(prints),stickers:activeOnly(stickers),metals:activeOnly(metals),media,assignments,printAssignments,stickerAssignments,metalAssignments,stickerInstructions,metalInstructions});
+      state.counts=!countR.error&&countR.data?countR.data:derivedCounts();
+      renderStatusTabs();renderGallery();
+    }catch(enrichError){
+      console.warn("Art Decision enrichment deferred:",enrichError);
+      say(`${state.decisions.length} CB child decision records loaded. Preview data is still unavailable.`,"success");
+    }
   }catch(e){
     console.error(e);
     $("gallery").innerHTML=`<article class="empty"><h3>Art Decide Master could not load</h3><p>${esc(textError(e))}</p></article>`;
