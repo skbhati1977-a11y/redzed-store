@@ -157,6 +157,12 @@ function renderCards(){
 }
 $("printSearch").oninput=renderCards;$("reloadPrints").onclick=()=>loadData().catch(e=>say(e.message,"error"));
 
+function bindPrintNoAssist(){
+ const input=$("printNo");if(!input||input.dataset.assistBound)return;input.dataset.assistBound="1";const list=document.createElement("div");list.style.cssText="display:none;position:absolute;z-index:40;left:0;right:0;top:100%;max-height:220px;overflow:auto;background:#15151b;border:1px solid #45454f;border-radius:12px;padding:6px;margin-top:4px";input.parentElement.style.position="relative";input.parentElement.appendChild(list);
+ const currentId=()=>String($("printId").value||""),matches=()=>{const q=input.value.trim().toUpperCase();return q?prints.filter(x=>String(x.id)!==currentId()&&String(x.print_no||"").toUpperCase().includes(q)).slice(0,12):[]},exact=()=>{const q=input.value.trim().toUpperCase();return prints.find(x=>String(x.id)!==currentId()&&String(x.print_no||"").trim().toUpperCase()===q)};
+ const paint=()=>{const rows=matches();list.innerHTML=rows.map(x=>`<button type="button" data-id="${RR.safeText(x.id)}" style="display:block;width:100%;text-align:left;padding:10px;border:0;background:transparent;color:inherit"><strong>${RR.safeText(x.print_no)}</strong> · ${RR.safeText(x.print_name||"")}</button>`).join("");list.style.display=rows.length?"block":"none";input.setCustomValidity(exact()?`Print No ${input.value.trim()} already exists.`:"")};input.addEventListener("input",paint);input.addEventListener("focus",paint);input.addEventListener("blur",()=>{const d=exact();setTimeout(()=>list.style.display="none",150);if(d){input.reportValidity();setTimeout(()=>{input.focus();input.select()},0)}});list.addEventListener("mousedown",e=>{const b=e.target.closest("[data-id]");if(!b)return;e.preventDefault();const x=prints.find(v=>String(v.id)===String(b.dataset.id));if(x){input.value=x.print_no||"";paint();input.reportValidity()}});
+}
+bindPrintNoAssist();
 async function editPrint(id){
  const p=prints.find(x=>String(x.id)===String(id));if(!p)return;
  $("printId").value=p.id;$("printNo").value=p.print_no||"";$("printName").value=p.print_name||"";$("designColours").value=compactNumber(p.design_colours||1);$("shortNote").value=p.short_note||"";
