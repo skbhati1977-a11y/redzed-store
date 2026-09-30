@@ -10,7 +10,7 @@ const state={
   stickerAssignments:[],metalAssignments:[],stickerInstructions:[],metalInstructions:[],
   active:null,step:"art",artId:null,printMode:"NA",printIds:[],stickerMode:"NA",
   stickerIds:[],metalMode:"NA",metalIds:[],createContext:null,createTimers:[],
-  viewerItems:[],viewerIndex:0
+  viewerItems:[],viewerIndex:0,allowedArtCategoryIds:[]
 };
 
 const MASTER_META={
@@ -257,10 +257,11 @@ function paintViewer(){
 function closeViewer(){const sheet=$("imageViewer");sheet.classList.add("hidden");sheet.setAttribute("aria-hidden","true");$("viewerImage").removeAttribute("src");state.viewerItems=[];state.viewerIndex=0;if($("decisionSheet").classList.contains("hidden")&&$("masterSheet").classList.contains("hidden"))document.body.style.overflow=""}
 function moveViewer(delta){const n=state.viewerItems.length;if(!n)return;state.viewerIndex=(state.viewerIndex+delta+n)%n;paintViewer()}
 
-function openDecision(unitId){
+async function loadAllowedArtCategories(unitId){try{const a=await state.client.from('rr_cb_material_allocations').select('purchase_entry_id').eq('division_id',unitId);if(a.error)throw a.error;const ids=[...new Set((a.data||[]).map(x=>x.purchase_entry_id).filter(Boolean))];if(!ids.length)return[];const e=await state.client.from('rr_cb_purchase_entries').select('allowed_art_category_ids').in('id',ids);if(e.error)throw e.error;return [...new Set((e.data||[]).flatMap(x=>x.allowed_art_category_ids||[]).map(String))]}catch(e){console.warn('Allowed Art categories',e);return[]}}
+async function openDecision(unitId){
   const u=unitFor(unitId);if(!u)return;
   const a=assignmentFor(unitId),d=decisionFor(unitId);
-  state.active=u;state.step="art";state.artId=a?.art_id?String(a.art_id):null;
+  state.active=u;state.allowedArtCategoryIds=await loadAllowedArtCategories(unitId);state.step="art";state.artId=a?.art_id?String(a.art_id):null;
   state.printIds=printIdsForAssignment(a);state.printMode=a?.print_due?"DUE":a?.print_not_applicable?"NA":state.printIds.length?"SELECTED":d?.print_status==="PRINT_DUE"?"DUE":"NA";
   state.stickerIds=stickerIdsForAssignment(a);state.stickerMode=a?.sticker_due?"DUE":a?.sticker_not_applicable?"NA":state.stickerIds.length?"SELECTED":d?.sticker_status==="STICKER_DUE"?"DUE":"NA";
   state.metalIds=metalIdsForAssignment(a);state.metalMode=a?.metal_id_due?"DUE":a?.metal_id_not_applicable?"NA":state.metalIds.length?"SELECTED":d?.metal_id_status==="METAL_ID_DUE"?"DUE":"NA";
@@ -284,7 +285,7 @@ function renderPicker(){
   $("quickAdd").innerHTML=`<button class="btn add-new" id="addNewMaster" type="button">+ Add New ${esc(meta.label)}</button><small>Creates directly in ${esc(meta.label)} Master and returns here for selection.</small>`;
   $("addNewMaster").onclick=()=>openMasterCreate(step);
   if(step==="art"){mode.classList.add("hidden");mode.innerHTML=""}else{mode.classList.remove("hidden");const m=currentMode();mode.innerHTML=[["NA","N.A."],["DUE","DUE"],["SELECTED","SELECT MASTER"]].map(([v,l])=>`<button class="mode ${m===v?"selected":""}" type="button" data-mode="${v}"><strong>${l}</strong></button>`).join("");mode.querySelectorAll("[data-mode]").forEach(b=>b.onclick=()=>setMode(b.dataset.mode))}
-  let list=sourceForStep();if(step!=="art"&&currentMode()!=="SELECTED")list=[];
+  let list=sourceForStep();if(step==="art"&&state.allowedArtCategoryIds.length)list=list.filter(row=>state.allowedArtCategoryIds.includes(String(row.art_category_id||'')));if(step!=="art"&&currentMode()!=="SELECTED")list=[];
   list=list.filter(row=>{const m=itemMeta(step,row);return !q||`${m.no} ${m.name}`.toLowerCase().includes(q)});
   const selected=selectedIds();
   $("picker").innerHTML=list.map(row=>{const m=itemMeta(step,row),on=step==="art"?String(state.artId)===String(m.id):selected.includes(String(m.id)),image=itemImage(step,row);return `<button class="pick ${on?"selected":""}" type="button" data-pick="${esc(m.id)}"><span class="pick-media">${image?`<img src="${esc(image)}" alt="${esc(`${m.no} thumbnail`)}" loading="lazy">`:`<span>NO IMAGE</span>`}</span><span class="pick-copy"><strong>${esc(m.no)}</strong><small>${esc(m.name)}</small></span></button>`}).join("")||`<article class="empty" style="padding:22px"><p>${step!=="art"&&currentMode()!=="SELECTED"?"N.A. / DUE selected. Continue karein.":"No matching master found. + Add New use kar sakte hain."}</p></article>`;
@@ -354,7 +355,7 @@ function stepError(step){if(step==="art"&&!state.artId)return"Art select karna z
 function allError(){return stepError("art")||stepError("print")||stepError("sticker")||stepError("metal")}
 async function advance(){const err=stepError(state.step);if(err){decisionSay(err,"error");return}if(state.step==="art")return showStep("print");if(state.step==="print")return showStep("sticker");if(state.step==="sticker")return showStep("metal");return saveDecision()}
 async function saveDecision(){
-  const err=allError();if(err){decisionSay(err,"error");return}
+  const err=allError();if(err){decisionSay(err,"error");return}if(state.allowedArtCategoryIds.length){const art=byId(state.arts,state.artId);if(!art||!state.allowedArtCategoryIds.includes(String(art.art_category_id||''))){decisionSay('Selected Art category is not allowed for this S division material mapping.','error');showStep('art');return}}
   const btn=$("decisionNext");setBusy(btn,true,"Saving…");
   try{
     const savedCb=cbNo(state.active);
