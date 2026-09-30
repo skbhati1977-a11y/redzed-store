@@ -321,9 +321,9 @@ function renderImages(){
   const is=ico&&x.type===ico.type&&x.id===ico.id;
   return `<figure class="art-media-item ${is?"is-icon":""}" data-type="${x.type}" data-id="${x.id}">
    <div class="art-media-thumb"><img src="${RR.safeText(x.url)}">${is?'<span class="art-icon-badge">★ ART ICON</span>':""}<span class="art-longpress-hint">Hold</span></div>
-   <figcaption>${RR.safeText(x.label)}</figcaption></figure>`;
+   <figcaption>${RR.safeText(x.label)}</figcaption>${artId()?`<div class="art-media-actions"><button type="button" data-image-view>View</button><button type="button" data-image-icon>Set Icon</button><button type="button" data-image-delete>Delete</button></div>`:""}</figure>`;
  }).join("");
- list.forEach(x=>bindHold(document.querySelector(`[data-type="${x.type}"][data-id="${CSS.escape(String(x.id))}"]`),x));
+ list.forEach(x=>{const el=document.querySelector(`[data-type="${x.type}"][data-id="${CSS.escape(String(x.id))}"]`);bindHold(el,x);el?.querySelector("[data-image-view]")?.addEventListener("click",e=>{e.stopPropagation();openViewer(x)});el?.querySelector("[data-image-icon]")?.addEventListener("click",async e=>{e.stopPropagation();selectedIcon={type:x.type,id:x.id};renderImages();if(x.type==="saved")await setSavedIcon(x.id);say("Art Icon updated.","success")});el?.querySelector("[data-image-delete]")?.addEventListener("click",e=>{e.stopPropagation();activeImage=x;$("actionRemove").click()})});
 }
 function bindHold(el,image){
  if(!el)return;let timer,long=false;
