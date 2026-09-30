@@ -7,6 +7,7 @@ on:
       - real-print-master.html
       - real-print-master.js
       - real-art-decide-master-v9231.js
+      - real-art-decide-master.html
       - test70-real-chat-live-v70.js
       - test70-cb-purchase-real-chat-pilot.html
       - tests/e2e/**
