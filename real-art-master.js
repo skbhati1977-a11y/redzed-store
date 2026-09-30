@@ -399,6 +399,14 @@ function renderCards(){
  return `<article class="art-master-card"><button class="art-card-image" data-view="${a.id}">${ico?`<img src="${RR.safeText(ico.file_url)}"><span class="art-card-icon-badge">★ ICON</span>`:'<div class="art-placeholder">ART</div>'}</button><div class="art-card-body"><small>${RR.safeText(s.category_name||a.category||"")}</small><h3>${RR.safeText(a.art_no)} · ${RR.safeText(a.item_name||a.product_name||"")}</h3><div class="art-feature-badges">${items.slice(0,3).map(i=>`<span>${RR.safeText(i.text)}</span>`).join("")}</div><button class="rr-btn rr-btn-secondary" data-edit="${a.id}">Edit</button></div></article>`}).join(""):"<p>No Art saved yet.</p>";
  cards.querySelectorAll("[data-edit]").forEach(b=>b.onclick=()=>editArt(b.dataset.edit));cards.querySelectorAll("[data-view]").forEach(b=>b.onclick=()=>openSavedViewer(b.dataset.view));
 }
+function bindArtNoAssist(){
+ const input=$("artNo");if(!input||input.dataset.assistBound)return;input.dataset.assistBound="1";
+ const list=document.createElement("div");list.style.cssText="display:none;position:absolute;z-index:40;left:0;right:0;top:100%;max-height:220px;overflow:auto;background:#15151b;border:1px solid #45454f;border-radius:12px;padding:6px;margin-top:4px";input.parentElement.style.position="relative";input.parentElement.appendChild(list);
+ const currentId=()=>String($("artId").value||""),matches=()=>{const q=input.value.trim().toUpperCase();return q?arts.filter(x=>String(x.id)!==currentId()&&String(x.art_no||"").toUpperCase().includes(q)).slice(0,12):[]},exact=()=>{const q=input.value.trim().toUpperCase();return arts.find(x=>String(x.id)!==currentId()&&String(x.art_no||"").trim().toUpperCase()===q)};
+ const paint=()=>{const rows=matches();list.innerHTML=rows.map(x=>`<button type="button" data-id="${RR.safeText(x.id)}" style="display:block;width:100%;text-align:left;padding:10px;border:0;background:transparent;color:inherit"><strong>${RR.safeText(x.art_no)}</strong> · ${RR.safeText(x.item_name||x.product_name||"")}</button>`).join("");list.style.display=rows.length?"block":"none";input.setCustomValidity(exact()?`Art No ${input.value.trim()} already exists.`:"")};
+ input.addEventListener("input",paint);input.addEventListener("focus",paint);input.addEventListener("blur",()=>{const d=exact();setTimeout(()=>list.style.display="none",150);if(d){input.reportValidity();setTimeout(()=>{input.focus();input.select()},0)}});list.addEventListener("mousedown",e=>{const b=e.target.closest("[data-id]");if(!b)return;e.preventDefault();const x=arts.find(v=>String(v.id)===String(b.dataset.id));if(x){input.value=x.art_no||"";paint();input.reportValidity()}});
+}
+bindArtNoAssist();
 async function editArt(id){
  const a=arts.find(x=>String(x.id)===String(id));if(!a)return;
  $("artId").value=a.id;$("artNo").value=a.art_no||"";$("itemName").value=a.item_name||a.product_name||"";$("defaultMargin").value=0;$("designNotes").value=a.other_material_note||"";
