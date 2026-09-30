@@ -76,12 +76,11 @@ $("actionView").onclick=()=>{const x=activeImage;closeActions();if(x)openViewer(
 $("actionSetIcon").onclick=async()=>{const x=activeImage;closeActions();if(!x)return;selectedIcon={type:x.type,id:x.id};renderImages();if(x.type==="saved")await setSavedIcon(x.id);say("Print Icon updated.","success")};
 $("actionRemove").onclick=async()=>{
  const x=activeImage;closeActions();if(!x)return;
- const icon=currentIcon(),isCurrent=icon&&icon.type===x.type&&icon.id===x.id;
- if(isCurrent&&allImages().length>1){alert("Set another image as Print Icon first.");return}
- if(!confirm(`Remove "${x.label}"?`))return;
+ const icon=currentIcon(),isCurrent=icon&&icon.type===x.type&&icon.id===x.id,remaining=allImages().filter(y=>!(y.type===x.type&&y.id===x.id)),replacement=remaining[0]||null;
+ if(!confirm(`Remove "${x.label}"?${isCurrent&&replacement?" Next image will become Print Icon.":isCurrent?" This is the only image.":""}`))return;
  if(x.type==="new"){const q=queued.find(y=>y.tempId===x.id);if(q)URL.revokeObjectURL(q.url);queued=queued.filter(y=>y.tempId!==x.id)}
- else{if(x.media.storage_path)await supabaseClient.storage.from("redzed-media").remove([x.media.storage_path]);await supabaseClient.from("rr_media").delete().eq("id",x.id);mediaMap[String(printId())]=savedImages().filter(y=>y.id!==x.id)}
- if(isCurrent)selectedIcon=null;renderImages();
+ else{if(x.media.storage_path){const s=await supabaseClient.storage.from("redzed-media").remove([x.media.storage_path]);if(s.error)throw s.error}const d=await supabaseClient.from("rr_media").delete().eq("id",x.id);if(d.error)throw d.error;mediaMap[String(printId())]=savedImages().filter(y=>y.id!==x.id)}
+ if(isCurrent){selectedIcon=replacement?{type:replacement.type,id:replacement.id}:null;if(replacement?.type==="saved")await setSavedIcon(replacement.id)}renderImages();
 };
 
 async function setSavedIcon(id){
