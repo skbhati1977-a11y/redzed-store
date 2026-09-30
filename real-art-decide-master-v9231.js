@@ -91,13 +91,10 @@ async function loadData(){
   const refresh=$("refresh");setBusy(refresh,true,"Loading…");$("gallery").setAttribute("aria-busy","true");
   try{
     const requestedId=String(new URLSearchParams(location.search).get("cb_unit_id")||"").trim();
-    const [allR,countR,arts,prints,stickers,metals,media,assignments,printAssignments,stickerAssignments,metalAssignments,stickerInstructions,metalInstructions]=await Promise.all([
-      state.client.rpc("rr_pm_decision_filter_v802",{p_filter:"ALL"}),
-      state.client.rpc("rr_pm_decision_tab_counts_v802"),
-      rows("rr_art_master"),printRows(),rows("rr_sticker_master_library_v803"),rows("rr_metal_id_master_library_v803"),mediaRows(),
-      optionalRows("rr_cb_art_assignments"),optionalRows("rr_cb_print_assignments"),optionalRows("rr_cb_sticker_assignments"),optionalRows("rr_cb_metal_id_assignments_v801"),
-      optionalRows("rr_art_sticker_instructions"),optionalRows("rr_art_metal_id_instructions_v801")
-    ]);
+
+    // Render the actionable CB queue first. Master/library enrichment must never
+    // hold the whole Art Decision screen on its initial spinner.
+    const allR=await state.client.rpc("rr_pm_decision_filter_v802",{p_filter:"ALL"});
     if(allR.error)throw new Error(`CB decision list: ${textError(allR.error)}`);
     state.decisions=Array.isArray(allR.data)?allR.data:[];
     if(requestedId&&!state.decisions.some(x=>String(x.cb_unit_id)===requestedId)){
@@ -111,10 +108,24 @@ async function loadData(){
     const purchaseIds=[...new Set(units.map(x=>x.purchase_id).filter(Boolean))];
     let purchases=[];
     if(purchaseIds.length){const p=await state.client.from("rr_fabric_purchases").select("*").in("id",purchaseIds);if(p.error)throw new Error(`CB purchases: ${textError(p.error)}`);purchases=p.data||[]}
-    Object.assign(state,{units,purchases,arts:activeOnly(arts),prints:activeOnly(prints),stickers:activeOnly(stickers),metals:activeOnly(metals),media,assignments,printAssignments,stickerAssignments,metalAssignments,stickerInstructions,metalInstructions});
+
+    Object.assign(state,{units,purchases});
+    state.counts=derivedCounts();
+    renderStatusTabs();renderGallery();
+    $("gallery").setAttribute("aria-busy","false");
+    say(`${state.decisions.length} CB child decision records loaded.`,"success");
+
+    // Enrich previews/pickers after the queue is already usable. Optional
+    // assignment tables stay optional; a slow one can no longer pin the gallery.
+    const [countR,arts,prints,stickers,metals,media,assignments,printAssignments,stickerAssignments,metalAssignments,stickerInstructions,metalInstructions]=await Promise.all([
+      state.client.rpc("rr_pm_decision_tab_counts_v802"),
+      rows("rr_art_master"),printRows(),rows("rr_sticker_master_library_v803"),rows("rr_metal_id_master_library_v803"),mediaRows(),
+      optionalRows("rr_cb_art_assignments"),optionalRows("rr_cb_print_assignments"),optionalRows("rr_cb_sticker_assignments"),optionalRows("rr_cb_metal_id_assignments_v801"),
+      optionalRows("rr_art_sticker_instructions"),optionalRows("rr_art_metal_id_instructions_v801")
+    ]);
+    Object.assign(state,{arts:activeOnly(arts),prints:activeOnly(prints),stickers:activeOnly(stickers),metals:activeOnly(metals),media,assignments,printAssignments,stickerAssignments,metalAssignments,stickerInstructions,metalInstructions});
     state.counts=!countR.error&&countR.data?countR.data:derivedCounts();
     renderStatusTabs();renderGallery();
-    say(`${state.decisions.length} CB child decision records loaded.`,"success")
   }catch(e){
     console.error(e);
     $("gallery").innerHTML=`<article class="empty"><h3>Art Decide Master could not load</h3><p>${esc(textError(e))}</p></article>`;
