@@ -79,10 +79,11 @@ async function saveItem(ev){
  const btn=ev.submitter||$('itemSaveBtn'),prior=btn.textContent,wasEditing=!!state.editing;
  btn.disabled=true;btn.textContent=wasEditing?`Updating ${C.label}…`:`Saving ${C.label}…`;
  try{
+  const file=$('itemImage').files?.[0],hasExisting=!!state.editing?.image_url;
+  if(!file&&!hasExisting){const msg=`${C.label} image is required first.`;say(msg,'error');$('itemImage').focus();throw new Error(msg)}
   const payload={p_id:state.editing?.id||null,p_is_active:$('itemActive').checked};
   payload[C.rpcNoParam]=$('itemNo').value.trim();payload[C.rpcNameParam]=$('itemName').value.trim()||null;payload[C.rpcAttrParam]=$('itemAttr').value;
   const id=await rpc(C.upsertRpc,payload);
-  const file=$('itemImage').files?.[0];
   if(file){
    if(!window.RR?.uploadMedia)throw new Error('Image upload runtime unavailable.');
    if(state.editing?.image_url)await rpc('rr_accessory_reference_image_delete_v684',{p_master_type:C.itemType,p_master_id:id});
