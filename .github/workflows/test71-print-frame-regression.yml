@@ -4,6 +4,7 @@ on:
   push:
     branches: [test71-real-chat-e2e-finalization]
     paths:
+      - real-common.js
       - real-print-master.html
       - real-print-master.js
       - real-art-decide-master-v9231.js
@@ -44,6 +45,7 @@ jobs:
         run: npm ci --ignore-scripts --no-audit --no-fund
       - name: Check touched runtime syntax
         run: |
+          node --check real-common.js
           node --check real-print-master.js
           node --check real-art-decide-master-v9231.js
           node --check real-accessory-master-v804.js
