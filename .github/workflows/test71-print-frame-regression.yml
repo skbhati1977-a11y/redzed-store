@@ -6,6 +6,7 @@ on:
     paths:
       - real-print-master.html
       - real-print-master.js
+      - real-art-decide-master-v9231.js
       - test70-real-chat-live-v70.js
       - test70-cb-purchase-real-chat-pilot.html
       - tests/e2e/**
@@ -40,6 +41,7 @@ jobs:
       - name: Check touched runtime syntax
         run: |
           node --check real-print-master.js
+          node --check real-art-decide-master-v9231.js
           node --check test70-real-chat-live-v70.js
           node --check scripts/test71-print-navigation-browser.cjs
       - name: Retained static suite including print frame independence
