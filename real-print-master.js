@@ -225,9 +225,10 @@ form.onsubmit=async e=>{
   // Preserve the saved master identity if a later frame/media request fails: retry updates, never inserts a duplicate.
   $("printId").value=r.data.id;
   const fr=await supabaseClient.rpc("rr_save_print_frames",{p_print_id:r.data.id,p_rows:frames,p_allow_reassign:allowReassign===true});if(fr.error)throw fr.error;
-  const uploaded=[];for(const item of queued){const media=await RR.uploadMedia({file:item.file,entityType:"printing",entityId:r.data.id,mediaCategory:"print",sourceType:item.sourceType,visibilityScope:"factory",caption:`${r.data.print_no} print image`});uploaded.push({tempId:item.tempId,media})}
+  const queuedCount=queued.length,uploaded=[];for(const item of queued){const media=await RR.uploadMedia({file:item.file,entityType:"printing",entityId:r.data.id,mediaCategory:"print",sourceType:item.sourceType,visibilityScope:"factory",caption:`${r.data.print_no} print image`});if(!media?.id||!media?.file_url)throw new Error("Print image upload did not create a media record.");uploaded.push({tempId:item.tempId,media})}
   const iconId=selectedIcon?.type==="saved"?selectedIcon.id:uploaded.find(x=>x.tempId===selectedIcon?.id)?.media?.id;
-  if(iconId){await supabaseClient.from("rr_media").update({is_cover:false}).eq("entity_type","printing").eq("entity_id",r.data.id);await supabaseClient.from("rr_media").update({is_cover:true}).eq("id",iconId)}
+  if(iconId){const clear=await supabaseClient.from("rr_media").update({is_cover:false}).eq("entity_type","printing").eq("entity_id",r.data.id);if(clear.error)throw clear.error;const cover=await supabaseClient.from("rr_media").update({is_cover:true}).eq("id",iconId);if(cover.error)throw cover.error}
+  if(queuedCount){const mediaCheck=await supabaseClient.from("rr_media").select("id,file_url,is_cover").eq("entity_type","printing").eq("entity_id",r.data.id).eq("media_category","print");if(mediaCheck.error)throw mediaCheck.error;if((mediaCheck.data||[]).length<queuedCount)throw new Error("Print image save could not be verified. Please retry Save Print.");}
   rrPrintSaved=true;rrPrintDirty=false;say("Print saved successfully.","success");await loadData();window.parent?.postMessage?.({type:"RR_PRINT_MASTER_SAVED",print_id:r.data.id,print_no:r.data.print_no},"*");resetForm();
  }catch(err){console.error(err);say(err.message||"Print could not be saved.","error")}finally{btn.disabled=false;btn.textContent=printId()?"Update Print":"Save Print"}
 };
