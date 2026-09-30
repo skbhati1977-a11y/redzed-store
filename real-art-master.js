@@ -355,12 +355,11 @@ $("actionSetIcon").onclick=async()=>{
 };
 $("actionRemove").onclick=async()=>{
  const x=activeImage;closeActions();if(!x)return;
- const current=chosenIcon()&&chosenIcon().type===x.type&&chosenIcon().id===x.id;
- if(current&&allImages().length>1){alert("Set another image as Art Icon first.");return}
- if(!confirm(`Remove "${x.label}"?`))return;
+ const current=chosenIcon()&&chosenIcon().type===x.type&&chosenIcon().id===x.id,remaining=allImages().filter(y=>!(y.type===x.type&&y.id===x.id)),replacement=remaining[0]||null;
+ if(!confirm(`Remove "${x.label}"?${current&&replacement?" Next image will become Art Icon.":current?" This is the only image.":""}`))return;
  if(x.type==="new"){const q=queued.find(y=>y.tempId===x.id);if(q)URL.revokeObjectURL(q.url);queued=queued.filter(y=>y.tempId!==x.id)}
  else{if(x.media.storage_path){const s=await supabaseClient.storage.from("redzed-media").remove([x.media.storage_path]);if(s.error)throw s.error}const d=await supabaseClient.from("rr_media").delete().eq("id",x.id);if(d.error)throw d.error;mediaMap[String(artId())]=saved().filter(y=>y.id!==x.id)}
- if(current)selectedIcon=null;renderImages();
+ if(current){selectedIcon=replacement?{type:replacement.type,id:replacement.id}:null;if(replacement?.type==="saved")await setSavedIcon(replacement.id)}renderImages();
 };
 async function setSavedIcon(id){
  const a=artId();if(!a)return;
