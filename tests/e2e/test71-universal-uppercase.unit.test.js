@@ -154,3 +154,6 @@ test('Material card uses alphabetic internal steps separate from material number
 
 
 test('CB supplier Add New persists canonical details and auto-selects saved supplier',()=>{const cb=fs.readFileSync(path.resolve(__dirname,'../../real-cb-new-v9130-fix2.html'),'utf8');assert.ok(cb.includes('CANONICAL SUPPLIER MASTER'));assert.ok(cb.includes('cbNewSupplierMobile'));assert.ok(cb.includes('cbNewSupplierAddress'));assert.ok(cb.includes('cbNewSupplierGstin'));assert.ok(cb.includes('rr_supplier_upsert_v1'));assert.ok(cb.includes('materials[supplierModalMaterialIndex].vendor=saved.supplier_name'));assert.ok(cb.includes('secondary compact-new addVendor'));assert.ok(!cb.includes("prompt('New Supplier Name'"))});
+
+
+test('Supplier picker shows complete canonical active list and does not use filtered datalist',()=>{const cb=fs.readFileSync(path.resolve(__dirname,'../../real-cb-new-v9130-fix2.html'),'utf8');assert.ok(cb.includes('<select class="vendor"'));assert.ok(cb.includes('vendorOpts.map'));assert.ok(cb.includes('Select Supplier…'));assert.ok(cb.includes("querySelector('.vendor')?.addEventListener('change'"));assert.ok(!cb.includes('<input class="vendor" list="vendorHistory"'))});
