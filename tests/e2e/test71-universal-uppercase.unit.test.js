@@ -175,3 +175,9 @@ test('Canonical material Art rules drive reverse Set mirror and Direct Art is co
 
 
 test('Art Decision excludes category-less Arts and blocks category-less selection',()=>{const js=fs.readFileSync(path.resolve(__dirname,'../../real-art-decide-master-v9231.js'),'utf8');assert.ok(js.includes("if(step===\"art\")list=list.filter(row=>!!row.art_category_id)"));assert.ok(js.includes("if(!art?.art_category_id)"));assert.ok(js.includes('इस Art की category अभी mapped नहीं है.'))});
+
+
+test('Canonical CB invokeSave exists and uses v600 idempotent save authority',()=>{const cb=fs.readFileSync(path.resolve(__dirname,'../../real-cb-new-v9130-fix2.html'),'utf8');assert.ok(cb.includes('async function invokeSave('));assert.ok(cb.includes("rr_cb_department_save_v600"));assert.ok(cb.includes('p_action_id:pa.actionId'));assert.ok(cb.includes('p_payload:body'))});
+
+
+test('Technical errors never render raw through CB friendly error boundary',()=>{const cb=fs.readFileSync(path.resolve(__dirname,'../../real-cb-new-v9130-fix2.html'),'utf8');assert.ok(cb.includes('function isTechnicalError(raw)'));assert.ok(cb.includes('ReferenceError|TypeError|SyntaxError|is not defined'));assert.ok(cb.includes('Save पूरा नहीं हो सका. कृपया required details check करके दोबारा Save करें.'));assert.ok(!cb.includes('Canonical CB save service rejected the request'))});
