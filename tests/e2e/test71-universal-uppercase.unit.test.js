@@ -31,3 +31,6 @@ test('legacy CB material without canonical Art category mapping is exception-com
 
 
 test('CB Art thumbnails render inside mapped material and direct no-material panel',()=>{const cb=fs.readFileSync(path.resolve(__dirname,'../../real-cb-new-v9130-fix2.html'),'utf8');assert.match(cb,/DIRECT ART · NO MATERIAL/);assert.match(cb,/class="materialArtThumbs"/);assert.match(cb,/data-material-art/);assert.match(cb,/const mapped=new Set\(\)/);assert.match(cb,/!mapped\.has\(String\(unit\.id\)\)/)});
+
+
+test('mapped thumbnail requires both selected S and eligible Art category',()=>{const cb=fs.readFileSync(path.resolve(__dirname,'../../real-cb-new-v9130-fix2.html'),'utf8');assert.match(cb,/artCategoryByArt/);assert.match(cb,/eligible=new Set/);assert.match(cb,/eligible\.has\(String\(artCategoryId\|\|''\)\)/)});
