@@ -157,3 +157,6 @@ test('CB supplier Add New persists canonical details and auto-selects saved supp
 
 
 test('Supplier picker shows complete canonical active list and does not use filtered datalist',()=>{const cb=fs.readFileSync(path.resolve(__dirname,'../../real-cb-new-v9130-fix2.html'),'utf8');assert.ok(cb.includes('<select class="vendor"'));assert.ok(cb.includes('vendorOpts.map'));assert.ok(cb.includes('Select Supplier…'));assert.ok(cb.includes("querySelector('.vendor')?.addEventListener('change'"));assert.ok(!cb.includes('<input class="vendor" list="vendorHistory"'))});
+
+
+test('New Additional Material never auto-selects all Sets or infers Art categories from material name',()=>{const cb=fs.readFileSync(path.resolve(__dirname,'../../real-cb-new-v9130-fix2.html'),'utf8');assert.ok(cb.includes("pricingDriver:'rate',scope:'selected',selected:[]"));assert.ok(cb.includes('function defaultAllowedArtCategoryIds(){return []}'));assert.ok(cb.includes("m.scope='selected';m.selected=[];m.allowedArtCategoryIds=[]"));assert.ok(cb.includes('All Sets (manual)'))});
