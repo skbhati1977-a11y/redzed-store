@@ -130,3 +130,6 @@ test('Additional Material renders three explicit layers with PO between mapping 
 
 
 test('CB embedded editor header keeps active CB number visible',()=>{const js=fs.readFileSync(path.resolve(__dirname,'../../test70-real-chat-live-v70.js'),'utf8');assert.ok(js.includes("EDIT / CONTINUE · CB "));assert.ok(js.includes("EDIT / CONTINUE · NEW CB"));assert.ok(js.includes("actionUrl.searchParams.get('cb_no')"))});
+
+
+test('Supplier PO is PCS-first, supplier-consolidated, thumbnail-aware and asks for physical cutting',()=>{const cb=fs.readFileSync(path.resolve(__dirname,'../../real-cb-new-v9130-fix2.html'),'utf8');assert.ok(cb.includes('+ ADD ANOTHER MATERIAL'));assert.ok(cb.includes('PURCHASE ORDER SUMMARY'));assert.ok(cb.includes('C'+"'"+'+esc(x.colour_no)'));assert.ok(cb.includes('rr_cb_material_estimate_v2'));assert.ok(cb.includes('rr_cb_supplier_po_generate_v1'));assert.ok(cb.includes('colour_image_url'));assert.ok(cb.includes('Physical cloth cutting/sample collect करें'));assert.ok(!cb.includes('rr_cb_material_po_draft_create_v1'))});
