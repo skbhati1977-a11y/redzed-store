@@ -332,7 +332,7 @@ async function loadBaseTableSourcesForActive(){
 
 async function loadSourceData(options = {}){
   const result = await state.client
-    .from("rr_cutting_regular_purchase_sources_v1")
+    .from("rr_cutting_regular_purchase_sources_v2")
     .select("*");
 
   let viewRows = [];
@@ -885,6 +885,8 @@ function actionButtons(action){
   return out.join("");
 }
 
+function renderRollSelection(){const rows=sourceRowsForActive().filter(x=>x.roll_id&&x.roll_available_for_lot!==false),by=new Map();rows.forEach(r=>{const k=String(r.cb_colour_id||r.colour_name||'');if(!by.has(k))by.set(k,[]);by.get(k).push(r)});if(!rows.length)return'<section class="cm-form-card"><h3>Physical Rolls</h3><p class="rr-message error">इस Set के लिए कोई available physical roll नहीं मिला.</p></section>';return '<section class="cm-form-card"><h3>Physical Rolls · Lot Binding</h3><p style="color:#aaa">हर colour से इस Lot में काटा जाने वाला physical roll चुनें. चुना roll अगले Lot में available नहीं रहेगा.</p>'+[...by.values()].map(group=>{const first=group[0];return '<div style="margin:10px 0;padding:9px;border:1px solid #34343d;border-radius:10px"><strong>'+safe(first.colour_name||'Colour')+' · GSM '+safe(first.gsm??'—')+'</strong><div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:7px">'+group.map(r=>'<label style="padding:8px;border:1px solid #444;border-radius:9px"><input type="checkbox" data-roll-pick="'+safe(r.roll_id)+'" data-roll-colour="'+safe(r.cb_colour_id||r.colour_name||'')+'" '+(state.selectedRollIds.includes(String(r.roll_id))?'checked':'')+'> Roll '+safe(r.roll_no)+' · '+kg(r.roll_available_qty)+'</label>').join('')+'</div></div>'}).join('')+'</section>'}
+function bindRollSelection(panel){panel.querySelectorAll('[data-roll-pick]').forEach(input=>input.onchange=()=>{const id=String(input.dataset.rollPick),colour=String(input.dataset.rollColour);if(input.checked){panel.querySelectorAll('[data-roll-colour="'+CSS.escape(colour)+'"]').forEach(other=>{if(other!==input){other.checked=false;state.selectedRollIds=state.selectedRollIds.filter(x=>x!==String(other.dataset.rollPick))}});if(!state.selectedRollIds.includes(id))state.selectedRollIds.push(id)}else state.selectedRollIds=state.selectedRollIds.filter(x=>x!==id);window.RR_SELECTED_CUTTING_ROLL_IDS=[...state.selectedRollIds]})}
 function renderLotActionPanel(){
   const form = $("lotForm");
   const card = activeCard();
@@ -908,11 +910,11 @@ function renderLotActionPanel(){
   });
   if(panel.dataset.signature === signature){bindPanelActions(panel);return}
   panel.dataset.signature = signature;
-  panel.innerHTML = `
+  panel.innerHTML = `${renderRollSelection()}
     <div class="rr-cba-head"><div><h3>Damage / GR Decision</h3><p>Entry Cutting Master से होगी। Product Master CB card में permanent ledger reflect होगा।</p></div><span class="rr-cba-status">${safe(state.role || "user")}</span></div>
     ${blocked ? `<div class="rr-cba-blocked">Full GR approved — यह D card आगे Lot release के लिए blocked है।</div>` : `<div class="rr-cba-buttons"><button class="rr-cba-warn" type="button" data-cba-report="DAMAGE">Report Damage</button><button class="cm-secondary" type="button" data-cba-report="PARTIAL_GR">Report Partial GR</button><button class="rr-cba-danger" type="button" data-cba-report="FULL_GR">Report Full GR</button></div>`}
     <div class="rr-cba-list">${rows.length ? rows.map(a => `<article class="rr-cba-item"><div class="rr-cba-item-head"><div><strong>Action-${safe(a.action_no)} · ${safe(statusText(a.action_type))}</strong><div><small>${safe(a.source_lot_no || "—")} · ${kg(a.qty)} · ${money(a.value_snapshot)}</small></div></div><span class="rr-cba-status">${safe(statusText(a.status))}</span></div><div style="margin-top:6px"><small>${safe(a.bill_no || "Full CB/D scope")} · ${safe(a.colour_name || "")} ${a.roll_no ? `Roll ${safe(a.roll_no)}` : ""} · ${safe(a.reason)}</small></div>${mediaHtml(a)}<div class="rr-cba-actions">${actionButtons(a)}</div></article>`).join("") : `<small style="color:#aaa">No Damage / GR report for this D card.</small>`}</div>`;
-  bindPanelActions(panel);
+  bindPanelActions(panel);bindRollSelection(panel);
 }
 
 function bindPanelActions(panel){
