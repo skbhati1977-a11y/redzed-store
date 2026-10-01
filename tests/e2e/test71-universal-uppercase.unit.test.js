@@ -46,3 +46,6 @@ test('saved and new Additional Material rows use one canonical shape without sil
 
 
 test('CB supplier and material suggestions reuse canonical masters and refresh after creation',()=>{const cb=fs.readFileSync(path.resolve(__dirname,'../../real-cb-new-v9130-fix2.html'),'utf8');assert.match(cb,/ensureCanonicalSupplier/);assert.match(cb,/rr_suppliers/);assert.match(cb,/normalizedMasterName/);assert.match(cb,/await loadOptions\(\);renderMaterials\(\)/);assert.match(cb,/for\(const c of materialCategories\(\)\)add\(fabricOpts/);assert.match(cb,/await loadCategories\(\);await loadOptions\(\)/)});
+
+
+test('TEST70 pilot force-loads TEST71 instant CB edit renderer',()=>{const html=fs.readFileSync(path.resolve(__dirname,'../../test70-cb-purchase-real-chat-pilot.html'),'utf8');assert.match(html,/test70-real-chat-live-v70\.js\?v=TEST71-CB-INSTANT-EDIT-/);assert.doesNotMatch(html,/test70-real-chat-live-v70\.js\?v=9233-art-decision-runtime/)});
