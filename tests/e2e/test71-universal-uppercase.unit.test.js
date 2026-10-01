@@ -49,3 +49,6 @@ test('CB supplier and material suggestions reuse canonical masters and refresh a
 
 
 test('TEST70 pilot force-loads TEST71 instant CB edit renderer',()=>{const html=fs.readFileSync(path.resolve(__dirname,'../../test70-cb-purchase-real-chat-pilot.html'),'utf8');assert.match(html,/test70-real-chat-live-v70\.js\?v=TEST71-CB-INSTANT-EDIT-/);assert.doesNotMatch(html,/test70-real-chat-live-v70\.js\?v=9233-art-decision-runtime/)});
+
+
+test('CB EDIT CONTINUE is a persistent primary action for the canonical OPEN card',()=>{const chat=fs.readFileSync(path.resolve(__dirname,'../../test70-real-chat-live-v70.js'),'utf8');assert.match(chat,/class="cb-primary-edit"/);assert.match(chat,/canEdit&&state==='OPEN'&&editHref/);assert.doesNotMatch(chat,/state==='OPEN'\?'EDIT \/ CONTINUE':'UPDATE MATERIAL'/)});
