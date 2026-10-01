@@ -85,3 +85,6 @@ test('CB reconciliation reports both SHORT and EXCESS to Admin while financial d
 
 
 test('CB reconciliation has one working REPORT SHORT EXCESS action and no stale Damage action',()=>{const cb=fs.readFileSync(path.resolve(__dirname,'../../real-cb-new-v9130-fix2.html'),'utf8');assert.match(cb,/REPORT SHORT \/ EXCESS/);assert.match(cb,/class="secondary reportVariance"/);assert.match(cb,/reportVariance'\)\?\.addEventListener\('click',reportReconciliationVariance\)/);assert.doesNotMatch(cb,/>REPORT DAMAGE<\/button>/);assert.doesNotMatch(cb,/class="secondary reportShortage"/)});
+
+
+test('CB frontend sanitizes technical backend errors and variance report uses friendly failure copy',()=>{const cb=fs.readFileSync(path.resolve(__dirname,'../../real-cb-new-v9130-fix2.html'),'utf8');assert.match(cb,/friendlyUserError/);assert.match(cb,/null value in column\|violates not-null\|constraint/);assert.match(cb,/SHORT \/ EXCESS report Admin को नहीं भेजा जा सका/);assert.match(cb,/console\.error\('CB variance report'/)});
