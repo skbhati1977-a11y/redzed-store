@@ -145,3 +145,6 @@ test('Every Additional Material selects category before decided-Art thumbnail an
 
 
 test('Additional Material uses progressive first-next chain and retires global add control',()=>{const cb=fs.readFileSync(path.resolve(__dirname,'../../real-cb-new-v9130-fix2.html'),'utf8');assert.ok(cb.includes('+ ADD FIRST MATERIAL'));assert.ok(cb.includes('+ ADD NEXT MATERIAL'));assert.ok(cb.includes('function addNextMaterial()'));assert.ok(cb.includes("querySelector('.addNextMaterial')"));assert.ok(!cb.includes('id="addMaterial"'));assert.ok(!cb.includes('+ ADD ANOTHER MATERIAL'));assert.ok(cb.includes('Current material selection complete करें, फिर अगला material add करें.'))});
+
+
+test('Additional Material numbering excludes Regular Cloth and follows progressive sequence',()=>{const cb=fs.readFileSync(path.resolve(__dirname,'../../real-cb-new-v9130-fix2.html'),'utf8');assert.ok(cb.includes("materialNo=materials.slice(1,mi+1).filter(x=>x.type!=='regular').length"));assert.ok(cb.includes('MATERIAL ${materialNo}'));assert.ok(!cb.includes('<h4>Additional Material</h4>'))});
