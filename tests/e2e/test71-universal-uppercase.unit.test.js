@@ -76,3 +76,6 @@ test('CB quantity reconciliation offers Debit Note for SHORT and Credit Note for
 
 
 test('SHORT reconciliation can enter existing Damage Claim lifecycle without a duplicate damage engine',()=>{const cb=fs.readFileSync(path.resolve(__dirname,'../../real-cb-new-v9130-fix2.html'),'utf8');assert.match(cb,/REPORT DAMAGE/);assert.match(cb,/rr_create_cb_damage_claim_v1/);assert.match(cb,/BEFORE_CUTTING/);assert.match(cb,/Owner verification\/approval required before supplier Accounts claim/);assert.doesNotMatch(cb,/rr_cb_reconciliation_damage/)});
+
+
+test('SHORT reconciliation reports shortage to Admin Real Chat, not Damage Claim',()=>{const cb=fs.readFileSync(path.resolve(__dirname,'../../real-cb-new-v9130-fix2.html'),'utf8');assert.match(cb,/REPORT SHORTAGE/);assert.match(cb,/rr_cb_shortage_report_v1/);assert.match(cb,/FORWARD TO SUPPLIER action/);assert.doesNotMatch(cb,/Create Damage Claim for/);assert.doesNotMatch(cb,/reportReconciliationDamage/)});
