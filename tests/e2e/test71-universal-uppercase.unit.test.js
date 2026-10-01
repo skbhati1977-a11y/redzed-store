@@ -184,3 +184,6 @@ test('Technical errors never render raw through CB friendly error boundary',()=>
 
 
 test('Material Set Art mapping persists from save payload instead of post-save UI side effect',()=>{const cb=fs.readFileSync(path.resolve(__dirname,'../../real-cb-new-v9130-fix2.html'),'utf8');assert.ok(cb.includes('selected_sets:[...(m.selected||[])]'));assert.ok(cb.includes('allowed_art_category_ids:[...(m.allowedArtCategoryIds||[])]'));assert.ok(cb.includes("rr_cb_material_mapping_sync_v1"));assert.ok(!cb.includes("await syncAllowedArtMappings();$('stateChip')"))});
+
+
+test('Save failures guide to exact relevant field or section with friendly message',()=>{const cb=fs.readFileSync(path.resolve(__dirname,'../../real-cb-new-v9130-fix2.html'),'utf8');assert.ok(cb.includes('function guideSaveError(ex)'));assert.ok(cb.includes("err.guide={selector:'.reconcile-box'}"));assert.ok(cb.includes("base+' .vendor'"));assert.ok(cb.includes("base+' .bill'"));assert.ok(cb.includes("base+' .date'"));assert.ok(cb.includes("base+' .rate'"));assert.ok(cb.includes("base+' .materialQty'"));assert.ok(cb.includes('const guided=guideSaveError(ex);setMessage(guided.message);focusGuidedIssue(guided)'))});
