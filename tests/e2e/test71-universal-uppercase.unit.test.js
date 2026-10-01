@@ -103,3 +103,6 @@ test('TEST71 Real Chat has universal friendly error guard without changing busin
 
 
 test('final SEND TO SUPER ADMIN action marks WhatsApp delivery SENT without a second confirmation',()=>{const cb=fs.readFileSync(path.resolve(__dirname,'../../real-cb-new-v9130-fix2.html'),'utf8');assert.match(cb,/rr_report_send_superadmin_confirm_v1/);assert.match(cb,/SENT mark कर दिया गया/);assert.doesNotMatch(cb,/क्या message Super Admin को send कर दिया/);assert.doesNotMatch(cb,/Report saved है\. WhatsApp send अभी confirm नहीं किया गया/)});
+
+
+test('CB card keeps Sets label and Art Decision until actual Cutting lot evidence exists',()=>{const chat=fs.readFileSync(path.resolve(__dirname,'../../test70-real-chat-live-v70.js'),'utf8'),shell=fs.readFileSync(path.resolve(__dirname,'../../test70-cb-purchase-real-chat-pilot.html'),'utf8');assert.match(chat,/<span>Sets <b>/);assert.match(chat,/ART DECISION/);assert.match(chat,/lot_numbers\|\|x\.lots/);assert.doesNotMatch(chat,/artLocked=released>0/);assert.match(shell,/TEST71-ART-SETS-PERSISTENT-/)});
