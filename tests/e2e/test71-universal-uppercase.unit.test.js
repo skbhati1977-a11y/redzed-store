@@ -91,3 +91,6 @@ test('CB frontend sanitizes technical backend errors and variance report uses fr
 
 
 test('CB variance report offers Super Admin WhatsApp send inside report success flow',()=>{const cb=fs.readFileSync(path.resolve(__dirname,'../../real-cb-new-v9130-fix2.html'),'utf8');assert.match(cb,/sendReportToSuperAdmin/);assert.match(cb,/rr_report_send_superadmin_prepare_v1/);assert.match(cb,/SEND TO SUPER ADMIN on WhatsApp/);assert.match(cb,/rr_report_send_superadmin_confirm_v1/)});
+
+
+test('existing CB renders before noncritical mirror reconciliation thumbnail enrichment',()=>{const cb=fs.readFileSync(path.resolve(__dirname,'../../real-cb-new-v9130-fix2.html'),'utf8');assert.match(cb,/Loading saved CB…/);assert.match(cb,/ensureDefaultRolls\(\);renderMaterials\(\);renderColours\(\);updateSummary\(\);\$\('bootMsg'\)\.style\.display='none'/);assert.match(cb,/Promise\.allSettled\(\[mirrorMaterialSetsFromDecidedArt\(\),loadReconciliation\(\),loadArtThumbs\(\)\]\)/);assert.match(cb,/mastersPromise=Promise\.all/)});
