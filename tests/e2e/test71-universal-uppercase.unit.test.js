@@ -160,3 +160,9 @@ test('Supplier picker shows complete canonical active list and does not use filt
 
 
 test('New Additional Material never auto-selects all Sets or infers Art categories from material name',()=>{const cb=fs.readFileSync(path.resolve(__dirname,'../../real-cb-new-v9130-fix2.html'),'utf8');assert.ok(cb.includes("pricingDriver:'rate',scope:'selected',selected:[]"));assert.ok(cb.includes('function defaultAllowedArtCategoryIds(){return []}'));assert.ok(cb.includes("m.scope='selected';m.selected=[];m.allowedArtCategoryIds=[]"));assert.ok(cb.includes('All Sets (manual)'))});
+
+
+test('Set-wise Material Art constraint remains authoritative and decided Art cannot rewrite allowed categories',()=>{const cb=fs.readFileSync(path.resolve(__dirname,'../../real-cb-new-v9130-fix2.html'),'utf8');assert.ok(cb.includes('allowed_art_category_ids:allowed'));assert.ok(!cb.includes('effective=decided?'));assert.ok(cb.includes("existing decided Art does not match this Material's allowed categories"));assert.ok(cb.includes("decided Art category is outside this Material's Allowed Art Categories"))});
+
+
+test('Art Decision picker consumes per-Set Material category constraint',()=>{const js=fs.readFileSync(path.resolve(__dirname,'../../real-art-decide-master-v9231.js'),'utf8');assert.ok(js.includes("rr_cb_material_allocations"));assert.ok(js.includes("allowed_art_category_ids"));assert.ok(js.includes("list.filter(row=>state.allowedArtCategoryIds.includes(String(row.art_category_id||'')))"));assert.ok(js.includes('Material mapping applied · only allowed Art categories are shown for this Set.'))});
