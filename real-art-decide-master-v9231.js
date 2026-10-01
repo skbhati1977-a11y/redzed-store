@@ -95,13 +95,13 @@ function derivedCounts(){
 async function loadData(){
   const refresh=$("refresh");setBusy(refresh,true,"Loading…");$("gallery").setAttribute("aria-busy","true");
   try{
-    const requestedId=String(new URLSearchParams(location.search).get("cb_unit_id")||"").trim();
+    const params=new URLSearchParams(location.search),requestedId=String(params.get("cb_unit_id")||"").trim(),requestedCb=String(params.get("cb_no")||"").trim().toUpperCase();
 
     // Render the actionable CB queue first. Master/library enrichment must never
     // hold the whole Art Decision screen on its initial spinner.
     const allR=await withTimeout(state.client.rpc("rr_pm_decision_filter_v802",{p_filter:"ALL"}),"CB decision list",8000);
     if(allR.error)throw new Error(`CB decision list: ${textError(allR.error)}`);
-    state.decisions=Array.isArray(allR.data)?allR.data:[];
+    state.decisions=Array.isArray(allR.data)?allR.data:[];if(requestedCb)state.decisions.sort((x,y)=>Number(String(x.cb_no||x.cb_code||"").toUpperCase()!==requestedCb)-Number(String(y.cb_no||y.cb_code||"").toUpperCase()!==requestedCb));
     if(requestedId&&!state.decisions.some(x=>String(x.cb_unit_id)===requestedId)){
       const exact=await withTimeout(state.client.from("rr_pm_decision_status_v802").select("*").eq("cb_unit_id",requestedId).maybeSingle(),"Requested Art Decision",8000);
       if(exact.error)throw new Error(`Requested Art Decision: ${textError(exact.error)}`);
