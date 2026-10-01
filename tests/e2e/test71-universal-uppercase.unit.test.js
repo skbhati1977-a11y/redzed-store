@@ -166,3 +166,6 @@ test('Set-wise Material Art constraint remains authoritative and decided Art can
 
 
 test('Art Decision picker consumes per-Set Material category constraint',()=>{const js=fs.readFileSync(path.resolve(__dirname,'../../real-art-decide-master-v9231.js'),'utf8');assert.ok(js.includes("rr_cb_material_allocations"));assert.ok(js.includes("allowed_art_category_ids"));assert.ok(js.includes("list.filter(row=>state.allowedArtCategoryIds.includes(String(row.art_category_id||'')))"));assert.ok(js.includes('Material mapping applied · only allowed Art categories are shown for this Set.'))});
+
+
+test('Existing decided Art reverse mirror runs after master hydration before thumbnails and estimates',()=>{const cb=fs.readFileSync(path.resolve(__dirname,'../../real-cb-new-v9130-fix2.html'),'utf8');const seq="await loadExisting();await mastersPromise;await mirrorMaterialSetsFromDecidedArt();renderMaterials();renderColours();updateSummary();await loadArtThumbs();await loadMaterialEstimates()";assert.ok(cb.includes(seq));assert.ok(!cb.includes('Promise.allSettled([mirrorMaterialSetsFromDecidedArt(),loadReconciliation(),loadArtThumbs()])')});
