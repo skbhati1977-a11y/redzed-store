@@ -196,3 +196,6 @@ test('Statement timeout reports exact friendly reason instead of blaming require
 
 
 test('CB save uses bounded v601 wrapper while preserving canonical save authority',()=>{const cb=fs.readFileSync(path.resolve(__dirname,'../../real-cb-new-v9130-fix2.html'),'utf8');assert.ok(cb.includes("rr_cb_department_save_v601"));assert.ok(!cb.includes("sb().rpc('rr_cb_department_save_v600'"))});
+
+
+test('CB save batches repeated Real Chat reconciliation through v601 authority',()=>{const cb=fs.readFileSync(path.resolve(__dirname,'../../real-cb-new-v9130-fix2.html'),'utf8');assert.ok(cb.includes("rr_cb_department_save_v601"))});
