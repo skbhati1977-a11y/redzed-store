@@ -109,3 +109,6 @@ test('CB card keeps Sets label and Art Decision until actual Cutting lot evidenc
 
 
 test('Art Decision Edit remains editable until a real Lot Number exists and CB actions stay side by side',()=>{const chat=fs.readFileSync(path.resolve(__dirname,'../../test70-real-chat-live-v70.js'),'utf8'),shell=fs.readFileSync(path.resolve(__dirname,'../../test70-cb-purchase-real-chat-pilot.html'),'utf8');assert.match(chat,/ART DECISION EDIT/);assert.match(chat,/ART DECISION FIXED/);assert.match(chat,/lot_no\|\|l\.lot_number/);assert.doesNotMatch(chat,/ART LOCKED · CUTTING/);assert.doesNotMatch(chat,/RELEASED_TO_CUTTING/);assert.match(shell,/grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/)});
+
+
+test('WhatsApp handoff preserves current CB editor context for Android back return',()=>{const cb=fs.readFileSync(path.resolve(__dirname,'../../real-cb-new-v9130-fix2.html'),'utf8');assert.match(cb,/RR_CB_WHATSAPP_RETURN_V1/);assert.match(cb,/href:location\.href,scrollY:window\.scrollY,cbId/);assert.match(cb,/pageshow.*restoreCbAfterWhatsApp/);assert.match(cb,/visibilitychange/);assert.match(cb,/window\.scrollTo/)});
