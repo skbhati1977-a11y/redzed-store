@@ -172,3 +172,6 @@ test('Existing decided Art reverse mirror runs after master hydration before thu
 
 
 test('Canonical material Art rules drive reverse Set mirror and Direct Art is complement only',()=>{const cb=fs.readFileSync(path.resolve(__dirname,'../../real-cb-new-v9130-fix2.html'),'utf8');assert.ok(cb.includes("rr_material_default_art_categories_v1"));assert.ok(cb.includes('await mirrorMaterialSetsFromDecidedArt()'));assert.ok(cb.includes("matched.forEach(unit=>mapped.add(String(unit.id)))"));assert.ok(cb.includes("const direct=units.filter(unit=>byUnit.get(String(unit.id))&&!mapped.has(String(unit.id)))"));assert.ok(cb.includes("for(const m of materials.filter(x=>x.type!=='regular'&&!(x.allowedArtCategoryIds||[]).length))"))});
+
+
+test('Art Decision excludes category-less Arts and blocks category-less selection',()=>{const js=fs.readFileSync(path.resolve(__dirname,'../../real-art-decide-master-v9231.js'),'utf8');assert.ok(js.includes("if(step===\"art\")list=list.filter(row=>!!row.art_category_id)"));assert.ok(js.includes("if(!art?.art_category_id)"));assert.ok(js.includes('इस Art की category अभी mapped नहीं है.'))});
