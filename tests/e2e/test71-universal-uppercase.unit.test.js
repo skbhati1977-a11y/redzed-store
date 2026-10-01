@@ -100,3 +100,6 @@ test('fast existing CB render is retained and boot errors are user-friendly',()=
 
 
 test('TEST71 Real Chat has universal friendly error guard without changing business validation',()=>{const shell=fs.readFileSync(path.resolve(__dirname,'../../test70-cb-purchase-real-chat-pilot.html'),'utf8'),guard=fs.readFileSync(path.resolve(__dirname,'../../test71-user-friendly-errors.js'),'utf8');assert.match(shell,/test71-user-friendly-errors\.js/);assert.match(guard,/RRUserFriendlyError/);assert.match(guard,/null value in column/);assert.match(guard,/unhandledrejection/);assert.match(guard,/actionFrame/);assert.match(guard,/if\(!TECH\.test\(s\)\)return s/)});
+
+
+test('final SEND TO SUPER ADMIN action marks WhatsApp delivery SENT without a second confirmation',()=>{const cb=fs.readFileSync(path.resolve(__dirname,'../../real-cb-new-v9130-fix2.html'),'utf8');assert.match(cb,/rr_report_send_superadmin_confirm_v1/);assert.match(cb,/SENT mark कर दिया गया/);assert.doesNotMatch(cb,/क्या message Super Admin को send कर दिया/);assert.doesNotMatch(cb,/Report saved है\. WhatsApp send अभी confirm नहीं किया गया/)});
