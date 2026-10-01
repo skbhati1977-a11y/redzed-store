@@ -79,3 +79,6 @@ test('SHORT reconciliation can enter existing Damage Claim lifecycle without a d
 
 
 test('SHORT reconciliation reports shortage to Admin Real Chat, not Damage Claim',()=>{const cb=fs.readFileSync(path.resolve(__dirname,'../../real-cb-new-v9130-fix2.html'),'utf8');assert.match(cb,/REPORT SHORTAGE/);assert.match(cb,/rr_cb_shortage_report_v1/);assert.match(cb,/FORWARD TO SUPPLIER action/);assert.doesNotMatch(cb,/Create Damage Claim for/);assert.doesNotMatch(cb,/reportReconciliationDamage/)});
+
+
+test('CB reconciliation reports both SHORT and EXCESS to Admin while financial decisions remain separate',()=>{const cb=fs.readFileSync(path.resolve(__dirname,'../../real-cb-new-v9130-fix2.html'),'utf8');assert.match(cb,/REPORT SHORT/);assert.match(cb,/REPORT EXCESS/);assert.match(cb,/rr_cb_variance_report_v1/);assert.match(cb,/p_variance_type:type/);assert.match(cb,/Financial decision remains separate/)});
