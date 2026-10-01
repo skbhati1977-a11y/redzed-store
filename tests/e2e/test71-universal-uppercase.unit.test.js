@@ -67,3 +67,6 @@ test('CB EDIT and ART actions derive from parent CB identity on first paint, not
 
 
 test('live roll edits change Physical Stock-In only and never overwrite Party Bill Qty',()=>{const cb=fs.readFileSync(path.resolve(__dirname,'../../real-cb-new-v9130-fix2.html'),'utf8');assert.match(cb,/regular\.rolls\[ci\]\[ri\]\.qty=e\.target\.value;markReconciliationDirty\(\);renderMaterials\(\);updateSummary\(\)/);assert.doesNotMatch(cb,/regular\.qty=String\(rollTotal\(regular\)/);assert.match(cb,/liveKey=bill\.toFixed\(3\).*physical\.toFixed\(3\)/);assert.match(cb,/stale\?'RECHECK_REQUIRED'/);assert.match(cb,/friendlySaveError/)});
+
+
+test('CB OPEN actions render before actor role hydration while destination enforces permission',()=>{const chat=fs.readFileSync(path.resolve(__dirname,'../../test70-real-chat-live-v70.js'),'utf8');assert.match(chat,/edit=state==='OPEN'&&editHref/);assert.match(chat,/artButton=state==='OPEN'&&artHref&&!artLocked/);assert.doesNotMatch(chat,/edit=canEdit&&state==='OPEN'/);assert.doesNotMatch(chat,/artButton=canEdit&&state==='OPEN'/)});
