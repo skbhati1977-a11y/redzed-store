@@ -127,3 +127,6 @@ test('CB editor mobile workspace keeps header and save actions in normal documen
 
 
 test('Additional Material renders three explicit layers with PO between mapping and purchase',()=>{const cb=fs.readFileSync(path.resolve(__dirname,'../../real-cb-new-v9130-fix2.html'),'utf8');const a=cb.indexOf('1 · MATERIAL SELECTION'),b=cb.indexOf('2 · SET & ART MAPPING'),c=cb.indexOf('YIELD ESTIMATION · PO PLANNING'),d=cb.indexOf('3 · PURCHASE DETAILS');assert.ok(a>=0&&b>a&&c>b&&d>c);assert.ok(cb.includes('QUALITY / VARIETY'));assert.ok(cb.includes('ITEM / MATERIAL *'));assert.ok(cb.includes('Allowed Art Categories'));assert.ok(cb.includes('rr_cb_material_estimate_v1'));assert.ok(cb.includes('rr_cb_material_po_draft_create_v1'))});
+
+
+test('CB embedded editor header keeps active CB number visible',()=>{const js=fs.readFileSync(path.resolve(__dirname,'../../test70-real-chat-live-v70.js'),'utf8');assert.ok(js.includes("EDIT / CONTINUE · CB "));assert.ok(js.includes("EDIT / CONTINUE · NEW CB"));assert.ok(js.includes("actionUrl.searchParams.get('cb_no')"))});
