@@ -118,3 +118,6 @@ test('CB GSM and Cutting exact roll yield foundation are wired without changing 
 
 
 test('Multi Cutting uses per-lot roll selections and prevents one physical roll being selected twice',()=>{const cut=fs.readFileSync(path.resolve(__dirname,'../../redzed-cutting-cb-actions-v72035.js'),'utf8'),pm=fs.readFileSync(path.resolve(__dirname,'../../real-cutting-master-pm.V719.3.js'),'utf8');assert.match(cut,/selectedRollIdsByDev/);assert.match(cut,/RR_SELECTED_CUTTING_ROLLS_BY_DEV/);assert.match(cut,/data-roll-scope/);assert.match(pm,/selectedRollsByDev/);assert.match(pm,/for\(const lot of valid\.lots\)/);assert.match(pm,/rr_cutting_capture_yield_v1/)});
+
+
+test('Additional Material keeps mapping first, Yield/PO planning second, supplier and bill details last',()=>{const cb=fs.readFileSync(path.resolve(__dirname,'../../real-cb-new-v9130-fix2.html'),'utf8');const map=cb.indexOf('Allowed Art Categories'),yieldPos=cb.indexOf('YIELD ESTIMATION · PO PLANNING'),supplier=cb.indexOf('SUPPLIER / PURCHASE DETAILS'),bill=cb.indexOf('BILL NO.');assert.ok(map>=0&&yieldPos>map&&supplier>yieldPos&&bill>supplier);assert.match(cb,/rr_cb_material_estimate_v1/);assert.match(cb,/rr_cb_material_po_draft_create_v1/);assert.match(cb,/rr_material_types_v805/);assert.match(cb,/exact Material/)});
