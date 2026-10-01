@@ -94,3 +94,6 @@ test('CB variance report offers Super Admin WhatsApp send inside report success 
 
 
 test('existing CB renders before noncritical mirror reconciliation thumbnail enrichment',()=>{const cb=fs.readFileSync(path.resolve(__dirname,'../../real-cb-new-v9130-fix2.html'),'utf8');assert.match(cb,/Loading saved CB…/);assert.match(cb,/ensureDefaultRolls\(\);renderMaterials\(\);renderColours\(\);updateSummary\(\);\$\('bootMsg'\)\.style\.display='none'/);assert.match(cb,/Promise\.allSettled\(\[mirrorMaterialSetsFromDecidedArt\(\),loadReconciliation\(\),loadArtThumbs\(\)\]\)/);assert.match(cb,/mastersPromise=Promise\.all/)});
+
+
+test('fast existing CB render is retained and boot errors are user-friendly',()=>{const cb=fs.readFileSync(path.resolve(__dirname,'../../real-cb-new-v9130-fix2.html'),'utf8');assert.match(cb,/Promise\.allSettled\(\[mirrorMaterialSetsFromDecidedArt\(\),loadReconciliation\(\),loadArtThumbs\(\)\]\)/);assert.match(cb,/Loading saved CB…/);assert.match(cb,/console\.error\('CB boot'/);assert.match(cb,/friendlyUserError\(err,'CB details load नहीं हो सकीं/);assert.doesNotMatch(cb,/\$\('bootMsg'\)\.textContent=err\?\.message\|\|String\(err\)/)});
