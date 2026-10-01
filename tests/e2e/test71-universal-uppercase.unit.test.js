@@ -58,3 +58,6 @@ test('CB OPEN card renders persistent ART DECISION beside EDIT CONTINUE',()=>{co
 
 
 test('Art Decision remains editable before Cutting and locks once a Cutting lot exists',()=>{const chat=fs.readFileSync(path.resolve(__dirname,'../../test70-real-chat-live-v70.js'),'utf8'),art=fs.readFileSync(path.resolve(__dirname,'../../real-art-decide-master-v9231.js'),'utf8');assert.match(chat,/ART LOCKED · CUTTING/);assert.match(chat,/artLocked=released>0/);assert.match(art,/artDecisionCuttingLock/);assert.match(art,/from\("rr_lots"\).*eq\("cb_id",id\)/);assert.match(art,/Art Decision locked: Cutting Lot has already been created\/released for this Set/)});
+
+
+test('CB quantity reconciliation keeps Party Bill, physical roll stock and financial decision separate',()=>{const cb=fs.readFileSync(path.resolve(__dirname,'../../real-cb-new-v9130-fix2.html'),'utf8');assert.match(cb,/QUANTITY RECONCILIATION/);assert.match(cb,/Party Bill Qty/);assert.match(cb,/Physical Roll \/ Stock-In Qty/);assert.match(cb,/ACCEPT PARTY BILL/);assert.match(cb,/MAKE DEBIT NOTE/);assert.match(cb,/rr_cb_quantity_reconciliation_get_v1/);assert.match(cb,/rr_cb_quantity_reconcile_v1/);assert.match(cb,/RECHECK REQUIRED/);assert.match(cb,/Quantity mismatch: ACCEPT PARTY BILL or MAKE DEBIT NOTE before final confirm/)});
