@@ -142,3 +142,6 @@ test('Only add-another-material remains a large primary add action in Additional
 
 
 test('Every Additional Material selects category before decided-Art thumbnail and estimate',()=>{const cb=fs.readFileSync(path.resolve(__dirname,'../../real-cb-new-v9130-fix2.html'),'utf8');const set=cb.indexOf('For which Set? *'),cat=cb.indexOf('Allowed Art Categories *'),thumb=cb.indexOf('MATCHED DECIDED ART'),estimate=cb.indexOf('REQUIREMENT ESTIMATE · PO BASIS');assert.ok(set>=0&&cat>set&&thumb>cat&&estimate>thumb);assert.ok(cb.includes('पहले Allowed Art Categories select करें.'));assert.ok(cb.includes('Selected Set का decided Art चुनी हुई category से match नहीं करता.'));assert.ok(cb.includes("if(!(m.allowedArtCategoryIds||[]).length)"))});
+
+
+test('Additional Material uses progressive first-next chain and retires global add control',()=>{const cb=fs.readFileSync(path.resolve(__dirname,'../../real-cb-new-v9130-fix2.html'),'utf8');assert.ok(cb.includes('+ ADD FIRST MATERIAL'));assert.ok(cb.includes('+ ADD NEXT MATERIAL'));assert.ok(cb.includes('function addNextMaterial()'));assert.ok(cb.includes("querySelector('.addNextMaterial')"));assert.ok(!cb.includes('id="addMaterial"'));assert.ok(!cb.includes('+ ADD ANOTHER MATERIAL'));assert.ok(cb.includes('Current material selection complete करें, फिर अगला material add करें.'))});
