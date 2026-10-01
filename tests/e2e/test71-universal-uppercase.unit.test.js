@@ -37,3 +37,6 @@ test('mapped thumbnail requires both selected S and eligible Art category',()=>{
 
 
 test('CB user-facing division terminology is Set while individual identifiers remain S1 style',()=>{const cb=fs.readFileSync(path.resolve(__dirname,'../../real-cb-new-v9130-fix2.html'),'utf8');assert.match(cb,/For which Set\? \*/);assert.match(cb,/All Sets/);assert.match(cb,/Selected Sets/);assert.match(cb,/>S\$\{di\+1\}</);assert.match(cb,/<small>Sets<\/small>/);assert.match(cb,/division_id/);assert.match(cb,/division_index/)});
+
+
+test('CB group OPEN card renders edit action on first paint with canonical fallback href and Set label',()=>{const chat=fs.readFileSync(path.resolve(__dirname,'../../test70-real-chat-live-v70.js'),'utf8');assert.match(chat,/fallbackEdit=c\.cb_id\?'real-cb-new-v9130-loader\.html\?cb_id='/);assert.match(chat,/editHref=String\(c\.edit_href\|\|fallbackEdit\|\|''\)/);assert.match(chat,/EDIT \/ CONTINUE/);assert.match(chat,/<span>Sets <b>/)});
