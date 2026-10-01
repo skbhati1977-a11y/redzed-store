@@ -88,3 +88,6 @@ test('CB reconciliation has one working REPORT SHORT EXCESS action and no stale 
 
 
 test('CB frontend sanitizes technical backend errors and variance report uses friendly failure copy',()=>{const cb=fs.readFileSync(path.resolve(__dirname,'../../real-cb-new-v9130-fix2.html'),'utf8');assert.match(cb,/friendlyUserError/);assert.match(cb,/null value in column\|violates not-null\|constraint/);assert.match(cb,/SHORT \/ EXCESS report Admin को नहीं भेजा जा सका/);assert.match(cb,/console\.error\('CB variance report'/)});
+
+
+test('CB variance report offers Super Admin WhatsApp send inside report success flow',()=>{const cb=fs.readFileSync(path.resolve(__dirname,'../../real-cb-new-v9130-fix2.html'),'utf8');assert.match(cb,/sendReportToSuperAdmin/);assert.match(cb,/rr_report_send_superadmin_prepare_v1/);assert.match(cb,/SEND TO SUPER ADMIN on WhatsApp/);assert.match(cb,/rr_report_send_superadmin_confirm_v1/)});
