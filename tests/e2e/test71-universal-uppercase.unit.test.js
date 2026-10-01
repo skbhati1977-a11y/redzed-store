@@ -151,3 +151,6 @@ test('Additional Material numbering excludes Regular Cloth and follows progressi
 
 
 test('Material card uses alphabetic internal steps separate from material numbering',()=>{const cb=fs.readFileSync(path.resolve(__dirname,'../../real-cb-new-v9130-fix2.html'),'utf8');assert.ok(cb.includes('A · MATERIAL SELECTION'));assert.ok(cb.includes('B · SET & ART MAPPING'));assert.ok(cb.includes('C · REQUIREMENT ESTIMATE · PO BASIS'));assert.ok(cb.includes('D · PURCHASE DETAILS'));assert.ok(cb.includes('MATERIAL ${materialNo}'))});
+
+
+test('CB supplier Add New persists canonical details and auto-selects saved supplier',()=>{const cb=fs.readFileSync(path.resolve(__dirname,'../../real-cb-new-v9130-fix2.html'),'utf8');assert.ok(cb.includes('CANONICAL SUPPLIER MASTER'));assert.ok(cb.includes('cbNewSupplierMobile'));assert.ok(cb.includes('cbNewSupplierAddress'));assert.ok(cb.includes('cbNewSupplierGstin'));assert.ok(cb.includes('rr_supplier_upsert_v1'));assert.ok(cb.includes('materials[supplierModalMaterialIndex].vendor=saved.supplier_name'));assert.ok(cb.includes('secondary compact-new addVendor'));assert.ok(!cb.includes("prompt('New Supplier Name'"))});
