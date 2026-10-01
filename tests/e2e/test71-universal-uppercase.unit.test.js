@@ -187,3 +187,6 @@ test('Material Set Art mapping persists from save payload instead of post-save U
 
 
 test('Save failures guide to exact relevant field or section with friendly message',()=>{const cb=fs.readFileSync(path.resolve(__dirname,'../../real-cb-new-v9130-fix2.html'),'utf8');assert.ok(cb.includes('function guideSaveError(ex)'));assert.ok(cb.includes("err.guide={selector:'.reconcile-box'}"));assert.ok(cb.includes("base+' .vendor'"));assert.ok(cb.includes("base+' .bill'"));assert.ok(cb.includes("base+' .date'"));assert.ok(cb.includes("base+' .rate'"));assert.ok(cb.includes("base+' .materialQty'"));assert.ok(cb.includes('const guided=guideSaveError(ex);setMessage(guided.message);focusGuidedIssue(guided)'))});
+
+
+test('Save stage errors identify failing CB subsystem without raw technical text',()=>{const cb=fs.readFileSync(path.resolve(__dirname,'../../real-cb-new-v9130-fix2.html'),'utf8');assert.ok(cb.includes("e.saveStage='CB_SAVE'"));assert.ok(cb.includes("e.saveStage='MATERIAL_MAPPING'"));assert.ok(cb.includes("e.saveStage='GSM_SAVE'"));assert.ok(cb.includes('Material की Set / Art mapping save नहीं हो सकी.'));assert.ok(cb.includes('Colour GSM save नहीं हो सका.'));assert.ok(cb.includes("err.guide={selector:'.material-layer:nth-of-type(2)'}"))});
