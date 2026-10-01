@@ -70,3 +70,6 @@ test('live roll edits change Physical Stock-In only and never overwrite Party Bi
 
 
 test('CB OPEN actions render before actor role hydration while destination enforces permission',()=>{const chat=fs.readFileSync(path.resolve(__dirname,'../../test70-real-chat-live-v70.js'),'utf8');assert.match(chat,/edit=state==='OPEN'&&editHref/);assert.match(chat,/artButton=state==='OPEN'&&artHref&&!artLocked/);assert.doesNotMatch(chat,/edit=canEdit&&state==='OPEN'/);assert.doesNotMatch(chat,/artButton=canEdit&&state==='OPEN'/)});
+
+
+test('CB quantity reconciliation offers Debit Note for SHORT and Credit Note for EXCESS',()=>{const cb=fs.readFileSync(path.resolve(__dirname,'../../real-cb-new-v9130-fix2.html'),'utf8');assert.match(cb,/MAKE DEBIT NOTE/);assert.match(cb,/MAKE CREDIT NOTE/);assert.match(cb,/decideReconciliation\('DEBIT_NOTE'\)/);assert.match(cb,/decideReconciliation\('CREDIT_NOTE'\)/);assert.match(cb,/Credit Note posted to supplier Accounts/)});
