@@ -43,3 +43,6 @@ test('CB group OPEN card renders edit action on first paint with canonical fallb
 
 
 test('saved and new Additional Material rows use one canonical shape without silent first-material selection',()=>{const cb=fs.readFileSync(path.resolve(__dirname,'../../real-cb-new-v9130-fix2.html'),'utf8');assert.doesNotMatch(cb,/firstExtra=!reg\?materialCategories\(\)\[0\]/);assert.match(cb,/categoryId:cat\?\.id\|\|''/);assert.match(cb,/canonicalEntryById/);assert.match(cb,/material_category_id/);assert.match(cb,/vendor_bill_no/);assert.match(cb,/requirement_state/);assert.match(cb,/allocationAllowed\.length\?allocationAllowed/)});
+
+
+test('CB supplier and material suggestions reuse canonical masters and refresh after creation',()=>{const cb=fs.readFileSync(path.resolve(__dirname,'../../real-cb-new-v9130-fix2.html'),'utf8');assert.match(cb,/ensureCanonicalSupplier/);assert.match(cb,/rr_suppliers/);assert.match(cb,/normalizedMasterName/);assert.match(cb,/await loadOptions\(\);renderMaterials\(\)/);assert.match(cb,/for\(const c of materialCategories\(\)\)add\(fabricOpts/);assert.match(cb,/await loadCategories\(\);await loadOptions\(\)/)});
