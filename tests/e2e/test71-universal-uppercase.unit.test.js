@@ -34,3 +34,6 @@ test('CB Art thumbnails render inside mapped material and direct no-material pan
 
 
 test('mapped thumbnail requires both selected S and eligible Art category',()=>{const cb=fs.readFileSync(path.resolve(__dirname,'../../real-cb-new-v9130-fix2.html'),'utf8');assert.match(cb,/artCategoryByArt/);assert.match(cb,/eligible=new Set/);assert.match(cb,/eligible\.has\(String\(artCategoryId\|\|''\)\)/)});
+
+
+test('CB user-facing division terminology is Set while individual identifiers remain S1 style',()=>{const cb=fs.readFileSync(path.resolve(__dirname,'../../real-cb-new-v9130-fix2.html'),'utf8');assert.match(cb,/For which Set\? \*/);assert.match(cb,/All Sets/);assert.match(cb,/Selected Sets/);assert.match(cb,/>S\$\{di\+1\}</);assert.match(cb,/<small>Sets<\/small>/);assert.match(cb,/division_id/);assert.match(cb,/division_index/)});
