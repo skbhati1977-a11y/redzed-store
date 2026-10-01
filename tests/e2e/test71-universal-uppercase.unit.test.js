@@ -190,3 +190,6 @@ test('Save failures guide to exact relevant field or section with friendly messa
 
 
 test('Save stage errors identify failing CB subsystem without raw technical text',()=>{const cb=fs.readFileSync(path.resolve(__dirname,'../../real-cb-new-v9130-fix2.html'),'utf8');assert.ok(cb.includes("e.saveStage='CB_SAVE'"));assert.ok(cb.includes("e.saveStage='MATERIAL_MAPPING'"));assert.ok(cb.includes("e.saveStage='GSM_SAVE'"));assert.ok(cb.includes('Material की Set / Art mapping save नहीं हो सकी.'));assert.ok(cb.includes('Colour GSM save नहीं हो सका.'));assert.ok(cb.includes("err.guide={selector:'.material-layer:nth-of-type(2)'}"))});
+
+
+test('Statement timeout reports exact friendly reason instead of blaming required details',()=>{const cb=fs.readFileSync(path.resolve(__dirname,'../../real-cb-new-v9130-fix2.html'),'utf8');assert.ok(cb.includes('server save process timeout हुआ है'));assert.ok(cb.includes('/statement timeout|canceling statement|query canceled/i.test(raw)'))});
