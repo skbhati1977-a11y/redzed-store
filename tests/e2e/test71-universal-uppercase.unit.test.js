@@ -121,3 +121,6 @@ test('Multi Cutting uses per-lot roll selections and prevents one physical roll 
 
 
 test('Additional Material keeps mapping first, Yield/PO planning second, supplier and bill details last',()=>{const cb=fs.readFileSync(path.resolve(__dirname,'../../real-cb-new-v9130-fix2.html'),'utf8');const map=cb.indexOf('Allowed Art Categories'),yieldPos=cb.indexOf('YIELD ESTIMATION · PO PLANNING'),supplier=cb.indexOf('SUPPLIER / PURCHASE DETAILS'),bill=cb.indexOf('BILL NO.');assert.ok(map>=0&&yieldPos>map&&supplier>yieldPos&&bill>supplier);assert.match(cb,/rr_cb_material_estimate_v1/);assert.match(cb,/rr_cb_material_po_draft_create_v1/);assert.match(cb,/rr_material_types_v805/);assert.match(cb,/exact Material/)});
+
+
+test('CB editor mobile workspace keeps header and save actions in normal document flow',()=>{const cb=fs.readFileSync(path.resolve(__dirname,'../../real-cb-new-v9130-fix2.html'),'utf8');assert.ok(cb.includes('.head{position:relative'));assert.ok(cb.includes('.actions{position:static'));assert.ok(!cb.includes('.head{position:sticky'));assert.ok(!cb.includes('.actions{position:fixed'))});
