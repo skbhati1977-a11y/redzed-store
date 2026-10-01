@@ -133,3 +133,6 @@ test('CB embedded editor header keeps active CB number visible',()=>{const js=fs
 
 
 test('Supplier PO is PCS-first, supplier-consolidated, thumbnail-aware and asks for physical cutting',()=>{const cb=fs.readFileSync(path.resolve(__dirname,'../../real-cb-new-v9130-fix2.html'),'utf8');assert.ok(cb.includes('+ ADD ANOTHER MATERIAL'));assert.ok(cb.includes('PURCHASE ORDER SUMMARY'));assert.ok(cb.includes('C'+"'"+'+esc(x.colour_no)'));assert.ok(cb.includes('rr_cb_material_estimate_v2'));assert.ok(cb.includes('rr_cb_supplier_po_generate_v1'));assert.ok(cb.includes('colour_image_url'));assert.ok(cb.includes('Physical cloth cutting/sample collect करें'));assert.ok(!cb.includes('rr_cb_material_po_draft_create_v1'))});
+
+
+test('Multi-item multi-supplier PO remains dynamic and supplier grouped without hard supplier count',()=>{const cb=fs.readFileSync(path.resolve(__dirname,'../../real-cb-new-v9130-fix2.html'),'utf8');assert.ok(cb.includes('const groups=new Map()'));assert.ok(cb.includes('normalizedMasterName(m.vendor)'));assert.ok(cb.includes('groups.get(key).lines.push'));assert.ok(cb.includes('GENERATE PO · '));assert.ok(cb.includes('rr_cb_supplier_po_generate_v1'));assert.ok(cb.includes('po_no'));assert.ok(cb.includes('colour_image_url'));assert.ok(cb.includes('estimated_pcs'));assert.ok(cb.includes('Physical cloth cutting/sample collect करें'))});
