@@ -136,3 +136,6 @@ test('Supplier PO is PCS-first, supplier-consolidated, thumbnail-aware and asks 
 
 
 test('Multi-item multi-supplier PO remains dynamic and supplier grouped without hard supplier count',()=>{const cb=fs.readFileSync(path.resolve(__dirname,'../../real-cb-new-v9130-fix2.html'),'utf8');assert.ok(cb.includes('const groups=new Map()'));assert.ok(cb.includes('normalizedMasterName(m.vendor)'));assert.ok(cb.includes('groups.get(key).lines.push'));assert.ok(cb.includes('GENERATE PO · '));assert.ok(cb.includes('rr_cb_supplier_po_generate_v1'));assert.ok(cb.includes('po_no'));assert.ok(cb.includes('colour_image_url'));assert.ok(cb.includes('estimated_pcs'));assert.ok(cb.includes('Physical cloth cutting/sample collect करें'))});
+
+
+test('Only add-another-material remains a large primary add action in Additional Material selection',()=>{const cb=fs.readFileSync(path.resolve(__dirname,'../../real-cb-new-v9130-fix2.html'),'utf8');assert.ok(cb.includes('+ ADD ANOTHER MATERIAL'));assert.ok(cb.includes('compact-master-row'));assert.ok(cb.includes('compact-new newMaterial'));assert.ok(cb.includes('compact-new addFabric'));assert.ok(!cb.includes('add-red newMaterial'));assert.ok(!cb.includes('add-red addFabric'))});
