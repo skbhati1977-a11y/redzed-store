@@ -28,3 +28,6 @@ test('material mapping is explicit S-set first and allocation-specific',()=>{con
 
 test('present and future CB materials keep one independent division selector and configured category mirror',()=>{const cb=fs.readFileSync(path.resolve(__dirname,'../../real-cb-new-v9130-fix2.html'),'utf8');assert.match(cb,/class="artSetAll"/);assert.match(cb,/class="artSetCheck"/);assert.match(cb,/Each material keeps its own division mapping/);assert.match(cb,/materialAppliesToArt/);assert.match(cb,/allowedArtCategoryIds/);assert.match(cb,/mirrorMaterialSetsFromDecidedArt/);assert.doesNotMatch(cb,/flat-polo\|polo/);assert.doesNotMatch(cb,/crew-neck\|drop-shoulder\|down-shoulder\|round-neck/)});
 test('legacy CB material without canonical Art category mapping is exception-compatible',()=>{const cb=fs.readFileSync(path.resolve(__dirname,'../../real-cb-new-v9130-fix2.html'),'utf8');assert.match(cb,/legacyUnmapped/);assert.match(cb,/if\(legacyUnmapped\)continue/)});
+
+
+test('CB Art thumbnails render inside mapped material and direct no-material panel',()=>{const cb=fs.readFileSync(path.resolve(__dirname,'../../real-cb-new-v9130-fix2.html'),'utf8');assert.match(cb,/DIRECT ART · NO MATERIAL/);assert.match(cb,/class="materialArtThumbs"/);assert.match(cb,/data-material-art/);assert.match(cb,/const mapped=new Set\(\)/);assert.match(cb,/!mapped\.has\(String\(unit\.id\)\)/)});
