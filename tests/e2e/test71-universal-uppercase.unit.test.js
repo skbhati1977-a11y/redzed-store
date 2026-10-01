@@ -55,3 +55,6 @@ test('CB EDIT CONTINUE is a persistent primary action for the canonical OPEN car
 
 
 test('CB OPEN card renders persistent ART DECISION beside EDIT CONTINUE',()=>{const chat=fs.readFileSync(path.resolve(__dirname,'../../test70-real-chat-live-v70.js'),'utf8');assert.match(chat,/class="cb-primary-art"/);assert.match(chat,/data-action="ART_DECISION"/);assert.match(chat,/>ART DECISION<\/a>/);assert.match(chat,/real-art-decide-master\.html\?cb_unit_id=/);assert.match(chat,/card-actions.*edit\+artButton\+mapped/)});
+
+
+test('Art Decision remains editable before Cutting and locks once a Cutting lot exists',()=>{const chat=fs.readFileSync(path.resolve(__dirname,'../../test70-real-chat-live-v70.js'),'utf8'),art=fs.readFileSync(path.resolve(__dirname,'../../real-art-decide-master-v9231.js'),'utf8');assert.match(chat,/ART LOCKED · CUTTING/);assert.match(chat,/artLocked=released>0/);assert.match(art,/artDecisionCuttingLock/);assert.match(art,/from\("rr_lots"\).*eq\("cb_id",id\)/);assert.match(art,/Art Decision locked: Cutting Lot has already been created\/released for this Set/)});
