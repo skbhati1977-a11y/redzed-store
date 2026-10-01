@@ -3234,8 +3234,9 @@ async function createLot(event = {}) {
     }
 
     const valid = validateLot();
-    const selectedPhysicalRollIds=[...(window.RR_SELECTED_CUTTING_ROLL_IDS||[])];
+    const selectedPhysicalRollIds=[...(window.RR_SELECTED_CUTTING_ROLL_IDS||[])],selectedRollsByDev={...(window.RR_SELECTED_CUTTING_ROLLS_BY_DEV||{})};
     if(valid.lotMode!=='multi'&&!selectedPhysicalRollIds.length)throw new Error('हर colour के लिए physical roll select करें.');
+    if(valid.lotMode==='multi')for(const lot of valid.lots){if(!(selectedRollsByDev[lot.dev_no]||[]).length)throw new Error(lot.dev_no+': हर colour के लिए physical roll select करें.');}
     matchingReservations = await reserveMatchingForLots(valid, client);
     const progressText = valid.lotMode === "multi"
       ? "Multi Lots save हो रहे हैं..."
@@ -3301,16 +3302,18 @@ async function createLot(event = {}) {
 
     if (result.error) throw result.error;
     releaseCommitted = true;
-    if(valid.lotMode!=='multi'&&selectedPhysicalRollIds.length){
-      const releasedLot=await client.from('rr_cutting_lots_v3').select('id,cb_unit_id,lot_no').eq('lot_no',valid.lots[0].lot_no).maybeSingle();
+    for(const lot of valid.lots){
+      const ids=valid.lotMode==='multi'?(selectedRollsByDev[lot.dev_no]||[]):selectedPhysicalRollIds;
+      if(!ids.length)continue;
+      const releasedLot=await client.from('rr_cutting_lots_v3').select('id,cb_unit_id,lot_no').eq('lot_no',lot.lot_no).maybeSingle();
       if(releasedLot.error)throw releasedLot.error;
       if(!releasedLot.data)throw new Error('Released Cutting Lot नहीं मिला.');
-      const bind=await client.rpc('rr_cutting_bind_rolls_v1',{p_cutting_lot_id:releasedLot.data.id,p_cb_unit_id:releasedLot.data.cb_unit_id,p_roll_ids:selectedPhysicalRollIds});
+      const bind=await client.rpc('rr_cutting_bind_rolls_v1',{p_cutting_lot_id:releasedLot.data.id,p_cb_unit_id:releasedLot.data.cb_unit_id,p_roll_ids:ids});
       if(bind.error)throw bind.error;
       const yieldCapture=await client.rpc('rr_cutting_capture_yield_v1',{p_cutting_lot_id:releasedLot.data.id});
       if(yieldCapture.error)console.warn('Yield observation capture warning',yieldCapture.error);
-      window.RR_SELECTED_CUTTING_ROLL_IDS=[];
     }
+    window.RR_SELECTED_CUTTING_ROLL_IDS=[];window.RR_SELECTED_CUTTING_ROLLS_BY_DEV={};
 
     const matchingWarnings = await confirmMatchingReservations(client, matchingReservations);
     const actualRateWarnings = await postCuttingActuals(valid, client);
