@@ -73,3 +73,6 @@ test('CB OPEN actions render before actor role hydration while destination enfor
 
 
 test('CB quantity reconciliation offers Debit Note for SHORT and Credit Note for EXCESS',()=>{const cb=fs.readFileSync(path.resolve(__dirname,'../../real-cb-new-v9130-fix2.html'),'utf8');assert.match(cb,/MAKE DEBIT NOTE/);assert.match(cb,/MAKE CREDIT NOTE/);assert.match(cb,/decideReconciliation\('DEBIT_NOTE'\)/);assert.match(cb,/decideReconciliation\('CREDIT_NOTE'\)/);assert.match(cb,/Credit Note posted to supplier Accounts/)});
+
+
+test('SHORT reconciliation can enter existing Damage Claim lifecycle without a duplicate damage engine',()=>{const cb=fs.readFileSync(path.resolve(__dirname,'../../real-cb-new-v9130-fix2.html'),'utf8');assert.match(cb,/REPORT DAMAGE/);assert.match(cb,/rr_create_cb_damage_claim_v1/);assert.match(cb,/BEFORE_CUTTING/);assert.match(cb,/Owner verification\/approval required before supplier Accounts claim/);assert.doesNotMatch(cb,/rr_cb_reconciliation_damage/)});
