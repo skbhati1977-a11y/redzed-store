@@ -40,3 +40,6 @@ test('CB user-facing division terminology is Set while individual identifiers re
 
 
 test('CB group OPEN card renders edit action on first paint with canonical fallback href and Set label',()=>{const chat=fs.readFileSync(path.resolve(__dirname,'../../test70-real-chat-live-v70.js'),'utf8');assert.match(chat,/fallbackEdit=c\.cb_id\?'real-cb-new-v9130-loader\.html\?cb_id='/);assert.match(chat,/editHref=String\(c\.edit_href\|\|fallbackEdit\|\|''\)/);assert.match(chat,/EDIT \/ CONTINUE/);assert.match(chat,/<span>Sets <b>/)});
+
+
+test('saved and new Additional Material rows use one canonical shape without silent first-material selection',()=>{const cb=fs.readFileSync(path.resolve(__dirname,'../../real-cb-new-v9130-fix2.html'),'utf8');assert.doesNotMatch(cb,/firstExtra=!reg\?materialCategories\(\)\[0\]/);assert.match(cb,/categoryId:cat\?\.id\|\|''/);assert.match(cb,/canonicalEntryById/);assert.match(cb,/material_category_id/);assert.match(cb,/vendor_bill_no/);assert.match(cb,/requirement_state/);assert.match(cb,/allocationAllowed\.length\?allocationAllowed/)});
