@@ -52,3 +52,6 @@ test('TEST70 pilot force-loads TEST71 instant CB edit renderer',()=>{const html=
 
 
 test('CB EDIT CONTINUE is a persistent primary action for the canonical OPEN card',()=>{const chat=fs.readFileSync(path.resolve(__dirname,'../../test70-real-chat-live-v70.js'),'utf8');assert.match(chat,/class="cb-primary-edit"/);assert.match(chat,/canEdit&&state==='OPEN'&&editHref/);assert.doesNotMatch(chat,/state==='OPEN'\?'EDIT \/ CONTINUE':'UPDATE MATERIAL'/)});
+
+
+test('CB OPEN card renders persistent ART DECISION beside EDIT CONTINUE',()=>{const chat=fs.readFileSync(path.resolve(__dirname,'../../test70-real-chat-live-v70.js'),'utf8');assert.match(chat,/class="cb-primary-art"/);assert.match(chat,/data-action="ART_DECISION"/);assert.match(chat,/>ART DECISION<\/a>/);assert.match(chat,/real-art-decide-master\.html\?cb_unit_id=/);assert.match(chat,/card-actions.*edit\+artButton\+mapped/)});
