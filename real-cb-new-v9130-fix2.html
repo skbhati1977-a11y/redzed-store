@@ -188,7 +188,7 @@ function renderMaterials(){
   node.querySelector('.date')?.addEventListener('change',e=>m.billDate=e.target.value);
   node.querySelector('.rate')?.addEventListener('input',e=>{m.billRate=e.target.value;syncPrice(m);const valueInput=node.querySelector('.value');if(valueInput)valueInput.value=m.billValue;updateSummary()});
   node.querySelector('.acceptPartyBill')?.addEventListener('click',()=>decideReconciliation('ACCEPT_PARTY_BILL'));node.querySelector('.makeDebitNote')?.addEventListener('click',()=>{if(confirm('Create supplier Debit Note for the physical weight shortage?'))decideReconciliation('DEBIT_NOTE')});node.querySelector('.makeCreditNote')?.addEventListener('click',()=>{if(confirm('Create supplier Credit Note for the physical weight excess?'))decideReconciliation('CREDIT_NOTE')});node.querySelector('.reportVariance')?.addEventListener('click',reportReconciliationVariance);node.querySelector('.addVendor')?.addEventListener('click',async()=>{const v=prompt('New Supplier Name',m.vendor||'');if(!v?.trim())return;try{m.vendor=await ensureCanonicalSupplier(v);await loadOptions();renderMaterials()}catch(e){setMessage(e?.message||String(e))}});
-  node.querySelector('.addFabric')?.addEventListener('click',()=>{const v=prompt('New Fabric / Material Name',m.fabric||'');if(v?.trim()){m.fabric=v.trim();renderMaterials()}});
+  node.querySelector('.addFabric')?.addEventListener('click',()=>{const v=prompt(m.type==='regular'?'New Fabric Name':'New Quality / Variety',m.fabric||'');if(v?.trim()){m.fabric=v.trim();renderMaterials()}});
   node.querySelector('.remove')?.addEventListener('click',()=>{materials.splice(mi,1);renderMaterials();updateSummary()})
  });
  updateSummary();if(cbId){loadArtThumbs();loadMaterialEstimates()}
