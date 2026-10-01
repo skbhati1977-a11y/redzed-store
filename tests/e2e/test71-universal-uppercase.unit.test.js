@@ -106,3 +106,6 @@ test('final SEND TO SUPER ADMIN action marks WhatsApp delivery SENT without a se
 
 
 test('CB card keeps Sets label and Art Decision until actual Cutting lot evidence exists',()=>{const chat=fs.readFileSync(path.resolve(__dirname,'../../test70-real-chat-live-v70.js'),'utf8'),shell=fs.readFileSync(path.resolve(__dirname,'../../test70-cb-purchase-real-chat-pilot.html'),'utf8');assert.match(chat,/<span>Sets <b>/);assert.match(chat,/ART DECISION/);assert.match(chat,/lot_numbers\|\|x\.lots/);assert.doesNotMatch(chat,/artLocked=released>0/);assert.match(shell,/TEST71-ART-SETS-PERSISTENT-/)});
+
+
+test('Art Decision Edit remains editable until a real Lot Number exists and CB actions stay side by side',()=>{const chat=fs.readFileSync(path.resolve(__dirname,'../../test70-real-chat-live-v70.js'),'utf8'),shell=fs.readFileSync(path.resolve(__dirname,'../../test70-cb-purchase-real-chat-pilot.html'),'utf8');assert.match(chat,/ART DECISION EDIT/);assert.match(chat,/ART DECISION FIXED/);assert.match(chat,/lot_no\|\|l\.lot_number/);assert.doesNotMatch(chat,/ART LOCKED · CUTTING/);assert.doesNotMatch(chat,/RELEASED_TO_CUTTING/);assert.match(shell,/grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/)});
