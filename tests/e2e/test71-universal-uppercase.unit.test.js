@@ -112,3 +112,6 @@ test('Art Decision Edit remains editable until a real Lot Number exists and CB a
 
 
 test('WhatsApp handoff preserves current CB editor context for Android back return',()=>{const cb=fs.readFileSync(path.resolve(__dirname,'../../real-cb-new-v9130-fix2.html'),'utf8');assert.match(cb,/RR_CB_WHATSAPP_RETURN_V1/);assert.match(cb,/href:location\.href,scrollY:window\.scrollY,cbId/);assert.match(cb,/pageshow.*restoreCbAfterWhatsApp/);assert.match(cb,/visibilitychange/);assert.match(cb,/window\.scrollTo/)});
+
+
+test('CB GSM and Cutting exact roll yield foundation are wired without changing quantity reconciliation',()=>{const cb=fs.readFileSync(path.resolve(__dirname,'../../real-cb-new-v9130-fix2.html'),'utf8'),cut=fs.readFileSync(path.resolve(__dirname,'../../redzed-cutting-cb-actions-v72035.js'),'utf8'),pm=fs.readFileSync(path.resolve(__dirname,'../../real-cutting-master-pm.V719.3.js'),'utf8');assert.match(cb,/class="colourGsm"/);assert.match(cb,/rr_cb_colour_gsm_save_v1/);assert.match(cb,/rr_cb_colour_gsm_v1/);assert.match(cb,/function reconciliationLocal/);assert.match(cut,/rr_cutting_regular_purchase_sources_v2/);assert.match(cut,/Physical Rolls · Lot Binding/);assert.match(cut,/RR_SELECTED_CUTTING_ROLL_IDS/);assert.match(pm,/rr_cutting_bind_rolls_v1/);assert.match(pm,/rr_cutting_capture_yield_v1/);assert.match(pm,/valid\.lotMode!=='multi'/)});
