@@ -263,3 +263,6 @@ test('Collar Cuff aliases expose one canonical material while legacy history rem
 
 
 test('Add New Material requires canonical duplicate guard before create',()=>{const cb=fs.readFileSync(path.resolve(__dirname,'../../real-cb-new-v9130-fix2.html'),'utf8');assert.ok(cb.includes('rr_material_canonical_guard_v1'));assert.ok(cb.includes("g.status==='EXACT'"));assert.ok(cb.includes("g.status==='SIMILAR'"));assert.ok(cb.includes('Press Save again only if this is genuinely a different material.'))});
+
+
+test('CB pre Art Set specification binds category sleeve finish and sizes',()=>{const cb=fs.readFileSync(path.resolve(__dirname,'../../real-cb-new-v9130-fix2.html'),'utf8');assert.ok(cb.includes('SET CONSTRUCTION · PRE-ART SPEC'));assert.ok(cb.includes('HALF SLEEVE'));assert.ok(cb.includes('FULL SLEEVE'));assert.ok(cb.includes('WITH TAPE'));assert.ok(cb.includes('WITH CUFF'));assert.ok(cb.includes('WITH RIB'));assert.ok(cb.includes('rr_cb_set_requirement_sync_v1'))});
