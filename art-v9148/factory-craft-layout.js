@@ -5,9 +5,6 @@
 
   const STYLE_ID = 'artFactoryCraftLayoutV9148';
   const GROUPS = [
-    { label: 'Collar', keys: ['collar'] },
-    { label: 'Neck', keys: ['neck'] },
-    { label: 'Sleeve', keys: ['sleeve', 'cuff'] },
     { label: 'Placket', keys: ['placket'] },
     { label: 'Panels', keys: ['panel', 'shoulder', 'pocket', 'waist', 'bottom', 'fit', 'construction'] },
     { label: 'Stitch / Finish', keys: ['stitch', 'finish'] }
@@ -59,10 +56,12 @@
 
     const buckets = GROUPS.map(group => ({ ...group, options: [] }));
     const advanced = [];
+    const retiredCanonical = [];
 
     for (const section of original) {
       const heading = normalize(section.querySelector('h4')?.textContent);
       const buttons = [...section.querySelectorAll('.rr-caption-pill')];
+      if (['collar','neck','sleeve','cuff'].some(key => heading.includes(key))) { retiredCanonical.push(section); continue; }
       const bucket = buckets.find(group => group.keys.some(key => heading.includes(key)));
       if (bucket) bucket.options.push(...buttons);
       else advanced.push(section);
@@ -93,6 +92,7 @@
       document.getElementById('moreFeaturesBtn')?.toggleAttribute('hidden', advanced.length === 0);
     }
 
+    if(retiredCanonical.length){const note=document.createElement('section');note.className='rr-caption-group art-factory-primary-group';note.innerHTML='<h4>CB Canonical Construction</h4><div class="rr-caption-options"><span class="rr-caption-empty" style="display:block!important">Category decides Neck/Collar. Sleeve, Cuff and Size are mirrored from CB and are not re-selected in Art Master.</span></div>';grid.prepend(note);}
     grid.dataset.factoryGrouped = '1';
   }
 
