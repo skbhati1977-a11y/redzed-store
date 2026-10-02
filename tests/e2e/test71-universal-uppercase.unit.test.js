@@ -229,3 +229,6 @@ test('CB boot rerenders reconciliation after projection load',()=>{const cb=fs.r
 
 
 test('Reconciliation canonical load embeds decision projection in same backend snapshot',()=>{const cb=fs.readFileSync(path.resolve(__dirname,'../../real-cb-new-v9130-fix2.html'),'utf8');assert.ok(cb.includes('rr_cb_quantity_reconciliation_get_v2'));assert.ok(cb.includes('r.data?.decision_projection'));assert.ok(cb.includes('await loadReconciliation();renderMaterials();'))});
+
+
+test('CB reconciliation decisions remain view-only until final confirm then post current decision',()=>{const cb=fs.readFileSync(path.resolve(__dirname,'../../real-cb-new-v9130-fix2.html'),'utf8');assert.ok(cb.includes('rr_cb_quantity_reconcile_draft_v5'));assert.ok(cb.includes('rr_cb_reconciliation_post_on_confirm_v1'));assert.ok(cb.includes('if(confirming&&cbId)'));assert.ok(cb.includes('Accounts posting will happen only on SAVE & CONFIRM.'))});
