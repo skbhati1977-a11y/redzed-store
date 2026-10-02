@@ -260,7 +260,7 @@ function moveViewer(delta){const n=state.viewerItems.length;if(!n)return;state.v
 async function loadAllowedArtCategories(unitId){try{const a=await state.client.from('rr_cb_material_allocations').select('purchase_entry_id').eq('division_id',unitId);if(a.error)throw a.error;const ids=[...new Set((a.data||[]).map(x=>x.purchase_entry_id).filter(Boolean))];if(!ids.length)return[];const e=await state.client.from('rr_cb_material_allocations').select('allowed_art_category_ids').eq('division_id',unitId).in('purchase_entry_id',ids);if(e.error)throw e.error;return [...new Set((e.data||[]).flatMap(x=>x.allowed_art_category_ids||[]).map(String))]}catch(e){console.warn('Allowed Art categories',e);return[]}}
 async function openDecision(unitId){
   const u=unitFor(unitId);if(!u)return;
-  if(String(u.material_decision||'DUE').toUpperCase()==='DUE'){say('Material Decision DUE है. CB में Direct Material Decision complete करें.','error');return;}
+  
   const a=assignmentFor(unitId),d=decisionFor(unitId);
   state.active=u;state.allowedArtCategoryIds=u.garment_category_id?[String(u.garment_category_id)]:await loadAllowedArtCategories(unitId);state.step="art";state.artId=a?.art_id?String(a.art_id):null;
   state.printIds=printIdsForAssignment(a);state.printMode=a?.print_due?"DUE":a?.print_not_applicable?"NA":state.printIds.length?"SELECTED":d?.print_status==="PRINT_DUE"?"DUE":"NA";
@@ -365,6 +365,7 @@ async function saveDecision(){
     const mode=await currentDataMode();
     const r=await state.client.rpc("rr_pm_save_decision_bundle_v804",{p_cb_unit_id:state.active.id,p_art_id:state.artId,p_print_mode:state.printMode,p_print_ids:state.printIds,p_sticker_mode:state.stickerMode,p_sticker_master_ids:state.stickerIds,p_metal_id_mode:state.metalMode,p_metal_id_master_ids:state.metalIds,p_data_mode:mode});
     if(r.error)throw r.error;
+    const mirror=await state.client.rpc("rr_sync_cb_mapping_from_art_v1",{p_cb_unit_id:state.active.id,p_art_id:state.artId});if(mirror.error)throw mirror.error;
     const savedLabel=`${cbNo(state.active)} · ${dNo(state.active)}`;
     const projected=await state.client.rpc("rr_cb_department_cards_v600",{p_state:null,p_search:savedCb});
     if(projected.error)throw projected.error;
