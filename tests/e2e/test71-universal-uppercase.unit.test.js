@@ -241,3 +241,6 @@ test('Canonical CB detail survives enrichment failures inside loadExisting',()=>
 
 
 test('Saved CB canonical load is independent of optional master bootstrap while new CB still requires masters',()=>{const cb=fs.readFileSync(path.resolve(__dirname,'../../real-cb-new-v9130-fix2.html'),'utf8');assert.ok(cb.includes('savedMastersPromise=Promise.allSettled'));assert.ok(cb.includes("console.warn('CB saved-form optional master load'"));assert.ok(cb.includes('else{await mastersPromise;'))});
+
+
+test('Saved CB master bootstrap runs once before canonical hydration and new CB stays strict',()=>{const cb=fs.readFileSync(path.resolve(__dirname,'../../real-cb-new-v9130-fix2.html'),'utf8');assert.ok(cb.includes('const masterResults=await Promise.allSettled([loadCanonicalMasters(),loadCategories(),loadOptions()]);await loadExisting();'));assert.ok(cb.includes('else{await Promise.all([loadCanonicalMasters(),loadCategories(),loadOptions()]);'));assert.ok(!cb.includes('savedMastersPromise'));assert.ok(!cb.includes('mastersPromise=Promise.all'))});
