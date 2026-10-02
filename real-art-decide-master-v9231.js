@@ -260,6 +260,7 @@ function moveViewer(delta){const n=state.viewerItems.length;if(!n)return;state.v
 async function loadAllowedArtCategories(unitId){try{const a=await state.client.from('rr_cb_material_allocations').select('purchase_entry_id').eq('division_id',unitId);if(a.error)throw a.error;const ids=[...new Set((a.data||[]).map(x=>x.purchase_entry_id).filter(Boolean))];if(!ids.length)return[];const e=await state.client.from('rr_cb_material_allocations').select('allowed_art_category_ids').eq('division_id',unitId).in('purchase_entry_id',ids);if(e.error)throw e.error;return [...new Set((e.data||[]).flatMap(x=>x.allowed_art_category_ids||[]).map(String))]}catch(e){console.warn('Allowed Art categories',e);return[]}}
 async function openDecision(unitId){
   const u=unitFor(unitId);if(!u)return;
+  if(String(u.material_decision||'DUE').toUpperCase()==='DUE'){say('Material Decision DUE है. CB में Direct Material Decision complete करें.','error');return;}
   const a=assignmentFor(unitId),d=decisionFor(unitId);
   state.active=u;state.allowedArtCategoryIds=u.garment_category_id?[String(u.garment_category_id)]:await loadAllowedArtCategories(unitId);state.step="art";state.artId=a?.art_id?String(a.art_id):null;
   state.printIds=printIdsForAssignment(a);state.printMode=a?.print_due?"DUE":a?.print_not_applicable?"NA":state.printIds.length?"SELECTED":d?.print_status==="PRINT_DUE"?"DUE":"NA";
