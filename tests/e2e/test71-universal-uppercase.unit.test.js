@@ -269,3 +269,6 @@ test('CB pre Art Set specification binds category sleeve finish and sizes',()=>{
 
 
 test('Cuff and Tape are one canonical sleeve finish',()=>{const cb=fs.readFileSync(path.resolve(__dirname,'../../real-cb-new-v9130-fix2.html'),'utf8');assert.ok(cb.includes('CUFF_TAPE'));assert.ok(cb.includes('WITH CUFF / TAPE'));assert.ok(cb.includes("role:'CUFF_TAPE'"))});
+
+
+test('Collar and Cuff material uses independent Collar neck and Cuff sleeve switches',()=>{const cb=fs.readFileSync(path.resolve(__dirname,'../../real-cb-new-v9130-fix2.html'),'utf8');assert.ok(cb.includes("role:'COLLAR'},{zone:'SLEEVE',role:'CUFF'"));assert.ok(cb.includes('>WITH CUFF</option>'));assert.ok(!cb.includes('>WITH CUFF / TAPE</option>'));assert.ok(cb.includes("['N_A','N/A · NOT APPLICABLE'],['CUFF','CUFF']"))});
