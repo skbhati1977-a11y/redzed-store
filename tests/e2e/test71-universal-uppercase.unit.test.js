@@ -223,3 +223,6 @@ test('CB reconciliation renders backend previous-current projection only without
 
 
 test('Current detail remains above previous-current projection',()=>{const cb=fs.readFileSync(path.resolve(__dirname,'../../real-cb-new-v9130-fix2.html'),'utf8');const detail=cb.indexOf('Decision: <b>${esc(x.decision)}</b> · Financial Qty'),projection=cb.indexOf('${esc(h.view_role)} · ${esc(h.decision_date)}');assert.ok(detail>=0&&projection>detail)});
+
+
+test('CB boot rerenders reconciliation after projection load',()=>{const cb=fs.readFileSync(path.resolve(__dirname,'../../real-cb-new-v9130-fix2.html'),'utf8');assert.ok(cb.includes('Promise.allSettled([loadReconciliation()]).then(()=>{renderMaterials();updateSummary()});'))});
