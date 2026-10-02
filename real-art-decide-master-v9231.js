@@ -266,7 +266,7 @@ async function openDecision(unitId){
   state.printIds=printIdsForAssignment(a);state.printMode=a?.print_due?"DUE":a?.print_not_applicable?"NA":state.printIds.length?"SELECTED":d?.print_status==="PRINT_DUE"?"DUE":"NA";
   state.stickerIds=stickerIdsForAssignment(a);state.stickerMode=a?.sticker_due?"DUE":a?.sticker_not_applicable?"NA":state.stickerIds.length?"SELECTED":d?.sticker_status==="STICKER_DUE"?"DUE":"NA";
   state.metalIds=metalIdsForAssignment(a);state.metalMode=a?.metal_id_due?"DUE":a?.metal_id_not_applicable?"NA":state.metalIds.length?"SELECTED":d?.metal_id_status==="METAL_ID_DUE"?"DUE":"NA";
-  $("decisionTitle").textContent=`${cbNo(u)} · ${dNo(u)}`;$("decisionContext").textContent=`Canonical mirror · ${u.sleeve_type||"HALF"} · ${u.sleeve_finish||"WITH_CUFF"} · ${(u.size_set||["L","XL","XXL"]).join(", ")} · Neck/Collar by Category`;$("pickerSearch").value="";decisionSay("");showStep("art");
+  $("decisionTitle").textContent=`${cbNo(u)} · ${dNo(u)}`;$("decisionContext").textContent=`Canonical mirror · ${u.sleeve_type||"HALF"} · ${u.sleeve_finish||"WITH_CUFF"} · ${u.border_pounchi||"WITHOUT_BORDER_POUNCHI"} · ${(u.size_set||["L","XL","XXL"]).join(", ")} · Neck/Collar by Category`;$("pickerSearch").value="";decisionSay("");showStep("art");
   const sheet=$("decisionSheet");sheet.classList.remove("hidden");sheet.setAttribute("aria-hidden","false");document.body.style.overflow="hidden"
 }
 function closeDecision(){if(!$("masterSheet").classList.contains("hidden"))return;const sheet=$("decisionSheet");sheet.classList.add("hidden");sheet.setAttribute("aria-hidden","true");document.body.style.overflow=""}
