@@ -1450,6 +1450,7 @@ function sizesForCard(card) {
   const decision = cardDecision(card);
 
   const sources = [
+    card.division?.size_set,
     card.assignment?.size_set,
     card.assignment?.sizes,
     decision.art?.size_set,
@@ -1534,6 +1535,7 @@ function openLotByDivision(divisionId, requestedMode = "single") {
     setInputValue("artNo", decision.artNo);
     setInputValue("printNo", decision.noPrintRequired ? "N/A" : decision.printNo);
     setInputValue("sizeSet", sizes.join(","));
+    setInputValue("cmSingleSleeve", String(card.division.sleeve_type||"HALF").toUpperCase()==="FULL"?"Full":"Half");
     setInputValue("lotNotes", "");
     setInputValue("fabricUsed", unitWeight ? unitWeight.toFixed(3) : "");
     setInputValue("wastageWeight", "0");
@@ -1553,6 +1555,9 @@ function openLotByDivision(divisionId, requestedMode = "single") {
     openSheet(lotSheet);
 
     ensureComboUi();
+    setInputValue("cmSingleSleeve", String(card.division.sleeve_type||"HALF").toUpperCase()==="FULL"?"Full":"Half");
+    if($("cmSingleSleeve")){$("cmSingleSleeve").disabled=true;$("cmSingleSleeve").title="Mirrored from CB canonical mapping";}
+    if($("cmSingleSizeCombo")){$("cmSingleSizeCombo").disabled=true;$("cmSingleSizeCombo").title="Mirrored from CB canonical mapping";}
     hideLegacyOwnerCosting();
     setComboDefaults();
     setLotMode(currentLotMode);
