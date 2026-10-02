@@ -217,3 +217,6 @@ test('Decision change immediately refreshes view-only history',()=>{const cb=fs.
 
 
 test('CB form limits reconciliation view to previous and current while backend history remains complete',()=>{const cb=fs.readFileSync(path.resolve(__dirname,'../../real-cb-new-v9130-fix2.html'),'utf8');assert.ok(cb.includes("'CURRENT DECISION':'PREVIOUS DECISION'"));assert.ok(cb.includes('rows=[previous,current].filter(Boolean)'));assert.ok(!cb.includes('<strong>DECISION HISTORY</strong>'))});
+
+
+test('CB reconciliation renders backend previous-current projection only without financial amount details',()=>{const cb=fs.readFileSync(path.resolve(__dirname,'../../real-cb-new-v9130-fix2.html'),'utf8');assert.ok(cb.includes('rr_cb_quantity_reconciliation_projection_v1'));assert.ok(cb.includes('${esc(h.view_role)} · ${esc(h.decision_date)}'));assert.ok(!cb.includes('Decision: <b>${esc(x.decision)}</b> · Financial Qty'));assert.ok(!cb.includes('Debit ₹${Number(x.debit_amount'))});
