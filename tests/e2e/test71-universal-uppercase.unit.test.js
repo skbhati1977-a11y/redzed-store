@@ -257,3 +257,6 @@ test('Used material category is hidden from later Additional Material cards',()=
 
 
 test('Duplicate Additional Material category is blocked canonically and hidden from later cards',()=>{const cb=fs.readFileSync(path.resolve(__dirname,'../../real-cb-new-v9130-fix2.html'),'utf8');assert.ok(cb.includes('rr_cb_material_mapping_sync_v4'));assert.ok(cb.includes("const used=new Set(materials.filter(x=>x.type!=='regular'&&x!==m&&x.categoryId)"))});
+
+
+test('Collar Cuff aliases expose one canonical material while legacy history remains immutable',()=>{const cb=fs.readFileSync(path.resolve(__dirname,'../../real-cb-new-v9130-fix2.html'),'utf8');assert.ok(cb.includes("c.is_active!==false"));assert.ok(cb.includes("!=='cuff-collar'"))});
