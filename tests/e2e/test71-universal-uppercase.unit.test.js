@@ -199,3 +199,6 @@ test('CB save uses bounded v601 wrapper while preserving canonical save authorit
 
 
 test('CB save batches repeated Real Chat reconciliation through v601 authority',()=>{const cb=fs.readFileSync(path.resolve(__dirname,'../../real-cb-new-v9130-fix2.html'),'utf8');assert.ok(cb.includes("rr_cb_department_save_v601"))});
+
+
+test('CB reconciliation report lifecycle uses idempotent v2 authorities',()=>{const cb=fs.readFileSync(path.resolve(__dirname,'../../real-cb-new-v9130-fix2.html'),'utf8');assert.ok(cb.includes('rr_cb_quantity_reconcile_v2'));assert.ok(cb.includes('rr_cb_shortage_report_v2'));assert.ok(!cb.includes("rpc('rr_cb_quantity_reconcile_v1'"));assert.ok(!cb.includes("rpc('rr_cb_shortage_report_v1'"))});
