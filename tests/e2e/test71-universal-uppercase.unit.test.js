@@ -275,3 +275,6 @@ test('Collar and Cuff material uses independent Collar neck and Cuff sleeve swit
 
 
 test('CB construction defaults Half Sleeve Cuff and L XL XXL with canonical size groups',()=>{const cb=fs.readFileSync(path.resolve(__dirname,'../../real-cb-new-v9130-fix2.html'),'utf8');assert.ok(cb.includes('HALF SLEEVE'));assert.ok(cb.includes('WITH CUFF'));assert.ok(!cb.includes('WITH TAPE'));assert.ok(cb.includes('2XL, 3XL, 4XL'));assert.ok(cb.includes('3XL, 4XL, 5XL'));assert.ok(cb.includes('FREE SIZE'));assert.ok(cb.includes('rr_cb_set_requirement_sync_v2'))});
+
+
+test('CB construction defaults use half sleeve L XL XXL and rib sleeve N A',()=>{const cb=fs.readFileSync(path.resolve(__dirname,'../../real-cb-new-v9130-fix2.html'),'utf8');assert.ok(cb.includes("if(/rib/.test(n))return[{zone:'NECK',role:'NECK_RIB'},{zone:'SLEEVE',role:'N_A'}]"));assert.ok(cb.includes("sizeFamilyOptions(r.sizeFamily||'L, XL, XXL')"));assert.ok(cb.includes('value="CUFF"'));assert.ok(!cb.includes('value="CUFF_TAPE"'))});
