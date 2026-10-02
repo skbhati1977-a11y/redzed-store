@@ -261,11 +261,11 @@ async function loadAllowedArtCategories(unitId){try{const a=await state.client.f
 async function openDecision(unitId){
   const u=unitFor(unitId);if(!u)return;
   const a=assignmentFor(unitId),d=decisionFor(unitId);
-  state.active=u;state.allowedArtCategoryIds=await loadAllowedArtCategories(unitId);state.step="art";state.artId=a?.art_id?String(a.art_id):null;
+  state.active=u;state.allowedArtCategoryIds=u.garment_category_id?[String(u.garment_category_id)]:await loadAllowedArtCategories(unitId);state.step="art";state.artId=a?.art_id?String(a.art_id):null;
   state.printIds=printIdsForAssignment(a);state.printMode=a?.print_due?"DUE":a?.print_not_applicable?"NA":state.printIds.length?"SELECTED":d?.print_status==="PRINT_DUE"?"DUE":"NA";
   state.stickerIds=stickerIdsForAssignment(a);state.stickerMode=a?.sticker_due?"DUE":a?.sticker_not_applicable?"NA":state.stickerIds.length?"SELECTED":d?.sticker_status==="STICKER_DUE"?"DUE":"NA";
   state.metalIds=metalIdsForAssignment(a);state.metalMode=a?.metal_id_due?"DUE":a?.metal_id_not_applicable?"NA":state.metalIds.length?"SELECTED":d?.metal_id_status==="METAL_ID_DUE"?"DUE":"NA";
-  $("decisionTitle").textContent=`${cbNo(u)} · ${dNo(u)}`;$("decisionContext").textContent="Cutting se pehle complete crafting decision";$("pickerSearch").value="";decisionSay("");showStep("art");
+  $("decisionTitle").textContent=`${cbNo(u)} · ${dNo(u)}`;$("decisionContext").textContent=`Canonical mirror · ${u.sleeve_type||"HALF"} · ${u.sleeve_finish||"WITH_CUFF"} · ${(u.size_set||["L","XL","XXL"]).join(", ")} · Neck/Collar by Category`;$("pickerSearch").value="";decisionSay("");showStep("art");
   const sheet=$("decisionSheet");sheet.classList.remove("hidden");sheet.setAttribute("aria-hidden","false");document.body.style.overflow="hidden"
 }
 function closeDecision(){if(!$("masterSheet").classList.contains("hidden"))return;const sheet=$("decisionSheet");sheet.classList.add("hidden");sheet.setAttribute("aria-hidden","true");document.body.style.overflow=""}
@@ -357,7 +357,7 @@ async function advance(){const err=stepError(state.step);if(err){decisionSay(err
 async function artDecisionCuttingLock(unitId){const id=String(unitId||'').trim();if(!id)return false;const [unit,lots]=await Promise.all([state.client.from("rr_cb_units").select("id,is_locked,locked_at,status,is_cutting_enabled,operation_status").eq("id",id).maybeSingle(),state.client.from("rr_lots").select("id,lot_no,status").eq("cb_id",id).limit(1)]);if(unit.error)throw unit.error;if(lots.error)throw lots.error;const u=unit.data||{},unitLocked=!!u.is_locked||!!u.locked_at||["RELEASED","CUTTING","CUT","CLOSE","CLOSED"].includes(String(u.status||u.operation_status||"").toUpperCase());return unitLocked||(lots.data||[]).length>0}
 async function saveDecision(){
   if(await artDecisionCuttingLock(state.active?.id)){decisionSay("Art Decision locked: Cutting Lot has already been created/released for this Set.","error");return}
-  const err=allError();if(err){decisionSay(err,"error");return}if(state.allowedArtCategoryIds.length){const art=byId(state.arts,state.artId);if(!art||!state.allowedArtCategoryIds.includes(String(art.art_category_id||''))){decisionSay('Selected Art category is not allowed for this S division material mapping.','error');showStep('art');return}}
+  const err=allError();if(err){decisionSay(err,"error");return}if(state.allowedArtCategoryIds.length){const art=byId(state.arts,state.artId);if(!art||!state.allowedArtCategoryIds.includes(String(art.art_category_id||''))){decisionSay('Selected Art must match the canonical CB Category. Category/Neck/Sleeve/Cuff/Size are not re-decided in Art.','error');showStep('art');return}}
   const btn=$("decisionNext");setBusy(btn,true,"Saving…");
   try{
     const savedCb=cbNo(state.active);
