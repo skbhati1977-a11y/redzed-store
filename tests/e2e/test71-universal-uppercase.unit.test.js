@@ -244,3 +244,6 @@ test('Saved CB canonical load is independent of optional master bootstrap while 
 
 
 test('Saved CB master bootstrap runs once before canonical hydration and new CB stays strict',()=>{const cb=fs.readFileSync(path.resolve(__dirname,'../../real-cb-new-v9130-fix2.html'),'utf8');assert.ok(cb.includes('const masterResults=await Promise.allSettled([loadCanonicalMasters(),loadCategories(),loadOptions()]);await loadExisting();'));assert.ok(cb.includes('else{await Promise.all([loadCanonicalMasters(),loadCategories(),loadOptions()]);'));assert.ok(!cb.includes('savedMastersPromise'));assert.ok(!cb.includes('mastersPromise=Promise.all'))});
+
+
+test('CB reconciliation render state is declared before use',()=>{const cb=fs.readFileSync(path.resolve(__dirname,'../../real-cb-new-v9130-fix2.html'),'utf8');const decl=cb.indexOf('reconciliation=null,reconciliationHistory=[]'),render=cb.indexOf('function reconciliationPanel()');assert.ok(decl>=0&&render>decl);assert.ok(!cb.includes("cbLoadStage"));assert.ok(!cb.includes("loadStage='RENDER'"))});
