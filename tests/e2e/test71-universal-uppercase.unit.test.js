@@ -247,3 +247,6 @@ test('Saved CB master bootstrap runs once before canonical hydration and new CB 
 
 
 test('CB reconciliation render state is declared before use',()=>{const cb=fs.readFileSync(path.resolve(__dirname,'../../real-cb-new-v9130-fix2.html'),'utf8');const decl=cb.indexOf('reconciliation=null,reconciliationHistory=[]'),render=cb.indexOf('function reconciliationPanel()');assert.ok(decl>=0&&render>decl);assert.ok(!cb.includes("cbLoadStage"));assert.ok(!cb.includes("loadStage='RENDER'"))});
+
+
+test('Additional Material decided Set ownership is unique in mirror and backend sync',()=>{const cb=fs.readFileSync(path.resolve(__dirname,'../../real-cb-new-v9130-fix2.html'),'utf8');assert.ok(cb.includes('rr_cb_material_mapping_sync_v2'));assert.ok(cb.includes("claimed=new Set(materials.filter(x=>x.type!=='regular'&&x!==m)"));assert.ok(cb.includes('!claimed.has(Number(x.di))'))});
