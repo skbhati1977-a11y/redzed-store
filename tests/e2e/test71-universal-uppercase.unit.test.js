@@ -249,8 +249,11 @@ test('Saved CB master bootstrap runs once before canonical hydration and new CB 
 test('CB reconciliation render state is declared before use',()=>{const cb=fs.readFileSync(path.resolve(__dirname,'../../real-cb-new-v9130-fix2.html'),'utf8');const decl=cb.indexOf('reconciliation=null,reconciliationHistory=[]'),render=cb.indexOf('function reconciliationPanel()');assert.ok(decl>=0&&render>decl);assert.ok(!cb.includes("cbLoadStage"));assert.ok(!cb.includes("loadStage='RENDER'"))});
 
 
-test('Additional Material decided Set ownership is unique in mirror and backend sync',()=>{const cb=fs.readFileSync(path.resolve(__dirname,'../../real-cb-new-v9130-fix2.html'),'utf8');assert.ok(cb.includes('rr_cb_material_mapping_sync_v2'));assert.ok(cb.includes('rr_cb_material_mapping_sync_v3'));assert.ok(cb.includes('function defaultUsageRoles(m)'))});
+test('Additional Material decided Set ownership is unique in mirror and backend sync',()=>{const cb=fs.readFileSync(path.resolve(__dirname,'../../real-cb-new-v9130-fix2.html'),'utf8');assert.ok(cb.includes('rr_cb_material_mapping_sync_v2'));assert.ok(cb.includes('rr_cb_material_mapping_sync_v4'));assert.ok(cb.includes('function defaultUsageRoles(m)'))});
 
 
-test('CB material usage role defaults and N A are canonical',()=>{const cb=fs.readFileSync(path.resolve(__dirname,'../../real-cb-new-v9130-fix2.html'),'utf8');assert.ok(cb.includes("role:'COLLAR'"));assert.ok(cb.includes("role:'CUFF'"));assert.ok(cb.includes("role:'NECK_RIB'"));assert.ok(cb.includes("role:'SLEEVE_RIB'"));assert.ok(cb.includes('N/A · NOT APPLICABLE'));assert.ok(cb.includes('rr_cb_material_mapping_sync_v3'))});
+test('CB material usage role defaults and N A are canonical',()=>{const cb=fs.readFileSync(path.resolve(__dirname,'../../real-cb-new-v9130-fix2.html'),'utf8');assert.ok(cb.includes("role:'COLLAR'"));assert.ok(cb.includes("role:'CUFF'"));assert.ok(cb.includes("role:'NECK_RIB'"));assert.ok(cb.includes("role:'SLEEVE_RIB'"));assert.ok(cb.includes('N/A · NOT APPLICABLE'));assert.ok(cb.includes('rr_cb_material_mapping_sync_v4'))});
 test('Used material category is hidden from later Additional Material cards',()=>{const cb=fs.readFileSync(path.resolve(__dirname,'../../real-cb-new-v9130-fix2.html'),'utf8');assert.ok(cb.includes("const used=new Set(materials.filter(x=>x.type!=='regular'&&x!==m&&x.categoryId)"))});
+
+
+test('Duplicate Additional Material category is blocked canonically and hidden from later cards',()=>{const cb=fs.readFileSync(path.resolve(__dirname,'../../real-cb-new-v9130-fix2.html'),'utf8');assert.ok(cb.includes('rr_cb_material_mapping_sync_v4'));assert.ok(cb.includes("const used=new Set(materials.filter(x=>x.type!=='regular'&&x!==m&&x.categoryId)"))});
