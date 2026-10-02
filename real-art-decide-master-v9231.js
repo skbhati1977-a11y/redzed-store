@@ -263,6 +263,7 @@ async function openDecision(unitId){
   
   const a=assignmentFor(unitId),d=decisionFor(unitId);
   state.active=u;state.allowedArtCategoryIds=u.garment_category_id?[String(u.garment_category_id)]:await loadAllowedArtCategories(unitId);state.step="art";state.artId=a?.art_id?String(a.art_id):null;
+  if(state.artId){const ms=await state.client.rpc("rr_art_canonical_mapping_status_v1",{p_art_id:state.artId});if(!ms.error&&ms.data&&!ms.data.complete)decisionSay("ART MAPPING REQUIRED: "+(ms.data.missing||[]).join(", ")+" · Art Master में complete करें; CB defaults को Art mirror नहीं माना जाएगा.","error");}
   state.printIds=printIdsForAssignment(a);state.printMode=a?.print_due?"DUE":a?.print_not_applicable?"NA":state.printIds.length?"SELECTED":d?.print_status==="PRINT_DUE"?"DUE":"NA";
   state.stickerIds=stickerIdsForAssignment(a);state.stickerMode=a?.sticker_due?"DUE":a?.sticker_not_applicable?"NA":state.stickerIds.length?"SELECTED":d?.sticker_status==="STICKER_DUE"?"DUE":"NA";
   state.metalIds=metalIdsForAssignment(a);state.metalMode=a?.metal_id_due?"DUE":a?.metal_id_not_applicable?"NA":state.metalIds.length?"SELECTED":d?.metal_id_status==="METAL_ID_DUE"?"DUE":"NA";
@@ -365,7 +366,7 @@ async function saveDecision(){
     const mode=await currentDataMode();
     const r=await state.client.rpc("rr_pm_save_decision_bundle_v804",{p_cb_unit_id:state.active.id,p_art_id:state.artId,p_print_mode:state.printMode,p_print_ids:state.printIds,p_sticker_mode:state.stickerMode,p_sticker_master_ids:state.stickerIds,p_metal_id_mode:state.metalMode,p_metal_id_master_ids:state.metalIds,p_data_mode:mode});
     if(r.error)throw r.error;
-    const mirror=await state.client.rpc("rr_sync_cb_mapping_from_art_v1",{p_cb_unit_id:state.active.id,p_art_id:state.artId});if(mirror.error)throw mirror.error;
+    const ms=await state.client.rpc("rr_art_canonical_mapping_status_v1",{p_art_id:state.artId});if(ms.error)throw ms.error;if(!ms.data?.complete){decisionSay("ART MAPPING REQUIRED: "+(ms.data?.missing||[]).join(", ")+" · Art Master में canonical Sleeve/Cuff/Border Pounchi/Size complete करें.","error");return}const mirror=await state.client.rpc("rr_sync_cb_mapping_from_art_v1",{p_cb_unit_id:state.active.id,p_art_id:state.artId});if(mirror.error)throw mirror.error;
     const savedLabel=`${cbNo(state.active)} · ${dNo(state.active)}`;
     const projected=await state.client.rpc("rr_cb_department_cards_v600",{p_state:null,p_search:savedCb});
     if(projected.error)throw projected.error;
