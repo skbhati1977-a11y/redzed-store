@@ -1556,6 +1556,7 @@ function openLotByDivision(divisionId, requestedMode = "single") {
 
     ensureComboUi();
     setInputValue("cmSingleSleeve", String(card.division.sleeve_type||"HALF").toUpperCase()==="FULL"?"Full":"Half");
+    if($("lotContext"))$("lotContext").textContent += ` · ${card.division.sleeve_finish||"WITH_CUFF"} · ${sizes.join(", ")} · Neck/Collar by Category`;
     if($("cmSingleSleeve")){$("cmSingleSleeve").disabled=true;$("cmSingleSleeve").title="Mirrored from CB canonical mapping";}
     if($("cmSingleSizeCombo")){$("cmSingleSizeCombo").disabled=true;$("cmSingleSizeCombo").title="Mirrored from CB canonical mapping";}
     hideLegacyOwnerCosting();
