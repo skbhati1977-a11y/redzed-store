@@ -85,7 +85,7 @@ const today=()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMon
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#039;'}[c]));
 function isMatching(c){return `${c?.category_code||''} ${c?.category_name||''}`.toLowerCase().includes('matching')}
 function regularCategory(){return categories.find(c=>/regular.*cloth|cloth.*regular/.test(`${c.category_code||''} ${c.category_name||''}`.toLowerCase()))||categories.find(c=>!isMatching(c))||null}
-function materialCategories(){return categories.filter(c=>!isMatching(c))}
+function materialCategories(){return categories.filter(c=>!isMatching(c)&&c.is_active!==false&&String(c.category_code||'').toLowerCase()!=='cuff-collar')}
 async function defaultAllowedArtCategoryIds(categoryId){if(!categoryId)return[];const r=await sb().rpc('rr_material_default_art_categories_v1',{p_material_category_id:categoryId});if(r.error)throw r.error;return (r.data||[]).map(x=>String(x.art_category_id))}
 function artCategoryOptions(selected=[]){const set=new Set((selected||[]).map(String));return artCategories.map(a=>`<option value="${esc(a.id)}" ${set.has(String(a.id))?'selected':''}>${esc(a.category_name||a.category_code)}</option>`).join('')}
 function colourCount(){return Math.max(1,Math.min(20,Number($('colourCount').value||1)))}
