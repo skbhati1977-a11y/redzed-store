@@ -235,3 +235,6 @@ test('CB reconciliation decisions remain view-only until final confirm then post
 
 
 test('Optional CB projections cannot collapse canonical detail load',()=>{const cb=fs.readFileSync(path.resolve(__dirname,'../../real-cb-new-v9130-fix2.html'),'utf8');assert.ok(cb.includes("console.warn('CB optional art mirror'"));assert.ok(cb.includes("console.warn('CB optional art thumbnails'"));assert.ok(cb.includes("console.warn('CB optional material estimates'"))});
+
+
+test('Canonical CB detail survives enrichment failures inside loadExisting',()=>{const cb=fs.readFileSync(path.resolve(__dirname,'../../real-cb-new-v9130-fix2.html'),'utf8');assert.ok(cb.includes("console.warn('CB optional GSM enrichment'"));assert.ok(cb.includes("console.warn('CB optional entry enrichment'"));assert.ok(cb.includes("console.warn('CB optional unit enrichment'"));assert.ok(cb.includes("console.warn('CB optional allocation enrichment'"));assert.ok(!cb.includes('if(mapRows.error)throw mapRows.error'));assert.ok(!cb.includes('if(unitRows.error)throw unitRows.error'));assert.ok(!cb.includes('if(ar.error)throw ar.error'))});
