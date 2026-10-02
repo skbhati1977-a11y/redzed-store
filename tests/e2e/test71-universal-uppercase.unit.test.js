@@ -205,3 +205,9 @@ test('CB reconciliation report lifecycle uses idempotent v2 authorities',()=>{co
 
 
 test('CB form shows view-only reconciliation decision history without reversed amount',()=>{const cb=fs.readFileSync(path.resolve(__dirname,'../../real-cb-new-v9130-fix2.html'),'utf8');assert.ok(cb.includes('rr_cb_quantity_reconcile_v3'));assert.ok(cb.includes('rr_cb_quantity_reconciliation_history_get_v1'));assert.ok(cb.includes('DECISION HISTORY'));assert.ok(cb.includes("h.status==='CURRENT'?'CURRENT':'REVERSED'"));assert.ok(!cb.includes('reconciliationHistory.map(h=>`<div><span>${esc(h.decision_date)} · ${esc(String(h.decision||\'\').replaceAll(\'_\',\' \'))} ₹'))});
+
+
+test('CB reconciliation uses reversible v4 lifecycle and freezes actions after confirm',()=>{const cb=fs.readFileSync(path.resolve(__dirname,'../../real-cb-new-v9130-fix2.html'),'utf8');assert.ok(cb.includes('rr_cb_quantity_reconcile_v4'));assert.ok(cb.includes('function applyReconciliationFreeze()'));assert.ok(cb.includes("Decision frozen after SAVE & CONFIRM."))});
+
+
+test('Normal Accounts Book uses reversal-pair filtered projections',()=>{const js=fs.readFileSync(path.resolve(__dirname,'../../real-accounts-v805.js'),'utf8');assert.ok(js.includes('rr_day_book_v807'));assert.ok(js.includes('rr_ledger_statement_v807'));assert.ok(!js.includes('rr_day_book_v806'));assert.ok(!js.includes('rr_ledger_statement_v806'))});
