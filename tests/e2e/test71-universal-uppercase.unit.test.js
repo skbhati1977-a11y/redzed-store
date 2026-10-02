@@ -211,3 +211,6 @@ test('CB reconciliation uses reversible v4 lifecycle and freezes actions after c
 
 
 test('Normal Accounts Book uses reversal-pair filtered projections',()=>{const js=fs.readFileSync(path.resolve(__dirname,'../../real-accounts-v805.js'),'utf8');assert.ok(js.includes('rr_day_book_v807'));assert.ok(js.includes('rr_ledger_statement_v807'));assert.ok(!js.includes('rr_day_book_v806'));assert.ok(!js.includes('rr_ledger_statement_v806'))});
+
+
+test('Decision change immediately refreshes view-only history',()=>{const cb=fs.readFileSync(path.resolve(__dirname,'../../real-cb-new-v9130-fix2.html'),'utf8');assert.ok(cb.includes('rr_cb_reconciliation_history_sync_v2'));assert.ok(cb.includes("const h=await sb().rpc('rr_cb_quantity_reconciliation_history_get_v1'"));assert.ok(cb.includes('reconciliationHistory=h.data||[];renderMaterials()'))});
