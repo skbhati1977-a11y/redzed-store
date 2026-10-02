@@ -226,3 +226,6 @@ test('Current detail remains above previous-current projection',()=>{const cb=fs
 
 
 test('CB boot rerenders reconciliation after projection load',()=>{const cb=fs.readFileSync(path.resolve(__dirname,'../../real-cb-new-v9130-fix2.html'),'utf8');assert.ok(cb.includes('Promise.allSettled([loadReconciliation()]).then(()=>{renderMaterials();updateSummary()});'))});
+
+
+test('Reconciliation canonical load embeds decision projection in same backend snapshot',()=>{const cb=fs.readFileSync(path.resolve(__dirname,'../../real-cb-new-v9130-fix2.html'),'utf8');assert.ok(cb.includes('rr_cb_quantity_reconciliation_get_v2'));assert.ok(cb.includes('r.data?.decision_projection'));assert.ok(cb.includes('await loadReconciliation();renderMaterials();'))});
