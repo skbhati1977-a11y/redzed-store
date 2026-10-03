@@ -44,9 +44,8 @@ begin
     raise exception 'Parent Set is Multi Lot. Save Cutting against its child profile.';
   end if;
 
-  if exists(select 1 from public.rr_cutting_lots_v3 x where x.cb_unit_id=u.id)
-     or exists(select 1 from public.rr_production_lots x where x.cb_unit_id=u.id) then
-    raise exception '% already has a saved Cutting Lot. Change Multi Lot planning in CB before Cutting save.',
+  if public.rr_cb_unit_has_final_cutting_v1(u.id) then
+    raise exception '% is frozen after Lot No + Cutting Pieces save.',
       public.rr_cb_profile_label_v1(u.id);
   end if;
 
@@ -229,7 +228,7 @@ begin
   set supplier_ledger_id=coalesce(r.supplier_ledger_id,v_supplier_ledger),
       supplier_name=coalesce(r.supplier_name,v_supplier_name),
       supplier_mobile=coalesce(r.supplier_mobile,v_supplier_mobile),
-      status=case when v_sequence=1 then 'SENT' else 'RESENT' end,
+      status=case when v_template_kind='RESEND' then 'RESENT' else 'SENT' end,
       last_sent_at=now(),
       last_sent_revision=v_revision,
       updated_at=now()
