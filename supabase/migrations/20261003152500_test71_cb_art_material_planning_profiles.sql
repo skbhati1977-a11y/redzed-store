@@ -1,4 +1,5 @@
 -- TEST71: CB Art & Material planning, category defaults, reversible Single/Multi profiles.
+-- Freeze rule: planning stays editable until successful Cutting Lot No + Pieces save; then only that exact profile freezes.
 -- Live-truth capture for reproducible deploys.
 
 alter table public.rr_fabric_purchases
