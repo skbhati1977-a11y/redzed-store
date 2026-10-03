@@ -6,140 +6,177 @@ const path=require('path');
 const root=path.resolve(__dirname,'../..');
 const read=p=>fs.readFileSync(path.join(root,p),'utf8');
 
-test('CB uses one canonical S1-S4 Set decision UI with no duplicate material construction fields',()=>{
-  const cb=read('real-cb-new-v9130-fix2.html');
-  for(const token of ['id="setDecisionCard"','class="canonicalSetCategory"','class="canonicalSetArt"','class="canonicalSetSleeve"','class="canonicalSetFinish"','class="canonicalSetBorder"','class="canonicalSetSizes"']) assert.ok(cb.includes(token),token);
-  assert.ok(cb.includes('DIRECT · MATERIAL N/A'));
-  assert.ok(cb.includes('CB Set Art authority · downstream linked'));
-  assert.ok(!cb.includes('SET CONSTRUCTION · PRE-ART SPEC'));
-  assert.ok(!cb.includes('details class="allowedArtCats"'));
-  assert.ok(!cb.includes('class="setArt"'));
-  assert.ok(!cb.includes('class="directArt"'));
+const cb=()=>read('real-cb-new-v9130-fix2.html');
+const cut=()=>read('real-cutting-master-pm.V719.3.js');
+const planSql=()=>read('supabase/migrations/20261003103000_test71_cb_art_material_planning_yield_whatsapp.sql');
+
+test('Art & Material Decision is the first canonical planning surface',()=>{
+  const s=cb();
+  assert.ok(s.includes('Art &amp; Material Decision'));
+  for(const token of [
+    'PENDING · NO DECISION',
+    'DUE · DECIDE LATER',
+    'SINGLE LOT · ALL SETS',
+    'MULTI LOT / MIXED SETS',
+    'id="artMaterialPlanState"'
+  ]) assert.ok(s.includes(token),token);
+  assert.ok(s.indexOf('Art &amp; Material Decision') < s.indexOf('Cloth Purchase & Bill Details'));
 });
 
-test('CB Set Art Combo owns the shared Art assignment authority',()=>{
-  const cb=read('real-cb-new-v9130-fix2.html');
-  const retired=read('real-art-decide-master-v9231.js');
-  assert.ok(cb.includes("rr_cb_select_art_v1"));
-  assert.ok(cb.includes('saveCbArtSelection(di,id)'));
-  assert.ok(cb.includes('Art decides Category'));
-  assert.ok(cb.includes('CHANGE CATEGORY / ART'));
-  assert.ok(cb.includes('rr_pm_save_decision_bundle_v804'));
-  assert.ok(cb.includes('rr_sync_cb_mapping_from_art_v3'));
-  assert.ok(retired.includes('ART_DECISION_RETIRED#setDecisionCard'));
-  assert.ok(!retired.includes('rr_pm_save_decision_bundle_v804'));
+test('Single Multi planning uses real CB profile identities and is reversible before Cutting final',()=>{
+  const s=cb(),sql=planSql();
+  assert.ok(s.includes('rr_cb_set_lot_plan_v1'));
+  assert.ok(s.includes('rootPlanMode'));
+  assert.ok(s.includes('CHILD PROFILES'));
+  assert.ok(s.includes('profileShare'));
+  assert.ok(s.includes('profile-card'));
+  assert.ok(sql.includes('rr_cb_set_lot_plan_v1'));
+  assert.ok(sql.includes('parent_unit_id'));
+  assert.ok(sql.includes('planning_share_pct'));
+  assert.ok(sql.includes("mode not in('SINGLE','MULTI')"));
+  assert.ok(sql.includes("first child Combo parent"));
 });
 
-test('Border Pounchi is canonical end-to-end with WITHOUT as default',()=>{
-  const cb=read('real-cb-new-v9130-fix2.html');
-  const cut=read('real-cutting-master-pm.V719.3.js');
-  const sql=read('supabase/migrations/20261003064331_test71_cb_art_two_way_border_authority.sql');
-  const lot=read('supabase/migrations/20261003075100_test71_lot_parent_combo_inheritance.sql');
-  assert.ok(cb.includes('WITHOUT BORDER POUNCHI'));
-  assert.ok(cb.includes('WITH BORDER POUNCHI'));
-  assert.ok(cb.includes('border_pounchi:normalizeBorderPounchi'));
-  assert.ok(cut.includes('defaultBorderForActiveSet'));
-  assert.ok(cut.includes('Without Border Pounchi'));
-  assert.ok(cut.includes('With Border Pounchi'));
-  assert.ok(sql.includes("default 'WITHOUT_BORDER_POUNCHI'"));
-  assert.ok(sql.includes('border_pounchi=excluded.border_pounchi'));
-  assert.ok(lot.includes('new.border_type:=case'));
+test('Multi children have their own Art Combo but share downstream CB-unit authority',()=>{
+  const s=cb(),sql=planSql();
+  assert.ok(s.includes('Each child has its own Art Combo and downstream identity.'));
+  assert.ok(s.includes('cb_unit_id:r.unitId||null'));
+  assert.ok(s.includes('rr_cb_set_requirement_sync_v6'));
+  assert.ok(sql.includes('rr_cb_copy_combo_v1'));
+  assert.ok(sql.includes('rr_cb_set_requirement_sync_v6'));
+  assert.ok(sql.includes('Active Set profile not found.'));
 });
 
-test('New Set defaults are configurable without rewriting existing Sets',()=>{
-  const cb=read('real-cb-new-v9130-fix2.html');
-  const sql=read('supabase/migrations/20261003065207_test71_cb_configurable_set_defaults.sql');
-  for(const token of ['DEFAULT SLEEVE','DEFAULT FINISH','DEFAULT BORDER POUNCHI','DEFAULT SIZE FAMILY']) assert.ok(cb.includes(token),token);
-  assert.ok(cb.includes('rr_cb_construction_defaults_get_v2'));
-  assert.ok(cb.includes('rr_cb_construction_defaults_set_v2'));
-  assert.ok(cb.includes('Existing Sets unchanged.'));
+test('Art is directly editable until exact Cutting Lot No plus PCS save',()=>{
+  const s=cb(),sql=planSql();
+  assert.ok(s.includes('class="canonicalSetArt"'));
+  assert.ok(!s.includes('CHANGE CATEGORY / ART'));
+  assert.ok(s.includes('rr_cb_select_art_v1'));
+  assert.ok(sql.includes('rr_cb_unit_has_final_cutting_v1'));
+  assert.ok(sql.includes("nullif(trim(coalesce(lot_no,'')),'') is not null"));
+  assert.ok(sql.includes('coalesce(nullif(actual_pcs,0),planned_pcs,0)>0'));
+  assert.ok(sql.includes('frozen after Cutting Lot No + Pieces save.'));
+});
+
+test('Art drives Category automatically and category defaults are configurable',()=>{
+  const s=cb(),sql=planSql();
+  assert.ok(s.includes('CATEGORY · AUTO MAPPED'));
+  assert.ok(s.includes('applyCategoryDefaults'));
+  assert.ok(s.includes('MAKE CURRENT VALUES DEFAULT'));
+  assert.ok(s.includes('rr_cb_category_defaults_set_v1'));
+  assert.ok(sql.includes('rr_cb_category_construction_defaults_v1'));
+  assert.ok(sql.includes("default_sleeve_type text not null default 'HALF'"));
+  assert.ok(sql.includes("default_sleeve_finish text not null default 'CUFF'"));
   assert.ok(sql.includes("default_border_pounchi text not null default 'WITHOUT_BORDER_POUNCHI'"));
+  assert.ok(sql.includes("lower(category_code) in('crew-neck','drop-shoulder') then 'PLAIN'"));
 });
 
-test('Self Collar is direct and guarded from Additional Material mapping',()=>{
-  const cb=read('real-cb-new-v9130-fix2.html');
-  const sql=read('supabase/migrations/20261003071031_test71_cb_material_set_guard_v5.sql');
-  assert.ok(cb.includes('DIRECT · MATERIAL N/A'));
-  assert.ok(cb.includes('rr_cb_material_mapping_sync_v5'));
-  assert.ok(sql.includes("set_code='self-collar'"));
-  assert.ok(sql.includes('Additional Material cannot be linked'));
+test('Print Sticker Metal pickers collapse after Done and show selected thumbnails',()=>{
+  const s=cb();
+  for(const token of ['comboOpen','comboDone','combo-preview-grid','combo-preview-tile','frame-detail']) assert.ok(s.includes(token),token);
+  assert.ok(s.includes("if(!open)"));
+  assert.ok(s.includes("s[kind+'Done']"));
+  assert.ok(s.includes('comboPrintPreview'));
+  assert.ok(s.includes('comboFrames'));
+  assert.ok(s.includes('FRAME'));
 });
 
-test('Cutting reads shared Set size sleeve and Border Pounchi',()=>{
-  const cut=read('real-cutting-master-pm.V719.3.js');
-  assert.ok(cut.includes('setRequirementRows'));
-  assert.ok(cut.includes('setRequirementForUnit'));
-  assert.ok(cut.includes('defaultSizeForActiveSet'));
-  assert.ok(cut.includes('defaultSleeveForActiveSet'));
-  assert.ok(cut.includes('defaultBorderForActiveSet'));
-  for(const x of ['"L.XL.XXL"','"2XL.3XL.4XL"','"3XL.4XL.5XL"','"M.L.XL.XXL"','"M.L.XL"','"L.XL"','"L.XXL"','"FREE SIZE"']) assert.ok(cut.includes(x),x);
+test('Existing Add New masters are reused inside CB Combo',()=>{
+  const s=cb();
+  for(const token of [
+    'art-v9148/?v=9233&from=cb-combo',
+    'real-print-master.html?v=9233&from=cb-combo',
+    'real-sticker-master-v804.html?v=9233&from=cb-combo',
+    'real-metal-id-master-v804.html?v=9233&from=cb-combo'
+  ]) assert.ok(s.includes(token),token);
+  assert.ok(s.includes('comboAddArt'));
+  assert.ok(s.includes('comboAddNew'));
 });
 
-
-test('S1-S4 structural Art families are enforced in CB and backend',()=>{
-  const cb=read('real-cb-new-v9130-fix2.html');
-  const sql=read('supabase/migrations/20261003071702_test71_cb_set_category_family_guard.sql');
-  assert.ok(cb.includes("di)===1?['self-collar']:Number(di)===4?['flat-polo']:['crew-neck','drop-shoulder']"));
-  assert.ok(cb.includes('artOptionsForSet'));
-  assert.ok(sql.includes("when u.division_index=1 then lower(c.category_code)='self-collar'"));
-  assert.ok(sql.includes("when u.division_index=4 then lower(c.category_code)='flat-polo'"));
-  assert.ok(sql.includes("when u.division_index in(2,3) then lower(c.category_code) in('crew-neck','drop-shoulder')"));
+test('Manual Additional Material decision surface is operationally retired',()=>{
+  const s=cb();
+  assert.ok(s.includes('id="extraMaterialCard" hidden'));
+  assert.ok(s.includes('Yield · Consolidated Requirement'));
+  assert.ok(!s.includes('SET CONSTRUCTION · PRE-ART SPEC'));
+  assert.ok(!s.includes('CHANGE CATEGORY / ART'));
 });
 
-test('CB embeds the existing Print Sticker Metal combo engine and Add New masters',()=>{
-  const cb=read('real-cb-new-v9130-fix2.html');
-  for(const token of ['ART COMBO','PRINT','STICKER','METAL ID','comboModeBtn','comboChoice','comboAddNew','comboAddArt']) assert.ok(cb.includes(token),token);
-  assert.ok(cb.includes('rr_pm_save_decision_bundle_v804'));
-  assert.ok(cb.includes("p_print_mode:s.printMode"));
-  assert.ok(cb.includes("p_sticker_mode:s.stickerMode"));
-  assert.ok(cb.includes("p_metal_id_mode:s.metalMode"));
-  assert.ok(cb.includes('art-v9148/?v=9233&from=cb-combo'));
-  assert.ok(cb.includes('real-print-master.html?v=9233&from=cb-combo'));
-  assert.ok(cb.includes('real-sticker-master-v804.html?v=9233&from=cb-combo'));
-  assert.ok(cb.includes('real-metal-id-master-v804.html?v=9233&from=cb-combo'));
+test('Yield drives Collar Rib Sticker and Metal ID initial requirement',()=>{
+  const s=cb(),sql=planSql();
+  assert.ok(s.includes('rr_cb_refresh_derived_requirements_v1'));
+  assert.ok(s.includes('rr_cb_requirement_context_v1'));
+  assert.ok(s.includes('rr_cb_material_estimate_v3'));
+  assert.ok(s.includes('rr_cb_material_mapping_sync_v6'));
+  assert.ok(sql.includes('rr_cb_profile_yield_v1'));
+  assert.ok(sql.includes('rr_cb_material_estimate_v3'));
+  assert.ok(sql.includes("requirement_type in('MATERIAL','STICKER','METAL_ID')"));
+  assert.ok(sql.includes("when 'STICKER' then 'STICKER_MASTER_V803'"));
+  assert.ok(sql.includes("when 'METAL_ID' then 'METAL_ID_MASTER_V803'"));
+  assert.ok(sql.includes('qty_per_piece'));
+  assert.ok(sql.includes("basis text not null default 'YIELD'"));
 });
 
-test('All Sets create one CB-level Purchase Order table from Yield',()=>{
-  const cb=read('real-cb-new-v9130-fix2.html');
-  assert.ok(cb.includes('GENERATE PURCHASE ORDER · ALL SETS'));
-  assert.ok(cb.includes('generateAllSetPurchaseOrder'));
-  assert.ok(cb.includes('ensureAllMaterialEstimates'));
-  assert.ok(cb.includes('rr_cb_material_estimate_v2'));
-  assert.ok(cb.includes('rr_cb_supplier_po_generate_v1'));
-  for(const token of ['Set</th>','Material</th>','Colour</th>','Thumbnail</th>','Yield PCS</th>','Approx Qty</th>']) assert.ok(cb.includes(token),token);
-  assert.ok(cb.includes("code||'').toLowerCase()!=='self-collar'"));
-  assert.ok(!cb.includes('class="primary supplierPo"'));
+test('Cutting actual revises the same derived requirement only after final lot save',()=>{
+  const sql=planSql();
+  assert.ok(sql.includes('rr_cb_cutting_actual_requirement_refresh_trg_v1'));
+  assert.ok(sql.includes('rr_cb_cutting_actual_requirement_refresh_v1'));
+  assert.ok(sql.includes('rr_cb_multi_actual_requirement_refresh_v1'));
+  assert.ok(sql.includes("or update of cb_unit_id,lot_no,planned_pcs,actual_pcs,status"));
+  assert.ok(sql.includes("basis='CUTTING_ACTUAL'"));
+  assert.ok(sql.includes('revision_no'));
+  assert.ok(sql.includes('drop trigger if exists rr_cb_derived_after_single_cutting_v1'));
+  assert.ok(sql.includes('drop trigger if exists rr_cb_derived_after_multi_cutting_v1'));
 });
 
-test('Standalone Art Decision editing is retired into CB without retiring backend engine',()=>{
+test('Supplier mapping and WhatsApp first resend revised history are canonical',()=>{
+  const s=cb(),sql=planSql();
+  assert.ok(s.includes('rr_cb_requirement_supplier_set_v1'));
+  assert.ok(s.includes('rr_cb_requirement_send_v1'));
+  assert.ok(s.includes('RESEND #'));
+  assert.ok(s.includes('SEND REVISED'));
+  assert.ok(sql.includes('rr_cb_requirement_send_log_v1'));
+  assert.ok(sql.includes("template_kind in('FIRST','RESEND','REVISED')"));
+  assert.ok(sql.includes('rr_cb_requirement_whatsapp_send_v1'));
+  assert.ok(sql.includes('REQUIREMENT STILL PENDING'));
+  assert.ok(sql.includes('REVISED PURCHASE ORDER / REQUIREMENT'));
+  assert.ok(sql.includes('rr_material_source_supplier_map_v805_31'));
+});
+
+test('One CB-level Purchase Order uses profile-aware Yield v3',()=>{
+  const s=cb();
+  assert.ok(s.includes('GENERATE PURCHASE ORDER · ALL SETS'));
+  assert.ok(s.includes('generateAllSetPurchaseOrder'));
+  assert.ok(s.includes('rr_cb_material_estimate_v3'));
+  assert.ok(s.includes('rr_cb_supplier_po_generate_v1'));
+  assert.ok(!s.includes('rr_cb_material_estimate_v2'));
+  assert.ok(!s.includes('rr_cb_material_mapping_sync_v5'));
+  for(const token of ['Set</th>','Material</th>','Colour</th>','Thumbnail</th>','Yield PCS</th>','Approx Qty</th>']) assert.ok(s.includes(token),token);
+});
+
+test('Cutting cannot redefine parent profile construction identity',()=>{
+  const s=cut();
+  assert.ok(s.includes('Sleeve · Parent Set'));
+  assert.ok(s.includes('Border Pounchi · Parent Set'));
+  assert.ok(!s.includes('<select class="cm-dev-sleeve"'));
+  assert.ok(!s.includes('<select class="cm-dev-border"'));
+  const lot=read('supabase/migrations/20261003075100_test71_lot_parent_combo_inheritance.sql');
+  for(const token of ['new.art_no:=v_art_no','new.print_no:=v_print_no','new.sleeve_type:=lower','new.border_type:=case']) assert.ok(lot.includes(token),token);
+});
+
+test('Standalone Art Decision UI stays retired and routes back to CB',()=>{
   const retired=read('real-art-decide-master-v9231.js');
   const chat=read('test70-real-chat-live-v70.js');
   const pm=read('real-product-master-art-decision-module-v9226.js');
-  const pmBase=read('real-product-master-v804.js');
-  const cb=read('real-cb-new-v9130-fix2.html');
   assert.ok(retired.includes('ART_DECISION_RETIRED#setDecisionCard'));
   assert.ok(chat.includes('EDIT ART COMBO'));
   assert.ok(chat.includes('CB_ART_COMBO'));
   assert.ok(!chat.includes('>ART DECISION EDIT</a>'));
   assert.ok(!pm.includes('>ART DECISION MASTER</button>'));
-  assert.ok(pm.includes('Art / Print / Sticker / Metal ID decisions are managed only inside the CB Set · Art Combo screen.'));
-  assert.ok(pmBase.includes('data-cb-combo='));
-  assert.ok(pmBase.includes('EDIT CB ART COMBO'));
-  assert.ok(pmBase.includes('from=PRODUCT_MASTER#setDecisionCard'));
-  assert.ok(!pmBase.includes('data-assign="${safe(unitId)}"'));
-  assert.ok(cb.includes('rr_pm_save_decision_bundle_v804'));
 });
 
-test('Single and Multi Lots inherit parent Set Combo and cannot redefine construction identity',()=>{
-  const cut=read('real-cutting-master-pm.V719.3.js');
-  const sql=read('supabase/migrations/20261003075100_test71_lot_parent_combo_inheritance.sql');
-  const lock=read('supabase/migrations/20261003075600_test71_cb_combo_lock_after_lot.sql');
-  assert.ok(cut.includes('Sleeve · Parent Set'));
-  assert.ok(cut.includes('Border Pounchi · Parent Set'));
-  assert.ok(!cut.includes('<select class="cm-dev-sleeve"'));
-  assert.ok(!cut.includes('<select class="cm-dev-border"'));
-  for(const token of ['new.art_no:=v_art_no','new.print_no:=v_print_no','new.sleeve_type:=lower','new.border_type:=case']) assert.ok(sql.includes(token),token);
-  assert.ok(sql.includes('rr_cutting_lot_inherit_cb_set_combo_trg'));
-  assert.ok(sql.includes('rr_production_lot_inherit_cb_set_combo_trg'));
-  assert.ok(lock.includes('CB Set Art Combo is locked after Cutting Lot release.'));
+test('Planning Yield WhatsApp migration retires duplicate intermediate engines',()=>{
+  const sql=planSql();
+  assert.ok(sql.includes('drop function if exists public.rr_cb_requirement_prepare_send_v1'));
+  assert.ok(sql.includes('drop function if exists public.rr_cb_requirement_supplier_set_v1(uuid,uuid,text,text)'));
+  assert.ok(sql.includes('drop function if exists public.rr_cb_refresh_derived_after_cutting_v1()'));
 });
