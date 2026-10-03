@@ -10,14 +10,14 @@ test('CB uses one canonical S1-S4 Set decision UI with no duplicate material con
   const cb=read('real-cb-new-v9130-fix2.html');
   for(const token of ['id="setDecisionCard"','class="canonicalSetCategory"','class="canonicalSetArt"','class="canonicalSetSleeve"','class="canonicalSetFinish"','class="canonicalSetBorder"','class="canonicalSetSizes"']) assert.ok(cb.includes(token),token);
   assert.ok(cb.includes('DIRECT · MATERIAL N/A'));
-  assert.ok(cb.includes('Same Art in CB + Art Decision'));
+  assert.ok(cb.includes('CB Set Art authority · downstream linked'));
   assert.ok(!cb.includes('SET CONSTRUCTION · PRE-ART SPEC'));
   assert.ok(!cb.includes('details class="allowedArtCats"'));
   assert.ok(!cb.includes('class="setArt"'));
   assert.ok(!cb.includes('class="directArt"'));
 });
 
-test('CB and Art Decision share one Art assignment authority in both directions',()=>{
+test('CB Set Art Combo owns the shared Art assignment authority',()=>{
   const cb=read('real-cb-new-v9130-fix2.html');
   const art=read('real-art-decide-master-v9231.js');
   assert.ok(cb.includes("rr_cb_select_art_v1"));
@@ -89,4 +89,58 @@ test('S1-S4 structural Art families are enforced in CB Art Decision and backend'
   assert.ok(sql.includes("when u.division_index=1 then lower(c.category_code)='self-collar'"));
   assert.ok(sql.includes("when u.division_index=4 then lower(c.category_code)='flat-polo'"));
   assert.ok(sql.includes("when u.division_index in(2,3) then lower(c.category_code) in('crew-neck','drop-shoulder')"));
+});
+
+
+test('CB embeds the existing Print Sticker Metal combo engine and Add New masters',()=>{
+  const cb=read('real-cb-new-v9130-fix2.html');
+  for(const token of ['ART COMBO','PRINT','STICKER','METAL ID','comboModeBtn','comboChoice','comboAddNew','comboAddArt']) assert.ok(cb.includes(token),token);
+  assert.ok(cb.includes('rr_pm_save_decision_bundle_v804'));
+  assert.ok(cb.includes("p_print_mode:s.printMode"));
+  assert.ok(cb.includes("p_sticker_mode:s.stickerMode"));
+  assert.ok(cb.includes("p_metal_id_mode:s.metalMode"));
+  assert.ok(cb.includes('art-v9148/?v=9233&from=cb-combo'));
+  assert.ok(cb.includes('real-print-master.html?v=9233&from=cb-combo'));
+  assert.ok(cb.includes('real-sticker-master-v804.html?v=9233&from=cb-combo'));
+  assert.ok(cb.includes('real-metal-id-master-v804.html?v=9233&from=cb-combo'));
+});
+
+test('All Sets create one CB-level Purchase Order table from Yield',()=>{
+  const cb=read('real-cb-new-v9130-fix2.html');
+  assert.ok(cb.includes('GENERATE PURCHASE ORDER · ALL SETS'));
+  assert.ok(cb.includes('generateAllSetPurchaseOrder'));
+  assert.ok(cb.includes('ensureAllMaterialEstimates'));
+  assert.ok(cb.includes('rr_cb_material_estimate_v2'));
+  assert.ok(cb.includes('rr_cb_supplier_po_generate_v1'));
+  for(const token of ['Set</th>','Material</th>','Colour</th>','Thumbnail</th>','Yield PCS</th>','Approx Qty</th>']) assert.ok(cb.includes(token),token);
+  assert.ok(cb.includes("code||'').toLowerCase()!=='self-collar'"));
+  assert.ok(!cb.includes('class="primary supplierPo"'));
+});
+
+test('Standalone Art Decision editing is retired into CB without retiring backend engine',()=>{
+  const retired=read('real-art-decide-master-v9231.js');
+  const chat=read('test70-real-chat-live-v70.js');
+  const pm=read('real-product-master-art-decision-module-v9226.js');
+  const cb=read('real-cb-new-v9130-fix2.html');
+  assert.ok(retired.includes('ART_DECISION_RETIRED#setDecisionCard'));
+  assert.ok(chat.includes('EDIT ART COMBO'));
+  assert.ok(chat.includes('CB_ART_COMBO'));
+  assert.ok(!chat.includes('>ART DECISION EDIT</a>'));
+  assert.ok(!pm.includes('>ART DECISION MASTER</button>'));
+  assert.ok(pm.includes('Art / Print / Sticker / Metal ID decisions are managed only inside the CB Set · Art Combo screen.'));
+  assert.ok(cb.includes('rr_pm_save_decision_bundle_v804'));
+});
+
+test('Single and Multi Lots inherit parent Set Combo and cannot redefine construction identity',()=>{
+  const cut=read('real-cutting-master-pm.V719.3.js');
+  const sql=read('supabase/migrations/20261003075100_test71_lot_parent_combo_inheritance.sql');
+  const lock=read('supabase/migrations/20261003075600_test71_cb_combo_lock_after_lot.sql');
+  assert.ok(cut.includes('Sleeve · Parent Set'));
+  assert.ok(cut.includes('Border Pounchi · Parent Set'));
+  assert.ok(!cut.includes('<select class="cm-dev-sleeve"'));
+  assert.ok(!cut.includes('<select class="cm-dev-border"'));
+  for(const token of ['new.art_no:=v_art_no','new.print_no:=v_print_no','new.sleeve_type:=lower','new.border_type:=case']) assert.ok(sql.includes(token),token);
+  assert.ok(sql.includes('rr_cutting_lot_inherit_cb_set_combo_trg'));
+  assert.ok(sql.includes('rr_production_lot_inherit_cb_set_combo_trg'));
+  assert.ok(lock.includes('CB Set Art Combo is locked after Cutting Lot release.'));
 });
