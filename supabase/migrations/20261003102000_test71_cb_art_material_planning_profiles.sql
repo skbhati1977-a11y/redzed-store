@@ -13,7 +13,33 @@ begin
       add constraint rr_fabric_purchases_art_material_plan_state_chk
       check (art_material_plan_state in ('PENDING','DUE','SINGLE','MULTI'));
   end if;
-end $$;
+end $;
+
+-- One-time migration of pre-existing CBs: preserve already-decided Art/child structure.
+update public.rr_fabric_purchases cb
+set art_material_plan_state=case
+  when exists(
+    select 1 from public.rr_cb_units u
+    where u.purchase_id=cb.id and u.parent_unit_id is not null
+  ) then 'MULTI'
+  when exists(
+    select 1
+    from public.rr_cb_units u
+    join public.rr_cb_art_assignments a on a.cb_id=u.id
+    where u.purchase_id=cb.id
+  ) then 'SINGLE'
+  else art_material_plan_state
+end,
+updated_at=now()
+where art_material_plan_state='PENDING'
+  and (
+    exists(select 1 from public.rr_cb_units u where u.purchase_id=cb.id and u.parent_unit_id is not null)
+    or exists(
+      select 1 from public.rr_cb_units u
+      join public.rr_cb_art_assignments a on a.cb_id=u.id
+      where u.purchase_id=cb.id
+    )
+  );
 
 create table if not exists public.rr_cb_category_construction_defaults_v1(
   art_category_id uuid primary key references public.rr_art_categories(id) on delete cascade,
