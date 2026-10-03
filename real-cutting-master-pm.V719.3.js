@@ -40,6 +40,7 @@ let multiLotRows = [];
 let breakupRows = [];
 let matchingStockRows = [];
 let matchingLotRows = [];
+let setRequirementRows = [];
 let currentRole = "";
 let cuttingLifecycle = new Map();
 
@@ -1475,15 +1476,14 @@ let matrixQtyMemory = new Map();
 let matrixColourTotalMemory = new Map();
 
 const SIZE_COMBO_OPTIONS = [
-  "M",
-  "L",
-  "XL",
-  "2XL",
-  "M.L.XL",
   "L.XL.XXL",
-  "M.L.XL.XXL",
   "2XL.3XL.4XL",
-  "3XL.4XL.5XL"
+  "3XL.4XL.5XL",
+  "M.L.XL.XXL",
+  "M.L.XL",
+  "L.XL",
+  "L.XXL",
+  "FREE SIZE"
 ];
 
 const DEFAULT_SIZE_COMBO = "L.XL.XXL";
@@ -2035,7 +2035,7 @@ function ensureComboUi() {
       <div class="cm-grid-3">
         <label><span>Size Combo</span><select id="cmSingleSizeCombo"></select></label>
         <label><span>Sleeve</span><select id="cmSingleSleeve"><option value="Half">Half Sleeve</option><option value="Full">Full Sleeve</option></select></label>
-        <label><span>Border</span><select id="cmSingleBorder"><option value="Without Border">Without Border</option><option value="With Border">With Border</option></select></label>
+        <label><span>Border Pounchi</span><select id="cmSingleBorder"><option value="Without Border Pounchi">Without Border Pounchi</option><option value="With Border Pounchi">With Border Pounchi</option></select></label>
       </div>
 
       <div class="cm-grid-3">
@@ -2178,11 +2178,17 @@ function fillSizeComboSelect(select, value) {
     .join("");
 }
 
+function setRequirementForUnit(unitId){return setRequirementRows.find(r=>String(r.cb_unit_id)===String(unitId))||null}
+function sizeFamilyToCombo(value){const s=String(value||DEFAULT_SIZE_COMBO).trim().toUpperCase();if(s==='FREE SIZE')return'FREE SIZE';const dotted=s.replace(/\s*,\s*/g,'.');return SIZE_COMBO_OPTIONS.includes(dotted)?dotted:DEFAULT_SIZE_COMBO}
+function activeSetRequirement(){return activeCard?setRequirementForUnit(activeCard.division.division_id):null}
+function defaultSizeForActiveSet(){return sizeFamilyToCombo(activeSetRequirement()?.size_family||activeCard?.division?.size_family||activeCard?.division?.size_set||DEFAULT_SIZE_COMBO)}
+function defaultSleeveForActiveSet(){const v=String(activeSetRequirement()?.sleeve_type||activeCard?.division?.sleeve_type||'HALF').toUpperCase();return v==='FULL'?'Full':'Half'}
+function defaultBorderForActiveSet(){const v=String(activeSetRequirement()?.border_pounchi||activeCard?.division?.border_pounchi||'WITHOUT_BORDER_POUNCHI').toUpperCase();return v==='WITH_BORDER_POUNCHI'?'With Border Pounchi':'Without Border Pounchi'}
 function setComboDefaults() {
   const singleSize = $("cmSingleSizeCombo");
-  if (singleSize) singleSize.value = DEFAULT_SIZE_COMBO;
-  if ($("cmSingleSleeve")) $("cmSingleSleeve").value = "Half";
-  if ($("cmSingleBorder")) $("cmSingleBorder").value = "Without Border";
+  if (singleSize) singleSize.value = defaultSizeForActiveSet();
+  if ($("cmSingleSleeve")) $("cmSingleSleeve").value = defaultSleeveForActiveSet();
+  if ($("cmSingleBorder")) $("cmSingleBorder").value = defaultBorderForActiveSet();
 
   setInputValue("cmManualLotNo", "");
   setInputValue("lotNo", "");
@@ -2232,14 +2238,7 @@ function devCount() {
 }
 
 function defaultDevSizeCombo(index) {
-  const defaults = [
-    "L.XL.XXL",
-    "2XL.3XL.4XL",
-    "M.L.XL",
-    "M.L.XL.XXL"
-  ];
-
-  return defaults[index] || DEFAULT_SIZE_COMBO;
+  return defaultSizeForActiveSet();
 }
 
 function singleRowFromInputs(old = {}) {
@@ -2253,8 +2252,8 @@ function singleRowFromInputs(old = {}) {
     lot_no: readText("cmManualLotNo"),
     size_combo: sizeCombo,
     sizes: sizesFromText(sizeCombo),
-    sleeve: selectValue("cmSingleSleeve") || "Half",
-    border: selectValue("cmSingleBorder") || "Without Border",
+    sleeve: selectValue("cmSingleSleeve") || defaultSleeveForActiveSet(),
+    border: selectValue("cmSingleBorder") || defaultBorderForActiveSet(),
     cutting_pcs: plannedTotalForDev(activeChildCode()),
     matching_item_id: snapshot.itemId || null,
     matching_consumption: snapshot.itemId ? numberValue("cmSingleMatchingQty") : 0,
@@ -2310,8 +2309,8 @@ function buildComboDevRows(options = {}) {
       lot_no: old.lot_no || "",
       size_combo: sizeCombo,
       sizes: sizesFromText(sizeCombo),
-      sleeve: old.sleeve || "Half",
-      border: old.border || "Without Border",
+      sleeve: old.sleeve || defaultSleeveForActiveSet(),
+      border: old.border || defaultBorderForActiveSet(),
       cutting_pcs: Number(old.cutting_pcs || 0),
       matching_item_id: stock.itemId || null,
       matching_consumption: stock.itemId
@@ -2365,7 +2364,7 @@ function renderDevRows() {
         <div class="cm-grid-3">
           <label><span>Size Combo</span><select class="cm-dev-size" data-dev-index="${index}"></select></label>
           <label><span>Sleeve</span><select class="cm-dev-sleeve" data-dev-index="${index}"><option value="Half">Half Sleeve</option><option value="Full">Full Sleeve</option></select></label>
-          <label><span>Border</span><select class="cm-dev-border" data-dev-index="${index}"><option value="Without Border">Without Border</option><option value="With Border">With Border</option></select></label>
+          <label><span>Border Pounchi</span><select class="cm-dev-border" data-dev-index="${index}"><option value="Without Border Pounchi">Without Border Pounchi</option><option value="With Border Pounchi">With Border Pounchi</option></select></label>
         </div>
 
         <div class="cm-grid-3">
