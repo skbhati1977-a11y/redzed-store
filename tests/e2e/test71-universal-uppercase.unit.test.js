@@ -299,3 +299,6 @@ test('Decided Art is authoritative for CB Set mirror and Self Collar stays direc
  assert.ok(cb.includes("WITHOUT BORDER POUNCHI"));
  assert.ok(cb.includes("L, XL, XXL"));
 });
+
+
+test('Cutting and CB identity hints stay distinct',()=>{const fs=require('fs'),path=require('path');const cutting=fs.readFileSync(path.resolve(__dirname,'../../real-cutting-master.html'),'utf8'),cb=fs.readFileSync(path.resolve(__dirname,'../../real-cb-new-v9130-fix2.html'),'utf8');assert.ok(cutting.includes('<span>Lot No. *</span><input id="lotNo" type="text" placeholder="Lot No.">'));assert.ok(!cutting.includes('placeholder="CB No."'));assert.ok(cb.includes('<span>CB No. *</span><input id="cbNo" autocomplete="off" placeholder="CB No.">'));assert.ok(!cb.includes('id="cbNo" autocomplete="off" placeholder="Lot No."'))});
