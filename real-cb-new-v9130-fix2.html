@@ -166,6 +166,7 @@ function renderSetDecisions(){
   card.querySelector('.canonicalSetBorder').onchange=e=>{req.borderPounchi=normalizeBorderPounchi(e.target.value);scheduleSetRequirementSync(di);renderSetDecisions()};
   card.querySelector('.canonicalSetSizes').onchange=e=>{req.sizeFamily=e.target.value;scheduleSetRequirementSync(di)};
  })
+ renderPoSummary();
 }
 function newColour(i){return {name:`Colour ${i+1}`,gsm:'',imageUrl:'',file:null,previewUrl:'',photoSaved:false}}
 function blankRolls(){return Array.from({length:divisionCount()},()=>({qty:'',manual:false}))}
