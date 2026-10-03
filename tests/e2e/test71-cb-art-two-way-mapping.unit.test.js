@@ -186,3 +186,30 @@ test('Legacy duplicate mapping engines are absent from active CB UI',()=>{
     'CHANGE CATEGORY / ART'
   ]) assert.ok(!cb.includes(token),token);
 });
+
+
+test('Canonical Yield history bootstraps from conservative real released lots and auto learns exact Cutting',()=>{
+  const sql=read('supabase/migrations/20261003152800_test71_yield_history_bootstrap_auto_capture.sql');
+  assert.ok(sql.includes('rr_cutting_yield_bootstrap_history_v1'));
+  assert.ok(sql.includes("l.lot_no ~ '^[0-9]+$'"));
+  assert.ok(sql.includes("upper(coalesce(l.status,'')) in('RELEASED','COMPLETED','CLOSE','CLOSED')"));
+  assert.ok(sql.includes('l.fabric_used>0'));
+  assert.ok(sql.includes('rr_cutting_yield_refresh_exact_v1'));
+  assert.ok(sql.includes('rr_cutting_breakup_yield_refresh_v1'));
+  assert.ok(sql.includes('rr_cutting_binding_yield_refresh_v1'));
+  assert.ok(sql.includes("v_scope:='SAME_ART'"));
+  assert.ok(sql.includes("v_scope:='SAME_CATEGORY'"));
+  assert.ok(sql.includes("v_scope:='GENERAL_HISTORY'"));
+  assert.ok(sql.includes('select public.rr_cutting_yield_bootstrap_history_v1();'));
+});
+
+test('Yield PCS is the initial planning basis and Cutting actual can revise it',()=>{
+  const req=read('supabase/migrations/20261003152600_test71_cb_yield_requirement_whatsapp_v1.sql');
+  const cut=read('supabase/migrations/20261003152700_test71_cb_cutting_freeze_actual_revision_v1.sql');
+  const yieldSql=read('supabase/migrations/20261003152800_test71_yield_history_bootstrap_auto_capture.sql');
+  assert.ok(req.includes("basis:='YIELD'"));
+  assert.ok(req.includes("basis:='CUTTING_ACTUAL'"));
+  assert.ok(req.includes('rr_cb_profile_yield_v1'));
+  assert.ok(yieldSql.includes('estimated_pcs'));
+  assert.ok(cut.includes('rr_cb_cutting_actual_requirement_refresh_trg_v1'));
+});
