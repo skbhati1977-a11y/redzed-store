@@ -81,7 +81,7 @@ select jsonb_build_object(
 from public.rr_art_categories c
 left join public.rr_cb_category_construction_defaults_v1 d on d.art_category_id=c.id
 where c.is_active
-$function$
+$function$;
 
 
 CREATE OR REPLACE FUNCTION public.rr_cb_category_defaults_set_v1(p_art_category_id uuid, p_sleeve_type text, p_sleeve_finish text, p_border_pounchi text, p_size_family text)
@@ -125,7 +125,7 @@ select coalesce(p.division_index,u.division_index)
 from public.rr_cb_units u
 left join public.rr_cb_units p on p.id=u.parent_unit_id
 where u.id=p_cb_unit_id
-$function$
+$function$;
 
 
 CREATE OR REPLACE FUNCTION public.rr_cb_profile_label_v1(p_cb_unit_id uuid)
@@ -139,7 +139,7 @@ select 'S'||coalesce(p.division_index,u.division_index)::text||
 from public.rr_cb_units u
 left join public.rr_cb_units p on p.id=u.parent_unit_id
 where u.id=p_cb_unit_id
-$function$
+$function$;
 
 
 CREATE OR REPLACE FUNCTION public.rr_cb_unit_has_final_cutting_v1(p_cb_unit_id uuid)
@@ -176,7 +176,7 @@ select
         0
       )>0
   )
-$function$
+$function$;
 
 
 CREATE OR REPLACE FUNCTION public.rr_cb_copy_combo_v1(p_from_unit_id uuid, p_to_unit_id uuid)
@@ -555,7 +555,7 @@ select jsonb_build_object(
     '[]'::jsonb
   )
 )
-$function$
+$function$;
 
 
 CREATE OR REPLACE FUNCTION public.rr_cb_set_art_category_allowed_v1(p_cb_unit_id uuid, p_category_id uuid)
@@ -578,7 +578,7 @@ select case
 end
 from x
 join public.rr_art_categories c on c.id=p_category_id
-$function$
+$function$;
 
 
 CREATE OR REPLACE FUNCTION public.rr_cb_set_requirement_sync_v6(p_cb_id uuid, p_rows jsonb)
