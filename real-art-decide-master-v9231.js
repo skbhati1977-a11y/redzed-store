@@ -262,8 +262,16 @@ async function openDecision(unitId){
   const u=unitFor(unitId);if(!u)return;
   
   const a=assignmentFor(unitId),d=decisionFor(unitId);
-  state.active=u;state.allowedArtCategoryIds=u.garment_category_id?[String(u.garment_category_id)]:await loadAllowedArtCategories(unitId);state.step="art";state.artId=a?.art_id?String(a.art_id):null;
-  if(state.artId){const ms=await state.client.rpc("rr_art_canonical_mapping_status_v1",{p_art_id:state.artId});if(!ms.error&&ms.data&&!ms.data.complete)decisionSay("ART MAPPING REQUIRED: "+(ms.data.missing||[]).join(", ")+" · Art Master में complete करें; CB defaults को Art mirror नहीं माना जाएगा.","error");}
+  state.active=u;state.step="art";state.artId=a?.art_id?String(a.art_id):null;
+  if(state.artId){
+    const ms=await state.client.rpc("rr_art_canonical_mapping_status_v1",{p_art_id:state.artId});
+    const artCategory=ms?.data?.category_id;
+    state.allowedArtCategoryIds=artCategory?[String(artCategory)]:[];
+    if(!ms.error&&ms.data&&!ms.data.complete)decisionSay("ART MAPPING REQUIRED: "+(ms.data.missing||[]).join(", ")+" · Art Master में complete करें; CB defaults को Art mirror नहीं माना जाएगा.","error");
+  }else{
+    state.allowedArtCategoryIds=await loadAllowedArtCategories(unitId);
+    if(!state.allowedArtCategoryIds.length&&u.garment_category_id)state.allowedArtCategoryIds=[String(u.garment_category_id)];
+  }
   state.printIds=printIdsForAssignment(a);state.printMode=a?.print_due?"DUE":a?.print_not_applicable?"NA":state.printIds.length?"SELECTED":d?.print_status==="PRINT_DUE"?"DUE":"NA";
   state.stickerIds=stickerIdsForAssignment(a);state.stickerMode=a?.sticker_due?"DUE":a?.sticker_not_applicable?"NA":state.stickerIds.length?"SELECTED":d?.sticker_status==="STICKER_DUE"?"DUE":"NA";
   state.metalIds=metalIdsForAssignment(a);state.metalMode=a?.metal_id_due?"DUE":a?.metal_id_not_applicable?"NA":state.metalIds.length?"SELECTED":d?.metal_id_status==="METAL_ID_DUE"?"DUE":"NA";
