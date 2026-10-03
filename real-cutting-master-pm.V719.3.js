@@ -1759,16 +1759,16 @@ function renderGallery() {
 
           <div class="cm-actions cm-actions-two">
             ${state === "art_due" ? `
-              <button class="cm-primary" type="button" data-art-decision="${safe(card.division.division_id)}">
-                ART DECISION
+              <button class="cm-primary" type="button" data-cb-combo="${safe(card.group.cb_id)}">
+                EDIT CB ART COMBO
               </button>
-              <button class="cm-secondary" type="button" disabled>Cutting waits for Art</button>
+              <button class="cm-secondary" type="button" disabled>Cutting waits for CB Art Combo</button>
             ` : state === "cutting_hold" ? `
               <button class="cm-primary" type="button" disabled>MATERIAL DUE ${dueCount}</button>
               <button class="cm-secondary" type="button" disabled>CUTTING HOLD</button>
             ` : state === "ready" ? `
-              <button class="cm-primary" type="button" data-single="${safe(card.division.division_id)}" data-lot-mode="single">Single Lot</button>
-              <button class="cm-secondary" type="button" data-multi="${safe(card.division.division_id)}" data-lot-mode="multi">Multi Lot</button>
+              <button class="cm-primary" type="button" data-release-lot="${safe(card.division.division_id)}">OPEN CUTTING LOT</button>
+              <button class="cm-secondary" type="button" disabled>Lot plan fixed in CB</button>
             ` : state === "released" ? `
               ${(cuttingLifecycle.get(String(card.division.division_id))?.lots || []).filter(row => !row.production_assigned).map(row => `<a class="cm-primary" href="real-universal-production-v770-v9059.html?mode=TEST&rrMode=ASSIGN&lot=${encodeURIComponent(row.lot_no)}">ASSIGN WORK · ${safe(row.lot_no)}</a>`).join("")}
             ` : `
@@ -1897,7 +1897,7 @@ function openLotByDivision(divisionId, requestedMode = "single") {
     }
 
     activeCard = card;
-    currentLotMode = requestedMode === "multi" ? "multi" : "single";
+    currentLotMode = "single";
     matrixQtyMemory = new Map();
     matrixColourTotalMemory = new Map();
 
@@ -2120,7 +2120,7 @@ function hideLegacyOwnerCosting() {
 }
 
 function setLotMode(mode) {
-  currentLotMode = mode === "multi" ? "multi" : "single";
+  currentLotMode = "single";
 
   if ($("cmSelectedMode")) {
     $("cmSelectedMode").textContent =
@@ -3741,7 +3741,7 @@ async function loadAllData() {
 
   if (!loadAllData.deepLinkOpened && requestedDivisionId) {
     loadAllData.deepLinkOpened = true;
-    const requestedMode = pageParams.get("lot_mode") === "multi" ? "multi" : "single";
+    const requestedMode = "single";
     if (requestedState === "ready") {
       window.setTimeout(
         () => openLotByDivision(requestedDivisionId, requestedMode),
@@ -3791,18 +3791,17 @@ function bindEvents() {
   $("lotForm")?.addEventListener("submit", createLot);
 
   gallery?.addEventListener("click", event => {
-    const artButton = event.target?.closest?.("[data-art-decision]");
-    if (artButton && gallery.contains(artButton)) {
+    const comboButton = event.target?.closest?.("[data-cb-combo]");
+    if (comboButton && gallery.contains(comboButton)) {
       event.preventDefault();
-      const unitId = String(artButton.dataset.artDecision || "").trim();
-      if (!unitId) return say("Exact CB child mapping missing.", "error");
-      const back = `${location.pathname}${location.search}`;
-      location.href = `real-art-decide-master.html?cb_unit_id=${encodeURIComponent(unitId)}&from=CUTTING_DEPARTMENT&return=${encodeURIComponent(back)}`;
+      const cbId = String(comboButton.dataset.cbCombo || "").trim();
+      if (!cbId) return say("CB mapping missing.", "error");
+      location.href = "real-cb-new-v9130-fix2.html?cb_id=" + encodeURIComponent(cbId) + "&from=CUTTING_DEPARTMENT#setDecisionCard";
       return;
     }
 
     const button = event.target?.closest?.(
-      "[data-single], [data-multi], [data-release-lot]"
+      "[data-release-lot]"
     );
 
     if (!button || !gallery.contains(button)) return;
@@ -3811,8 +3810,6 @@ function bindEvents() {
     event.stopPropagation();
 
     const divisionId = String(
-      button.dataset.single ||
-      button.dataset.multi ||
       button.dataset.releaseLot ||
       button.dataset.divisionId ||
       ""
@@ -3823,11 +3820,7 @@ function bindEvents() {
       return;
     }
 
-    openLotByDivision(
-      divisionId,
-      button.dataset.lotMode ||
-      (button.dataset.multi ? "multi" : "single")
-    );
+    openLotByDivision(divisionId, "single");
   });
 
   $("cmSearch")?.addEventListener("input", renderGallery);
