@@ -297,78 +297,6 @@ async function sendDerivedRequirementWhatsapp(g){
  await loadDerivedRequirements(false);
 }
 
-async function loadPlanningContextAndProfiles(){
- if(!cbId){ensureSetRequirements();renderSetDecisions();return}
- const pc=await sb().rpc('rr_cb_plan_context_v1',{p_cb_id:cbId});if(pc.error)throw pc.error;planContext=pc.data||{state:'PENDING',sets:[]};
- const ur=await sb().from('rr_cb_units').select('id,division_index,parent_unit_id,batch_index,garment_category_id,sleeve_type,sleeve_finish,border_pounchi,size_set,size_family,planning_share_pct,is_final,combo_mode').eq('purchase_id',cbId).order('division_index');
- if(ur.error)throw ur.error;const rows=ur.data||[],ids=rows.map(x=>x.id),rootById=new Map(rows.filter(x=>!x.parent_unit_id).map(x=>[String(x.id),x]));
- const [sr,aa]=ids.length?await Promise.all([
-  sb().from('rr_cb_set_requirement_v1').select('cb_unit_id,art_id,art_category_id,sleeve_type,size_family,sleeve_finish,border_pounchi').in('cb_unit_id',ids),
-  sb().from('rr_cb_art_assignments').select('id,cb_id,art_id,print_due,print_not_applicable,sticker_due,sticker_not_applicable,metal_id_due,metal_id_not_applicable').in('cb_id',ids)
- ]):[{data:[],error:null},{data:[],error:null}];
- if(sr.error)throw sr.error;if(aa.error)throw aa.error;
- const reqByUnit=new Map((sr.data||[]).map(x=>[String(x.cb_unit_id),x])),assignByUnit=new Map((aa.data||[]).map(x=>[String(x.cb_id),x])),artIds=[...new Set((aa.data||[]).map(x=>x.art_id).filter(Boolean))];
- let artById=new Map();
- if(artIds.length){const ar=await sb().from('rr_art_master').select('id,art_no,art_category_id').in('id',artIds);if(ar.error)throw ar.error;artById=new Map((ar.data||[]).map(x=>[String(x.id),x]))}
- const next={};
- for(const x of rows){
-  const root=x.parent_unit_id?rootById.get(String(x.parent_unit_id)):x,rootNo=Number(root?.division_index||x.division_index),plan=rootPlanForSet.call({},{})&&null;
-  const planRow=(planContext.sets||[]).find(z=>Number(z.set_no)===rootNo)||null;
-  const childInfo=x.parent_unit_id?(planRow?.children||[]).find(ch=>String(ch.unit_id)===String(x.id)):null;
-  const active=x.parent_unit_id||planRow?.mode!=='MULTI';
-  const req=reqByUnit.get(String(x.id))||{},a=assignByUnit.get(String(x.id))||{},meta=artById.get(String(a.art_id||req.art_id||''))||null,sizes=Array.isArray(x.size_set)&&x.size_set.length?x.size_set:['L','XL','XXL'];
-  next[String(x.division_index)]={
-   unitId:x.id,parentUnitId:x.parent_unit_id||null,rootSetNo:rootNo,profileLabel:x.parent_unit_id?(childInfo?.label||('S'+rootNo+'-'+String.fromCharCode(64+Number(x.batch_index||1)))):'S'+rootNo,
-   sharePct:Number(x.planning_share_pct||childInfo?.share_pct||(x.parent_unit_id?0:100)),active,
-   locked:x.parent_unit_id?!!childInfo?.locked:!!(planRow?.mode==='SINGLE'&&planRow?.structure_locked),
-   artId:a.art_id||req.art_id||null,artNo:meta?.art_no||'',artCategoryId:meta?.art_category_id||req.art_category_id||x.garment_category_id||'',
-   sleeveType:String(req.sleeve_type||x.sleeve_type||'HALF').toUpperCase(),sleeveFinish:normalizeSharedFinish(req.sleeve_finish||x.sleeve_finish||'CUFF'),
-   borderPounchi:normalizeBorderPounchi(req.border_pounchi||x.border_pounchi),sizeFamily:canonicalSizeFamilyDisplay(req.size_family||(Array.isArray(x.size_set)?sizes.join(', '):x.size_family)||constructionDefaultSizeFamily),
-   artLocked:!!a.art_id
-  };
- }
- setRequirements=next;ensureSetRequirements();
- comboStatesLoaded=false;comboStates={};
- const activeUnits=rows.filter(x=>next[String(x.division_index)]?.active).map(x=>({id:x.id,division_index:x.division_index}));
- await loadComboStates(activeUnits,aa.data||[]);
- const planSelect=$('artMaterialPlanState');if(planSelect)planSelect.value=String(planContext.state||'PENDING').toUpperCase();
- renderSetDecisions();
- await loadArtThumbs();
-}
-async function changeArtMaterialPlanState(next){
- next=String(next||'PENDING').toUpperCase();planContext.state=next;
- if(!cbId){renderSetDecisions();return}
- const r=await sb().rpc('rr_cb_art_material_plan_set_v1',{p_cb_id:cbId,p_state:next});if(r.error)throw r.error;
- await loadPlanningContextAndProfiles();await loadDerivedRequirements(true);
-}
-function multiShareValues(plan,count){const existing=(plan?.children||[]).slice(0,count).map(x=>Number(x.share_pct||0));if(existing.length===count&&existing.every(x=>x>0)&&Math.abs(existing.reduce((a,b)=>a+b,0)-100)<.2)return existing;const base=Math.floor((100/count)*100)/100,out=Array.from({length:count},()=>base);out[count-1]=Number((100-base*(count-1)).toFixed(2));return out}
-function multiShareInputsHtml(plan,count){const vals=multiShareValues(plan,count);return vals.map((v,i)=>`<label><span>${'S'+plan.set_no+'-'+String.fromCharCode(65+i)} SHARE %</span><input class="multiShare" data-share-index="${i}" type="number" min="0.01" max="100" step="0.01" value="${v}"></label>`).join('')}
-async function applySetLotPlan(setNo,mode,card){
- const plan=rootPlanForSet(setNo);if(!plan?.parent_unit_id)throw new Error('Save CB Draft first.');
- mode=String(mode||'SINGLE').toUpperCase();let count=2,shares=null;
- if(mode==='MULTI'){count=Number(card?.querySelector('.multiChildCount')?.value||plan.children?.length||2);shares=[...card.querySelectorAll('.multiShare')].map(x=>Number(x.value||0));if(shares.length!==count)shares=multiShareValues(plan,count);const total=shares.reduce((a,b)=>a+b,0);if(Math.abs(total-100)>.02)throw new Error('Multi Lot shares must total 100%.');if(String(planContext.state)!=='MULTI'){const st=await sb().rpc('rr_cb_art_material_plan_set_v1',{p_cb_id:cbId,p_state:'MULTI'});if(st.error)throw st.error;}}
- const r=await sb().rpc('rr_cb_set_lot_plan_v1',{p_parent_unit_id:plan.parent_unit_id,p_mode:mode,p_child_count:count,p_share_percents:shares});if(r.error)throw r.error;
- await loadPlanningContextAndProfiles();await loadDerivedRequirements(true);setMessage('S'+setNo+' '+mode+' planning updated.',true);
-}
-function requirementThumb(group){if(group.requirement_type==='STICKER'){const row=comboLibraries.sticker.find(x=>String(x.id)===String(group.source_id));return comboImage('sticker',row)}if(group.requirement_type==='METAL_ID'){const row=comboLibraries.metal.find(x=>String(x.id)===String(group.source_id));return comboImage('metal',row)}return''}
-async function syncAutoDerivedMaterials(){
- if(!cbId)return;const r=await sb().from('rr_cb_purchase_entries').select('id,client_key,material_category_id,requirement_state,unit,vendor_name,vendor_bill_no,bill_date,fabric_name,quantity,rate,amount,cutting_blocking,allowed_art_category_ids,entry_notes').eq('cb_id',cbId).eq('entry_notes','AUTO ART COMBO MATERIAL');if(r.error)throw r.error;
- const groups=new Map((derivedContext.rows||[]).filter(x=>x.requirement_type==='MATERIAL').map(x=>[String(x.source_id),x]));
- const ids=new Set((r.data||[]).map(x=>String(x.id)));materials=materials.filter((m,i)=>i===0||!m.autoDerived||ids.has(String(m.id)));
- for(const x of r.data||[]){const g=groups.get(String(x.material_category_id)),selected=[...new Set((g?.rows||[]).map(z=>Number(z.set_no)).filter(Boolean))].sort((a,b)=>a-b);let m=materials.find(z=>String(z.id)===String(x.id));if(!m){m=newMaterial('material');materials.push(m)}Object.assign(m,{id:x.id,clientKey:x.client_key,type:'material',autoDerived:true,categoryId:x.material_category_id,state:String(x.requirement_state||'DUE').toUpperCase(),allowedArtCategoryIds:x.allowed_art_category_ids||[],unit:String(x.unit||'KG').toUpperCase(),cuttingBlocking:!!x.cutting_blocking,qty:x.quantity??'',qtySource:'yield',vendor:x.vendor_name||'',fabric:x.fabric_name||'',billNo:x.vendor_bill_no||'',billDate:x.bill_date||'',billRate:x.rate??'',billValue:x.amount??'',scope:'selected',selected,rolls:colours.map(()=>blankRolls())})}
-}
-async function loadDerivedRequirements(refresh=false){
- const host=$('derivedRequirementSummary');if(!host)return;if(!cbId){derivedContext={rows:[]};host.innerHTML='<div class="muted">Save CB Draft to calculate Yield requirements.</div>';return}
- try{if(refresh){const s=await sb().rpc('rr_cb_refresh_derived_requirements_v1',{p_cb_id:cbId});if(s.error)throw s.error}const r=await sb().rpc('rr_cb_requirement_cards_v1',{p_cb_id:cbId});if(r.error)throw r.error;derivedContext=r.data||{rows:[]};await syncAutoDerivedMaterials();renderDerivedRequirements();renderMaterials();renderPoSummary()}catch(e){console.warn('Derived requirements',e);host.innerHTML='<div class="muted">'+esc(friendlyUserError(e,'Yield requirement load नहीं हुई.'))+'</div>'}
-}
-function renderDerivedRequirements(){
- const host=$('derivedRequirementSummary');if(!host)return;const rows=derivedContext.rows||[];if(!rows.length){host.innerHTML='<div class="muted">No derived requirement yet. Complete Art Combo / Yield mapping.</div>';return}
- host.innerHTML='<div class="requirement-scroll"><table class="requirement-table"><thead><tr><th>Type</th><th>Item</th><th>Set / Profile</th><th>Basis</th><th>Required</th><th>Mode</th><th>Supplier</th><th>Status</th><th>WhatsApp</th></tr></thead><tbody>'+rows.map((g,i)=>{const thumb=requirementThumb(g),profiles=(g.rows||[]).map(x=>x.profile_label+' · '+Number(x.required_qty||0).toFixed(g.unit==='PCS'?0:3)+' '+g.unit).join('<br>'),revised=(g.rows||[]).some(x=>x.status==='REVISED'),button=revised?'SEND REVISED':Number(g.send_count||0)>0?'RESEND #'+(Number(g.send_count||0)+1):'SEND';return `<tr data-req-group="${i}"><td><b>${esc(g.requirement_type)}</b></td><td>${thumb?'<img src="'+esc(thumb)+'" style="width:42px;height:42px;object-fit:cover;border-radius:7px;vertical-align:middle;margin-right:6px">':''}<b>${esc(g.item_no||'')}</b><br><small>${esc(g.item_name||'')}</small></td><td>${profiles}</td><td><b>${g.basis==='CUTTING_ACTUAL'?'CUTTING ACTUAL':'YIELD SHEET'}</b><br><small>${Number(g.basis_pcs||0).toFixed(0)} PCS</small></td><td><b>${Number(g.required_qty||0).toFixed(g.unit==='PCS'?0:3)} ${esc(g.unit)}</b></td><td>${esc(g.fulfilment_method||'PURCHASE')}</td><td><input class="reqSupplierName" list="vendorHistory" value="${esc(g.supplier_name||'')}" placeholder="Supplier"><input class="reqSupplierMobile" inputmode="tel" value="${esc(g.supplier_mobile||'')}" placeholder="WhatsApp mobile" style="margin-top:5px"><button type="button" class="secondary tiny reqSupplierSave" style="margin-top:5px">SAVE SUPPLIER</button></td><td><span class="req-status ${revised?'req-revised':''}">${revised?'REVISED':Number(g.send_count||0)>0?'SENT × '+g.send_count:'READY'}</span></td><td><button type="button" class="primary tiny wa-send">${button} WHATSAPP</button></td></tr>`}).join('')+'</tbody></table></div>';
- host.querySelectorAll('[data-req-group]').forEach(tr=>{const g=rows[Number(tr.dataset.reqGroup)],name=tr.querySelector('.reqSupplierName'),mobile=tr.querySelector('.reqSupplierMobile');tr.querySelector('.reqSupplierSave').onclick=async()=>{try{const first=g.rows?.[0];if(!first?.requirement_id)throw new Error('Requirement not found.');const r=await sb().rpc('rr_cb_requirement_supplier_set_v1',{p_requirement_id:first.requirement_id,p_supplier_ledger_id:g.supplier_ledger_id||null,p_supplier_name:name.value.trim()||null,p_supplier_mobile:mobile.value.trim()||null});if(r.error)throw r.error;await loadDerivedRequirements(false);setMessage('Supplier mapping saved for '+g.item_name+'.',true)}catch(e){setMessage(friendlyUserError(e,'Supplier mapping save नहीं हुई.'))}};tr.querySelector('.wa-send').onclick=async()=>sendDerivedRequirementWhatsApp(g,name.value,mobile.value)});
-}
-async function sendDerivedRequirementWhatsApp(group,supplierName,supplierMobile){
- try{const r=await sb().rpc('rr_cb_requirement_whatsapp_send_v1',{p_cb_id:cbId,p_requirement_type:group.requirement_type,p_source_id:group.source_id,p_supplier_ledger_id:group.supplier_ledger_id||null,p_supplier_name:String(supplierName||'').trim()||null,p_supplier_mobile:String(supplierMobile||'').trim()||null});if(r.error)throw r.error;const d=r.data||{},phone=String(d.supplier_mobile||'').replace(/\D/g,''),msg=String(d.message||'');if(!phone||!msg)throw new Error('Supplier WhatsApp details missing.');try{sessionStorage.setItem('RR_CB_WHATSAPP_RETURN_V1',JSON.stringify({href:location.href,scrollY:window.scrollY,cbId,at:Date.now()}))}catch(_){}window.open('https://wa.me/'+encodeURIComponent(phone)+'?text='+encodeURIComponent(msg),'_blank','noopener');await loadDerivedRequirements(false);setMessage((d.template_kind||'SEND')+' · '+group.item_name+' WhatsApp opened. Send #'+d.send_sequence,true)}catch(e){setMessage(friendlyUserError(e,'WhatsApp requirement तैयार नहीं हो सकी.'))}
-}
 const CB_COMBO_MASTER_META={
  art:{label:'Art',url:'art-v9148/?v=9233&from=cb-combo',focus:'artNo'},
  print:{label:'Print',url:'real-print-master.html?v=9233&from=cb-combo',focus:'printNo'},
@@ -453,46 +381,6 @@ function setPlanCardHtml(setNo){
    profiles=`<div class="profile-list">${profileCardHtml(String(setNo))}</div>`;
  }
  return `<section class="set-plan" data-root-set="${setNo}"><div class="set-plan-head"><div><strong>S${setNo}</strong><div class="muted">${mode==='MULTI'?'Each child has its own Art Combo and downstream identity.':'One Art Combo for this Set.'}</div></div>${controls}</div>${profiles}${locked?'<div class="muted">Structure frozen because at least one Cutting Lot is saved.</div>':''}</section>`;
-}
-async function loadDerivedRequirements(refresh=true){
- const box=$('derivedRequirementSummary');
- if(!cbId){derivedContext={groups:[],suppliers:[],colours:[]};if(box)box.innerHTML='<div class="muted">Save CB Draft to calculate Yield requirements.</div>';return derivedContext}
- if(refresh){const rr=await sb().rpc('rr_cb_refresh_derived_requirements_v1',{p_cb_id:cbId});if(rr.error)throw rr.error}
- const r=await sb().rpc('rr_cb_requirement_context_v1',{p_cb_id:cbId});if(r.error)throw r.error;
- derivedContext=r.data||{groups:[],suppliers:[],colours:[]};renderDerivedRequirements();return derivedContext
-}
-function supplierOptions(selected){
- const list=derivedContext.suppliers||[],has=selected&&list.some(x=>String(x.id)===String(selected));
- return '<option value="">SELECT SUPPLIER…</option>'+(selected&&!has?`<option value="${esc(selected)}" selected>Current mapped supplier</option>`:'')+list.map(x=>`<option value="${esc(x.id)}" ${String(x.id)===String(selected||'')?'selected':''}>${esc(x.name||'Supplier')}${x.mobile?' · '+esc(x.mobile):''}</option>`).join('')
-}
-function requirementSendLabel(g){
- const count=Number(g.send_count||0),rev=Number(g.revision_no||1),last=Number(g.last_sent_revision||0);
- if(!count)return'SEND WHATSAPP';
- if(rev>last)return'SEND REVISED';
- return 'RESEND #'+(count+1)
-}
-function renderDerivedRequirements(){
- const box=$('derivedRequirementSummary');if(!box)return;
- const groups=derivedContext.groups||[],colours=derivedContext.colours||[];
- if(!cbId){box.innerHTML='<div class="muted">Save CB Draft first.</div>';return}
- if(!groups.length){box.innerHTML='<div class="muted">No requirement yet. Save Art Combo; Yield Sheet will create Collar/Rib/Sticker/Metal ID requirement automatically.</div>';return}
- const thumbs=colours.filter(x=>x.thumbnail_url).map(x=>`<img src="${esc(x.thumbnail_url)}" title="${esc(x.colour_name||('C'+x.colour_no))}" style="width:44px;height:44px;object-fit:cover;border-radius:7px">`).join('');
- box.innerHTML=(thumbs?`<div style="display:flex;gap:6px;overflow:auto;margin-bottom:9px">${thumbs}</div>`:'')+`<div class="requirement-scroll"><table class="requirement-table"><thead><tr><th>Type</th><th>Item</th><th>Set / Profile</th><th>Basis</th><th>PCS</th><th>Required</th><th>Supplier</th><th>Status</th><th>WhatsApp</th></tr></thead><tbody>${groups.map(g=>{const revised=Number(g.revision_no||1)>Number(g.last_sent_revision||0)&&Number(g.send_count||0)>0,basis=String(g.basis||'YIELD').replaceAll('_',' '),profiles=(g.profile_labels||[]).join(', ');return `<tr data-req-type="${esc(g.requirement_type)}" data-source-id="${esc(g.source_id)}"><td><b>${esc(g.requirement_label||g.requirement_type)}</b><br><small>${esc(g.fulfilment_method||'PURCHASE')}</small></td><td><b>${esc(g.item_name||g.item_no||'-')}</b><br><small>${esc(g.item_no||'')}</small></td><td>${esc(profiles||'-')}</td><td>${esc(basis)}</td><td>${Number(g.basis_pcs||0).toFixed(0)}</td><td><b>${Number(g.required_qty||0).toFixed(g.unit==='KG'?3:0)} ${esc(g.unit||'PCS')}</b></td><td><select class="reqSupplier" data-type="${esc(g.requirement_type)}" data-source-id="${esc(g.source_id)}">${supplierOptions(g.supplier_ledger_id)}</select><small style="display:block;margin-top:4px">${esc(g.supplier_name||'Auto supplier not mapped')}</small></td><td><span class="req-status ${revised?'req-revised':''}">${revised?'REVISED':esc(g.status||'READY')} · R${Number(g.revision_no||1)}</span><br><small>Sent ${Number(g.send_count||0)} time(s)</small></td><td><button type="button" class="primary tiny wa-send" data-type="${esc(g.requirement_type)}" data-source-id="${esc(g.source_id)}">${esc(requirementSendLabel(g))}</button></td></tr>`}).join('')}</tbody></table></div>`;
- box.querySelectorAll('.reqSupplier').forEach(sel=>sel.onchange=async()=>{if(!sel.value)return;sel.disabled=true;try{const r=await sb().rpc('rr_cb_requirement_supplier_set_v1',{p_cb_id:cbId,p_requirement_type:sel.dataset.type,p_source_id:sel.dataset.sourceId,p_supplier_ledger_id:sel.value});if(r.error)throw r.error;await loadDerivedRequirements(false);setMessage('Supplier mapping updated.',true)}catch(e){setMessage(friendlyUserError(e,'Supplier mapping update नहीं हुई.'))}finally{sel.disabled=false}});
- box.querySelectorAll('.wa-send').forEach(btn=>btn.onclick=()=>sendDerivedRequirementWhatsApp(btn.dataset.type,btn.dataset.sourceId,btn))
-}
-function waPhone(v){let d=String(v||'').replace(/\D/g,'');if(d.length===10)d='91'+d;else if(d.length===11&&d.startsWith('0'))d='91'+d.slice(1);return d}
-async function sendDerivedRequirementWhatsApp(type,sourceId,button){
- if(!confirm('WhatsApp requirement भेजना है?'))return;
- const old=button?.textContent;if(button)button.disabled=true;
- try{
-   const r=await sb().rpc('rr_cb_requirement_send_prepare_v1',{p_cb_id:cbId,p_requirement_type:type,p_source_id:sourceId});if(r.error)throw r.error;
-   const d=r.data||{},msg=String(d.message_text||''),phone=waPhone(d.supplier_mobile),url=phone?'https://wa.me/'+encodeURIComponent(phone)+'?text='+encodeURIComponent(msg):'https://wa.me/?text='+encodeURIComponent(msg);
-   try{sessionStorage.setItem('RR_CB_WHATSAPP_RETURN_V1',JSON.stringify({href:location.href,scrollY:window.scrollY,cbId,at:Date.now()}))}catch(_){}
-   window.open(url,'_blank','noopener');
-   await loadDerivedRequirements(false);
-   setMessage((d.template_kind==='FIRST'?'Requirement sent':d.template_kind==='REVISED'?'Revised requirement sent':'Requirement resent')+' · '+(d.supplier_name||'Supplier'),true)
- }catch(e){setMessage(friendlyUserError(e,'WhatsApp requirement तैयार नहीं हो सकी.'))}finally{if(button){button.disabled=false;button.textContent=old}}
 }
 function renderSetDecisions(){
  const host=$('setDecisionList');if(!host)return;ensureSetRequirements();
@@ -744,7 +632,7 @@ async function loadArtThumbs(){
 async function loadExisting(){
  const [detailR,sr,gsmRows,mapRows]=await Promise.all([
   withDbRetry(()=>sb().rpc('rr_cb_department_detail_v600',{p_cb_id:cbId}),'Loading saved CB'),
-  withDbRetry(()=>sb().from('rr_cb_units').select('id,division_index,parent_unit_id,batch_index,combo_mode,is_final,is_cutting_enabled,planning_share_pct,garment_category_id,sleeve_type,sleeve_finish,border_pounchi,size_set').eq('purchase_id',cbId).order('division_index'),'Loading CB Sets'),
+  withDbRetry(()=>sb().from('rr_cb_units').select('id,division_index,parent_unit_id,batch_index,combo_mode,is_final,is_cutting_enabled,garment_category_id,sleeve_type,sleeve_finish,border_pounchi,size_set').eq('purchase_id',cbId).order('division_index'),'Loading CB Sets'),
   sb().rpc('rr_cb_colour_gsm_v1',{p_cb_id:cbId}),
   sb().from('rr_cb_purchase_entries').select('id,client_key,material_category_id,requirement_state,unit,vendor_name,vendor_bill_no,bill_date,fabric_name,quantity,rate,amount,cutting_blocking,allowed_art_category_ids').eq('cb_id',cbId)
  ]);
