@@ -224,3 +224,28 @@ test('Yield PCS is the initial planning basis and Cutting actual can revise it',
   assert.ok(yieldSql.includes('estimated_pcs'));
   assert.ok(cut.includes('rr_cb_cutting_actual_requirement_refresh_trg_v1'));
 });
+
+
+test('CB purchase fields autosave on field exit without waiting for final Save',()=>{
+  const cb=read('real-cb-new-v9130-fix2.html');
+  const sql=read('supabase/migrations/20261003171500_test71_cb_field_level_autosave.sql');
+  assert.ok(cb.includes('bindFieldAutosave'));
+  assert.ok(cb.includes("form.addEventListener('focusout'"));
+  assert.ok(cb.includes("form.addEventListener('change'"));
+  assert.ok(cb.includes('rr_cb_field_autosave_v1'));
+  assert.ok(cb.includes('FIELD_AUTOSAVE_BOOTSTRAP'));
+  assert.ok(cb.includes('AUTO SAVED'));
+  for(const token of ["v_section='REGULAR'","v_section='ROLL'","v_section='GSM'","v_section='MATERIAL'","v_section='REMARKS'"]) assert.ok(sql.includes(token),token);
+  assert.ok(sql.includes('rr_cb_quantity_reconciliation_get_v1'));
+  assert.ok(sql.includes('rr_cb_refresh_derived_requirements_core_v1'));
+});
+
+test('Reports PO WhatsApp and final Save flush pending field autosave first',()=>{
+  const cb=read('real-cb-new-v9130-fix2.html');
+  assert.ok(cb.includes('async function flushFieldAutosave()'));
+  assert.ok(cb.includes('async function decideReconciliation(decision){await flushFieldAutosave();'));
+  assert.ok(cb.includes('async function reportReconciliationVariance(){await flushFieldAutosave();'));
+  assert.ok(cb.includes('async function sendDerivedRequirementWhatsApp(type,sourceId,button){\n await flushFieldAutosave();'));
+  assert.ok(cb.includes('async function generateAllSetPurchaseOrder(){await flushFieldAutosave();'));
+  assert.ok(cb.includes('async function saveCanonical(confirming){if(saving)return;await flushFieldAutosave();'));
+});
