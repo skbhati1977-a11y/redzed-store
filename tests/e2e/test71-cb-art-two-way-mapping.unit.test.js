@@ -165,6 +165,9 @@ test('Cutting no longer offers a second Multi Lot decision',()=>{
   assert.ok(!cut.includes('id="cmDevCount"'));
   assert.ok(!cut.includes('id="cmBuildDevRows"'));
   assert.ok(cut.includes('currentLotMode = "single"'));
+  assert.ok(cut.includes('CB Profile Lot'));
+  assert.ok(cut.includes('Lot plan CB में तय है. यहाँ Permanent Lot No और Cutting Pieces save करें.'));
+  assert.ok(!cut.includes('पहले Single या Multi Lot चुनें, फिर Manual Lot No भरें.'));
 });
 
 test('Only one actual-cutting derived requirement refresh trigger is retained per lot table',()=>{
