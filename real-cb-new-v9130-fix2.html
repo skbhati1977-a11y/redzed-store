@@ -488,6 +488,70 @@ function usageRoleOptions(zone,value){if(zone==='SLEEVE'&&['TAPE','CUFF_TAPE'].i
 function applyMaterialSetsFromDecidedArt(decided){const decidedSets=new Set(decided.map(x=>Number(x.di)));for(const m of materials.filter(x=>x.type!=='regular')){const eligible=new Set((m.allowedArtCategoryIds||[]).map(String));if(!eligible.size)continue;const compatible=new Set(decided.filter(x=>eligible.has(String(x.categoryId))).map(x=>Number(x.di)));m.selected=[...new Set([...(m.selected||[]).filter(di=>!decidedSets.has(Number(di))||compatible.has(Number(di))),...compatible])].sort((a,b)=>a-b);m.scope=m.selected.length===divisionCount()?'all':'selected'}}
 async function mirrorMaterialSetsFromDecidedArt(){if(!cbId)return;const loaded=Object.entries(setRequirements).map(([di,r])=>({di:Number(di),categoryId:r?.artId?r?.artCategoryId:null})).filter(x=>x.categoryId);if(loaded.length){applyMaterialSetsFromDecidedArt(loaded);return}const u=await sb().from('rr_cb_units').select('id,division_index').eq('purchase_id',cbId).order('division_index');if(u.error)throw u.error;const units=u.data||[],ids=units.map(x=>x.id);if(!ids.length)return;const a=await sb().from('rr_cb_art_assignments').select('cb_id,art_id').in('cb_id',ids);if(a.error)throw a.error;const artIds=[...new Set((a.data||[]).map(x=>x.art_id).filter(Boolean))];if(!artIds.length)return;const am=await sb().from('rr_art_master').select('id,art_category_id').in('id',artIds);if(am.error)throw am.error;const catByArt=new Map((am.data||[]).map(x=>[String(x.id),x.art_category_id])),artByUnit=new Map((a.data||[]).map(x=>[String(x.cb_id),catByArt.get(String(x.art_id))]));applyMaterialSetsFromDecidedArt(units.map(unit=>({di:Number(unit.division_index),categoryId:artByUnit.get(String(unit.id))})).filter(x=>x.categoryId))}
 
+function setFieldAutosaveStatus(text,state=''){const el=$('autoSaveStatus');if(!el)return;el.textContent=text||'AUTO SAVE READY';el.className='autosave-status'+(state?' '+state:'')}
+function autosaveRegularSnapshot(){const m=materials[0]||{};return{id:m.id||null,client_key:m.clientKey||null,vendor:m.vendor||'',fabric_name:m.fabric||'',bill_no:m.billNo||'',bill_date:m.billDate||'',qty:m.qty??'',rate:m.billRate??''}}
+function autosaveMaterialSnapshot(mi){const m=materials[mi]||{};return{id:m.id||null,client_key:m.clientKey||null,category_id:m.categoryId||null,state:m.state||'DUE',unit:m.unit||'PCS',cutting_blocking:!!m.cuttingBlocking,vendor:m.vendor||'',fabric_name:m.fabric||'',bill_no:m.billNo||'',bill_date:m.billDate||'',qty:m.qty??'',rate:m.billRate??'',selected_sets:[...(m.selected||[])],allowed_art_category_ids:[...(m.allowedArtCategoryIds||[])]}}
+function autosaveColourPayload(){return colours.map((x,i)=>({index:i+1,name:x.name||('Colour '+(i+1)),gsm:x.gsm??'',image_url:x.imageUrl||null,media_id:x.mediaId||null,confirmed:!!x.imageUrl}))}
+function autosaveMinimumReady(){const m=materials[0]||{};return !!$('cbNo')?.value.trim()&&divisionCount()>0&&colourCount()>0&&!!m.categoryId&&entryQty(m)>0&&entryRate(m)>0}
+async function ensureAutosaveIdentity(){
+ if(cbId)return true;
+ if(fieldAutosaveBootstrap)return false;
+ if(!autosaveMinimumReady()){setFieldAutosaveStatus('AUTO SAVE WAITING · QTY + RATE');return false}
+ fieldAutosaveBootstrap=true;setFieldAutosaveStatus('CREATING DRAFT…','saving');
+ try{
+  const d=await invokeSave(false,autosaveColourPayload(),'FIELD_AUTOSAVE_BOOTSTRAP');
+  cbId=d?.cb_id||d?.id||cbId;cbState=d?.state||cbState||'OPEN';
+  if(!cbId)throw new Error('CB draft identity was not created.');
+  const reg=await sb().from('rr_cb_purchase_entries').select('id,client_key').eq('cb_id',cbId).ilike('entry_notes','regular cloth').order('created_at').limit(1).maybeSingle();
+  if(!reg.error&&reg.data){materials[0].id=reg.data.id;materials[0].clientKey=reg.data.client_key||materials[0].clientKey}
+  $('stateChip').textContent=cbState;$('pageTitle').textContent='CB '+$('cbNo').value.trim().toUpperCase();
+  history.replaceState(history.state,'',location.pathname+'?cb_id='+encodeURIComponent(cbId)+'&from=CB_DEPARTMENT'+(location.hash||''));
+  sessionStorage.removeItem('RR_CB_NEW_CLIENT_KEY_V608');
+  setFieldAutosaveStatus('AUTO SAVED','saved');
+  return true
+ }finally{fieldAutosaveBootstrap=false}
+}
+function autosavePatchForTarget(el){
+ if(!el||el.disabled||el.readOnly)return null;
+ if(el.closest('#setDecisionCard')||el.closest('#derivedRequirementCard')||el.closest('#poSummaryCard'))return null;
+ if(el.id==='remarks')return{section:'REMARKS',value:el.value};
+ const mat=el.closest('[data-m]');
+ if(mat){
+  const mi=Number(mat.dataset.m);if(!Number.isFinite(mi))return null;
+  if(!el.matches('.vendor,.fabric,.materialQty,.bill,.date,.rate,.reqState,.unitSelect,.cat,.artSetCheck'))return null;
+  return mi===0?{section:'REGULAR',row:autosaveRegularSnapshot()}:{section:'MATERIAL',material_index:mi,row:autosaveMaterialSnapshot(mi)}
+ }
+ const colour=el.closest('.colour-row[data-c]');
+ if(colour){
+  const ci=Number(colour.dataset.c);
+  if(el.classList.contains('colourGsm'))return{section:'GSM',colour_index:ci+1,gsm:colours[ci]?.gsm??el.value};
+  const roll=el.closest('.roll-row[data-ri]');
+  if(roll&&el.classList.contains('qty')){const ri=Number(roll.dataset.ri);return{section:'ROLL',colour_index:ci+1,roll_no:ri+1,qty:materials[0]?.rolls?.[ci]?.[ri]?.qty??el.value}}
+ }
+ return null
+}
+async function performFieldAutosave(patch){
+ if(!patch||saving)return null;
+ const ready=await ensureAutosaveIdentity();if(!ready||!cbId)return null;
+ const fp=JSON.stringify({cbId,patch});if(fp===fieldAutosaveLast)return null;
+ setFieldAutosaveStatus('AUTO SAVING…','saving');
+ const r=await sb().rpc('rr_cb_field_autosave_v1',{p_cb_id:cbId,p_patch:patch});
+ if(r.error)throw r.error;
+ const d=r.data||{};
+ if((patch.section==='REGULAR'||patch.section==='ROLL')&&d.reconciliation)reconciliation=d.reconciliation;
+ if(patch.section==='MATERIAL'){const mi=Number(patch.material_index);if(materials[mi]&&d.purchase_entry_id){materials[mi].id=d.purchase_entry_id;if(d.effective_state)materials[mi].state=d.effective_state}}
+ fieldAutosaveLast=fp;setFieldAutosaveStatus('AUTO SAVED','saved');
+ if(['ROLL','GSM','MATERIAL'].includes(patch.section))loadDerivedRequirements(false).catch(e=>console.warn('Autosave derived refresh',e));
+ return d
+}
+function queueFieldAutosave(el){
+ const patch=autosavePatchForTarget(el);if(!patch)return;
+ const fp=JSON.stringify({cbId:cbId||'NEW',patch});if(fieldAutosaveQueued.has(fp))return;
+ fieldAutosaveQueued.add(fp);
+ fieldAutosaveChain=fieldAutosaveChain.catch(()=>null).then(()=>performFieldAutosave(patch)).catch(e=>{console.warn('CB field autosave',e);setFieldAutosaveStatus('AUTO SAVE FAILED','error');return null}).finally(()=>fieldAutosaveQueued.delete(fp))
+}
+async function flushFieldAutosave(){try{await fieldAutosaveChain}catch{}}
+function bindFieldAutosave(){const form=$('cbForm');if(!form||form.dataset.autosaveBound==='1')return;form.dataset.autosaveBound='1';form.addEventListener('focusout',e=>queueFieldAutosave(e.target));form.addEventListener('change',e=>queueFieldAutosave(e.target))}
 function reconciliationLocal(){const m=materials[0]||{},bill=Number(m.qty||0),physical=Number(rollTotal(m)||0),diff=Number((physical-bill).toFixed(3)),liveKey=bill.toFixed(3)+'|'+physical.toFixed(3),savedKey=reconciliation?Number(reconciliation.bill_qty||0).toFixed(3)+'|'+Number(reconciliation.physical_roll_qty||0).toFixed(3):null,stale=!!(reconciliation?.decision&&savedKey!==liveKey);return {bill_qty:bill,physical_roll_qty:physical,difference_qty:diff,status:stale?'RECHECK_REQUIRED':(reconciliation?.status||'PENDING'),decision:stale?null:(reconciliation?.decision||null),accepted_financial_qty:stale?null:reconciliation?.accepted_financial_qty,debit_qty:stale?0:(reconciliation?.debit_qty||0),debit_amount:stale?0:(reconciliation?.debit_amount||0),account_transaction_id:reconciliation?.account_transaction_id||null}}
 async function loadReconciliation(){const regular=materials[0];if(!cbId||!regular?.id){reconciliation=null;reconciliationHistory=[];return}const r=await sb().rpc('rr_cb_quantity_reconciliation_get_v2',{p_purchase_entry_id:regular.id});if(r.error)throw r.error;reconciliation=r.data;reconciliationHistory=Array.isArray(r.data?.decision_projection)?r.data.decision_projection:[]}
 async function decideReconciliation(decision){const regular=materials[0];if(!regular?.id){setMessage('Save Draft first so Party Bill and Roll quantities have a canonical purchase record.');return}const r=await sb().rpc('rr_cb_quantity_reconcile_draft_v5',{p_purchase_entry_id:regular.id,p_decision:decision,p_data_mode:'TEST'});if(r.error){setMessage(r.error.message||String(r.error));return}await sb().rpc('rr_cb_reconciliation_history_sync_v2',{p_purchase_entry_id:regular.id});await loadReconciliation();renderMaterials();setMessage(decision==='DEBIT_NOTE'?'Debit Note decision saved. Accounts posting will happen only on SAVE & CONFIRM.':decision==='CREDIT_NOTE'?'Credit Note decision saved. Accounts posting will happen only on SAVE & CONFIRM.':'Party Bill quantity accepted; physical roll stock remains actual roll weight.',true)}
