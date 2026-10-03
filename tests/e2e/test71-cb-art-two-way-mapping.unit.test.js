@@ -115,6 +115,7 @@ test('Standalone Art Decision editing is retired into CB without retiring backen
   const retired=read('real-art-decide-master-v9231.js');
   const chat=read('test70-real-chat-live-v70.js');
   const pm=read('real-product-master-art-decision-module-v9226.js');
+  const pmBase=read('real-product-master-v804.js');
   const cb=read('real-cb-new-v9130-fix2.html');
   assert.ok(retired.includes('ART_DECISION_RETIRED#setDecisionCard'));
   assert.ok(chat.includes('EDIT ART COMBO'));
@@ -122,6 +123,10 @@ test('Standalone Art Decision editing is retired into CB without retiring backen
   assert.ok(!chat.includes('>ART DECISION EDIT</a>'));
   assert.ok(!pm.includes('>ART DECISION MASTER</button>'));
   assert.ok(pm.includes('Art / Print / Sticker / Metal ID decisions are managed only inside the CB Set · Art Combo screen.'));
+  assert.ok(pmBase.includes('data-cb-combo='));
+  assert.ok(pmBase.includes('EDIT CB ART COMBO'));
+  assert.ok(pmBase.includes('from=PRODUCT_MASTER#setDecisionCard'));
+  assert.ok(!pmBase.includes('data-assign="${safe(unitId)}"'));
   assert.ok(cb.includes('rr_pm_save_decision_bundle_v804'));
 });
 
