@@ -6,26 +6,36 @@ const path=require('path');
 const root=path.resolve(__dirname,'../..');
 const read=p=>fs.readFileSync(path.join(root,p),'utf8');
 
-test('CB Short Excess report reserves WhatsApp window before async work',()=>{
+test('CB Short Excess report avoids mobile about:blank dead-end',()=>{
   const cb=read('real-cb-new-v9130-fix2.html');
   const fnStart=cb.indexOf('async function reportReconciliationVariance()');
   const fnEnd=cb.indexOf('function reconciliationPanel()',fnStart);
   const block=cb.slice(fnStart,fnEnd);
-  const reserve=block.indexOf('const waWindow=reserveWhatsappWindow()');
-  const firstAwait=block.indexOf('await flushFieldAutosave()');
-  assert.ok(reserve>=0,'WhatsApp window must be reserved');
-  assert.ok(firstAwait>reserve,'window must be reserved before first await');
-  assert.ok(block.includes("await sendReportToSuperAdmin('CB_VARIANCE',reportId,waWindow)"));
-  assert.ok(!block.includes('SEND TO SUPER ADMIN on WhatsApp?'));
+  assert.ok(block.includes('await flushFieldAutosave()'));
+  assert.ok(block.includes("await sendReportToSuperAdmin('CB_VARIANCE',reportId)"));
+  assert.ok(!cb.includes("window.open('about:blank'"));
+  assert.ok(!cb.includes('reserveWhatsappWindow()'));
+  assert.ok(!block.includes('preparedWindow'));
 });
 
-test('CB variance WhatsApp flow has same-tab fallback and return-state restore',()=>{
+test('CB variance WhatsApp uses same-tab handoff and restores CB return state',()=>{
   const cb=read('real-cb-new-v9130-fix2.html');
+  const fnStart=cb.indexOf('async function sendReportToSuperAdmin(');
+  const fnEnd=cb.indexOf('async function reportReconciliationVariance()',fnStart);
+  const block=cb.slice(fnStart,fnEnd);
+  const confirmAt=block.indexOf("rr_report_send_superadmin_confirm_v1");
+  const assignAt=block.indexOf('location.assign(waUrl)');
   assert.ok(cb.includes("sessionStorage.setItem('RR_CB_WHATSAPP_RETURN_V1'"));
-  assert.ok(cb.includes("preparedWindow.location.replace(waUrl)"));
-  assert.ok(cb.includes("location.assign(waUrl)"));
-  assert.ok(cb.includes("rr_report_send_superadmin_confirm_v1"));
-  assert.ok(cb.includes("restoreCbAfterWhatsApp"));
+  assert.ok(confirmAt>=0,'SENT status confirmation must run');
+  assert.ok(assignAt>confirmAt,'same-tab WhatsApp handoff must happen after SENT status save attempt');
+  assert.ok(!block.includes('window.open('));
+  assert.ok(cb.includes('restoreCbAfterWhatsApp'));
+});
+
+test('CB Debit Note decision and variance report remain separate actions',()=>{
+  const cb=read('real-cb-new-v9130-fix2.html');
+  assert.ok(cb.includes("node.querySelector('.makeDebitNote')?.addEventListener('click',()=>{if(confirm('Create supplier Debit Note for the physical weight shortage?'))decideReconciliation('DEBIT_NOTE')}"));
+  assert.ok(cb.includes("node.querySelector('.reportVariance')?.addEventListener('click',reportReconciliationVariance)"));
 });
 
 test('CB variance WhatsApp template contains CB and physical reconciliation values',()=>{
