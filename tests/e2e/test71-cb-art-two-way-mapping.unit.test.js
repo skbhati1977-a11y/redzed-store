@@ -74,3 +74,19 @@ test('Cutting reads shared Set size sleeve and Border Pounchi',()=>{
   assert.ok(cut.includes('defaultBorderForActiveSet'));
   for(const x of ['"L.XL.XXL"','"2XL.3XL.4XL"','"3XL.4XL.5XL"','"M.L.XL.XXL"','"M.L.XL"','"L.XL"','"L.XXL"','"FREE SIZE"']) assert.ok(cut.includes(x),x);
 });
+
+
+test('S1-S4 structural Art families are enforced in CB Art Decision and backend',()=>{
+  const cb=read('real-cb-new-v9130-fix2.html');
+  const art=read('real-art-decide-master-v9231.js');
+  const sql=read('supabase/migrations/20261003071702_test71_cb_set_category_family_guard.sql');
+  assert.ok(cb.includes("di)===1?['self-collar']:Number(di)===4?['flat-polo']:['crew-neck','drop-shoulder']"));
+  assert.ok(cb.includes('artOptionsForSet'));
+  assert.ok(art.includes('structuralArtCategoryIds'));
+  assert.ok(art.includes("['self-collar']"));
+  assert.ok(art.includes("['flat-polo']"));
+  assert.ok(art.includes("['crew-neck','drop-shoulder']"));
+  assert.ok(sql.includes("when u.division_index=1 then lower(c.category_code)='self-collar'"));
+  assert.ok(sql.includes("when u.division_index=4 then lower(c.category_code)='flat-polo'"));
+  assert.ok(sql.includes("when u.division_index in(2,3) then lower(c.category_code) in('crew-neck','drop-shoulder')"));
+});
