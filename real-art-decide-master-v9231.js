@@ -6,7 +6,7 @@ window.__RR_ART_DECIDE_MASTER_9233__=true;
 const $=id=>document.getElementById(id);
 const state={
   client:null,role:null,filter:"all",decisions:[],counts:{},units:[],purchases:[],
-  arts:[],prints:[],stickers:[],metals:[],media:[],assignments:[],printAssignments:[],
+  arts:[],artCategories:[],prints:[],stickers:[],metals:[],media:[],assignments:[],printAssignments:[],
   stickerAssignments:[],metalAssignments:[],stickerInstructions:[],metalInstructions:[],
   active:null,step:"art",artId:null,printMode:"NA",printIds:[],stickerMode:"NA",
   stickerIds:[],metalMode:"NA",metalIds:[],createContext:null,createTimers:[],
@@ -67,6 +67,7 @@ async function mediaRows(){
 function unitFor(id){return state.units.find(x=>String(x.id)===String(id))||null}
 function purchaseFor(unit){return state.purchases.find(x=>String(x.id)===String(unit?.purchase_id))||null}
 function dNo(unit){return `S${Number(unit?.division_index||1)}`}
+function structuralArtCategoryIds(unit){const di=Number(unit?.division_index||0),codes=di===1?['self-collar']:di===4?['flat-polo']:di===2||di===3?['crew-neck','drop-shoulder']:[];if(!codes.length)return[];return state.artCategories.filter(x=>codes.includes(String(x.category_code||'').toLowerCase())).map(x=>String(x.id))}
 function cbNo(unit){return purchaseFor(unit)?.cb_no||unit?.cb_base_no||String(unit?.cb_code||"CB").replace(/[-\s]S\d+.*$/i,"")||"CB"}
 function decisionFor(id){return state.decisions.find(x=>String(x.cb_unit_id)===String(id))||null}
 function assignmentFor(id){return state.assignments.find(x=>String(x.cb_id)===String(id))||null}
@@ -123,13 +124,13 @@ async function loadData(){
     // Enrich previews/pickers after the queue is already usable. A secondary
     // failure must not replace the already-rendered CB queue with an error card.
     try{
-      const [countR,arts,prints,stickers,metals,media,assignments,printAssignments,stickerAssignments,metalAssignments,stickerInstructions,metalInstructions]=await Promise.all([
+      const [countR,arts,artCategories,prints,stickers,metals,media,assignments,printAssignments,stickerAssignments,metalAssignments,stickerInstructions,metalInstructions]=await Promise.all([
         state.client.rpc("rr_pm_decision_tab_counts_v802"),
-        rows("rr_art_master"),printRows(),rows("rr_sticker_master_library_v803"),rows("rr_metal_id_master_library_v803"),mediaRows(),
+        rows("rr_art_master"),rows("rr_art_categories"),printRows(),rows("rr_sticker_master_library_v803"),rows("rr_metal_id_master_library_v803"),mediaRows(),
         optionalRows("rr_cb_art_assignments"),optionalRows("rr_cb_print_assignments"),optionalRows("rr_cb_sticker_assignments"),optionalRows("rr_cb_metal_id_assignments_v801"),
         optionalRows("rr_art_sticker_instructions"),optionalRows("rr_art_metal_id_instructions_v801")
       ]);
-      const assignedArtIds=new Set((assignments||[]).map(x=>String(x.art_id||'')).filter(Boolean));Object.assign(state,{arts:(arts||[]).filter(x=>x.is_active!==false||assignedArtIds.has(String(x.id))),prints:activeOnly(prints),stickers:activeOnly(stickers),metals:activeOnly(metals),media,assignments,printAssignments,stickerAssignments,metalAssignments,stickerInstructions,metalInstructions});
+      const assignedArtIds=new Set((assignments||[]).map(x=>String(x.art_id||'')).filter(Boolean));Object.assign(state,{arts:(arts||[]).filter(x=>x.is_active!==false||assignedArtIds.has(String(x.id))),artCategories:(artCategories||[]).filter(x=>x.is_active!==false),prints:activeOnly(prints),stickers:activeOnly(stickers),metals:activeOnly(metals),media,assignments,printAssignments,stickerAssignments,metalAssignments,stickerInstructions,metalInstructions});
       state.counts=!countR.error&&countR.data?countR.data:derivedCounts();
       renderStatusTabs();renderGallery();
     }catch(enrichError){
@@ -258,7 +259,7 @@ function closeViewer(){const sheet=$("imageViewer");sheet.classList.add("hidden"
 function moveViewer(delta){const n=state.viewerItems.length;if(!n)return;state.viewerIndex=(state.viewerIndex+delta+n)%n;paintViewer()}
 
 async function loadSetRequirement(unitId){try{const r=await state.client.from('rr_cb_set_requirement_v1').select('art_category_id,sleeve_type,size_family,sleeve_finish,border_pounchi,art_id').eq('cb_unit_id',unitId).maybeSingle();if(r.error)throw r.error;return r.data||null}catch(e){console.warn('CB Set requirement',e);return null}}
-async function loadAllowedArtCategories(unitId,req=null,artDecided=false){try{const a=await state.client.from('rr_cb_material_allocations').select('purchase_entry_id,allowed_art_category_ids').eq('division_id',unitId);if(a.error)throw a.error;const materialAllowed=[...new Set((a.data||[]).flatMap(x=>x.allowed_art_category_ids||[]).map(String))];if(materialAllowed.length)return materialAllowed;if(!artDecided&&req?.art_category_id)return[String(req.art_category_id)];return[]}catch(e){console.warn('Allowed Art categories',e);return!artDecided&&req?.art_category_id?[String(req.art_category_id)]:[]}}
+async function loadAllowedArtCategories(unitId,req=null,artDecided=false){try{const structural=structuralArtCategoryIds(unitFor(unitId)),structuralSet=new Set(structural);const a=await state.client.from('rr_cb_material_allocations').select('purchase_entry_id,allowed_art_category_ids').eq('division_id',unitId);if(a.error)throw a.error;const materialAllowed=[...new Set((a.data||[]).flatMap(x=>x.allowed_art_category_ids||[]).map(String))],compatible=materialAllowed.length?(structural.length?materialAllowed.filter(id=>structuralSet.has(String(id))):materialAllowed):structural;if(compatible.length)return compatible;if(!artDecided&&req?.art_category_id&&(!structural.length||structuralSet.has(String(req.art_category_id))))return[String(req.art_category_id)];return structural}catch(e){console.warn('Allowed Art categories',e);const structural=structuralArtCategoryIds(unitFor(unitId));if(structural.length)return structural;return!artDecided&&req?.art_category_id?[String(req.art_category_id)]:[]}}
 async function openDecision(unitId){
   const u=unitFor(unitId);if(!u)return;
   
