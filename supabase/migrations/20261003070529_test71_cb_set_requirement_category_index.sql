@@ -1,0 +1,2 @@
+create index if not exists rr_cb_set_requirement_art_category_idx
+on public.rr_cb_set_requirement_v1(art_category_id);
