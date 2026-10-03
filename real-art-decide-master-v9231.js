@@ -258,18 +258,17 @@ function closeViewer(){const sheet=$("imageViewer");sheet.classList.add("hidden"
 function moveViewer(delta){const n=state.viewerItems.length;if(!n)return;state.viewerIndex=(state.viewerIndex+delta+n)%n;paintViewer()}
 
 async function loadSetRequirement(unitId){try{const r=await state.client.from('rr_cb_set_requirement_v1').select('art_category_id,sleeve_type,size_family,sleeve_finish,border_pounchi,art_id').eq('cb_unit_id',unitId).maybeSingle();if(r.error)throw r.error;return r.data||null}catch(e){console.warn('CB Set requirement',e);return null}}
-async function loadAllowedArtCategories(unitId,req=null){try{if(req?.art_category_id)return[String(req.art_category_id)];const a=await state.client.from('rr_cb_material_allocations').select('purchase_entry_id').eq('division_id',unitId);if(a.error)throw a.error;const ids=[...new Set((a.data||[]).map(x=>x.purchase_entry_id).filter(Boolean))];if(!ids.length)return[];const e=await state.client.from('rr_cb_material_allocations').select('allowed_art_category_ids').eq('division_id',unitId).in('purchase_entry_id',ids);if(e.error)throw e.error;return [...new Set((e.data||[]).flatMap(x=>x.allowed_art_category_ids||[]).map(String))]}catch(e){console.warn('Allowed Art categories',e);return[]}}
+async function loadAllowedArtCategories(unitId,req=null,artDecided=false){try{const a=await state.client.from('rr_cb_material_allocations').select('purchase_entry_id,allowed_art_category_ids').eq('division_id',unitId);if(a.error)throw a.error;const materialAllowed=[...new Set((a.data||[]).flatMap(x=>x.allowed_art_category_ids||[]).map(String))];if(materialAllowed.length)return materialAllowed;if(!artDecided&&req?.art_category_id)return[String(req.art_category_id)];return[]}catch(e){console.warn('Allowed Art categories',e);return!artDecided&&req?.art_category_id?[String(req.art_category_id)]:[]}}
 async function openDecision(unitId){
   const u=unitFor(unitId);if(!u)return;
   
   const a=assignmentFor(unitId),d=decisionFor(unitId),req=await loadSetRequirement(unitId);
   state.active=u;state.setRequirement=req;state.step="art";state.artId=a?.art_id?String(a.art_id):null;
   if(state.artId){
-    const art=byId(state.arts,state.artId),artCategory=art?.art_category_id||req?.art_category_id||u.garment_category_id;
-    state.allowedArtCategoryIds=artCategory?[String(artCategory)]:[];
+    state.allowedArtCategoryIds=await loadAllowedArtCategories(unitId,req,true);
   }else{
-    state.allowedArtCategoryIds=await loadAllowedArtCategories(unitId,req);
-    if(!state.allowedArtCategoryIds.length&&u.garment_category_id)state.allowedArtCategoryIds=[String(u.garment_category_id)];
+    state.allowedArtCategoryIds=await loadAllowedArtCategories(unitId,req,false);
+    if(!state.allowedArtCategoryIds.length&&req?.art_category_id)state.allowedArtCategoryIds=[String(req.art_category_id)];
   }
   state.printIds=printIdsForAssignment(a);state.printMode=a?.print_due?"DUE":a?.print_not_applicable?"NA":state.printIds.length?"SELECTED":d?.print_status==="PRINT_DUE"?"DUE":"NA";
   state.stickerIds=stickerIdsForAssignment(a);state.stickerMode=a?.sticker_due?"DUE":a?.sticker_not_applicable?"NA":state.stickerIds.length?"SELECTED":d?.sticker_status==="STICKER_DUE"?"DUE":"NA";
