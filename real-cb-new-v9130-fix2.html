@@ -104,7 +104,7 @@ function rootSetNoForKey(key){const r=setRequirements[String(key)]||setRequireme
 function structuralSetCategoryIds(key){const di=rootSetNoForKey(key),codes=di===1?['self-collar']:di===4?['flat-polo']:['crew-neck','drop-shoulder'];return artCategories.filter(x=>codes.includes(String(x.category_code||'').toLowerCase())).map(x=>String(x.id))}
 function structuralDefaultCategoryId(key){const di=rootSetNoForKey(key),ids=structuralSetCategoryIds(key);return di===1||di===4?(ids[0]||''):''}
 function artOptionsForSet(key,selectedArtId=''){const structural=new Set(structuralSetCategoryIds(key)),list=arts.filter(a=>(a.is_active!==false||String(a.id)===String(selectedArtId||''))&&structural.has(String(a.art_category_id))).sort((a,b)=>String(a.art_no||'').localeCompare(String(b.art_no||''),undefined,{numeric:true,sensitivity:'base'}));return '<option value="">ART DUE / SELECT ART</option>'+list.map(a=>`<option value="${esc(a.id)}" ${String(a.id)===String(selectedArtId||'')?'selected':''}>${esc(a.art_no||a.art_code||'ART')}</option>`).join('')}
-async function cbArtCuttingLocked(unitId){if(!unitId)return false;const u=await sb().from('rr_cb_units').select('id,is_locked,locked_at,status,operation_status').eq('id',unitId).maybeSingle();if(u.error)throw u.error;const x=u.data||{};return !!x.is_locked||!!x.locked_at||['RELEASED','CUTTING','CUT','CLOSE','CLOSED'].includes(String(x.status||x.operation_status||'').toUpperCase())}
+async function cbArtCuttingLocked(unitId){if(!unitId)return false;const r=await sb().rpc('rr_cb_unit_has_final_cutting_v1',{p_cb_unit_id:unitId});if(r.error)throw r.error;return !!r.data}
 async function saveCbArtSelection(key,artId){const req=setRequirements[String(key)]||{},unitId=req.unitId;if(!unitId)return null;const art=arts.find(a=>String(a.id)===String(artId));if(!art)throw new Error('Selected Art not found.');if(!structuralSetCategoryIds(key).includes(String(art.art_category_id)))throw new Error('Selected Art Category is not allowed for this Set.');const r=await sb().rpc('rr_cb_select_art_v1',{p_cb_unit_id:unitId,p_art_id:artId});if(r.error)throw r.error;return r.data}
 
 function colourCount(){return Math.max(1,Math.min(20,Number($('colourCount').value||1)))}
@@ -128,6 +128,97 @@ async function syncSetRequirementNow(key){if(!cbId)return;const r=await sb().rpc
 function scheduleSetRequirementSync(key){clearTimeout(setSyncTimers[key]);setSyncTimers[key]=setTimeout(()=>syncSetRequirementNow(key).then(()=>loadDerivedRequirements(false)).catch(e=>setMessage(friendlyUserError(e,`${profileLabelForKey(key)} mapping save नहीं हो सकी.`))),220)}
 async function saveCurrentCategoryDefault(key){const req=setRequirements[String(key)]||{};if(!req.artCategoryId)throw new Error('Art Category required.');const r=await sb().rpc('rr_cb_category_defaults_set_v1',{p_art_category_id:req.artCategoryId,p_sleeve_type:req.sleeveType,p_sleeve_finish:req.sleeveFinish,p_border_pounchi:req.borderPounchi,p_size_family:req.sizeFamily});if(r.error)throw r.error;categoryDefaults.set(String(req.artCategoryId),r.data||{});setMessage((categoryForId(req.artCategoryId)?.category_name||'Category')+' defaults updated for future decisions. Existing saved profiles unchanged.',true)}
 
+
+async function loadCategoryDefaultsFromDb(){
+ const r=await sb().rpc('rr_cb_category_defaults_get_v1');
+ if(r.error)throw r.error;
+ categoryDefaults=new Map((r.data?.rows||[]).map(x=>[String(x.art_category_id),x]));
+ return categoryDefaults;
+}
+async function loadPlanContext(){
+ if(!cbId){
+  planContext={state:'PENDING',sets:[]};
+  if($('artMaterialPlanState'))$('artMaterialPlanState').value='PENDING';
+  return planContext;
+ }
+ const r=await sb().rpc('rr_cb_plan_context_v1',{p_cb_id:cbId});
+ if(r.error)throw r.error;
+ planContext=r.data||{state:'PENDING',sets:[]};
+ if($('artMaterialPlanState'))$('artMaterialPlanState').value=planContext.state||'PENDING';
+ return planContext;
+}
+function hydrateSetRequirementsFromRows(unitRows,assignmentRows,artRows){
+ const byUnit=new Map((assignmentRows||[]).map(x=>[String(x.cb_id),x.art_id]));
+ const artById=new Map((artRows||[]).map(x=>[String(x.id),x]));
+ const unitById=new Map((unitRows||[]).map(x=>[String(x.id),x]));
+ setRequirements={};
+ for(const x of unitRows||[]){
+  const parent=x.parent_unit_id?unitById.get(String(x.parent_unit_id)):null;
+  const rootNo=Number(parent?.division_index||x.division_index);
+  const key=String(x.division_index);
+  const artId=byUnit.get(String(x.id));
+  const meta=artById.get(String(artId||''))||null;
+  const sizes=Array.isArray(x.size_set)&&x.size_set.length?x.size_set:['L','XL','XXL'];
+  const plan=rootPlanForSet(rootNo);
+  const child=(plan?.children||[]).find(ch=>String(ch.unit_id)===String(x.id));
+  const label=child?.label||(x.parent_unit_id?('S'+rootNo+'-'+String.fromCharCode(64+Number(x.batch_index||1))):('S'+rootNo));
+  const locked=x.parent_unit_id?!!child?.locked:(plan?.mode==='SINGLE'?!!plan?.structure_locked:false);
+  setRequirements[key]={
+   unitId:x.id,rootSetNo:rootNo,profileLabel:label,parentUnitId:x.parent_unit_id||null,batchIndex:x.batch_index||null,
+   artId:artId||null,artCategoryId:artId?(meta?.art_category_id||x.garment_category_id||''):(x.garment_category_id||''),
+   sleeveType:x.sleeve_type||'HALF',sizeFamily:canonicalSizeFamilyDisplay(sizes.join(', ')),
+   sleeveFinish:normalizeSharedFinish(x.sleeve_finish||'CUFF'),borderPounchi:normalizeBorderPounchi(x.border_pounchi),
+   artLocked:!!artId,locked,artNo:meta?.art_no||''
+  };
+ }
+ ensureSetRequirements();
+}
+async function reloadPlanningProfiles(){
+ if(!cbId)return;
+ await loadPlanContext();
+ const u=await sb().from('rr_cb_units').select('id,division_index,parent_unit_id,batch_index,combo_mode,is_final,garment_category_id,sleeve_type,sleeve_finish,border_pounchi,size_set').eq('purchase_id',cbId).order('division_index');
+ if(u.error)throw u.error;
+ const unitRows=u.data||[],ids=unitRows.map(x=>x.id);
+ const aa=ids.length?await sb().from('rr_cb_art_assignments').select('id,cb_id,art_id,print_due,print_not_applicable,sticker_due,sticker_not_applicable,metal_id_due,metal_id_not_applicable').in('cb_id',ids):{data:[],error:null};
+ if(aa.error)throw aa.error;
+ const artIds=[...new Set((aa.data||[]).map(x=>x.art_id).filter(Boolean))];
+ const ar=artIds.length?await sb().from('rr_art_master').select('id,art_no,art_category_id').in('id',artIds):{data:[],error:null};
+ if(ar.error)throw ar.error;
+ hydrateSetRequirementsFromRows(unitRows,aa.data||[],ar.data||[]);
+ comboStatesLoaded=false;
+ await loadComboStates(unitRows,aa.data||[]);
+ await loadArtThumbs();
+ renderSetDecisions();
+}
+async function setGlobalPlanState(state){
+ state=String(state||'PENDING').toUpperCase();
+ if(!cbId){
+  planContext.state=state;
+  if($('artMaterialPlanState'))$('artMaterialPlanState').value=state;
+  renderSetDecisions();
+  setMessage('Save CB Draft first to create Set planning identities.');
+  return;
+ }
+ const r=await sb().rpc('rr_cb_art_material_plan_set_v1',{p_cb_id:cbId,p_state:state});
+ if(r.error)throw r.error;
+ await reloadPlanningProfiles();
+ if(['SINGLE','MULTI'].includes(state))await loadDerivedRequirements(true);
+ else{derivedContext={groups:[],suppliers:derivedContext.suppliers||[]};renderDerivedRequirements();}
+ setMessage('Art & Material Decision: '+state,true);
+}
+async function setRootSetMode(setNo,mode,childCount=2,shares=null){
+ const p=rootPlanForSet(setNo);
+ const parentId=p?.parent_unit_id||setRequirements[String(setNo)]?.unitId;
+ if(!cbId||!parentId)throw new Error('Save CB Draft first.');
+ if(p?.structure_locked)throw new Error('S'+setNo+' is frozen after Cutting Lot save.');
+ const r=await sb().rpc('rr_cb_set_lot_plan_v1',{
+  p_parent_unit_id:parentId,p_mode:mode,p_child_count:Number(childCount||2),p_share_percents:shares||null
+ });
+ if(r.error)throw r.error;
+ await reloadPlanningProfiles();
+ await loadDerivedRequirements(true);
+ setMessage('S'+setNo+' '+mode+' planning updated.',true);
+}
 const CB_COMBO_MASTER_META={
  art:{label:'Art',url:'art-v9148/?v=9233&from=cb-combo',focus:'artNo'},
  print:{label:'Print',url:'real-print-master.html?v=9233&from=cb-combo',focus:'printNo'},
