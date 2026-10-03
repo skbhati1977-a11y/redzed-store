@@ -278,3 +278,6 @@ test('CB construction defaults Half Sleeve Cuff and L XL XXL with canonical size
 
 
 test('CB construction defaults use half sleeve L XL XXL and rib sleeve N A',()=>{const cb=fs.readFileSync(path.resolve(__dirname,'../../real-cb-new-v9130-fix2.html'),'utf8');assert.ok(cb.includes("if(/rib/.test(n))return[{zone:'NECK',role:'NECK_RIB'},{zone:'SLEEVE',role:'N_A'}]"));assert.ok(cb.includes("sizeFamilyOptions(r.sizeFamily||'L, XL, XXL')"));assert.ok(cb.includes('value="CUFF"'));assert.ok(!cb.includes('value="CUFF_TAPE"'))});
+
+
+test('CB 1011 approved size families and sleeve defaults are canonical',()=>{const cb=fs.readFileSync(path.resolve(__dirname,'../../real-cb-new-v9130-fix2.html'),'utf8');for(const v of ['L,XL,XXL','2XL,3XL,4XL','3XL,4XL,5XL','M,L,XL,XXL','M,L,XL','L,XL','L,XXL','FREE SIZE'])assert.ok(cb.includes(v));assert.ok(cb.includes("defaultSleeveFinish(m)"));assert.ok(cb.includes('rr_cb_set_requirement_sync_v2'));assert.ok(!cb.includes('>WITH TAPE</option>'))});
