@@ -112,7 +112,7 @@ begin
    default_size_family=excluded.default_size_family,
    updated_by=auth.uid(),updated_at=now();
  return jsonb_build_object('ok',true,'art_category_id',p_art_category_id,'default_sleeve_type',st,'default_sleeve_finish',sf,'default_border_pounchi',bp,'default_size_family',sz);
-end $function$
+end $function$;
 
 
 CREATE OR REPLACE FUNCTION public.rr_cb_root_set_no_v1(p_cb_unit_id uuid)
@@ -233,7 +233,7 @@ begin
   end if;
 
   return jsonb_build_object('ok',true,'from_unit_id',p_from_unit_id,'to_unit_id',p_to_unit_id,'assignment_id',new_a);
-end $function$
+end $function$;
 
 
 CREATE OR REPLACE FUNCTION public.rr_cb_set_lot_plan_v1(p_parent_unit_id uuid, p_mode text, p_child_count integer DEFAULT 2, p_share_percents jsonb DEFAULT NULL::jsonb)
@@ -464,7 +464,7 @@ begin
     'child_count',cnt,
     'child_unit_ids',to_jsonb(child_ids)
   );
-end $function$
+end $function$;
 
 
 CREATE OR REPLACE FUNCTION public.rr_cb_art_material_plan_set_v1(p_cb_id uuid, p_state text)
@@ -502,7 +502,7 @@ begin
  where id=p_cb_id;
 
  return jsonb_build_object('ok',true,'cb_id',p_cb_id,'state',st);
-end $function$
+end $function$;
 
 
 CREATE OR REPLACE FUNCTION public.rr_cb_plan_context_v1(p_cb_id uuid)
@@ -714,7 +714,7 @@ begin
   end loop;
 
   return jsonb_build_object('ok',true,'synced',n);
-end $function$
+end $function$;
 
 revoke all on function public.rr_cb_category_defaults_get_v1() from public,anon;
 revoke all on function public.rr_cb_category_defaults_set_v1(uuid,text,text,text,text) from public,anon;
