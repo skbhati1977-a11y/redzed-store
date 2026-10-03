@@ -2051,18 +2051,6 @@ function ensureComboUi() {
       <p id="cmSingleMatchingStockInfo" class="cm-rule-note">No Matching Cloth selected · Qty 0 · Avg Cost 0 · Release allowed.</p>
     </section>
 
-    <section id="cmMultiPanel" class="cm-hidden">
-      <div class="cm-primary-input-row">
-        <label>
-          <span>Sub-Dev Count</span>
-          <select id="cmDevCount"><option value="2">2 Sub-Dev</option><option value="3">3 Sub-Dev</option><option value="4">4 Sub-Dev</option></select>
-        </label>
-      </div>
-      <div class="cm-actions cm-actions-one">
-        <button id="cmBuildDevRows" type="button" class="cm-secondary">Build Sub-Dev Cards</button>
-      </div>
-      <div id="cmDevRows"></div>
-    </section>
   `;
 
   if (firstCard) firstCard.insertAdjacentElement("beforebegin", panel);
@@ -2095,21 +2083,6 @@ function ensureComboUi() {
     updateCostPreview();
   });
 
-  $("cmDevCount")?.addEventListener("change", () => {
-    matrixQtyMemory = new Map();
-    matrixColourTotalMemory = new Map();
-    buildComboDevRows({ keepManual: true, autoDistribute: false, resetMatrix: true });
-    renderCuttingMatrix();
-    updateCostPreview();
-  });
-
-  $("cmBuildDevRows")?.addEventListener("click", () => {
-    matrixQtyMemory = new Map();
-    matrixColourTotalMemory = new Map();
-    buildComboDevRows({ keepManual: true, autoDistribute: false, resetMatrix: true });
-    renderCuttingMatrix();
-    updateCostPreview();
-  });
 
   hideBundleUi();
 }
@@ -2134,10 +2107,6 @@ function setLotMode(mode) {
     currentLotMode !== "single"
   );
 
-  $("cmMultiPanel")?.classList.toggle(
-    "cm-hidden",
-    currentLotMode !== "multi"
-  );
 
   matrixQtyMemory = new Map();
   matrixColourTotalMemory = new Map();
@@ -2201,8 +2170,6 @@ function setComboDefaults() {
   setInputValue("cmSingleMatchingQty", "");
   setInputValue("cmSingleMatchingAvgCost", "");
   refreshMatchingStockControls();
-
-  if ($("cmDevCount")) $("cmDevCount").value = "2";
 
   comboDevRows = [];
   matrixQtyMemory = new Map();
