@@ -189,7 +189,7 @@ test('Legacy duplicate mapping engines are absent from active CB UI',()=>{
 
 
 test('Canonical Yield history bootstraps from conservative real released lots and auto learns exact Cutting',()=>{
-  const sql=read('supabase/migrations/20261003152800_test71_yield_history_bootstrap_auto_capture.sql');
+  const sql=read('supabase/migrations/20261003152900_test71_yield_history_bootstrap_auto_capture.sql');
   assert.ok(sql.includes('rr_cutting_yield_bootstrap_history_v1'));
   assert.ok(sql.includes("l.lot_no ~ '^[0-9]+$'"));
   assert.ok(sql.includes("upper(coalesce(l.status,'')) in('RELEASED','COMPLETED','CLOSE','CLOSED')"));
@@ -206,7 +206,7 @@ test('Canonical Yield history bootstraps from conservative real released lots an
 test('Yield PCS is the initial planning basis and Cutting actual can revise it',()=>{
   const req=read('supabase/migrations/20261003152600_test71_cb_yield_requirement_whatsapp_v1.sql');
   const cut=read('supabase/migrations/20261003152700_test71_cb_cutting_freeze_actual_revision_v1.sql');
-  const yieldSql=read('supabase/migrations/20261003152800_test71_yield_history_bootstrap_auto_capture.sql');
+  const yieldSql=read('supabase/migrations/20261003152900_test71_yield_history_bootstrap_auto_capture.sql');
   assert.ok(req.includes("basis:='YIELD'"));
   assert.ok(req.includes("basis:='CUTTING_ACTUAL'"));
   assert.ok(req.includes('rr_cb_profile_yield_v1'));
