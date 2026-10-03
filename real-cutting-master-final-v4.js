@@ -311,6 +311,9 @@
     if ($("styleName") && !$("styleName").value.trim() && data.art) {
       $("styleName").value = styleName(data.art);
     }
+    const sharedUnit=unitById(unitId);
+    if($("sizeSet")&&sharedUnit){const sizes=Array.isArray(sharedUnit.size_set)&&sharedUnit.size_set.length?sharedUnit.size_set:String(sharedUnit.size_family||"L,XL,XXL").split(",").map(x=>x.trim()).filter(Boolean);$("sizeSet").value=sizes.join(", ")}
+    if($("sleeveType")&&sharedUnit)$("sleeveType").value=String(sharedUnit.sleeve_type||"HALF").toLowerCase();
 
     if ($("releaseLotBtn")) {
       $("releaseLotBtn").disabled = !data.assignment || !data.art;
