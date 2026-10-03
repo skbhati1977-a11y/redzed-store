@@ -287,3 +287,15 @@ test('Direct Set uses decided Art category authority and exact size families',()
 
 
 test('Canonical CB size family dropdown has exact eight choices with half sleeve and cuff defaults',()=>{const cb=fs.readFileSync(path.resolve(__dirname,'../../real-cb-new-v9130-fix2.html'),'utf8');assert.ok(cb.includes("const SIZE_FAMILIES=['L, XL, XXL','2XL, 3XL, 4XL','3XL, 4XL, 5XL','M, L, XL, XXL','M, L, XL','L, XL','L, XXL','FREE SIZE']"));assert.ok(cb.includes("!r.sleeveType||r.sleeveType==='HALF'"));assert.ok(cb.includes('WITH CUFF'));assert.ok(!cb.includes('>WITH TAPE</option>'))});
+
+test('Decided Art is authoritative for CB Set mirror and Self Collar stays direct',()=>{
+ const cb=fs.readFileSync(path.resolve(__dirname,'../../real-cb-new-v9130-fix2.html'),'utf8');
+ assert.ok(cb.includes("cat=r.artLocked?(r.artCategoryId||'')"));
+ assert.ok(cb.includes("mirror.category_id||x.garment_category_id"));
+ assert.ok(cb.includes("additionalIds=materials.filter(m=>m.type!=='regular'&&m.id)"));
+ assert.ok(cb.includes("selfDirect=String(catObj?.category_code||'').toLowerCase()==='self-collar'"));
+ assert.ok(cb.includes("DIRECT · NO MATERIAL"));
+ assert.ok(cb.includes("Decided Art thumbnail"));
+ assert.ok(cb.includes("WITHOUT BORDER POUNCHI"));
+ assert.ok(cb.includes("L, XL, XXL"));
+});
