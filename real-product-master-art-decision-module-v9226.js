@@ -53,7 +53,6 @@
       tabs.setAttribute("aria-label", "Child Master tabs");
       tabs.innerHTML = `
         <button type="button" data-pm-child-view="overview" class="active">CHILD OVERVIEW</button>
-        <button type="button" data-pm-child-view="decision">ART DECISION MASTER</button>
       `;
       $("rrPmModuleNav9226").insertAdjacentElement("afterend", tabs);
       tabs.addEventListener("click", event => {
@@ -89,9 +88,7 @@
   function setFilterVisibility() {
     const allowed = state.module === "matching"
       ? new Set(["mc"])
-      : state.childView === "decision"
-        ? new Set(["all", "art_due", "print_due", "sticker_due", "metal_id_due", "ready"])
-        : new Set(["all", "cb"]);
+      : new Set(["all", "cb"]);
 
     document.querySelectorAll("#filters [data-filter]").forEach(button => {
       button.classList.toggle("rr-pm-module-hidden-9226", !allowed.has(button.dataset.filter));
@@ -119,15 +116,9 @@
       return;
     }
 
-    if (state.childView === "decision") {
-      if (small) small.textContent = "ART DECISION MASTER";
-      if (heading) heading.textContent = "Child-wise Art → Print → Sticker → Metal ID";
-      if (hint) hint.textContent = "Har D child ka complete decision flow yahin chalega: ART → PRINT → STICKER → METAL ID → SAVE & EXIT.";
-    } else {
-      if (small) small.textContent = "CB / CHILD MASTER";
-      if (heading) heading.textContent = "CB Children & Production Identity";
-      if (hint) hint.textContent = "Child overview. Art Decision editing dedicated Art Decision Master tab mein rakha gaya hai.";
-    }
+    if (small) small.textContent = "CB / CHILD MASTER";
+    if (heading) heading.textContent = "CB Children & Production Identity";
+    if (hint) hint.textContent = "Art / Print / Sticker / Metal ID decisions are managed only inside the CB Set · Art Combo screen.";
   }
 
   function applyGalleryScope() {
@@ -140,9 +131,9 @@
       card.classList.toggle("rr-pm-module-hidden-9226", !allow);
 
       card.querySelectorAll("[data-assign]").forEach(button => {
-        const showDecision = state.module === "child" && state.childView === "decision";
-        button.classList.toggle("rr-pm-decision-action-hidden-9226", !showDecision);
-        if (showDecision) button.textContent = "Open Art Decision";
+        button.classList.add("rr-pm-decision-action-hidden-9226");
+        button.setAttribute("aria-hidden","true");
+        button.title = "Retired here · edit the Set Art Combo from CB";
       });
     });
   }
