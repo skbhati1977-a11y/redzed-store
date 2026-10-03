@@ -744,7 +744,7 @@ async function loadArtThumbs(){
 async function loadExisting(){
  const [detailR,sr,gsmRows,mapRows]=await Promise.all([
   withDbRetry(()=>sb().rpc('rr_cb_department_detail_v600',{p_cb_id:cbId}),'Loading saved CB'),
-  withDbRetry(()=>sb().from('rr_cb_units').select('id,division_index,garment_category_id,sleeve_type,sleeve_finish,border_pounchi,size_set').eq('purchase_id',cbId).order('division_index'),'Loading CB Sets'),
+  withDbRetry(()=>sb().from('rr_cb_units').select('id,division_index,parent_unit_id,batch_index,combo_mode,is_final,is_cutting_enabled,planning_share_pct,garment_category_id,sleeve_type,sleeve_finish,border_pounchi,size_set').eq('purchase_id',cbId).order('division_index'),'Loading CB Sets'),
   sb().rpc('rr_cb_colour_gsm_v1',{p_cb_id:cbId}),
   sb().from('rr_cb_purchase_entries').select('id,client_key,material_category_id,requirement_state,unit,vendor_name,vendor_bill_no,bill_date,fabric_name,quantity,rate,amount,cutting_blocking,allowed_art_category_ids').eq('cb_id',cbId)
  ]);
@@ -761,17 +761,13 @@ async function loadExisting(){
  ]);
  if(aa.error)console.warn('CB optional Art assignment enrichment',aa.error);
  if(allocR.error)console.warn('CB optional allocation enrichment',allocR.error);
- const byUnit=new Map((aa.data||[]).map(x=>[String(x.cb_id),x.art_id])),artIds=[...new Set((aa.data||[]).map(x=>x.art_id).filter(Boolean))];
+ const artIds=[...new Set((aa.data||[]).map(x=>x.art_id).filter(Boolean))];
  const artRows=artIds.length?await sb().from('rr_art_master').select('id,art_no,art_category_id').in('id',artIds):{data:[],error:null};
  if(artRows.error)console.warn('CB optional Art canonical enrichment',artRows.error);
- const artById=new Map((artRows.data||[]).map(x=>[String(x.id),x]));
- setRequirements={};
- for(const x of unitRows){
-  const di=Number(x.division_index),artId=byUnit.get(String(x.id)),meta=artById.get(String(artId||''))||null,sizes=Array.isArray(x.size_set)&&x.size_set.length?x.size_set:['L','XL','XXL'],missing=artId&&!meta?.art_category_id?['CATEGORY']:[];
-  if(di)setRequirements[di]={unitId:x.id,artId:artId||null,artCategoryId:artId?(meta?.art_category_id||x.garment_category_id||''):(x.garment_category_id||''),sleeveType:x.sleeve_type||'HALF',sizeFamily:sizes.join(', '),sleeveFinish:normalizeSharedFinish(x.sleeve_finish||'PLAIN'),borderPounchi:normalizeBorderPounchi(x.border_pounchi),artLocked:!!artId,artMappingComplete:missing.length===0,artMissing:missing,artNo:meta?.art_no||''}
- }
+ try{await loadPlanContext()}catch(e){console.warn('CB optional plan context',e);planContext={state:'PENDING',sets:[]}}
+ hydrateSetRequirementsFromRows(unitRows,aa.data||[],artRows.data||[]);
  if(mapRows.error)console.warn('CB optional entry enrichment',mapRows.error);
- const canonicalEntryById=new Map((mapRows.data||[]).map(x=>[String(x.id),x])),allowedByEntry=new Map((mapRows.data||[]).map(x=>[String(x.id),x.allowed_art_category_ids||[]])),divisionByUnit=new Map(unitRows.map(x=>[String(x.id),Number(x.division_index)])),allocationsByEntry=new Map();
+ const canonicalEntryById=new Map((mapRows.data||[]).map(x=>[String(x.id),x])),allowedByEntry=new Map((mapRows.data||[]).map(x=>[String(x.id),x.allowed_art_category_ids||[]])),unitById=new Map(unitRows.map(x=>[String(x.id),x])),divisionByUnit=new Map(unitRows.map(x=>{const p=x.parent_unit_id?unitById.get(String(x.parent_unit_id)):null;return[String(x.id),Number(p?.division_index||x.division_index)]})),allocationsByEntry=new Map();
  for(const row of allocR.data||[]){const key=String(row.purchase_entry_id),bucket=allocationsByEntry.get(key)||[];bucket.push(row);allocationsByEntry.set(key,bucket)}
  const entries=(d.entries||[]).map(x=>({...x,allowed_art_category_ids:allowedByEntry.get(String(x.id))||[]})),regularEntry=entries.find(x=>String(x.entry_notes||'').toLowerCase()==='regular cloth'),reg=regularFromDetail(regularEntry);
  materials=[reg,...entries.filter(x=>String(x.entry_notes||'').toLowerCase()!=='regular cloth').map(x=>{const db=canonicalEntryById.get(String(x.id))||{},allocations=allocationsByEntry.get(String(x.id))||[],selected=[...new Set(allocations.map(a=>divisionByUnit.get(String(a.division_id))).filter(Boolean))].sort((a,b)=>a-b),allocationAllowed=[...new Set(allocations.flatMap(a=>a.allowed_art_category_ids||[]).map(String))],state=String(db.requirement_state||x.state||'CONFIRMED').toUpperCase();return {id:x.id,clientKey:db.client_key||x.client_key,type:'material',categoryId:db.material_category_id||x.category_id||'',state,allowedArtCategoryIds:allocationAllowed.length?allocationAllowed:(db.allowed_art_category_ids||x.allowed_art_category_ids||[]),lateEditable:cbState!=='OPEN'&&state==='DUE',unit:String(db.unit||x.unit||'PCS').toUpperCase(),cuttingBlocking:!!(db.cutting_blocking??x.cutting_blocking),qty:db.quantity??x.qty??'',qtySource:'manual',vendor:db.vendor_name||x.vendor||'',fabric:db.fabric_name||x.fabric_name||'',billNo:db.vendor_bill_no||x.bill_no||'',billDate:db.bill_date||x.bill_date||'',billRate:db.rate??x.rate??'',billValue:db.amount??x.amount??'',pricingDriver:'rate',scope:selected.length?'selected':'all',selected,rolls:colours.map(()=>blankRolls())}})];
@@ -786,21 +782,20 @@ async function boot(){try{
  await rolePromise;
  if(cbId){
   cbClientKey=cbId;
-  const masterPromise=Promise.allSettled([loadCanonicalMasters(),loadCategories(),loadOptions(),loadComboLibraries()]);
+  const masterPromise=Promise.allSettled([loadCanonicalMasters(),loadCategories(),loadOptions(),loadComboLibraries(),loadCategoryDefaultsFromDb()]);
   await loadExisting();
   masterPromise.then(async masterResults=>{
    masterResults.filter(x=>x.status==='rejected').forEach(x=>console.warn('CB saved-form optional master load',x.reason));
    const missing=materials.filter(x=>x.type!=='regular'&&!(x.allowedArtCategoryIds||[]).length);
    await Promise.all(missing.map(async m=>{try{m.allowedArtCategoryIds=await defaultAllowedArtCategoryIds(m.categoryId)}catch(e){console.warn('CB optional category defaults',e)}}));
-   try{await mirrorMaterialSetsFromDecidedArt()}catch(e){console.warn('CB optional art mirror',e)}
-   try{await loadComboStates()}catch(e){console.warn('CB optional Art Combo state',e);comboStatesLoaded=true}
+   try{await reloadPlanningProfiles()}catch(e){console.warn('CB optional planning profiles',e);comboStatesLoaded=true}
    renderMaterials();renderSetDecisions();renderColours();updateSummary();
-   setTimeout(()=>{loadArtThumbs().catch(e=>console.warn('CB optional Art thumbnails',e));loadMaterialEstimates().catch(e=>console.warn('CB optional material estimates',e))},40);
+   setTimeout(()=>{loadArtThumbs().catch(e=>console.warn('CB optional Art thumbnails',e));loadDerivedRequirements(false).catch(e=>console.warn('CB optional derived requirements',e))},40);
   }).catch(e=>console.warn('CB optional master enrichment',e));
   return;
  }
- await Promise.all([loadCanonicalMasters(),loadCategories(),loadOptions()]);
- cbClientKey=sessionStorage.getItem('RR_CB_NEW_CLIENT_KEY_V608')||crypto.randomUUID();sessionStorage.setItem('RR_CB_NEW_CLIENT_KEY_V608',cbClientKey);colours=Array.from({length:colourCount()},(_,i)=>newColour(i));materials=[newMaterial('regular')];materials[0].clientKey=cbClientKey;$('bootMsg').style.display='none';ensureDefaultRolls();ensureSetRequirements();await loadComboStates();renderMaterials();renderSetDecisions();renderColours();updateSummary();loadComboLibraries().then(renderSetDecisions).catch(e=>console.warn('CB optional Combo libraries',e));
+ await Promise.all([loadCanonicalMasters(),loadCategories(),loadOptions(),loadCategoryDefaultsFromDb()]);
+ cbClientKey=sessionStorage.getItem('RR_CB_NEW_CLIENT_KEY_V608')||crypto.randomUUID();sessionStorage.setItem('RR_CB_NEW_CLIENT_KEY_V608',cbClientKey);colours=Array.from({length:colourCount()},(_,i)=>newColour(i));materials=[newMaterial('regular')];materials[0].clientKey=cbClientKey;$('bootMsg').style.display='none';ensureDefaultRolls();ensureSetRequirements();comboStatesLoaded=true;renderMaterials();renderSetDecisions();renderColours();renderDerivedRequirements();updateSummary();loadComboLibraries().then(renderSetDecisions).catch(e=>console.warn('CB optional Combo libraries',e));
 }catch(err){console.error('CB boot',err);const b=$('bootMsg');b.textContent=isTransientDbError(err)?'Server reconnect नहीं हो पाया. CB को दोबारा खोलें.':friendlyUserError(err,'CB details load नहीं हो सकीं. कृपया दोबारा खोलें.');b.style.borderColor='#8a3440';b.style.background='#32161c'}}
 
 function restoreCbAfterWhatsApp(){try{const raw=sessionStorage.getItem('RR_CB_WHATSAPP_RETURN_V1');if(!raw)return;const x=JSON.parse(raw);if(x.cbId&&cbId&&String(x.cbId)===String(cbId)){requestAnimationFrame(()=>window.scrollTo({top:Number(x.scrollY||0),behavior:'auto'}));sessionStorage.removeItem('RR_CB_WHATSAPP_RETURN_V1')}}catch(_){}}
