@@ -41,6 +41,8 @@ test('standalone Art Decision is operationally retired into CB and Real Chat rou
   assert.ok(chat.includes('EDIT ART COMBO'));
   assert.ok(chat.includes('data-action="CB_ART_COMBO"'));
   assert.ok(!chat.includes('ART DECISION EDIT'));
+  assert.ok(!chat.includes('Art Decide ·'));
+  assert.ok(chat.includes('CB Art Combo ·'));
   assert.ok(!chat.includes("real-art-decide-master.html?cb_no="));
 });
 
@@ -66,4 +68,11 @@ test('Art Combo backend is locked after any Cutting Lot release',()=>{
   assert.ok(sql.includes('rr_production_lots where cb_unit_id=p_cb_unit_id'));
   assert.ok(sql.includes('CB Set Art Combo is locked after Cutting Lot release.'));
   assert.ok(sql.includes("'combo_authority','CB_SET'"));
+});
+
+
+test('CB Combo libraries hydrate after the initial new-CB render',()=>{
+  const cb=read('real-cb-new-v9130-fix2.html');
+  assert.ok(cb.includes("await Promise.all([loadCanonicalMasters(),loadCategories(),loadOptions()]);"));
+  assert.ok(cb.includes("loadComboLibraries().then(renderSetDecisions)"));
 });
