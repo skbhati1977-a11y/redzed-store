@@ -62,7 +62,7 @@ begin
 
   return new;
 end
-$function$
+$function$;
 
 
 CREATE OR REPLACE FUNCTION public.rr_cb_cutting_actual_requirement_refresh_trg_v1()
