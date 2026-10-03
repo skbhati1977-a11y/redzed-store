@@ -67,7 +67,7 @@
   if (window.__RR_PM_ART_DECISION_LOADER_9226__) return;
   window.__RR_PM_ART_DECISION_LOADER_9226__ = true;
   const script = document.createElement("script");
-  script.src = "real-product-master-art-decision-module-v9226.js?v=9226";
+  script.src = "real-product-master-art-decision-module-v9226.js?v=9234";
   script.async = false;
   document.body.appendChild(script);
 })();
