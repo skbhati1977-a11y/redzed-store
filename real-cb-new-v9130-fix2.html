@@ -429,8 +429,8 @@ async function boot(){try{
   }).catch(e=>console.warn('CB optional master enrichment',e));
   return;
  }
- await Promise.all([loadCanonicalMasters(),loadCategories(),loadOptions(),loadComboLibraries()]);
- cbClientKey=sessionStorage.getItem('RR_CB_NEW_CLIENT_KEY_V608')||crypto.randomUUID();sessionStorage.setItem('RR_CB_NEW_CLIENT_KEY_V608',cbClientKey);colours=Array.from({length:colourCount()},(_,i)=>newColour(i));materials=[newMaterial('regular')];materials[0].clientKey=cbClientKey;$('bootMsg').style.display='none';ensureDefaultRolls();ensureSetRequirements();await loadComboStates();renderMaterials();renderSetDecisions();renderColours();updateSummary();
+ await Promise.all([loadCanonicalMasters(),loadCategories(),loadOptions()]);
+ cbClientKey=sessionStorage.getItem('RR_CB_NEW_CLIENT_KEY_V608')||crypto.randomUUID();sessionStorage.setItem('RR_CB_NEW_CLIENT_KEY_V608',cbClientKey);colours=Array.from({length:colourCount()},(_,i)=>newColour(i));materials=[newMaterial('regular')];materials[0].clientKey=cbClientKey;$('bootMsg').style.display='none';ensureDefaultRolls();ensureSetRequirements();await loadComboStates();renderMaterials();renderSetDecisions();renderColours();updateSummary();loadComboLibraries().then(renderSetDecisions).catch(e=>console.warn('CB optional Combo libraries',e));
 }catch(err){console.error('CB boot',err);const b=$('bootMsg');b.textContent=isTransientDbError(err)?'Server reconnect नहीं हो पाया. CB को दोबारा खोलें.':friendlyUserError(err,'CB details load नहीं हो सकीं. कृपया दोबारा खोलें.');b.style.borderColor='#8a3440';b.style.background='#32161c'}}
 
 function restoreCbAfterWhatsApp(){try{const raw=sessionStorage.getItem('RR_CB_WHATSAPP_RETURN_V1');if(!raw)return;const x=JSON.parse(raw);if(x.cbId&&cbId&&String(x.cbId)===String(cbId)){requestAnimationFrame(()=>window.scrollTo({top:Number(x.scrollY||0),behavior:'auto'}));sessionStorage.removeItem('RR_CB_WHATSAPP_RETURN_V1')}}catch(_){}}
