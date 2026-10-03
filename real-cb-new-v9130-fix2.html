@@ -222,8 +222,8 @@ async function setRootSetMode(setNo,mode,childCount=2,shares=null){
 
 
 function supplierOptions(selected){
- const list=derivedContext.suppliers||[],has=selected&&list.some(x=>String(x.id)===String(selected));
- return '<option value="">SELECT SUPPLIER…</option>'+(selected&&!has?`<option value="${esc(selected)}" selected>Current mapped supplier</option>`:'')+list.map(x=>`<option value="${esc(x.id)}" ${String(x.id)===String(selected||'')?'selected':''}>${esc(x.name||'Supplier')}${x.mobile?' · '+esc(x.mobile):''}</option>`).join('')
+ const list=derivedContext.suppliers||[],key=x=>String(x.ledger_id||x.id||''),has=selected&&list.some(x=>key(x)===String(selected));
+ return '<option value="">SELECT SUPPLIER…</option>'+(selected&&!has?`<option value="${esc(selected)}" selected>Current mapped supplier</option>`:'')+list.map(x=>{const id=key(x);return `<option value="${esc(id)}" ${id===String(selected||'')?'selected':''}>${esc(x.name||x.supplier_name||'Supplier')}${x.mobile?' · '+esc(x.mobile):''}</option>`}).join('')
 }
 function requirementSendLabel(g){
  const count=Number(g.send_count||0),rev=Number(g.revision_no||1),last=Number(g.last_sent_revision||0);
