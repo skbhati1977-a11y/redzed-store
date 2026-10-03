@@ -10,7 +10,7 @@ const state={
   stickerAssignments:[],metalAssignments:[],stickerInstructions:[],metalInstructions:[],
   active:null,step:"art",artId:null,printMode:"NA",printIds:[],stickerMode:"NA",
   stickerIds:[],metalMode:"NA",metalIds:[],createContext:null,createTimers:[],
-  viewerItems:[],viewerIndex:0,allowedArtCategoryIds:[]
+  viewerItems:[],viewerIndex:0,allowedArtCategoryIds:[],setRequirement:null
 };
 
 const MASTER_META={
@@ -257,25 +257,25 @@ function paintViewer(){
 function closeViewer(){const sheet=$("imageViewer");sheet.classList.add("hidden");sheet.setAttribute("aria-hidden","true");$("viewerImage").removeAttribute("src");state.viewerItems=[];state.viewerIndex=0;if($("decisionSheet").classList.contains("hidden")&&$("masterSheet").classList.contains("hidden"))document.body.style.overflow=""}
 function moveViewer(delta){const n=state.viewerItems.length;if(!n)return;state.viewerIndex=(state.viewerIndex+delta+n)%n;paintViewer()}
 
-async function loadAllowedArtCategories(unitId){try{const req=await state.client.from('rr_cb_set_requirement_v1').select('art_category_id,sleeve_type,size_family,sleeve_finish,art_id').eq('cb_unit_id',unitId).maybeSingle();if(!req.error&&req.data?.art_category_id)return[String(req.data.art_category_id)];const a=await state.client.from('rr_cb_material_allocations').select('purchase_entry_id').eq('division_id',unitId);if(a.error)throw a.error;const ids=[...new Set((a.data||[]).map(x=>x.purchase_entry_id).filter(Boolean))];if(!ids.length)return[];const e=await state.client.from('rr_cb_material_allocations').select('allowed_art_category_ids').eq('division_id',unitId).in('purchase_entry_id',ids);if(e.error)throw e.error;return [...new Set((e.data||[]).flatMap(x=>x.allowed_art_category_ids||[]).map(String))]}catch(e){console.warn('Allowed Art categories',e);return[]}}
+async function loadSetRequirement(unitId){try{const r=await state.client.from('rr_cb_set_requirement_v1').select('art_category_id,sleeve_type,size_family,sleeve_finish,border_pounchi,art_id').eq('cb_unit_id',unitId).maybeSingle();if(r.error)throw r.error;return r.data||null}catch(e){console.warn('CB Set requirement',e);return null}}
+async function loadAllowedArtCategories(unitId,req=null){try{if(req?.art_category_id)return[String(req.art_category_id)];const a=await state.client.from('rr_cb_material_allocations').select('purchase_entry_id').eq('division_id',unitId);if(a.error)throw a.error;const ids=[...new Set((a.data||[]).map(x=>x.purchase_entry_id).filter(Boolean))];if(!ids.length)return[];const e=await state.client.from('rr_cb_material_allocations').select('allowed_art_category_ids').eq('division_id',unitId).in('purchase_entry_id',ids);if(e.error)throw e.error;return [...new Set((e.data||[]).flatMap(x=>x.allowed_art_category_ids||[]).map(String))]}catch(e){console.warn('Allowed Art categories',e);return[]}}
 async function openDecision(unitId){
   const u=unitFor(unitId);if(!u)return;
   
-  const a=assignmentFor(unitId),d=decisionFor(unitId);
-  state.active=u;state.step="art";state.artId=a?.art_id?String(a.art_id):null;
+  const a=assignmentFor(unitId),d=decisionFor(unitId),req=await loadSetRequirement(unitId);
+  state.active=u;state.setRequirement=req;state.step="art";state.artId=a?.art_id?String(a.art_id):null;
   if(state.artId){
-    const ms=await state.client.rpc("rr_art_canonical_mapping_status_v1",{p_art_id:state.artId});
-    const artCategory=ms?.data?.category_id;
+    const art=byId(state.arts,state.artId),artCategory=art?.art_category_id||req?.art_category_id||u.garment_category_id;
     state.allowedArtCategoryIds=artCategory?[String(artCategory)]:[];
-    if(!ms.error&&ms.data&&!ms.data.complete)decisionSay("ART MAPPING REQUIRED: "+(ms.data.missing||[]).join(", ")+" · Art Master में complete करें; CB defaults को Art mirror नहीं माना जाएगा.","error");
   }else{
-    state.allowedArtCategoryIds=await loadAllowedArtCategories(unitId);
+    state.allowedArtCategoryIds=await loadAllowedArtCategories(unitId,req);
     if(!state.allowedArtCategoryIds.length&&u.garment_category_id)state.allowedArtCategoryIds=[String(u.garment_category_id)];
   }
   state.printIds=printIdsForAssignment(a);state.printMode=a?.print_due?"DUE":a?.print_not_applicable?"NA":state.printIds.length?"SELECTED":d?.print_status==="PRINT_DUE"?"DUE":"NA";
   state.stickerIds=stickerIdsForAssignment(a);state.stickerMode=a?.sticker_due?"DUE":a?.sticker_not_applicable?"NA":state.stickerIds.length?"SELECTED":d?.sticker_status==="STICKER_DUE"?"DUE":"NA";
   state.metalIds=metalIdsForAssignment(a);state.metalMode=a?.metal_id_due?"DUE":a?.metal_id_not_applicable?"NA":state.metalIds.length?"SELECTED":d?.metal_id_status==="METAL_ID_DUE"?"DUE":"NA";
-  $("decisionTitle").textContent=`${cbNo(u)} · ${dNo(u)}`;$("decisionContext").textContent=`Canonical mirror · ${u.sleeve_type||"HALF"} · ${u.sleeve_finish||"WITH_CUFF"} · ${u.border_pounchi||"WITHOUT_BORDER_POUNCHI"} · ${(u.size_set||["L","XL","XXL"]).join(", ")} · Neck/Collar by Category`;$("pickerSearch").value="";decisionSay("");showStep("art");
+  const ctxSleeve=req?.sleeve_type||u.sleeve_type||"HALF",ctxFinish=req?.sleeve_finish||u.sleeve_finish||"PLAIN",ctxBorder=req?.border_pounchi||u.border_pounchi||"WITHOUT_BORDER_POUNCHI",ctxSize=req?.size_family||(u.size_set||["L","XL","XXL"]).join(", ");
+  $("decisionTitle").textContent=`${cbNo(u)} · ${dNo(u)}`;$("decisionContext").textContent=`CB Set mirror · ${ctxSleeve} · ${ctxFinish} · ${ctxBorder} · ${ctxSize}`;$("pickerSearch").value="";decisionSay("");showStep("art");
   const sheet=$("decisionSheet");sheet.classList.remove("hidden");sheet.setAttribute("aria-hidden","false");document.body.style.overflow="hidden"
 }
 function closeDecision(){if(!$("masterSheet").classList.contains("hidden"))return;const sheet=$("decisionSheet");sheet.classList.add("hidden");sheet.setAttribute("aria-hidden","true");document.body.style.overflow=""}
