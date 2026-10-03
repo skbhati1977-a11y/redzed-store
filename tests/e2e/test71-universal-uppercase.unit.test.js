@@ -281,3 +281,6 @@ test('CB construction defaults use half sleeve L XL XXL and rib sleeve N A',()=>
 
 
 test('CB 1011 approved size families and sleeve defaults are canonical',()=>{const cb=fs.readFileSync(path.resolve(__dirname,'../../real-cb-new-v9130-fix2.html'),'utf8');for(const v of ['L,XL,XXL','2XL,3XL,4XL','3XL,4XL,5XL','M,L,XL,XXL','M,L,XL','L,XL','L,XXL','FREE SIZE'])assert.ok(cb.includes(v));assert.ok(cb.includes("defaultSleeveFinish(m)"));assert.ok(cb.includes('rr_cb_set_requirement_sync_v2'));assert.ok(!cb.includes('>WITH TAPE</option>'))});
+
+
+test('Direct Set uses decided Art category authority and exact size families',()=>{const cb=fs.readFileSync(path.resolve(__dirname,'../../real-cb-new-v9130-fix2.html'),'utf8');assert.ok(!cb.includes('loadArtThumbs(){ return;'));assert.ok(cb.includes("const direct=units.filter(x=>!mapped.has(String(x.id)))"));assert.ok(cb.includes('Mirrored from decided Art'));assert.ok(cb.includes("const SIZE_FAMILIES=['L, XL, XXL','2XL, 3XL, 4XL','3XL, 4XL, 5XL','M, L, XL, XXL','M, L, XL','L, XL','L, XXL','FREE SIZE']"))});
