@@ -19,31 +19,31 @@ test('CB uses one canonical S1-S4 Set decision UI with no duplicate material con
 
 test('CB Set Art Combo owns the shared Art assignment authority',()=>{
   const cb=read('real-cb-new-v9130-fix2.html');
-  const art=read('real-art-decide-master-v9231.js');
+  const retired=read('real-art-decide-master-v9231.js');
   assert.ok(cb.includes("rr_cb_select_art_v1"));
   assert.ok(cb.includes('saveCbArtSelection(di,id)'));
   assert.ok(cb.includes('Art decides Category'));
   assert.ok(cb.includes('CHANGE CATEGORY / ART'));
-  assert.ok(art.includes('rr_pm_save_decision_bundle_v804'));
-  assert.ok(art.includes('rr_sync_cb_mapping_from_art_v3'));
-  assert.ok(!art.includes('rr_sync_cb_mapping_from_art_v2'));
-  assert.ok(!art.includes('rr_art_canonical_mapping_status_v1'));
+  assert.ok(cb.includes('rr_pm_save_decision_bundle_v804'));
+  assert.ok(cb.includes('rr_sync_cb_mapping_from_art_v3'));
+  assert.ok(retired.includes('ART_DECISION_RETIRED#setDecisionCard'));
+  assert.ok(!retired.includes('rr_pm_save_decision_bundle_v804'));
 });
 
 test('Border Pounchi is canonical end-to-end with WITHOUT as default',()=>{
   const cb=read('real-cb-new-v9130-fix2.html');
-  const art=read('real-art-decide-master-v9231.js');
   const cut=read('real-cutting-master-pm.V719.3.js');
   const sql=read('supabase/migrations/20261003064331_test71_cb_art_two_way_border_authority.sql');
+  const lot=read('supabase/migrations/20261003075100_test71_lot_parent_combo_inheritance.sql');
   assert.ok(cb.includes('WITHOUT BORDER POUNCHI'));
   assert.ok(cb.includes('WITH BORDER POUNCHI'));
   assert.ok(cb.includes('border_pounchi:normalizeBorderPounchi'));
-  assert.ok(art.includes("border_pounchi,art_id"));
   assert.ok(cut.includes('defaultBorderForActiveSet'));
   assert.ok(cut.includes('Without Border Pounchi'));
   assert.ok(cut.includes('With Border Pounchi'));
   assert.ok(sql.includes("default 'WITHOUT_BORDER_POUNCHI'"));
   assert.ok(sql.includes('border_pounchi=excluded.border_pounchi'));
+  assert.ok(lot.includes('new.border_type:=case'));
 });
 
 test('New Set defaults are configurable without rewriting existing Sets',()=>{
@@ -76,21 +76,15 @@ test('Cutting reads shared Set size sleeve and Border Pounchi',()=>{
 });
 
 
-test('S1-S4 structural Art families are enforced in CB Art Decision and backend',()=>{
+test('S1-S4 structural Art families are enforced in CB and backend',()=>{
   const cb=read('real-cb-new-v9130-fix2.html');
-  const art=read('real-art-decide-master-v9231.js');
   const sql=read('supabase/migrations/20261003071702_test71_cb_set_category_family_guard.sql');
   assert.ok(cb.includes("di)===1?['self-collar']:Number(di)===4?['flat-polo']:['crew-neck','drop-shoulder']"));
   assert.ok(cb.includes('artOptionsForSet'));
-  assert.ok(art.includes('structuralArtCategoryIds'));
-  assert.ok(art.includes("['self-collar']"));
-  assert.ok(art.includes("['flat-polo']"));
-  assert.ok(art.includes("['crew-neck','drop-shoulder']"));
   assert.ok(sql.includes("when u.division_index=1 then lower(c.category_code)='self-collar'"));
   assert.ok(sql.includes("when u.division_index=4 then lower(c.category_code)='flat-polo'"));
   assert.ok(sql.includes("when u.division_index in(2,3) then lower(c.category_code) in('crew-neck','drop-shoulder')"));
 });
-
 
 test('CB embeds the existing Print Sticker Metal combo engine and Add New masters',()=>{
   const cb=read('real-cb-new-v9130-fix2.html');
