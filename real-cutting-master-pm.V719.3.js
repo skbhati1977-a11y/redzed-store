@@ -1630,6 +1630,7 @@ function renderGallery() {
               <small>Colours</small>
               <strong>${colours.length || 0}</strong>
             </span>
+            ${(()=>{const req=setRequirementForUnit(card.division.division_id);return req?`<span><small>Size</small><strong>${safe(String(req.size_family||'L,XL,XXL').replaceAll(',',', '))}</strong></span><span><small>Sleeve</small><strong>${safe(req.sleeve_type||'HALF')}</strong></span><span><small>Border Pounchi</small><strong>${safe(String(req.border_pounchi||'WITHOUT_BORDER_POUNCHI').replaceAll('_',' '))}</strong></span>`:''})()}
           </div>
 
           <div class="cm-metrics">
@@ -1803,8 +1804,12 @@ function sizesFromText(text) {
 
 function sizesForCard(card) {
   const decision = cardDecision(card);
+  const req = setRequirementForUnit(card?.division?.division_id);
 
   const sources = [
+    req?.size_family,
+    card.division?.size_set,
+    card.division?.size_family,
     card.assignment?.size_set,
     card.assignment?.sizes,
     decision.art?.size_set,
@@ -3626,7 +3631,8 @@ async function loadAllData() {
     loadedMultiLotRows,
     breakupResult,
     matchingStockResult,
-    matchingLotResult
+    matchingLotResult,
+    setRequirementResult
   ] = await Promise.all([
     withTimeout(
       loadGallerySource(client),
@@ -3683,7 +3689,9 @@ async function loadAllData() {
 
     loadMatchingStockSource(client),
 
-loadMatchingLotSource(client)
+    loadMatchingLotSource(client),
+
+    optionalRows(client, "rr_cb_set_requirement_v1")
   ]);
 
   purchaseRows = requiredData(purchaseResult, "Purchase rows");
@@ -3712,6 +3720,7 @@ loadMatchingLotSource(client)
   breakupRows = requiredData(breakupResult, "Cutting breakup");
   matchingStockRows = (matchingStockResult || []).map(normalizeMatchingStockRow);
   matchingLotRows = matchingLotResult || [];
+  setRequirementRows = setRequirementResult || [];
 
   await loadCuttingLifecycle(client);
   await loadCostSettings(client);
@@ -3762,7 +3771,8 @@ loadMatchingLotSource(client)
     lotRows: lotRows.length,
     breakupRows: breakupRows.length,
     matchingStockRows: matchingStockRows.length,
-    matchingLotRows: matchingLotRows.length
+    matchingLotRows: matchingLotRows.length,
+    setRequirementRows: setRequirementRows.length
   });
 }
 
