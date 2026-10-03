@@ -129,7 +129,7 @@ async function loadData(){
         optionalRows("rr_cb_art_assignments"),optionalRows("rr_cb_print_assignments"),optionalRows("rr_cb_sticker_assignments"),optionalRows("rr_cb_metal_id_assignments_v801"),
         optionalRows("rr_art_sticker_instructions"),optionalRows("rr_art_metal_id_instructions_v801")
       ]);
-      Object.assign(state,{arts:activeOnly(arts),prints:activeOnly(prints),stickers:activeOnly(stickers),metals:activeOnly(metals),media,assignments,printAssignments,stickerAssignments,metalAssignments,stickerInstructions,metalInstructions});
+      const assignedArtIds=new Set((assignments||[]).map(x=>String(x.art_id||'')).filter(Boolean));Object.assign(state,{arts:(arts||[]).filter(x=>x.is_active!==false||assignedArtIds.has(String(x.id))),prints:activeOnly(prints),stickers:activeOnly(stickers),metals:activeOnly(metals),media,assignments,printAssignments,stickerAssignments,metalAssignments,stickerInstructions,metalInstructions});
       state.counts=!countR.error&&countR.data?countR.data:derivedCounts();
       renderStatusTabs();renderGallery();
     }catch(enrichError){
