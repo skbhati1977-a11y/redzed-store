@@ -8,7 +8,7 @@ const read=p=>fs.readFileSync(path.join(root,p),'utf8');
 
 test('CB Art Material Decision owns Single Multi planning before Cutting',()=>{
   const cb=read('real-cb-new-v9130-fix2.html');
-  const sql=read('supabase/migrations/20261003102000_test71_cb_art_material_planning_profiles.sql');
+  const sql=read('supabase/migrations/20261003152500_test71_cb_art_material_planning_profiles.sql');
   for(const token of [
     'Art &amp; Material Decision',
     'PENDING · NO DECISION',
@@ -24,7 +24,7 @@ test('CB Art Material Decision owns Single Multi planning before Cutting',()=>{
 
 test('Multi planning creates real child CB profiles with independent Art Combo identity',()=>{
   const cb=read('real-cb-new-v9130-fix2.html');
-  const sql=read('supabase/migrations/20261003102000_test71_cb_art_material_planning_profiles.sql');
+  const sql=read('supabase/migrations/20261003152500_test71_cb_art_material_planning_profiles.sql');
   assert.ok(cb.includes('Each child has its own Art Combo and downstream identity.'));
   assert.ok(cb.includes('profileCardHtml(String(ch.division_index))'));
   assert.ok(cb.includes('activeProfileKeys'));
@@ -37,8 +37,8 @@ test('Multi planning creates real child CB profiles with independent Art Combo i
 
 test('Art remains directly editable until exact Cutting Lot save and Category auto maps',()=>{
   const cb=read('real-cb-new-v9130-fix2.html');
-  const plan=read('supabase/migrations/20261003102000_test71_cb_art_material_planning_profiles.sql');
-  const derived=read('supabase/migrations/20261003102500_test71_cb_derived_requirement_whatsapp.sql');
+  const plan=read('supabase/migrations/20261003152500_test71_cb_art_material_planning_profiles.sql');
+  const derived=read('supabase/migrations/20261003152600_test71_cb_yield_requirement_whatsapp_v1.sql');
   assert.ok(cb.includes('class="canonicalSetArt"'));
   assert.ok(cb.includes('CATEGORY · AUTO MAPPED'));
   assert.ok(!cb.includes('CHANGE CATEGORY / ART'));
@@ -51,7 +51,7 @@ test('Art remains directly editable until exact Cutting Lot save and Category au
 
 test('Category defaults are configurable and do not rewrite saved profiles',()=>{
   const cb=read('real-cb-new-v9130-fix2.html');
-  const sql=read('supabase/migrations/20261003102000_test71_cb_art_material_planning_profiles.sql');
+  const sql=read('supabase/migrations/20261003152500_test71_cb_art_material_planning_profiles.sql');
   assert.ok(cb.includes('MAKE CURRENT VALUES DEFAULT'));
   assert.ok(cb.includes('rr_cb_category_defaults_get_v1'));
   assert.ok(cb.includes('rr_cb_category_defaults_set_v1'));
@@ -73,21 +73,21 @@ test('Print Sticker Metal pickers collapse after Done and show selected thumbnai
 
 test('Additional Material manual decision UI is retired and requirement is derived from Art Combo',()=>{
   const cb=read('real-cb-new-v9130-fix2.html');
-  const plan=read('supabase/migrations/20261003102000_test71_cb_art_material_planning_profiles.sql');
-  const derived=read('supabase/migrations/20261003102500_test71_cb_derived_requirement_whatsapp.sql');
+  const plan=read('supabase/migrations/20261003152500_test71_cb_art_material_planning_profiles.sql');
+  const derived=read('supabase/migrations/20261003152600_test71_cb_yield_requirement_whatsapp_v1.sql');
   assert.ok(cb.includes('id="extraMaterialCard" hidden'));
   assert.ok(cb.includes('Yield · Consolidated Requirement'));
   assert.ok(cb.includes('rr_cb_material_mapping_sync_v6'));
   assert.ok(cb.includes('rr_cb_material_estimate_v3'));
-  assert.ok(plan.includes('rr_cb_material_mapping_sync_v6'));
-  assert.ok(plan.includes('rr_cb_profile_yield_v1'));
-  assert.ok(plan.includes('rr_cb_material_estimate_v3'));
+  assert.ok(derived.includes('rr_cb_material_mapping_sync_v6'));
+  assert.ok(derived.includes('rr_cb_profile_yield_v1'));
+  assert.ok(derived.includes('rr_cb_material_estimate_v3'));
   assert.ok(derived.includes("lower(mc.category_code) in('collar-cuff','rib')"));
   assert.ok(derived.includes("entry_notes='AUTO ART COMBO MATERIAL'"));
 });
 
 test('Sticker and Metal ID initial purchase or making quantity uses Yield PCS',()=>{
-  const derived=read('supabase/migrations/20261003102500_test71_cb_derived_requirement_whatsapp.sql');
+  const derived=read('supabase/migrations/20261003152600_test71_cb_yield_requirement_whatsapp_v1.sql');
   assert.ok(derived.includes("basis:='YIELD'"));
   assert.ok(derived.includes("'STICKER'"));
   assert.ok(derived.includes("'METAL_ID'"));
@@ -97,19 +97,20 @@ test('Sticker and Metal ID initial purchase or making quantity uses Yield PCS',(
 });
 
 test('Cutting actual revises Yield requirements only after Lot No and PCS are saved',()=>{
-  const derived=read('supabase/migrations/20261003102500_test71_cb_derived_requirement_whatsapp.sql');
-  assert.ok(derived.includes("nullif(trim(coalesce(new.lot_no,'')),'') is null"));
-  assert.ok(derived.includes('coalesce(nullif(new.actual_pcs,0),new.planned_pcs,0)<=0'));
+  const derived=read('supabase/migrations/20261003152600_test71_cb_yield_requirement_whatsapp_v1.sql');
+  const cut=read('supabase/migrations/20261003152700_test71_cb_cutting_freeze_actual_revision_v1.sql');
+  assert.ok(cut.includes("nullif(trim(coalesce(new.lot_no,'')),'') is null"));
+  assert.ok(cut.includes('coalesce(nullif(new.actual_pcs,0),new.planned_pcs,0)<=0'));
   assert.ok(derived.includes("basis:='CUTTING_ACTUAL'"));
-  assert.ok(derived.includes('rr_cb_cutting_actual_requirement_refresh_v1'));
-  assert.ok(derived.includes('rr_cb_multi_actual_requirement_refresh_v1'));
-  assert.ok(derived.includes('drop trigger if exists rr_cb_derived_after_single_cutting_v1'));
-  assert.ok(derived.includes('drop trigger if exists rr_cb_derived_after_multi_cutting_v1'));
+  assert.ok(cut.includes('rr_cb_cutting_actual_requirement_refresh_v1'));
+  assert.ok(cut.includes('rr_cb_multi_actual_requirement_refresh_v1'));
+  assert.ok(cut.includes('rr_cb_cutting_saved_finalize_v1'));
+  assert.ok(cut.includes('rr_cb_production_saved_finalize_v1'));
 });
 
 test('WhatsApp requirement supports first send resend and revised send with history',()=>{
   const cb=read('real-cb-new-v9130-fix2.html');
-  const sql=read('supabase/migrations/20261003102500_test71_cb_derived_requirement_whatsapp.sql');
+  const sql=read('supabase/migrations/20261003152600_test71_cb_yield_requirement_whatsapp_v1.sql');
   assert.ok(cb.includes("return'SEND WHATSAPP'"));
   assert.ok(cb.includes("return'SEND REVISED'"));
   assert.ok(cb.includes("return 'RESEND #'"));
@@ -125,7 +126,7 @@ test('WhatsApp requirement supports first send resend and revised send with hist
 
 test('Supplier is auto mapped from existing masters and can be overridden',()=>{
   const cb=read('real-cb-new-v9130-fix2.html');
-  const sql=read('supabase/migrations/20261003102500_test71_cb_derived_requirement_whatsapp.sql');
+  const sql=read('supabase/migrations/20261003152600_test71_cb_yield_requirement_whatsapp_v1.sql');
   assert.ok(cb.includes('rr_cb_requirement_supplier_set_v1'));
   assert.ok(cb.includes('SELECT SUPPLIER…'));
   assert.ok(sql.includes('rr_material_source_supplier_map_v805_31'));
@@ -170,12 +171,12 @@ test('Standalone Art Decision UI remains retired and CB stays the editing author
 
 test('Existing assignment IDs remain the downstream authority for Print Sticker Metal',()=>{
   const cb=read('real-cb-new-v9130-fix2.html');
-  const lot=read('supabase/migrations/20261003075100_test71_lot_parent_combo_inheritance.sql');
+  const lot=read('supabase/migrations/20261003152700_test71_cb_cutting_freeze_actual_revision_v1.sql');
   assert.ok(cb.includes('rr_cb_art_assignments'));
   assert.ok(cb.includes('rr_cb_print_assignments'));
   assert.ok(cb.includes('rr_cb_sticker_assignments'));
   assert.ok(cb.includes('rr_cb_metal_id_assignments_v801'));
   assert.ok(cb.includes('rr_pm_save_decision_bundle_v804'));
-  assert.ok(lot.includes('rr_cutting_lot_inherit_cb_set_combo_trg'));
-  assert.ok(lot.includes('rr_production_lot_inherit_cb_set_combo_trg'));
+  assert.ok(lot.includes('rr_lot_inherit_cb_set_combo_v1'));
+  assert.ok(lot.includes('rr_000_cb_set_combo_inherit_v1'));
 });
