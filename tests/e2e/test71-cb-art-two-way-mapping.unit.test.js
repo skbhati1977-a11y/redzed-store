@@ -175,6 +175,14 @@ test('Only one actual-cutting derived requirement refresh trigger is retained pe
   assert.ok(sql.includes('rr_cb_multi_actual_requirement_refresh_v1'));
 });
 
+test('Planned profile guard freezes only after Lot No plus Cutting Pieces save',()=>{
+  const sql=read('supabase/migrations/20261003152800_test71_cb_planning_final_hardening.sql');
+  assert.ok(sql.includes('rr_cb_unit_has_final_cutting_v1(u.id)'));
+  assert.ok(sql.includes('frozen after Lot No + Cutting Pieces save'));
+  assert.ok(!sql.includes("if exists(select 1 from public.rr_cutting_lots_v3 x where x.cb_unit_id=u.id)"));
+  assert.ok(sql.includes("status=case when v_template_kind='RESEND' then 'RESENT' else 'SENT' end"));
+});
+
 test('Legacy duplicate mapping engines are absent from active CB UI',()=>{
   const cb=read('real-cb-new-v9130-fix2.html');
   for(const token of [
