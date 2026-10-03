@@ -219,6 +219,83 @@ async function setRootSetMode(setNo,mode,childCount=2,shares=null){
  await loadDerivedRequirements(true);
  setMessage('S'+setNo+' '+mode+' planning updated.',true);
 }
+
+function requirementSupplierOptions(current){
+ current=String(current||'');
+ return '<option value="">SELECT SUPPLIER</option>'+
+  (derivedContext.suppliers||[]).map(function(s){
+   return '<option value="'+esc(s.ledger_id)+'" '+(String(s.ledger_id)===current?'selected':'')+'>'+
+    esc(s.supplier_name)+(s.mobile?' · '+esc(s.mobile):'')+'</option>';
+  }).join('');
+}
+function requirementThumbs(){
+ const imgs=colours.map(function(c){return c.imageUrl||c.previewUrl;}).filter(Boolean);
+ if(!imgs.length)return '';
+ return '<div style="display:flex;gap:6px;overflow:auto;margin-top:7px">'+
+  imgs.map(function(x,i){return '<img src="'+esc(x)+'" title="Colour '+(i+1)+'" style="width:44px;height:44px;object-fit:cover;border-radius:8px">';}).join('')+
+  '</div>';
+}
+function renderDerivedRequirements(){
+ const box=$('derivedRequirementSummary');
+ if(!box)return;
+ const groups=derivedContext.groups||[];
+ if(!cbId){box.innerHTML='<div class="muted">Save CB Draft to calculate Yield requirements.</div>';return;}
+ if(!groups.length){box.innerHTML='<div class="muted">No derived requirement yet. Complete Art mapping and press REFRESH YIELD.</div>';return;}
+ box.innerHTML=groups.map(function(g,i){
+  const sendCount=Number(g.send_count||0);
+  const label=g.revised_pending?'SEND REVISED WHATSAPP':(sendCount?'RESEND WHATSAPP · #'+(sendCount+1):'SEND WHATSAPP');
+  const basis=String(g.basis||'YIELD')==='CUTTING_ACTUAL'?'CUTTING ACTUAL':'YIELD SHEET';
+  const qty=Number(g.required_qty||0).toFixed(String(g.unit||'').toUpperCase()==='KG'?3:0);
+  return '<article class="material-layer derivedReq" data-i="'+i+'" style="margin-bottom:10px">'+
+   '<div class="material-layer-title">'+esc(g.requirement_type)+' · '+esc(g.item_no||'')+' '+esc(g.item_name||'')+'</div>'+
+   '<div class="grid3">'+
+    '<div><span class="muted">Profiles</span><strong>'+esc((g.profiles||[]).join(', '))+'</strong></div>'+
+    '<div><span class="muted">Basis</span><strong>'+basis+' · '+Number(g.basis_pcs||0)+' PCS</strong></div>'+
+    '<div><span class="muted">Required</span><strong>'+qty+' '+esc(g.unit||'')+'</strong></div>'+
+    '<div><span class="muted">Mode</span><strong>'+esc(g.fulfilment_method||'PURCHASE')+'</strong></div>'+
+    '<div><span class="muted">Revision</span><strong>R'+Number(g.revision_no||1)+' · Sent '+sendCount+'x</strong></div>'+
+    '<label><span>Supplier</span><select class="derivedSupplier">'+requirementSupplierOptions(g.supplier_ledger_id)+'</select></label>'+
+   '</div>'+requirementThumbs()+
+   '<button type="button" class="primary derivedWhatsapp" style="margin-top:9px">'+label+'</button>'+
+  '</article>';
+ }).join('');
+ box.querySelectorAll('.derivedReq').forEach(function(card){
+  const i=Number(card.dataset.i),g=groups[i];
+  card.querySelector('.derivedSupplier').onchange=async function(e){
+   const ledger=e.target.value;
+   if(!ledger){setMessage('Supplier select करें.');return;}
+   const r=await sb().rpc('rr_cb_requirement_supplier_set_v1',{
+    p_cb_id:cbId,p_requirement_type:g.requirement_type,p_source_id:g.source_id,p_supplier_ledger_id:ledger
+   });
+   if(r.error){setMessage(friendlyUserError(r.error,'Supplier mapping save नहीं हुई.'));return;}
+   await loadDerivedRequirements(false);
+  };
+  card.querySelector('.derivedWhatsapp').onclick=function(){sendDerivedRequirementWhatsapp(g);};
+ });
+}
+async function loadDerivedRequirements(refresh){
+ if(refresh===undefined)refresh=true;
+ if(!cbId){derivedContext={groups:[],suppliers:[]};renderDerivedRequirements();return derivedContext;}
+ if(refresh){
+  const rr=await sb().rpc('rr_cb_refresh_derived_requirements_v1',{p_cb_id:cbId});
+  if(rr.error)throw rr.error;
+ }
+ const r=await sb().rpc('rr_cb_requirement_context_v1',{p_cb_id:cbId});
+ if(r.error)throw r.error;
+ derivedContext={groups:r.data?.groups||[],suppliers:r.data?.suppliers||[]};
+ renderDerivedRequirements();
+ return derivedContext;
+}
+async function sendDerivedRequirementWhatsapp(g){
+ const r=await sb().rpc('rr_cb_requirement_send_v1',{p_cb_id:cbId,p_requirement_type:g.requirement_type,p_source_id:g.source_id});
+ if(r.error){setMessage(friendlyUserError(r.error,'WhatsApp requirement prepare नहीं हो सकी.'));return;}
+ const d=r.data||{},phone=String(d.supplier_mobile||'').replace(/\D/g,''),msg=String(d.message||'');
+ if(!phone){setMessage('Selected Supplier का WhatsApp/Mobile number missing है.');return;}
+ try{sessionStorage.setItem('RR_CB_WHATSAPP_RETURN_V1',JSON.stringify({href:location.href,scrollY:window.scrollY,cbId:cbId,at:Date.now()}));}catch(_){}
+ window.open('https://wa.me/'+encodeURIComponent(phone)+'?text='+encodeURIComponent(msg),'_blank','noopener');
+ setMessage((d.template_kind||'SEND')+' · '+(d.supplier_name||'Supplier')+' · Send #'+(d.send_sequence||1),true);
+ await loadDerivedRequirements(false);
+}
 const CB_COMBO_MASTER_META={
  art:{label:'Art',url:'art-v9148/?v=9233&from=cb-combo',focus:'artNo'},
  print:{label:'Print',url:'real-print-master.html?v=9233&from=cb-combo',focus:'printNo'},
