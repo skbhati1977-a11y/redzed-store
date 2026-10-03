@@ -1751,7 +1751,7 @@ function renderGallery() {
                 <div class="cm-lot-box">
                   <h4>Permanent Lot No Due</h4>
                   <p>
-                    पहले Single या Multi Lot चुनें, फिर Manual Lot No भरें.
+                    Lot plan CB में तय है. यहाँ Permanent Lot No और Cutting Pieces save करें.
                   </p>
                 </div>
               `
@@ -2026,7 +2026,7 @@ function ensureComboUi() {
   panel.innerHTML = `
     <div class="cm-matrix-head">
       <h3>Cutting Lot</h3>
-      <strong id="cmSelectedMode">Single Lot</strong>
+      <strong id="cmSelectedMode">CB Profile Lot</strong>
     </div>
 
     <section id="cmSinglePanel">
@@ -2097,9 +2097,7 @@ function setLotMode(mode) {
 
   if ($("cmSelectedMode")) {
     $("cmSelectedMode").textContent =
-      currentLotMode === "multi"
-        ? `Multi Lot · ${activeChildCode()}A…`
-        : `Single Lot · ${activeChildCode()}`;
+      `CB Profile · ${activeChildCode()}`;
   }
 
   $("cmSinglePanel")?.classList.toggle(
