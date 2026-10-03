@@ -966,7 +966,7 @@ select jsonb_build_object(
     from colour_rows
   ),'[]'::jsonb)
 )
-$function$
+$function$;
 
 
 CREATE OR REPLACE FUNCTION public.rr_cb_requirement_supplier_set_v1(p_cb_id uuid, p_requirement_type text, p_source_id uuid, p_supplier_ledger_id uuid)
