@@ -302,3 +302,6 @@ test('Border Pounchi mirrors CB Art Decision and Cutting end to end',()=>{const 
 
 
 test('CB Set defaults are configurable without rewriting existing Sets',()=>{const cb=fs.readFileSync(path.resolve(__dirname,'../../real-cb-new-v9130-fix2.html'),'utf8'),sql=fs.readFileSync(path.resolve(__dirname,'../../supabase/migrations/20261003065207_test71_cb_configurable_set_defaults.sql'),'utf8');for(const x of ['DEFAULT SLEEVE','DEFAULT FINISH','DEFAULT BORDER POUNCHI','DEFAULT SIZE FAMILY'])assert.ok(cb.includes(x));assert.ok(cb.includes('rr_cb_construction_defaults_set_v2'));assert.ok(cb.includes('Existing Sets unchanged.'));assert.ok(sql.includes('default_size_family'));assert.ok(sql.includes('default_border_pounchi'));});
+
+
+test('Self Collar stays direct and material sync uses guarded v5',()=>{const cb=fs.readFileSync(path.resolve(__dirname,'../../real-cb-new-v9130-fix2.html'),'utf8'),sql=fs.readFileSync(path.resolve(__dirname,'../../supabase/migrations/20261003071031_test71_cb_material_set_guard_v5.sql'),'utf8');assert.ok(cb.includes('rr_cb_material_mapping_sync_v5'));assert.ok(cb.includes('sanitizeDirectMaterialLinks'));assert.ok(cb.includes("category_code||'').toLowerCase()!=='self-collar'"));assert.ok(sql.includes("set_code='self-collar'"));assert.ok(sql.includes('Additional Material cannot be linked'));});
