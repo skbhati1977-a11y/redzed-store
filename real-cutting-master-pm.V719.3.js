@@ -2039,8 +2039,8 @@ function ensureComboUi() {
 
       <div class="cm-grid-3">
         <label><span>Size Combo</span><select id="cmSingleSizeCombo"></select></label>
-        <label><span>Sleeve</span><select id="cmSingleSleeve"><option value="Half">Half Sleeve</option><option value="Full">Full Sleeve</option></select></label>
-        <label><span>Border Pounchi</span><select id="cmSingleBorder"><option value="Without Border Pounchi">Without Border Pounchi</option><option value="With Border Pounchi">With Border Pounchi</option></select></label>
+        <label><span>Sleeve · From CB Set</span><input id="cmSingleSleeve" type="text" readonly></label>
+        <label><span>Border Pounchi · From CB Set</span><input id="cmSingleBorder" type="text" readonly></label>
       </div>
 
       <div class="cm-grid-3">
@@ -2314,8 +2314,8 @@ function buildComboDevRows(options = {}) {
       lot_no: old.lot_no || "",
       size_combo: sizeCombo,
       sizes: sizesFromText(sizeCombo),
-      sleeve: old.sleeve || defaultSleeveForActiveSet(),
-      border: old.border || defaultBorderForActiveSet(),
+      sleeve: defaultSleeveForActiveSet(),
+      border: defaultBorderForActiveSet(),
       cutting_pcs: Number(old.cutting_pcs || 0),
       matching_item_id: stock.itemId || null,
       matching_consumption: stock.itemId
@@ -2368,8 +2368,8 @@ function renderDevRows() {
 
         <div class="cm-grid-3">
           <label><span>Size Combo</span><select class="cm-dev-size" data-dev-index="${index}"></select></label>
-          <label><span>Sleeve</span><select class="cm-dev-sleeve" data-dev-index="${index}"><option value="Half">Half Sleeve</option><option value="Full">Full Sleeve</option></select></label>
-          <label><span>Border Pounchi</span><select class="cm-dev-border" data-dev-index="${index}"><option value="Without Border Pounchi">Without Border Pounchi</option><option value="With Border Pounchi">With Border Pounchi</option></select></label>
+          <label><span>Sleeve · Parent Set</span><input class="cm-dev-sleeve" data-dev-index="${index}" type="text" readonly></label>
+          <label><span>Border Pounchi · Parent Set</span><input class="cm-dev-border" data-dev-index="${index}" type="text" readonly></label>
         </div>
 
         <div class="cm-grid-3">
@@ -2433,8 +2433,8 @@ function updateDevRowFromInput(input, options = {}) {
     row.size_combo = input.value || DEFAULT_SIZE_COMBO;
     row.sizes = sizesFromText(row.size_combo);
   }
-  if (input.classList.contains("cm-dev-sleeve")) row.sleeve = input.value || "Half";
-  if (input.classList.contains("cm-dev-border")) row.border = input.value || "Without Border";
+  if (input.classList.contains("cm-dev-sleeve")) row.sleeve = defaultSleeveForActiveSet();
+  if (input.classList.contains("cm-dev-border")) row.border = defaultBorderForActiveSet();
   if (input.classList.contains("cm-dev-match-item")) {
     const snapshot = matchingSnapshot(input.value);
     row.matching_item_id = snapshot.itemId || null;
@@ -2505,7 +2505,7 @@ function sleeveFactorFor(row) {
 }
 
 function borderFactorFor(row) {
-  return row.border === "With Border"
+  return String(row.border||"").toLowerCase().startsWith("with border")
     ? Number(costSettings.border_adjustment || 0)
     : 0;
 }
