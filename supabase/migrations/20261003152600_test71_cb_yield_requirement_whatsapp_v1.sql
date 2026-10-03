@@ -163,7 +163,7 @@ begin
     'root_set_aware',true,
     'multi_child_aware',true
   );
-end $function$
+end $function$;
 
 
 CREATE OR REPLACE FUNCTION public.rr_cb_profile_yield_v1(p_cb_unit_id uuid)
@@ -306,7 +306,7 @@ begin
     'confidence',confidence,
     'rows',rows
   );
-end $function$
+end $function$;
 
 
 CREATE OR REPLACE FUNCTION public.rr_cb_material_estimate_v3(p_cb_id uuid, p_material_category_id uuid, p_set_numbers integer[])
@@ -413,7 +413,7 @@ begin
     'rows',v_rows,
     'multi_child_aware',true
   );
-end $function$
+end $function$;
 
 
 CREATE OR REPLACE FUNCTION public.rr_cb_auto_supplier_v1(p_cb_id uuid, p_requirement_type text, p_source_id uuid)
@@ -489,7 +489,7 @@ begin
     'supplier_name',v_supplier_name,
     'supplier_mobile',v_mobile
   );
-end $function$
+end $function$;
 
 
 CREATE OR REPLACE FUNCTION public.rr_cb_upsert_derived_requirement_v1(p_cb_id uuid, p_cb_unit_id uuid, p_root_set_no integer, p_profile_label text, p_requirement_type text, p_source_id uuid, p_item_no text, p_item_name text, p_unit text, p_fulfilment_method text, p_basis text, p_basis_pcs numeric, p_qty_per_piece numeric, p_required_qty numeric)
@@ -576,7 +576,7 @@ begin
   end if;
 
   return out_id;
-end $function$
+end $function$;
 
 
 CREATE OR REPLACE FUNCTION public.rr_cb_refresh_derived_requirements_core_v1(p_cb_id uuid)
@@ -847,7 +847,7 @@ begin
   end loop;
 
   return jsonb_build_object('ok',true,'cb_id',p_cb_id,'active_requirements',req_count);
-end $function$
+end $function$;
 
 
 CREATE OR REPLACE FUNCTION public.rr_cb_refresh_derived_requirements_v1(p_cb_id uuid)
@@ -859,7 +859,7 @@ AS $function$
 begin
   perform public.rr_cb_department_assert_authority_v600();
   return public.rr_cb_refresh_derived_requirements_core_v1(p_cb_id);
-end $function$
+end $function$;
 
 
 CREATE OR REPLACE FUNCTION public.rr_cb_requirement_context_v1(p_cb_id uuid)
@@ -1015,7 +1015,7 @@ begin
     'supplier_name',v_name,
     'supplier_mobile',v_mobile
   );
-end $function$
+end $function$;
 
 
 CREATE OR REPLACE FUNCTION public.rr_cb_requirement_whatsapp_send_v1(p_cb_id uuid, p_requirement_type text, p_source_id uuid, p_supplier_ledger_id uuid DEFAULT NULL::uuid, p_supplier_name text DEFAULT NULL::text, p_supplier_mobile text DEFAULT NULL::text)
@@ -1201,7 +1201,7 @@ Please confirm availability / making status.';
     'template_kind',v_template_kind,
     'message',v_message
   );
-end $function$
+end $function$;
 
 
 CREATE OR REPLACE FUNCTION public.rr_cb_requirement_send_v1(p_cb_id uuid, p_requirement_type text, p_source_id uuid)
@@ -1214,7 +1214,7 @@ begin
   return public.rr_cb_requirement_whatsapp_send_v1(
     p_cb_id,p_requirement_type,p_source_id,null,null,null
   );
-end $function$
+end $function$;
 
 
 CREATE OR REPLACE FUNCTION public.rr_cb_select_art_v1(p_cb_unit_id uuid, p_art_id uuid)
@@ -1276,7 +1276,7 @@ begin
     'combo_reset_to_due',changed,
     'locked',false
   );
-end $function$
+end $function$;
 
 
 CREATE OR REPLACE FUNCTION public.rr_pm_save_decision_bundle_v804(p_cb_unit_id uuid, p_art_id uuid, p_print_mode text DEFAULT 'NA'::text, p_print_ids uuid[] DEFAULT '{}'::uuid[], p_sticker_mode text DEFAULT 'NA'::text, p_sticker_master_ids uuid[] DEFAULT '{}'::uuid[], p_metal_id_mode text DEFAULT 'NA'::text, p_metal_id_master_ids uuid[] DEFAULT '{}'::uuid[], p_data_mode text DEFAULT 'TEST'::text)
@@ -1351,7 +1351,7 @@ begin
     'frozen_after_cutting_save',true,
     'derived_requirements_refreshed',v_cb_id is not null
   );
-end $function$
+end $function$;
 
 revoke all on function public.rr_cb_material_mapping_sync_v6(uuid,jsonb) from public,anon;
 revoke all on function public.rr_cb_profile_yield_v1(uuid) from public,anon;
