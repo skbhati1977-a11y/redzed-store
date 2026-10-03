@@ -90,7 +90,7 @@ begin
   end if;
 
   return new;
-end $function$
+end $function$;
 
 
 CREATE OR REPLACE FUNCTION public.rr_cb_cutting_saved_finalize_v1()
@@ -123,7 +123,7 @@ begin
   end if;
 
   return new;
-end $function$
+end $function$;
 
 -- Normalize parent-combo inheritance trigger names from earlier TEST71 iterations.
 drop trigger if exists rr_cutting_lot_inherit_cb_set_combo_trg on public.rr_cutting_lots_v3;
