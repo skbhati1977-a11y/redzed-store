@@ -180,3 +180,31 @@ test('Existing assignment IDs remain the downstream authority for Print Sticker 
   assert.ok(lot.includes('rr_lot_inherit_cb_set_combo_v1'));
   assert.ok(lot.includes('rr_000_cb_set_combo_inherit_v1'));
 });
+
+
+test('Final hardening keeps one Lot per CB planning profile and one Cutting refresh path',()=>{
+  const hard=read('supabase/migrations/20261003152800_test71_cb_planning_final_hardening.sql');
+  assert.ok(hard.includes('rr_cb_planned_profile_lot_guard_v1'));
+  assert.ok(hard.includes('rr_cb_planned_single_profile_lot_guard_v1'));
+  assert.ok(hard.includes('rr_cb_planned_multi_profile_lot_guard_v1'));
+  assert.ok(hard.includes('Parent Set is Multi Lot. Save Cutting against its child profile.'));
+  assert.ok(hard.includes('already has a saved Cutting Lot'));
+  assert.ok(hard.includes('drop trigger if exists rr_cb_derived_after_single_cutting_v1'));
+  assert.ok(hard.includes('drop trigger if exists rr_cb_derived_after_multi_cutting_v1'));
+  assert.ok(hard.includes('drop function if exists public.rr_cb_requirement_send_prepare_v1'));
+  assert.ok(hard.includes('rr_cb_cutting_actual_requirement_refresh_v1'));
+  assert.ok(hard.includes('rr_cb_multi_actual_requirement_refresh_v1'));
+});
+
+test('WhatsApp templates remain multiline and distinguish first revised and resend',()=>{
+  const hard=read('supabase/migrations/20261003152800_test71_cb_planning_final_hardening.sql');
+  assert.ok(hard.includes('REDZED PURCHASE ORDER / REQUIREMENT'));
+  assert.ok(hard.includes('REVISED PURCHASE ORDER / REQUIREMENT'));
+  assert.ok(hard.includes('REQUIREMENT STILL PENDING · RESENDING PURCHASE ORDER'));
+  assert.ok(hard.includes("E'\\nCB: '"));
+  assert.ok(hard.includes("E'\\nDetails:'"));
+  assert.ok(hard.includes("E'\\nResend No: '"));
+  assert.ok(hard.includes("v_template_kind:='FIRST'"));
+  assert.ok(hard.includes("v_template_kind:='REVISED'"));
+  assert.ok(hard.includes("v_template_kind:='RESEND'"));
+});
