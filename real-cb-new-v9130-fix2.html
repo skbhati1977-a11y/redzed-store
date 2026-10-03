@@ -333,27 +333,128 @@ function openCbComboMaster(key,kind){key=String(key);const meta=CB_COMBO_MASTER_
 async function closeCbComboMaster(sync=true){const ctx=comboMasterContext,frame=$('cbComboMasterFrame');if(ctx?.kind==='print'&&sync){try{const canClose=frame?.contentWindow?.RR_PRINT_MASTER_CAN_CLOSE;if(typeof canClose==='function'&&!canClose()){if(!confirm('Print अभी SAVE नहीं हुआ है। बिना save किए CB Combo में वापस जाना है?'))return}}catch(e){console.warn('Print unsaved guard unavailable',e)}}clearCbComboMasterTimers();if(sync&&ctx)await detectCbComboCreated(false);comboMasterContext=null;frame.onload=null;frame.src='about:blank';showMasterModal('cbComboMasterModal',false);renderSetDecisions()}
 window.addEventListener('message',event=>{const frame=$('cbComboMasterFrame');if(event.source!==frame?.contentWindow||event.data?.type!=='RR_PRINT_MASTER_SAVED')return;scheduleCbComboDetection()});
 
+
+function expectedMaterialLabel(req){
+ const code=String(categoryForId(req?.artCategoryId)?.category_code||'').toLowerCase();
+ if(code==='self-collar')return 'MATERIAL N/A · SELF COLLAR';
+ if(code==='flat-polo')return 'AUTO · COLLAR & CUFF';
+ if(['crew-neck','drop-shoulder'].includes(code))return 'AUTO · RIB';
+ return 'AUTO AFTER ART';
+}
+function profileCardHtml(key){
+ key=String(key);
+ const r=setRequirements[key]||{},cat=categoryForId(r.artCategoryId),art=artForId(r.artId),img=artImages.get(String(r.artId||''))||'',locked=!!r.locked,label=profileLabelForKey(key),disabled=locked?'disabled':'';
+ const defaultText=cat?'Current category defaults can be changed for future decisions.':'Art select होने पर Category auto map होगी.';
+ return `<article class="profile-card ${locked?'frozen':''}" data-profile="${esc(key)}">
+   <div class="profile-title"><strong>${esc(label)}</strong><span class="state-chip">${locked?'FROZEN · CUTTING SAVED':r.artId?'ART READY':'ART DUE'}</span></div>
+   <div class="set-decision-grid">
+     <label><span>ART</span><div class="addrow"><div><select class="canonicalSetArt" ${disabled}>${artOptionsForSet(key,r.artId||'')}</select></div><button type="button" class="secondary tiny comboAddArt" ${disabled}>+ ADD NEW</button></div></label>
+     <div><span class="muted">CATEGORY · AUTO MAPPED</span><div class="auto-category">${esc(cat?.category_name||'ART SELECT करें')}</div><div class="muted" style="margin-top:5px">${esc(defaultText)}</div></div>
+     <div class="set-art-preview">${img?`<img src="${esc(img)}" alt="${esc(label)} Art">`:'<span class="muted">NO IMAGE</span>'}<div><strong>${esc(art?.art_no||r.artNo||'ART DUE')}</strong><small>${r.artId?'CB profile authority · downstream linked':'Dropdown से Art select करें'}</small></div></div>
+     <label><span>SLEEVES</span><select class="canonicalSetSleeve" ${disabled}><option value="HALF" ${r.sleeveType==='HALF'?'selected':''}>HALF SLEEVE</option><option value="FULL" ${r.sleeveType==='FULL'?'selected':''}>FULL SLEEVE</option></select></label>
+     <label><span>SLEEVE FINISH</span><select class="canonicalSetFinish" ${disabled}><option value="PLAIN" ${normalizeSharedFinish(r.sleeveFinish)==='PLAIN'?'selected':''}>PLAIN / N.A.</option><option value="CUFF" ${normalizeSharedFinish(r.sleeveFinish)==='CUFF'?'selected':''}>WITH CUFF</option><option value="RIB" ${normalizeSharedFinish(r.sleeveFinish)==='RIB'?'selected':''}>WITH RIB</option></select></label>
+     <label><span>BORDER POUNCHI</span><select class="canonicalSetBorder" ${disabled}><option value="WITHOUT_BORDER_POUNCHI" ${normalizeBorderPounchi(r.borderPounchi)==='WITHOUT_BORDER_POUNCHI'?'selected':''}>WITHOUT BORDER POUNCHI</option><option value="WITH_BORDER_POUNCHI" ${normalizeBorderPounchi(r.borderPounchi)==='WITH_BORDER_POUNCHI'?'selected':''}>WITH BORDER POUNCHI</option></select></label>
+     <label><span>SIZE FAMILY</span><select class="canonicalSetSizes" ${disabled}>${sizeFamilyOptions(r.sizeFamily)}</select></label>
+     <div><span class="muted">MATERIAL REQUIREMENT</span><div class="auto-category">${esc(expectedMaterialLabel(r))}</div></div>
+     <div><span class="muted">DEFAULT</span><button type="button" class="secondary tiny categoryDefaultAction" ${disabled||!r.artCategoryId?'disabled':''}>MAKE CURRENT VALUES DEFAULT</button><div class="muted" style="margin-top:5px">Future/new decisions only; saved profiles नहीं बदलेंगे.</div></div>
+   </div>
+   <section class="set-combo">
+     <div class="set-combo-title"><strong>ART COMBO</strong><span class="state-chip">${comboReady(key)?'COMBO READY':'COMBO PENDING'}</span></div>
+     <div class="set-combo-grid">${comboDecisionHtml(key,'print')}${comboDecisionHtml(key,'sticker')}${comboDecisionHtml(key,'metal')}</div>
+     <button type="button" class="primary combo-save comboSave" ${disabled}>${comboReady(key)?'SAVE / UPDATE COMBO':'SAVE COMBO'}</button>
+   </section>
+   ${locked?'<div class="muted" style="margin-top:8px">Lot No + Cutting Pieces save हो चुके हैं. इस profile की identity frozen है.</div>':''}
+ </article>`;
+}
+function setPlanCardHtml(setNo){
+ const p=rootPlanForSet(setNo)||{set_no:setNo,parent_unit_id:setRequirements[String(setNo)]?.unitId||null,mode:'SINGLE',structure_locked:false,children:[]};
+ const global=String(planContext.state||'PENDING').toUpperCase(),mode=global==='SINGLE'?'SINGLE':String(p.mode||'SINGLE').toUpperCase(),locked=!!p.structure_locked,children=Array.isArray(p.children)?p.children:[],count=Math.max(2,Math.min(4,children.length||2));
+ const controls=global==='MULTI'?`<div class="set-plan-controls">
+   <label><span>LOT PLAN</span><select class="rootPlanMode" data-set-no="${setNo}" ${locked?'disabled':''}><option value="SINGLE" ${mode==='SINGLE'?'selected':''}>SINGLE LOT</option><option value="MULTI" ${mode==='MULTI'?'selected':''}>MULTI LOT</option></select></label>
+   ${mode==='MULTI'?`<label><span>CHILD PROFILES</span><select class="rootChildCount" data-set-no="${setNo}" ${locked?'disabled':''}>${[2,3,4].map(n=>`<option value="${n}" ${n===count?'selected':''}>${n}</option>`).join('')}</select></label><button type="button" class="secondary applySplit" data-set-no="${setNo}" ${locked?'disabled':''}>APPLY SPLIT</button>`:''}
+ </div>`:'<span class="state-chip">SINGLE LOT</span>';
+ let profiles='';
+ if(mode==='MULTI'&&children.length){
+   profiles=`<div class="profile-share-row">${children.map(ch=>`<label><span>${esc(ch.label)} SHARE %</span><input class="profileShare" data-set-no="${setNo}" data-child-index="${Number(ch.batch_index||1)-1}" type="number" min="0.01" step="0.01" value="${Number(ch.share_pct||0).toFixed(2)}" ${locked?'disabled':''}></label>`).join('')}</div><div class="profile-list">${children.map(ch=>profileCardHtml(String(ch.division_index))).join('')}</div>`;
+ }else{
+   profiles=`<div class="profile-list">${profileCardHtml(String(setNo))}</div>`;
+ }
+ return `<section class="set-plan" data-root-set="${setNo}"><div class="set-plan-head"><div><strong>S${setNo}</strong><div class="muted">${mode==='MULTI'?'Each child has its own Art Combo and downstream identity.':'One Art Combo for this Set.'}</div></div>${controls}</div>${profiles}${locked?'<div class="muted">Structure frozen because at least one Cutting Lot is saved.</div>':''}</section>`;
+}
+async function loadDerivedRequirements(refresh=true){
+ const box=$('derivedRequirementSummary');
+ if(!cbId){derivedContext={groups:[],suppliers:[],colours:[]};if(box)box.innerHTML='<div class="muted">Save CB Draft to calculate Yield requirements.</div>';return derivedContext}
+ if(refresh){const rr=await sb().rpc('rr_cb_refresh_derived_requirements_v1',{p_cb_id:cbId});if(rr.error)throw rr.error}
+ const r=await sb().rpc('rr_cb_requirement_context_v1',{p_cb_id:cbId});if(r.error)throw r.error;
+ derivedContext=r.data||{groups:[],suppliers:[],colours:[]};renderDerivedRequirements();return derivedContext
+}
+function supplierOptions(selected){
+ const list=derivedContext.suppliers||[],has=selected&&list.some(x=>String(x.id)===String(selected));
+ return '<option value="">SELECT SUPPLIER…</option>'+(selected&&!has?`<option value="${esc(selected)}" selected>Current mapped supplier</option>`:'')+list.map(x=>`<option value="${esc(x.id)}" ${String(x.id)===String(selected||'')?'selected':''}>${esc(x.name||'Supplier')}${x.mobile?' · '+esc(x.mobile):''}</option>`).join('')
+}
+function requirementSendLabel(g){
+ const count=Number(g.send_count||0),rev=Number(g.revision_no||1),last=Number(g.last_sent_revision||0);
+ if(!count)return'SEND WHATSAPP';
+ if(rev>last)return'SEND REVISED';
+ return 'RESEND #'+(count+1)
+}
+function renderDerivedRequirements(){
+ const box=$('derivedRequirementSummary');if(!box)return;
+ const groups=derivedContext.groups||[],colours=derivedContext.colours||[];
+ if(!cbId){box.innerHTML='<div class="muted">Save CB Draft first.</div>';return}
+ if(!groups.length){box.innerHTML='<div class="muted">No requirement yet. Save Art Combo; Yield Sheet will create Collar/Rib/Sticker/Metal ID requirement automatically.</div>';return}
+ const thumbs=colours.filter(x=>x.thumbnail_url).map(x=>`<img src="${esc(x.thumbnail_url)}" title="${esc(x.colour_name||('C'+x.colour_no))}" style="width:44px;height:44px;object-fit:cover;border-radius:7px">`).join('');
+ box.innerHTML=(thumbs?`<div style="display:flex;gap:6px;overflow:auto;margin-bottom:9px">${thumbs}</div>`:'')+`<div class="requirement-scroll"><table class="requirement-table"><thead><tr><th>Type</th><th>Item</th><th>Set / Profile</th><th>Basis</th><th>PCS</th><th>Required</th><th>Supplier</th><th>Status</th><th>WhatsApp</th></tr></thead><tbody>${groups.map(g=>{const revised=Number(g.revision_no||1)>Number(g.last_sent_revision||0)&&Number(g.send_count||0)>0,basis=String(g.basis||'YIELD').replaceAll('_',' '),profiles=(g.profile_labels||[]).join(', ');return `<tr data-req-type="${esc(g.requirement_type)}" data-source-id="${esc(g.source_id)}"><td><b>${esc(g.requirement_label||g.requirement_type)}</b><br><small>${esc(g.fulfilment_method||'PURCHASE')}</small></td><td><b>${esc(g.item_name||g.item_no||'-')}</b><br><small>${esc(g.item_no||'')}</small></td><td>${esc(profiles||'-')}</td><td>${esc(basis)}</td><td>${Number(g.basis_pcs||0).toFixed(0)}</td><td><b>${Number(g.required_qty||0).toFixed(g.unit==='KG'?3:0)} ${esc(g.unit||'PCS')}</b></td><td><select class="reqSupplier" data-type="${esc(g.requirement_type)}" data-source-id="${esc(g.source_id)}">${supplierOptions(g.supplier_ledger_id)}</select><small style="display:block;margin-top:4px">${esc(g.supplier_name||'Auto supplier not mapped')}</small></td><td><span class="req-status ${revised?'req-revised':''}">${revised?'REVISED':esc(g.status||'READY')} · R${Number(g.revision_no||1)}</span><br><small>Sent ${Number(g.send_count||0)} time(s)</small></td><td><button type="button" class="primary tiny wa-send" data-type="${esc(g.requirement_type)}" data-source-id="${esc(g.source_id)}">${esc(requirementSendLabel(g))}</button></td></tr>`}).join('')}</tbody></table></div>`;
+ box.querySelectorAll('.reqSupplier').forEach(sel=>sel.onchange=async()=>{if(!sel.value)return;sel.disabled=true;try{const r=await sb().rpc('rr_cb_requirement_supplier_set_v1',{p_cb_id:cbId,p_requirement_type:sel.dataset.type,p_source_id:sel.dataset.sourceId,p_supplier_ledger_id:sel.value});if(r.error)throw r.error;await loadDerivedRequirements(false);setMessage('Supplier mapping updated.',true)}catch(e){setMessage(friendlyUserError(e,'Supplier mapping update नहीं हुई.'))}finally{sel.disabled=false}});
+ box.querySelectorAll('.wa-send').forEach(btn=>btn.onclick=()=>sendDerivedRequirementWhatsApp(btn.dataset.type,btn.dataset.sourceId,btn))
+}
+function waPhone(v){let d=String(v||'').replace(/\D/g,'');if(d.length===10)d='91'+d;else if(d.length===11&&d.startsWith('0'))d='91'+d.slice(1);return d}
+async function sendDerivedRequirementWhatsApp(type,sourceId,button){
+ if(!confirm('WhatsApp requirement भेजना है?'))return;
+ const old=button?.textContent;if(button)button.disabled=true;
+ try{
+   const r=await sb().rpc('rr_cb_requirement_send_prepare_v1',{p_cb_id:cbId,p_requirement_type:type,p_source_id:sourceId});if(r.error)throw r.error;
+   const d=r.data||{},msg=String(d.message_text||''),phone=waPhone(d.supplier_mobile),url=phone?'https://wa.me/'+encodeURIComponent(phone)+'?text='+encodeURIComponent(msg):'https://wa.me/?text='+encodeURIComponent(msg);
+   try{sessionStorage.setItem('RR_CB_WHATSAPP_RETURN_V1',JSON.stringify({href:location.href,scrollY:window.scrollY,cbId,at:Date.now()}))}catch(_){}
+   window.open(url,'_blank','noopener');
+   await loadDerivedRequirements(false);
+   setMessage((d.template_kind==='FIRST'?'Requirement sent':d.template_kind==='REVISED'?'Revised requirement sent':'Requirement resent')+' · '+(d.supplier_name||'Supplier'),true)
+ }catch(e){setMessage(friendlyUserError(e,'WhatsApp requirement तैयार नहीं हो सकी.'))}finally{if(button){button.disabled=false;button.textContent=old}}
+}
 function renderSetDecisions(){
- renderSetDefaultControls();const host=$('setDecisionList');if(!host)return;ensureSetRequirements();
- host.innerHTML=Array.from({length:divisionCount()},(_,i)=>i+1).map(di=>{const r=setRequirements[di],cat=categoryForId(r.artCategoryId),art=artForId(r.artId),code=String(cat?.category_code||'').toLowerCase(),direct=code==='self-collar',img=artImages.get(String(r.artId||''))||'',links=setMaterialLinks(di);return `<article class="set-decision ${direct?'direct':''}" data-set="${di}"><div class="set-decision-head"><strong>S${di} · ${esc(cat?.category_name||'CATEGORY DUE')}</strong><span class="state-chip">${direct?'DIRECT · MATERIAL N/A':r.artId?'ART DECIDED':'ART DUE'}</span></div><div class="set-decision-grid"><label><span>CATEGORY</span><select class="canonicalSetCategory" ${(r.artId&&!r.changingArtCategory)||di===1||di===4?'disabled title="Set / Art decides Category"':''}><option value="">Choose Category…</option>${artCategories.filter(x=>structuralSetCategoryIds(di).includes(String(x.id))).map(x=>`<option value="${esc(x.id)}" ${String(x.id)===String(r.artCategoryId)?'selected':''}>${esc(x.category_name||x.category_code)}</option>`).join('')}</select>${r.artId&&!r.changingArtCategory?'<small>Art decides Category.</small>':''}</label><label><span>ART</span><div class="addrow"><div><select class="canonicalSetArt">${artOptionsForSet(di,r.artCategoryId,r.artId||'')}</select></div><button type="button" class="secondary tiny comboAddArt">+ ADD NEW</button></div></label><div class="set-art-preview">${img?`<img src="${esc(img)}" alt="S${di} Art">`:'<span class="muted">NO IMAGE</span>'}<div><strong>${esc(art?.art_no||r.artNo||'ART DUE')}</strong><small>${r.artId?'CB Set Art authority · downstream linked':'Category choose करें या सीधे Art select करें'}</small></div></div><label><span>SLEEVES</span><select class="canonicalSetSleeve"><option value="HALF" ${r.sleeveType==='HALF'?'selected':''}>HALF SLEEVE</option><option value="FULL" ${r.sleeveType==='FULL'?'selected':''}>FULL SLEEVE</option></select></label><label><span>SLEEVE FINISH</span><select class="canonicalSetFinish"><option value="PLAIN" ${normalizeSharedFinish(r.sleeveFinish)==='PLAIN'?'selected':''}>PLAIN / N/A</option><option value="CUFF" ${normalizeSharedFinish(r.sleeveFinish)==='CUFF'?'selected':''}>WITH CUFF</option><option value="RIB" ${normalizeSharedFinish(r.sleeveFinish)==='RIB'?'selected':''}>WITH RIB</option></select></label><label><span>BORDER POUNCHI</span><select class="canonicalSetBorder"><option value="WITHOUT_BORDER_POUNCHI" ${normalizeBorderPounchi(r.borderPounchi)==='WITHOUT_BORDER_POUNCHI'?'selected':''}>WITHOUT BORDER POUNCHI</option><option value="WITH_BORDER_POUNCHI" ${normalizeBorderPounchi(r.borderPounchi)==='WITH_BORDER_POUNCHI'?'selected':''}>WITH BORDER POUNCHI</option></select></label><label><span>SIZE FAMILY</span><select class="canonicalSetSizes">${sizeFamilyOptions(r.sizeFamily)}</select></label></div><div class="set-material-links"><b>Material:</b> ${direct?'N/A · Self Collar direct':links.length?esc(links.join(' + ')):'DUE / not linked yet'} · <b>Border:</b> ${borderPounchiLabel(r.borderPounchi)}</div>${r.artId&&!r.changingArtCategory?'<button type="button" class="secondary tiny changeSetArtCategory" style="margin-top:8px">CHANGE CATEGORY / ART</button>':r.changingArtCategory?'<button type="button" class="secondary tiny cancelSetArtCategory" style="margin-top:8px">CANCEL CHANGE</button>':''}<section class="set-combo"><div class="set-combo-title"><strong>ART COMBO</strong><span class="state-chip">${comboReady(di)?'COMBO READY':'COMBO PENDING'}</span></div><div class="set-combo-grid">${comboDecisionHtml(di,'print')}${comboDecisionHtml(di,'sticker')}${comboDecisionHtml(di,'metal')}</div><button type="button" class="primary combo-save comboSave">${comboReady(di)?'SAVE / UPDATE SET COMBO':'SAVE SET COMBO'}</button></section></article>`}).join('');
- host.querySelectorAll('.set-decision').forEach(card=>{const di=Number(card.dataset.set),req=setRequirements[di];
-  card.querySelector('.canonicalSetCategory').onchange=async e=>{const next=e.target.value,old=req.artCategoryId;req.artCategoryId=next;if(String(old)!==String(next))req.sleeveFinish=categoryDefaultFinish(next);renderSetDecisions();renderMaterials();if(!req.changingArtCategory)scheduleSetRequirementSync(di)};
-  card.querySelector('.canonicalSetArt').onchange=async e=>{const id=e.target.value;if(!id){renderSetDecisions();return}const art=artForId(id);if(!art?.art_category_id){setMessage('इस Art की Category mapped नहीं है.');return}if(!structuralSetCategoryIds(di).includes(String(art.art_category_id))){setMessage(`S${di} में यह Art Category allowed नहीं है.`);renderSetDecisions();return}const categoryChanged=String(req.artCategoryId)!==String(art.art_category_id);req.artId=String(id);req.artNo=art.art_no||art.art_code||'';req.artCategoryId=String(art.art_category_id);req.artLocked=true;req.changingArtCategory=false;req.changeBackup=null;if(categoryChanged)req.sleeveFinish=categoryDefaultFinish(req.artCategoryId);renderSetDecisions();try{if(req.unitId)await saveCbArtSelection(di,id);if(cbId)await syncSetRequirementNow(di);await loadArtThumbs();await mirrorMaterialSetsFromDecidedArt();renderMaterials();setMessage(`S${di} Art + Category two-way mirror updated.`,true)}catch(ex){setMessage(friendlyUserError(ex,`S${di} Art update नहीं हो सका.`))}};
-  card.querySelector('.changeSetArtCategory')?.addEventListener('click',()=>{req.changeBackup={artId:req.artId,artNo:req.artNo,artCategoryId:req.artCategoryId};req.artId=null;req.artNo='';req.artLocked=false;req.changingArtCategory=true;renderSetDecisions()});
-  card.querySelector('.cancelSetArtCategory')?.addEventListener('click',()=>{const b=req.changeBackup||{};req.artId=b.artId||req.artId;req.artNo=b.artNo||req.artNo;req.artCategoryId=b.artCategoryId||req.artCategoryId;req.artLocked=!!req.artId;req.changingArtCategory=false;req.changeBackup=null;renderSetDecisions()});
-  card.querySelector('.comboAddArt')?.addEventListener('click',()=>openCbComboMaster(di,'art'));
-  card.querySelectorAll('.comboModeBtn').forEach(btn=>btn.onclick=()=>{const s=comboEnsureState(di);comboSetMode(s,btn.dataset.kind,btn.dataset.mode);renderSetDecisions()});
-  card.querySelectorAll('.comboChoice').forEach(ch=>ch.onchange=()=>{const s=comboEnsureState(di),kind=ch.dataset.kind,key=kind+'Ids',ids=new Set(s[key]||[]);if(ch.checked)ids.add(String(ch.value));else ids.delete(String(ch.value));s[key]=[...ids];comboSetMode(s,kind,'SELECTED');renderSetDecisions()});
-  card.querySelectorAll('.comboSearch').forEach(inp=>inp.oninput=()=>{const s=comboEnsureState(di),kind=inp.dataset.kind;s[kind+'Search']=inp.value;const value=inp.value;renderSetDecisions();requestAnimationFrame(()=>{const next=host.querySelector(`.set-decision[data-set="${di}"] .comboSearch[data-kind="${kind}"]`);if(next){next.focus();next.value=value;next.setSelectionRange(value.length,value.length)}})});
-  card.querySelectorAll('.comboAddNew').forEach(btn=>btn.onclick=()=>openCbComboMaster(di,btn.dataset.kind));
-  card.querySelector('.comboSave')?.addEventListener('click',async e=>{const btn=e.currentTarget;btn.disabled=true;try{await saveSetCombo(di);await loadMaterialEstimates()}catch(ex){setMessage(friendlyUserError(ex,`S${di} Combo save नहीं हो सका.`))}finally{btn.disabled=false}});
-  card.querySelector('.canonicalSetSleeve').onchange=e=>{req.sleeveType=e.target.value;scheduleSetRequirementSync(di)};
-  card.querySelector('.canonicalSetFinish').onchange=e=>{req.sleeveFinish=e.target.value;scheduleSetRequirementSync(di)};
-  card.querySelector('.canonicalSetBorder').onchange=e=>{req.borderPounchi=normalizeBorderPounchi(e.target.value);scheduleSetRequirementSync(di);renderSetDecisions()};
-  card.querySelector('.canonicalSetSizes').onchange=e=>{req.sizeFamily=e.target.value;scheduleSetRequirementSync(di)};
- })
+ const host=$('setDecisionList');if(!host)return;ensureSetRequirements();
+ const state=String(planContext.state||'PENDING').toUpperCase();
+ if($('artMaterialPlanState'))$('artMaterialPlanState').value=state;
+ if($('planStateNote'))$('planStateNote').textContent=state==='PENDING'?'No decision yet.':state==='DUE'?'Decision pending; continue later.':state==='SINGLE'?'All Sets are Single Lot profiles.':'Choose Single/Multi independently for every Set.';
+ if(['PENDING','DUE'].includes(state)){
+   host.innerHTML='<div class="set-plan"><b>Art & Material Decision '+esc(state)+'</b><div class="muted" style="margin-top:6px">SINGLE or MULTI चुनने के बाद Set-wise Art Combo planning खुलेगी.</div></div>';
+   renderPoSummary();return;
+ }
+ host.innerHTML=Array.from({length:divisionCount()},(_,i)=>setPlanCardHtml(i+1)).join('');
+ host.querySelectorAll('.rootPlanMode').forEach(sel=>sel.onchange=async()=>{const setNo=Number(sel.dataset.setNo),plan=rootPlanForSet(setNo),next=sel.value;if(plan?.mode==='MULTI'&&next==='SINGLE'&&!confirm('S'+setNo+' Multi child decisions को Single में merge करना है? First child Combo parent में retain होगा.')){renderSetDecisions();return}sel.disabled=true;try{await setRootSetMode(setNo,next,2,null)}catch(e){setMessage(friendlyUserError(e,'Set Lot Plan change नहीं हुआ.'));renderSetDecisions()}});
+ host.querySelectorAll('.applySplit').forEach(btn=>btn.onclick=async()=>{const setNo=Number(btn.dataset.setNo),card=btn.closest('.set-plan'),count=Number(card.querySelector('.rootChildCount')?.value||2),shares=[...card.querySelectorAll('.profileShare')].slice(0,count).map(x=>Number(x.value||0));btn.disabled=true;try{await setRootSetMode(setNo,'MULTI',count,shares.length===count?shares:null)}catch(e){setMessage(friendlyUserError(e,'Multi Lot split update नहीं हुआ.'));renderSetDecisions()}finally{btn.disabled=false}});
+ host.querySelectorAll('.profile-card').forEach(card=>{
+   const key=String(card.dataset.profile),req=setRequirements[key]||{};if(req.locked){card.querySelectorAll('.canonicalSetArt,.comboAddArt,.canonicalSetSleeve,.canonicalSetFinish,.canonicalSetBorder,.canonicalSetSizes,.categoryDefaultAction,.comboOpen,.comboModeBtn,.comboChoice,.comboAddNew,.comboDone,.comboCancel,.comboSave').forEach(x=>x.disabled=true)}
+   card.querySelector('.canonicalSetArt')?.addEventListener('change',async e=>{if(req.locked)return;const id=e.target.value;if(!id){renderSetDecisions();return}const art=artForId(id);if(!art?.art_category_id){setMessage('इस Art की Category mapped नहीं है.');return}if(!structuralSetCategoryIds(key).includes(String(art.art_category_id))){setMessage(profileLabelForKey(key)+' में यह Art Category allowed नहीं है.');renderSetDecisions();return}const changed=String(req.artCategoryId||'')!==String(art.art_category_id);req.artId=String(id);req.artNo=art.art_no||art.art_code||'';req.artCategoryId=String(art.art_category_id);req.artLocked=true;if(changed)applyCategoryDefaults(req,req.artCategoryId);renderSetDecisions();try{if(req.unitId){await saveCbArtSelection(key,id);await syncSetRequirementNow(key)}await loadArtThumbs();await loadDerivedRequirements(true);setMessage(profileLabelForKey(key)+' Art + Category updated.',true)}catch(ex){setMessage(friendlyUserError(ex,profileLabelForKey(key)+' Art update नहीं हुआ.'))}});
+   card.querySelector('.comboAddArt')?.addEventListener('click',()=>{if(!req.locked)openCbComboMaster(key,'art')});
+   card.querySelector('.categoryDefaultAction')?.addEventListener('click',()=>saveCurrentCategoryDefault(key).catch(e=>setMessage(friendlyUserError(e,'Category default update नहीं हुआ.'))));
+   card.querySelector('.canonicalSetSleeve')?.addEventListener('change',e=>{req.sleeveType=e.target.value;scheduleSetRequirementSync(key)});
+   card.querySelector('.canonicalSetFinish')?.addEventListener('change',e=>{req.sleeveFinish=e.target.value;scheduleSetRequirementSync(key)});
+   card.querySelector('.canonicalSetBorder')?.addEventListener('change',e=>{req.borderPounchi=normalizeBorderPounchi(e.target.value);scheduleSetRequirementSync(key)});
+   card.querySelector('.canonicalSetSizes')?.addEventListener('change',e=>{req.sizeFamily=e.target.value;scheduleSetRequirementSync(key)});
+   card.querySelectorAll('.comboOpen').forEach(btn=>btn.onclick=()=>{const s=comboEnsureState(key),kind=btn.dataset.kind;s[kind+'Backup']={mode:comboMode(s,kind),ids:[...comboIds(s,kind)],done:!!s[kind+'Done']};s[kind+'Open']=true;renderSetDecisions()});
+   card.querySelectorAll('.comboModeBtn').forEach(btn=>btn.onclick=()=>{const s=comboEnsureState(key);comboSetMode(s,btn.dataset.kind,btn.dataset.mode);renderSetDecisions()});
+   card.querySelectorAll('.comboChoice').forEach(ch=>ch.onchange=()=>{const s=comboEnsureState(key),kind=ch.dataset.kind,idsKey=kind+'Ids',ids=new Set(s[idsKey]||[]);if(ch.checked)ids.add(String(ch.value));else ids.delete(String(ch.value));s[idsKey]=[...ids];comboSetMode(s,kind,'SELECTED');renderSetDecisions()});
+   card.querySelectorAll('.comboSearch').forEach(inp=>inp.oninput=()=>{const s=comboEnsureState(key),kind=inp.dataset.kind,value=inp.value;s[kind+'Search']=value;renderSetDecisions();requestAnimationFrame(()=>{const next=host.querySelector(`.profile-card[data-profile="${CSS.escape(key)}"] .comboSearch[data-kind="${kind}"]`);if(next){next.focus();next.value=value;next.setSelectionRange(value.length,value.length)}})});
+   card.querySelectorAll('.comboAddNew').forEach(btn=>btn.onclick=()=>openCbComboMaster(key,btn.dataset.kind));
+   card.querySelectorAll('.comboCancel').forEach(btn=>btn.onclick=()=>{const s=comboEnsureState(key),kind=btn.dataset.kind,b=s[kind+'Backup'];if(b){comboSetMode(s,kind,b.mode);s[kind+'Ids']=[...(b.ids||[])];s[kind+'Done']=!!b.done}s[kind+'Open']=false;delete s[kind+'Backup'];renderSetDecisions()});
+   card.querySelectorAll('.comboDone').forEach(btn=>btn.onclick=()=>{const s=comboEnsureState(key),kind=btn.dataset.kind;if(comboMode(s,kind)==='SELECTED'&&!comboIds(s,kind).length){setMessage('कम से कम एक '+(kind==='metal'?'Metal ID':kind)+' select करें.');return}s[kind+'Done']=true;s[kind+'Open']=false;delete s[kind+'Backup'];renderSetDecisions()});
+   card.querySelectorAll('.comboPrintPreview').forEach(btn=>btn.onclick=()=>btn.classList.toggle('open'));
+   card.querySelector('.comboSave')?.addEventListener('click',async e=>{const btn=e.currentTarget;btn.disabled=true;try{await saveSetCombo(key);await loadDerivedRequirements(true)}catch(ex){setMessage(friendlyUserError(ex,profileLabelForKey(key)+' Combo save नहीं हुआ.'))}finally{btn.disabled=false}});
+ });
  renderPoSummary();
 }
+
 function newColour(i){return {name:`Colour ${i+1}`,gsm:'',imageUrl:'',file:null,previewUrl:'',photoSaved:false}}
 function blankRolls(){return Array.from({length:divisionCount()},()=>({qty:'',manual:false}))}
 function newMaterial(type='regular'){
