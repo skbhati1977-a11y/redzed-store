@@ -202,7 +202,7 @@
         ...auth(),
         p_partner_customer_id: customerId,
         p_lines: lots.map((lot) => ({lot_no:lot,margin_amount:margin,discount_amount:discount})),
-        p_link_base: new URL("s.html", location.href).href.split("?")[0],
+        p_link_base: new URL('s.html', window.RR_CUSTOMER_SHARE_BASE || 'https://redzed-customer-collection.jggfab2011.chatgpt.site/').href.split("?")[0],
         p_attachment: attachment,
       }), 30000, "SEND TIMED OUT · CHECK NETWORK AND TRY AGAIN");
       if (!result?.collection_id || !result?.chat_message_id)
