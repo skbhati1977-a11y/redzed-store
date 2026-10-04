@@ -24,7 +24,7 @@ test('CB requirement share builds JPEG and PDF with numbered thumbnails',()=>{
   assert.ok(cb.includes('requirementReportPdfFile'));
   assert.ok(cb.includes('jspdf.umd.min.js'));
   assert.ok(cb.includes("String(x.index)+'. '"));
-  assert.ok(cb.includes("String(x.index).padStart(2,'0')"));
+  assert.ok(cb.includes("String(index).padStart(2,'0')"));
   assert.ok(cb.includes("allFiles=[report.file,...(pdf?[pdf]:[]),...thumbFiles]"));
 });
 
