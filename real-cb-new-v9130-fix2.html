@@ -101,7 +101,7 @@
   <div class="master-actions"><button id="doneCbComboMaster" class="primary" type="button">DONE · BACK TO CB COMBO</button></div>
 </section></div>
 <datalist id="vendorHistory"></datalist><datalist id="fabricHistory"></datalist>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>\n<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
 <script src="config.js?v=9144"></script>
 <script src="test70-action-return-v110.js?v=626"></script>
 <script src="real-common.js?v=S-DISPLAY-20260930-1"></script>
@@ -269,18 +269,101 @@ async function loadDerivedRequirements(refresh=true){
  const r=await sb().rpc('rr_cb_requirement_context_v1',{p_cb_id:cbId});if(r.error)throw r.error;
  derivedContext=r.data||{groups:[],suppliers:[],colours:[]};renderDerivedRequirements();return derivedContext
 }
-function waPhone(v){let d=String(v||'').replace(/\D/g,'');if(d.length===10)d='91'+d;else if(d.length===11&&d.startsWith('0'))d='91'+d.slice(1);return d}
-async function sendDerivedRequirementWhatsApp(type,sourceId,button){
- await flushFieldAutosave();if(!confirm('WhatsApp requirement भेजना है?'))return;
- const old=button?.textContent;if(button)button.disabled=true;
+function requirementShareCaption(d){
+ const unit=String(d.unit||'PCS').toUpperCase(),profiles=(d.profile_labels||[]).join(', ')||'—',cut=Number(d.cutting_pcs||0);
+ return [
+  'REDZED · '+String(d.requirement_type||'REQUIREMENT').replaceAll('_',' ')+' REQUIREMENT',
+  'CB: '+String(d.cb_no||'—'),
+  'Item: '+[d.item_no,d.item_name].filter(Boolean).join(' · '),
+  'Set / Profile: '+profiles,
+  'Mode: '+String(d.fulfilment_method||'PURCHASE'),
+  'Appx PCS: '+Number(d.appx_pcs||0).toFixed(0),
+  'Cutting PCS: '+(cut>0?cut.toFixed(0):'—'),
+  'Required: '+Number(d.required_qty||0).toFixed(unit==='KG'?3:0)+' '+unit,
+  d.supplier_name?'Mapped Supplier: '+d.supplier_name:'',
+  'Revision: '+Number(d.revision_no||1),
+  '',
+  'Please confirm availability / making status.'
+ ].filter(Boolean).join('\n')
+}
+function reqSafeFilePart(v){return String(v||'ITEM').replace(/[^A-Za-z0-9_-]+/g,'-').replace(/-+/g,'-').replace(/^-|-$/g,'').slice(0,50)||'ITEM'}
+function reqBlobDataUrl(blob){return new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve(String(r.result||''));r.onerror=()=>reject(r.error||new Error('File read failed.'));r.readAsDataURL(blob)})}
+async function reqImageToJpeg(item,index){
+ const res=await fetch(item.url,{cache:'no-store'});if(!res.ok)throw new Error('Thumbnail load failed.');
+ const blob=await res.blob(),url=URL.createObjectURL(blob),img=new Image();
  try{
-   const r=await sb().rpc('rr_cb_requirement_send_v1',{p_cb_id:cbId,p_requirement_type:type,p_source_id:sourceId});if(r.error)throw r.error;
-   const d=r.data||{},msg=String(d.message||''),phone=waPhone(d.supplier_mobile),url=phone?'https://wa.me/'+encodeURIComponent(phone)+'?text='+encodeURIComponent(msg):'https://wa.me/?text='+encodeURIComponent(msg);
+  await new Promise((resolve,reject)=>{img.onload=resolve;img.onerror=reject;img.src=url});
+  const canvas=document.createElement('canvas'),size=1000;canvas.width=size;canvas.height=size;
+  const ctx=canvas.getContext('2d',{alpha:false});ctx.fillStyle='#ffffff';ctx.fillRect(0,0,size,size);
+  const scale=Math.min(size/img.naturalWidth,size/img.naturalHeight),w=img.naturalWidth*scale,h=img.naturalHeight*scale;
+  ctx.drawImage(img,(size-w)/2,(size-h)/2,w,h);
+  const jpeg=await new Promise((resolve,reject)=>canvas.toBlob(b=>b?resolve(b):reject(new Error('JPEG prepare failed.')),'image/jpeg',.92));
+  const dataUrl=await reqBlobDataUrl(jpeg),kind=reqSafeFilePart(item.kind||'THUMB'),label=reqSafeFilePart(item.label||kind);
+  return {item,index,jpeg,dataUrl,file:new File([jpeg],String(index).padStart(2,'0')+'-'+kind+'-'+label+'.jpg',{type:'image/jpeg'})}
+ }finally{URL.revokeObjectURL(url)}
+}
+async function requirementShareVisuals(ctx){
+ const items=(ctx.attachments||[]).filter(x=>x?.url).slice(0,8),loaded=[];
+ for(let i=0;i<items.length;i++){try{loaded.push(await reqImageToJpeg(items[i],i+1))}catch(e){console.warn('Requirement thumbnail skipped',items[i]?.url,e)}}
+ return loaded
+}
+async function requirementReportJpegFile(ctx,loaded){
+ const cols=2,cardH=390,rows=Math.max(1,Math.ceil(loaded.length/cols)),canvas=document.createElement('canvas');
+ canvas.width=1080;canvas.height=Math.max(1350,490+rows*cardH+150);
+ const c=canvas.getContext('2d',{alpha:false});c.fillStyle='#fff';c.fillRect(0,0,canvas.width,canvas.height);
+ c.fillStyle='#b42335';c.fillRect(0,0,canvas.width,155);c.fillStyle='#fff';c.font='700 54px system-ui,sans-serif';c.fillText('REDZED',65,78);c.font='700 29px system-ui,sans-serif';c.fillText('APPX / CUTTING REQUIREMENT',65,126);
+ c.fillStyle='#111827';c.font='700 31px system-ui,sans-serif';let y=215;
+ const unit=String(ctx.unit||'PCS').toUpperCase(),cut=Number(ctx.cutting_pcs||0),rowsText=[
+  ['CB',ctx.cb_no||'—'],['Item',[ctx.item_no,ctx.item_name].filter(Boolean).join(' · ')||'—'],
+  ['Set / Profile',(ctx.profile_labels||[]).join(', ')||'—'],['Mode',ctx.fulfilment_method||'PURCHASE'],
+  ['Appx PCS',Number(ctx.appx_pcs||0).toFixed(0)],['Cutting PCS',cut>0?cut.toFixed(0):'—'],
+  ['Required',Number(ctx.required_qty||0).toFixed(unit==='KG'?3:0)+' '+unit]
+ ];
+ for(const [k,v] of rowsText){c.fillStyle='#6b7280';c.font='600 23px system-ui,sans-serif';c.fillText(k,65,y);c.fillStyle='#111827';c.font='700 28px system-ui,sans-serif';canvasWrappedText(c,String(v),335,y,680,34);y+=47}
+ y+=20;c.fillStyle='#111827';c.font='700 28px system-ui,sans-serif';c.fillText('AVAILABLE THUMBNAILS',65,y);y+=28;
+ for(const x of loaded){const i=x.index-1,col=i%cols,row=Math.floor(i/cols),x0=65+col*500,y0=y+row*cardH;c.fillStyle='#f3f4f6';c.fillRect(x0,y0,450,350);c.fillStyle='#b42335';c.beginPath();c.arc(x0+32,y0+32,22,0,Math.PI*2);c.fill();c.fillStyle='#fff';c.font='700 22px system-ui,sans-serif';c.textAlign='center';c.fillText(String(x.index),x0+32,y0+40);c.textAlign='left';const img=new Image();img.src=x.dataUrl;await new Promise((resolve,reject)=>{if(img.complete)resolve();else{img.onload=resolve;img.onerror=reject}});const maxW=390,maxH=245,scale=Math.min(maxW/img.naturalWidth,maxH/img.naturalHeight),iw=img.naturalWidth*scale,ih=img.naturalHeight*scale;c.drawImage(img,x0+(450-iw)/2,y0+58,iw,ih);c.fillStyle='#111827';c.font='700 19px system-ui,sans-serif';canvasWrappedText(c,String(x.item.label||x.item.kind||'Thumbnail'),x0+18,y0+323,414,23)}
+ c.fillStyle='#6b7280';c.font='500 20px system-ui,sans-serif';c.fillText('Revision '+Number(ctx.revision_no||1)+' · '+new Date().toLocaleString('en-IN'),65,canvas.height-55);
+ const blob=await new Promise((resolve,reject)=>canvas.toBlob(b=>b?resolve(b):reject(new Error('JPEG report prepare failed.')),'image/jpeg',.92));
+ const base='CB-'+reqSafeFilePart(ctx.cb_no)+'-'+reqSafeFilePart(ctx.item_no||ctx.item_name)+'-REQUIREMENT';
+ return {file:new File([blob],base+'.jpg',{type:'image/jpeg'}),dataUrl:await reqBlobDataUrl(blob),base}
+}
+async function requirementReportPdfFile(ctx,loaded,base){
+ const JsPdf=window.jspdf?.jsPDF;if(!JsPdf)return null;
+ const pdf=new JsPdf({orientation:'portrait',unit:'pt',format:'a4'}),unit=String(ctx.unit||'PCS').toUpperCase(),cut=Number(ctx.cutting_pcs||0);
+ const header=()=>{pdf.setFillColor(180,35,53);pdf.rect(0,0,595,82,'F');pdf.setTextColor(255,255,255);pdf.setFontSize(24);pdf.text('REDZED',34,38);pdf.setFontSize(13);pdf.text('APPX / CUTTING REQUIREMENT',34,61);pdf.setTextColor(20,24,30)};
+ header();pdf.setFontSize(11);let y=112;
+ const details=['CB: '+(ctx.cb_no||'—'),'Item: '+([ctx.item_no,ctx.item_name].filter(Boolean).join(' · ')||'—'),'Set / Profile: '+((ctx.profile_labels||[]).join(', ')||'—'),'Mode: '+(ctx.fulfilment_method||'PURCHASE'),'Appx PCS: '+Number(ctx.appx_pcs||0).toFixed(0),'Cutting PCS: '+(cut>0?cut.toFixed(0):'—'),'Required: '+Number(ctx.required_qty||0).toFixed(unit==='KG'?3:0)+' '+unit];
+ for(const line of details){pdf.text(line,34,y);y+=18}y+=10;
+ let idx=0;for(const x of loaded){if(y>610){pdf.addPage();header();y=110}pdf.setFontSize(12);pdf.setFont(undefined,'bold');pdf.text(String(x.index)+'. '+String(x.item.label||x.item.kind||'Thumbnail').slice(0,75),34,y);pdf.setFont(undefined,'normal');y+=12;try{pdf.addImage(x.dataUrl,'JPEG',34,y,220,220)}catch(e){console.warn('PDF thumbnail skipped',e)}y+=245;idx++}
+ if(!idx){pdf.setFontSize(11);pdf.text('No thumbnail available.',34,y)}
+ const blob=pdf.output('blob');return new File([blob],base+'.pdf',{type:'application/pdf'})
+}
+function downloadRequirementShareFile(file){const a=document.createElement('a');a.href=URL.createObjectURL(file);a.download=file.name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1400)}
+async function markDerivedRequirementShared(type,sourceId){
+ const r=await sb().rpc('rr_cb_requirement_send_v1',{p_cb_id:cbId,p_requirement_type:type,p_source_id:sourceId});if(r.error)throw r.error;await loadDerivedRequirements(false);return r.data||{}
+}
+async function sendDerivedRequirementWhatsApp(type,sourceId,button){
+ await flushFieldAutosave();if(!confirm('WhatsApp requirement share करना है?'))return;
+ const old=button?.textContent;if(button){button.disabled=true;button.textContent='PREPARING FILES…'}
+ try{
+   const cr=await sb().rpc('rr_cb_requirement_share_context_v1',{p_cb_id:cbId,p_requirement_type:type,p_source_id:sourceId});if(cr.error)throw cr.error;
+   const ctx=cr.data||{},caption=requirementShareCaption(ctx),loaded=await requirementShareVisuals(ctx),report=await requirementReportJpegFile(ctx,loaded),pdf=await requirementReportPdfFile(ctx,loaded,report.base),thumbFiles=loaded.map(x=>x.file),allFiles=[report.file,...(pdf?[pdf]:[]),...thumbFiles];
+   let shareFiles=allFiles;
+   if(navigator.canShare&&!navigator.canShare({files:shareFiles})){shareFiles=[report.file,...(pdf?[pdf]:[])];if(!navigator.canShare({files:shareFiles}))shareFiles=[report.file]}
    try{sessionStorage.setItem('RR_CB_WHATSAPP_RETURN_V1',JSON.stringify({href:location.href,scrollY:window.scrollY,cbId,at:Date.now()}))}catch(_){}
-   window.open(url,'_blank','noopener');
-   await loadDerivedRequirements(false);
-   setMessage((d.template_kind==='FIRST'?'Requirement sent':d.template_kind==='REVISED'?'Revised requirement sent':'Requirement resent')+' · '+(d.supplier_name||'Supplier'),true)
- }catch(e){setMessage(friendlyUserError(e,'WhatsApp requirement तैयार नहीं हो सकी.'))}finally{if(button){button.disabled=false;button.textContent=old}}
+   if(navigator.share&&(!navigator.canShare||navigator.canShare({files:shareFiles}))){
+     if(button)button.textContent='CHOOSE WHATSAPP / CONTACT';
+     try{await navigator.share({title:'CB '+String(ctx.cb_no||'')+' '+String(ctx.item_name||'Requirement'),text:caption,files:shareFiles})}
+     catch(e){if(e?.name==='AbortError'){setMessage('WhatsApp share cancel हुई. SENT mark नहीं किया गया.');return}throw e}
+     const d=await markDerivedRequirementShared(type,sourceId);
+     setMessage((d.template_kind==='REVISED'?'Revised requirement shared':d.template_kind==='RESEND'?'Requirement reshared':'Requirement shared')+' · JPEG/PDF + '+loaded.length+' thumbnail(s)',true);
+     return;
+   }
+   allFiles.forEach(downloadRequirementShareFile);
+   window.open('https://api.whatsapp.com/send?text='+encodeURIComponent(caption),'_blank','noopener');
+   await markDerivedRequirementShared(type,sourceId);
+   setMessage('JPEG/PDF + thumbnails download हुए · WhatsApp contact list खुल रही है; files attach करके भेजें.',true)
+ }catch(e){console.error('Requirement WhatsApp share',e);setMessage(friendlyUserError(e,'WhatsApp JPEG/PDF requirement share तैयार नहीं हो सकी.'))}finally{if(button){button.disabled=false;button.textContent=old}}
 }
 
 const CB_COMBO_MASTER_META={
