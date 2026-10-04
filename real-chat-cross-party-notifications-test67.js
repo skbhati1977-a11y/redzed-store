@@ -4,30 +4,8 @@
   window.__RR_CROSS_PARTY_NOTIFICATIONS_TEST67__ = true;
 
   const MUTE_KEY = "rr_chat_mute";
-  const seen = new Set();
-  const fallbackKeys = new WeakMap();
-  let seeded = false;
   let audio = null;
-
   const muted = () => localStorage.getItem(MUTE_KEY) === "1";
-  function messageKey(node) {
-    const id = node.dataset.msgId || node.dataset.rrMsgid || node.getAttribute("data-message-id");
-    if (id) return String(id);
-    // Requirement decorators change visible text, but that is not a new message.
-    if (!fallbackKeys.has(node)) fallbackKeys.set(node,
-      String(node.dataset.rrStableKey || node.textContent || "").replace(/\s+/g, " ").trim());
-    return fallbackKeys.get(node);
-  }
-
-  function label(node) {
-    const sender = node.querySelector("small")?.textContent?.trim() || "New update";
-    const raw = node.textContent.replace(/\s+/g, " ").trim();
-    return {
-      title: document.getElementById("chatTitle")?.textContent?.trim() || "REDZED Chat",
-      body: `${sender}: ${raw.replace(sender, "").trim() || "New activity"}`.slice(0, 180),
-    };
-  }
-
   function tone() {
     if (muted()) return;
     try {
@@ -75,7 +53,7 @@
     const options = {
       body,
       tag: `rr-cross-${key}`,
-      renotify: true,
+      renotify: false,
       vibrate: [160, 80, 160],
       data: { url: location.href },
       icon: "./redzed-icon-test67.svg",
@@ -88,37 +66,44 @@
     } catch (_) {}
   }
 
-  function alertIncoming(node, key) {
-    const { title, body } = label(node);
-    banner(title, body);
-    if (document.getElementById("rrChatBar")) {
-      if (!muted()) navigator.vibrate?.([160, 80, 160]);
-      return;
-    }
-    tone();
-    if (!muted()) navigator.vibrate?.([160, 80, 160]);
-    systemNotice(title, body, key);
+  // The first server batch in each chat is history, however late it arrives.
+  // DOM decorations, restored nodes and timers are never new-message sources.
+  const streams = new Map();
+  let actor = null;
+  function revision(message) {
+    const p=message.payload || {};
+    return [message.id, p.requirement_update_no ?? "", p.collection_update_no ?? ""].join("|");
   }
-
-  function scan() {
-    const nodes = [...document.querySelectorAll("#msgs .msg, #rrMsgs .msg, #rrMsgs .rr-msg")];
-    if (!seeded) {
-      if (!nodes.length) return;
-      nodes.forEach((node) => {
-        const key = messageKey(node);
-        if (key) seen.add(key);
-      });
-      seeded = true;
-      return;
-    }
-    nodes.forEach((node) => {
-      const key = messageKey(node);
-      if (!key || seen.has(key)) return;
-      seen.add(key);
-      if (!node.classList.contains("me")) alertIncoming(node, key);
+  function receive(name, args, rows) {
+    if (!Array.isArray(rows) || !rows.length || !/rr_chat_(?:staff|customer)_messages/.test(name)) return;
+    const stream=[args.p_chat_id || args.p_token || args.p_session_token || location.pathname, args.p_channel || "GROUP"].join("|");
+    let entry=streams.get(stream);
+    if (!entry) { streams.set(stream,{keys:new Set(rows.map(revision)),watermark:Math.max(0,...rows.map(m=>Date.parse(m.created_at)||0))}); return; }
+    const {keys}=entry;
+    rows.slice().reverse().forEach(message => {
+      const key=revision(message);
+      if (keys.has(key)) return;
+      keys.add(key);
+      if ((Date.parse(message.created_at)||0)<=entry.watermark) return;
+      const own=actor && String(message.sender_kind || "STAFF").toUpperCase()==="STAFF" && (message.sender_profile_id===actor.id || message.sender_name===actor.full_name);
+      if (own || muted()) return;
+      const title=document.getElementById("chatTitle")?.textContent?.trim() || "REDZED Chat";
+      const body=`${message.sender_name || "New update"}: ${message.body || "New activity"}`.slice(0,180);
+      banner(title,body);tone();navigator.vibrate?.([160,80,160]);
+      // The open chat already shows this update. System alerts belong to background receipt.
+      if(document.hidden) systemNotice(title,body,key);
     });
-    if (seen.size > 600) [...seen].slice(0, 300).forEach((key) => seen.delete(key));
+    entry.watermark=Math.max(entry.watermark,...rows.map(m=>Date.parse(m.created_at)||0));
   }
+  function hook() {
+    if(!window.RF853?.rpc || RF853.rpc.__rrNotice71) return false;
+    const base=RF853.rpc.bind(RF853);
+    const wrapped=async(name,args={})=>{const result=await base(name,args);receive(name,args,result);return result;};
+    wrapped.__rrNotice71=true;RF853.rpc=wrapped;
+    base("rr_chat_actor_profile_v9433",{}).then(value=>{actor=value;}).catch(()=>{});
+    return true;
+  }
+  if(!hook()) {let tries=0;const timer=setInterval(()=>{if(hook()||++tries>60)clearInterval(timer);},100);}
 
   navigator.serviceWorker?.register("./redzed-sw-test67.js?v=68").catch(() => {});
   addEventListener("pointerdown", () => {
@@ -127,9 +112,5 @@
       audio.resume();
     } catch (_) {}
   }, { once: true, passive: true });
-  new MutationObserver(scan).observe(document.documentElement, { subtree: true, childList: true });
-  setTimeout(() => {
-    scan();
-  }, 350);
-  setTimeout(() => (seeded = true), 2500);
+
 })();
