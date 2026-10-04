@@ -31,6 +31,7 @@
     .colour{display:flex;align-items:center;gap:9px}.colour img{width:38px;height:38px;object-fit:cover;border-radius:8px;border:1px solid var(--line)}
     .mode{font-size:10px;font-weight:900;border-radius:999px;padding:4px 7px;background:#e8ebef}.actual .mode{background:#d9f2e5;color:var(--green)}
     footer{margin-top:24px;color:var(--muted);font-size:12px;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+    .gallery{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px}.gallery a{border:1px solid var(--line);border-radius:12px;padding:10px;color:var(--ink);text-decoration:none;overflow-wrap:anywhere}.gallery img{width:100%;height:160px;object-fit:contain;background:var(--soft);border-radius:8px}.gallery span{display:block;font-size:12px;font-weight:750;margin-top:8px}
     .error{padding:38px 20px;text-align:center}.error h1{font-size:21px}.hidden{display:none!important}
     @media(max-width:600px){header{align-items:flex-start}.state{white-space:normal;text-align:center}.grid{grid-template-columns:1fr}.field,.field:nth-child(odd){border-right:0}.field.full{grid-column:auto}.receipt-progress{grid-template-columns:1fr}.brand{font-size:24px}}
   </style>
@@ -73,6 +74,7 @@
         <tbody id="colourRows"></tbody>
       </table></div>
     </section>
+    <section id="mediaSection" class="hidden"><h2>Available thumbnails · tap to open</h2><div id="mediaGallery" class="gallery"></div></section>
     <footer><span>Read-only supplier slip · no app access</span><span id="updatedAt">Waiting for first update…</span></footer>
   </div>
   <div class="error hidden" id="error"><h1>Link unavailable</h1><p>This LIVE UPDATE link is invalid, revoked, or no longer available.</p></div>
@@ -107,8 +109,15 @@
     })
   }
 
+  function renderMedia(data){
+    const gallery=byId('mediaGallery');gallery.replaceChildren();const seen=new Set();
+    const items=[...(Array.isArray(data.attachments)?data.attachments:[]),...(data.colour_projection?.rows||[]).map(r=>({url:r.thumbnail_url,label:'COLOUR · '+(r.colour_name||('C'+r.colour_no))}))];
+    for(const item of items){let url;try{url=new URL(item.url);if(!['https:','http:'].includes(url.protocol)||seen.has(url.href))continue}catch(_){continue}seen.add(url.href);
+      const a=document.createElement('a');a.href=url.href;a.target='_blank';a.rel='noopener noreferrer';const img=document.createElement('img');img.src=url.href;img.alt=item.label||item.kind||'Thumbnail';img.loading='lazy';img.referrerPolicy='no-referrer';const label=document.createElement('span');label.textContent=seen.size+'. '+img.alt;a.append(img,label);gallery.appendChild(a)
+    }byId('mediaSection').classList.toggle('hidden',!seen.size)
+  }
   function render(data){
-    lastGood=true;byId('content').classList.remove('hidden');byId('error').classList.add('hidden');
+    lastGood=true;byId('content').classList.remove('hidden');byId('error').classList.add('hidden');renderMedia(data);
     const closed=Boolean(data.closed),label=closed?'CLOSE REQUIREMENT':'LIVE UPDATE',unit=String(data.unit||'PCS').toUpperCase(),fulfil=data.fulfilment||{};
     document.body.classList.toggle('closed',closed);document.title='REDZED · '+label;
     set('stateLabel',label);set('noticeTitle',label);
