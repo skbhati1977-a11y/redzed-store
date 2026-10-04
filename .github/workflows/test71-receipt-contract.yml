@@ -1,0 +1,94 @@
+name: TEST71 single receipt contract
+on:
+  push:
+    branches: [test71-real-chat-e2e-finalization]
+    paths:
+      - scripts/test71-receipt-contract-apply.py
+      - test71-cb-receipt.js
+      - test71-cb-receipt.html
+      - tests/e2e/test71_cb_receipt_browser.py
+      - .github/workflows/test71-receipt-contract.yml
+permissions:
+  contents: read
+concurrency:
+  group: test71-receipt-contract-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  receipt:
+    if: github.repository == 'skbhati1977-a11y/redzed-store' && github.ref == 'refs/heads/test71-real-chat-e2e-finalization'
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Apply exact convergence without overwriting unrelated work
+        run: python scripts/test71-receipt-contract-apply.py
+      - name: Syntax and retained projection
+        run: |
+          node --check test71-cb-receipt.js
+          python -m py_compile tests/e2e/test71_cb_receipt_browser.py
+          npm run test:real-chat-projection
+          git diff --check
+      - name: Install isolated browser test dependencies
+        run: |
+          python -m pip install 'playwright==1.57.0' 'Pillow>=11,<13' 'PyMuPDF==1.26.7'
+          python -m playwright install --with-deps chromium
+      - name: Receipt, routing and embedded PDF gates without live orders
+        env:
+          RECEIPT_QA_OUT: ${{ runner.temp }}/receipt-contract-evidence
+        run: python tests/e2e/test71_cb_receipt_browser.py
+      - name: Reject newly failing static tests, retain baseline failures explicitly
+        shell: bash
+        run: |
+          mkdir -p "${RUNNER_TEMP}/receipt-baseline"
+          git archive f94298028c720cd6538892da36350a28e7a2538e | tar -x -C "${RUNNER_TEMP}/receipt-baseline"
+          (cd "${RUNNER_TEMP}/receipt-baseline" && npm run test:e2e:static) > "${RUNNER_TEMP}/receipt-baseline.log" 2>&1 || true
+          npm run test:e2e:static > "${RUNNER_TEMP}/receipt-current.log" 2>&1 || true
+          python - <<'PY'
+          import os,re,json,collections,pathlib
+          root=pathlib.Path(os.environ['RUNNER_TEMP'])
+          baseline=(root/'receipt-baseline.log').read_text()
+          current=(root/'receipt-current.log').read_text()
+          assert re.search(r'^# tests [1-9]\d*$',baseline,re.M),'Baseline did not finish'
+          assert re.search(r'^# tests [1-9]\d*$',current,re.M),'Current suite did not finish'
+          old=collections.Counter(re.findall(r'^not ok \d+ - (.*)',baseline,re.M))
+          new=collections.Counter(re.findall(r'^not ok \d+ - (.*)',current,re.M))
+          introduced=list((new-old).elements())
+          result={'baseline_sha':'f94298028c720cd6538892da36350a28e7a2538e','baseline_failed':sum(old.values()),'current_failed':sum(new.values()),'introduced_failures':introduced,'full_suite_green':not new}
+          (root/'receipt-contract-evidence'/'regression-delta.json').write_text(json.dumps(result,indent=2))
+          print(json.dumps(result,indent=2))
+          assert not introduced,'New failure: do not publish integration'
+          PY
+      - name: Publish tested convergence on TEST71 only, normal fast-forward
+        run: |
+          test "$GITHUB_REF" = refs/heads/test71-real-chat-e2e-finalization
+          if ! git diff --quiet; then
+            git config user.name 'github-actions[bot]'
+            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+            git add -- test71-cb-receipt.js test71-cb-receipt.html tests/e2e/test71_cb_receipt_browser.py TEST71_CB_RECEIPT_V2_VERIFICATION.md
+            git commit -m 'fix(test71): one requirement receipt with note and explicit send confirmation'
+            git push origin HEAD:refs/heads/test71-real-chat-e2e-finalization
+          fi
+          git rev-parse HEAD > "${RUNNER_TEMP}/receipt-contract-evidence/tested-sha.txt"
+      - name: Preserve evidence and exact tested source
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: test71-single-receipt-evidence
+          path: |
+            ${{ runner.temp }}/receipt-contract-evidence/
+            ${{ runner.temp }}/receipt-baseline.log
+            ${{ runner.temp }}/receipt-current.log
+            test71-cb-receipt.js
+            test71-cb-receipt.html
+            tests/e2e/test71_cb_receipt_browser.py
+          retention-days: 7
