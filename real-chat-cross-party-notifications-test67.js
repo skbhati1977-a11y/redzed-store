@@ -5,12 +5,19 @@
 
   const MUTE_KEY = "rr_chat_mute";
   const seen = new Set();
+  const fallbackKeys = new WeakMap();
   let seeded = false;
   let audio = null;
 
   const muted = () => localStorage.getItem(MUTE_KEY) === "1";
-  const messageKey = (node) =>
-    String(node.dataset.msgId || node.getAttribute("data-message-id") || node.textContent || "").replace(/\s+/g, " ").trim();
+  function messageKey(node) {
+    const id = node.dataset.msgId || node.dataset.rrMsgid || node.getAttribute("data-message-id");
+    if (id) return String(id);
+    // Requirement decorators change visible text, but that is not a new message.
+    if (!fallbackKeys.has(node)) fallbackKeys.set(node,
+      String(node.dataset.rrStableKey || node.textContent || "").replace(/\s+/g, " ").trim());
+    return fallbackKeys.get(node);
+  }
 
   function label(node) {
     const sender = node.querySelector("small")?.textContent?.trim() || "New update";
@@ -48,6 +55,8 @@
       box = document.createElement("button");
       box.id = "rrCrossPartyNotice67";
       box.type = "button";
+      box.setAttribute("aria-label", "Dismiss chat notification");
+      box.onclick = () => { clearTimeout(banner.timer); box.hidden = true; };
       box.style.cssText = "position:fixed;z-index:2147483646;top:12px;left:50%;transform:translateX(-50%);width:min(92vw,440px);padding:13px 15px;border:1px solid #6caef2;border-radius:14px;background:#122236;color:#fff;box-shadow:0 12px 34px #000a;text-align:left;font:inherit";
       document.body.appendChild(box);
     }

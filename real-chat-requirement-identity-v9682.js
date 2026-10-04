@@ -92,7 +92,18 @@
   function init() {
     css();
     scan();
-    new MutationObserver(scan).observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ["class"] });
+    // Coalesce renderer/notification mutations into a frame. A chat renderer
+    // must never keep the browser trapped in a MutationObserver microtask loop.
+    let scheduled = false;
+    const schedule = () => {
+      if (scheduled) return;
+      scheduled = true;
+      requestAnimationFrame(() => { scheduled = false; scan(); });
+    };
+    new MutationObserver((records) => {
+      if (records.some(({ target }) => target instanceof Element &&
+        (target.closest('#msgs, #rrReqBack9508') || target.id === 'rrReqBack9508'))) schedule();
+    }).observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ["class"] });
   }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init, { once: true });
   else init();
