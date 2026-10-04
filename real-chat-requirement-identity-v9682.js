@@ -6,7 +6,7 @@
   const cache = new Map();
   let activeId = "";
   const esc = (value) => String(value ?? "").replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" })[char]);
-  const chatId = () => document.querySelector("#inboxRows .chatrow.on")?.dataset.chat || localStorage.getItem("rr_real_chat_last_group_v9507") || "";
+  const chatId = () => document.querySelector("#inboxRows .chatrow.on")?.dataset.chat || new URLSearchParams(location.search).get("chat_id") || localStorage.getItem("rr_real_chat_last_group_v9507") || "";
   const stage = (value) => ({
     READY_FOR_PI: "READY FOR PI",
     PI_GENERATED: "PI GENERATED",
@@ -46,7 +46,6 @@
       const x = label(data);
       button.querySelector("b").textContent = `📋 ${x.req}`;
       button.querySelector("small").innerHTML = `${esc(x.collection)} · <span data-rr-stage>${esc(stage(data.status))}</span>`;
-      button.addEventListener("click", () => { activeId = match[1]; showSheet(); }, { capture: true });
     } catch (_) {}
   }
 
@@ -90,6 +89,12 @@
     if (document.getElementById("rrReqBack9508")?.classList.contains("on")) showSheet();
   }
   function init() {
+    document.addEventListener("click", (event) => {
+      const card = event.target.closest?.("#msgs .rrReqCard9508");
+      if (!card) return;
+      activeId = card.dataset.requirementId || (card.closest(".msg")?.textContent || "").match(RX)?.[1] || "";
+      showSheet();
+    }, true);
     css();
     scan();
     // Coalesce renderer/notification mutations into a frame. A chat renderer
