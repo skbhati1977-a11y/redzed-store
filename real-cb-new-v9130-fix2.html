@@ -101,7 +101,7 @@
   <div class="master-actions"><button id="doneCbComboMaster" class="primary" type="button">DONE · BACK TO CB COMBO</button></div>
 </section></div>
 <datalist id="vendorHistory"></datalist><datalist id="fabricHistory"></datalist>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>\n<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>\n<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>\n<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
 <script src="config.js?v=9144"></script>
 <script src="test70-action-return-v110.js?v=626"></script>
 <script src="real-common.js?v=S-DISPLAY-20260930-1"></script>
@@ -248,9 +248,9 @@ function supplierOptions(selected){
 }
 function requirementSendLabel(g){
  const count=Number(g.send_count||0),rev=Number(g.revision_no||1),last=Number(g.last_sent_revision||0);
- if(!count)return'SEND WHATSAPP';
- if(rev>last)return'SEND REVISED';
- return 'RESEND #'+(count+1)
+ if(!count)return'SHARE RECEIPT';
+ if(rev>last)return'SHARE REVISED';
+ return 'RESHARE #'+(count+1)
 }
 function renderDerivedRequirements(){
  const box=$('derivedRequirementSummary');if(!box)return;
@@ -258,7 +258,7 @@ function renderDerivedRequirements(){
  if(!cbId){box.innerHTML='<div class="muted">Save CB Draft to calculate Appx Sheet requirements.</div>';return}
  if(!groups.length){box.innerHTML='<div class="muted">No requirement yet. Save Art Combo; Appx Sheet will create Collar/Rib/Sticker/Metal ID requirement automatically.</div>';return}
  const thumbs=colours.filter(x=>x.thumbnail_url).map(x=>`<img src="${esc(x.thumbnail_url)}" title="${esc(x.colour_name||('C'+x.colour_no))}" style="width:44px;height:44px;object-fit:cover;border-radius:7px">`).join('');
- box.innerHTML=(thumbs?`<div style="display:flex;gap:6px;overflow:auto;margin-bottom:9px">${thumbs}</div>`:'')+`<div class="requirement-scroll"><table class="requirement-table"><thead><tr><th>Type</th><th>Item</th><th>Set / Profile</th><th>Basis</th><th>Appx PCS</th><th>Cutting PCS</th><th>Required</th><th>Supplier</th><th>Status</th><th>WhatsApp</th></tr></thead><tbody>${groups.map(g=>{const revised=Number(g.revision_no||1)>Number(g.last_sent_revision||0)&&Number(g.send_count||0)>0,rawBasis=String(g.basis||'YIELD').toUpperCase(),basis=rawBasis==='YIELD'?'APPX SHEET':rawBasis.replaceAll('_',' '),profiles=(g.profile_labels||[]).join(', ');return `<tr data-req-type="${esc(g.requirement_type)}" data-source-id="${esc(g.source_id)}"><td><b>${esc(g.requirement_label||g.requirement_type)}</b><br><small>${esc(g.fulfilment_method||'PURCHASE')}</small></td><td><b>${esc(g.item_name||g.item_no||'-')}</b><br><small>${esc(g.item_no||'')}</small></td><td>${esc(profiles||'-')}</td><td>${esc(basis)}</td><td><b>${Number(g.appx_pcs||0).toFixed(0)}</b></td><td>${Number(g.cutting_pcs||0)>0?'<b>'+Number(g.cutting_pcs||0).toFixed(0)+'</b>':'—'}</td><td><b>${Number(g.required_qty||0).toFixed(String(g.unit||'').toUpperCase()==='KG'?3:0)} ${esc(g.unit||'PCS')}</b></td><td><select class="reqSupplier" data-type="${esc(g.requirement_type)}" data-source-id="${esc(g.source_id)}">${supplierOptions(g.supplier_ledger_id)}</select><small style="display:block;margin-top:4px">${esc(g.supplier_name||'Auto supplier not mapped')}</small></td><td><span class="req-status ${revised?'req-revised':''}">${revised?'REVISED':esc(g.status||'READY')} · R${Number(g.revision_no||1)}</span><br><small>Sent ${Number(g.send_count||0)} time(s)</small></td><td><button type="button" class="primary tiny wa-send" data-type="${esc(g.requirement_type)}" data-source-id="${esc(g.source_id)}">${esc(requirementSendLabel(g))}</button></td></tr>`}).join('')}</tbody></table></div>`;
+ box.innerHTML=(thumbs?`<div style="display:flex;gap:6px;overflow:auto;margin-bottom:9px">${thumbs}</div>`:'')+`<div class="requirement-scroll"><table class="requirement-table"><thead><tr><th>Type</th><th>Item</th><th>Set / Profile</th><th>Basis</th><th>Appx PCS</th><th>Cutting PCS</th><th>Required</th><th>Supplier</th><th>Status</th><th>Receipt Share</th></tr></thead><tbody>${groups.map(g=>{const revised=Number(g.revision_no||1)>Number(g.last_sent_revision||0)&&Number(g.send_count||0)>0,rawBasis=String(g.basis||'YIELD').toUpperCase(),basis=rawBasis==='YIELD'?'APPX SHEET':rawBasis.replaceAll('_',' '),profiles=(g.profile_labels||[]).join(', ');return `<tr data-req-type="${esc(g.requirement_type)}" data-source-id="${esc(g.source_id)}"><td><b>${esc(g.requirement_label||g.requirement_type)}</b><br><small>${esc(g.fulfilment_method||'PURCHASE')}</small></td><td><b>${esc(g.item_name||g.item_no||'-')}</b><br><small>${esc(g.item_no||'')}</small></td><td>${esc(profiles||'-')}</td><td>${esc(basis)}</td><td><b>${Number(g.appx_pcs||0).toFixed(0)}</b></td><td>${Number(g.cutting_pcs||0)>0?'<b>'+Number(g.cutting_pcs||0).toFixed(0)+'</b>':'—'}</td><td><b>${Number(g.required_qty||0).toFixed(String(g.unit||'').toUpperCase()==='KG'?3:0)} ${esc(g.unit||'PCS')}</b></td><td><select class="reqSupplier" data-type="${esc(g.requirement_type)}" data-source-id="${esc(g.source_id)}">${supplierOptions(g.supplier_ledger_id)}</select><small style="display:block;margin-top:4px">${esc(g.supplier_name||'Auto supplier not mapped')}</small></td><td><span class="req-status ${revised?'req-revised':''}">${revised?'REVISED':esc(g.status||'READY')} · R${Number(g.revision_no||1)}</span><br><small>Sent ${Number(g.send_count||0)} time(s)</small></td><td><button type="button" class="primary tiny wa-send" data-type="${esc(g.requirement_type)}" data-source-id="${esc(g.source_id)}">${esc(requirementSendLabel(g))}</button></td></tr>`}).join('')}</tbody></table></div>`;
  box.querySelectorAll('.reqSupplier').forEach(sel=>sel.onchange=async()=>{if(!sel.value)return;sel.disabled=true;try{const r=await sb().rpc('rr_cb_requirement_supplier_set_v1',{p_cb_id:cbId,p_requirement_type:sel.dataset.type,p_source_id:sel.dataset.sourceId,p_supplier_ledger_id:sel.value});if(r.error)throw r.error;await loadDerivedRequirements(false);setMessage('Supplier mapping updated.',true)}catch(e){setMessage(friendlyUserError(e,'Supplier mapping update नहीं हुई.'))}finally{sel.disabled=false}});
  box.querySelectorAll('.wa-send').forEach(btn=>btn.onclick=()=>sendDerivedRequirementWhatsApp(btn.dataset.type,btn.dataset.sourceId,btn))
 }
@@ -269,22 +269,47 @@ async function loadDerivedRequirements(refresh=true){
  const r=await sb().rpc('rr_cb_requirement_context_v1',{p_cb_id:cbId});if(r.error)throw r.error;
  derivedContext=r.data||{groups:[],suppliers:[],colours:[]};renderDerivedRequirements();return derivedContext
 }
-function requirementShareCaption(d){
- const unit=String(d.unit||'PCS').toUpperCase(),profiles=(d.profile_labels||[]).join(', ')||'—',cut=Number(d.cutting_pcs||0);
+function requirementDefaultShortNote(d){return String(d?.short_note||'').trim()||(String(d?.fulfilment_method||'PURCHASE').toUpperCase()==='MAKING'?'Please confirm making status.':'Please confirm availability and expected delivery.')}
+function requirementShortNote(v,d){return (String(v||'').trim()||requirementDefaultShortNote(d)).slice(0,240)}
+function requirementColourRows(d){return Array.isArray(d?.colour_projection?.rows)?d.colour_projection.rows:[]}
+function requirementProjectionTotals(d){return d?.colour_projection?.totals||{}}
+function requirementAppxPcs(d){const x=requirementProjectionTotals(d).appx_pcs;return Number(x??d?.appx_pcs??0)}
+function requirementCuttingPcs(d){const x=requirementProjectionTotals(d).actual_pcs;return Number(x??d?.cutting_pcs??0)}
+function requirementRequiredQty(d){const x=requirementProjectionTotals(d).effective_required_qty;return Number(x??d?.required_qty??0)}
+function requirementQtyText(value,unit){const u=String(unit||'PCS').toUpperCase();return Number(value||0).toFixed(u==='KG'?3:0)+' '+u}
+function requirementLiveUpdateUrl(shortCode){const u=new URL('r.html',location.href);u.search='';u.hash='';u.searchParams.set('k',String(shortCode||''));return u.href}
+function requirementShareCaption(d,shortNote){
+ const unit=String(d.unit||'PCS').toUpperCase(),profiles=(d.profile_labels||[]).join(', ')||'—',cut=requirementCuttingPcs(d),note=requirementShortNote(shortNote,d);
  return [
-  'REDZED · '+String(d.requirement_type||'REQUIREMENT').replaceAll('_',' ')+' REQUIREMENT',
-  'CB: '+String(d.cb_no||'—'),
+  'REDZED · REQUIREMENT RECEIPT',
+  'CB No: '+String(d.cb_no||'—'),
   'Item: '+[d.item_no,d.item_name].filter(Boolean).join(' · '),
   'Set / Profile: '+profiles,
-  'Mode: '+String(d.fulfilment_method||'PURCHASE'),
-  'Appx PCS: '+Number(d.appx_pcs||0).toFixed(0),
+  'Appx PCS: '+requirementAppxPcs(d).toFixed(0),
   'Cutting PCS: '+(cut>0?cut.toFixed(0):'—'),
-  'Required: '+Number(d.required_qty||0).toFixed(unit==='KG'?3:0)+' '+unit,
-  d.supplier_name?'Mapped Supplier: '+d.supplier_name:'',
-  'Revision: '+Number(d.revision_no||1),
-  '',
-  'Please confirm availability / making status.'
- ].filter(Boolean).join('\n')
+  'Required: '+requirementQtyText(requirementRequiredQty(d),unit),
+  'Revision: R'+Number(d.revision_no||1),
+  'Mode: '+String(d.fulfilment_method||'PURCHASE'),
+  'Supplier: '+String(d.supplier_name||'—'),
+  'Short Note: '+note,
+  'LIVE UPDATE: '+String(d.live_update_url||'—')
+ ].join('\n')
+}
+async function requirementQrDataUrl(value){
+ if(!value||typeof window.QRCode!=='function')return null;
+ const host=document.createElement('div');host.style.cssText='position:fixed;left:-10000px;top:-10000px;width:220px;height:220px;background:#fff';document.body.appendChild(host);
+ try{
+  new window.QRCode(host,{text:String(value),width:220,height:220,colorDark:'#111827',colorLight:'#ffffff',correctLevel:window.QRCode.CorrectLevel?.M});
+  await new Promise(resolve=>setTimeout(resolve,60));
+  const canvas=host.querySelector('canvas');if(canvas)return canvas.toDataURL('image/png');
+  const img=host.querySelector('img');return img?.src||null
+ }finally{host.remove()}
+}
+function requirementShareEventId(){
+ if(crypto.randomUUID)return crypto.randomUUID();
+ const bytes=crypto.getRandomValues(new Uint8Array(16));bytes[6]=(bytes[6]&15)|64;bytes[8]=(bytes[8]&63)|128;
+ const h=Array.from(bytes,x=>x.toString(16).padStart(2,'0')).join('');
+ return h.slice(0,8)+'-'+h.slice(8,12)+'-'+h.slice(12,16)+'-'+h.slice(16,20)+'-'+h.slice(20)
 }
 function reqSafeFilePart(v){return String(v||'ITEM').replace(/[^A-Za-z0-9_-]+/g,'-').replace(/-+/g,'-').replace(/^-|-$/g,'').slice(0,50)||'ITEM'}
 function reqBlobDataUrl(blob){return new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve(String(r.result||''));r.onerror=()=>reject(r.error||new Error('File read failed.'));r.readAsDataURL(blob)})}
@@ -293,77 +318,123 @@ async function reqImageToJpeg(item,index){
  const blob=await res.blob(),url=URL.createObjectURL(blob),img=new Image();
  try{
   await new Promise((resolve,reject)=>{img.onload=resolve;img.onerror=reject;img.src=url});
-  const canvas=document.createElement('canvas'),size=1000;canvas.width=size;canvas.height=size;
+  const canvas=document.createElement('canvas'),size=800;canvas.width=size;canvas.height=size;
   const ctx=canvas.getContext('2d',{alpha:false});ctx.fillStyle='#ffffff';ctx.fillRect(0,0,size,size);
   const scale=Math.min(size/img.naturalWidth,size/img.naturalHeight),w=img.naturalWidth*scale,h=img.naturalHeight*scale;
   ctx.drawImage(img,(size-w)/2,(size-h)/2,w,h);
-  const jpeg=await new Promise((resolve,reject)=>canvas.toBlob(b=>b?resolve(b):reject(new Error('JPEG prepare failed.')),'image/jpeg',.92));
+  const jpeg=await new Promise((resolve,reject)=>canvas.toBlob(b=>b?resolve(b):reject(new Error('JPEG prepare failed.')),'image/jpeg',.86));
   const dataUrl=await reqBlobDataUrl(jpeg),kind=reqSafeFilePart(item.kind||'THUMB'),label=reqSafeFilePart(item.label||kind);
   return {item,index,jpeg,dataUrl,file:new File([jpeg],String(index).padStart(2,'0')+'-'+kind+'-'+label+'.jpg',{type:'image/jpeg'})}
  }finally{URL.revokeObjectURL(url)}
 }
 async function requirementShareVisuals(ctx){
- const items=(ctx.attachments||[]).filter(x=>x?.url).slice(0,8),loaded=[];
- for(let i=0;i<items.length;i++){try{loaded.push(await reqImageToJpeg(items[i],i+1))}catch(e){console.warn('Requirement thumbnail skipped',items[i]?.url,e)}}
+ const seen=new Set(),items=(ctx.attachments||[]).filter(x=>{const url=String(x?.url||'').trim();if(!url||seen.has(url))return false;seen.add(url);return true}),loaded=[];
+ for(const item of items){try{loaded.push(await reqImageToJpeg(item,loaded.length+1))}catch(e){console.warn('Requirement thumbnail skipped',item?.url,e)}}
  return loaded
 }
-async function requirementReportJpegFile(ctx,loaded){
- const cols=2,cardH=390,rows=Math.max(1,Math.ceil(loaded.length/cols)),canvas=document.createElement('canvas');
- canvas.width=1080;canvas.height=Math.max(1350,490+rows*cardH+150);
+async function requirementReportJpegFile(ctx,loaded,shortNote,qrDataUrl){
+ const cols=2,cardH=390,thumbRows=Math.max(1,Math.ceil(loaded.length/cols)),colourRows=requirementColourRows(ctx),tableH=colourRows.length?118+colourRows.length*72:0,canvas=document.createElement('canvas'),note=requirementShortNote(shortNote,ctx);
+ canvas.width=1080;canvas.height=Math.max(1900,1320+tableH+thumbRows*cardH+180);
  const c=canvas.getContext('2d',{alpha:false});c.fillStyle='#fff';c.fillRect(0,0,canvas.width,canvas.height);
- c.fillStyle='#b42335';c.fillRect(0,0,canvas.width,155);c.fillStyle='#fff';c.font='700 54px system-ui,sans-serif';c.fillText('REDZED',65,78);c.font='700 29px system-ui,sans-serif';c.fillText('APPX / CUTTING REQUIREMENT',65,126);
- c.fillStyle='#111827';c.font='700 31px system-ui,sans-serif';let y=215;
- const unit=String(ctx.unit||'PCS').toUpperCase(),cut=Number(ctx.cutting_pcs||0),rowsText=[
-  ['CB',ctx.cb_no||'—'],['Item',[ctx.item_no,ctx.item_name].filter(Boolean).join(' · ')||'—'],
-  ['Set / Profile',(ctx.profile_labels||[]).join(', ')||'—'],['Mode',ctx.fulfilment_method||'PURCHASE'],
-  ['Appx PCS',Number(ctx.appx_pcs||0).toFixed(0)],['Cutting PCS',cut>0?cut.toFixed(0):'—'],
-  ['Required',Number(ctx.required_qty||0).toFixed(unit==='KG'?3:0)+' '+unit]
+ c.fillStyle='#b42335';c.fillRect(0,0,canvas.width,155);c.fillStyle='#fff';c.font='700 54px system-ui,sans-serif';c.fillText('REDZED',65,78);c.font='700 29px system-ui,sans-serif';c.fillText('REQUIREMENT RECEIPT',65,126);
+ c.fillStyle='#111827';let y=215;
+ const unit=String(ctx.unit||'PCS').toUpperCase(),cut=requirementCuttingPcs(ctx),rowsText=[
+  ['CB No',ctx.cb_no||'—'],['Item',[ctx.item_no,ctx.item_name].filter(Boolean).join(' · ')||'—'],
+  ['Set / Profile',(ctx.profile_labels||[]).join(', ')||'—'],
+  ['Appx PCS',requirementAppxPcs(ctx).toFixed(0)],['Cutting PCS',cut>0?cut.toFixed(0):'—'],
+  ['Required Qty',requirementQtyText(requirementRequiredQty(ctx),unit)],
+  ['Revision','R'+Number(ctx.revision_no||1)],['Mode',ctx.fulfilment_method||'PURCHASE'],
+  ['Supplier',ctx.supplier_name||'—'],['Short Note',note]
  ];
- for(const [k,v] of rowsText){c.fillStyle='#6b7280';c.font='600 23px system-ui,sans-serif';c.fillText(k,65,y);c.fillStyle='#111827';c.font='700 28px system-ui,sans-serif';canvasWrappedText(c,String(v),335,y,680,34);y+=47}
- y+=20;c.fillStyle='#111827';c.font='700 28px system-ui,sans-serif';c.fillText('AVAILABLE THUMBNAILS',65,y);y+=28;
- for(const x of loaded){const i=x.index-1,col=i%cols,row=Math.floor(i/cols),x0=65+col*500,y0=y+row*cardH;c.fillStyle='#f3f4f6';c.fillRect(x0,y0,450,350);c.fillStyle='#b42335';c.beginPath();c.arc(x0+32,y0+32,22,0,Math.PI*2);c.fill();c.fillStyle='#fff';c.font='700 22px system-ui,sans-serif';c.textAlign='center';c.fillText(String(x.index),x0+32,y0+40);c.textAlign='left';const img=new Image();img.src=x.dataUrl;await new Promise((resolve,reject)=>{if(img.complete)resolve();else{img.onload=resolve;img.onerror=reject}});const maxW=390,maxH=245,scale=Math.min(maxW/img.naturalWidth,maxH/img.naturalHeight),iw=img.naturalWidth*scale,ih=img.naturalHeight*scale;c.drawImage(img,x0+(450-iw)/2,y0+58,iw,ih);c.fillStyle='#111827';c.font='700 19px system-ui,sans-serif';canvasWrappedText(c,String(x.item.label||x.item.kind||'Thumbnail'),x0+18,y0+323,414,23)}
- c.fillStyle='#6b7280';c.font='500 20px system-ui,sans-serif';c.fillText('Revision '+Number(ctx.revision_no||1)+' · '+new Date().toLocaleString('en-IN'),65,canvas.height-55);
- const blob=await new Promise((resolve,reject)=>canvas.toBlob(b=>b?resolve(b):reject(new Error('JPEG report prepare failed.')),'image/jpeg',.92));
- const base='CB-'+reqSafeFilePart(ctx.cb_no)+'-'+reqSafeFilePart(ctx.item_no||ctx.item_name)+'-REQUIREMENT';
+ for(const [k,v] of rowsText){const rowY=y;c.fillStyle='#6b7280';c.font='600 23px system-ui,sans-serif';c.fillText(k,65,rowY);c.fillStyle='#111827';c.font='700 28px system-ui,sans-serif';y=Math.max(rowY+34,canvasWrappedText(c,String(v),335,rowY,680,34))+14;c.strokeStyle='#eef0f3';c.lineWidth=1;c.beginPath();c.moveTo(65,y-7);c.lineTo(1015,y-7);c.stroke()}
+
+ y+=18;c.fillStyle='#f4f0f1';c.fillRect(65,y,950,205);c.fillStyle='#b42335';c.font='800 30px system-ui,sans-serif';c.fillText('LIVE UPDATE',90,y+48);c.fillStyle='#374151';c.font='600 20px system-ui,sans-serif';canvasWrappedText(c,'Same link auto-updates from APPX to actual cutting. Partial receipt stays live; fully received + confirmed becomes CLOSE REQUIREMENT.',90,y+82,690,27);
+ c.fillStyle='#111827';c.font='700 18px ui-monospace,monospace';const liveDisplay=String(ctx.live_update_url||'—').replace(/(.{48})/g,'$1 ');canvasWrappedText(c,liveDisplay,90,y+151,700,25);
+ if(qrDataUrl){const qr=new Image();qr.src=qrDataUrl;await new Promise((resolve,reject)=>{if(qr.complete)resolve();else{qr.onload=resolve;qr.onerror=reject}});c.drawImage(qr,825,y+17,170,170)}
+ y+=235;
+
+ if(colourRows.length){
+  c.fillStyle='#111827';c.font='800 28px system-ui,sans-serif';c.fillText('COLOUR-WISE PCS · '+String(ctx.colour_projection?.mode||'APPX'),65,y);y+=24;
+  const xs=[65,245,445,555,665,775,920],heads=['Set / Profile','Colour','Appx','Actual PCS','Use PCS','Required','Δ Qty'];
+  c.fillStyle='#252b36';c.fillRect(65,y,950,48);c.fillStyle='#fff';c.font='700 17px system-ui,sans-serif';heads.forEach((h,i)=>c.fillText(h,xs[i]+8,y+31));y+=48;
+  for(const row of colourRows){
+   c.fillStyle=String(row.source_mode||'APPX')==='ACTUAL'?'#edf8f1':'#faf7ef';c.fillRect(65,y,950,68);c.fillStyle='#111827';c.font='600 17px system-ui,sans-serif';
+   const actual=row.actual_pcs==null?'—':Number(row.actual_pcs||0).toFixed(0),delta=row.difference_qty==null?'—':Number(row.difference_qty||0).toFixed(unit==='KG'?3:0);
+   const cells=[String(row.profile_label||('S'+(row.set_no||'—'))),String(row.colour_name||('C'+(row.colour_no||''))),Number(row.appx_pcs||0).toFixed(0),actual,Number(row.effective_pcs||0).toFixed(0),requirementQtyText(row.required_qty||0,row.unit||unit),delta];
+   cells.forEach((value,i)=>{const max=[164,184,96,96,96,132,82][i];canvasWrappedText(c,value,xs[i]+8,y+24,max,20)});c.strokeStyle='#e5e7eb';c.beginPath();c.moveTo(65,y+68);c.lineTo(1015,y+68);c.stroke();y+=68
+  }
+  const totals=requirementProjectionTotals(ctx);c.fillStyle='#111827';c.font='800 19px system-ui,sans-serif';c.fillText('TOTAL',73,y+31);c.fillText(Number(totals.appx_pcs||0).toFixed(0),453,y+31);c.fillText(Number(totals.actual_pcs||0)>0?Number(totals.actual_pcs).toFixed(0):'—',563,y+31);c.fillText(Number(totals.effective_pcs||0).toFixed(0),673,y+31);c.fillText(requirementQtyText(totals.effective_required_qty||0,unit),783,y+31);y+=68
+ }
+
+ y+=20;c.fillStyle='#111827';c.font='700 28px system-ui,sans-serif';c.fillText('AVAILABLE THUMBNAILS',65,y);y+=28;const thumbStart=y;
+ for(let i=0;i<loaded.length;i++){const x=loaded[i],col=i%cols,row=Math.floor(i/cols),x0=65+col*500,y0=thumbStart+row*cardH;c.fillStyle='#f3f4f6';c.fillRect(x0,y0,450,350);c.fillStyle='#b42335';c.beginPath();c.arc(x0+32,y0+32,22,0,Math.PI*2);c.fill();c.fillStyle='#fff';c.font='700 22px system-ui,sans-serif';c.textAlign='center';c.fillText(String(x.index),x0+32,y0+40);c.textAlign='left';const img=new Image();img.src=x.dataUrl;await new Promise((resolve,reject)=>{if(img.complete)resolve();else{img.onload=resolve;img.onerror=reject}});const maxW=390,maxH=245,scale=Math.min(maxW/img.naturalWidth,maxH/img.naturalHeight),iw=img.naturalWidth*scale,ih=img.naturalHeight*scale;c.drawImage(img,x0+(450-iw)/2,y0+58,iw,ih);c.fillStyle='#111827';c.font='700 19px system-ui,sans-serif';canvasWrappedText(c,String(x.item.label||x.item.kind||'Thumbnail'),x0+18,y0+323,414,23)}
+ if(!loaded.length){c.fillStyle='#6b7280';c.font='600 24px system-ui,sans-serif';c.fillText('No linked thumbnail is available.',65,y+50)}
+ c.fillStyle='#6b7280';c.font='500 20px system-ui,sans-serif';c.fillText('R'+Number(ctx.revision_no||1)+' · '+new Date().toLocaleString('en-IN')+' · Snapshot; current status is at LIVE UPDATE.',65,canvas.height-55);
+ const blob=await new Promise((resolve,reject)=>canvas.toBlob(b=>b?resolve(b):reject(new Error('JPEG report prepare failed.')),'image/jpeg',.9));
+ const base='CB-'+reqSafeFilePart(ctx.cb_no)+'-'+reqSafeFilePart(ctx.item_no||ctx.item_name)+'-R'+Number(ctx.revision_no||1)+'-REQUIREMENT-RECEIPT';
  return {file:new File([blob],base+'.jpg',{type:'image/jpeg'}),dataUrl:await reqBlobDataUrl(blob),base}
 }
-async function requirementReportPdfFile(ctx,loaded,base){
+async function requirementReportPdfFile(ctx,loaded,base,shortNote,qrDataUrl){
  const JsPdf=window.jspdf?.jsPDF;if(!JsPdf)return null;
- const pdf=new JsPdf({orientation:'portrait',unit:'pt',format:'a4'}),unit=String(ctx.unit||'PCS').toUpperCase(),cut=Number(ctx.cutting_pcs||0);
- const header=()=>{pdf.setFillColor(180,35,53);pdf.rect(0,0,595,82,'F');pdf.setTextColor(255,255,255);pdf.setFontSize(24);pdf.text('REDZED',34,38);pdf.setFontSize(13);pdf.text('APPX / CUTTING REQUIREMENT',34,61);pdf.setTextColor(20,24,30)};
- header();pdf.setFontSize(11);let y=112;
- const details=['CB: '+(ctx.cb_no||'—'),'Item: '+([ctx.item_no,ctx.item_name].filter(Boolean).join(' · ')||'—'),'Set / Profile: '+((ctx.profile_labels||[]).join(', ')||'—'),'Mode: '+(ctx.fulfilment_method||'PURCHASE'),'Appx PCS: '+Number(ctx.appx_pcs||0).toFixed(0),'Cutting PCS: '+(cut>0?cut.toFixed(0):'—'),'Required: '+Number(ctx.required_qty||0).toFixed(unit==='KG'?3:0)+' '+unit];
- for(const line of details){pdf.text(line,34,y);y+=18}y+=10;
- let idx=0;for(const x of loaded){if(y>610){pdf.addPage();header();y=110}pdf.setFontSize(12);pdf.setFont(undefined,'bold');pdf.text(String(x.index)+'. '+String(x.item.label||x.item.kind||'Thumbnail').slice(0,75),34,y);pdf.setFont(undefined,'normal');y+=12;try{pdf.addImage(x.dataUrl,'JPEG',34,y,220,220)}catch(e){console.warn('PDF thumbnail skipped',e)}y+=245;idx++}
- if(!idx){pdf.setFontSize(11);pdf.text('No thumbnail available.',34,y)}
+ const pdf=new JsPdf({orientation:'portrait',unit:'pt',format:'a4'}),unit=String(ctx.unit||'PCS').toUpperCase(),cut=requirementCuttingPcs(ctx),note=requirementShortNote(shortNote,ctx),colourRows=requirementColourRows(ctx),pageW=595,pageH=842;
+ const header=()=>{pdf.setFillColor(180,35,53);pdf.rect(0,0,pageW,82,'F');pdf.setTextColor(255,255,255);pdf.setFontSize(24);pdf.setFont(undefined,'bold');pdf.text('REDZED',34,38);pdf.setFontSize(13);pdf.text('REQUIREMENT RECEIPT',34,61);pdf.setTextColor(20,24,30);pdf.setFont(undefined,'normal')};
+ const newPage=()=>{pdf.addPage();header();return 110};
+ const ensure=(y,need)=>y+need>790?newPage():y;
+ header();let y=112;
+ const details=[['CB No',ctx.cb_no||'—'],['Item',[ctx.item_no,ctx.item_name].filter(Boolean).join(' · ')||'—'],['Set / Profile',(ctx.profile_labels||[]).join(', ')||'—'],['Appx PCS',requirementAppxPcs(ctx).toFixed(0)],['Cutting PCS',cut>0?cut.toFixed(0):'—'],['Required Qty',requirementQtyText(requirementRequiredQty(ctx),unit)],['Revision','R'+Number(ctx.revision_no||1)],['Mode',ctx.fulfilment_method||'PURCHASE'],['Supplier',ctx.supplier_name||'—'],['Short Note',note]];
+ pdf.setFontSize(10.5);for(const [label,value] of details){const lines=pdf.splitTextToSize(String(value),390);y=ensure(y,Math.max(18,lines.length*13+5));pdf.setFont(undefined,'bold');pdf.text(label,34,y);pdf.setFont(undefined,'normal');pdf.text(lines,145,y);y+=Math.max(18,lines.length*13+5)}
+
+ y=ensure(y,142);y+=8;pdf.setFillColor(248,242,244);pdf.roundedRect(34,y,527,126,5,5,'F');pdf.setTextColor(180,35,53);pdf.setFont(undefined,'bold');pdf.setFontSize(14);if(typeof pdf.textWithLink==='function')pdf.textWithLink('LIVE UPDATE',50,y+27,{url:String(ctx.live_update_url||'')});else pdf.text('LIVE UPDATE',50,y+27);pdf.setTextColor(20,24,30);pdf.setFont(undefined,'normal');pdf.setFontSize(8.5);const liveLines=pdf.splitTextToSize(String(ctx.live_update_url||'—'),385);pdf.text(liveLines,50,y+50);pdf.setFontSize(8);pdf.text(pdf.splitTextToSize('APPX to actual cutting updates automatically. Partial receipt stays live; fully received + confirmed becomes CLOSE REQUIREMENT.',385),50,y+87);
+ if(qrDataUrl){try{pdf.addImage(qrDataUrl,'PNG',455,y+13,88,88);if(typeof pdf.link==='function')pdf.link(455,y+13,88,88,{url:String(ctx.live_update_url||'')})}catch(e){console.warn('PDF LIVE UPDATE QR skipped',e)}}y+=150;
+
+ if(colourRows.length){
+  y=ensure(y,70);pdf.setTextColor(20,24,30);pdf.setFont(undefined,'bold');pdf.setFontSize(12);pdf.text('COLOUR-WISE PCS · '+String(ctx.colour_projection?.mode||'APPX'),34,y);y+=13;
+  const x=[34,135,245,300,355,410,495],w=[101,110,55,55,55,85,66],heads=['Set / Profile','Colour','Appx','Actual PCS','Use PCS','Required','Delta'];
+  const drawHead=()=>{pdf.setFillColor(37,43,54);pdf.rect(34,y,527,24,'F');pdf.setTextColor(255,255,255);pdf.setFont(undefined,'bold');pdf.setFontSize(7.5);heads.forEach((h,i)=>pdf.text(h,x[i]+4,y+16));pdf.setTextColor(20,24,30);y+=24};
+  drawHead();
+  for(const row of colourRows){
+   const cells=[String(row.profile_label||('S'+(row.set_no||'—'))),String(row.colour_name||('C'+(row.colour_no||''))),Number(row.appx_pcs||0).toFixed(0),row.actual_pcs==null?'—':Number(row.actual_pcs||0).toFixed(0),Number(row.effective_pcs||0).toFixed(0),requirementQtyText(row.required_qty||0,row.unit||unit),row.difference_qty==null?'—':Number(row.difference_qty||0).toFixed(unit==='KG'?3:0)];
+   const split=cells.map((v,i)=>pdf.splitTextToSize(v,w[i]-8)),h=Math.max(27,...split.map(v=>v.length*9+9));if(y+h>790){y=newPage();pdf.setFont(undefined,'bold');pdf.setFontSize(12);pdf.text('COLOUR-WISE PCS · CONTINUED',34,y);y+=13;drawHead()}
+   pdf.setFillColor(String(row.source_mode||'APPX')==='ACTUAL'?238:251,String(row.source_mode||'APPX')==='ACTUAL'?248:248,String(row.source_mode||'APPX')==='ACTUAL'?242:239);pdf.rect(34,y,527,h,'F');pdf.setFont(undefined,'normal');pdf.setFontSize(7.3);split.forEach((v,i)=>pdf.text(v,x[i]+4,y+12));pdf.setDrawColor(225,228,232);pdf.line(34,y+h,561,y+h);y+=h
+  }
+  const totals=requirementProjectionTotals(ctx);y=ensure(y,32);pdf.setFont(undefined,'bold');pdf.setFontSize(8);pdf.text('TOTAL',38,y+17);pdf.text(Number(totals.appx_pcs||0).toFixed(0),249,y+17);pdf.text(Number(totals.actual_pcs||0)>0?Number(totals.actual_pcs).toFixed(0):'—',304,y+17);pdf.text(Number(totals.effective_pcs||0).toFixed(0),359,y+17);pdf.text(requirementQtyText(totals.effective_required_qty||0,unit),414,y+17);y+=30
+ }
+
+ y=ensure(y,50);y+=12;pdf.setDrawColor(225,228,232);pdf.line(34,y,561,y);y+=24;pdf.setFont(undefined,'bold');pdf.setFontSize(12);pdf.text('AVAILABLE THUMBNAILS',34,y);pdf.setFont(undefined,'normal');y+=18;
+ let idx=0;for(const item of loaded){y=ensure(y,245);pdf.setFontSize(11);pdf.setFont(undefined,'bold');const label=String(item.index)+'. '+String(item.item.label||item.item.kind||'Thumbnail');pdf.text(pdf.splitTextToSize(label,510).slice(0,2),34,y);pdf.setFont(undefined,'normal');y+=25;let iw=220,ih=180;try{const props=pdf.getImageProperties(item.dataUrl),scale=Math.min(220/props.width,180/props.height);iw=props.width*scale;ih=props.height*scale;pdf.addImage(item.dataUrl,'JPEG',34,y,iw,ih);if(item.item.url&&typeof pdf.link==='function')pdf.link(34,y,iw,ih,{url:String(item.item.url)})}catch(e){console.warn('PDF thumbnail skipped',e)}if(item.item.url){pdf.setTextColor(180,35,53);if(typeof pdf.textWithLink==='function')pdf.textWithLink('OPEN ORIGINAL IMAGE',270,y+16,{url:String(item.item.url)});else pdf.text('OPEN ORIGINAL IMAGE',270,y+16);pdf.setTextColor(20,24,30)}y+=Math.max(ih,40)+28;idx++}
+ if(!idx){pdf.setFontSize(11);pdf.text('No linked thumbnail is available.',34,y)}
+ const pages=pdf.getNumberOfPages();for(let p=1;p<=pages;p++){pdf.setPage(p);pdf.setFontSize(8.5);pdf.setTextColor(100,105,115);pdf.text('R'+Number(ctx.revision_no||1)+' · '+new Date().toLocaleString('en-IN')+' · Snapshot · Page '+p+'/'+pages,34,pageH-24)}
  const blob=pdf.output('blob');return new File([blob],base+'.pdf',{type:'application/pdf'})
 }
 function downloadRequirementShareFile(file){const a=document.createElement('a');a.href=URL.createObjectURL(file);a.download=file.name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1400)}
-async function markDerivedRequirementShared(type,sourceId){
- const r=await sb().rpc('rr_cb_requirement_send_v1',{p_cb_id:cbId,p_requirement_type:type,p_source_id:sourceId});if(r.error)throw r.error;await loadDerivedRequirements(false);return r.data||{}
-}
+function requirementCanShareFile(file){try{return !!navigator.share&&!!file&&(!navigator.canShare||navigator.canShare({files:[file]}))}catch(_){return false}}
+async function copyRequirementLiveUpdate(value){try{await navigator.clipboard?.writeText('LIVE UPDATE: '+value);return true}catch(_){return false}}
 async function sendDerivedRequirementWhatsApp(type,sourceId,button){
- await flushFieldAutosave();if(!confirm('WhatsApp requirement share करना है?'))return;
- const old=button?.textContent;if(button){button.disabled=true;button.textContent='PREPARING FILES…'}
+ await flushFieldAutosave();if(!confirm('Requirement receipt share sheet खोलना है? WhatsApp और contact आप खुद चुनेंगे.'))return;
+ const old=button?.textContent;let handoffComplete=false;if(button){button.disabled=true;button.textContent='PREPARING RECEIPT…'}
  try{
-   const cr=await sb().rpc('rr_cb_requirement_share_context_v1',{p_cb_id:cbId,p_requirement_type:type,p_source_id:sourceId});if(cr.error)throw cr.error;
-   const ctx=cr.data||{},caption=requirementShareCaption(ctx),loaded=await requirementShareVisuals(ctx),report=await requirementReportJpegFile(ctx,loaded),pdf=await requirementReportPdfFile(ctx,loaded,report.base),thumbFiles=loaded.map(x=>x.file),allFiles=[report.file,...(pdf?[pdf]:[]),...thumbFiles];
-   let shareFiles=allFiles;
-   if(navigator.canShare&&!navigator.canShare({files:shareFiles})){shareFiles=[report.file,...(pdf?[pdf]:[])];if(!navigator.canShare({files:shareFiles}))shareFiles=[report.file]}
+   const cr=await sb().rpc('rr_cb_requirement_receipt_context_v2',{p_cb_id:cbId,p_requirement_type:type,p_source_id:sourceId});if(cr.error)throw cr.error;
+   const ctx=cr.data||{},defaultNote=requirementDefaultShortNote(ctx),noteInput=prompt('Receipt Short Note',defaultNote);if(noteInput===null){setMessage('Requirement receipt share cancel हुई.');return}
+   const shortNote=requirementShortNote(noteInput,ctx),lr=await sb().rpc('rr_cb_requirement_live_link_v1',{p_cb_id:cbId,p_requirement_type:type,p_source_id:sourceId,p_short_note:shortNote});if(lr.error)throw lr.error;
+   ctx.short_note=shortNote;ctx.live_update_label='LIVE UPDATE';ctx.live_update_url=requirementLiveUpdateUrl(lr.data?.short_code);
+   const caption=requirementShareCaption(ctx,shortNote),loaded=await requirementShareVisuals(ctx),qr=await requirementQrDataUrl(ctx.live_update_url),report=await requirementReportJpegFile(ctx,loaded,shortNote,qr),pdf=await requirementReportPdfFile(ctx,loaded,report.base,shortNote,qr),candidates=[pdf,report.file].filter(Boolean),receiptFile=candidates.find(requirementCanShareFile)||null;
    try{sessionStorage.setItem('RR_CB_WHATSAPP_RETURN_V1',JSON.stringify({href:location.href,scrollY:window.scrollY,cbId,at:Date.now()}))}catch(_){}
-   if(navigator.share&&(!navigator.canShare||navigator.canShare({files:shareFiles}))){
+   if(receiptFile){
      if(button)button.textContent='CHOOSE WHATSAPP / CONTACT';
-     try{await navigator.share({title:'CB '+String(ctx.cb_no||'')+' '+String(ctx.item_name||'Requirement'),text:caption,files:shareFiles})}
+     try{await navigator.share({title:'CB '+String(ctx.cb_no||'')+' '+String(ctx.item_name||'Requirement')+' receipt',text:'LIVE UPDATE: '+ctx.live_update_url,files:[receiptFile]})}
      catch(e){if(e?.name==='AbortError'){setMessage('WhatsApp share cancel हुई. SENT mark नहीं किया गया.');return}throw e}
-     const d=await markDerivedRequirementShared(type,sourceId);
-     setMessage((d.template_kind==='REVISED'?'Revised requirement shared':d.template_kind==='RESEND'?'Requirement reshared':'Requirement shared')+' · JPEG/PDF + '+loaded.length+' thumbnail(s)',true);
+     handoffComplete=true;
+     const eventId=requirementShareEventId(),manifest=[{name:receiptFile.name,type:receiptFile.type,size:receiptFile.size}],rr=await sb().rpc('rr_cb_requirement_receipt_record_v2',{p_cb_id:cbId,p_requirement_type:type,p_source_id:sourceId,p_share_event_id:eventId,p_snapshot_token:ctx.snapshot_token,p_format:receiptFile.type==='application/pdf'?'PDF':'JPG',p_caption:caption,p_files:manifest});
+     if(rr.error){setMessage('Receipt share हो गई, लेकिन SENT status save नहीं हुआ. सुरक्षित रूप से RESHARE करें.');console.error('Requirement receipt record',rr.error);return}
+     const d=rr.data||{};if(d.recorded===false&&d.reason==='REQUIREMENT_CHANGED'){await loadDerivedRequirements(false);setMessage('Share के दौरान requirement बदल गई. पुरानी snapshot SENT mark नहीं हुई—updated receipt फिर share करें.');return}
+     await loadDerivedRequirements(false);
+     setMessage((d.template_kind==='REVISED'?'Revised requirement receipt shared':d.template_kind==='RESEND'?'Requirement receipt reshared':'Requirement receipt shared')+' · '+receiptFile.name+' · '+loaded.length+' embedded thumbnail(s)',true);
      return;
    }
-   allFiles.forEach(downloadRequirementShareFile);
-   window.open('https://api.whatsapp.com/send?text='+encodeURIComponent(caption),'_blank','noopener');
-   await markDerivedRequirementShared(type,sourceId);
-   setMessage('JPEG/PDF + thumbnails download हुए · WhatsApp contact list खुल रही है; files attach करके भेजें.',true)
- }catch(e){console.error('Requirement WhatsApp share',e);setMessage(friendlyUserError(e,'WhatsApp JPEG/PDF requirement share तैयार नहीं हो सकी.'))}finally{if(button){button.disabled=false;button.textContent=old}}
+   const fallbackFile=pdf||report.file;downloadRequirementShareFile(fallbackFile);
+   const copied=await copyRequirementLiveUpdate(ctx.live_update_url);
+   setMessage('Single requirement receipt download हुई. WhatsApp में यही one file manually attach करें'+(copied?' · LIVE UPDATE link copied':'')+'; SENT mark नहीं किया गया.')
+ }catch(e){console.error('Requirement WhatsApp share',e);setMessage(handoffComplete?'Receipt share हो गई, लेकिन system status save नहीं हुआ. RESHARE करें.':friendlyUserError(e,'WhatsApp JPG/PDF requirement receipt तैयार नहीं हो सकी.'))}finally{if(button){button.disabled=false;button.textContent=old}}
 }
 
 const CB_COMBO_MASTER_META={

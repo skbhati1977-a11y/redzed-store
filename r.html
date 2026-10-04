@@ -1,1 +1,135 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>REAL FACTORY · Rate Review</title><style>body{margin:0;background:#090b10;color:#f4f6fb;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}.wrap{max-width:760px;margin:0 auto;padding:18px}.card{border:1px solid #2a303c;border-radius:12px;background:#131720;padding:16px;margin:12px 0}.k{color:#ffd76a;font-weight:800;font-size:13px}.muted{color:#a9afbd}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px}.stat{border:1px solid #2a303c;border-radius:10px;padding:10px;background:#0e1118}.stat b{display:block;font-size:22px}input,button{width:100%;box-sizing:border-box;border-radius:10px;border:1px solid #343b49;background:#080a0f;color:#fff;padding:13px;font:inherit}button{background:#e91f37;border:0;font-weight:900;margin-top:10px}.ok{background:#148553}.imgs{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px}.imgs img{width:100%;height:160px;object-fit:cover;border-radius:10px;border:1px solid #2a303c}.msg{font-weight:800;color:#ff8090;white-space:pre-wrap}.msg.ok{color:#62df91;background:transparent}.hide{display:none}</style></head><body><main class="wrap"><div class="k">REAL FACTORY</div><h1>Final Rate Review</h1><p class="muted">WhatsApp approval link se rate suggestion/final approval.</p><section id="login" class="card hide"><h2>Login Required</h2><p class="muted">Is review link ko open karne ke liye same authorized account se login karein.</p><input id="email" type="email" placeholder="Email"><input id="password" type="password" placeholder="Password"><button id="loginBtn">LOGIN & OPEN REVIEW</button></section><section id="review" class="card hide"><div class="k" id="role"></div><h2 id="lot">Lot</h2><div class="grid"><div class="stat"><span>Qty</span><b id="qty">-</b></div><div class="stat"><span>Mapped Costing Rate</span><b id="sourceRate">-</b></div><div class="stat"><span>Sales Suggestion</span><b id="salesRate">-</b></div><div class="stat"><span>Admin Suggestion</span><b id="adminRate">-</b></div></div><h3>Final Photos</h3><div id="imgs" class="imgs"></div><div id="action" class="card"></div></section><p id="msg" class="msg"></p></main><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script>const SUPABASE_URL='https://hruartsemierwhtzonei.supabase.co';const SUPABASE_ANON_KEY='sb_publishable_uo3dcrFuRvGsvRzPcdTV0A_5ZVwgzga';const sb=supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});const $=id=>document.getElementById(id);const token=decodeURIComponent((location.hash||'').replace(/^#/,''));function money(v){return v==null||v===''?'-':'₹'+Number(v).toLocaleString('en-IN')}function show(t,c){$('msg').textContent=t||'';$('msg').className='msg '+(c||'')}async function rpc(name,args){const {data,error}=await sb.rpc(name,args);if(error)throw error;return data}async function load(){show('');if(!token)throw Error('Approval token missing');let ctx;try{ctx=await rpc('rr_pack_rate_token_context_v9346',{p_token:token})}catch(e){if(/Login required/i.test(String(e.message||e))){$('login').classList.remove('hide');$('review').classList.add('hide');return}throw e}$('login').classList.add('hide');$('review').classList.remove('hide');$('role').textContent=(ctx.recipient_name||'')+' · '+String(ctx.recipient_role||ctx.current_role||'').toUpperCase();$('lot').textContent='Lot: '+ctx.lot_no+' · '+ctx.status;$('qty').textContent=Number(ctx.qty||0).toLocaleString('en-IN');$('sourceRate').textContent=money(ctx.source_rate);$('salesRate').textContent=money(ctx.sales_suggested_rate);$('adminRate').textContent=money(ctx.admin_suggested_rate);$('imgs').innerHTML=(ctx.image_urls||[]).map(u=>'<img src="'+String(u).replace(/"/g,'&quot;')+'" alt="Final garment photo">').join('')||'<p class="muted">No final photos found.</p>';if(ctx.can_approve){$('action').innerHTML='<h3>Super Admin Final Approval</h3><input id="rate" type="number" min="1" step="1" placeholder="Final rate"><button class="ok" id="approve">APPROVE FINAL RATE</button>';$('approve').onclick=approve}else if(ctx.can_suggest){$('action').innerHTML='<h3>Rate Suggestion</h3><input id="rate" type="number" min="1" step="1" placeholder="Suggested rate"><button id="suggest">SUBMIT SUGGESTION</button>';$('suggest').onclick=suggest}else{$('action').innerHTML='<p class="muted">Aapke role ke liye action available nahi hai.</p>'}}async function suggest(){try{const r=Number($('rate').value||0);if(!r)throw Error('Rate fill karein');await rpc('rr_pack_rate_token_suggest_v9346',{p_token:token,p_suggested_rate:r});show('Suggestion saved. Link used ho gaya.','ok');$('action').innerHTML=''}catch(e){show(e.message||String(e))}}async function approve(){try{const r=Number($('rate').value||0);if(!r)throw Error('Final rate fill karein');await rpc('rr_pack_rate_token_approve_v9346',{p_token:token,p_final_rate:r});show('Final rate approved. Packing page refresh karein.','ok');$('action').innerHTML=''}catch(e){show(e.message||String(e))}}$('loginBtn').onclick=async()=>{try{show('Login ho raha hai...');const {error}=await sb.auth.signInWithPassword({email:$('email').value.trim(),password:$('password').value});if(error)throw error;await load()}catch(e){show(e.message||String(e))}};load().catch(e=>show(e.message||String(e)));</script></body></html>
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="robots" content="noindex,nofollow,noarchive">
+  <meta name="referrer" content="no-referrer">
+  <meta http-equiv="Cache-Control" content="no-store">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'unsafe-inline'; connect-src https://hruartsemierwhtzonei.supabase.co; img-src https: data:; font-src data:; base-uri 'none'; form-action 'none'">
+  <title>REDZED · LIVE UPDATE</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    :root{color-scheme:light;--red:#b42335;--ink:#171a21;--muted:#687080;--line:#e4e7ec;--paper:#fff;--soft:#f6f7f9;--green:#18794e;--amber:#946200}
+    *{box-sizing:border-box}
+    body{margin:0;background:#eef0f3;color:var(--ink);font:15px/1.45 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+    main{width:min(980px,100%);margin:0 auto;min-height:100vh;background:var(--paper);box-shadow:0 0 40px #1112}
+    header{padding:24px clamp(18px,5vw,46px);background:var(--red);color:#fff;display:flex;justify-content:space-between;gap:18px;align-items:center}
+    .brand{font-size:29px;font-weight:900;letter-spacing:.06em}.receipt{font-size:12px;font-weight:800;opacity:.88;letter-spacing:.1em}
+    .state{white-space:nowrap;border:1px solid #fff7;border-radius:999px;padding:9px 13px;font-size:12px;font-weight:900;letter-spacing:.06em}
+    body.closed header{background:var(--green)}
+    .body{padding:24px clamp(18px,5vw,46px) 42px}
+    .notice{border:1px solid #efc5cb;background:#fff7f8;border-radius:14px;padding:16px 18px;margin-bottom:20px}
+    body.closed .notice{border-color:#b9dfcc;background:#f0faf5}
+    .notice strong{display:block;color:var(--red);font-size:18px;margin-bottom:4px}body.closed .notice strong{color:var(--green)}
+    .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));border:1px solid var(--line);border-radius:14px;overflow:hidden}
+    .field{padding:13px 15px;border-bottom:1px solid var(--line);min-width:0}.field:nth-child(odd){border-right:1px solid var(--line)}
+    .field.full{grid-column:1/-1;border-right:0}.key{display:block;color:var(--muted);font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;margin-bottom:4px}.value{font-weight:750;overflow-wrap:anywhere}
+    section{margin-top:25px}h2{font-size:16px;margin:0 0 10px}.tag{display:inline-block;border-radius:999px;padding:4px 9px;background:#f5ecee;color:var(--red);font-size:11px;font-weight:850;margin-left:7px}
+    .receipt-progress{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.metric{background:var(--soft);border-radius:12px;padding:13px}.metric b{display:block;font-size:19px}.metric span{color:var(--muted);font-size:11px;font-weight:750}
+    .table-wrap{overflow:auto;border:1px solid var(--line);border-radius:14px}table{width:100%;min-width:760px;border-collapse:collapse}th,td{padding:10px 11px;border-bottom:1px solid var(--line);text-align:left;vertical-align:middle}th{background:#252b36;color:#fff;font-size:11px;letter-spacing:.04em}td.num{text-align:right;font-variant-numeric:tabular-nums}.actual{background:#f0faf5}.appx{background:#fffbf1}
+    .colour{display:flex;align-items:center;gap:9px}.colour img{width:38px;height:38px;object-fit:cover;border-radius:8px;border:1px solid var(--line)}
+    .mode{font-size:10px;font-weight:900;border-radius:999px;padding:4px 7px;background:#e8ebef}.actual .mode{background:#d9f2e5;color:var(--green)}
+    footer{margin-top:24px;color:var(--muted);font-size:12px;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+    .error{padding:38px 20px;text-align:center}.error h1{font-size:21px}.hidden{display:none!important}
+    @media(max-width:600px){header{align-items:flex-start}.state{white-space:normal;text-align:center}.grid{grid-template-columns:1fr}.field,.field:nth-child(odd){border-right:0}.field.full{grid-column:auto}.receipt-progress{grid-template-columns:1fr}.brand{font-size:24px}}
+  </style>
+</head>
+<body>
+<main>
+  <header>
+    <div><div class="brand">REDZED</div><div class="receipt">REQUIREMENT SLIP PROJECTION</div></div>
+    <div class="state" id="stateLabel">LIVE UPDATE</div>
+  </header>
+  <div class="body" id="content">
+    <div class="notice"><strong id="noticeTitle">LIVE UPDATE</strong><span id="noticeText">Latest requirement loading…</span></div>
+    <div class="grid" id="details">
+      <div class="field"><span class="key">CB No</span><span class="value" id="cbNo">—</span></div>
+      <div class="field"><span class="key">Receipt</span><span class="value" id="receiptNo">—</span></div>
+      <div class="field full"><span class="key">Item</span><span class="value" id="item">—</span></div>
+      <div class="field full"><span class="key">Set / Profile</span><span class="value" id="profiles">—</span></div>
+      <div class="field"><span class="key">Appx PCS</span><span class="value" id="appxPcs">—</span></div>
+      <div class="field"><span class="key">Cutting PCS</span><span class="value" id="cuttingPcs">—</span></div>
+      <div class="field"><span class="key">Required Qty</span><span class="value" id="requiredQty">—</span></div>
+      <div class="field"><span class="key">Revision</span><span class="value" id="revision">—</span></div>
+      <div class="field"><span class="key">Mode</span><span class="value" id="mode">—</span></div>
+      <div class="field"><span class="key">Supplier</span><span class="value" id="supplier">—</span></div>
+      <div class="field full"><span class="key">Short Note</span><span class="value" id="note">—</span></div>
+    </div>
+
+    <section>
+      <h2>Receipt confirmation</h2>
+      <div class="receipt-progress">
+        <div class="metric"><span>Required</span><b id="fulfilRequired">—</b></div>
+        <div class="metric"><span>Fully received / confirmed</span><b id="fulfilReceived">—</b></div>
+        <div class="metric"><span>Open balance</span><b id="fulfilBalance">—</b></div>
+      </div>
+    </section>
+
+    <section id="colourSection">
+      <h2>Colour-wise PCS <span class="tag" id="projectionMode">APPX</span></h2>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Set / Profile</th><th>Colour</th><th>Appx PCS</th><th>Actual PCS</th><th>Use PCS</th><th>Required</th><th>Difference</th><th>Source</th></tr></thead>
+        <tbody id="colourRows"></tbody>
+      </table></div>
+    </section>
+    <footer><span>Read-only supplier slip · no app access</span><span id="updatedAt">Waiting for first update…</span></footer>
+  </div>
+  <div class="error hidden" id="error"><h1>Link unavailable</h1><p>This LIVE UPDATE link is invalid, revoked, or no longer available.</p></div>
+</main>
+<script>
+(function(){
+  'use strict';
+  const URL_VALUE='https://hruartsemierwhtzonei.supabase.co';
+  const KEY_VALUE='sb_publishable_uo3dcrFuRvGsvRzPcdTV0A_5ZVwgzga';
+  const token=String(new URLSearchParams(location.search).get('k')||'').trim().toUpperCase();
+  const client=window.supabase.createClient(URL_VALUE,KEY_VALUE,{auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false},global:{headers:{'X-Client-Info':'redzed-live-requirement-slip-v1'}}});
+  const byId=id=>document.getElementById(id);
+  const set=(id,value)=>{byId(id).textContent=value==null||value===''?'—':String(value)};
+  const number=(value,digits)=>Number(value||0).toFixed(digits);
+  const qty=(value,unit)=>{const u=String(unit||'PCS').toUpperCase();return number(value,u==='KG'?3:0)+' '+u};
+  const time=value=>{try{return new Intl.DateTimeFormat('en-IN',{dateStyle:'medium',timeStyle:'medium',timeZone:'Asia/Kolkata'}).format(new Date(value))}catch(_){return String(value||'—')}};
+  let busy=false,lastGood=false,timer=null;
+
+  function renderRows(data){
+    const body=byId('colourRows');body.replaceChildren();
+    const rows=Array.isArray(data.colour_projection?.rows)?data.colour_projection.rows:[];
+    byId('colourSection').classList.toggle('hidden',!rows.length);
+    rows.forEach(row=>{
+      const tr=document.createElement('tr');tr.className=String(row.source_mode||'APPX')==='ACTUAL'?'actual':'appx';
+      const add=(value,className)=>{const td=document.createElement('td');if(className)td.className=className;td.textContent=value;tr.appendChild(td);return td};
+      add(row.profile_label||('S'+(row.set_no||'—')));
+      const colour=add('');colour.className='colour';
+      if(row.thumbnail_url){const img=document.createElement('img');img.src=row.thumbnail_url;img.alt='';img.loading='lazy';img.referrerPolicy='no-referrer';colour.appendChild(img)}
+      const name=document.createElement('span');name.textContent=row.colour_name||('C'+(row.colour_no||''));colour.appendChild(name);
+      add(number(row.appx_pcs,0),'num');add(row.actual_pcs==null?'—':number(row.actual_pcs,0),'num');add(number(row.effective_pcs,0),'num');add(qty(row.required_qty,row.unit||data.unit),'num');add(row.difference_qty==null?'—':number(row.difference_qty,String(data.unit).toUpperCase()==='KG'?3:0),'num');
+      const source=add('');const badge=document.createElement('span');badge.className='mode';badge.textContent=row.source_mode||'APPX';source.appendChild(badge);body.appendChild(tr)
+    })
+  }
+
+  function render(data){
+    lastGood=true;byId('content').classList.remove('hidden');byId('error').classList.add('hidden');
+    const closed=Boolean(data.closed),label=closed?'CLOSE REQUIREMENT':'LIVE UPDATE',unit=String(data.unit||'PCS').toUpperCase(),fulfil=data.fulfilment||{};
+    document.body.classList.toggle('closed',closed);document.title='REDZED · '+label;
+    set('stateLabel',label);set('noticeTitle',label);
+    set('noticeText',closed?'Purchase fully received and confirmed. This requirement is retired; no further supply is required.':fulfil.status==='PARTIAL'?'Partial receipt confirmed. The open balance and cutting projection will continue updating automatically.':'This read-only slip refreshes automatically as actual cutting is mapped.');
+    set('cbNo',data.cb_no);set('receiptNo',data.receipt_no);set('item',[data.item_no,data.item_name].filter(Boolean).join(' · '));set('profiles',(data.profile_labels||[]).filter(Boolean).join(', '));set('appxPcs',number(data.appx_pcs,0));set('cuttingPcs',Number(data.cutting_pcs||0)>0?number(data.cutting_pcs,0):'—');set('requiredQty',qty(data.required_qty,unit));set('revision','R'+Number(data.revision_no||1));set('mode',data.mode);set('supplier',data.supplier_name);set('note',data.short_note);
+    set('fulfilRequired',qty(fulfil.required_qty??data.required_qty,unit));set('fulfilReceived',qty(fulfil.received_qty,unit)+(fulfil.fully_received_confirmed?' ✓':''));set('fulfilBalance',qty(fulfil.balance_qty??data.required_qty,unit));
+    set('projectionMode',data.projection_mode||'APPX');set('updatedAt','Updated '+time(data.updated_at)+' · checked '+time(new Date().toISOString()));renderRows(data)
+  }
+
+  async function refresh(){
+    if(busy||document.hidden)return;busy=true;
+    try{
+      if(!/^[A-F0-9]{20}$/.test(token))throw new Error('INVALID_LINK');
+      const result=await client.rpc('rr_cb_requirement_live_projection_v1',{p_short_code:token});if(result.error)throw result.error;render(result.data||{})
+    }catch(error){
+      console.warn('LIVE UPDATE',error);if(!lastGood){byId('content').classList.add('hidden');byId('error').classList.remove('hidden')}
+      else set('updatedAt','Update delayed · retrying automatically')
+    }finally{busy=false}
+  }
+  refresh();timer=setInterval(refresh,10000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)refresh()});window.addEventListener('online',refresh,{passive:true});window.addEventListener('beforeunload',()=>clearInterval(timer),{once:true})
+})();
+</script>
+</body>
+</html>
