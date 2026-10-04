@@ -26,16 +26,16 @@
   async function send(){
     const lots=selectedLots();
     if(!lots.length)return flash('SELECT AT LEAST ONE LOT');
-    if(!customerId)return flash('CUSTOMER IDENTITY MISSING');
     const button=$('sendChatBtn');
     try{
       if(button){button.disabled=true;button.textContent='UPDATING COLLECTION…';}
       const result=await RF853.rpc('rr_direct_collection_send_v9684',{
         p_chat_id:chatId,
-        p_customer_id:customerId,
+        // The authenticated backend resolves missing identity from this chat.
+        p_customer_id:customerId||null,
         p_lots:lots,
         p_requirement_id:appendRequirementId||null,
-        p_origin:location.origin
+        p_origin:new URL(window.RR_CUSTOMER_SHARE_BASE||'https://redzed-customer-collection.jggfab2011.chatgpt.site/').origin
       });
       if(!result?.token||!result?.collection_cycle_id)throw Error('COLLECTION UPDATE FAILED');
       try{
