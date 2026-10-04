@@ -40,10 +40,14 @@
         RF853.rpc("rr_collection_current_state_v9633", { p_token: token }),
         RF853.rpc("rr_collection_customer_requirement_summary_v9637", { p_token: token }),
       ]);
-      paint(state, hasRequirement(summary));
+      paint(state, hasRequirement(summary) && Number(state.collection_update_no||0) <= Number(state.requirement_response_collection_update_no ?? -1));
     } catch (error) { console.warn("V9675 cycle state unavailable", error); }
   }
   function bind() {
+    document.addEventListener("rr:v71-cycle-state", ({detail:state}) => {
+      const response=Number(state?.requirement_response_collection_update_no ?? -1);
+      paint(state,response>=0 && response>=Number(state?.collection_update_no||0));
+    });
     document.addEventListener("rr:v9605-requirement-sent", () => setTimeout(refresh, 120));
     document.addEventListener("rr:v9630-customer-closed", () => closeActiveUi(last?.state));
     document.addEventListener("click", (event) => {
