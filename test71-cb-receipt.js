@@ -1,11 +1,11 @@
-/* TEST71 Receipt V2. File preparation and sharing are deliberately separate clicks. */
+/* TEST71 Receipt V2.1 — RECEIPT_SINGLE_ATTACHMENT_V21. One requirement, one selected JPG/PDF. */
 (function(root){
 'use strict';
 const W=1080,H=1528,ink='#172333',muted='#647487',red='#b42e42';
 const $=id=>document.getElementById(id);
 const safeName=s=>String(s||'receipt').replace(/[^a-z0-9_-]+/gi,'-').slice(0,100);
 const quantity=(v,unit='PCS')=>Number(v||0).toLocaleString('en-IN',{minimumFractionDigits:unit==='KG'?3:0,maximumFractionDigits:unit==='KG'?3:0});
-const count=v=>v==null||Number(v)<=0?'—':quantity(v);
+const count=v=>v==null||v===''?'—':quantity(v);
 function eventId(){if(typeof crypto.randomUUID==='function')return crypto.randomUUID();const b=crypto.getRandomValues(new Uint8Array(16));b[6]=(b[6]&15)|64;b[8]=(b[8]&63)|128;const s=Array.from(b,n=>n.toString(16).padStart(2,'0')).join('');return [s.slice(0,8),s.slice(8,12),s.slice(12,16),s.slice(16,20),s.slice(20)].join('-')}
 const encoder=new TextEncoder();
 const bytes=s=>encoder.encode(s);
@@ -29,7 +29,7 @@ async function loadAsset(item,index){
  try{const res=await fetch(url,{signal:controller.signal,credentials:'omit',cache:'no-cache'});if(!res.ok)throw new Error('Reference load failed');blob=await res.blob()}finally{clearTimeout(timer)}
  if(!blob.size||blob.size>25*1024*1024)throw new Error('Reference file size unsupported: '+item.label);
  const sig=new Uint8Array(await blob.slice(0,8).arrayBuffer());
- if(String.fromCharCode(...sig.slice(0,5))==='%PDF-')return{...item,index,url,kind:item.kind||'PDF',pdf:true,blob,objectURL:URL.createObjectURL(blob),file:new File([blob],String(index+1).padStart(2,'0')+'-'+safeName(item.label)+'.pdf',{type:'application/pdf'})};
+ if(String.fromCharCode(...sig.slice(0,5))==='%PDF-')return{...item,index,url,kind:item.kind||'PDF',pdf:true,blob,pdfData:new Uint8Array(await blob.arrayBuffer()),objectURL:URL.createObjectURL(blob),file:new File([blob],String(index+1).padStart(2,'0')+'-'+safeName(item.label)+'.pdf',{type:'application/pdf'})};
  const objectURL=URL.createObjectURL(blob),img=new Image();
  try{await timeout(new Promise((resolve,reject)=>{img.onload=resolve;img.onerror=()=>reject(new Error('Image decode failed'));img.src=objectURL}),15000,'Image load timeout');if(!img.naturalWidth)throw new Error('Invalid image')}
  catch(e){URL.revokeObjectURL(objectURL);throw e}
@@ -46,7 +46,7 @@ function receiptPages(d,assets){
  function row(label,value){c.font='400 22px system-ui';const h=Math.max(34,wrap(c,value,720).length*31+10);room(h);text(c,label,64,y,185,19,false,muted);text(c,value,260,y,756,22,true);y+=h}
  y=176;row('Receipt no.',d.receipt_no);row('Prepared',new Date(d.generated_at||Date.now()).toLocaleString('en-IN'));row('Revision / Type','R'+d.revision_no+' · '+d.send_kind);
  y+=13;room(70);y=text(c,'CB '+d.cb_no,64,y,W-128,42,true)+5;
- row('Item code',d.item_no||'—');row('Item name',d.item_name||'—');row('Mode',d.fulfilment_method||'PURCHASE');if(d.supplier_name)row('Mapped supplier',d.supplier_name);
+ row('Item code',d.item_no||'—');row('Item name',d.item_name||'—');row('Mode',d.fulfilment_method||'PURCHASE');row('Supplier',d.supplier_name||'Not mapped');row('Short note',d.short_note||'Please confirm availability / making status.');
  y+=8;room(210);c.fillStyle='#f9eef1';c.fillRect(64,y,W-128,97);text(c,'REQUIRED QUANTITY',84,y+31,480,18,true,red);text(c,quantity(d.required_qty,d.unit)+' '+d.unit,84,y+77,W-168,38,true);y+=130;
  text(c,'APPX PCS',64,y,300,19,false,muted);text(c,'CUTTING PCS',405,y,300,19,false,muted);text(c,'DIFFERENCE',744,y,260,19,false,muted);
  text(c,quantity(d.appx_pcs),64,y+42,300,33,true);text(c,count(d.cutting_pcs),405,y+42,300,33,true);
@@ -63,8 +63,16 @@ function receiptPages(d,assets){
 function detailPage(d,a){const page=canvasPage(),c=page.c;head(page,d,true);let y=text(c,(a.index+1)+'. '+a.label,64,184,W-128,27,true)+20;fitImage(c,a,64,y,W-128,H-260-y);text(c,'← BACK TO RECEIPT',64,H-147,440,22,true,red);page.links.push({x:64,y:H-175,w:440,h:47,toSummary:true});text(c,'OPEN ORIGINAL ↗',600,H-147,420,22,true,red);page.links.push({x:600,y:H-175,w:420,h:47,url:a.url});return page}
 /* PDF 1.4: UTF-8 canvas text is rasterized once; thumbnails have local GoTo links.
    No CDN PDF library, no background text-only fallback, no external image dependency. */
-function pdfBytes(pages){
- const objects=[null,bytes('<< /Type /Catalog /Pages 2 0 R >>'),null];const ids=[];
+function pdfBytes(pages,embedded=[]){
+ const objects=[null,null,null];const ids=[],embeddedIds=new Map(),names=[];
+ for(const asset of embedded){
+  const streamId=objects.length;objects.push(join([bytes('<< /Type /EmbeddedFile /Subtype /application#2Fpdf /Length '+asset.pdfData.length+' >>\nstream\n'),asset.pdfData,bytes('\nendstream')]));
+  const fileId=objects.length,name=String(asset.index+1).padStart(2,'0')+'-'+safeName(asset.label)+'.pdf';
+  const hex=Array.from(bytes(name),b=>b.toString(16).padStart(2,'0')).join('');
+  objects.push(bytes('<< /Type /Filespec /F <'+hex+'> /EF << /F '+streamId+' 0 R >> >>'));
+  embeddedIds.set(asset.index,fileId);names.push('<'+hex+'> '+fileId+' 0 R');
+ }
+ objects[1]=bytes('<< /Type /Catalog /Pages 2 0 R'+(names.length?' /Names << /EmbeddedFiles << /Names ['+names.join(' ')+'] >> >>':'')+' >>');
  for(let i=0;i<pages.length;i++){ids.push(objects.length);objects.push(null,null,null)}
  objects[2]=bytes('<< /Type /Pages /Count '+pages.length+' /Kids ['+ids.map(id=>id+' 0 R').join(' ')+'] >>');
  for(let i=0;i<pages.length;i++){
@@ -72,6 +80,7 @@ function pdfBytes(pages){
   for(const link of page.links||[]){const rect=[link.x, H-link.y-link.h,link.x+link.w,H-link.y].map(v=>(v*595.28/W).toFixed(3)).join(' ');let action='';
    if(Number.isInteger(link.page)&&ids[link.page])action='/Dest ['+ids[link.page]+' 0 R /Fit]';
    else if(link.url){const url=safeURL(link.url);if(url)action='/A << /S /URI /URI <'+Array.from(bytes(url),b=>b.toString(16).padStart(2,'0')).join('')+'> >>'}
+   if(embeddedIds.has(link.embedded)){annots.push(objects.length);objects.push(bytes('<< /Type /Annot /Subtype /FileAttachment /Rect ['+rect+'] /FS '+embeddedIds.get(link.embedded)+' 0 R /Name /Paperclip >>'));continue}
    if(!action)continue;annots.push(objects.length);objects.push(bytes('<< /Type /Annot /Subtype /Link /Rect ['+rect+'] /Border [0 0 0] '+action+' >>'));
   }
   const pw=595.28,ph=H*pw/W,stream=bytes('q '+pw+' 0 0 '+ph.toFixed(3)+' 0 0 cm /Im0 Do Q');
@@ -83,25 +92,28 @@ function pdfBytes(pages){
  for(let i=1;i<objects.length;i++){offsets[i]=offset;const part=join([bytes(i+' 0 obj\n'),objects[i],bytes('\nendobj\n')]);parts.push(part);offset+=part.length}
  const xref=offset;parts.push(bytes('xref\n0 '+objects.length+'\n0000000000 65535 f \n'+offsets.slice(1).map(o=>String(o).padStart(10,'0')+' 00000 n \n').join('')+'trailer\n<< /Size '+objects.length+' /Root 1 0 R >>\nstartxref\n'+xref+'\n%%EOF\n'));return join(parts);
 }
-function caption(d){return['REDZED · Requirement Receipt',d.receipt_no,'CB '+d.cb_no+' · '+[d.item_no,d.item_name].filter(Boolean).join(' · '),'Set: '+(d.profile_labels||[]).join(', '),'Appx '+quantity(d.appx_pcs)+' PCS | Cutting '+count(d.cutting_pcs),'Required: '+quantity(d.required_qty,d.unit)+' '+d.unit,'Photos और details receipt में हैं.'].join('\n')}
+function caption(d){return['REDZED · Requirement Receipt',d.receipt_no,'CB '+d.cb_no+' · '+[d.item_no,d.item_name].filter(Boolean).join(' · '),'Set: '+(d.profile_labels||[]).join(', '),'Appx '+quantity(d.appx_pcs)+' PCS | Cutting '+count(d.cutting_pcs),'Required: '+quantity(d.required_qty,d.unit)+' '+d.unit,'Mode: '+(d.fulfilment_method||'PURCHASE')+' | Supplier: '+(d.supplier_name||'Not mapped'),'Note: '+(d.short_note||'Please confirm availability / making status.'),'Photos और details receipt में हैं.'].join('\n')}
 async function build(d,assets){
  const summaries=receiptPages(d,assets),pages=summaries.slice(),destinations=new Map(),summaryForAsset=new Map();
  summaries.forEach((p,i)=>p.links.forEach(l=>summaryForAsset.set(l.asset,i)));
  for(const a of assets){if(!a.pdf){destinations.set(a.index,pages.length);pages.push({detailAsset:a})}}
- summaries.forEach(p=>p.links.forEach(l=>{const a=assets.find(x=>x.index===l.asset);if(a?.pdf)l.url=a.url;else l.page=destinations.get(l.asset)}));
- const jpgFiles=[];
- for(let i=0;i<pages.length;i++){if(pages[i].detailAsset){const a=pages[i].detailAsset;pages[i]=detailPage(d,a);pages[i].links.forEach(l=>{if(l.toSummary)l.page=summaryForAsset.get(a.index)||0})}footer(pages[i],d,i,pages.length);const jpg=await canvasJpeg(pages[i].canvas);pages[i].jpeg=jpg.data;pages[i].blob=jpg.blob;if(i<summaries.length)jpgFiles.push(new File([jpg.blob],safeName(d.receipt_no)+'-'+String(i+1).padStart(2,'0')+'.jpg',{type:'image/jpeg'}));pages[i].canvas.width=1;pages[i].canvas.height=1;pages[i].canvas=null;pages[i].c=null}
- const pdf=new File([pdfBytes(pages)],safeName(d.receipt_no)+'.pdf',{type:'application/pdf'});
- return{summaries,pages,jpgFiles,pdf,jpgPayload:[...jpgFiles,...assets.filter(a=>!a.pdf).map(a=>a.file)],pdfPayload:[pdf,...assets.filter(a=>a.pdf).map(a=>a.file)],caption:caption(d)};
+ summaries.forEach(p=>p.links.forEach(l=>{const a=assets.find(x=>x.index===l.asset);if(a?.pdf)l.embedded=a.index;else l.page=destinations.get(l.asset)}));
+ const jpgFiles=[];let strip=null;
+ if(summaries.length*H<=16000){strip=document.createElement('canvas');strip.width=W;strip.height=summaries.length*H}
+ const stripContext=strip?.getContext('2d',{alpha:false});
+ for(let i=0;i<pages.length;i++){if(pages[i].detailAsset){const a=pages[i].detailAsset;pages[i]=detailPage(d,a);pages[i].links.forEach(l=>{if(l.toSummary)l.page=summaryForAsset.get(a.index)||0})}footer(pages[i],d,i,pages.length);const jpg=await canvasJpeg(pages[i].canvas);pages[i].jpeg=jpg.data;pages[i].blob=jpg.blob;if(i<summaries.length&&stripContext)stripContext.drawImage(pages[i].canvas,0,i*H);pages[i].canvas.width=1;pages[i].canvas.height=1;pages[i].canvas=null;pages[i].c=null}
+ if(stripContext){const jpg=await canvasJpeg(strip);jpgFiles.push(new File([jpg.blob],safeName(d.receipt_no)+'.jpg',{type:'image/jpeg'}));strip.width=1;strip.height=1}
+ const pdf=new File([pdfBytes(pages,assets.filter(a=>a.pdf))],safeName(d.receipt_no)+'.pdf',{type:'application/pdf'});
+ return{summaries,pages,jpgFiles,pdf,jpgPayload:jpgFiles,pdfPayload:[pdf],caption:caption(d)};
 }
-const state={context:null,assets:[],files:null,busy:false,pending:null,viewer:0,urls:[],returnFocus:null,generation:0};
+const state={context:null,assets:[],files:null,busy:false,pending:null,viewer:0,urls:[],returnFocus:null,generation:0,note:'Please confirm availability / making status.'};
 function message(text,kind=''){const el=$('receiptMessage');el.textContent=text;el.className=kind}
 function emit(type,extra={}){if(root.parent!==root)root.parent.postMessage({type,cb_id:state.context?.cb_id,...extra},location.origin)}
 function client(){try{if(root.parent!==root&&root.parent.location.origin===location.origin&&root.parent.supabaseClient)return root.parent.supabaseClient}catch{}return root.supabaseClient}
 async function rpc(name,args){if(root.RRReceiptClientReady)await root.RRReceiptClientReady;const c=client();if(!c?.rpc)throw new Error('Login connection उपलब्ध नहीं है. CB से receipt दोबारा खोलें.');const r=await c.rpc(name,args);if(r.error)throw r.error;return r.data}
 function args(){const q=new URLSearchParams(location.search);return{p_cb_id:q.get('cb_id'),p_requirement_type:q.get('type'),p_source_id:q.get('source_id')}}
 function fileShareSupported(files){try{const policy=document.permissionsPolicy||document.featurePolicy;if(policy?.allowsFeature&&!policy.allowsFeature('web-share'))return false;return root.isSecureContext&&typeof navigator.share==='function'&&typeof navigator.canShare==='function'&&navigator.canShare({files})}catch{return false}}
-function syncButtons(){const ready=!!state.files&&!state.busy&&!state.pending;$('shareJpg').disabled=!ready;$('sharePdf').disabled=!ready;$('shareImage').disabled=!ready;$('retryRecord').hidden=!state.pending;$('retryRecord').disabled=state.busy}
+function syncButtons(){const ready=!!state.files&&!state.busy&&!state.pending;$('shareJpg').disabled=!ready||!state.files?.jpgFiles.length;$('shortNote').disabled=state.busy||!!state.pending;$('updateReceipt').disabled=state.busy||!!state.pending;$('sharePdf').disabled=!ready;$('shareImage').disabled=!ready;$('retryRecord').hidden=!state.pending;$('retryRecord').disabled=state.busy}
 function revoke(){for(const url of state.urls)URL.revokeObjectURL(url);state.urls=[];for(const a of state.assets)if(a.objectURL)URL.revokeObjectURL(a.objectURL);state.assets=[]}
 function downloadLink(file,label){const a=document.createElement('a'),url=URL.createObjectURL(file);state.urls.push(url);a.href=url;a.download=file.name;a.textContent=label||file.name;return a}
 function render(){
@@ -120,12 +132,12 @@ async function prepare(){
  if(state.busy||state.pending)return;state.busy=true;state.files=null;syncButtons();$('retryReceipt').hidden=true;message('Receipt और सभी enrolled तस्वीरें तैयार हो रही हैं…');revoke();const generation=++state.generation;
  try{
   const p=args();if(!p.p_cb_id||!p.p_source_id||!['MATERIAL','STICKER','METAL_ID'].includes(p.p_requirement_type))throw new Error('CB से सही requirement खोलें.');
-  state.context=await rpc('rr_cb_requirement_receipt_context_v2',p);if(!state.context?.receipt_no)throw new Error('Receipt data उपलब्ध नहीं है.');
+  state.context=await rpc('rr_cb_requirement_receipt_context_v2',p);if(!state.context?.receipt_no)throw new Error('Receipt data उपलब्ध नहीं है.');state.context.short_note=state.note;$('shortNote').value=state.note;
   const items=state.context.attachments||[],loaded=new Array(items.length),errors=[];let cursor=0;
   await Promise.all(Array.from({length:Math.min(3,items.length)},async()=>{while(cursor<items.length){const i=cursor++;try{loaded[i]=await loadAsset(items[i],i)}catch(e){errors.push(items[i].label||'Reference '+(i+1));console.warn('Receipt media load',e)}}}));
   state.assets=loaded.filter(Boolean);if(errors.length)throw new Error(errors.length+' तस्वीरें load नहीं हुईं: '+errors.join(', ')+'. RETRY दबाएँ; बिना तस्वीरों के share नहीं किया गया.');
   if(generation!==state.generation)return;await document.fonts?.ready;state.files=await build(state.context,state.assets);render();
-  message('Receipt तैयार है · '+state.assets.length+' reference file(s). Thumbnail दबाकर बड़ी image देखें; फिर SHARE JPG या SHARE PDF दबाएँ.'+(state.assets.some(a=>a.pdf)?' Original PDF references के लिए SHARE PDF चुनें.':''),'success');
+  message('Receipt तैयार है · '+state.assets.length+' reference file(s). Thumbnail दबाकर बड़ी image देखें; फिर SHARE JPG या SHARE PDF दबाएँ.'+(state.assets.some(a=>a.pdf)?' Original PDF references भी इसी receipt PDF में embedded हैं; attachment-capable PDF reader में खोलें.':''),'success');
  }catch(e){console.error('Receipt prepare',e);const msg=String(e?.message||'');message(/तस्वीरें load|CB से|Login connection|Receipt data/.test(msg)?msg:'Receipt तैयार नहीं हुई. Connection/Login check करके RETRY दबाएँ.','error');$('retryReceipt').hidden=false}
  finally{state.busy=false;syncButtons()}
 }
@@ -138,8 +150,8 @@ async function record(){
  try{
   const d=await rpc('rr_cb_requirement_receipt_record_v2',pending);
   if(!d.recorded){message('Files share हो गईं, लेकिन requirement इस बीच बदली है. नया receipt खोलें; पुरानी quantity को SENT नहीं किया.','error');state.pending=null;state.files=null;$('retryReceipt').hidden=false;return}
-  state.pending=null;emit('RR_CB_RECEIPT_SHARED');message('Receipt files share app को दे दी गईं · SHARE record saved. यह delivery confirmation नहीं है.','success');
- }catch(e){console.error('Receipt share record',e);message('Files share app को दे दी गईं, पर record save नहीं हुआ. RETRY SHARE RECORD दबाएँ—files दोबारा नहीं भेजी जाएँगी.','error')}
+  state.pending=null;emit('RR_CB_RECEIPT_SHARED');message('आपकी पुष्टि पर requirement SENT mark हुई. यह WhatsApp delivery confirmation नहीं है.','success');
+ }catch(e){$('retryRecord').textContent='RETRY SHARE RECORD';console.error('Receipt share record',e);message('Files share app को दे दी गईं, पर record save नहीं हुआ. RETRY SHARE RECORD दबाएँ—files दोबारा नहीं भेजी जाएँगी.','error')}
  finally{state.busy=false;syncButtons()}
 }
 /* Must remain synchronous until navigator.share(): no fetch, await, confirmation dialog or PDF work here. */
@@ -148,17 +160,24 @@ function share(format,singleAsset=null){
  const files=singleAsset?[singleAsset.file]:format==='PDF'?state.files.pdfPayload:state.files.jpgPayload;
  if(!fileShareSupported(files)){message('इस window में file sharing उपलब्ध नहीं है. Receipt नए browser tab में खोलें, या SAVE RECEIPT PDF से file लें. केवल text नहीं भेजा गया.','error');$('downloadOptions').open=true;return}
  state.busy=true;syncButtons();const sharedCaption=state.files.caption+(singleAsset?'\nPhoto: '+singleAsset.label:'');let promise;
- try{promise=navigator.share({files,text:sharedCaption,title:'REDZED '+state.context.receipt_no})}
+ try{promise=navigator.share({files,title:'REDZED '+state.context.receipt_no})}
  catch(e){failed(e);return}
  Promise.resolve(promise).then(()=>{
   state.busy=false;
   if(singleAsset){message('Reference file share app को दी गई. पूरी receipt का SENT count नहीं बदला.','success');syncButtons();return}
   state.pending={...args(),p_share_event_id:eventId(),p_snapshot_token:state.context.snapshot_token,p_format:format,p_caption:sharedCaption,p_files:files.map(f=>({name:f.name,type:f.type,size:f.size}))};
-  record();
+  $('retryRecord').textContent='भेज दिया · OK';message('Share-picker से लौट आए. Receipt WhatsApp पर भेज दी हो तो भेज दिया · OK करें. अभी SENT mark नहीं हुआ.');syncButtons();
  },failed);
  function failed(e){state.busy=false;message(e?.name==='AbortError'?'Share cancel हुई. SENT count नहीं बढ़ा.':'File share नहीं खुली. दोबारा Share दबाएँ या receipt नए tab में खोलें; SENT नहीं किया गया.',e?.name==='AbortError'?'':'error');syncButtons()}
 }
+async function updateNote(){
+ if(state.busy||state.pending||!state.context)return;state.busy=true;syncButtons();
+ try{state.context.short_note=state.note;await document.fonts?.ready;state.files=await build(state.context,state.assets);for(const url of state.urls)URL.revokeObjectURL(url);state.urls=[];render();message('Short note updated. तैयार receipt JPG/PDF share करें.','success')}
+ catch(e){state.files=null;message('Receipt update नहीं हुई. UPDATE RECEIPT से दोबारा कोशिश करें.','error')}
+ finally{state.busy=false;syncButtons()}
+}
 function init(){
+ $('shortNote').value=state.note;$('shortNote').oninput=()=>{state.note=$('shortNote').value;state.files=null;syncButtons();message('Note बदला है. UPDATE RECEIPT दबाएँ, फिर share करें.')};$('updateReceipt').onclick=updateNote;
  $('shareJpg').onclick=()=>share('JPG');$('sharePdf').onclick=()=>share('PDF');$('retryReceipt').onclick=prepare;$('retryRecord').onclick=record;
  $('closeReceipt').onclick=()=>{if(state.busy)return;if(root.parent!==root)emit('RR_CB_RECEIPT_CLOSE');else history.back()};
  $('closeImage').onclick=closeViewer;$('previousImage').onclick=()=>moveViewer(-1);$('nextImage').onclick=()=>moveViewer(1);$('zoomImage').onclick=()=>{$('imageStage').classList.toggle('zoomed');$('zoomImage').textContent=$('imageStage').classList.contains('zoomed')?'FIT IMAGE':'ZOOM 2×'};

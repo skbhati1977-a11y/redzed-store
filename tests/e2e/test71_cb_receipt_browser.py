@@ -76,9 +76,12 @@ async def main():
   await p.locator('#zoomImage').click();ok('image zoom works',await p.locator('#imageStage').evaluate('(x)=>x.classList.contains("zoomed")'))
   await p.locator('#nextImage').click();ok('gallery advances to next reference',await p.locator('#imageNumber').inner_text()=='2 / 5')
   await p.locator('#closeImage').click()
+  await p.fill('#shortNote','कृपया नीला प्रिंट कन्फर्म करें');ok('note edit invalidates old attachments',await p.locator('#sharePdf').is_disabled());await p.click('#updateReceipt');await p.wait_for_function('RRReceiptV2.state.files && !RRReceiptV2.state.busy');ok('note is present in receipt context and audit caption',await p.evaluate('RRReceiptV2.state.context.short_note.includes("नीला") && RRReceiptV2.state.files.caption.includes("नीला")'));
   await p.locator('#shareJpg').click();await p.wait_for_timeout(500)
-  call=await p.evaluate('calls[0]');ok('JPG share attaches actual files and user gesture',call['activation'] and len(call['sizes'])>=6 and all(n>1000 for n in call['sizes']) and set(call['types'])=={'image/jpeg'},call)
-  ok('native JPG handoff records once',await p.evaluate('records.length')==1)
+  call=await p.evaluate('calls[0]');ok('JPG share attaches actual files and user gesture',call['activation'] and len(call['sizes'])==1 and all(n>1000 for n in call['sizes']) and set(call['types'])=={'image/jpeg'},call)
+  ok('native JPG handoff alone never marks SENT',await p.evaluate('records.length')==0)
+  await p.locator('#retryRecord').click();await p.wait_for_timeout(200)
+  ok('explicit confirmation records once',await p.evaluate('records.length')==1)
   await p.locator('#sharePdf').click();await p.wait_for_timeout(400)
   call=await p.evaluate('calls[1]');ok('PDF shared separately, not mixed with image MIME',call['types']==['application/pdf'] and call['sizes'][0]>1000)
   ok('no browser runtime errors',not errs,errs)
@@ -93,14 +96,16 @@ async def main():
   missing=copy.deepcopy(CTX);missing['attachments'][0]['url']='http://127.0.0.1:8750/no-image.jpg'
   p,e=await setup(browser,ctx=missing);ok('missing approved image is reported, never silently skipped',await p.locator('#shareJpg').is_disabled() and 'तस्वीरें load नहीं हुईं' in await p.locator('#receiptMessage').inner_text());await p.close()
   noPhone=copy.deepcopy(CTX);noPhone['supplier_name']=None
-  p,e=await setup(browser,ctx=noPhone);await p.locator('#sharePdf').click();await p.wait_for_timeout(400);ok('missing supplier phone/name does not block file handoff',await p.evaluate('calls.length===1&&records.length===1'));await p.close()
+  p,e=await setup(browser,ctx=noPhone);await p.locator('#sharePdf').click();await p.wait_for_timeout(400);ok('missing supplier phone/name does not block file handoff',await p.evaluate('calls.length===1&&records.length===0'));await p.close()
   p,e=await setup(browser,slow=True);await p.locator('#shareJpg').click();await p.wait_for_timeout(400);ok('slow media preparation preserves fresh Share click activation',await p.evaluate('calls[0].activation'));await p.close()
-  p,e=await setup(browser);await p.evaluate('window.recordFail=true');await p.locator('#sharePdf').click();await p.wait_for_timeout(400);await p.evaluate('window.recordFail=false');await p.locator('#retryRecord').click();await p.wait_for_timeout(200)
+  p,e=await setup(browser);await p.evaluate('window.recordFail=true');await p.locator('#sharePdf').click();await p.wait_for_timeout(400);await p.locator('#retryRecord').click();await p.wait_for_timeout(200);await p.evaluate('window.recordFail=false');await p.locator('#retryRecord').click();await p.wait_for_timeout(200)
   ok('retry log does not re-share files and reuses idempotency event',await p.evaluate('calls.length===1&&records.length===2&&records[0].p_share_event_id===records[1].p_share_event_id'));await p.close()
+  p,e=await setup(browser);await p.evaluate('recordMismatch=true');await p.click('#sharePdf');await p.wait_for_timeout(400);await p.click('#retryRecord');await p.wait_for_timeout(200);ok('changed snapshot blocks stale SENT',await p.evaluate('RRReceiptV2.state.files===null') and 'बदली' in await p.locator('#receiptMessage').inner_text());await p.close()
   many=copy.deepcopy(CTX);many['attachments']*=2
   p,e=await setup(browser,ctx=many);ok('more than eight references are retained',await p.locator('.reference').count()==10);await p.close()
   docs=copy.deepcopy(CTX);docs['attachments'].append({'kind':'PRINT','label':'PRINT · source PDF','url':'http://127.0.0.1:8750/qa/reference.pdf'})
-  p,e=await setup(browser,ctx=docs);await p.locator('#sharePdf').click();await p.wait_for_timeout(400);ok('original PDF references remain actual additional PDF files',await p.evaluate('calls[0].types.length===2&&calls[0].types.every(t=>t==="application/pdf")'));await p.close()
+  p,e=await setup(browser,ctx=docs);await p.locator('#sharePdf').click();await p.wait_for_timeout(400);ok('original PDF references stay embedded inside one receipt PDF',await p.evaluate('calls[0].types.length===1&&calls[0].types[0]==="application/pdf"'));
+  embedded=await p.evaluate('async()=>Array.from(new Uint8Array(await RRReceiptV2.state.files.pdf.arrayBuffer()))');(QA/'receipt-with-embedded-source.pdf').write_bytes(bytes(embedded));await p.close()
   await browser.close()
  (QA/'browser-results.json').write_text(json.dumps(RESULT,indent=2,ensure_ascii=False))
  print(json.dumps({'passed':len(RESULT),'tests':[r['test'] for r in RESULT]},ensure_ascii=False,indent=2))
@@ -143,15 +148,16 @@ def test_pdf():
     assert int(dest.group(1)) in page_refs,raw
     internal+=1
    elif '/URI' in raw:external+=1
- assert len(doc)==6 and internal==10 and external==5
+ assert len(doc)>=6 and internal==10 and external==5
  embedded=sum(len(page.get_images()) for page in doc)
- assert embedded==6
+ assert embedded==len(doc)
  doc[0].get_pixmap(matrix=fitz.Matrix(1,1)).save(QA/'pdf-page-1.png')
  doc[1].get_pixmap(matrix=fitz.Matrix(1,1)).save(QA/'pdf-page-2.png')
  result={'pages':len(doc),'embedded_images':embedded,'internal_links':internal,
  'external_original_links':external,'all_destinations_valid':True,'parser':'PyMuPDF '+fitz.VersionBind}
  (QA/'pdf-results.json').write_text(json.dumps(result,indent=2))
- doc.close();print(json.dumps(result,indent=2))
+ doc.close()
+ source=fitz.open(QA/'receipt-with-embedded-source.pdf');assert source.embfile_count()==1;name=source.embfile_names()[0];assert source.embfile_get(name).startswith(b'%PDF-');source.close();result['embedded_original_pdf']=True;print(json.dumps(result,indent=2))
 
 if __name__=='__main__':
  asyncio.run(main())

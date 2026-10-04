@@ -6,23 +6,24 @@
 <title>REDZED · Requirement Receipt</title>
 <link rel="stylesheet" href="test71-cb-receipt.css?v=2">
 <script defer src="test71-cb-receipt-client.js?v=2"></script>
-<script defer src="test71-cb-receipt.js?v=2"></script>
+<script defer src="test71-cb-receipt.js?v=2.1"></script>
 </head>
 <body>
 <main id="receiptApp">
 <header class="toolbar"><div><b>REDZED · Order Receipt</b><small id="receiptIdentity">Receipt V2 · तैयार हो रही है…</small></div><button id="closeReceipt" type="button" aria-label="Back to CB">×</button></header>
 <p id="receiptMessage" role="status" aria-live="polite">Receipt और जुड़ी हुई तस्वीरें तैयार हो रही हैं…</p>
+<label class="hint" for="shortNote">Short note</label><textarea id="shortNote" maxlength="180" rows="2" style="display:block;width:100%;margin:6px 0 10px;font:inherit"></textarea><button id="updateReceipt" type="button" class="secondary">UPDATE RECEIPT</button>
 <div class="actions" aria-label="Receipt sharing">
-<button id="shareJpg" type="button" disabled>SHARE JPG + PHOTOS</button>
+<button id="shareJpg" type="button" disabled>SHARE JPG RECEIPT</button>
 <button id="sharePdf" type="button" disabled>SHARE PDF</button>
 <button id="retryReceipt" type="button" class="secondary" hidden>RETRY</button>
-<button id="retryRecord" type="button" class="secondary" hidden>RETRY SHARE RECORD</button>
+<button id="retryRecord" type="button" class="secondary" hidden>भेज दिया · OK</button>
 </div>
-<p class="hint">पहले receipt देखें। फिर Share दबाकर WhatsApp और contact/group चुनें। Thumbnail दबाएँ → बड़ी image।</p>
+<p class="hint">एक requirement = एक receipt. JPG या PDF चुनें → WhatsApp → contact/group खुद चुनें. PDF thumbnail → embedded बड़ी image; JPG एक flat image है.</p>
 <div id="receiptPages" aria-label="Receipt preview"></div>
 <section id="referenceSection" hidden><h2>तस्वीरें / Reference files</h2><div id="referenceGrid"></div></section>
 <details id="downloadOptions" hidden><summary>Save JPG / PDF या अलग browser में खोलें</summary><div id="downloadFiles"></div><a id="openFullReceipt" target="_blank" rel="noopener">OPEN RECEIPT IN A NEW TAB</a><p class="hint">File sharing unavailable होने पर receipt save करें। यहाँ से केवल text भेजकर सफल नहीं बताया जाएगा।</p></details>
-<footer class="footnote">Requirement slip only · Payment receipt / tax invoice नहीं है। Share status का अर्थ file handoff है, WhatsApp delivery confirmation नहीं।</footer>
+<footer class="footnote">Requirement slip only · Payment receipt / tax invoice नहीं है। SENT केवल भेज दिया · OK की पुष्टि पर; WhatsApp delivery confirmation नहीं।</footer>
 </main>
 <dialog id="imageViewer" aria-label="Full image viewer"><header><button id="closeImage" type="button" aria-label="Close image">×</button><strong id="imageTitle"></strong></header><div id="imageStage"></div><nav><button id="previousImage" type="button">‹ पिछली</button><span id="imageNumber"></span><button id="nextImage" type="button">अगली ›</button></nav><div class="viewerActions"><button id="zoomImage" type="button">ZOOM 2×</button><a id="originalImage" target="_blank" rel="noopener">OPEN ORIGINAL</a><button id="shareImage" type="button">SHARE IMAGE</button></div></dialog>
 </body></html>

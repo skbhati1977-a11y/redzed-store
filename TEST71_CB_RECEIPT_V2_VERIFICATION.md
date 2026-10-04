@@ -56,3 +56,10 @@ python tests/e2e/test71_cb_receipt_browser.py
 ## Verification boundary
 
 These are focused browser/renderer/router tests, not a full-repository regression run. Positive authenticated end-to-end RPC calls and actual WhatsApp attachment receipt on the user's Android device were not exercised by this environment. The backend schema/media queries and execute permissions were checked without impersonating a user. Native chooser availability, target app behavior and final delivery must not be inferred from a Vercel deployment status or a successful mocked share test.
+
+
+## V2.1 convergence — 2026-10-04
+
+The concurrent V2 viewer/router and authorized media/audit RPCs are retained. One requirement now shares exactly one selected JPG or PDF. JPG consolidates all summary pages; very long slips offer PDF rather than truncating images. Original PDF references are embedded as file attachments within the receipt PDF, not extra WhatsApp files. Supplier is always shown, and the editable short note rebuilds both files. Native share success no longer auto-marks SENT: the user must press भेज दिया · OK. Download/cancel alone do not mark SENT.
+
+Executed after convergence: 22 receipt/browser checks, 7 router checks, PDF embedding/link validation and retained projection gate passed. Full static suite: 305 total, 219 passed, 86 pre-existing failures, zero newly failing test names versus f94298028c720cd6538892da36350a28e7a2538e. This is not a full TEST71 release approval or evidence of delivery to an actual Android WhatsApp recipient.
