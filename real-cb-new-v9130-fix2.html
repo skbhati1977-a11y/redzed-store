@@ -385,7 +385,9 @@ async function requirementReportPdfFile(ctx,loaded,base,shortNote,qrDataUrl){
  pdf.setFontSize(10.5);for(const [label,value] of details){const lines=pdf.splitTextToSize(String(value),390);y=ensure(y,Math.max(18,lines.length*13+5));pdf.setFont(undefined,'bold');pdf.text(label,34,y);pdf.setFont(undefined,'normal');pdf.text(lines,145,y);y+=Math.max(18,lines.length*13+5)}
 
  y=ensure(y,142);y+=8;pdf.setFillColor(248,242,244);pdf.roundedRect(34,y,527,126,5,5,'F');pdf.setTextColor(180,35,53);pdf.setFont(undefined,'bold');pdf.setFontSize(14);if(typeof pdf.textWithLink==='function')pdf.textWithLink('LIVE UPDATE',50,y+27,{url:String(ctx.live_update_url||'')});else pdf.text('LIVE UPDATE',50,y+27);pdf.setTextColor(20,24,30);pdf.setFont(undefined,'normal');pdf.setFontSize(8.5);const liveLines=pdf.splitTextToSize(String(ctx.live_update_url||'—'),385);pdf.text(liveLines,50,y+50);pdf.setFontSize(8);pdf.text(pdf.splitTextToSize('APPX to actual cutting updates automatically. Partial receipt stays live; fully received + confirmed becomes CLOSE REQUIREMENT.',385),50,y+87);
- if(qrDataUrl){try{pdf.addImage(qrDataUrl,'PNG',455,y+13,88,88);if(typeof pdf.link==='function')pdf.link(455,y+13,88,88,{url:String(ctx.live_update_url||'')})}catch(e){console.warn('PDF LIVE UPDATE QR skipped',e)}}y+=150;
+ if(qrDataUrl){try{pdf.addImage(qrDataUrl,'PNG',455,y+13,88,88)}catch(e){console.warn('PDF LIVE UPDATE QR skipped',e)}}
+ if(ctx.live_update_url&&typeof pdf.link==='function')pdf.link(34,y,527,126,{url:String(ctx.live_update_url)});
+ y+=150;
 
  if(colourRows.length){
   y=ensure(y,70);pdf.setTextColor(20,24,30);pdf.setFont(undefined,'bold');pdf.setFontSize(12);pdf.text('COLOUR-WISE PCS · '+String(ctx.colour_projection?.mode||'APPX'),34,y);y+=13;
@@ -417,7 +419,7 @@ async function sendDerivedRequirementWhatsApp(type,sourceId,button){
    const ctx=cr.data||{},defaultNote=requirementDefaultShortNote(ctx),noteInput=prompt('Receipt Short Note',defaultNote);if(noteInput===null){setMessage('Requirement receipt share cancel हुई.');return}
    const shortNote=requirementShortNote(noteInput,ctx),lr=await sb().rpc('rr_cb_requirement_live_link_v1',{p_cb_id:cbId,p_requirement_type:type,p_source_id:sourceId,p_short_note:shortNote});if(lr.error)throw lr.error;
    ctx.short_note=shortNote;ctx.live_update_label='LIVE UPDATE';ctx.live_update_url=requirementLiveUpdateUrl(lr.data?.short_code);
-   const caption=requirementShareCaption(ctx,shortNote),loaded=await requirementShareVisuals(ctx),qr=await requirementQrDataUrl(ctx.live_update_url),report=await requirementReportJpegFile(ctx,loaded,shortNote,qr),pdf=await requirementReportPdfFile(ctx,loaded,report.base,shortNote,qr),candidates=[pdf,report.file].filter(Boolean),receiptFile=candidates.find(requirementCanShareFile)||null;
+   const caption=requirementShareCaption(ctx,shortNote),loaded=await requirementShareVisuals(ctx),qr=await requirementQrDataUrl(ctx.live_update_url),report=await requirementReportJpegFile(ctx,loaded,shortNote,qr),receiptFile=requirementCanShareFile(report.file)?report.file:null;
    try{sessionStorage.setItem('RR_CB_WHATSAPP_RETURN_V1',JSON.stringify({href:location.href,scrollY:window.scrollY,cbId,at:Date.now()}))}catch(_){}
    if(receiptFile){
      if(button)button.textContent='CHOOSE WHATSAPP / CONTACT';
@@ -431,7 +433,7 @@ async function sendDerivedRequirementWhatsApp(type,sourceId,button){
      setMessage((d.template_kind==='REVISED'?'Revised requirement receipt shared':d.template_kind==='RESEND'?'Requirement receipt reshared':'Requirement receipt shared')+' · '+receiptFile.name+' · '+loaded.length+' embedded thumbnail(s)',true);
      return;
    }
-   const fallbackFile=pdf||report.file;downloadRequirementShareFile(fallbackFile);
+   downloadRequirementShareFile(report.file);
    const copied=await copyRequirementLiveUpdate(ctx.live_update_url);
    setMessage('Single requirement receipt download हुई. WhatsApp में यही one file manually attach करें'+(copied?' · LIVE UPDATE link copied':'')+'; SENT mark नहीं किया गया.')
  }catch(e){console.error('Requirement WhatsApp share',e);setMessage(handoffComplete?'Receipt share हो गई, लेकिन system status save नहीं हुआ. RESHARE करें.':friendlyUserError(e,'WhatsApp JPG/PDF requirement receipt तैयार नहीं हो सकी.'))}finally{if(button){button.disabled=false;button.textContent=old}}
