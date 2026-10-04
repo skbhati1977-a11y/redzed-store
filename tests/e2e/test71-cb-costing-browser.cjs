@@ -1,0 +1,61 @@
+const {chromium}=require('@playwright/test');
+const assert=require('node:assert/strict');
+const fs=require('node:fs');
+const path=require('node:path');
+const http=require('node:http');
+let base;
+const mock=`
+window.__mappingCalls=[];
+const materials=[{material_id:'box',material_name:'Box',consumption_unit:'PCS'},{material_id:'button',material_name:'Button',consumption_unit:'PCS'}];
+const rows=[{id:'future',material_id:'box',consumption_method:'WORKER_ACTUAL',consume_department_code:'PACKING',effective_from:'2029-01-01',is_active:true},{id:'current',material_id:'box',consumption_method:'WORKER_ACTUAL',consume_department_code:'PACKING',effective_from:'2026-09-27',is_active:true},{id:'button',material_id:'button',consumption_method:'WORKER_ACTUAL',consume_department_code:'KAJ_BUTTON',effective_from:'2026-09-27',is_active:true}];
+const chain={select(){return this},eq(){return this},order(){return this},limit(){return Promise.resolve({data:[],error:null})}};
+window.supabaseClient={from(){return Object.create(chain)},rpc:async(name,args)=>{window.__mappingCalls.push({name,args});let data={};if(name==='rr_material_purchase_bootstrap_v805_1')data={materials,material_types:[],ledgers:[],categories:[{category_code:'SELF-COLLAR',category_name:'Self Collar'}]};if(name==='rr_unit_master_list_v606')data=[{unit_code:'PCS',unit_name:'Pieces'}];if(name==='rr_upm_effective_identity_v200')data={role_code:'SUPER_ADMIN'};if(name==='rr_material_mapping_list_v656')data={rows};return {data,error:null}}};
+window.RR={getClient:()=>window.supabaseClient,requireRoles:async()=>({profile:{full_name:'Test',role_code:'super_admin'},user:{}})};
+`;
+(async()=>{
+ const root=path.resolve(__dirname,'../..');
+ const server=http.createServer((req,res)=>{
+  const file=path.join(root,new URL(req.url,'http://localhost').pathname);
+  if(!file.startsWith(root+path.sep)||!fs.existsSync(file)){res.writeHead(404);return res.end();}
+  res.setHeader('Content-Type',file.endsWith('.js')?'application/javascript':file.endsWith('.html')?'text/html':'text/plain');
+  res.end(fs.readFileSync(file));
+ });
+ await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
+ base='http://127.0.0.1:'+server.address().port;
+ const browser=await chromium.launch({headless:true});
+ const page=await browser.newPage({viewport:{width:390,height:844}});
+ const errors=[];page.on('pageerror',e=>errors.push(e.message));
+ page.on('dialog',d=>d.dismiss());
+ await page.route('**/*',route=>{
+  const url=new URL(route.request().url());
+  if(url.origin!==base)return route.fulfill({body:'',contentType:'application/javascript'});
+  if(url.pathname==='/config.js')return route.fulfill({body:mock,contentType:'application/javascript'});
+  if(url.pathname==='/real-common.js')return route.fulfill({body:'',contentType:'application/javascript'});
+  return route.continue();
+ });
+ const returnPath='/real-cb-new-v9130-fix2.html?cb_no=1011#setDecisionCard';
+ await page.goto(base+'/real-material-master-v853.html?view=costing-mapping&return='+encodeURIComponent(returnPath)+'#bomModal');
+ await page.waitForFunction(()=>document.querySelector('#bomModal')&&!document.querySelector('#bomModal').classList.contains('hidden'));
+ assert.ok(page.url().includes('real-material-master-v805.html?view=costing-mapping'));
+ assert.equal(new URL(page.url()).hash,'#bomModal');
+ assert.equal(await page.locator('#mappingReturn').getAttribute('href'),base+returnPath);
+ await page.selectOption('#bomMaterial','box');
+ await page.waitForFunction(()=>document.querySelector('#bomMethod').value==='WORKER_ACTUAL');
+ assert.equal(await page.locator('#bomDepartment').inputValue(),'PACKING');
+ assert.equal(await page.locator('#bomDate').inputValue(),'2026-09-27');
+ await page.selectOption('#bomMaterial','button');
+ await page.waitForFunction(()=>document.querySelector('#bomMsg').textContent.includes('Saved WORKER'));
+ assert.equal(await page.locator('#bomDepartment').inputValue(),'KAAJ_BTN');
+ assert.equal(await page.locator('#bomUnitWrap').isVisible(),false);
+ assert.deepEqual(errors,[]);
+ await page.screenshot({path:'/tmp/test71-costing-mapping-mobile.png'});
+ await page.locator('#mappingReturn').click();
+ await page.waitForURL('**/real-cb-new-v9130-fix2.html?cb_no=1011*');
+ await page.locator('#openCostingMapping').click();
+ await page.waitForURL('**/real-material-master-v805.html?view=costing-mapping*');
+ await page.waitForFunction(()=>!document.querySelector('#bomModal').classList.contains('hidden'));
+ assert.equal(new URL(page.url()).searchParams.get('return'),returnPath);
+ console.log('BROWSER PASS: legacy redirect, view/hash/return, auto-open, current Worker mapping, Kaaj alias, mobile modal, CB round trip');
+ await browser.close();
+ server.close();
+})().catch(e=>{console.error(e);process.exit(1)});
