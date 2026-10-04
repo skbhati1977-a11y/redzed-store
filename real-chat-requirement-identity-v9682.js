@@ -64,9 +64,12 @@
         body.prepend(meta);
       }
       const x = label(data);
-      meta.innerHTML = `<b>${esc(x.req)}</b><small>${esc(x.collection)}</small><small class="rrReqStage9682">${esc(stage(data.status))}</small>`;
+      const html = `<b>${esc(x.req)}</b><small>${esc(x.collection)}</small><small class="rrReqStage9682">${esc(stage(data.status))}</small>`;
+      // The observer also sees this sheet. Identical writes would retrigger it
+      // indefinitely and starve clicks, rendering and notification timers.
+      if (meta.innerHTML !== html) meta.innerHTML = html;
       const title = document.getElementById("rrReqTitle9508");
-      if (title) title.textContent = `📋 ${x.req}`;
+      if (title && title.textContent !== `📋 ${x.req}`) title.textContent = `📋 ${x.req}`;
       const add = document.getElementById("rrReqAdd9508");
       const pi = document.getElementById("rrReqPi9508");
       if (add) {
@@ -75,8 +78,9 @@
       }
       if (pi) {
         pi.disabled = data.can_prepare_pi === false;
-        pi.textContent = data?.pi?.status === "CI_FINAL" ? `CI FINAL · ${data.pi.ci_no || ""}` :
+        const piLabel = data?.pi?.status === "CI_FINAL" ? `CI FINAL · ${data.pi.ci_no || ""}` :
           data?.pi ? `PI CREATED · ${data.pi.pi_no || ""}` : "PREPARE PI";
+        if (pi.textContent !== piLabel) pi.textContent = piLabel;
       }
     } catch (_) {}
   }
