@@ -26,3 +26,14 @@
 Reproducible proofs: `tests/evidence/test71-cb-costing-rollback.sql`, `tests/evidence/test71-cb-costing-preservation.sql`, `tests/e2e/test71-cb-costing-compatibility.unit.test.js`, `tests/e2e/test71-cb-costing-browser.cjs`.
 
 Database migration `test71_cb_costing_mapping_authority` applied successfully and the installed proof passed. Main/production Git branch is outside this change.
+
+## Live downstream follow-up — 2026-10-04
+
+- User screenshots confirmed saved Panni ALL / 1 PCS and Button WORKER_ACTUAL / Kaaj-Button mappings load from CB 1011.
+- Fresh installed rollback proof passed. Expanded live database audit: 43 App/Chat cost contexts equal, 39 category-resolved lots pass Gatta/Panni per-piece and lot quantity × rate arithmetic, and 100 Worker/Direct assignment pending adapters agree.
+- Four old lots (2613, 2614, 2615, 2634) reference inactive Art `test 03`, which has no category. No category was invented or historical Art reassigned.
+- Found and fixed a completeness defect: final costing previously reported complete despite missing canonical BOM category/rate. Migration `test71_final_cost_bom_completeness` retains every numeric component and formula but reports incomplete with `BOM_CATEGORY_MAPPING_REQUIRED` or `BOM_PURCHASE_RATE_REQUIRED`.
+- Before/after rollback comparison: numeric cost, final rate, salary, FOC, Printing, special departments and BOM unchanged for all 43 lots; four incomplete BOMs now blocked from being labelled complete. Installed audit: zero BOM-to-final wiring, base rounding, final-rate, or false-complete errors across 43 lots.
+- Five posted TEST material consumption rows: zero quantity × purchase-rate or cost-per-piece arithmetic errors.
+- CB 1011 has no released lots yet; its final cost cannot be certified before release. Full authenticated browser/worker flow remains unverified because Cloud Browser policy blocks the Codespaces preview. This is database/API verification, not a full TEST71 release certification.
+- Reproduce expanded audit with `tests/evidence/test71-downstream-final-cost-audit.sql` inside its BEGIN/ROLLBACK transaction.
