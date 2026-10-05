@@ -399,11 +399,23 @@
       ["value", "freight", "other"].forEach((id) => ($(id).oninput = render));
       $("save").onclick = () => save(false);
       $("convertCi").onclick = () => save(true);
+      $("retryPartySend").onclick = retryPartySend;
       if (finalized) {
         $("itemEditor").hidden = true;
         document.querySelectorAll("input,textarea,button.del").forEach((el) => (el.disabled = true));
         $("save").disabled = $("convertCi").disabled = true;
         $("msg").textContent = "Finalized bill · saved discount snapshot.";
+      }
+      if (piId) {
+        try {
+          const status = await rpc("rr_pi_customer_document_test71", {
+            p_pi_id: piId,
+            p_chat_id: ctx.chat_id || new URLSearchParams(location.search).get("chat_id") || null,
+          });
+          $("retryPartySend").hidden = status?.already_sent !== false;
+        } catch (_) {
+          $("retryPartySend").hidden = false;
+        }
       }
     } catch (e) {
       $("msg").textContent = e.message;
@@ -430,9 +442,33 @@
         x.reason = r.trim();
       }
   }
+  async function sendSavedBillToParty() {
+    if (!window.RRPIReceipt71) throw Error("Receipt sender did not load. Reload and retry sending.");
+    const chat = ctx.chat_id || new URLSearchParams(location.search).get("chat_id") || null;
+    const result = await window.RRPIReceipt71.send(piId, chat, message => ($("msg").textContent = message));
+    if (!result?.sent) throw Error("Party send could not be confirmed.");
+    $("retryPartySend").hidden = true;
+    return result;
+  }
+  async function retryPartySend() {
+    if (saving || !piId) return;
+    saving = true;
+    $("retryPartySend").disabled = true;
+    try {
+      const result = await sendSavedBillToParty();
+      $("msg").textContent = result.already_sent ? "Bill already sent to party." : "JPG and details sent to party · notification queued.";
+    } catch(e) {
+      $("retryPartySend").hidden = false;
+      $("msg").textContent = "Bill saved · party send failed: " + e.message;
+    } finally {
+      saving = false;
+      $("retryPartySend").disabled = false;
+    }
+  }
   async function save(finalize = false) {
     if (saving || finalized) return;
     saving = true;
+    let billSaved = false;
     try {
       $("msg").textContent = "Revalidating stock/rate…";
       await contexts(true);
@@ -473,6 +509,17 @@
       });
       render();
       piId = res.pi_id || piId;
+      billSaved = true;
+      if (piId) {
+        const savedUrl = new URL(location.href);
+        savedUrl.searchParams.set("pi_id", piId);
+        history.replaceState(null, "", savedUrl.href);
+      }
+      if (finalize) {
+        finalized = true;
+        $("save").disabled = $("convertCi").disabled = true;
+        $("itemEditor").hidden = true;
+      }
       if (piId && !piNo) {
         piNo = await rpc("rr_pi_apply_display_no_v9540", { p_pi_id: piId });
         $("piNo").textContent = "PI No. " + piNo;
@@ -527,11 +574,14 @@
         $("piNo").textContent = `CI No. ${res.cpi_no || res.ci_no || piNo}`;
         $("save").disabled = true;
         $("msg").textContent = `CI ${res.cpi_no || res.ci_no || ""} finalised.`;
-      } else {
-        $("msg").textContent = "PI saved · mapped flow audited.";
       }
+      const sent = await sendSavedBillToParty();
+      $("msg").textContent = sent.already_sent ? "Bill saved · already sent to party." : "Bill saved · JPG and details sent to party · notification queued.";
     } catch (e) {
-      $("msg").textContent = e.message;
+      if (billSaved) {
+        $("retryPartySend").hidden = false;
+        $("msg").textContent = "Bill saved · follow-up failed: " + e.message + ". Retry Send to Party.";
+      } else $("msg").textContent = e.message;
     } finally {
       saving = false;
     }
