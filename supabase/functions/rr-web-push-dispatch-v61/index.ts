@@ -68,7 +68,7 @@ Deno.serve(async (request) => {
     if (actorKind === "STAFF") {
       const { data: allowed } = await db.from("rr_worker_directory_unified_v1").select("worker_id").eq("is_active", true).eq("access_status", "ACTIVE").in("department_code", ["sales", "accounts", "admin", "SALES", "ACCOUNTS", "ADMIN"]);
       const ids = [...new Set((allowed || []).map((item: any) => item.worker_id))];
-      if (ids.length) { const { data } = await db.from("rr_web_push_subscriptions_v61").select("*").eq("enabled", true).in("worker_id", ids); subscriptions = data || []; }
+      if (ids.length) { const { data } = await db.from("rr_web_push_subscriptions_v61").select("*").eq("enabled", true).in("worker_id", ids); const all=data||[],preferred=new Set(all.filter((x:any)=>x.device_key).map((x:any)=>String(x.worker_id)));subscriptions=all.filter((x:any)=>Boolean(x.device_key)||!preferred.has(String(x.worker_id))); }
     } else if (actorKind && actorId) {
       const { data } = await db.from("rr_web_push_subscriptions_v61").select("*").eq("enabled", true).eq("actor_kind", actorKind).eq("actor_id", actorId);
       subscriptions = data || [];
@@ -89,4 +89,3 @@ Deno.serve(async (request) => {
     return new Response(JSON.stringify({ error: String(error instanceof Error ? error.message : error) }), { status: 500, headers: { "Content-Type": "application/json" } });
   }
 });
-
