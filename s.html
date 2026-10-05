@@ -47,7 +47,7 @@
         const baseScripts = [
           "real-notification-permission-guard-v69.js?v=69",
           "real-collection-cycle-share-adapter-v9686.js?v=9686",
-          "real-customer-secure-session-addon-v9592.js?v=9680",
+          "real-customer-secure-session-addon-v9592.js?v=TEST71-REMEMBER-20261005",
           "real-customer-chat-thumbnail-cache-v51.js?v=51",
           "real-customer-chat-image-upload-v54.js?v=58instant1",
           "real-customer-fullscreen-secure-chat-v9648.js?v=TEST71-TWOWAY-TEST71-HISTORY",
@@ -103,13 +103,8 @@
                   "null",
               )?.relation;
             } catch (_) {}
-            if (
-              previousBinding !== binding ||
-              savedRelation === "DISTRIBUTOR_CUSTOMER"
-            ) {
-              localStorage.removeItem("rr_customer_secure_session_v9592");
-              localStorage.removeItem("rr_market_customer_identity_v9423");
-            }
+            // Token-scoped sessions restore independently; a new collection
+            // must not erase this device's verified customer login.
             localStorage.setItem(bindingKey, binding);
           }
           if (relation === "DISTRIBUTOR_CUSTOMER") {
