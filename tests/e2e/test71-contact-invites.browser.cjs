@@ -1,0 +1,57 @@
+const { chromium } = require('playwright');
+const assert = require('node:assert/strict');
+const path = require('node:path');
+const fs = require('node:fs');
+(async () => {
+  const browser = await chromium.launch({headless:true,args:['--no-sandbox']});
+  try {
+    const context = await browser.newContext({viewport:{width:390,height:844}});
+    await context.route('https://fixture.test/**', route => route.fulfill({contentType:'text/html',body:'<head></head><body><div id="inbox"><div class="head"></div></div><div id="flash"></div></body>'}));
+    const page = await context.newPage();
+    await page.goto('https://fixture.test/real-sales-live-chat-v9434.html?chat_id=private');
+    await page.evaluate(async () => {
+      window.supabaseClient={auth:{getSession:async()=>({data:{session:{user:{id:'auth'}}}})},from:()=>({select:()=>({eq:()=>({maybeSingle:async()=>({data:{id:'owner',role_code:'SUPER_ADMIN',is_active:true}})})})})};
+      window.inviteCalls=[];
+      window.RF853={rpc:async(name,args)=>{window.inviteCalls.push({name,args});return{token:'token-'+args.p_default_mobile,short_code:'CODE'}}};
+      window.opened=[];
+      window.open=()=>({opener:null,location:{replace:url=>window.opened.push(url)},close:()=>{}});
+      const db=await new Promise((resolve,reject)=>{const r=indexedDB.open('redzed-contact-directory-v67',1);r.onupgradeneeded=()=>r.result.createObjectStore('contacts',{keyPath:'id'});r.onsuccess=()=>resolve(r.result);r.onerror=reject});
+      const tx=db.transaction('contacts','readwrite');
+      for(let i=0;i<205;i++)tx.objectStore('contacts').put({id:'contact-'+i,ownerId:'owner',name:i===0?'<img src=x onerror=alert(1)>':'Contact '+i,numbers:[String(9000000000+i)]});
+      tx.objectStore('contacts').put({id:'duplicate',ownerId:'owner',name:'Duplicate',numbers:['+919000000000']});
+      tx.objectStore('contacts').put({id:'other',ownerId:'different-owner',name:'Other owner',numbers:['8888888888']});
+      await new Promise((resolve,reject)=>{tx.oncomplete=resolve;tx.onerror=reject});db.close();
+    });
+    await page.addScriptTag({path:path.resolve(__dirname,'../../real-chat-add-customer-test67.js')});
+    await page.locator('#rr67InviteContacts').click();
+    await page.waitForFunction(()=>document.getElementById('rr67Selection')?.textContent==='0 selected · 205 contacts');
+    assert.equal(await page.locator('#rr67DirectoryRows input[type=checkbox]').count(),100);
+    assert.equal(await page.locator('#rr67DirectoryRows img').count(),0);
+    await page.locator('#rr67DirectoryRows input[type=checkbox]').first().check();
+    await page.locator('#rr67ContactSearch').fill('Contact 204');
+    await page.locator('#rr67DirectoryRows input[type=checkbox]').check();
+    await page.locator('#rr67SendSelected').click();
+    assert.equal(await page.locator('#rr67InviteQueue > div').count(),2);
+    assert.equal(await page.evaluate(()=>window.inviteCalls.length),0);
+    await page.locator('#rr67InviteQueue button').first().click();
+    await page.waitForFunction(()=>window.opened.length===1);
+    const sent=await page.evaluate(()=>({call:window.inviteCalls[0],url:window.opened[0]}));
+    assert.equal(sent.call.name,'rr_chat_staff_create_invite_v67');
+    assert.equal(sent.call.args.p_default_mobile,'9000000000');
+    const wa=new URL(sent.url);assert.equal(wa.pathname,'/919000000000');
+    const message=wa.searchParams.get('text');assert(message.includes('token-9000000000'));assert(!message.includes('chat_id=private'));
+    await page.locator('#rr67InviteQueue button').first().click();
+    assert.equal(await page.evaluate(()=>window.inviteCalls.length),1,'reuse prepared link when sharing again');
+    await page.locator('#rr67SendAll').click();
+    assert.equal(await page.locator('#rr67InviteQueue > div').count(),205,'all ignores search and pagination');
+    assert((await page.locator('#rr67BatchNote').innerText()).includes('205'));
+    await page.evaluate(()=>{window.RF853.rpc=async()=>{throw Error('backend private error')};window.open=()=>null});
+    await page.locator('#rr67InviteQueue button').nth(2).click();
+    await page.waitForFunction(()=>document.querySelectorAll('#rr67InviteQueue small')[1].textContent.includes('दोबारा'));
+    assert(!((await page.locator('#rr67InviteQueue').innerText()).includes('backend private error')));
+    assert.equal(await page.locator('#rr67SendAll').isEnabled(),true);
+    const html=fs.readFileSync(path.resolve(__dirname,'../../real-sales-live-chat-v9434.html'),'utf8');
+    assert(html.includes('real-chat-add-customer-test67.js?v=TEST71-CONTACT-INVITES-20261005'));
+    console.log('PASS: selection, all 205, deduplication, owner isolation, escaping, separate invite, reuse, honest status, failure recovery, page wiring');
+  } finally { await browser.close(); }
+})().catch(error=>{console.error(error);process.exitCode=1});
