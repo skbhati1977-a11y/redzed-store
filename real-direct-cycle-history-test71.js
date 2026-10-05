@@ -19,6 +19,7 @@
  .rrCycleLive71 b{font-size:12px}.rrCycleLive71 small{font-size:10px;color:#a8b8ca}.rrCycleLive71 p{margin:3px 0;overflow-wrap:anywhere}
  .rrCycleLive71 .rrCycleStatus71{color:#8bd4ac;font-weight:700}.rrCycleLive71 button{border:1px solid #50647e;border-radius:7px;padding:6px 9px;background:#182535;color:#fff;font-size:11px;margin:4px 5px 0 0}
  #rrSalesCycleLive71{position:fixed;left:320px;right:0;z-index:10015;bottom:70px}
+ #msgs{min-height:0;scroll-padding-bottom:24px}#msgs>.msg{flex-shrink:0}
  #rrFSChat #fsCollectionCard{display:none!important}
  .rrCycleLive71 details{margin-top:4px}.rrCycleLive71 summary{cursor:pointer;color:#aec9e6}
  @media(max-width:760px){#rrSalesCycleLive71{left:0}}
@@ -62,7 +63,7 @@
   if(!staff)return;const host=document.getElementById('rrSalesCycleLive71'),compose=document.querySelector('.compose'),msgs=document.getElementById('msgs');
   if(!host||!compose||!msgs)return;
   const bottom=Math.max(0,innerHeight-compose.getBoundingClientRect().top);
-  host.style.bottom=bottom+'px';msgs.style.paddingBottom=(bottom+(host.hidden?0:host.offsetHeight)+18)+'px';
+  host.style.bottom=bottom+'px';const reserved=bottom+(host.hidden?0:host.offsetHeight);msgs.style.marginBottom=reserved+'px';msgs.style.paddingBottom='24px';
  }
  function paint(){
   const host=panel();if(!host)return;
@@ -74,7 +75,8 @@
   if(host._html!==html){const open=!!host.querySelector('details[open]');host.innerHTML=html;host._html=html;if(open)host.querySelector('details')?.setAttribute('open','');const sheet=document.getElementById('rrLiveDetail71');if(sheet)sheet.querySelector('section').innerHTML='<button type="button" data-live-action="close">CLOSE ×</button>'+markup(state);}
   // Consolidated workflow history lives in this dock; normal messages remain in the stream.
   document.querySelectorAll(staff?'#msgs .msg':'#fsMsgs .fsm').forEach(row=>{
-   if(staff&&row.querySelector('.rrMarketLinkCard9505,.rrReqCard9508')){row.style.setProperty('display','none','important');return;}
+   if(staff&&row.querySelector('.rrMarketLinkCard9505')){row.style.removeProperty('display');return;}
+   if(staff&&row.querySelector('.rrReqCard9508')){row.style.setProperty('display','none','important');return;}
    if(!row.dataset.rrCycle71)return;
    if(row.dataset.rrWorkflow71==='1'||['COLLECTION','REQUIREMENT','CATEGORY'].includes(row.dataset.rrWorkflow71))row.style.setProperty('display','none','important');
   });
