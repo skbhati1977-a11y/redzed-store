@@ -418,6 +418,9 @@
       $("save").onclick = () => save(false);
       $("convertCi").onclick = () => save(true);
       $("retryPartySend").onclick = retryPartySend;
+      $("resendBill").onclick = () => invoiceAction(false);
+      $("shareBill").onclick = () => invoiceAction(true);
+      $("resendBill").hidden = $("shareBill").hidden = !piId;
       $("retryDraftSave").onclick = () => save(false, true);
       if (finalized) {
         $("itemEditor").hidden = true;
@@ -426,6 +429,8 @@
         $("msg").textContent = "Finalized bill · saved discount snapshot.";
       }
       if (piId) {
+        const action=new URLSearchParams(location.search).get("invoice_action");
+        if(action){$(action==="share"?"shareBill":"resendBill").scrollIntoView?.({block:"center"});$("msg").textContent=action==="share"?"Tap SHARE JPG OUTSIDE to attach the saved bill.":"Tap RESEND to send the saved bill again.";}
         try {
           const status = await rpc("rr_pi_customer_document_test71", {
             p_pi_id: piId,
@@ -460,6 +465,16 @@
           throw Error(`${x.lot_no}: quantity exception reason required.`);
         x.reason = r.trim();
       }
+  }
+  async function invoiceAction(outside) {
+    if(saving||!piId)return;
+    if(draftNeedsSave){$("msg").textContent="Save current changes before Resend / Share.";return;}
+    saving=true;const button=$(outside?"shareBill":"resendBill");button.disabled=true;
+    try {
+      const chat=ctx.chat_id||new URLSearchParams(location.search).get("chat_id")||null;
+      const result=outside?await window.RRPIReceipt71.share(piId,chat):await window.RRPIReceipt71.send(piId,chat,m=>$("msg").textContent=m,{resend:true});
+      $("msg").textContent=outside?(result.downloaded?"JPG downloaded · attach it in your outside app.":"Outside share completed."):"Bill resent to party · notification queued.";
+    }catch(e){$("msg").textContent=e.name==="AbortError"?"Share cancelled.":e.message;}finally{saving=false;button.disabled=false;}
   }
   async function sendSavedBillToParty() {
     if (draftNeedsSave) throw Error("Current item changes need saving before sending.");
@@ -538,6 +553,7 @@
       render();
       piId = res.pi_id || piId;
       billSaved = true;
+      $("resendBill").hidden = $("shareBill").hidden = false;
       draftNeedsSave = false;
       if (piId) {
         const savedUrl = new URL(location.href);

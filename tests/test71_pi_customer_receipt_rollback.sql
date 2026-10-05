@@ -1,6 +1,6 @@
 begin;
 do $test$
-declare actor uuid; profile uuid; cid uuid; other_cid uuid; chat uuid; wrong_chat uuid; cname text:='TEST71 PI RECEIPT '||gen_random_uuid(); r jsonb; ctx jsonb; pid uuid; oldfp text; pages jsonb; rejected boolean; stock record;
+declare actor uuid; profile uuid; cid uuid; other_cid uuid; chat uuid; wrong_chat uuid; cname text:='TEST71 PI RECEIPT '||gen_random_uuid(); r jsonb; ctx jsonb; pid uuid; oldfp text; pages jsonb; rejected boolean; stock record; resend_key uuid:=gen_random_uuid(); rid uuid;
 begin
  select auth_user_id,id into actor,profile from rr_user_profiles where role_code='owner' and is_active and upper(coalesce(access_status,'ACTIVE'))='ACTIVE' limit 1;
  perform set_config('request.jwt.claim.sub',actor::text,true);
@@ -40,5 +40,25 @@ begin
  if ctx->'document'->>'document_kind'<>'CI' then raise exception 'CI receipt mislabelled'; end if;
  r:=rr_pi_customer_document_send_test71(pid,chat,ctx->>'fingerprint',jsonb_build_array(pages->0));
  if (select count(*) from rr_chat_push_outbox_v61 where chat_id=chat)<>3 then raise exception 'CI notification missing'; end if;
+-- Explicit resend creates one new notification, and retries of that request stay idempotent.
+ r:=rr_pi_customer_document_resend_test71(pid,chat,ctx->>'fingerprint',jsonb_build_array(pages->0),resend_key);
+ r:=rr_pi_customer_document_resend_test71(pid,chat,ctx->>'fingerprint','[]',resend_key);
+ if not (r->>'already_sent')::boolean or (select count(*) from rr_chat_push_outbox_v61 where chat_id=chat)<>4 then raise exception 'Resend retry duplicated push'; end if;
+ insert into rr_rci_v9740(rci_no,flow_type,linked_ci_id,buyer_id,buyer_snapshot,status,total_qty,total_amount,reason,data_mode,created_by,idempotency_key)
+ select 'TEST-RECEIPT-'||gen_random_uuid(),'COMBINED',id,buyer_id,buyer_snapshot,'POSTED',1,95,'Receipt rollback fixture','TEST',actor,gen_random_uuid()::text from rr_fg_pi_v787 where id=pid returning id into rid;
+ insert into rr_rci_lines_v9740(rci_id,serial_no,return_type,source_ci_id,source_ci_line_id,original_lot_no,stock_lot_no,category_name,size_text,total_sold_qty,previous_rci_qty,returnable_qty,rci_qty,rate,amount,stock_type,location_code,valuation_source)
+ select rid,1,'KNOWN',pid,id,lot_no,lot_no,'SHIRT','L',1,0,1,1,95,95,'REGULAR','MAIN','CI_RATE' from rr_fg_pi_lines_v787 where pi_id=pid limit 1;
+ ctx:=rr_rci_customer_document_test71(rid,chat);
+ if ctx->'document'->>'document_kind'<>'RCI' or (ctx->'document'->>'grand_total')::numeric<>95 then raise exception 'RCI wrong receipt'; end if;
+ r:=rr_rci_customer_document_send_test71(rid,chat,ctx->>'fingerprint',pages);
+ r:=rr_rci_customer_document_send_test71(rid,chat,ctx->>'fingerprint','[]');
+ if not (r->>'already_sent')::boolean or (select count(*) from rr_chat_push_outbox_v61 where chat_id=chat)<>5 then raise exception 'RCI retry / multi-page push incorrect'; end if;
+rejected:=false;
+ begin perform rr_rci_customer_document_test71(rid,wrong_chat);
+ exception when others then if sqlerrm like 'Matching party chat%' then rejected:=true; else raise; end if; end;
+ if not rejected then raise exception 'Wrong RCI party accepted'; end if;
+ update rr_rci_v9740 set linked_ci_id=null,flow_type='STANDALONE' where id=rid;
+ ctx:=rr_rci_customer_document_test71(rid,chat);
+ if (ctx->>'chat_id')::uuid<>chat or ctx->'document'->>'document_kind'<>'RCI' then raise exception 'Standalone mapping failed'; end if;
 end $test$;
 rollback;
