@@ -51,7 +51,7 @@ const fs = require('node:fs');
     assert(!((await page.locator('#rr67InviteQueue').innerText()).includes('backend private error')));
     assert.equal(await page.locator('#rr67SendAll').isEnabled(),true);
     const html=fs.readFileSync(path.resolve(__dirname,'../../real-sales-live-chat-v9434.html'),'utf8');
-    assert(html.includes('real-chat-add-customer-test67.js?v=TEST71-VCF-DEDUP-20261005'));
+    assert(html.includes('real-chat-add-customer-test67.js?v=TEST71-INVITE-SAVE-20261005'));
     console.log('PASS: selection, all 205, deduplication, owner isolation, escaping, separate invite, reuse, honest status, failure recovery, page wiring');
   } finally { await browser.close(); }
 })().catch(error=>{console.error(error);process.exitCode=1});
