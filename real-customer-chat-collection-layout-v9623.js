@@ -7,4 +7,11 @@
 #rrFSChat .fc-qty-hint{display:block!important;color:#f4e9cd!important;font-size:12px!important;line-height:1.4!important;margin-bottom:9px!important}
 #rrFSChat .fc-qty input{display:block!important;box-sizing:border-box!important;width:100%!important;max-width:100%!important;min-width:0!important;min-height:58px!important;margin:0!important;padding:12px 15px!important;border:2px solid #f2c45d!important;border-radius:10px!important;background:#0d1219!important;color:#fff!important;font-size:25px!important;line-height:1.2!important;font-weight:900!important}
 #rrFSChat .fc-qty input:focus{outline:3px solid #fff0b5!important;outline-offset:2px!important}
+
+/* Fill the existing right column through the thumbnail row. */
+#rrFSChat .fc-lot>.fc-body{display:flex!important;flex-direction:column!important;align-self:stretch!important;min-height:0!important}
+#rrFSChat .fc-body>.fc-caps{display:flex!important;flex-direction:column!important;flex:1 1 auto!important;min-height:0!important}
+#rrFSChat .fc-caps>.fc-cap{display:flex!important;flex-direction:column!important;justify-content:center!important;flex:1 1 0!important;min-height:0!important;box-sizing:border-box!important;padding:7px 3px!important}
+#rrFSChat .fc-caps>.fc-cap>span{font-size:11.5px!important;line-height:1.3!important;font-weight:800!important;color:#d7e1ed!important}
+#rrFSChat .fc-caps>.fc-cap>b{font-size:15px!important;line-height:1.3!important;font-weight:900!important;margin-top:4px!important;overflow-wrap:anywhere!important;color:#fff!important}
 `;document.head.appendChild(s)})();
