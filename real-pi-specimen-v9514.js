@@ -384,6 +384,7 @@
       isSuper = !!ac.superadmin;
       $("customer").value = ctx.customer_name || "";
       $("dispatch").value = ctx.dispatch_details || "";
+      $("value").value = +ctx.value_added_pct || 0;
       $("freight").value = +ctx.freight_amount || 0;
       $("other").value = +ctx.packing_other || 0;
       $("piDate").textContent = new Date().toLocaleDateString("en-IN");
@@ -445,23 +446,22 @@
         qty: x.qty,
         rate: x.rate,
       }));
-      const gross = lines.reduce(
-          (a, x) => a + x.qty * Math.max(0, x.rate - x.discount),
-          0,
-        ),
-        va = (gross * (+$("value").value || 0)) / 100;
+      const valuePct = Number($("value").value);
+      if (!Number.isFinite(valuePct) || valuePct < -100)
+        throw Error("Value Added % must be a number of at least -100.");
       const manual = ($("remarks").value || "").trim(),
         dispatch = [$("dispatch").value, manual && `Remarks: ${manual}`]
           .filter(Boolean)
           .join(" | ");
-      const res = await rpc("rr_fg_save_pi_party_discount_v9557", {
+      const res = await rpc("rr_fg_save_pi_value_adjustment_test71", {
         p_pi_id: piId,
         p_customer_name: ctx.customer_name,
         p_dispatch_details: dispatch,
         p_lines: payload,
         p_party_discount: isSuper && discountDirty ? partyDiscount : null,
         p_freight_amount: +$("freight").value || 0,
-        p_packing_other: (+$("other").value || 0) + va,
+        p_packing_other: +$("other").value || 0,
+        p_value_added_pct: valuePct,
         p_gst_pct: 0,
         p_finalize: finalize,
         p_data_mode: "TEST",
