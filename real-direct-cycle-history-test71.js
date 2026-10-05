@@ -114,7 +114,7 @@
    if(staff&&/rr_chat_staff_messages_v/.test(name)&&Array.isArray(data)){
     const chat=args.p_chat_id;
     setTimeout(()=>{if(chat!==chatId())return;
-     data.forEach(m=>{const row=document.querySelector('#msgs .msg[data-msg-id="'+CSS.escape(String(m.id))+'"]');if(row&&m.payload?.direct_collection_cycle_id){row.dataset.rrCycle71=m.payload.direct_collection_cycle_id;row.dataset.rrWorkflow71=m.payload.source==='DIRECT_MARKET_WINDOW'?'COLLECTION':m.payload.source==='DIRECT_CATEGORY_REQUEST_TEST71'?'CATEGORY':'REQUIREMENT';}});
+     data.forEach(m=>{const row=document.querySelector('#msgs .msg[data-msg-id="'+CSS.escape(String(m.id))+'"]');if(row&&m.payload?.direct_collection_cycle_id){row.dataset.rrCycle71=m.payload.direct_collection_cycle_id;row.dataset.rrWorkflow71=m.payload.source==='DIRECT_MARKET_WINDOW'?'COLLECTION':m.payload.source==='DIRECT_CATEGORY_REQUEST_TEST71'?'CATEGORY':m.payload.source==='DIRECT_MARKET_REQUIREMENT'?'REQUIREMENT':'';}});
      if(activeChat!==chat){state=null;paint();}refresh();
     },80);
    }
