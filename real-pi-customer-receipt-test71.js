@@ -30,10 +30,10 @@
       if(doc.gstin)text('GSTIN: '+doc.gstin,70,254,20);
       if(doc.address)wrap(doc.address,70,285,1430,20,2);
       text(`Page ${page+1} / ${count}`,1530,345,20,false,'right');
-      const widths=[55,125,345,150,175,90,115,125,145,140], labels=['Sr. No.','Image','Item Name','Size','Lot No.','QTY','Rate','Disc / PCS','Amount','Box Count'];let y=365;
+      const widths=[55,125,345,150,175,90,165,220,140], labels=['Sr. No.','Image','Item Name','Size','Lot No.','QTY','Rate','Amount','Box Count'];let y=365;
       let x=70;labels.forEach((label,i)=>{cell(x,y,widths[i],65,true);wrap(label,x+8,y+27,widths[i]-16,18,2);x+=widths[i];});y+=65;
       items.forEach((l,i)=>{const pack=Number(l.pack_pcs_per_box||0),q=Number(l.qty||0),full=pack>0?Math.floor(q/pack):0,rem=q-full*pack;
-        const vals=[page*perPage+i+1,'',l.item_name,l.size_text||'—',l.lot_no,q,money(l.net_rate),money(l.discount),money(l.amount),[full?full+' BOX':'',rem?rem+' Loose':''].filter(Boolean).join(' + ')||'—'];
+        const vals=[page*perPage+i+1,'',l.item_name,l.size_text||'—',l.lot_no,q,money(l.net_rate),money(l.amount),[full?full+' BOX':'',rem?rem+' Loose':''].filter(Boolean).join(' + ')||'—'];
         x=70;vals.forEach((v,j)=>{cell(x,y,widths[j],130);if(j!==1)wrap(v,x+8,y+35,widths[j]-16,19,3);else{const img=images.get(l.image_url);if(img)c.drawImage(img,x+8,y+8,widths[j]-16,114);else text('—',x+55,y+65,20);}x+=widths[j];});y+=130;
       });
       cell(70,y,1465,48,true);text(last?'Total':'Page Total',80,y+32,21,true);text(items.reduce((n,l)=>n+Number(l.qty||0),0),960,y+32,21,true);text(money(items.reduce((n,l)=>n+Number(l.amount||0),0)),1390,y+32,21,true,'right');y+=95;
