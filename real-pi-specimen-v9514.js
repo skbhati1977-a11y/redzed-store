@@ -473,7 +473,7 @@
     try {
       const chat=ctx.chat_id||new URLSearchParams(location.search).get("chat_id")||null;
       const result=outside?await window.RRPIReceipt71.share(piId,chat):await window.RRPIReceipt71.send(piId,chat,m=>$("msg").textContent=m,{resend:true});
-      $("msg").textContent=outside?(result.downloaded?"JPG downloaded · attach it in your outside app.":"Outside share completed."):"Bill resent to party · notification queued.";
+      $("msg").textContent=outside?(result.downloaded?"JPG downloaded · attach it in your outside app.":"Outside share completed."):"Bill resent to party · sent ✓.";
     }catch(e){$("msg").textContent=e.name==="AbortError"?"Share cancelled.":e.message;}finally{saving=false;button.disabled=false;}
   }
   async function sendSavedBillToParty() {
@@ -494,7 +494,7 @@
     $("retryPartySend").disabled = true;
     try {
       const result = await sendSavedBillToParty();
-      $("msg").textContent = result.already_sent ? "Bill already sent to party." : "JPG and details sent to party · notification queued.";
+      $("msg").textContent = result.already_sent ? "Bill already sent to party." : "JPG and details sent to party · sent ✓.";
     } catch(e) {
       $("retryPartySend").hidden = false;
       $("msg").textContent = "Bill saved · party send failed: " + e.message;
@@ -624,7 +624,7 @@
       }
       $("retryDraftSave").hidden = true;
       const sent = await sendSavedBillToParty();
-      $("msg").textContent = sent.already_sent ? "Bill saved · already sent to party." : "Bill saved · JPG and details sent to party · notification queued.";
+      $("msg").textContent = sent.already_sent ? "Bill saved · already sent to party." : "Bill saved · JPG and details sent to party · sent ✓.";
       return true;
     } catch (e) {
       if (autoDraft) {

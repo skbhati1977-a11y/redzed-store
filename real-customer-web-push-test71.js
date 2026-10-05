@@ -1,11 +1,11 @@
 (() => {
  'use strict'; if(window.__RR_CUSTOMER_WEB_PUSH71__)return;window.__RR_CUSTOMER_WEB_PUSH71__=true;
- const staff=!!document.getElementById('inboxRows');let staffToken='',busy=false;const q=new URLSearchParams(location.search),share=q.get('t')||q.get('c')||'';
+ const staff=!!document.getElementById('inboxRows');let staffToken='',busy=false,lastAttempt=0;const q=new URLSearchParams(location.search),share=q.get('t')||q.get('c')||'';
  function session(){if(staff)return staffToken?{session_token:staffToken}:null;try{const s=JSON.parse(localStorage.getItem('rr_customer_secure_session_v9592')||'null');return s?.share_token===share&&s.session_token?s:null}catch(_){return null}}
  async function api(body){const r=await fetch(SUPABASE_URL+'/functions/v1/rr-web-push-v61',{method:'POST',headers:{'Content-Type':'application/json',apikey:SUPABASE_ANON_KEY,...(staffToken?{Authorization:'Bearer '+staffToken}:{})},body:JSON.stringify(body)});const d=await r.json();if(!r.ok)throw Error(d.error||'Notifications enable नहीं हुईं');return d}
  function key(value){const str=atob(value.replace(/-/g,'+').replace(/_/g,'/'));return Uint8Array.from(str,c=>c.charCodeAt(0))}
  async function enable(gesture=false){
-  if(busy||!session())return;busy=true;const button=document.getElementById('rrCustomerPush71');
+  if(busy||!session())return;busy=true;lastAttempt=Date.now();const button=document.getElementById('rrCustomerPush71');
   try{
    if(gesture&&Notification.permission==='default')await (window.RRRequestNotificationPermissionV69?window.RRRequestNotificationPermissionV69():Notification.requestPermission());
    if(Notification.permission!=='granted')throw Error(Notification.permission==='denied'?'Browser settings में Notifications Allow करें':'नई activity की notification के लिए Allow करें');
@@ -29,6 +29,8 @@
   if(Notification.permission==='granted'){enable(false);return;}
   showButton();
  }
+ window.addEventListener('online',()=>{if(window.Notification?.permission==='granted')mount();});
+ document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&!window.__RR_CUSTOMER_PUSH_REGISTERED71__&&Date.now()-lastAttempt>30000)mount();});
  document.addEventListener('rr:customer-secure-session-ready',mount);if(staff){window.supabaseClient?.auth.getSession().then(({data})=>{staffToken=data?.session?.access_token||'';mount()}).catch(()=>{});}else mount();
  window.RRCustomerWebPush71={enable,mount};
 })();
