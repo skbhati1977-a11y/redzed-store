@@ -11,7 +11,9 @@
     isSuper = false,
     discountDirty = false,
     saving = false,
-    finalized = false;
+    finalized = false,
+    partyDiscount = null,
+    editingItem = null;
   try {
     ctx = JSON.parse(sessionStorage.getItem("rr_pi_requirement_v9514") || "{}");
   } catch (_) {}
@@ -57,9 +59,9 @@
       );
     } catch (_) {}
   }
-  async function contexts(preserve = true) {
+  async function contexts(preserve = true, items = lines) {
     await Promise.all(
-      lines.map(async (x) => {
+      items.map(async (x) => {
         try {
           const c = await rpc("rr_pi_lot_context_v9517", {
             p_lot_no: x.lot_no,
@@ -81,6 +83,7 @@
           }
           x.allowed = +c.allowed_discount || 0;
           if (!discountDirty && !finalized) x.discount = x.allowed;
+          x.category = c.category || x.category || "";
           x.available = +c.available_qty || 0;
           x.box = +c.pack_pcs_per_box || 0;
           x.rate_path = c.rate_path || "NONE";
@@ -102,6 +105,65 @@
       }),
     );
   }
+  function setPartyDiscount(value) {
+    if (!isSuper || finalized || saving) return;
+    if (!Number.isFinite(value) || value < 0 || value > 10) {
+      $("msg").textContent = "Party discount must be between ₹0 and ₹10 per piece.";
+      return;
+    }
+    partyDiscount = value;
+    discountDirty = true;
+    lines.forEach((line) => (line.discount = value));
+  }
+  function resetItemEditor() {
+    editingItem = null;
+    $("itemLot").value = $("itemQty").value = "";
+    $("itemStockType").value = "REGULAR";
+    $("addItem").textContent = "ADD ITEM";
+    $("cancelItemEdit").hidden = true;
+    $("itemEditorMessage").textContent = "";
+  }
+  async function addOrReplaceItem() {
+    if (saving || finalized) return;
+    const lot = $("itemLot").value.trim().toUpperCase();
+    const qty = Number($("itemQty").value);
+    const stockType = $("itemStockType").value;
+    const index = editingItem;
+    if (!/^[A-Z0-9][A-Z0-9._/-]*$/.test(lot) || !Number.isSafeInteger(qty) || qty < 1) {
+      $("itemEditorMessage").textContent = "Enter a valid lot number and whole PCS qty greater than zero.";
+      return;
+    }
+    if (lines.some((x,i) => i !== index && x.lot_no.trim().toUpperCase() === lot && (x.stock_type || "REGULAR") === stockType)) {
+      $("itemEditorMessage").textContent = "This lot already exists. Use EDIT / REPLACE to change its PCS qty.";
+      return;
+    }
+    saving = true;
+    $("addItem").disabled = true;
+    $("itemEditorMessage").textContent = "Checking lot, stock and approved rate…";
+    try {
+      const old = index === null ? null : lines[index];
+      const sameLot = old && old.lot_no.trim().toUpperCase() === lot && (old.stock_type || "REGULAR") === stockType;
+      const candidate = { ...(sameLot ? old : {}), lot_no: lot, qty, stock_type: stockType, discount: partyDiscount ?? 0 };
+      await contexts(!!sameLot, [candidate]);
+      if (candidate.context_error) throw Error(candidate.context_error);
+      if (candidate.available < qty) throw Error(`${lot}: only ${candidate.available} PCS available.`);
+      candidate.discount = discountDirty ? partyDiscount : candidate.allowed;
+      if (!discountDirty) {
+        partyDiscount = candidate.allowed;
+        lines.forEach((line) => (line.discount = partyDiscount));
+      }
+      if (sameLot && old.qty !== qty) delete candidate.reason;
+      if (index === null) lines.push(candidate); else lines[index] = candidate;
+      resetItemEditor();
+      render();
+      $("itemEditorMessage").textContent = index === null ? "Item added." : "Item updated.";
+    } catch(e) {
+      $("itemEditorMessage").textContent = e.message;
+    } finally {
+      saving = false;
+      $("addItem").disabled = false;
+    }
+  }
   function exceptions() {
     return lines.filter((x) => x.box > 0 && x.qty % x.box !== 0);
   }
@@ -117,6 +179,12 @@
   function render() {
     let gross = 0,
       q = 0;
+    partyDiscount = lines[0]?.discount ?? partyDiscount ?? 0;
+    $("partyDiscount").value = partyDiscount;
+    $("partyDiscount").readOnly = !isSuper || finalized;
+    $("discountHelp").textContent = finalized ? "Saved bill discount" : isSuper
+      ? "Applies equally to every item. Saving this bill updates the party default for future bills."
+      : "Approved party discount · automatically applied to every item";
     $("rows").innerHTML = lines
       .map((x, i) => {
         x.qty = +x.qty || 0;
@@ -130,7 +198,7 @@
           qtyWarn = x.qty > x.available,
           boxWarn = x.box > 0 && x.qty % x.box !== 0,
           delta = (x.rate - x.approved) * x.qty;
-        return `<tr><td>${i + 1}</td><td>${x.image ? `<img class="pic" src="${x.image}">` : "👕"}</td><td><b>${x.lot_no}</b></td><td>${x.category || ""}</td><td>${x.size || ""}</td><td><input class="num qty ${boxWarn || qtyWarn ? "alter" : ""}" data-i="${i}" value="${x.qty}" type="number" min="1">${qtyWarn ? `<div class="warn">Stock ${x.available}</div>` : ""}</td><td>${x.box || "—"}</td><td>${boxResult(x)}</td><td><input class="num rate ${rateAlt ? "alter" : ""}" data-i="${i}" value="${x.rate}" type="number" min="0"><div class="muted">Approved ${money(x.approved)}${x.customerRate != null ? ` · Customer-Lot ${money(x.customerRate)}` : ""}</div></td><td><input class="num disc" data-i="${i}" value="${x.discount}" type="number" min="0" ${isSuper ? "" : "readonly"}><div class="muted">Party ${money(x.allowed)}</div></td><td>${money(x.net)}</td><td>${money(x.amount)}</td><td class="rrq"><div>Available ${money(x.rrqAvailable)}</div><div>This PI ${(delta >= 0 ? "+" : "") + money(delta)}</div><b>Balance ${money(x.rrqAvailable + delta)}</b></td><td class="rr-godown-view-only">${x.godown || "—"}</td><td><button class="btn del" data-del="${i}" type="button">DELETE</button></td></tr>`;
+        return `<tr><td>${i + 1}</td><td><button class="btn" data-edit="${i}" type="button">EDIT / REPLACE</button><button class="btn del" data-del="${i}" type="button">DELETE</button></td><td>${x.image ? `<img class="pic" src="${x.image}">` : "👕"}</td><td><b>${x.lot_no}</b></td><td>${x.category || ""}</td><td>${x.size || ""}</td><td><input class="num qty ${boxWarn || qtyWarn ? "alter" : ""}" data-i="${i}" value="${x.qty}" type="number" min="1">${qtyWarn ? `<div class="warn">Stock ${x.available}</div>` : ""}</td><td>${x.box || "—"}</td><td>${boxResult(x)}</td><td><input class="num rate ${rateAlt ? "alter" : ""}" data-i="${i}" value="${x.rate}" type="number" min="0"><div class="muted">Approved ${money(x.approved)}${x.customerRate != null ? ` · Customer-Lot ${money(x.customerRate)}` : ""}</div></td><td><input class="num disc" data-i="${i}" value="${x.discount}" type="number" min="0" ${isSuper ? "" : "readonly"}><div class="muted">Party ${money(x.allowed)}</div></td><td>${money(x.net)}</td><td>${money(x.amount)}</td><td class="rrq"><div>Available ${money(x.rrqAvailable)}</div><div>This PI ${(delta >= 0 ? "+" : "") + money(delta)}</div><b>Balance ${money(x.rrqAvailable + delta)}</b></td><td class="rr-godown-view-only">${x.godown || "—"}</td></tr>`;
       })
       .join("");
     document.querySelectorAll(".qty,.rate,.disc").forEach(
@@ -141,14 +209,7 @@
             v = +e.target.value || 0;
           if (e.target.classList.contains("qty")) x.qty = v;
           if (e.target.classList.contains("rate")) x.rate = v;
-          if (e.target.classList.contains("disc") && isSuper && !finalized) {
-            if (!Number.isFinite(v) || v < 0 || v > 10) {
-              $("msg").textContent = "Party discount must be between ₹0 and ₹10 per piece.";
-            } else {
-              discountDirty = true;
-              lines.forEach((line) => (line.discount = v));
-            }
-          }
+          if (e.target.classList.contains("disc")) setPartyDiscount(v);
           render();
         }),
     );
@@ -166,10 +227,26 @@
     $("qty").textContent = q;
     $("total").textContent = money(total);
     remarks();
+    if (finalized) $("rows").querySelectorAll("input,button").forEach((el) => (el.disabled = true));
   }
   function bindDelete() {
     const body = $("rows");
     body.onclick = (e) => {
+      if (saving || finalized) return;
+      const edit = e.target.closest("[data-edit]");
+      if (edit && body.contains(edit)) {
+        editingItem = Number(edit.dataset.edit);
+        const line = lines[editingItem];
+        $("itemLot").value = line.lot_no;
+        $("itemQty").value = line.qty;
+        $("itemStockType").value = line.stock_type || "REGULAR";
+        $("addItem").textContent = "UPDATE / REPLACE ITEM";
+        $("cancelItemEdit").hidden = false;
+        $("itemEditorMessage").textContent = "Edit PCS qty or enter another lot to replace this item.";
+        $("itemLot").focus();
+        $("itemEditor").scrollIntoView?.({block:"center",behavior:"smooth"});
+        return;
+      }
       const b = e.target.closest("[data-del]");
       if (!b || !body.contains(b)) return;
       const i = Number(b.dataset.del),
@@ -182,6 +259,7 @@
       )
         return;
       lines.splice(i, 1);
+      resetItemEditor();
       render();
     };
   }
@@ -214,11 +292,15 @@
       await contexts(!!piId);
       if (piNo) $("piNo").textContent = "PI No. " + piNo;
       bindDelete();
+      $("partyDiscount").onchange = () => { setPartyDiscount(Number($("partyDiscount").value)); render(); };
+      $("addItem").onclick = addOrReplaceItem;
+      $("cancelItemEdit").onclick = resetItemEditor;
       render();
       ["value", "freight", "other"].forEach((id) => ($(id).oninput = render));
       $("save").onclick = () => save(false);
       $("convertCi").onclick = () => save(true);
       if (finalized) {
+        $("itemEditor").hidden = true;
         document.querySelectorAll("input,textarea,button.del").forEach((el) => (el.disabled = true));
         $("save").disabled = $("convertCi").disabled = true;
         $("msg").textContent = "Finalized bill · saved discount snapshot.";
@@ -229,6 +311,9 @@
   }
   async function getReasons() {
     if (!lines.length) throw Error("PI me kam se kam ek Lot required hai.");
+    for (const x of lines)
+      if (!Number.isSafeInteger(x.qty) || x.qty < 1)
+        throw Error(`${x.lot_no}: enter whole PCS qty greater than zero.`);
     for (const x of lines)
       if (x.qty > x.available)
         throw Error(
@@ -275,7 +360,7 @@
         p_customer_name: ctx.customer_name,
         p_dispatch_details: dispatch,
         p_lines: payload,
-        p_party_discount: isSuper && discountDirty ? +lines[0].discount : null,
+        p_party_discount: isSuper && discountDirty ? partyDiscount : null,
         p_freight_amount: +$("freight").value || 0,
         p_packing_other: (+$("other").value || 0) + va,
         p_gst_pct: 0,
@@ -283,6 +368,7 @@
         p_data_mode: "TEST",
       });
       discountDirty = false;
+      partyDiscount = +res.party_discount_per_piece || 0;
       lines.forEach((x) => {
         x.discount = x.allowed = +res.party_discount_per_piece || 0;
       });
@@ -337,6 +423,8 @@
       if (convert) convert.disabled = !piId || finalize;
       if (finalize) {
         finalized = true;
+        render();
+        $("itemEditor").hidden = true;
         $("piNo").textContent = `CI No. ${res.cpi_no || res.ci_no || piNo}`;
         $("save").disabled = true;
         $("msg").textContent = `CI ${res.cpi_no || res.ci_no || ""} finalised.`;

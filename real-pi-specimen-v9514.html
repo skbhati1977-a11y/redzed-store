@@ -235,13 +235,29 @@
           <div class="f">
             <label>Dispatch Details</label><input id="dispatch" />
           </div>
+          <div class="f">
+            <label>Party Discount · ₹ / PCS · All Items</label>
+            <input id="partyDiscount" type="number" min="0" max="10" step="0.01" value="0" readonly />
+            <div class="muted" id="discountHelp"></div>
+          </div>
         </div>
+      </section>
+      <section class="card" id="itemEditor">
+        <div class="grid">
+          <div class="f"><label for="itemLot">Lot No.</label><input id="itemLot" autocomplete="off" /></div>
+          <div class="f"><label for="itemQty">PCS Qty</label><input id="itemQty" type="number" min="1" step="1" /></div>
+          <div class="f"><label for="itemStockType">Stock Type</label><select id="itemStockType"><option value="REGULAR">REGULAR</option><option value="ASST">ASST</option><option value="TRADED">TRADED</option></select></div>
+        </div>
+        <button class="btn" type="button" id="addItem">ADD ITEM</button>
+        <button class="btn" type="button" id="cancelItemEdit" hidden>CANCEL EDIT</button>
+        <div class="muted" id="itemEditorMessage" role="status"></div>
       </section>
       <section class="card wrap">
         <table data-rr-no-enhance="1">
           <thead>
             <tr>
               <th>S.No.</th>
+              <th>ITEM ACTIONS</th>
               <th>Pic</th>
               <th>Lot No.</th>
               <th>Category</th>
@@ -255,7 +271,6 @@
               <th>Amount</th>
               <th>INTERNAL RRQ</th>
               <th class="rr-godown-view-only">GODOWN / ALLOCATION</th>
-              <th>DELETE</th>
             </tr>
           </thead>
           <tbody id="rows"></tbody>
@@ -347,7 +362,7 @@
     <script src="config.js"></script>
     <script src="real-common.js"></script>
     <script src="rf-v853-core.js"></script>
-    <script src="real-pi-specimen-v9514.js?v=TEST71-party-discount-20261005"></script>
+    <script src="real-pi-specimen-v9514.js?v=TEST71-pi-item-editor-20261005"></script>
     <script>
       (async () => {
         const el = document.getElementById("reqNo");
