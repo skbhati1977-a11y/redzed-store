@@ -49,7 +49,8 @@
     "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
   })[char]);
 
-  function activityTarget(message) {
+  function activityTarget(message,args={}) {
+    if(document.getElementById("inboxRows")){const u=new URL("real-sales-live-chat-v9434.html",location.href);u.searchParams.set("chat_id",message.chat_id||args.p_chat_id||"");return u.href;}
     const raw=message?.payload?.url || String(message?.body||'').match(/https:\/\/[^\s<]+\/s\.html\?[^\s<]+/i)?.[0];
     if(!raw)return location.href;
     try {
@@ -91,7 +92,7 @@
     return [message.id, p.requirement_update_no ?? "", p.collection_update_no ?? ""].join("|");
   }
   function receive(name, args, rows) {
-    if (!Array.isArray(rows) || !/rr_chat_customer_messages/.test(name)) return;
+    if (!Array.isArray(rows) || !/rr_chat_(staff|customer)_messages/.test(name)) return;
     const stream=[args.p_chat_id || args.p_token || args.p_session_token || location.pathname, args.p_channel || "GROUP"].join("|");
     let entry=streams.get(stream);
     if (!entry) { streams.set(stream,{keys:new Set(rows.map(revision)),watermark:Math.max(openedAt,...rows.map(m=>Date.parse(m.created_at)||0))}); return; }
@@ -102,17 +103,17 @@
       keys.add(key);
       if ((Date.parse(message.created_at)||0)<=entry.watermark) return;
       const own=actor?.id && String(message.sender_kind || "STAFF").toUpperCase()==="STAFF" && (message.sender_profile_id===actor.id || message.sender_name===actor.full_name);
-      if (own || muted() || String(message.sender_kind || "").toUpperCase() !== "STAFF") return;
+      const expected=/rr_chat_staff_messages/.test(name)?"CUSTOMER":"STAFF";
+      if (own || muted() || String(message.sender_kind || "").toUpperCase() !== expected) return;
       const title=document.getElementById("chatTitle")?.textContent?.trim() || "REDZED Chat";
       const body=`${message.sender_name || "New update"}: ${message.body || "New activity"}`.slice(0,180);
-      banner(title,body,activityTarget(message));tone();navigator.vibrate?.([160,80,160]);
+      banner(title,body,activityTarget(message,args));tone();navigator.vibrate?.([160,80,160]);
       // The open chat already shows this update. System alerts belong to background receipt.
-      if(document.hidden) systemNotice(title,body,key,activityTarget(message));
+      if(document.hidden && !window.__RR_CUSTOMER_PUSH_REGISTERED71__) systemNotice(title,body,key,activityTarget(message,args));
     });
     entry.watermark=Math.max(entry.watermark,...rows.map(m=>Date.parse(m.created_at)||0));
   }
   function hook() {
-    if(document.getElementById("inboxRows")) return true;
     if(!window.RF853?.rpc || RF853.rpc.__rrNotice71) return false;
     const base=RF853.rpc.bind(RF853);
     const wrapped=async(name,args={})=>{const result=await base(name,args);receive(name,args,result);return result;};
@@ -122,8 +123,7 @@
   }
   if(!hook()) {let tries=0;const timer=setInterval(()=>{if(hook()||++tries>60)clearInterval(timer);},100);}
 
-  if(!document.getElementById("inboxRows")) navigator.serviceWorker?.register("./redzed-sw-test67.js?v=TEST71-TARGET-20261005").catch(() => {});
-  else navigator.serviceWorker?.getRegistration?.().then(async reg=>{const notices=await reg?.getNotifications?.();(notices||[]).filter(n=>/^rr-(cross-)?/.test(n.tag||"")).forEach(n=>n.close());}).catch(()=>{});
+  navigator.serviceWorker?.register("./redzed-sw-test67.js?v=TEST71-TWOWAY-20261005").catch(() => {});
   addEventListener("pointerdown", () => {
     try {
       audio ||= new (window.AudioContext || window.webkitAudioContext)();

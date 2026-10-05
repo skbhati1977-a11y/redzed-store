@@ -8,7 +8,7 @@ async function run(staff){
  d.window.eval(src);const call=async r=>{rows=r;await d.window.RF853.rpc(staff?'rr_chat_staff_messages_v9434':'rr_chat_customer_messages_v9434',{p_chat_id:'party',p_token:'token'});await new Promise(r=>setTimeout(r,5))};
  return {d,call,count:()=>notices};
 }
-test('Sales history, reopening and even new rows never trigger this party alert path',async()=>{const x=await run(true);try{await x.call([msg('old',Date.now()-86400000)]);await x.call([msg('new',Date.now()+1000)]);assert.equal(x.count(),0);assert.equal(x.d.window.document.getElementById('rrCrossPartyNotice67'),null)}finally{x.d.window.close()}});
+test('Sales history and own activity silent; new customer activity alerts once',async()=>{const x=await run(true);try{await x.call([msg('old',Date.now()-86400000)]);await x.call([msg('new',Date.now()+1000)]);assert.equal(x.count(),0);await x.call([msg('customer',Date.now()+2000,'CUSTOMER')]);assert.equal(x.count(),1);await x.call([msg('customer',Date.now()+2000,'CUSTOMER')]);assert.equal(x.count(),1)}finally{x.d.window.close()}});
 test('party baseline and older history silent; new Sales activity alerts once; own activity silent',async()=>{const x=await run(false);try{const now=Date.now();await x.call([]);await x.call([msg('old',now-86400000)]);assert.equal(x.count(),0);await x.call([msg('fresh',now+1000)]);assert.equal(x.count(),1);await x.call([msg('fresh',now+1000)]);assert.equal(x.count(),1);await x.call([msg('own',now+2000,'CUSTOMER')]);assert.equal(x.count(),1)}finally{x.d.window.close()}});
 test('new collection notification carries its exact token and cycle',async()=>{
  const x=await run(false);try{

@@ -16,3 +16,14 @@ self.addEventListener('notificationclick',event=>{
   await self.clients.openWindow(target.href);
  })());
 });
+
+self.addEventListener('push',event=>{
+ event.waitUntil((async()=>{
+  let data;try{data=event.data.json()}catch(_){data={preview:event.data?.text()||'New collection update'}}
+  let url;try{url=new URL(data.url||'./s.html',self.location.href);if(url.origin!==self.location.origin||url.protocol!=='https:')return;}catch(_){return;}
+  const tag='rr-collection-'+String(data.event_key||data.message_id||data.chat_id||'new');
+  await self.registration.showNotification(data.customer_name||'REDZED Collection',{body:String(data.preview||'नई collection update').slice(0,180),tag,renotify:false,icon:'./redzed-icon-test67.svg',data:{url:url.href}});
+ })());
+});
+
+self.addEventListener('fetch',event=>{if(event.request.mode==='navigate')event.respondWith(fetch(event.request));});

@@ -49,7 +49,7 @@ Deno.serve(async (request) => {
     if (!body.outbox_id || !body.dispatch_token) return new Response("unauthorized", { status: 401 });
     const { data: outbox } = await db.from("rr_chat_push_outbox_v61").select("*").eq("id", body.outbox_id).eq("dispatch_token", body.dispatch_token).is("processed_at", null).maybeSingle();
     if (!outbox) return new Response("already processed", { status: 200 });
-    const { data: message } = await db.from("rr_customer_chat_messages_v9433").select("sender_kind,sender_customer_id,sender_profile_id,sender_name").eq("id", outbox.message_id).maybeSingle();
+    const { data: message } = await db.from("rr_customer_chat_messages_v9433").select("sender_kind,sender_customer_id,sender_profile_id,sender_name,payload").eq("id", outbox.message_id).maybeSingle();
     const { data: chat } = await db.from("rr_customer_chat_v9433").select("customer_id,relation_kind").eq("id", outbox.chat_id).maybeSingle();
     const { data: relation } = await db.from("rr_market_partner_relation_chat_v67").select("relation_kind,owner_customer_id,partner_customer_id").eq("chat_id", outbox.chat_id).eq("status", "ACTIVE").maybeSingle();
     const sender = String(message?.sender_kind || "").toUpperCase();
@@ -76,7 +76,7 @@ Deno.serve(async (request) => {
     webpush.setVapidDetails("https://skbhati1977-a11y.github.io/redzed-store/", Deno.env.get("VAPID_PUBLIC_KEY")!, Deno.env.get("VAPID_PRIVATE_KEY")!);
     let sent = 0;
     for (const subscription of subscriptions) {
-      const payload = JSON.stringify({ message_id: outbox.message_id, chat_id: outbox.chat_id, customer_name: message?.sender_name || outbox.customer_name, preview: outbox.preview, url: subscription.route_url || "./" });
+      const payload = JSON.stringify({ message_id: outbox.message_id, chat_id: outbox.chat_id, customer_name: message?.sender_name || outbox.customer_name, preview: outbox.preview, url: actorKind === "STAFF" ? (()=>{try{const u=new URL(subscription.route_url);u.pathname=u.pathname.replace(/[^/]*$/, "real-sales-live-chat-v9434.html");u.search="";u.searchParams.set("chat_id",outbox.chat_id);return u.href}catch(_){return subscription.route_url||"./"}})() : outbox.target_url || subscription.route_url || "./", collection_cycle_id: outbox.collection_cycle_id || null, event_key: outbox.collection_cycle_id ? `${outbox.message_id}:${outbox.collection_update_no}` : outbox.message_id });
       try {
         await webpush.sendNotification({ endpoint: subscription.endpoint, keys: { p256dh: subscription.p256dh, auth: subscription.auth } }, payload, { TTL: 300, urgency: "high" }); sent++;
       } catch (error: any) {
@@ -89,3 +89,4 @@ Deno.serve(async (request) => {
     return new Response(JSON.stringify({ error: String(error instanceof Error ? error.message : error) }), { status: 500, headers: { "Content-Type": "application/json" } });
   }
 });
+

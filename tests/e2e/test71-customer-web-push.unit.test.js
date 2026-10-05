@@ -1,0 +1,18 @@
+'use strict';const {test}=require('node:test');const assert=require('node:assert/strict');const {JSDOM}=require('jsdom');const fs=require('node:fs');const path=require('node:path');const vm=require('node:vm');const source=n=>fs.readFileSync(path.join(__dirname,'../..',n),'utf8');
+test('verified customer subscription uses the bound session/device and shows enabled only after server accepts',async()=>{
+ const d=new JSDOM('<body></body>',{url:'https://example.test/s.html?t=share-a',runScripts:'outside-only'});const w=d.window,calls=[];
+ try{
+  w.SUPABASE_URL='https://database.test';w.SUPABASE_ANON_KEY='public';Object.defineProperty(w,'isSecureContext',{value:true});w.PushManager=function(){};w.Notification={permission:'granted'};
+  w.localStorage.setItem('rr_customer_secure_session_v9592',JSON.stringify({share_token:'share-a',session_token:'session-a'}));w.localStorage.setItem('rr_customer_device_v9592','device-a');
+  const sub={toJSON:()=>({endpoint:'https://push.test/device',keys:{p256dh:'key',auth:'auth'}})};
+  Object.defineProperty(w.navigator,'serviceWorker',{value:{ready:Promise.resolve(),register:async()=>({pushManager:{getSubscription:async()=>null,subscribe:async options=>{assert.equal(options.userVisibleOnly,true);return sub}}})}});
+  w.fetch=async(url,options)=>{const b=JSON.parse(options.body);calls.push(b);return {ok:true,json:async()=>b.action==='config'?{public_key:'AQID'}:{ok:true}}};
+  w.eval(source('real-customer-web-push-test71.js'));await new Promise(r=>setTimeout(r,20));
+  assert.equal(calls[1].session_token,'session-a');assert.equal(calls[1].device_id,'device-a');assert.match(calls[1].route_url,/t=share-a/);assert.equal(w.__RR_CUSTOMER_PUSH_REGISTERED71__,true);
+ }finally{w.close()}
+});
+test('wrong share/session does not register customer push',()=>{const d=new JSDOM('<body></body>',{url:'https://example.test/s.html?t=another',runScripts:'outside-only'});try{d.window.localStorage.setItem('rr_customer_secure_session_v9592',JSON.stringify({share_token:'share-a',session_token:'a'}));d.window.eval(source('real-customer-web-push-test71.js'));assert.equal(d.window.document.getElementById('rrCustomerPush71'),null)}finally{d.window.close()}});
+test('background push is displayed once with exact collection route',async()=>{
+ const callbacks={},notices=[];const self={location:{href:'https://example.test/redzed-sw-test67.js',origin:'https://example.test'},addEventListener:(n,f)=>callbacks[n]=f,registration:{showNotification:async(t,o)=>notices.push({t,o})}};
+ vm.runInNewContext(source('redzed-sw-test67.js'),{self,URL});let task;callbacks.push({data:{json:()=>({customer_name:'REDZED',preview:'Collection update',url:'https://example.test/s.html?t=share-a&open=collection',event_key:'message:4'})},waitUntil:p=>task=p});await task;assert.equal(notices.length,1);assert.match(notices[0].o.data.url,/share-a/);assert.equal(notices[0].o.tag,'rr-collection-message:4');
+});
