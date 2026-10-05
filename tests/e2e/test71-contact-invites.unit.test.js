@@ -13,7 +13,7 @@ function fixture(){
   const supabaseClient={auth:{getSession:async()=>({data:{session:{user:{id:'auth'}}}})},from:()=>({select:()=>({eq:()=>({maybeSingle:async()=>({data:{id:'owner',role_code:'SUPER_ADMIN',is_active:true}})})})})};
   const RF853={rpc:async(name,args)=>{calls.push({name,args});return {token:'token-'+args.p_default_mobile}}};
   const context={window,document,supabaseClient,RF853,URL,location:{href:'https://fixture.test/chat.html?chat_id=secret&t=old#private'},setTimeout:()=>0};
-  const instrumented=source.replace("document.readyState==='loading'?document.addEventListener('DOMContentLoaded',boot,{once:true}):boot()",'window.testApi={inviteRecipients,queueInvites,sendQueuedInvite,setRows:r=>{directoryRows=r},select:ids=>{selectedContacts=new Set(ids)},queue:()=>inviteQueue}');
+  const instrumented=source.replace("document.readyState==='loading'?document.addEventListener('DOMContentLoaded',boot,{once:true}):boot()",'window.testApi={contactPhone,uniqueDirectory,parseVcards,saveDirectory,setOwner:id=>{ownerId=id},setDb:f=>{contactDb=f},inviteRecipients,queueInvites,sendQueuedInvite,setRows:r=>{directoryRows=r},select:ids=>{selectedContacts=new Set(ids)},queue:()=>inviteQueue}');
   vm.runInNewContext(instrumented,context);
   return {...context,api:window.testApi,nodes,calls,opened,node};
 }
@@ -33,8 +33,8 @@ test('all includes contacts beyond displayed/search results',()=>{
 test('separate recipient link, clean query, and reuse without claiming delivery',async()=>{
   const f=fixture();f.api.setRows(f.api.inviteRecipients(rows.slice(0,2)));f.api.queueInvites(true);const [first,second]=f.api.queue();
   const wa=f.node(),sms=f.node();await f.api.sendQueuedInvite(first,'whatsapp',wa,sms);await f.api.sendQueuedInvite(first,'whatsapp',wa,sms);await f.api.sendQueuedInvite(second,'whatsapp',wa,sms);
-  assert.equal(f.calls.length,2);const url=new URL(f.opened[0]);assert.equal(url.pathname,'/919000000000');const message=url.searchParams.get('text');assert(message.includes('token-9000000000'));assert(!message.includes('chat_id=secret'));assert(!message.includes('t=old'));assert(!message.includes('#private'));
-  assert(f.opened[2].includes('token-9000000001'));assert(first.statusNode.textContent.includes('delivery की पुष्टि नहीं'));assert.equal(wa.disabled,false);
+  assert.equal(f.calls.length,2);const url=new URL(f.opened[0]);assert.equal(url.pathname,'/919000000000');const message=url.searchParams.get('text');assert(message.includes('token-%2B919000000000'));assert(!message.includes('chat_id=secret'));assert(!message.includes('t=old'));assert(!message.includes('#private'));
+  assert(new URL(f.opened[2]).searchParams.get('text').includes('token-%2B919000000001'));assert(first.statusNode.textContent.includes('delivery की पुष्टि नहीं'));assert.equal(wa.disabled,false);
 });
 test('blocked popup exposes a clickable link, RPC failure restores actions',async()=>{
   const f=fixture();f.window.open=()=>null;f.api.setRows(f.api.inviteRecipients(rows.slice(0,2)));f.api.queueInvites(true);const [first,second]=f.api.queue();const wa=f.node(),sms=f.node();
@@ -42,5 +42,28 @@ test('blocked popup exposes a clickable link, RPC failure restores actions',asyn
   f.RF853.rpc=async()=>{throw Error('sensitive backend error')};await f.api.sendQueuedInvite(second,'whatsapp',wa,sms);assert.equal(second.statusNode.textContent,'लिंक तैयार नहीं हुआ। दोबारा कोशिश करें।');assert.equal(wa.disabled,false);assert.equal(f.nodes.get('rr67SendAll').disabled,false);
 });
 test('invite controls are wired into staff chat and hidden directory stays hidden',()=>{
-  const html=fs.readFileSync(path.resolve(__dirname,'../../real-sales-live-chat-v9434.html'),'utf8');assert(html.includes('real-chat-add-customer-test67.js?v=TEST71-CONTACT-INVITES-20261005'));assert(source.includes('#rr67Directory[hidden]{display:none}'));
+  const html=fs.readFileSync(path.resolve(__dirname,'../../real-sales-live-chat-v9434.html'),'utf8');assert(html.includes('real-chat-add-customer-test67.js?v=TEST71-VCF-DEDUP-20261005'));assert(source.includes('#rr67Directory[hidden]{display:none}'));
 });
+
+ test('4700 contacts stay 4700 after repeated imports and 80000 duplicate entries',()=>{
+  const f=fixture(),contacts=Array.from({length:4700},(_,i)=>({name:'Person '+i,numbers:[String(9000000000+i)]}));
+  let saved=f.api.uniqueDirectory(contacts);
+  for(let i=0;i<4;i++)saved=f.api.uniqueDirectory([...contacts,...saved]);
+  assert.equal(saved.length,4700);
+  const repeated=Array.from({length:80000},(_,i)=>({...contacts[i%4700],numbers:[i%2?'+91 '+contacts[i%4700].numbers[0]:'0'+contacts[i%4700].numbers[0]]}));
+  assert.equal(f.api.uniqueDirectory(repeated).length,4700);
+ });
+ test('overlapping multi-number cards merge; same names with different numbers remain',()=>{
+  const f=fixture();const result=f.api.uniqueDirectory([{name:'Same',numbers:['9000000000']},{name:'Same',numbers:['9000000001']},{name:'Bridge',numbers:['+919000000000','00919000000001']}]);
+  assert.equal(result.length,1);assert.equal(result[0].numbers.length,2);
+  assert.equal(f.api.uniqueDirectory([{name:'Same',numbers:['9000000000']},{name:'Same',numbers:['9000000001']}]).length,2);
+  const vcf='BEGIN:VCARD\r\nFN:Person\r\nTEL;TYPE=CELL:tel:+91 9000000000;ext=4\r\nEND:VCARD';
+  assert.equal(f.api.parseVcards(vcf)[0].numbers[0],'+919000000000');
+ });
+ test('atomic directory update uses stable IDs, keeps other owners, and repeats without growth',async()=>{
+  const f=fixture();f.api.setOwner('owner');const data=new Map([['other',{id:'other',ownerId:'other',name:'Other',numbers:['8000000000']}] ]);
+  f.api.setDb(async()=>({close(){},transaction(){const tx={};const table={getAll(){const r={};queueMicrotask(()=>{r.result=[...data.values()];r.onsuccess();queueMicrotask(()=>tx.oncomplete())});return r},delete:id=>data.delete(id),put:row=>data.set(row.id,row)};tx.objectStore=()=>table;tx.abort=()=>tx.onabort();return tx}}));
+  const contacts=[{name:'A',numbers:['9000000000']},{name:'Duplicate',numbers:['+919000000000']}];
+  const first=await f.api.saveDirectory(contacts);assert.equal(first.total,1);assert.equal(first.duplicates,1);assert(data.has('owner|+919000000000'));
+  const again=await f.api.saveDirectory(contacts);assert.equal(again.total,1);assert.equal(again.added,0);assert.equal(data.size,2);assert(data.has('other'));
+ });
