@@ -291,7 +291,7 @@
         card = document.createElement("button");
         card.type = "button";
         card.className = "rrRzCard83";
-        message.insertBefore(card, message.querySelector("time"));
+        message.insertBefore(card, message.querySelector(':scope > .rrMessageMeta71, :scope > time') || null);
       }
       const cardState = `${sentKind}|${sentRef || "REQUIREMENT"}`;
       const cardHtml = sentRef

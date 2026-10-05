@@ -5,7 +5,7 @@
   const q = new URLSearchParams(location.search);
   const partner = q.get('rr_partner_mode');
   if (partner) return;
-  const chatId = () => document.querySelector('#inboxRows .chatrow.on')?.dataset.chat || q.get('chat_id') || '';
+  const chatId = () => window.RRActiveSalesChat71?.() || document.getElementById('msgs')?.dataset.chatId || document.querySelector('#inboxRows .chatrow.on')?.dataset.chat || q.get('chat_id') || '';
   const selectedCycle = () => (!q.get('chat_id') || chatId() === q.get('chat_id')) ? q.get('collection_cycle_id') || null : null;
   const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   let windowContext = null;

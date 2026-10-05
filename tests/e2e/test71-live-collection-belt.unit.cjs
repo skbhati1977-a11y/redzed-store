@@ -1,0 +1,14 @@
+const assert=require('node:assert/strict');
+const fs=require('node:fs');
+const path=require('node:path');
+const source=fs.readFileSync(path.join(__dirname,'../../real-direct-cycle-history-test71.js'),'utf8');
+new Function(source);
+const start=source.indexOf(' function beltMarkup('),end=source.indexOf(' function showDetails',start);
+const render=new Function('esc','date',source.slice(start,end)+';return beltMarkup;')(String,v=>v||'—');
+const state={collection_display_no:'RZ COLLECTION 16',collection_update_no:2,requirement_display_no:'RZ REQUIREMENT 21',requirement_update_no:3,last_collection_at:'COL DATE',last_requirement_at:'REQ DATE',live_status:'PI GENERATED',pi_no:'10/001',requested_categories:['Band Collar']};
+const html=render(state);
+for(const text of ['rrLiveBelt71','RZ COLLECTION 16 · U2','RZ REQUIREMENT 21 · U3','COL DATE','REQ DATE','PI GENERATED','10/001'])assert.ok(html.includes(text),text);
+assert.ok(!html.includes('Band Collar'),'full categories belong in the opened detail');
+assert.ok(!html.includes('<details>'),'expanded history does not occupy the belt');
+assert.ok(render({...state,requirement_display_no:null,pi_no:null,live_status:'OPENED NO RESPONSE'}).includes('REQ PENDING'));
+console.log('PASS: compact live belt, independent numbering, dates, status, new-cycle pending state');

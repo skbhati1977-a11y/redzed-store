@@ -1026,8 +1026,8 @@
         previewShell.appendChild(preview);
         previewShell.onclick = () => openLivePiViewer(previewShell, preview);
         previewShell.onkeydown = (event) => { if(event.key === "Enter" || event.key === " "){ event.preventDefault(); openLivePiViewer(previewShell, preview); } };
-        message.insertBefore(previewShell, message.querySelector("time"));
-        message.insertBefore(card, message.querySelector("time"));
+        message.insertBefore(previewShell, message.querySelector(':scope > .rrMessageMeta71, :scope > time') || null);
+        message.insertBefore(card, message.querySelector(':scope > .rrMessageMeta71, :scope > time') || null);
       }
       if (batchMatch) {
         [...message.children].forEach((child) => {
@@ -1042,7 +1042,7 @@
           card = document.createElement("button");
           card.type = "button";
           card.className = "rrMarketLinkCard9505 rrPartnerBatchCard82";
-          message.insertBefore(card, message.querySelector("time"));
+          message.insertBefore(card, message.querySelector(':scope > .rrMessageMeta71, :scope > time') || null);
         }
         const cardState = `${sentKind}|${sentRef || "REQUIREMENT"}`;
         const cardHtml = sentRef
@@ -1107,7 +1107,7 @@
             card.className = "rrMarketLinkCard9505";
             card.innerHTML =
               '<span class="rrMkIcon9505">🛍️</span><span class="rrMkText9505"><b>COLLECTION</b><small>Loading collection number…</small></span><span class="rrMkGo9505">OPEN ›</span>';
-            message.insertBefore(card, message.querySelector("time"));
+            message.insertBefore(card, message.querySelector(':scope > .rrMessageMeta71, :scope > time') || null);
           }
           // The shared link-card observer must reuse this mapped card instead
           // of appending a second generic "REDZED COLLECTION" field.

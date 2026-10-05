@@ -103,7 +103,7 @@
     };
     node.dataset.rrMarketCard = "1";
     [...node.children].filter((child) => child.tagName === "DIV" && (child.textContent || "").match(rx)).forEach((child) => { child.style.display = "none"; });
-    node.insertBefore(box, node.querySelector("time") || null);
+    node.insertBefore(box, node.querySelector(':scope > .rrMessageMeta71, :scope > time') || null);
     const token = tokenFrom(url);
     if (token) Promise.all([
       RF853.rpc("rr_market_share_view_v9420", { p_token: token }),
