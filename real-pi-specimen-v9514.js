@@ -51,7 +51,7 @@
     }
     const id = query.get("requirement_id") || ctx.requirement_id;
     if (!id) return;
-    ctx = await rpc("rr_pi_requirement_bootstrap_v9541", {
+    ctx = await rpc("rr_pi_requirement_bootstrap_test71", {
       p_requirement_id: id,
     });
     if (String(ctx.requirement_id || "") !== String(id)) throw Error("Requirement could not be verified. Reopen it from chat.");
@@ -76,7 +76,7 @@
     await Promise.all(
       items.map(async (x) => {
         try {
-          const c = await rpc("rr_pi_lot_context_v9517", {
+          const c = x.bootstrap_context || await rpc("rr_pi_lot_context_v9517", {
             p_lot_no: x.lot_no,
             p_customer_name: ctx.customer_name,
             p_data_mode: "TEST",
@@ -104,6 +104,7 @@
           x.image = c.image || x.image || "";
           x.size = c.size_text || c.size || x.size || "";
           customerId = c.customer_id || customerId;
+          delete x.bootstrap_context;
           delete x.context_error;
           try {
             x.godown = await rpc("rr_pi_staff_godown_v67", {
@@ -412,6 +413,7 @@
       $("other").value = +ctx.packing_other || 0;
       $("piDate").textContent = new Date().toLocaleDateString("en-IN");
       await contexts(!!piId);
+      if (lines.some(x => x.context_error)) throw Error("Item rate/discount could not load: " + lines.filter(x => x.context_error).map(x => x.lot_no + ": " + x.context_error).join("; "));
       if (piNo) $("piNo").textContent = "PI No. " + piNo;
       bindDelete();
       bindLotSuggestions();
