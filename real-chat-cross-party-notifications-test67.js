@@ -71,7 +71,7 @@
       tag: `rr-cross-${key}`,
       renotify: false,
       vibrate: [160, 80, 160],
-      data: { url: target },
+      data: { url: target, message_id: String(key).split("|")[0] },
       icon: "./redzed-icon-test67.svg",
       badge: "./redzed-icon-test67.svg",
     };
@@ -123,7 +123,7 @@
   }
   if(!hook()) {let tries=0;const timer=setInterval(()=>{if(hook()||++tries>60)clearInterval(timer);},100);}
 
-  navigator.serviceWorker?.register("./redzed-sw-test67.js?v=TEST71-TWOWAY-20261005").catch(() => {});
+  navigator.serviceWorker?.register("./redzed-sw-test67.js?v=TEST71-READ-CLEAR-20261005").catch(() => {});
   addEventListener("pointerdown", () => {
     try {
       audio ||= new (window.AudioContext || window.webkitAudioContext)();

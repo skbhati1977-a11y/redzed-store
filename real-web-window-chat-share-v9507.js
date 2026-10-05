@@ -32,11 +32,13 @@
     const button=$('sendChatBtn');
     try{
       if(button){button.disabled=true;button.textContent='UPDATING COLLECTION…';}
+      const context=await RF853.rpc('rr_sales_collection_context_test71',{p_chat_id:chatId,p_requirement_id:appendRequirementId||null,p_collection_cycle_id:window.RRSalesCollection?.context()?.collection_cycle_id||q.get('collection_cycle_id')||null});
+      if(!context?.customer_id)throw Error('Party chat could not be verified. Return to Sales chat and reopen collection.');
       const result=await RF853.rpc('rr_sales_collection_send_test71',{
         p_chat_id:chatId,
         p_collection_cycle_id:window.RRSalesCollection?.context()?.collection_cycle_id||q.get('collection_cycle_id')||null,
         // The authenticated backend resolves missing identity from this chat.
-        p_customer_id:customerId||null,
+        p_customer_id:context.customer_id,
         p_lots:lots,
         p_requirement_id:appendRequirementId||null,
         p_origin:new URL(window.RR_CUSTOMER_SHARE_BASE||'https://redzed-customer-collection.jggfab2011.chatgpt.site/').origin

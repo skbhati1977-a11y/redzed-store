@@ -10,7 +10,7 @@
    if(gesture&&Notification.permission==='default')await (window.RRRequestNotificationPermissionV69?window.RRRequestNotificationPermissionV69():Notification.requestPermission());
    if(Notification.permission!=='granted')throw Error(Notification.permission==='denied'?'Browser settings में Notifications Allow करें':'नई activity की notification के लिए Allow करें');
    if(button){button.disabled=true;button.textContent='Enabling notifications…'}
-   const registration=await navigator.serviceWorker.register('./redzed-sw-test67.js?v=TEST71-WEBPUSH-20261005');await navigator.serviceWorker.ready;
+   const registration=await navigator.serviceWorker.register('./redzed-sw-test67.js?v=TEST71-READ-CLEAR-20261005');await navigator.serviceWorker.ready;
    let sub=await registration.pushManager.getSubscription();
    if(!sub){const config=await api({action:'config'});if(!config.public_key)throw Error('Notifications temporarily unavailable');sub=await registration.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:key(config.public_key)})}
    const identity=session();if(!identity)throw Error('Customer login दोबारा करें');

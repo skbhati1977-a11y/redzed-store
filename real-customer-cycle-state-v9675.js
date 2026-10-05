@@ -10,6 +10,10 @@
   const hasRequirement = (summary) => (summary?.lines || []).some((line) => Number(line.requested_qty || 0) > 0);
   function closeActiveUi(state) {
     $("fcPanel")?.classList.remove("on");
+    // Collection mode hides chat. Closing a completed collection must restore
+    // both messages and composer, rather than leave an invisible chat behind.
+    document.querySelectorAll('#rrFSChat .fc-hide').forEach(node => node.classList.remove('fc-hide'));
+    document.querySelector('#rrFSChat .fscompWrap')?.classList.remove('rrReqMode9634');
     if ($("fsCollectionCard")) $("fsCollectionCard").style.display = "none";
     if ($("rrCommercialActions9630")) $("rrCommercialActions9630").style.display = "none";
     document.body.classList.add("rrCustomerRequirementClosed58");

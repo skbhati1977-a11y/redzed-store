@@ -39,7 +39,7 @@ test('Select & Send is one call on double tap and returns to the same collection
  const context={chat_id:'chat-a',customer_id:'party-a',customer_name:'Party A',collection_cycle_id:'cycle-a',
  requirement_id:'req-a',collection_display_no:'COLLECTION 01',categories:['Round Neck'],sent_lots:[],can_send:true};
  const d=dom(source('real-web-window-v9329.html'),'https://example.test/real-web-window-v9329.html?from_chat=1&chat_id=chat-a&collection_cycle_id=cycle-a&append_requirement_id=req-a',
- async(name,args)=>{calls.push({name,args});if(name==='rr_sales_collection_cards_test71')return {context,rows:[{lot_no:'NEW',available_qty:24,media:[]}]};if(name==='rr_market_window_colours_v1')return {};if(name==='rr_sales_collection_send_test71')return new Promise(ok=>resolveSend=ok);throw Error(name)});
+ async(name,args)=>{calls.push({name,args});if(name==='rr_sales_collection_cards_test71')return {context,rows:[{lot_no:'NEW',available_qty:24,media:[]}]};if(name==='rr_sales_collection_context_test71')return context;if(name==='rr_market_window_colours_v1')return {};if(name==='rr_sales_collection_send_test71')return new Promise(ok=>resolveSend=ok);throw Error(name)});
  try{
   d.window.eval(source('real-sales-collection-contract-test71.js'));d.window.eval(source('real-web-window-v9329.js'));
   d.window.eval(source('real-web-window-chat-share-v9507.js'));await tick();
@@ -49,7 +49,7 @@ test('Select & Send is one call on double tap and returns to the same collection
   button.click();button.dispatchEvent(new d.window.MouseEvent('click',{bubbles:true}));await tick();
   const sent=calls.filter(x=>x.name==='rr_sales_collection_send_test71');assert.equal(sent.length,1);
   assert.deepEqual(Array.from(sent[0].args.p_lots),['NEW']);
-  assert.equal(sent[0].args.p_collection_cycle_id,'cycle-a');assert.equal(sent[0].args.p_requirement_id,'req-a');
+  assert.equal(sent[0].args.p_customer_id,'party-a');assert.equal(sent[0].args.p_collection_cycle_id,'cycle-a');assert.equal(sent[0].args.p_requirement_id,'req-a');
   resolveSend({token:'t',collection_cycle_id:'cycle-a',collection_display_no:'COLLECTION 01'});await tick();
   const returned=JSON.parse(d.window.sessionStorage.getItem('rr_real_chat_return_v9507'));
   assert.equal(returned.chat_id,'chat-a');assert.equal(returned.collection_cycle_id,'cycle-a');
