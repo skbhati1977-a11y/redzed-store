@@ -14,4 +14,7 @@
 #rrFSChat .fc-caps>.fc-cap{display:flex!important;flex-direction:column!important;justify-content:center!important;flex:1 1 0!important;min-height:0!important;box-sizing:border-box!important;padding:7px 3px!important}
 #rrFSChat .fc-caps>.fc-cap>span{font-size:11.5px!important;line-height:1.3!important;font-weight:800!important;color:#d7e1ed!important}
 #rrFSChat .fc-caps>.fc-cap>b{font-size:15px!important;line-height:1.3!important;font-weight:900!important;margin-top:4px!important;overflow-wrap:anywhere!important;color:#fff!important}
+
+#rrFSChat .fc-lot>.fc-body{position:relative!important;align-self:stretch!important}
+#rrFSChat .fc-body>.fc-caps{position:absolute!important;inset:0!important;display:grid!important;grid-template-rows:repeat(7,minmax(0,1fr))!important;width:100%!important;box-sizing:border-box!important}
 `;document.head.appendChild(s)})();
