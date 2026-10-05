@@ -44,6 +44,7 @@
       }));
       piId = ctx.pi_id;
       piNo = ctx.pi_no || "";
+      ctx.requirement_id = ctx.requirement_id || query.get("requirement_id") || null;
       finalized = !!ctx.status && ctx.status !== "DRAFT";
       return;
     }
@@ -253,7 +254,9 @@
       if (index === null) lines.push(candidate); else lines[index] = candidate;
       resetItemEditor();
       render();
-      $("itemEditorMessage").textContent = index === null ? "Item added." : "Item updated.";
+      saving = false;
+      const saved = await save(false, true);
+      $("itemEditorMessage").textContent = saved ? "Item auto-saved to PI draft." : "Item is not saved yet. Use RETRY AUTO-SAVE.";
     } catch(e) {
       $("itemEditorMessage").textContent = e.message;
     } finally {
@@ -308,6 +311,7 @@
           if (e.target.classList.contains("rate")) x.rate = v;
           if (e.target.classList.contains("disc")) setPartyDiscount(v);
           render();
+          save(false, true);
         }),
     );
     const vp = +$("value").value || 0,
@@ -356,9 +360,14 @@
         )
       )
         return;
+      if (lines.length === 1) {
+        $("msg").textContent = "Keep at least one item in the PI, or replace this item.";
+        return;
+      }
       lines.splice(i, 1);
       resetItemEditor();
       render();
+      save(false, true);
     };
   }
   function remarks() {
@@ -400,6 +409,7 @@
       $("save").onclick = () => save(false);
       $("convertCi").onclick = () => save(true);
       $("retryPartySend").onclick = retryPartySend;
+      $("retryDraftSave").onclick = () => save(false, true);
       if (finalized) {
         $("itemEditor").hidden = true;
         document.querySelectorAll("input,textarea,button.del").forEach((el) => (el.disabled = true));
@@ -465,7 +475,7 @@
       $("retryPartySend").disabled = false;
     }
   }
-  async function save(finalize = false) {
+  async function save(finalize = false, autoDraft = false) {
     if (saving || finalized) return;
     saving = true;
     let billSaved = false;
@@ -474,7 +484,10 @@
       await contexts(true);
       if (lines.some((x) => x.context_error))
         throw Error("Party/stock context could not be verified. Please retry.");
-      await getReasons();
+      if (autoDraft) {
+        if (!lines.length || lines.some(x => !Number.isSafeInteger(x.qty) || x.qty < 1 || x.qty > x.available))
+          throw Error("Check item PCS qty and available stock before saving.");
+      } else await getReasons();
       const payload = lines.map((x) => ({
         lot_no: x.lot_no,
         short_item_name: x.category || x.lot_no,
@@ -529,6 +542,12 @@
           p_requirement_id: ctx.requirement_id,
           p_pi_id: piId,
         });
+      if (autoDraft) {
+        $("retryDraftSave").hidden = true;
+        $("msg").textContent = "PI draft auto-saved · ready to Send to Party.";
+        $("convertCi").disabled = !piId;
+        return true;
+      }
       for (const x of lines) {
         if (customerId && x.rate !== x.approved)
           await rpc("rr_customer_lot_rate_set_v9517", {
@@ -575,13 +594,19 @@
         $("save").disabled = true;
         $("msg").textContent = `CI ${res.cpi_no || res.ci_no || ""} finalised.`;
       }
+      $("retryDraftSave").hidden = true;
       const sent = await sendSavedBillToParty();
       $("msg").textContent = sent.already_sent ? "Bill saved · already sent to party." : "Bill saved · JPG and details sent to party · notification queued.";
+      return true;
     } catch (e) {
-      if (billSaved) {
+      if (autoDraft) {
+        $("retryDraftSave").hidden = false;
+        $("msg").textContent = "Draft auto-save failed: " + e.message + ". Retry Auto-Save.";
+      } else if (billSaved) {
         $("retryPartySend").hidden = false;
         $("msg").textContent = "Bill saved · follow-up failed: " + e.message + ". Retry Send to Party.";
       } else $("msg").textContent = e.message;
+      return false;
     } finally {
       saving = false;
     }
