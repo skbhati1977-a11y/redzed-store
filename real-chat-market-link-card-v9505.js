@@ -59,13 +59,29 @@
       const rows = Array.isArray(data?.rows) ? data.rows : [];
       const updateNo = Number(state?.collection_update_no || 0);
       document.getElementById("rrScTitle9680").textContent = (state?.collection_display_no || data?.collection_display_no || "REDZED COLLECTION") + (updateNo > 0 ? ` · UPDATE ${updateNo}` : "");
-      body.innerHTML = `<div class="rrScNote9680">यह collection ${esc(party)} की इसी existing staff chat में read-only खुली है। Customer login/name/mobile दोबारा नहीं माँगा जाएगा।</div><div class="rrScGrid9680">${rows.map((row) => {
+      let followup = '';
+      if (state?.collection_cycle_id && window.RRSalesCollection) {
+        const chat = document.querySelector('#inboxRows .chatrow.on')?.dataset.chat;
+        if (chat) {
+          const context = await RF853.rpc('rr_sales_collection_context_test71', {p_chat_id: chat, p_collection_cycle_id: state.collection_cycle_id});
+          followup = `<div class="rrScNote9680"><b>Requested categories: ${context.categories.length ? context.categories.map(esc).join(' / ') : 'All categories'}</b>${context.can_send ? `<button type="button" data-rr-collection-open="${esc(state.collection_cycle_id)}">SELECT & SEND NEW DESIGNS</button>` : '<div>Collection complete</div>'}</div>`;
+        }
+      }
+      body.innerHTML = followup + `<div class="rrScNote9680">यह collection ${esc(party)} की इसी existing staff chat में read-only खुली है। Customer login/name/mobile दोबारा नहीं माँगा जाएगा।</div><div class="rrScGrid9680">${rows.map((row) => {
         const media = Array.isArray(row.media) ? row.media : [];
         const image = media[0]?.image_url || media[0]?.storage_path || row.primary_image_url || "";
         return `<article class="rrScLot9680">${image ? `<img loading="lazy" src="${esc(image)}" alt="${esc(row.lot_no)}">` : ""}<div><b>${esc(row.lot_no || "-")}</b><small>${esc(row.category || row.item_name || row.cloth_name || "-")}</small><small>${esc(row.size_text || "-")} · AVL ${Number(row.available_qty || 0)}</small></div></article>`;
       }).join("") || "<div>No collection lots found.</div>"}</div>`;
     } catch (error) {
-      body.innerHTML = `<div class="rrScNote9680">${esc(error?.message || "Collection unavailable.")}</div>`;
+      let followup = '';
+      if (state?.collection_cycle_id && window.RRSalesCollection) {
+        const chat = document.querySelector('#inboxRows .chatrow.on')?.dataset.chat;
+        if (chat) {
+          const context = await RF853.rpc('rr_sales_collection_context_test71', {p_chat_id: chat, p_collection_cycle_id: state.collection_cycle_id});
+          followup = `<div class="rrScNote9680"><b>Requested categories: ${context.categories.length ? context.categories.map(esc).join(' / ') : 'All categories'}</b>${context.can_send ? `<button type="button" data-rr-collection-open="${esc(state.collection_cycle_id)}">SELECT & SEND NEW DESIGNS</button>` : '<div>Collection complete</div>'}</div>`;
+        }
+      }
+      body.innerHTML = followup + `<div class="rrScNote9680">${esc(error?.message || "Collection unavailable.")}</div>`;
     }
   }
 
@@ -123,3 +139,4 @@
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init, { once: true });
   else init();
 })();
+

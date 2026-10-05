@@ -23,14 +23,18 @@
     return [...document.querySelectorAll('.ww-select:checked')]
       .map(el=>String(el.dataset.select||'').trim()).filter(Boolean);
   }
+  let sending=false;
   async function send(){
+    if(sending)return;
     const lots=selectedLots();
     if(!lots.length)return flash('SELECT AT LEAST ONE LOT');
+    sending=true;
     const button=$('sendChatBtn');
     try{
       if(button){button.disabled=true;button.textContent='UPDATING COLLECTION…';}
-      const result=await RF853.rpc('rr_direct_collection_send_v9684',{
+      const result=await RF853.rpc('rr_sales_collection_send_test71',{
         p_chat_id:chatId,
+        p_collection_cycle_id:window.RRSalesCollection?.context()?.collection_cycle_id||q.get('collection_cycle_id')||null,
         // The authenticated backend resolves missing identity from this chat.
         p_customer_id:customerId||null,
         p_lots:lots,
@@ -40,7 +44,7 @@
       if(!result?.token||!result?.collection_cycle_id)throw Error('COLLECTION UPDATE FAILED');
       try{
         sessionStorage.setItem('rr_real_chat_return_v9507',JSON.stringify({
-          chat_id:chatId,customer_name:customerName,ts:Date.now()
+          chat_id:chatId,customer_name:customerName,collection_cycle_id:result.collection_cycle_id,ts:Date.now()
         }));
       }catch(_){}
       flash(`${result.collection_display_no||'COLLECTION'} UPDATED ✓`);
@@ -49,6 +53,8 @@
         back.search='';
         back.searchParams.set('v','9684');
         back.searchParams.set('chat_id',chatId);
+        back.searchParams.set('followup','1');
+        back.searchParams.set('collection_cycle_id',result.collection_cycle_id);
         back.searchParams.set('refresh','1');
         back.hash='rr-chat';
         location.href=back.href;
@@ -56,6 +62,7 @@
     }catch(error){
       flash(error.message||'SEND FAILED');
     }finally{
+      sending=false;
       if(button){
         button.disabled=false;
         button.textContent=customerName?`SEND TO ${customerName}`:'SEND TO REAL CHAT';
@@ -65,6 +72,7 @@
   function bind(){
     const button=$('sendChatBtn');
     if(!button)return false;
+    button.disabled=false;
     button.onclick=event=>{
       event.preventDefault();
       event.stopImmediatePropagation();

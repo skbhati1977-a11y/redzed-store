@@ -4,7 +4,7 @@
   window.__RR_CHAT_REQUIREMENT_IDENTITY_V9682__ = true;
   const RX = /\[REQ:([0-9a-f-]{36})\]/i;
   const cache = new Map();
-  let activeId = "";
+  let activeId = "", messageSignature = "";
   const esc = (value) => String(value ?? "").replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" })[char]);
   const chatId = () => document.querySelector("#inboxRows .chatrow.on")?.dataset.chat || new URLSearchParams(location.search).get("chat_id") || localStorage.getItem("rr_real_chat_last_group_v9507") || "";
   const stage = (value) => ({
@@ -24,8 +24,9 @@
   }
 
   async function detail(id) {
-    if (!cache.has(id)) cache.set(id, RF853.rpc("rr_chat_requirement_detail_v9508", { p_chat_id: chatId(), p_requirement_id: id }));
-    return cache.get(id);
+    const key = chatId()+"|"+id;
+    if (!cache.has(key)) cache.set(key, RF853.rpc("rr_chat_requirement_detail_v9508", { p_chat_id: chatId(), p_requirement_id: id }));
+    return cache.get(key);
   }
 
   function label(data) {
@@ -52,7 +53,9 @@
   async function showSheet() {
     if (!activeId) return;
     try {
-      const data = await detail(activeId);
+      const requestedId=activeId,requestedChat=chatId();
+      const data = await detail(requestedId);
+      if(activeId!==requestedId||chatId()!==requestedChat)return;
       const body = document.getElementById("rrReqBody9508");
       if (!body) return;
       let meta = document.getElementById("rrReqIdentity9682");
@@ -89,10 +92,20 @@
     if (document.getElementById("rrReqBack9508")?.classList.contains("on")) showSheet();
   }
   function init() {
+    const base=RF853.rpc.bind(RF853);
+    RF853.rpc=async(name,args={})=>{
+      const data=await base(name,args);
+      if (/rr_chat_staff_messages_v/.test(name) && Array.isArray(data)) {
+        const next=JSON.stringify([args.p_chat_id,data.map(m=>[m.id,m.created_at,m.payload?.requirement_update_no,m.payload?.sample_request_update_no])]);
+        if(next!==messageSignature){messageSignature=next;cache.clear();}
+      }
+      return data;
+    };
     document.addEventListener("click", (event) => {
       const card = event.target.closest?.("#msgs .rrReqCard9508");
       if (!card) return;
       activeId = card.dataset.requirementId || (card.closest(".msg")?.textContent || "").match(RX)?.[1] || "";
+      cache.delete(chatId()+"|"+activeId);
       showSheet();
     }, true);
     css();
@@ -113,3 +126,4 @@
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init, { once: true });
   else init();
 })();
+

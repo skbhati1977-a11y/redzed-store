@@ -48,7 +48,7 @@
     try {
       const chat = chatId();
       const q=new URLSearchParams(location.search);
-      const data = staff ? await RF853.rpc('rr_chat_direct_cycle_state_test71', {p_chat_id:chat}) : await RF853.rpc('rr_collection_current_state_v9633',{p_token:q.get('t')||q.get('c')});
+      const data = staff ? await RF853.rpc('rr_sales_collection_context_test71', {p_chat_id:chat,p_collection_cycle_id:chat===q.get('chat_id')?q.get('collection_cycle_id')||null:null}) : await RF853.rpc('rr_collection_current_state_v9633',{p_token:q.get('t')||q.get('c')});
       if (!staff || chat === chatId()) { state = data; activeChat = chat; paint(); }
     } catch (_) {} finally { busy = false; }
   }
@@ -84,3 +84,4 @@
   hook();refresh();
   document.addEventListener('rr:v9605-requirement-sent',()=>setTimeout(paint,150));
 })();
+

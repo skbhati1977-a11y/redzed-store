@@ -19,6 +19,7 @@
     "test:real-chat-projection": "node scripts/test-real-chat-projection-gate-v712.cjs"
   },
   "devDependencies": {
-    "@playwright/test": "1.55.0"
+    "@playwright/test": "1.55.0",
+    "jsdom": "26.1.0"
   }
 }

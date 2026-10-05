@@ -13,10 +13,11 @@
     }
   })();
 
-  if (isWorkflowReturn) return;
+  if (isWorkflowReturn || new URLSearchParams(location.search).get('followup') === '1' || new URLSearchParams(location.search).has('collection_cycle_id')) return;
   const url = new URL(location.href);
   if (!url.searchParams.has("chat") && !url.searchParams.has("chat_id")) return;
   url.searchParams.delete("chat");
   url.searchParams.delete("chat_id");
   history.replaceState(history.state, "", url.pathname + url.search + url.hash);
 })();
+
