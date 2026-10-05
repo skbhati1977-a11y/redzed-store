@@ -1,50 +1,51 @@
-const CACHE='redzed-test71-target-v2';
-self.addEventListener('install',event=>event.waitUntil(self.skipWaiting()));
-self.addEventListener('activate',event=>event.waitUntil(self.clients.claim()));
+const CACHE='redzed-test71-notification-events-v3';
 const READ_CACHE='rr-notification-read-test71';
 let readQueue=Promise.resolve();
-async function readState(){try{const cache=await caches.open(READ_CACHE),r=await cache.match('/__rr_read_notifications71');return r?await r.json():[];}catch(_){return [];}}
+const activeChats=new Map();
+self.addEventListener('install',event=>event.waitUntil(self.skipWaiting()));
+self.addEventListener('activate',event=>event.waitUntil(self.clients.claim()));
+async function readState(){try{const c=await caches.open(READ_CACHE),r=await c.match('/__rr_read_state72');return r?await r.json():{events:[],chats:{}};}catch(_){return {events:[],chats:{}};}}
+async function writeState(state){const c=await caches.open(READ_CACHE);await c.put('/__rr_read_state72',new Response(JSON.stringify(state),{headers:{'Content-Type':'application/json'}}));}
 self.addEventListener('message',event=>{
  if(event.data?.type!=='rr:messages-read71')return;
- const ids=(event.data.ids||[]).filter(id=>typeof id==='string').slice(0,200);
+ const ids=(event.data.ids||[]).filter(id=>typeof id==='string').slice(0,200),chat=event.data.chat_id||'';
+ if(event.source?.id&&chat)activeChats.set(event.source.id,{chat,time:Date.now()});
  const work=readQueue=readQueue.catch(()=>{}).then(async()=>{
   const notices=await self.registration.getNotifications();
-  for(const notice of notices){const id=notice.data?.message_id; if(ids.includes(id)||ids.some(x=>['rr-'+x,'rr-message-'+x,'rr-collection-'+x].includes(notice.tag)||notice.tag?.startsWith('rr-cross-'+x+'|')))notice.close();}
-  try{const previous=await readState(),merged=[...new Set([...previous,...ids])].slice(-2000);const cache=await caches.open(READ_CACHE);await cache.put('/__rr_read_notifications71',new Response(JSON.stringify(merged),{headers:{'Content-Type':'application/json'}}));}catch(_){}
- });
- event.waitUntil(work);
+  for(const notice of notices){if(ids.includes(notice.data?.message_id)||(chat&&notice.data?.chat_id===chat))notice.close();}
+  const state=await readState();state.events=[...new Set([...state.events,...(event.data.events||[])])].slice(-2000);
+  if(chat)state.chats[chat]=Date.now();const chats=Object.entries(state.chats).sort((a,b)=>b[1]-a[1]).slice(0,100);state.chats=Object.fromEntries(chats);await writeState(state);
+ });event.waitUntil(work);
 });
 self.addEventListener('notificationclick',event=>{
  event.notification.close();
  event.waitUntil((async()=>{
-  let target;try{
-   target=new URL(event.notification.data?.url||'./s.html',self.location.href);
-   if(target.protocol!=='https:'||target.origin!==self.location.origin)return;
-   if(['/s.html','/index.html','/'].includes(target.pathname)){
-    target.searchParams.set('notification','1');
-    if(event.notification.data?.message_id)target.searchParams.set('activity_id',event.notification.data.message_id);
-    if(!event.notification.data?.collection_cycle_id)target.searchParams.set('open','chat');
-   }
+  let target;try{target=new URL(event.notification.data?.url||'./s.html',self.location.href);if(target.protocol!=='https:'||target.origin!==self.location.origin)return;
+   if(target.pathname.endsWith('/s.html')){target.searchParams.set('notification','1');if(event.notification.data?.message_id)target.searchParams.set('activity_id',event.notification.data.message_id);target.searchParams.set('open','chat');}
   }catch(_){return;}
+  const notices=await self.registration.getNotifications();for(const n of notices){if(event.notification.data?.chat_id&&n.data?.chat_id===event.notification.data.chat_id)n.close();}
   const windows=await self.clients.matchAll({type:'window',includeUncontrolled:true});
-  const exact=windows.find(client=>client.url===target.href);
-  if(exact){await exact.focus();return;}
-  const chat=windows.find(client=>{try{const u=new URL(client.url);return u.origin===target.origin&&u.pathname===target.pathname;}catch(_){return false;}});
-  if(chat){const navigated=await chat.navigate(target.href);await navigated?.focus();return;}
-  await self.clients.openWindow(target.href);
+  const exact=windows.find(c=>c.url===target.href);if(exact){await exact.focus();return;}
+  const chat=windows.find(c=>{try{const u=new URL(c.url);return u.origin===target.origin&&u.pathname===target.pathname;}catch(_){return false;}});
+  if(chat){const moved=await chat.navigate(target.href);await moved?.focus();return;}await self.clients.openWindow(target.href);
  })());
 });
-
 self.addEventListener('push',event=>{
- event.waitUntil((async()=>{
-  let data;try{data=event.data.json()}catch(_){data={preview:event.data?.text()||'New collection update'}}
-  await readQueue.catch(()=>{});
-  if(data.message_id&&!data.collection_cycle_id&&(await readState()).includes(data.message_id))return;
-  let url;try{url=new URL(data.url||'./s.html',self.location.href);if(url.origin!==self.location.origin||url.protocol!=='https:')return;}catch(_){return;}
-  const tag='rr-collection-'+String(data.event_key||data.message_id||data.chat_id||'new');
-  if(self.registration.getNotifications && (await self.registration.getNotifications({tag})).length)return;
-  await self.registration.showNotification(data.customer_name||'REDZED Collection',{body:String(data.preview||'नई collection update').slice(0,180),tag,renotify:false,icon:'./redzed-icon-test67.svg',data:{url:url.href,message_id:data.message_id||null,collection_cycle_id:data.collection_cycle_id||null}});
- })());
+ const work=readQueue=readQueue.catch(()=>{}).then(async()=>{
+  let data;try{data=event.data.json();}catch(_){data={preview:event.data?.text()||'New activity'};}
+  let url;try{url=new URL(data.url||'./s.html',self.location.href);
+   if(url.origin==='https://redzed-customer-collection.jggfab2011.chatgpt.site'&&url.pathname==='/s.html')url=new URL('./s.html'+url.search,self.location.href);
+   if(url.origin!==self.location.origin||url.protocol!=='https:')return;
+  }catch(_){return;}
+  const key=String(data.event_key||data.message_id||data.event_revision||data.chat_id||'new'),state=await readState();
+  if(state.events.includes(key))return;
+  const at=Date.parse(data.event_revision||'');
+  if(data.chat_id&&Number.isFinite(at)&&state.chats[data.chat_id]>=at)return;
+  const windows=await self.clients.matchAll({type:'window',includeUncontrolled:true});
+  if(data.chat_id&&windows.some(c=>c.visibilityState==='visible'&&activeChats.get(c.id)?.chat===data.chat_id&&Date.now()-activeChats.get(c.id).time<20000))return;
+  const tag='rr-chat-'+String(data.chat_id||data.message_id||key);
+  await self.registration.showNotification(data.customer_name||'REDZED Chat',{body:String(data.preview||'नई activity').slice(0,180),tag,renotify:true,icon:'./redzed-icon-test67.svg',data:{url:url.href,message_id:data.message_id||null,chat_id:data.chat_id||null,collection_cycle_id:data.collection_cycle_id||null,event_key:key,event_revision:data.event_revision||null}});
+  state.events=[...state.events,key].slice(-2000);await writeState(state);
+ });event.waitUntil(work);
 });
-
 self.addEventListener('fetch',event=>{if(event.request.mode==='navigate')event.respondWith(fetch(event.request));});

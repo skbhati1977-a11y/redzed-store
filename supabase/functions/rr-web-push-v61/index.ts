@@ -42,6 +42,7 @@ Deno.serve(async (request) => {
     }
     if (!actorId) return json({ error: "valid staff, customer or distributor session required" }, 401);
     if (workerId && deviceKey) await db.from("rr_web_push_subscriptions_v61").update({ enabled: false, updated_at: new Date().toISOString() }).eq("worker_id", workerId).eq("device_key", deviceKey).neq("endpoint", subscription.endpoint);
+    if (!workerId && deviceKey) await db.from("rr_web_push_subscriptions_v61").update({ enabled: false, updated_at: new Date().toISOString() }).eq("actor_kind",actorKind).eq("actor_id",actorId).eq("device_key",deviceKey).neq("endpoint",subscription.endpoint);
     const row = { worker_id: workerId, actor_kind: actorKind, actor_id: actorId, chat_id: chatId, device_key: deviceKey || null, endpoint: subscription.endpoint, p256dh: subscription.keys.p256dh, auth: subscription.keys.auth, user_agent: request.headers.get("user-agent"), route_url: String(body.route_url || "").slice(0, 1500), enabled: true, updated_at: new Date().toISOString() };
     const { error } = await db.from("rr_web_push_subscriptions_v61").upsert(row, { onConflict: "endpoint" });
     if (error) throw error;

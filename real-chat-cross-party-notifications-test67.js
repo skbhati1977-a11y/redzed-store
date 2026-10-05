@@ -89,7 +89,7 @@
   let actor = null;
   function revision(message) {
     const p=message.payload || {};
-    return [message.id, p.requirement_update_no ?? "", p.collection_update_no ?? ""].join("|");
+    return [message.id, p.requirement_update_no ?? "", p.collection_update_no ?? "", p.sample_request_update_no ?? "",message.created_at ?? ""].join("|");
   }
   function receive(name, args, rows) {
     if (!Array.isArray(rows) || !/rr_chat_(staff|customer)_messages/.test(name)) return;
@@ -123,7 +123,7 @@
   }
   if(!hook()) {let tries=0;const timer=setInterval(()=>{if(hook()||++tries>60)clearInterval(timer);},100);}
 
-  navigator.serviceWorker?.register("./redzed-sw-test67.js?v=TEST71-READ-CLEAR-20261005").catch(() => {});
+  navigator.serviceWorker?.register("./redzed-sw-test67.js?v=TEST71-SINGLE-PUSH-20261005").catch(() => {});
   addEventListener("pointerdown", () => {
     try {
       audio ||= new (window.AudioContext || window.webkitAudioContext)();

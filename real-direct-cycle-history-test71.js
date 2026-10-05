@@ -69,12 +69,14 @@
   const privateView=staff&&window.RRSalesChatActions71?.context()?.channel!=='GROUP';
   host.hidden=!state?.collection_cycle_id||privateView;
   if(host.hidden){measure();return;}
+  host.dataset.cycleId=String(state.collection_cycle_id);
   const html=beltMarkup(state);
   if(host._html!==html){const open=!!host.querySelector('details[open]');host.innerHTML=html;host._html=html;if(open)host.querySelector('details')?.setAttribute('open','');const sheet=document.getElementById('rrLiveDetail71');if(sheet)sheet.querySelector('section').innerHTML='<button type="button" data-live-action="close">CLOSE ×</button>'+markup(state);}
   // Consolidated workflow history lives in this dock; normal messages remain in the stream.
   document.querySelectorAll(staff?'#msgs .msg':'#fsMsgs .fsm').forEach(row=>{
+   if(staff&&row.querySelector('.rrMarketLinkCard9505,.rrReqCard9508')){row.style.setProperty('display','none','important');return;}
    if(!row.dataset.rrCycle71)return;
-   if(row.dataset.rrWorkflow71==='1'||['COLLECTION','REQUIREMENT','CATEGORY'].includes(row.dataset.rrWorkflow71))row.style.display='none';
+   if(row.dataset.rrWorkflow71==='1'||['COLLECTION','REQUIREMENT','CATEGORY'].includes(row.dataset.rrWorkflow71))row.style.setProperty('display','none','important');
   });
   document.querySelectorAll('.rrCycleHistory71').forEach(el=>el.remove());
   measure();
@@ -92,7 +94,12 @@
  document.addEventListener('click',e=>{
   const action=e.target.closest?.('.rrCycleLive71 [data-live-action]');if(!action||!state)return;
   e.preventDefault();
-  if(action.dataset.liveAction==='details'){showDetails();return;}
+  if(action.dataset.liveAction==='details'){
+   if(staff&&state.latest_collection_token&&window.RRStaffCollectionViewer71){const u=new URL('s.html',location.href);u.searchParams.set('t',state.latest_collection_token);window.RRStaffCollectionViewer71.open(u.href);}
+   else if(staff)showDetails();
+   else {const b=document.getElementById('fcReopen')||document.getElementById('fcOpen');if(state.latest_collection_token&&state.latest_collection_token!==token){const u=new URL('s.html',location.href);u.searchParams.set('t',state.latest_collection_token);u.searchParams.set('open','collection');location.href=u.href;}else b?.onclick?.();}
+   return;
+  }
   if(action.dataset.liveAction==='close'){document.getElementById('rrLiveDetail71')?.remove();return;}
   document.getElementById('rrLiveDetail71')?.remove();
   if(staff){

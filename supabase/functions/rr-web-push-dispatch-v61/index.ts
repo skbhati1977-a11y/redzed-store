@@ -2,6 +2,16 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import webpush from "npm:web-push@3.6.7";
 
+function customerPushRoute71(target: string | null, route: string | null): string {
+ try {
+  const base=new URL(route||'');const dest=new URL(target||route||'');
+  if(dest.origin==='https://redzed-customer-collection.jggfab2011.chatgpt.site'&&dest.pathname==='/s.html'){
+   dest.protocol=base.protocol;dest.host=base.host;dest.pathname=base.pathname.replace(/[^/]*$/,'s.html');return dest.href;
+  }
+  return target||route||'./';
+ }catch(_){return route||'./';}
+}
+
 Deno.serve(async (request) => {
   try {
     if (request.method !== "POST") return new Response("method", { status: 405 });
@@ -49,7 +59,7 @@ Deno.serve(async (request) => {
     if (!body.outbox_id || !body.dispatch_token) return new Response("unauthorized", { status: 401 });
     const { data: outbox } = await db.from("rr_chat_push_outbox_v61").select("*").eq("id", body.outbox_id).eq("dispatch_token", body.dispatch_token).is("processed_at", null).maybeSingle();
     if (!outbox) return new Response("already processed", { status: 200 });
-    const { data: message } = await db.from("rr_customer_chat_messages_v9433").select("sender_kind,sender_customer_id,sender_profile_id,sender_name,payload").eq("id", outbox.message_id).maybeSingle();
+    const { data: message } = await db.from("rr_customer_chat_messages_v9433").select("sender_kind,sender_customer_id,sender_profile_id,sender_name,payload,created_at").eq("id", outbox.message_id).maybeSingle();
     const { data: chat } = await db.from("rr_customer_chat_v9433").select("customer_id,relation_kind").eq("id", outbox.chat_id).maybeSingle();
     const { data: relation } = await db.from("rr_market_partner_relation_chat_v67").select("relation_kind,owner_customer_id,partner_customer_id").eq("chat_id", outbox.chat_id).eq("status", "ACTIVE").maybeSingle();
     const sender = String(message?.sender_kind || "").toUpperCase();
@@ -71,12 +81,12 @@ Deno.serve(async (request) => {
       if (ids.length) { const { data } = await db.from("rr_web_push_subscriptions_v61").select("*").eq("enabled", true).in("worker_id", ids); const all=data||[],preferred=new Set(all.filter((x:any)=>x.device_key).map((x:any)=>String(x.worker_id)));subscriptions=all.filter((x:any)=>Boolean(x.device_key)||!preferred.has(String(x.worker_id))); }
     } else if (actorKind && actorId) {
       const { data } = await db.from("rr_web_push_subscriptions_v61").select("*").eq("enabled", true).eq("actor_kind", actorKind).eq("actor_id", actorId);
-      subscriptions = data || [];
+      const all=data||[],preferred=new Set(all.filter((x:any)=>x.device_key).map((x:any)=>String(x.actor_kind)+"|"+String(x.actor_id)));subscriptions=all.filter((x:any)=>Boolean(x.device_key)||!preferred.has(String(x.actor_kind)+"|"+String(x.actor_id)));
     }
     webpush.setVapidDetails("https://skbhati1977-a11y.github.io/redzed-store/", Deno.env.get("VAPID_PUBLIC_KEY")!, Deno.env.get("VAPID_PRIVATE_KEY")!);
     let sent = 0;
     for (const subscription of subscriptions) {
-      const payload = JSON.stringify({ message_id: outbox.message_id, chat_id: outbox.chat_id, customer_name: message?.sender_name || outbox.customer_name, preview: outbox.preview, url: actorKind === "STAFF" ? (()=>{try{const u=new URL(subscription.route_url);u.pathname=u.pathname.replace(/[^/]*$/, "real-sales-live-chat-v9434.html");u.search="";u.searchParams.set("chat_id",outbox.chat_id);return u.href}catch(_){return subscription.route_url||"./"}})() : outbox.target_url || subscription.route_url || "./", collection_cycle_id: outbox.collection_cycle_id || null, event_key: outbox.collection_cycle_id ? `${outbox.message_id}:${outbox.collection_update_no}` : outbox.message_id });
+      const payload = JSON.stringify({ message_id: outbox.message_id, chat_id: outbox.chat_id, customer_name: message?.sender_name || outbox.customer_name, preview: outbox.preview || (String(message?.payload?.mime_type||"").startsWith("audio/")?"Voice message":"New message"), url: actorKind === "STAFF" ? (()=>{try{const u=new URL(subscription.route_url);u.pathname=u.pathname.replace(/[^/]*$/, "real-sales-live-chat-v9434.html");u.search="";u.searchParams.set("chat_id",outbox.chat_id);return u.href}catch(_){return subscription.route_url||"./"}})() : customerPushRoute71(outbox.target_url, subscription.route_url), event_revision:message?.created_at||outbox.created_at, collection_cycle_id: outbox.collection_cycle_id || null, event_key: `${outbox.message_id}:${message?.created_at||outbox.created_at}` });
       try {
         await webpush.sendNotification({ endpoint: subscription.endpoint, keys: { p256dh: subscription.p256dh, auth: subscription.auth } }, payload, { TTL: 300, urgency: "high" }); sent++;
       } catch (error: any) {
