@@ -8,7 +8,10 @@
     piId = null,
     piNo = "",
     customerId = null,
-    isSuper = false;
+    isSuper = false,
+    discountDirty = false,
+    saving = false,
+    finalized = false;
   try {
     ctx = JSON.parse(sessionStorage.getItem("rr_pi_requirement_v9514") || "{}");
   } catch (_) {}
@@ -25,7 +28,6 @@
     piNo = "";
   }
   async function loadRequirementUrl() {
-    if (lines.length) return;
     const query = new URLSearchParams(location.search);
     const savedPiId = query.get("pi_id");
     if (savedPiId) {
@@ -36,6 +38,7 @@
       }));
       piId = ctx.pi_id;
       piNo = ctx.pi_no || "";
+      finalized = !!ctx.status && ctx.status !== "DRAFT";
       return;
     }
     const id = query.get("requirement_id");
@@ -68,8 +71,16 @@
             c.customer_lot_rate == null ? null : +c.customer_lot_rate;
           const mapped = +c.effective_rate || x.approved;
           if (!preserve || x.rate == null) x.rate = mapped;
+          if (x.stock_type === "TRADED" && !finalized) {
+            const trade = await rpc("rr_trade_effective_rate_v849", {
+              p_lot_no: x.lot_no,
+              p_party_name: ctx.customer_name,
+              p_data_mode: "TEST",
+            });
+            x.approved = x.rate = +trade.target_sale_rate;
+          }
           x.allowed = +c.allowed_discount || 0;
-          if (x.discount == null) x.discount = x.allowed;
+          if (!discountDirty && !finalized) x.discount = x.allowed;
           x.available = +c.available_qty || 0;
           x.box = +c.pack_pcs_per_box || 0;
           x.rate_path = c.rate_path || "NONE";
@@ -77,6 +88,7 @@
           x.image = c.image || x.image || "";
           x.size = c.size_text || c.size || x.size || "";
           customerId = c.customer_id || customerId;
+          delete x.context_error;
           try {
             x.godown = await rpc("rr_pi_staff_godown_v67", {
               p_lot_no: x.lot_no,
@@ -124,11 +136,19 @@
     document.querySelectorAll(".qty,.rate,.disc").forEach(
       (el) =>
         (el.onchange = (e) => {
+          if (finalized || saving) return;
           const x = lines[+e.target.dataset.i],
             v = +e.target.value || 0;
           if (e.target.classList.contains("qty")) x.qty = v;
           if (e.target.classList.contains("rate")) x.rate = v;
-          if (e.target.classList.contains("disc") && isSuper) x.discount = v;
+          if (e.target.classList.contains("disc") && isSuper && !finalized) {
+            if (!Number.isFinite(v) || v < 0 || v > 10) {
+              $("msg").textContent = "Party discount must be between ₹0 and ₹10 per piece.";
+            } else {
+              discountDirty = true;
+              lines.forEach((line) => (line.discount = v));
+            }
+          }
           render();
         }),
     );
@@ -181,13 +201,15 @@
   }
   async function boot() {
     try {
-      await RR.requireRoles(["owner", "admin", "sales"]);
+      await RR.requireRoles(["owner", "superadmin", "super_admin", "admin", "sales"]);
       await loadTest();
       await loadRequirementUrl();
       const ac = await rpc("rr_pi_actor_context_v9526");
       isSuper = !!ac.superadmin;
       $("customer").value = ctx.customer_name || "";
       $("dispatch").value = ctx.dispatch_details || "";
+      $("freight").value = +ctx.freight_amount || 0;
+      $("other").value = +ctx.packing_other || 0;
       $("piDate").textContent = new Date().toLocaleDateString("en-IN");
       await contexts(!!piId);
       if (piNo) $("piNo").textContent = "PI No. " + piNo;
@@ -196,6 +218,11 @@
       ["value", "freight", "other"].forEach((id) => ($(id).oninput = render));
       $("save").onclick = () => save(false);
       $("convertCi").onclick = () => save(true);
+      if (finalized) {
+        document.querySelectorAll("input,textarea,button.del").forEach((el) => (el.disabled = true));
+        $("save").disabled = $("convertCi").disabled = true;
+        $("msg").textContent = "Finalized bill · saved discount snapshot.";
+      }
     } catch (e) {
       $("msg").textContent = e.message;
     }
@@ -219,22 +246,14 @@
       }
   }
   async function save(finalize = false) {
+    if (saving || finalized) return;
+    saving = true;
     try {
-      await getReasons();
       $("msg").textContent = "Revalidating stock/rate…";
       await contexts(true);
-      if (isSuper && customerId) {
-        const d = lines.length ? +lines[0].discount || 0 : 0;
-        if (lines.some((x) => (+x.discount || 0) !== d))
-          throw Error("Party discount must be same on all PI lines.");
-        if (d !== (lines[0]?.allowed || 0)) {
-          await rpc("rr_pi_set_customer_discount_v9525", {
-            p_customer_id: customerId,
-            p_discount: d,
-          });
-          lines.forEach((x) => (x.allowed = d));
-        }
-      }
+      if (lines.some((x) => x.context_error))
+        throw Error("Party/stock context could not be verified. Please retry.");
+      await getReasons();
       const payload = lines.map((x) => ({
         lot_no: x.lot_no,
         short_item_name: x.category || x.lot_no,
@@ -251,17 +270,23 @@
         dispatch = [$("dispatch").value, manual && `Remarks: ${manual}`]
           .filter(Boolean)
           .join(" | ");
-      const res = await rpc("rr_fg_save_pi_v816", {
+      const res = await rpc("rr_fg_save_pi_party_discount_v9557", {
         p_pi_id: piId,
         p_customer_name: ctx.customer_name,
         p_dispatch_details: dispatch,
         p_lines: payload,
+        p_party_discount: isSuper && discountDirty ? +lines[0].discount : null,
         p_freight_amount: +$("freight").value || 0,
         p_packing_other: (+$("other").value || 0) + va,
         p_gst_pct: 0,
         p_finalize: finalize,
         p_data_mode: "TEST",
       });
+      discountDirty = false;
+      lines.forEach((x) => {
+        x.discount = x.allowed = +res.party_discount_per_piece || 0;
+      });
+      render();
       piId = res.pi_id || piId;
       if (piId && !piNo) {
         piNo = await rpc("rr_pi_apply_display_no_v9540", { p_pi_id: piId });
@@ -311,6 +336,7 @@
       const convert = $("convertCi");
       if (convert) convert.disabled = !piId || finalize;
       if (finalize) {
+        finalized = true;
         $("piNo").textContent = `CI No. ${res.cpi_no || res.ci_no || piNo}`;
         $("save").disabled = true;
         $("msg").textContent = `CI ${res.cpi_no || res.ci_no || ""} finalised.`;
@@ -319,6 +345,8 @@
       }
     } catch (e) {
       $("msg").textContent = e.message;
+    } finally {
+      saving = false;
     }
   }
   boot();

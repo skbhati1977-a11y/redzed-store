@@ -1,0 +1,58 @@
+begin;
+do $test$
+declare owner_id uuid; sales_id uuid; cid uuid; cname text:='TEST71 DISCOUNT AUDIT '||gen_random_uuid(); r jsonb; pid uuid; oldpid uuid; before_snapshot jsonb; n integer; passed boolean; trade record; stock record; ln jsonb:='[{"lot_no":"TEST71-DISC-A","stock_type":"REGULAR","qty":2,"rate":100},{"lot_no":"TEST71-DISC-B","stock_type":"ASST","qty":3,"rate":200}]';
+begin
+ select auth_user_id into owner_id from rr_user_profiles where lower(role_code) in ('owner','super_admin','superadmin') and is_active and upper(coalesce(access_status,'ACTIVE'))='ACTIVE' limit 1;
+ select auth_user_id into sales_id from rr_user_profiles where lower(role_code)='sales' and is_active and upper(coalesce(access_status,'ACTIVE'))='ACTIVE' limit 1;
+ if owner_id is null or sales_id is null then raise exception 'Audit staff fixtures missing'; end if;
+ perform set_config('request.jwt.claim.sub',owner_id::text,true);
+ insert into rr_customers(customer_name) values(cname) returning id into cid;
+ if not (rr_pi_actor_context_v9526()->>'superadmin')::boolean then raise exception 'Owner role mismatch'; end if;
+ perform rr_market_set_customer_discount_v9423(cid,1);
+ r:=rr_fg_save_pi_party_discount_v9557(null,cname,'AUDIT',ln,5);
+ pid:=(r->>'pi_id')::uuid;
+ if (select allowed_discount_per_piece from rr_customers where id=cid)<>5 then raise exception 'Party default did not persist'; end if;
+ if (select count(*) from rr_fg_pi_lines_v787 where pi_id=pid and party_discount_per_piece=5 and final_rate=gross_rate-5 and gross_rate=case lot_no when 'TEST71-DISC-A' then 100 else 200 end)<>2 then raise exception 'Line mapping/equal discount failed'; end if;
+ if not exists(select 1 from rr_customer_discount_history_v9420 where customer_id=cid and source_pi_id=pid and discount_per_piece=5) then raise exception 'Approval history missing'; end if;
+ if (select (snapshot->'header'->>'party_discount_per_piece')::numeric from rr_fg_pi_versions_v787 where pi_id=pid)<>5 then raise exception 'Version snapshot missing discount'; end if;
+ -- Frozen bill fixture avoids performing any stock sale.
+ update rr_fg_pi_v787 set status='CI_FINAL' where id=pid;
+ oldpid:=pid; select to_jsonb(p) into before_snapshot from rr_fg_pi_v787 p where id=oldpid;
+ perform set_config('request.jwt.claim.sub',sales_id::text,true);
+ r:=rr_fg_save_pi_party_discount_v9557(null,cname,'AUDIT',ln,null);
+ if (r->>'party_discount_per_piece')::numeric<>5 then raise exception 'Sales default inheritance failed'; end if;
+ passed:=false;
+ begin perform rr_fg_save_pi_party_discount_v9557(null,cname,'AUDIT',ln,6);
+ exception when others then if sqlerrm like 'SUPERADMIN ONLY%' then passed:=true; else raise; end if; end;
+ if not passed then raise exception 'Sales changed party discount'; end if;
+ perform set_config('request.jwt.claim.sub',owner_id::text,true);
+ select count(*) into n from rr_customer_discount_history_v9420 where customer_id=cid;
+ passed:=false;
+ begin perform rr_fg_save_pi_party_discount_v9557(null,cname,'AUDIT','[{"lot_no":"BAD","stock_type":"BAD","qty":1,"rate":100}]',7);
+ exception when others then if sqlerrm='Invalid PI line' then passed:=true; else raise; end if; end;
+ if not passed or (select allowed_discount_per_piece from rr_customers where id=cid)<>5 or (select count(*) from rr_customer_discount_history_v9420 where customer_id=cid)<>n then raise exception 'Failed save changed permanent default/history'; end if;
+ r:=rr_fg_save_pi_party_discount_v9557(null,cname,'AUDIT',ln,7);
+ if (select to_jsonb(p) from rr_fg_pi_v787 p where id=oldpid) is distinct from before_snapshot then raise exception 'Old finalized bill changed'; end if;
+ passed:=false;
+ begin perform rr_fg_save_pi_party_discount_v9557(oldpid,cname,'AUDIT',ln,8);
+ exception when others then if sqlerrm='Editable PI not found' then passed:=true; else raise; end if; end;
+ if not passed or (select allowed_discount_per_piece from rr_customers where id=cid)<>7 then raise exception 'Finalized guard/rollback failed'; end if;
+ perform set_config('request.jwt.claim.sub',sales_id::text,true);
+ r:=rr_fg_save_pi_party_discount_v9557(null,cname,'AUDIT',ln,null);
+ if (r->>'party_discount_per_piece')::numeric<>7 then raise exception 'Future bill did not follow new default'; end if;
+ select * into trade from rr_rm_stock_v849_2c6 where data_mode='TEST' and sale_ready and target_sale_rate-minimum_allowed_sale_rate>=7 limit 1;
+ if found then
+ r:=rr_fg_save_pi_party_discount_v9557(null,cname,'AUDIT',jsonb_build_array(jsonb_build_object('lot_no',trade.lot_no,'stock_type','TRADED','qty',1,'rate',trade.target_sale_rate)),null);
+ if (select final_rate from rr_fg_pi_lines_v787 where pi_id=(r->>'pi_id')::uuid)<>trade.target_sale_rate-7 then raise exception 'Traded item ignored party discount'; end if;
+ end if;
+ select * into stock from rr_fg_stock_balance_v787 where data_mode='TEST' and stock_type='REGULAR' and available_qty>=1 limit 1;
+ if not found then raise exception 'CI stock fixture missing'; end if;
+ r:=rr_fg_save_pi_party_discount_v9557(null,cname,'AUDIT',jsonb_build_array(jsonb_build_object('lot_no',stock.lot_no,'stock_type','REGULAR','qty',1,'rate',100)),null,0,0,0,true,'TEST');
+ pid:=(r->>'pi_id')::uuid;
+ if (select status from rr_fg_pi_v787 where id=pid)<>'CI_FINAL' or (select final_rate from rr_fg_pi_lines_v787 where pi_id=pid)<>93 then raise exception 'CI did not inherit party discount'; end if;
+ if not exists(select 1 from rr_fg_stock_ledger_v787 g join rr_fg_pi_lines_v787 l on g.ref_id=l.id where l.pi_id=pid and g.txn_type='CI_SALE' and g.rate=93) then raise exception 'CI stock ledger discount differs'; end if;
+ r:=rr_sales_pi_detail_v500(pid);
+ if (r->'lines'->0->>'rate')::numeric<>100 or (r->'lines'->0->>'discount')::numeric<>7 then raise exception 'Bill detail did not restore saved gross/discount'; end if;
+ raise notice 'PASS: role, uniform discount, permanent default, Sales inheritance/rejection, atomic rollback, future changes, frozen bills, traded parity';
+end $test$;
+rollback;
