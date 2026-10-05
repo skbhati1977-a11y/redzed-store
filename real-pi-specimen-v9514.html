@@ -210,6 +210,13 @@
           display: none !important;
         }
       }
+      #itemEditor > .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .item-add-row { display: grid; grid-template-columns: minmax(0, 1fr) 112px; gap: 10px; align-items: end; margin-top: 12px; }
+      .item-add-row #addItem { width: 100%; min-width: 0; min-height: 48px; margin: 0; }
+      .item-add-row .f { min-width: 0; }
+      .item-add-row label { font-size: 12px; }
+      .item-add-row select { width: 100%; min-width: 0; min-height: 48px; padding: 8px 4px; border: 1px solid #465a73; border-radius: 10px; background: #182535; color: #fff; font: inherit; font-size: 13px; }
+      @media (max-width: 650px) { #itemEditor > .grid { grid-template-columns: 1fr; } }
       .lot-picker { position: relative; }
       #itemLotSuggestions { position: absolute; top: 100%; left: 0; right: 0; z-index: 20; max-height: 280px; overflow-y: auto; background: #111b27; border: 1px solid #65778b; border-radius: 10px; box-shadow: 0 8px 24px #0008; }
       #itemLotSuggestions[hidden] { display: none; }
@@ -254,9 +261,11 @@
         <div class="grid">
           <div class="f lot-picker"><label for="itemLot">Lot No.</label><input id="itemLot" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="itemLotSuggestions" /><div id="itemLotSuggestions" role="listbox" aria-label="Lot suggestions" hidden></div></div>
           <div class="f"><label for="itemQty">PCS Qty</label><input id="itemQty" type="number" min="1" step="1" /></div>
+        </div>
+        <div class="item-add-row">
+          <button class="btn" type="button" id="addItem">ADD ITEM</button>
           <div class="f"><label for="itemStockType">Stock Type</label><select id="itemStockType"><option value="REGULAR">REGULAR</option><option value="ASST">ASST</option><option value="TRADED">TRADED</option></select></div>
         </div>
-        <button class="btn" type="button" id="addItem">ADD ITEM</button>
         <button class="btn" type="button" id="cancelItemEdit" hidden>CANCEL EDIT</button>
         <div class="muted" id="itemEditorMessage" role="status"></div>
       </section>
