@@ -27,18 +27,18 @@ Deno.serve(async (request) => {
         actorKind = "PARTNER_CUSTOMER"; actorId = downstream.data.partner_customer_id; chatId = downstream.data.chat_id || null;
       }
       if (!actorId) {
-        const distributor = await db.rpc("rr_market_partner_context_v67", { p_session_token: body.session_token, p_device_id: body.device_id });
-        if (!distributor.error && distributor.data?.owner_customer_id) { actorKind = "DISTRIBUTOR"; actorId = distributor.data.owner_customer_id; }
-      }
-      if (!actorId) {
         const customer = await db.rpc("rr_customer_session_validate_v9590", { p_session_token: body.session_token, p_device_id: body.device_id });
         const customerId = customer.data?.customer_id;
         if (!customer.error && customerId) {
-          actorKind = "CUSTOMER"; actorId = customerId;
-          const { data: chat } = await db.from("rr_customer_chat_v9433").select("id").eq("customer_id", customerId).eq("relation_kind", "DIRECT_CUSTOMER").eq("status", "OPEN").limit(1).maybeSingle();
-          chatId = chat?.id || null;
+          const { data: chat } = await db.from("rr_customer_chat_v9433").select("id").eq("id", customer.data.chat_id).eq("customer_id", customerId).eq("relation_kind", "DIRECT_CUSTOMER").eq("status", "OPEN").limit(1).maybeSingle();
+          if(chat?.id){actorKind = "CUSTOMER"; actorId = customerId;chatId=chat.id;}
         }
       }
+      if (!actorId) {
+        const distributor = await db.rpc("rr_market_partner_context_v67", { p_session_token: body.session_token, p_device_id: body.device_id });
+        if (!distributor.error && distributor.data?.owner_customer_id) { actorKind = "DISTRIBUTOR"; actorId = distributor.data.owner_customer_id; }
+      }
+
     }
     if (!actorId) return json({ error: "valid staff, customer or distributor session required" }, 401);
     if (workerId && deviceKey) await db.from("rr_web_push_subscriptions_v61").update({ enabled: false, updated_at: new Date().toISOString() }).eq("worker_id", workerId).eq("device_key", deviceKey).neq("endpoint", subscription.endpoint);
@@ -48,4 +48,3 @@ Deno.serve(async (request) => {
     return json({ ok: true, actor_kind: actorKind });
   } catch (error) { return json({ error: String(error instanceof Error ? error.message : error) }, 400); }
 });
-
