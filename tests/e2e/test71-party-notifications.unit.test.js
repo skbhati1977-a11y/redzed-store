@@ -10,3 +10,19 @@ async function run(staff){
 }
 test('Sales history, reopening and even new rows never trigger this party alert path',async()=>{const x=await run(true);try{await x.call([msg('old',Date.now()-86400000)]);await x.call([msg('new',Date.now()+1000)]);assert.equal(x.count(),0);assert.equal(x.d.window.document.getElementById('rrCrossPartyNotice67'),null)}finally{x.d.window.close()}});
 test('party baseline and older history silent; new Sales activity alerts once; own activity silent',async()=>{const x=await run(false);try{const now=Date.now();await x.call([]);await x.call([msg('old',now-86400000)]);assert.equal(x.count(),0);await x.call([msg('fresh',now+1000)]);assert.equal(x.count(),1);await x.call([msg('fresh',now+1000)]);assert.equal(x.count(),1);await x.call([msg('own',now+2000,'CUSTOMER')]);assert.equal(x.count(),1)}finally{x.d.window.close()}});
+test('new collection notification carries its exact token and cycle',async()=>{
+ const x=await run(false);try{
+  const message={...msg('new',Date.now()+1000),payload:{url:'https://example.test/s.html?t=new-party-token&r=req-a',direct_collection_cycle_id:'cycle-a'}};
+  const target=new URL(x.d.window.RRChatActivityTarget71(message));assert.equal(target.searchParams.get('t'),'new-party-token');assert.equal(target.searchParams.get('collection_cycle_id'),'cycle-a');assert.equal(target.searchParams.get('open'),'collection');
+  assert.equal(x.d.window.RRChatActivityTarget71({...message,payload:{url:'https://evil.test/s.html?t=bad'}}),x.d.window.location.href);
+ }finally{x.d.window.close()}
+});
+test('notification tap navigates the matching collection tab and never another party surface',async()=>{
+ const vm=require('node:vm'),listeners={},actions=[];
+ const target='https://example.test/s.html?t=party-new&open=collection';
+ const windows=[{url:'https://example.test/other.html',navigate:async()=>actions.push('wrong')},{url:'https://example.test/s.html?t=party-old',navigate:async url=>{actions.push(url);return {focus:async()=>actions.push('focus')}}}];
+ const self={location:{href:'https://example.test/redzed-sw-test67.js',origin:'https://example.test'},addEventListener:(n,f)=>listeners[n]=f,clients:{matchAll:async()=>windows,openWindow:async u=>actions.push(u)}};
+ vm.runInNewContext(fs.readFileSync(path.join(__dirname,'../../redzed-sw-test67.js'),'utf8'),{self,URL});
+ let task;listeners.notificationclick({notification:{data:{url:target},close:()=>{}},waitUntil:p=>task=p});await task;assert.deepEqual(actions,[target,'focus']);
+ actions.length=0;windows.length=0;listeners.notificationclick({notification:{data:{url:target},close:()=>{}},waitUntil:p=>task=p});await task;assert.deepEqual(actions,[target]);
+});

@@ -27,18 +27,19 @@
     } catch (_) {}
   }
 
-  function banner(title, body) {
+  function banner(title, body, target) {
     let box = document.getElementById("rrCrossPartyNotice67");
     if (!box) {
       box = document.createElement("button");
       box.id = "rrCrossPartyNotice67";
       box.type = "button";
       box.setAttribute("aria-label", "Dismiss chat notification");
-      box.onclick = () => { clearTimeout(banner.timer); box.hidden = true; };
+      box.onclick = () => { clearTimeout(banner.timer); box.hidden = true; if(box.dataset.target && box.dataset.target!==location.href)location.href=box.dataset.target; };
       box.style.cssText = "position:fixed;z-index:2147483646;top:12px;left:50%;transform:translateX(-50%);width:min(92vw,440px);padding:13px 15px;border:1px solid #6caef2;border-radius:14px;background:#122236;color:#fff;box-shadow:0 12px 34px #000a;text-align:left;font:inherit";
       document.body.appendChild(box);
     }
     box.innerHTML = `<b style="display:block;margin-bottom:3px">${escapeHtml(title)}</b><span>${escapeHtml(body)}</span>`;
+    box.dataset.target=target||location.href;
     box.hidden = false;
     clearTimeout(banner.timer);
     banner.timer = setTimeout(() => (box.hidden = true), 5500);
@@ -48,14 +49,28 @@
     "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
   })[char]);
 
-  async function systemNotice(title, body, key) {
+  function activityTarget(message) {
+    const raw=message?.payload?.url || String(message?.body||'').match(/https:\/\/[^\s<]+\/s\.html\?[^\s<]+/i)?.[0];
+    if(!raw)return location.href;
+    try {
+      const u=new URL(raw,location.href);
+      if(u.protocol!=='https:' || (u.origin!==location.origin && u.origin!=='https://redzed-customer-collection.jggfab2011.chatgpt.site') || !u.pathname.endsWith('/s.html') || !(u.searchParams.get('t')||u.searchParams.get('c')))return location.href;
+      u.searchParams.set('open','collection');
+      const cycle=message?.payload?.direct_collection_cycle_id;
+      if(cycle)u.searchParams.set('collection_cycle_id',cycle);
+      u.searchParams.set('activity_id',String(message.id||''));
+      return u.href;
+    }catch(_){return location.href;}
+  }
+  window.RRChatActivityTarget71=activityTarget;
+  async function systemNotice(title, body, key, target) {
     if (muted() || !("Notification" in window) || Notification.permission !== "granted") return;
     const options = {
       body,
       tag: `rr-cross-${key}`,
       renotify: false,
       vibrate: [160, 80, 160],
-      data: { url: location.href },
+      data: { url: target },
       icon: "./redzed-icon-test67.svg",
       badge: "./redzed-icon-test67.svg",
     };
@@ -90,9 +105,9 @@
       if (own || muted() || String(message.sender_kind || "").toUpperCase() !== "STAFF") return;
       const title=document.getElementById("chatTitle")?.textContent?.trim() || "REDZED Chat";
       const body=`${message.sender_name || "New update"}: ${message.body || "New activity"}`.slice(0,180);
-      banner(title,body);tone();navigator.vibrate?.([160,80,160]);
+      banner(title,body,activityTarget(message));tone();navigator.vibrate?.([160,80,160]);
       // The open chat already shows this update. System alerts belong to background receipt.
-      if(document.hidden) systemNotice(title,body,key);
+      if(document.hidden) systemNotice(title,body,key,activityTarget(message));
     });
     entry.watermark=Math.max(entry.watermark,...rows.map(m=>Date.parse(m.created_at)||0));
   }
@@ -107,7 +122,7 @@
   }
   if(!hook()) {let tries=0;const timer=setInterval(()=>{if(hook()||++tries>60)clearInterval(timer);},100);}
 
-  if(!document.getElementById("inboxRows")) navigator.serviceWorker?.register("./redzed-sw-test67.js?v=68").catch(() => {});
+  if(!document.getElementById("inboxRows")) navigator.serviceWorker?.register("./redzed-sw-test67.js?v=TEST71-TARGET-20261005").catch(() => {});
   else navigator.serviceWorker?.getRegistration?.().then(async reg=>{const notices=await reg?.getNotifications?.();(notices||[]).filter(n=>/^rr-(cross-)?/.test(n.tag||"")).forEach(n=>n.close());}).catch(()=>{});
   addEventListener("pointerdown", () => {
     try {
