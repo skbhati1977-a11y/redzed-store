@@ -2,7 +2,7 @@
  'use strict';
  if(window.__RR_CHAT_REQUIREMENT_IDENTITY_V9682__)return;
  window.__RR_CHAT_REQUIREMENT_IDENTITY_V9682__=true;
- const chatId=()=>document.querySelector('#inboxRows .chatrow.on')?.dataset.chat||new URLSearchParams(location.search).get('chat_id')||'';
+ const chatId=()=>window.RRActiveSalesChat71?.()||document.getElementById('msgs')?.dataset.chatId||document.querySelector('#inboxRows .chatrow.on')?.dataset.chat||new URLSearchParams(location.search).get('chat_id')||'';
  let signature='',revision=0,scheduled=false;
  async function decorate(node){
   const button=node.querySelector('.rrReqCard9508'),id=button?.dataset.requirementId;
@@ -13,7 +13,7 @@
    const data=await RRRequirementDetail71.load(chat,id);
    if(!node.isConnected||chatId()!==chat||version!==revision)return;
    const title=button.querySelector('b'),small=button.querySelector('small');
-   if(title)title.textContent='📋 '+(data.requirement_display_no||data.requirement_no||'REQUIREMENT');
+   if(title && title.textContent!=='📋 '+(data.requirement_display_no||data.requirement_no||'REQUIREMENT'))title.textContent='📋 '+(data.requirement_display_no||data.requirement_no||'REQUIREMENT');
    if(small)small.textContent='SOURCE: '+(data.collection_display_no||'COLLECTION')+' · '+(Number(data.collection_update_no)>0?'UPDATE '+Number(data.collection_update_no):'ORIGINAL')+' · '+String(data.status||'REQUIREMENT RECEIVED').replaceAll('_',' ');
   }catch(_){if(node.dataset.rrIdentity9682===key)delete node.dataset.rrIdentity9682;}
  }

@@ -135,7 +135,7 @@
     style.textContent = ".rrMarketLinkCard9505{width:100%;display:flex;align-items:center;gap:10px;margin:7px 0 3px;padding:11px 12px;border:1px solid #49627d;border-radius:13px;background:#101923;color:#fff;text-align:left;cursor:pointer}.rrMkIcon9505{font-size:25px;flex:0 0 auto}.rrMkText9505{display:block;min-width:0;flex:1}.rrMkText9505 b,.rrMkText9505 small{display:block}.rrMkText9505 b{font-size:14px}.rrMkText9505 small{font-size:11px;color:#9fb0c2;margin-top:2px}.rrMkGo9505{font-weight:900;color:#8fc8ff;white-space:nowrap}";
     document.head.appendChild(style);
   }
-  function init() { css(); loadExtras(); scan(); new MutationObserver(scan).observe(document.body, { childList: true, subtree: true }); }
+  function init() { css(); scan(); new MutationObserver(scan).observe(document.body, { childList: true, subtree: true }); }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init, { once: true });
   else init();
 })();
