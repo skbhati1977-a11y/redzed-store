@@ -10,6 +10,7 @@
     customerId = null,
     isSuper = false,
     discountDirty = false,
+    draftNeedsSave = false,
     saving = false,
     finalized = false,
     partyDiscount = null,
@@ -48,11 +49,14 @@
       finalized = !!ctx.status && ctx.status !== "DRAFT";
       return;
     }
-    const id = query.get("requirement_id");
+    const id = query.get("requirement_id") || ctx.requirement_id;
     if (!id) return;
     ctx = await rpc("rr_pi_requirement_bootstrap_v9541", {
       p_requirement_id: id,
     });
+    piId = ctx.pi_id || null;
+    piNo = ctx.pi_no || "";
+    finalized = !!ctx.status && ctx.status !== "DRAFT";
     lines = (ctx.lines || []).map((x) => ({
       ...x,
       size: x.size || x.size_text || "",
@@ -209,6 +213,7 @@
     }
     partyDiscount = value;
     discountDirty = true;
+    draftNeedsSave = true;
     lines.forEach((line) => (line.discount = value));
   }
   function resetItemEditor() {
@@ -252,6 +257,7 @@
       }
       if (sameLot && old.qty !== qty) delete candidate.reason;
       if (index === null) lines.push(candidate); else lines[index] = candidate;
+      draftNeedsSave = true;
       resetItemEditor();
       render();
       saving = false;
@@ -310,6 +316,7 @@
           if (e.target.classList.contains("qty")) x.qty = v;
           if (e.target.classList.contains("rate")) x.rate = v;
           if (e.target.classList.contains("disc")) setPartyDiscount(v);
+          draftNeedsSave = true;
           render();
           save(false, true);
         }),
@@ -365,6 +372,7 @@
         return;
       }
       lines.splice(i, 1);
+      draftNeedsSave = true;
       resetItemEditor();
       render();
       save(false, true);
@@ -405,7 +413,8 @@
       $("addItem").onclick = addOrReplaceItem;
       $("cancelItemEdit").onclick = resetItemEditor;
       render();
-      ["value", "freight", "other"].forEach((id) => ($(id).oninput = render));
+      ["value", "freight", "other"].forEach((id) => ($(id).oninput = () => { draftNeedsSave = true; render(); }));
+      ["dispatch", "remarks"].forEach((id) => ($(id).oninput = () => { draftNeedsSave = true; }));
       $("save").onclick = () => save(false);
       $("convertCi").onclick = () => save(true);
       $("retryPartySend").onclick = retryPartySend;
@@ -453,15 +462,19 @@
       }
   }
   async function sendSavedBillToParty() {
+    if (draftNeedsSave) throw Error("Current item changes need saving before sending.");
     if (!window.RRPIReceipt71) throw Error("Receipt sender did not load. Reload and retry sending.");
     const chat = ctx.chat_id || new URLSearchParams(location.search).get("chat_id") || null;
     const result = await window.RRPIReceipt71.send(piId, chat, message => ($("msg").textContent = message));
     if (!result?.sent) throw Error("Party send could not be confirmed.");
     $("retryPartySend").hidden = true;
+    $("retryDraftSave").hidden = true;
+    $("itemEditorMessage").textContent = "Saved bill sent to party.";
     return result;
   }
   async function retryPartySend() {
     if (saving || !piId) return;
+    if (draftNeedsSave) { await save(false); return; }
     saving = true;
     $("retryPartySend").disabled = true;
     try {
@@ -502,7 +515,7 @@
         dispatch = [$("dispatch").value, manual && `Remarks: ${manual}`]
           .filter(Boolean)
           .join(" | ");
-      const res = await rpc("rr_fg_save_pi_value_adjustment_test71", {
+      const saveArgs = {
         p_pi_id: piId,
         p_customer_name: ctx.customer_name,
         p_dispatch_details: dispatch,
@@ -514,7 +527,9 @@
         p_gst_pct: 0,
         p_finalize: finalize,
         p_data_mode: "TEST",
-      });
+      };
+      if (ctx.requirement_id) saveArgs.p_requirement_id = ctx.requirement_id;
+      const res = await rpc(ctx.requirement_id ? "rr_pi_requirement_save_test71" : "rr_fg_save_pi_value_adjustment_test71", saveArgs);
       discountDirty = false;
       partyDiscount = +res.party_discount_per_piece || 0;
       lines.forEach((x) => {
@@ -523,6 +538,7 @@
       render();
       piId = res.pi_id || piId;
       billSaved = true;
+      draftNeedsSave = false;
       if (piId) {
         const savedUrl = new URL(location.href);
         savedUrl.searchParams.set("pi_id", piId);
@@ -537,13 +553,9 @@
         piNo = await rpc("rr_pi_apply_display_no_v9540", { p_pi_id: piId });
         $("piNo").textContent = "PI No. " + piNo;
       } else if (piNo) $("piNo").textContent = "PI No. " + piNo;
-      if (ctx.requirement_id && piId)
-        await rpc("rr_market_link_requirement_pi_v9432", {
-          p_requirement_id: ctx.requirement_id,
-          p_pi_id: piId,
-        });
       if (autoDraft) {
         $("retryDraftSave").hidden = true;
+        $("itemEditorMessage").textContent = "Items auto-saved to PI draft.";
         $("msg").textContent = "PI draft auto-saved · ready to Send to Party.";
         $("convertCi").disabled = !piId;
         return true;
@@ -600,6 +612,7 @@
       return true;
     } catch (e) {
       if (autoDraft) {
+        draftNeedsSave = true;
         $("retryDraftSave").hidden = false;
         $("msg").textContent = "Draft auto-save failed: " + e.message + ". Retry Auto-Save.";
       } else if (billSaved) {
