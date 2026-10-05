@@ -28,7 +28,7 @@
   }
   async function loadTest() {
     const t = new URLSearchParams(location.search).get("testpi");
-    if (!t) return;
+    if (!t || new URLSearchParams(location.search).has("requirement_id")) return;
     ctx = await rpc("rr_pi_test_context_v9522", { p_token: t });
     lines = (ctx.lines || []).map((x) => ({ ...x }));
     piId = null;
@@ -54,9 +54,13 @@
     ctx = await rpc("rr_pi_requirement_bootstrap_v9541", {
       p_requirement_id: id,
     });
+    if (String(ctx.requirement_id || "") !== String(id)) throw Error("Requirement could not be verified. Reopen it from chat.");
     piId = ctx.pi_id || null;
     piNo = ctx.pi_no || "";
-    finalized = !!ctx.status && ctx.status !== "DRAFT";
+    finalized = !!piId && !!ctx.status && ctx.status !== "DRAFT";
+    try { ctx.requirement_no = await rpc("rr_requirement_ref_v9543", {p_requirement_id: id}); } catch (_) {}
+    const reqLabel = $("reqNo");
+    if (reqLabel) reqLabel.textContent = "Requirement No. " + (ctx.requirement_display_no || ctx.requirement_no || id);
     lines = (ctx.lines || []).map((x) => ({
       ...x,
       size: x.size || x.size_text || "",
@@ -307,6 +311,8 @@
         return `<tr><td>${i + 1}</td><td><button class="btn" data-edit="${i}" type="button">EDIT / REPLACE</button><button class="btn del" data-del="${i}" type="button">DELETE</button></td><td>${x.image ? `<img class="pic" src="${x.image}">` : "👕"}</td><td><b>${x.lot_no}</b></td><td>${x.category || ""}</td><td>${x.size || ""}</td><td><input class="num qty ${boxWarn || qtyWarn ? "alter" : ""}" data-i="${i}" value="${x.qty}" type="number" min="1">${qtyWarn ? `<div class="warn">Stock ${x.available}</div>` : ""}</td><td>${x.box || "—"}</td><td>${boxResult(x)}</td><td><input class="num rate ${rateAlt ? "alter" : ""}" data-i="${i}" value="${x.rate}" type="number" min="0"><div class="muted">Approved ${money(x.approved)}${x.customerRate != null ? ` · Customer-Lot ${money(x.customerRate)}` : ""}</div></td><td><input class="num disc" data-i="${i}" value="${x.discount}" type="number" min="0" ${isSuper ? "" : "readonly"}><div class="muted">Party ${money(x.allowed)}</div></td><td>${money(x.net)}</td><td>${money(x.amount)}</td><td class="rrq"><div>Available ${money(x.rrqAvailable)}</div><div>This PI ${(delta >= 0 ? "+" : "") + money(delta)}</div><b>Balance ${money(x.rrqAvailable + delta)}</b></td><td class="rr-godown-view-only">${x.godown || "—"}</td></tr>`;
       })
       .join("");
+    const headings = [...document.querySelectorAll(".wrap thead th")].map(el => el.textContent.trim());
+    $("rows").querySelectorAll("tr").forEach(row => [...row.children].forEach((cell, i) => cell.dataset.label = headings[i] || ""));
     document.querySelectorAll(".qty,.rate,.disc").forEach(
       (el) =>
         (el.onchange = (e) => {
