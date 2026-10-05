@@ -13,7 +13,11 @@
     saving = false,
     finalized = false,
     partyDiscount = null,
-    editingItem = null;
+    editingItem = null,
+    lotSearchVersion = 0,
+    lotSearchTimer = null,
+    lotOptions = [],
+    activeLotOption = -1;
   try {
     ctx = JSON.parse(sessionStorage.getItem("rr_pi_requirement_v9514") || "{}");
   } catch (_) {}
@@ -105,6 +109,97 @@
       }),
     );
   }
+  function hideLotSuggestions() {
+    clearTimeout(lotSearchTimer);
+    lotSearchVersion++;
+    $("itemLotSuggestions").hidden = true;
+    $("itemLot").setAttribute("aria-expanded", "false");
+    $("itemLot").removeAttribute("aria-activedescendant");
+    lotOptions = [];
+    activeLotOption = -1;
+  }
+  function pickLot(index) {
+    const lot = lotOptions[index];
+    if (!lot || saving || finalized) return;
+    $("itemLot").value = lot.lot_no;
+    hideLotSuggestions();
+    $("itemQty").focus();
+  }
+  function highlightLot(index) {
+    activeLotOption = index;
+    $("itemLotSuggestions").querySelectorAll("[role=option]").forEach((el,i) => {
+      el.setAttribute("aria-selected", String(i === index));
+      if (i === index) {
+        $("itemLot").setAttribute("aria-activedescendant", el.id);
+        el.scrollIntoView?.({block:"nearest"});
+      }
+    });
+  }
+  function bindLotSuggestions() {
+    const input = $("itemLot"), list = $("itemLotSuggestions");
+    input.addEventListener("input", () => {
+      hideLotSuggestions();
+      const term = input.value.trim().toUpperCase();
+      if (!term || finalized || saving) return;
+      const version = lotSearchVersion;
+      lotSearchTimer = setTimeout(async () => {
+        const status = (message) => {
+          list.replaceChildren();
+          const el = document.createElement("div");
+          el.className = "lot-picker-status";
+          el.setAttribute("role", "status");
+          el.textContent = message;
+          list.appendChild(el);
+          list.hidden = false;
+          input.setAttribute("aria-expanded", "true");
+        };
+        status("Searching lots…");
+        try {
+          const result = await rpc("rr_ws_stock_search_v9411", {p_search:term,p_multi_lots:"",p_sort:"LOT_ASC",p_data_mode:"TEST"});
+          if (version !== lotSearchVersion || finalized || saving) return;
+          lotOptions = (Array.isArray(result) ? result : []).filter(x => String(x.lot_no || "").toUpperCase().includes(term) && Number(x.available_qty) > 0)
+            .sort((a,b) => Number(!String(a.lot_no).toUpperCase().startsWith(term)) - Number(!String(b.lot_no).toUpperCase().startsWith(term)))
+            .slice(0,20);
+          if (!lotOptions.length) { status("No available lots found."); return; }
+          list.replaceChildren();
+          lotOptions.forEach((lot,i) => {
+            const option = document.createElement("button");
+            option.type = "button"; option.className = "lot-option"; option.id = "pi-lot-option-" + i; option.tabIndex = -1;
+            option.setAttribute("role", "option"); option.setAttribute("aria-selected", "false");
+            const placeholder = document.createElement("span"); placeholder.className = "lot-micro"; placeholder.textContent = "👕";
+            try {
+              const url = new URL(lot.thumbnail, location.href);
+              if (!lot.thumbnail || !["https:","http:"].includes(url.protocol)) throw Error("No image");
+              const img = document.createElement("img"); img.className = "lot-micro"; img.src = url.href; img.alt = ""; img.loading = "lazy";
+              img.onerror = () => img.replaceWith(placeholder);
+              option.appendChild(img);
+            } catch (_) { option.appendChild(placeholder); }
+            const text = document.createElement("span"), name = document.createElement("b"), detail = document.createElement("small");
+            name.textContent = lot.lot_no;
+            detail.textContent = [lot.category, lot.sizes, `${lot.available_qty} PCS`].filter(Boolean).join(" · ");
+            text.append(name,detail); option.appendChild(text);
+            option.addEventListener("pointerdown", e => e.preventDefault());
+            option.onclick = () => pickLot(i);
+            list.appendChild(option);
+          });
+          list.hidden = false;
+          input.setAttribute("aria-expanded", "true");
+        } catch(e) {
+          if (version === lotSearchVersion) status("Lot search unavailable. Edit the lot number to retry.");
+        }
+      }, 200);
+    });
+    input.addEventListener("keydown", e => {
+      if (e.key === "Escape") { hideLotSuggestions(); return; }
+      if (list.hidden || !lotOptions.length) return;
+      if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+        e.preventDefault(); highlightLot((activeLotOption + (e.key === "ArrowDown" ? 1 : -1) + lotOptions.length) % lotOptions.length);
+      } else if (e.key === "Enter" && activeLotOption >= 0) { e.preventDefault(); pickLot(activeLotOption); }
+      else if (e.key === "Tab") hideLotSuggestions();
+    });
+    input.addEventListener("blur", hideLotSuggestions);
+    document.addEventListener("pointerdown", e => { if (!e.target.closest(".lot-picker")) hideLotSuggestions(); });
+  }
   function setPartyDiscount(value) {
     if (!isSuper || finalized || saving) return;
     if (!Number.isFinite(value) || value < 0 || value > 10) {
@@ -116,6 +211,7 @@
     lines.forEach((line) => (line.discount = value));
   }
   function resetItemEditor() {
+    hideLotSuggestions();
     editingItem = null;
     $("itemLot").value = $("itemQty").value = "";
     $("itemStockType").value = "REGULAR";
@@ -125,6 +221,7 @@
   }
   async function addOrReplaceItem() {
     if (saving || finalized) return;
+    hideLotSuggestions();
     const lot = $("itemLot").value.trim().toUpperCase();
     const qty = Number($("itemQty").value);
     const stockType = $("itemStockType").value;
@@ -235,6 +332,7 @@
       if (saving || finalized) return;
       const edit = e.target.closest("[data-edit]");
       if (edit && body.contains(edit)) {
+        hideLotSuggestions();
         editingItem = Number(edit.dataset.edit);
         const line = lines[editingItem];
         $("itemLot").value = line.lot_no;
@@ -292,6 +390,7 @@
       await contexts(!!piId);
       if (piNo) $("piNo").textContent = "PI No. " + piNo;
       bindDelete();
+      bindLotSuggestions();
       $("partyDiscount").onchange = () => { setPartyDiscount(Number($("partyDiscount").value)); render(); };
       $("addItem").onclick = addOrReplaceItem;
       $("cancelItemEdit").onclick = resetItemEditor;
