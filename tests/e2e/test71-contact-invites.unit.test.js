@@ -42,7 +42,7 @@ test('blocked popup exposes a clickable link, RPC failure restores actions',asyn
   f.RF853.rpc=async()=>{throw Error('sensitive backend error')};await f.api.sendQueuedInvite(second,'whatsapp',wa,sms);assert.equal(second.statusNode.textContent,'लिंक तैयार नहीं हुआ। दोबारा कोशिश करें।');assert.equal(wa.disabled,false);assert.equal(f.nodes.get('rr67SendAll').disabled,false);
 });
 test('invite controls are wired into staff chat and hidden directory stays hidden',()=>{
-  const html=fs.readFileSync(path.resolve(__dirname,'../../real-sales-live-chat-v9434.html'),'utf8');assert(html.includes('real-chat-add-customer-test67.js?v=TEST71-INVITE-SAVE-20261005'));assert(source.includes('#rr67Directory[hidden]{display:none}'));
+  const html=fs.readFileSync(path.resolve(__dirname,'../../real-sales-live-chat-v9434.html'),'utf8');assert(html.includes('real-chat-add-customer-test67.js?v=TEST71-INVITE-LOADER-20261005'));assert(source.includes('#rr67Directory[hidden]{display:none}'));
 });
 
  test('4700 contacts stay 4700 after repeated imports and 80000 duplicate entries',()=>{
