@@ -17,7 +17,7 @@
    await api({action:'subscribe',subscription:sub.toJSON(),session_token:identity.session_token,device_id:localStorage.getItem('rr_customer_device_v9592'),device_key:localStorage.getItem('rr_customer_device_v9592'),route_url:staff?location.origin+'/real-sales-live-chat-v9434.html':location.origin+'/s.html?t='+encodeURIComponent(share)+'&open=collection'});
    window.__RR_CUSTOMER_PUSH_REGISTERED71__=true;
    if(button){button.textContent='Notifications ON ✓';button.disabled=true;setTimeout(()=>button.remove(),1800);}
-  }catch(e){const retry=button||showButton();retry.textContent=e.message;retry.disabled=false;}finally{busy=false;}
+  }catch(e){window.RRWebPushStatus71={ok:false,error:String(e.message||e)};console.warn('REDZED notification registration unavailable',e);if(staff){button?.remove();}else{const retry=button||showButton();retry.textContent='🔔 Notifications unavailable · Retry';retry.title='Notifications को दोबारा चालू करने के लिए tap करें';retry.disabled=false;}}finally{busy=false;}
  }
  function showButton(){
   let b=document.getElementById('rrCustomerPush71');
