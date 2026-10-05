@@ -69,24 +69,25 @@
   // The first server batch in each chat is history, however late it arrives.
   // DOM decorations, restored nodes and timers are never new-message sources.
   const streams = new Map();
+  const openedAt = Date.now();
   let actor = null;
   function revision(message) {
     const p=message.payload || {};
     return [message.id, p.requirement_update_no ?? "", p.collection_update_no ?? ""].join("|");
   }
   function receive(name, args, rows) {
-    if (!Array.isArray(rows) || !rows.length || !/rr_chat_(?:staff|customer)_messages/.test(name)) return;
+    if (!Array.isArray(rows) || !/rr_chat_customer_messages/.test(name)) return;
     const stream=[args.p_chat_id || args.p_token || args.p_session_token || location.pathname, args.p_channel || "GROUP"].join("|");
     let entry=streams.get(stream);
-    if (!entry) { streams.set(stream,{keys:new Set(rows.map(revision)),watermark:Math.max(0,...rows.map(m=>Date.parse(m.created_at)||0))}); return; }
+    if (!entry) { streams.set(stream,{keys:new Set(rows.map(revision)),watermark:Math.max(openedAt,...rows.map(m=>Date.parse(m.created_at)||0))}); return; }
     const {keys}=entry;
     rows.slice().reverse().forEach(message => {
       const key=revision(message);
       if (keys.has(key)) return;
       keys.add(key);
       if ((Date.parse(message.created_at)||0)<=entry.watermark) return;
-      const own=actor && String(message.sender_kind || "STAFF").toUpperCase()==="STAFF" && (message.sender_profile_id===actor.id || message.sender_name===actor.full_name);
-      if (own || muted()) return;
+      const own=actor?.id && String(message.sender_kind || "STAFF").toUpperCase()==="STAFF" && (message.sender_profile_id===actor.id || message.sender_name===actor.full_name);
+      if (own || muted() || String(message.sender_kind || "").toUpperCase() !== "STAFF") return;
       const title=document.getElementById("chatTitle")?.textContent?.trim() || "REDZED Chat";
       const body=`${message.sender_name || "New update"}: ${message.body || "New activity"}`.slice(0,180);
       banner(title,body);tone();navigator.vibrate?.([160,80,160]);
@@ -96,6 +97,7 @@
     entry.watermark=Math.max(entry.watermark,...rows.map(m=>Date.parse(m.created_at)||0));
   }
   function hook() {
+    if(document.getElementById("inboxRows")) return true;
     if(!window.RF853?.rpc || RF853.rpc.__rrNotice71) return false;
     const base=RF853.rpc.bind(RF853);
     const wrapped=async(name,args={})=>{const result=await base(name,args);receive(name,args,result);return result;};
@@ -105,7 +107,8 @@
   }
   if(!hook()) {let tries=0;const timer=setInterval(()=>{if(hook()||++tries>60)clearInterval(timer);},100);}
 
-  navigator.serviceWorker?.register("./redzed-sw-test67.js?v=68").catch(() => {});
+  if(!document.getElementById("inboxRows")) navigator.serviceWorker?.register("./redzed-sw-test67.js?v=68").catch(() => {});
+  else navigator.serviceWorker?.getRegistration?.().then(async reg=>{const notices=await reg?.getNotifications?.();(notices||[]).filter(n=>/^rr-(cross-)?/.test(n.tag||"")).forEach(n=>n.close());}).catch(()=>{});
   addEventListener("pointerdown", () => {
     try {
       audio ||= new (window.AudioContext || window.webkitAudioContext)();
@@ -114,3 +117,4 @@
   }, { once: true, passive: true });
 
 })();
+
