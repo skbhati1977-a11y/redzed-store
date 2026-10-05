@@ -1,0 +1,3 @@
+const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs');
+const source=fs.readFileSync('real-chat-swipe-reply-v9479.js','utf8');
+test('reply hold does not show a false selection highlight when message selection owns long press',()=>{const body=source.slice(source.indexOf('timer:setTimeout(()=>{')+'timer:setTimeout(()=>{'.length,source.indexOf('},330)'));let held=false,glows=0;const m={classList:{add(){glows++}}},g={m};new Function('g','m','window','navigator',body)(g,m,{RRSalesDelete71:{handlesLongPress:true,isSelecting:()=>false}},{vibrate(){}});assert.equal(g.held,true);assert.equal(glows,0)});
