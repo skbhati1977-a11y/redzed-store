@@ -53,3 +53,13 @@ Run: `node --test tests/e2e/test71-sales-collection-followup.unit.test.js`.
 Database regression: `tests/test71_sales_collection_followup_rollback.sql` against the authorized TEST fixture; it ends in ROLLBACK.
 Apply migrations in timestamp order. Staff frontend must serve this branch and cache-bumped HTML. The public customer Site separately preserves its installation gate and updates the quantity card script/cache.
 
+
+## Fresh-session requirement opening (2026-10-05)
+- Card metadata and detail use one shared in-flight loader scoped by chat and requirement.
+- Detail prefetch starts when the card appears; tap opens the panel synchronously.
+- Failed requests are evicted; an eight-second timeout provides Retry instead of indefinite loading.
+- One-message refresh polls no longer invalidate full-chat detail snapshots.
+- Metadata observes message rows only; no independent sheet writer or sheet observer remains.
+- Closing/switching chat and newer taps prevent stale responses/actions.
+- Added five regression checks (including three independent fresh DOM sessions). Combined targeted suites: 11/11 pass.
+- Actual user Codespaces/mobile verification is still pending; data rendering depends on network availability.
