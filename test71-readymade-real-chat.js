@@ -108,6 +108,7 @@
   function marketUrl(lots=[]) {
     const url=new URL('real-web-window-v9329.html',location.href);
     url.searchParams.set('share_mode','chooser');url.searchParams.set('from','READYMADE');
+    (window.RRMarketCustomer71?.get()||[]).forEach(id=>url.searchParams.append('recipient_chat',id));
     lots.forEach(lot=>url.searchParams.append('selected_lot',lot));return url.href;
   }
   async function send(ctx,cards) {

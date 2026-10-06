@@ -2,10 +2,13 @@
  'use strict';
  const q=new URLSearchParams(location.search);
  if(q.get('share_mode')!=='chooser'||q.get('from_chat')==='1'||q.get('rr_partner_mode'))return;
- const recipients=[...new Set(q.getAll('recipient_chat').filter(Boolean))];
+ const shared=window.RRMarketCustomer71;
+ const explicit=q.getAll('recipient_chat').filter(Boolean);
+ const recipients=[...new Set(explicit.length?explicit:(q.get('outside')==='1'?[]:shared?.get()||[]))];
+ if(recipients.length)shared?.set(recipients);
  const outside=q.get('outside')==='1';
  const base=RF853.rpc.bind(RF853);
- window.RRMarketRecipientFirst71={recipients,outside,choose(ids){const url=new URL(location.href);url.searchParams.delete('recipient_chat');url.searchParams.delete('outside');ids.forEach(id=>url.searchParams.append('recipient_chat',id));location.href=url.href;},chooseOutside(){const url=new URL(location.href);url.searchParams.delete('recipient_chat');url.searchParams.set('outside','1');location.href=url.href;},change(){const url=new URL(location.href);url.searchParams.delete('recipient_chat');url.searchParams.delete('outside');url.searchParams.delete('selected_lot');location.href=url.href;}};
+ window.RRMarketRecipientFirst71={recipients,outside,choose(ids){shared?.set(ids);const url=new URL(location.href);url.searchParams.delete('recipient_chat');url.searchParams.delete('outside');ids.forEach(id=>url.searchParams.append('recipient_chat',id));location.href=url.href;},chooseOutside(){shared?.clear();const url=new URL(location.href);url.searchParams.delete('recipient_chat');url.searchParams.set('outside','1');location.href=url.href;},change(){shared?.clear();const url=new URL(location.href);url.searchParams.delete('recipient_chat');url.searchParams.delete('outside');url.searchParams.delete('selected_lot');location.href=url.href;}};
  if(outside)return;
  const mode=document.getElementById('dataMode');if(mode){mode.value='TEST';mode.disabled=true;}
  RF853.rpc=async(name,args={})=>{
