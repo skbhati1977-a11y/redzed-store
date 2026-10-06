@@ -168,11 +168,23 @@
     body.addEventListener('input',e=>{const row=e.target.closest('.rm-chat-line');if(!row)return;updateReceipt(row);if(e.target.dataset.field==='final_image_url'){const img=row.querySelector('[data-preview]');img.src=/^https?:\/\//.test(e.target.value)?e.target.value:'';img.hidden=!img.src}});
     body.addEventListener('change',e=>{if(e.target.dataset.field==='art_no'){bindArt(e.target.closest('.rm-chat-line'));return}if(!e.target.matches('[data-photo]'))return;const row=e.target.closest('.rm-chat-line'),file=e.target.files[0];if(!file)return;const img=row.querySelector('[data-preview]');if(img.dataset.blob)URL.revokeObjectURL(img.dataset.blob);img.dataset.blob=URL.createObjectURL(file);img.src=img.dataset.blob;img.hidden=false});
     m.querySelector('[data-footer]').innerHTML='<button type="button" data-draft>Save draft</button><button type="button" data-post>Save & Confirm Purchase</button><button type="button" data-prepare-share>Save & Confirm · Send Receipt</button><small>Save confirms purchase and creates its Debit/Credit Note. Receipt opens next—tap Send Receipt to choose WhatsApp or another app. Sale rate remains subject to final approval.</small>';
+    function reopenSaved(saved){
+      if(!saved?.found||saved.purchase_id===pid)return false;
+      if(saved.status==='POSTED'){
+        m.remove();receiptView(saved.receipt,ctx);ctx.notice('Saved bill opened · Share its original receipt / Debit · Credit Note. No new purchase posted.');return true;
+      }
+      if(saved.status==='DRAFT'&&saved.draft){
+        msg.textContent='इस bill का draft पहले से saved है. उसी draft को खोलें—नई entry नहीं बनेगी.';
+        if(!m.querySelector('[data-open-saved-bill]')){const b=document.createElement('button');b.type='button';b.dataset.openSavedBill='';b.textContent='Open saved bill draft';b.onclick=()=>{m.remove();purchase(ctx,saved.draft)};m.querySelector('[data-footer]').prepend(b)}return true;
+      }
+      throw Error('इस bill का record पहले से है. Purchase records में उसकी status देखें.');
+    }
     async function save(post,button) {
       await action(button,msg,async()=>{
         const supplier=body.querySelector('[data-supplier]').value.trim(),bill=body.querySelector('[data-bill]').value.trim(),date=body.querySelector('[data-date]').value;
         if(supplierSelect.disabled||!supplierNames.has(supplier))throw Error('Select an existing active supplier from the dropdown.');
         if(!bill||!date)throw Error('Supplier bill number and date required.');
+        if(post&&!pid){const saved=await ctx.rpc('rr_rm_saved_bill_test71',{p_supplier_name:supplier,p_bill_no:bill});if(reopenSaved(saved))return;}
         const payload=[];
         for(const row of lines.children){
           const x=Object.fromEntries([...row.querySelectorAll('[data-field]')].map(i=>[i.dataset.field,i.value.trim()]));x.bill_qty=Number(x.bill_qty);x.qty=Number(x.qty);x.purchase_rate=Number(x.purchase_rate);x.final_rate=x.final_rate===''?null:Number(x.final_rate);x.markup_mode='DEFAULT_22';if(x.art_no){x.art_revision=Number(row.dataset.artRevision||artRows.find(a=>a.art_no.toUpperCase()===x.art_no.toUpperCase())?.art_revision||0)}
@@ -184,7 +196,8 @@
           if(!/^https?:\/\//i.test(x.final_image_url))throw Error('Final garment photo required.');payload.push(x);
         }
         if(new Set(payload.map(x=>x.lot_no.toUpperCase())).size!==payload.length)throw Error('Each garment lot number must be unique.');
-        const j=await ctx.rpc('rr_rm_chat_save_test71',{p_purchase_id:pid,p_supplier_name:supplier,p_bill_no:bill,p_purchase_date:date,p_lines:payload,p_post:post});pid=j.purchase_id;
+        let j;try{j=await ctx.rpc('rr_rm_chat_save_test71',{p_purchase_id:pid,p_supplier_name:supplier,p_bill_no:bill,p_purchase_date:date,p_lines:payload,p_post:post})}
+        catch(e){if(post&&!pid&&String(e.message||'').includes('Supplier bill already exists')){const saved=await ctx.rpc('rr_rm_saved_bill_test71',{p_supplier_name:supplier,p_bill_no:bill});if(reopenSaved(saved))return;}throw e}pid=j.purchase_id;
         if(post){m.remove();if(j.receipt)receiptView(j.receipt,ctx);state.selection.clear();ctx.s.status='WORKING';ctx.s.userStatusLock='WORKING';ctx.changed();await ctx.refresh();ctx.notice('Purchase confirmed · Received stock, supplier Accounts and Short / Excess notes updated.'+(j.rate_notes?.length?' '+j.rate_notes.join(' · '):''));}
         else{msg.textContent='Draft saved. Continue here or reopen from OPEN.';ctx.s.departmentCountCache.delete('READYMADE');}
       });
