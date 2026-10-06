@@ -71,15 +71,18 @@
    files.push(new File([blob],f.name,{type:'image/jpeg'}));
   }
   if(!files.length)throw Error('Receipt JPG अभी तैयार नहीं है.');
-  return{receipt,files};
+  return{receipt,files,urls:(receipt.files||[]).map(f=>storage.getPublicUrl(f.path).data.publicUrl)};
  }
  function attach(ctx,modal,receipt){
   const footer=modal.querySelector('[data-footer]'),message=modal.querySelector('[data-message]');
-  const prepareButton=document.createElement('button'),shareButton=document.createElement('button'),recordButton=document.createElement('button'),links=document.createElement('div');
+  const prepareButton=document.createElement('button'),shareButton=document.createElement('button'),recordButton=document.createElement('button'),links=document.createElement('div'),whatsapp=document.createElement('a'),browser=document.createElement('a');
   prepareButton.type=shareButton.type=recordButton.type='button';prepareButton.dataset.prepareJpg='';shareButton.dataset.shareJpg='';recordButton.dataset.shareOk='';
-  prepareButton.textContent='Retry / Prepare JPG';shareButton.textContent='WhatsApp · Share JPG';shareButton.disabled=true;recordButton.textContent='भेज दिया · OK';recordButton.hidden=true;
-  footer.append(prepareButton,shareButton,recordButton,links);
-  let pack=null,busy=false,pending=null;const urls=[];
+  prepareButton.textContent='Retry / Prepare JPG';shareButton.textContent='Send Receipt · Choose app';shareButton.disabled=true;recordButton.textContent='भेज दिया · OK';recordButton.hidden=true;
+  whatsapp.dataset.whatsappReceipt='';whatsapp.textContent='WhatsApp · Contact चुनें · Receipt link';browser.dataset.browserReceipt='';browser.textContent='Open in browser · Share JPG';for(const a of [whatsapp,browser]){a.target='_blank';a.rel='noopener noreferrer';a.hidden=true}
+  footer.dataset.receiptSend='';footer.append(shareButton,whatsapp,browser,recordButton,prepareButton,links);
+  const body=modal.querySelector('[data-body]');if(body){body.before(footer);body.before(message)}
+  if(!document.getElementById('rmReceiptSendStyle')){const style=document.createElement('style');style.id='rmReceiptSendStyle';style.textContent='[data-receipt-send]{display:grid!important;gap:9px;padding:14px!important;border:1px solid #3c8265;border-radius:12px;background:#102e25;margin-bottom:12px}[data-receipt-send]>button,[data-receipt-send]>a{box-sizing:border-box;width:100%;padding:13px!important;border-radius:9px;text-align:center;font:600 16px system-ui;text-decoration:none}[data-share-jpg]{background:#18794e!important;color:white!important;border:1px solid #58ac86!important}[data-receipt-send]>a{color:#d4f0e2;background:#173e32;border:1px solid #4c8068}[data-receipt-send] [hidden]{display:none!important}';document.head.appendChild(style)}
+  let pack=null,busy=false,pending=null,linkData=null;const urls=[];
   const originalRemove=modal.remove.bind(modal);modal.remove=()=>{urls.forEach(url=>URL.revokeObjectURL(url));originalRemove()};
   async function load(){
    if(busy)return;busy=true;prepareButton.disabled=true;shareButton.disabled=true;message.textContent='Receipt JPG तैयार हो रही है…';
@@ -87,20 +90,30 @@
     pack=await prepare(ctx,receipt.purchase_id);if(!modal.isConnected)return;
     urls.splice(0).forEach(url=>URL.revokeObjectURL(url));links.replaceChildren();
     for(const file of pack.files){const url=URL.createObjectURL(file);urls.push(url);const a=document.createElement('a');a.href=url;a.download=file.name;a.textContent='Save JPG · '+file.name;a.style.display='block';links.appendChild(a)}
-    shareButton.disabled=false;message.textContent='JPG तैयार है. Share में WhatsApp चुनें और supplier contact select करें.'+(pack.receipt.last_shared_at?' Last shared: '+new Date(pack.receipt.last_shared_at).toLocaleString('en-IN',{timeZone:'Asia/Kolkata'}):'');
+    const page=new URL('test71-readymade-supplier-receipt.html',location.href);page.hash=encodeURIComponent(JSON.stringify({title:'REDZED '+pack.receipt.purchase_no,files:pack.receipt.files.map((f,i)=>({...f,url:pack.urls[i]}))}));
+    browser.href=page.href;whatsapp.href='https://wa.me/?text='+encodeURIComponent('REDZED Purchase Receipt · Bill '+pack.receipt.bill_no+'\n'+page.href);whatsapp.hidden=browser.hidden=false;
+    linkData={title:'REDZED Purchase Receipt',text:'Purchase receipt · Bill '+pack.receipt.bill_no,url:page.href};
+    shareButton.disabled=false;message.textContent='Purchase saved. अब Send Receipt दबाएँ—app picker में WhatsApp / दूसरी app चुनें. JPG share बंद हो तो Open in browser या WhatsApp Receipt link चुनें.'+(pack.receipt.last_shared_at?' Last shared: '+new Date(pack.receipt.last_shared_at).toLocaleString('en-IN',{timeZone:'Asia/Kolkata'}):'');
    }catch(e){message.textContent=e.message||'JPG तैयार नहीं हुई. Retry JPG दबाएँ.'}finally{busy=false;prepareButton.disabled=false}
   }
   prepareButton.onclick=load;
+  const chooseExternal=()=>{if(!pack||busy||pending)return;pending=crypto.randomUUID();recordButton.hidden=false;shareButton.disabled=true;message.textContent='WhatsApp / browser खुल रहा है. भेजने के बाद वापस आकर भेज दिया · OK दबाएँ. Receipt link है; JPG attachment के लिए Open in browser चुनें.'};
+  whatsapp.onclick=browser.onclick=chooseExternal;
   // Keep native share synchronous with this tap: never render/upload/fetch before share().
   shareButton.onclick=()=>{
    if(!pack||busy||pending)return;
    const policy=document.permissionsPolicy||document.featurePolicy;
-   if(!navigator.share||!navigator.canShare?.({files:pack.files})||(policy?.allowsFeature&&!policy.allowsFeature('web-share'))){message.textContent='इस browser में JPG share उपलब्ध नहीं है. Save JPG से file लें, फिर WhatsApp में attachment भेजें.';return}
+   let payload={files:pack.files,title:'REDZED Purchase Receipt'};
+   const allowed=!(policy?.allowsFeature&&!policy.allowsFeature('web-share'));
+   let filesAllowed=allowed&&typeof navigator.share==='function';try{if(navigator.canShare)filesAllowed=filesAllowed&&navigator.canShare({files:pack.files})}catch{filesAllowed=false}
+   if(!filesAllowed)payload=linkData;
+   let supported=allowed&&typeof navigator.share==='function';try{if(navigator.canShare)supported=supported&&navigator.canShare(payload)}catch{supported=false}
+   if(!supported){whatsapp.click();return}
    busy=true;shareButton.disabled=true;const eventId=crypto.randomUUID();let promise;
-   try{promise=navigator.share({files:pack.files,title:'REDZED Purchase Receipt'})}catch(e){busy=false;shareButton.disabled=false;message.textContent='Share नहीं खुला. फिर से Share दबाएँ.';return}
-   Promise.resolve(promise).then(()=>{pending=eventId;recordButton.hidden=false;message.textContent='Share-picker से लौट आए. WhatsApp पर भेज दिया हो तो भेज दिया · OK दबाएँ.'},e=>{message.textContent=e?.name==='AbortError'?'Share cancel हुई. Receipt और Debit/Credit Note सुरक्षित हैं.':'JPG share नहीं खुला. Retry करें या Save JPG से file लें.'}).finally(()=>{busy=false;shareButton.disabled=!!pending});
+   try{promise=navigator.share(payload)}catch(e){busy=false;shareButton.disabled=false;message.textContent='Share नहीं खुला. WhatsApp · Contact चुनें से receipt link भेजें, या Open in browser से JPG share करें.';return}
+   Promise.resolve(promise).then(()=>{pending=eventId;recordButton.hidden=false;message.textContent=(filesAllowed?'JPG':'Receipt link')+' share-picker से लौट आए. WhatsApp पर भेज दिया हो तो भेज दिया · OK दबाएँ.'},e=>{message.textContent=e?.name==='AbortError'?'Share cancel हुई. Receipt और Debit/Credit Note सुरक्षित हैं.':'Share बंद है. WhatsApp · Contact चुनें से receipt link भेजें, या Open in browser से JPG share करें.'}).finally(()=>{busy=false;shareButton.disabled=!!pending});
   };
-  recordButton.onclick=async()=>{
+    recordButton.onclick=async()=>{
    if(!pending||busy)return;busy=true;recordButton.disabled=true;
    try{await ctx.rpc('rr_rm_receipt_share_record_test71',{p_purchase_id:receipt.purchase_id,p_event_id:pending});pending=null;recordButton.hidden=true;message.textContent='Share record saved. इसी JPG को दोबारा भेज सकते हैं; नया Debit/Credit Note नहीं बनेगा.'}
    catch{message.textContent='Share record save नहीं हुआ. भेज दिया · OK दोबारा दबाएँ; file दोबारा नहीं भेजी जाएगी.'}
