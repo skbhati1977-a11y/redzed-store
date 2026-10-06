@@ -7,7 +7,7 @@ async function setup(role='OWNER',status='WORKING'){
  w.CSS={escape:x=>x};w.URL.createObjectURL=()=> 'blob:test';w.eval(code);
  const calls=[],c={stock_id:'s1',lot_no:'RM1',item_name:'Shirt',category:'Polo',size_text:'L / XL',available_qty:20,received_qty:24,approved_rate:150,approval_ready:true,image_url:'https://example.com/shirt.jpg',costing:role==='OWNER'?{purchase_cost_per_pc:100,salary_per_pc:10,overhead_per_pc:18,source_rate:150,costing_complete:true}:{costing_complete:true}};
  const s={actor:{role},status,search:'',db:{from:table=>({select(){return this},eq(){return this},order:async()=>({data:table==='rr_art_categories'?[{id:'cat1',category_name:'Polo'}]:[{id:'supplier1',supplier_name:'Supplier'},{id:'supplier2',supplier_name:'RDN'}],error:null})})},departmentCountCache:new Map(),departments:[{department_code:'PURCHASE'},{department_code:'CUTTING'}]};
- const rpc=async(n,p)=>{calls.push({n,p});if(n==='rr_rm_chat_queue_test71')return{can_purchase:['OWNER','ADMIN','ACCOUNTS'].includes(role),can_approve:['OWNER','ADMIN'].includes(role),cards:[c],drafts:[],categories:['Polo'],counts:{OPEN:1,WORKING:1}};
+ const rpc=async(n,p)=>{calls.push({n,p});if(n==='rr_rm_chat_fast_queue_test71')return{can_purchase:['OWNER','ADMIN','ACCOUNTS'].includes(role),can_approve:['OWNER','ADMIN'].includes(role),cards:[c],drafts:[],categories:['Polo'],counts:{OPEN:1,WORKING:1}};
  if(n==='rr_cb_category_defaults_get_v1')return{rows:[{art_category_id:'cat1',default_size_family:'L,XL,XXL'}]};if(n==='rr_rm_chat_save_test71')return{purchase_id:'p1',rate_notes:[]};if(n==='rr_chat_staff_inbox_v9434')return[{chat_id:'chat1',customer_name:'Buyer <One>'}];if(n==='rr_sales_collection_cards_test71')return{context:{customer_id:'buyer1',collection_cycle_id:'cycle1',requirement_id:null},rows:[{lot_no:'RM1'}]};return{quota_delta:40,rrq_balance:500};};
  const ctx={s,rpc,box:w.document.getElementById('messages'),owned:()=>true,changed:()=>{},notice:()=>{},refresh:()=>w.RRReadymadeChat.render(ctx)};
  await ctx.refresh();return{w,s,calls,ctx,close:()=>w.close()};
@@ -30,7 +30,7 @@ test('Working approval updates RRQ and purchase return uses stable duplicate pro
  }finally{x.close()}
 });
 test('Unapproved garments cannot be selected or sent and pending costing blocks rate approval',async()=>{
- const x=await setup();try{const old=x.ctx.rpc;x.ctx.rpc=async(n,p)=>{const j=await old(n,p);if(n==='rr_rm_chat_queue_test71'){j.cards[0].approval_ready=false;j.cards[0].costing.costing_complete=false;}return j};await x.ctx.refresh();assert.ok(x.w.document.querySelector('[data-select]').disabled);assert.ok(x.w.document.querySelector('[data-approve]').disabled);assert.match(x.w.document.body.textContent,/Approval pending/)}finally{x.close()}
+ const x=await setup();try{const old=x.ctx.rpc;x.ctx.rpc=async(n,p)=>{const j=await old(n,p);if(n==='rr_rm_chat_fast_queue_test71'){j.cards[0].approval_ready=false;j.cards[0].costing.costing_complete=false;}return j};await x.ctx.refresh();assert.ok(x.w.document.querySelector('[data-select]').disabled);assert.ok(x.w.document.querySelector('[data-approve]').disabled);assert.match(x.w.document.body.textContent,/Approval pending/)}finally{x.close()}
 });
 test('Real Chat shell opens Readymade first, switches OPEN/WORKING, and Back returns to directory',async()=>{
  const root=path.resolve(__dirname,'../..'),html=fs.readFileSync(path.join(root,'test70-cb-purchase-real-chat-pilot.html'),'utf8').replace(/<script\b[\s\S]*?<\/script>/g,'');
@@ -39,7 +39,7 @@ test('Real Chat shell opens Readymade first, switches OPEN/WORKING, and Back ret
  w.CSS={escape:x=>x};
  w.supabaseClient={auth:{getSession:async()=>({data:{session:{user:{id:'owner1'}}}}),getUser:async()=>({data:{user:{id:'owner1'}}})},channel:()=>({on(){return this},subscribe(){return this}}),rpc:async(n)=>{
  let data={cards:[]};if(n==='rr_real_chat_directory_v85')data={actor:{role:'OWNER',name:'Owner'},departments:[{department_code:'PURCHASE',department_name:'CB',workers:[],staff:[]},{department_code:'CUTTING',department_name:'Cutting',workers:[],staff:[]}],people:[]};
- if(n==='rr_rm_chat_queue_test71')data={can_purchase:true,can_approve:true,cards:[],drafts:[],categories:[],counts:{OPEN:1,WORKING:0}};
+ if(n==='rr_rm_chat_fast_queue_test71')data={can_purchase:true,can_approve:true,cards:[],drafts:[],categories:[],counts:{OPEN:1,WORKING:0}};
  return {data,error:null};}};
  w.eval(code);w.eval(fs.readFileSync(path.join(root,'test70-real-chat-live-v70.js'),'utf8'));await wait();await wait();
  assert.equal(w.document.querySelector('[data-department]').dataset.department,'READYMADE');
@@ -48,4 +48,25 @@ test('Real Chat shell opens Readymade first, switches OPEN/WORKING, and Back ret
  w.document.querySelector('[data-chat-status="OPEN"]').click();await wait();assert.ok(w.document.querySelector('[data-new]'));
  w.document.getElementById('back').click();await wait();assert.ok(!w.document.getElementById('inbox').hidden);assert.equal(w.document.querySelector('[data-department]').dataset.department,'READYMADE');
  }finally{w.close()}
+});
+test('OPEN New Purchase is usable while a delayed draft request is still pending',async()=>{
+ const x=await setup('OWNER','OPEN');try{
+ let resolve;const pending=new Promise(r=>resolve=r),old=x.ctx.rpc;
+ x.ctx.rpc=(n,p)=>n==='rr_rm_chat_fast_queue_test71'?pending:old(n,p);
+ const rendering=x.ctx.refresh();assert.ok(x.w.document.querySelector('[data-new]'));
+ x.w.document.querySelector('[data-new]').click();assert.ok(x.w.document.querySelector('[data-supplier]'));
+ resolve({cards:[],drafts:[],categories:[],counts:{OPEN:1,WORKING:0},can_purchase:true});await rendering;
+ assert.ok(!x.calls.some(c=>c.n==='rr_rm_costing_test71'));
+ }finally{x.close()}
+});
+test('WORKING lists stock first and loads costing only when rate details open',async()=>{
+ const x=await setup();try{
+ const old=x.ctx.rpc;x.ctx.rpc=async(n,p)=>{
+  if(n==='rr_rm_costing_test71'){x.calls.push({n,p});return{costing_complete:true,source_rate:150,purchase_cost_per_pc:100,salary_per_pc:10,overhead_per_pc:18}}
+  const j=await old(n,p);if(n==='rr_rm_chat_fast_queue_test71'){j.can_view_cost=true;j.cards[0].costing={costing_complete:false,frozen:false};}return j;
+ };
+ await x.ctx.refresh();assert.equal(x.calls.filter(c=>c.n==='rr_rm_costing_test71').length,0);
+ const details=x.w.document.querySelector('[data-cost-load]');details.open=true;details.dispatchEvent(new x.w.Event('toggle'));await wait();
+ assert.equal(x.calls.filter(c=>c.n==='rr_rm_costing_test71').length,1);assert.ok(!x.w.document.querySelector('[data-approve]').disabled);assert.match(x.w.document.querySelector('[data-cost-body]').textContent,/Purchase ₹100/);
+ }finally{x.close()}
 });
