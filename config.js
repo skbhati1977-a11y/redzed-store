@@ -122,3 +122,63 @@ let rrAuthRefreshPromise=null;window.RRRefreshSupabaseSession=async function(for
 // Staff/Codespace navigation must never become an external customer destination.
 if(!Object.getOwnPropertyDescriptor(window,"RR_CUSTOMER_SHARE_BASE")||Object.getOwnPropertyDescriptor(window,"RR_CUSTOMER_SHARE_BASE").configurable){Object.defineProperty(window,"RR_CUSTOMER_SHARE_BASE",{get:()=> "https://redzed-customer-collection.jggfab2011.chatgpt.site/",set:()=>{},configurable:false});}
 
+
+// TEST71: repair saved customer links at the outgoing transport boundary.
+(() => {
+  'use strict';
+  if (window.__RR_PUBLIC_CUSTOMER_LINK_GUARD_71__) return;
+  window.__RR_PUBLIC_CUSTOMER_LINK_GUARD_71__ = true;
+  const origin = 'https://redzed-customer-collection.jggfab2011.chatgpt.site';
+  const paths = new Set(['s.html','real-customer-invite-test67.html','real-market-shared-invoice-test67.html']);
+  function url(value) {
+    try {
+      const u = new URL(value);
+      const name = u.pathname.split('/').pop();
+      if (u.hostname.endsWith('.app.github.dev') && paths.has(name)) {
+        const target = new URL('/' + name, origin);
+        target.search = u.search; target.hash = u.hash;
+        return target.href;
+      }
+      if (['wa.me','api.whatsapp.com','web.whatsapp.com'].includes(u.hostname) || ['whatsapp:','sms:'].includes(u.protocol)) {
+        for (const key of ['text','body','url']) {
+          const before = u.searchParams.get(key);
+          if (before !== null) {
+            const after = text(before);
+            if (after !== before) u.searchParams.set(key, after);
+          }
+        }
+        return u.href;
+      }
+    } catch (_) {}
+    return value;
+  }
+  function text(value) {
+    return String(value).replace(/https?:\/\/[^\s<>"']+/g, raw => {
+      const suffix = raw.match(/[),.;]+$/)?.[0] || '';
+      return url(suffix ? raw.slice(0,-suffix.length) : raw) + suffix;
+    });
+  }
+  window.RRPublicCustomerLink71 = Object.freeze({url,text});
+  const open = window.open;
+  if (typeof open === 'function') window.open = function(value,...args) {
+    return open.call(this,typeof value === 'string' ? url(value) : value,...args);
+  };
+  const clipboard = navigator.clipboard;
+  if (clipboard && typeof clipboard.writeText === 'function') {
+    const write = clipboard.writeText.bind(clipboard);
+    try { clipboard.writeText = value => write(text(value)); } catch (_) {}
+  }
+  if (typeof navigator.share === 'function') {
+    const share = navigator.share.bind(navigator);
+    try { navigator.share = data => share(data ? {...data,
+      ...(typeof data.url === 'string' ? {url:url(data.url)} : {}),
+      ...(typeof data.text === 'string' ? {text:text(data.text)} : {})
+    } : data); } catch (_) {}
+  }
+  document.addEventListener('click', event => {
+    const anchor = event.target.closest?.('a[href]');
+    if (!anchor) return;
+    const before = anchor.href, after = url(before);
+    if (before !== after) anchor.href = after;
+  }, true);
+})();
