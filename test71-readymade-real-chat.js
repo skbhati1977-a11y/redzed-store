@@ -7,10 +7,15 @@
   const roles = ['OWNER','SUPER_ADMIN','ADMIN','ACCOUNTS','SALES','MANAGER'];
   const roleOf = s => String(window.RR_EFFECTIVE_ROLE ? window.RR_EFFECTIVE_ROLE(s.actor?.role || s.actor?.role_code) : window.RR_VIEW_AS_ROLE || s.actor?.role || s.actor?.role_code || '').toUpperCase();
   const state = {selection:new Set(),category:'',mapping:new URLSearchParams(location.search).get('rm_mapping')||'ALL',cols:2,seq:0,busy:false,returnKeys:new Map()};
+  const supplierCaches=new WeakMap();
+  function supplierCache(s){let scopes=supplierCaches.get(s.db);if(!scopes){scopes=new Map();supplierCaches.set(s.db,scopes)}const key=JSON.stringify([s.userId,s.actor?.id,roleOf(s),window.RR_VIEW_AS_ACTOR_ID]);if(!scopes.has(key))scopes.set(key,{rows:null,at:0,pending:null});return scopes.get(key)}
+  function suppliers(s,force=false){const cache=supplierCache(s);if(cache.pending)return cache.pending;if(!force&&cache.rows&&Date.now()-cache.at<60000)return Promise.resolve(cache.rows);const request=(async()=>{let timer;const controller=new AbortController();try{let query=s.db.from('rr_suppliers').select('id,supplier_name').eq('is_active',true).order('supplier_name');if(query.abortSignal)query=query.abortSignal(controller.signal);const result=await Promise.race([Promise.resolve(query),new Promise((_,reject)=>{timer=setTimeout(()=>{controller.abort();reject(Error('Supplier request timed out'))},8000)})]);if(result.error)throw result.error;cache.rows=(result.data||[]).filter(x=>String(x.supplier_name||'').trim());cache.at=Date.now();return cache.rows}finally{clearTimeout(timer)}})();cache.pending=request;request.then(()=>{if(cache.pending===request)cache.pending=null},()=>{if(cache.pending===request)cache.pending=null});return request}
+  function prefetchSuppliers(s){if(s.db&&['OWNER','SUPER_ADMIN','ADMIN','ACCOUNTS'].includes(roleOf(s)))suppliers(s).catch(()=>{})}
   const artKey=c=>String(c.art_no||'').trim().toUpperCase()||'LOT:'+c.lot_no;
   const groupCards=cards=>{const groups=new Map();for(const c of cards){const key=artKey(c);if(!groups.has(key))groups.set(key,[]);groups.get(key).push(c)}return [...groups.values()]};
   const caption = c => ['REDZED · '+c.lot_no,c.item_name,c.category,c.art_no && 'Art '+c.art_no,c.size_text && 'Size '+c.size_text,c.cloth_name,c.colours_text && 'Colours '+c.colours_text,c.caption_note,'Available '+c.available_qty+' PCS','Sales rate '+(c.approval_ready ? money(c.approved_rate) : 'Approval pending')].filter(Boolean).join('\n');
   function directory(s) {
+    prefetchSuppliers(s);
     s.departments = s.departments.filter(d => d.department_code !== 'READYMADE');
     if (roles.includes(roleOf(s))) s.departments.unshift({department_code:'READYMADE',department_name:'Readymade Garments',workers:[],staff:[],worker_count:0,staff_count:0});
   }
@@ -60,21 +65,12 @@
     body.innerHTML=`<div class="rm-fields"><label>Supplier / Seller *<select data-supplier disabled><option value="">Loading existing suppliers…</option></select></label><label>Supplier bill number *<input data-bill value="${esc(draft?.bill_no||'')}"></label><label>Purchase / bill date *<input data-date type="date" value="${esc(draft?.purchase_date||new Date().toLocaleDateString('en-CA',{timeZone:'Asia/Kolkata'}))}"></label></div><div data-lines></div><button type="button" data-add>Add garment</button><section class="card" data-costing-status><b>Monthly costing / Final rate</b><p data-cost-month></p><p>Purchase cost + monthly weighted Sales/Admin/Accounts salary + applicable overhead = total cost.</p>${['OWNER','SUPER_ADMIN'].includes(roleOf(ctx.s))?'<p>Fixed Owner margin: ₹22/PCS. Base sales rate = total cost + ₹22.</p>':''}<p>Actual weighted base rate is calculated after purchase confirmation and shown in WORKING. Missing monthly values keep approval pending. Final-rate approval changes RRQ on available PCS.</p></section>`;
     const supplierSelect=body.querySelector('[data-supplier]');
     let supplierNames=new Set();
-    async function loadSuppliers(preferred=supplierSelect.value||draft?.supplier_name){
-      supplierSelect.disabled=true;
-      try{
-        const result=await ctx.s.db.from('rr_suppliers').select('id,supplier_name').eq('is_active',true).order('supplier_name');
-        if(result.error)throw result.error;
-        const rows=(result.data||[]).filter(x=>String(x.supplier_name||'').trim());
-        supplierNames=new Set(rows.map(x=>x.supplier_name));
-        supplierSelect.innerHTML='<option value="">Select existing supplier</option>'+rows.map(x=>`<option value="${esc(x.supplier_name)}">${esc(x.supplier_name)}</option>`).join('');
-        supplierSelect.value=supplierNames.has(preferred)?preferred:'';
-        supplierSelect.disabled=false;
-        if(!rows.length)msg.textContent='No active suppliers in Supplier Master.';
-        else if(draft?.supplier_name&&!supplierNames.has(draft.supplier_name))msg.textContent='Saved supplier is inactive or unavailable. Select an active supplier.';
-      }catch(e){msg.textContent='Supplier list could not load. Tap Retry suppliers.';supplierSelect.innerHTML='<option value="">Suppliers unavailable</option>';}
+    function showSuppliers(rows,preferred){supplierNames=new Set(rows.map(x=>x.supplier_name));supplierSelect.innerHTML='<option value="">Select existing supplier</option>'+rows.map(x=>`<option value="${esc(x.supplier_name)}">${esc(x.supplier_name)}</option>`).join('');supplierSelect.value=supplierNames.has(preferred)?preferred:'';supplierSelect.disabled=false;if(!rows.length)msg.textContent='No active suppliers in Supplier Master.';else if(draft?.supplier_name&&!supplierNames.has(draft.supplier_name))msg.textContent='Saved supplier is inactive or unavailable. Select an active supplier.';}
+    async function loadSuppliers(preferred=supplierSelect.value||draft?.supplier_name,force=false){
+      const cache=supplierCache(ctx.s);if(cache.rows)showSuppliers(cache.rows,preferred);else supplierSelect.disabled=true;
+      try{const rows=await suppliers(ctx.s,force);if(!m.isConnected)return;showSuppliers(rows,supplierSelect.value||preferred)}catch(e){if(!m.isConnected)return;msg.textContent='Supplier list could not refresh. Tap Retry suppliers.';if(!cache.rows)supplierSelect.innerHTML='<option value="">Suppliers unavailable</option>';}
     }
-    const retry=document.createElement('button');retry.type='button';retry.textContent='Retry suppliers';retry.dataset.retrySuppliers='';retry.onclick=()=>loadSuppliers();supplierSelect.parentElement.appendChild(retry);
+    const retry=document.createElement('button');retry.type='button';retry.textContent='Retry suppliers';retry.dataset.retrySuppliers='';retry.onclick=()=>loadSuppliers(supplierSelect.value||draft?.supplier_name,true);supplierSelect.parentElement.appendChild(retry);
     function addMaster(kind,onSaved){
       const supplier=kind==='Supplier',dialog=modal('+ Add New '+kind),content=dialog.querySelector('[data-body]'),message=dialog.querySelector('[data-message]');
       content.innerHTML='<label>'+kind+' name *<input data-master-name maxlength="120"></label>'+(supplier?'<label>Mobile · optional<input data-master-mobile type="tel"></label><label>Address · optional<input data-master-address></label><label>GSTIN · optional<input data-master-gstin maxlength="15"></label>':'');
@@ -92,7 +88,7 @@
     }
     const addSupplier=document.createElement('button');addSupplier.type='button';addSupplier.dataset.addSupplier='';addSupplier.textContent='+ Add New Supplier';
     addSupplier.onclick=()=>addMaster('Supplier',async saved=>{
-      await loadSuppliers(saved.supplier_name);
+      const cache=supplierCache(ctx.s);cache.rows=[...(cache.rows||[]).filter(x=>x.supplier_name!==saved.supplier_name),saved].sort((a,b)=>a.supplier_name.localeCompare(b.supplier_name));cache.at=Date.now();showSuppliers(cache.rows,saved.supplier_name);
       if(supplierSelect.disabled)throw Error('Supplier saved. Retry suppliers to refresh the list.');
       msg.textContent='Supplier saved and selected.';
     });supplierSelect.parentElement.appendChild(addSupplier);
@@ -262,6 +258,7 @@
   }
   async function render(ctx) {
     state.liveCleanup?.();state.liveCleanup=null;
+    prefetchSuppliers(ctx.s);
     style();const seq=++state.seq,s=ctx.s,box=ctx.box,viewStatus=s.status,viewSearch=s.search;
     if(viewStatus==='OPEN'&&['OWNER','SUPER_ADMIN','ADMIN','ACCOUNTS'].includes(roleOf(s))){
       box.innerHTML='<section class="card rm-chat-home"><h3>New Readymade Purchase</h3><button data-new>+ New Purchase</button><p data-notice>Saved drafts loading…</p></section>';
