@@ -1,3 +1,10 @@
+const CUSTOMER_ORIGIN='https://redzed-customer-collection.jggfab2011.chatgpt.site';
+function notificationRoute71(value){
+ const u=new URL(value||'./s.html',self.location.href);
+ if(u.pathname.endsWith('/s.html'))return new URL(CUSTOMER_ORIGIN+'/s.html'+u.search);
+ if(u.protocol!=='https:'||u.origin!==self.location.origin)throw Error('Invalid notification destination');
+ return u;
+}
 const CACHE='redzed-test71-notification-events-v3';
 const READ_CACHE='rr-notification-read-test71';
 let readQueue=Promise.resolve();
@@ -20,7 +27,7 @@ self.addEventListener('message',event=>{
 self.addEventListener('notificationclick',event=>{
  event.notification.close();
  event.waitUntil((async()=>{
-  let target;try{target=new URL(event.notification.data?.url||'./s.html',self.location.href);if(target.protocol!=='https:'||target.origin!==self.location.origin)return;
+  let target;try{target=notificationRoute71(event.notification.data?.url);
    if(target.pathname.endsWith('/s.html')){target.searchParams.set('notification','1');if(event.notification.data?.message_id)target.searchParams.set('activity_id',event.notification.data.message_id);target.searchParams.set('open','chat');}
   }catch(_){return;}
   const notices=await self.registration.getNotifications();for(const n of notices){if(event.notification.data?.chat_id&&n.data?.chat_id===event.notification.data.chat_id)n.close();}
@@ -33,9 +40,7 @@ self.addEventListener('notificationclick',event=>{
 self.addEventListener('push',event=>{
  const work=readQueue=readQueue.catch(()=>{}).then(async()=>{
   let data;try{data=event.data.json();}catch(_){data={preview:event.data?.text()||'New activity'};}
-  let url;try{url=new URL(data.url||'./s.html',self.location.href);
-   if(url.origin==='https://redzed-customer-collection.jggfab2011.chatgpt.site'&&url.pathname==='/s.html')url=new URL('./s.html'+url.search,self.location.href);
-   if(url.origin!==self.location.origin||url.protocol!=='https:')return;
+  let url;try{url=notificationRoute71(data.url);
   }catch(_){return;}
   const key=String(data.event_key||data.message_id||data.event_revision||data.chat_id||'new'),state=await readState();
   if(state.events.includes(key))return;

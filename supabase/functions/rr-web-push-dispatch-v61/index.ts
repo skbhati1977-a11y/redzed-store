@@ -3,13 +3,13 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 import webpush from "npm:web-push@3.6.7";
 
 function customerPushRoute71(target: string | null, route: string | null): string {
- try {
-  const base=new URL(route||'');const dest=new URL(target||route||'');
-  if(dest.origin==='https://redzed-customer-collection.jggfab2011.chatgpt.site'&&dest.pathname==='/s.html'){
-   dest.protocol=base.protocol;dest.host=base.host;dest.pathname=base.pathname.replace(/[^/]*$/,'s.html');return dest.href;
-  }
-  return target||route||'./';
- }catch(_){return route||'./';}
+ const publicBase='https://redzed-customer-collection.jggfab2011.chatgpt.site';
+ for(const value of [target,route]){
+  try {const dest=new URL(value||'');
+   if(dest.pathname.endsWith('/s.html'))return publicBase+'/s.html'+dest.search;
+  }catch(_){}
+ }
+ return publicBase+'/s.html';
 }
 
 
