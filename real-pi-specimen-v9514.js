@@ -649,5 +649,15 @@
       saving = false;
     }
   }
+  window.RRPIRateRecoveryRetry71 = async () => {
+    const savedLines = lines.map(x => ({...x}));
+    const savedFields = Object.fromEntries(['dispatch','value','freight','other','remarks'].map(id=>[id,$(id)?.value]));
+    await boot();
+    if (savedLines.length) {
+      lines.forEach(x=>{const old=savedLines.find(y=>y.lot_no===x.lot_no);if(old){x.qty=old.qty;x.discount=old.discount;}});
+      Object.entries(savedFields).forEach(([id,value])=>{if($(id)&&value!=null)$(id).value=value;});
+      render();
+    }
+  };
   boot();
 })();

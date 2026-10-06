@@ -1,0 +1,20 @@
+(()=>{'use strict';if(window.RRPIRateRecovery71)return;window.RRPIRateRecovery71=true;
+ const q=new URLSearchParams(location.search),requirement=q.get('requirement_id');if(!requirement)return;
+ const esc=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));let current='',busy=false;
+ function lotFrom(message){return String(message||'').match(/Approved rate unavailable for lot\s+([^\s;,]+)/i)?.[1]||null}
+ async function recover(lot){if(busy||current===lot)return;busy=true;current=lot;let panel;
+ try{document.getElementById('rrPIRateRecovery71')?.remove();panel=document.createElement('section');panel.id='rrPIRateRecovery71';panel.style.cssText='padding:14px;margin-top:12px;border:1px solid #5a7594;border-radius:14px;background:#122334;color:#edf5ff';panel.textContent='Checking rate approval and costing…';document.getElementById('msg').after(panel);
+ const d=await RF853.rpc('rr_pi_rate_recovery_test71',{p_requirement_id:requirement,p_lot_no:lot,p_notify:true});
+ const needsCost=d.readymade&&!d.costing_complete,reason=needsCost?'Monthly costing incomplete. Complete the missing allocation before rate approval.':'Approved sale rate missing. Super Admin approval is required.';
+ const costUrl=new URL(d.readymade?'real-accounts-costing-v850.html':'real-costing-v853.html',location.href);costUrl.searchParams.set('lot',lot);costUrl.searchParams.set('data_mode','TEST');
+ panel.innerHTML='<b>'+esc(lot)+' · Fix sale rate</b><p>'+esc(reason)+'</p>'+(d.can_approve?'<a data-costing href="'+esc(costUrl.href)+'" target="_blank" rel="noopener">'+(needsCost?'Complete monthly costing':'Open costing / rate approval')+'</a>':'<button type="button" data-request>Request Super Admin approval</button>')+(d.can_approve&&d.readymade&&d.costing_complete?'<p>Purchase cost ₹'+esc(d.costing?.purchase_cost_per_pc??'-')+' · Salary ₹'+esc(d.costing?.salary_per_pc??'-')+' · Overhead ₹'+esc(d.costing?.overhead_per_pc??'-')+' · Owner margin ₹22/PCS</p><label style="display:block;margin-top:12px">Final sale rate / PCS <input data-rate type="number" min="0.01" step="0.01" value="'+esc(d.suggested_rate||'')+'"></label><button type="button" data-approve>Approve sale rate</button>':'')+'<button type="button" data-retry style="margin:12px 0 0 10px">Refresh rate & retry PI</button><p data-result aria-live="polite"></p>';
+ const result=panel.querySelector('[data-result]');
+ if(!d.can_approve&&d.request_status==='REQUESTED')result.textContent='Super Admin approval requested. Repeated retries will not send duplicate requests.';
+ panel.querySelector('[data-request]')?.addEventListener('click',async e=>{e.target.disabled=true;try{await RF853.rpc('rr_pi_rate_recovery_test71',{p_requirement_id:requirement,p_lot_no:lot,p_notify:true});result.textContent='Super Admin approval requested. After approval, tap Refresh rate & retry PI.';}catch(error){result.textContent=error.message;e.target.disabled=false}});
+ panel.querySelector('[data-approve]')?.addEventListener('click',async e=>{const rate=Number(panel.querySelector('[data-rate]').value);if(!Number.isFinite(rate)||rate<=0){result.textContent='Enter a positive sale rate.';return}e.target.disabled=true;try{await RF853.rpc('rr_rm_approve_rate_test71',{p_lot_no:lot,p_final_rate:rate,p_reason:'PI blocked-rate follow-up'});panel.querySelector('[data-rate]').readOnly=true;result.textContent='Rate approved. Tap Refresh rate & retry PI.';}catch(error){result.textContent=error.message;e.target.disabled=false}});
+ panel.querySelector('[data-retry]').onclick=async()=>{current='';panel.remove();await window.RRPIRateRecoveryRetry71?.();};
+ }catch(error){if(panel)panel.textContent='Rate follow-up unavailable: '+error.message;current='';}finally{busy=false}
+ }
+ const msg=document.getElementById('msg');if(!msg)return;new MutationObserver(()=>{const lot=lotFrom(msg.textContent);if(lot)recover(lot)}).observe(msg,{childList:true,subtree:true,characterData:true});const lot=lotFrom(msg.textContent);if(lot)recover(lot);
+ window.RRPIRateRecoveryParse71=lotFrom;
+})();
