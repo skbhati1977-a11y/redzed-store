@@ -22,7 +22,17 @@
   try {
     ctx = JSON.parse(sessionStorage.getItem("rr_pi_requirement_v9514") || "{}");
   } catch (_) {}
-  let lines = Array.isArray(ctx.lines) ? ctx.lines.map((x) => ({ ...x })) : [];
+  function groupArtLines(items) {
+    const result = [], groups = new Map();
+    for (const line of items) {
+      if (!line.art_no || !line.art_sale_key) { result.push(line); continue; }
+      let group = groups.get(line.art_sale_key);
+      if (!group) { group = {...line,lot_no:"ART:" + line.art_no,qty:0,allocations:[]}; groups.set(line.art_sale_key,group);result.push(group); }
+      group.qty += Number(line.qty);group.allocations.push({lot_no:line.lot_no,qty:line.qty});
+    }
+    return result;
+  }
+  let lines = Array.isArray(ctx.lines) ? groupArtLines(ctx.lines).map((x) => ({ ...x })) : [];
   async function rpc(n, a = {}) {
     return RF853.rpc(n, a);
   }
@@ -30,7 +40,7 @@
     const t = new URLSearchParams(location.search).get("testpi");
     if (!t || new URLSearchParams(location.search).has("requirement_id")) return;
     ctx = await rpc("rr_pi_test_context_v9522", { p_token: t });
-    lines = (ctx.lines || []).map((x) => ({ ...x }));
+    lines = (groupArtLines(ctx.lines || [])).map((x) => ({ ...x }));
     piId = null;
     piNo = "";
   }
@@ -39,7 +49,7 @@
     const savedPiId = query.get("pi_id");
     if (savedPiId) {
       ctx = await rpc("rr_sales_pi_detail_v500", { p_pi_id: savedPiId });
-      lines = (ctx.lines || []).map((x) => ({
+      lines = (groupArtLines(ctx.lines || [])).map((x) => ({
         ...x,
         size: x.size || x.size_text || "",
       }));
@@ -61,7 +71,7 @@
     try { ctx.requirement_no = await rpc("rr_requirement_ref_v9543", {p_requirement_id: id}); } catch (_) {}
     const reqLabel = $("reqNo");
     if (reqLabel) reqLabel.textContent = "Requirement No. " + (ctx.requirement_display_no || ctx.requirement_no || id);
-    lines = (ctx.lines || []).map((x) => ({
+    lines = (groupArtLines(ctx.lines || [])).map((x) => ({
       ...x,
       size: x.size || x.size_text || "",
     }));
@@ -76,17 +86,17 @@
     await Promise.all(
       items.map(async (x) => {
         try {
-          const c = x.bootstrap_context || await rpc("rr_pi_lot_context_v9517", {
+          const c = x.bootstrap_context || (x.art_no ? await rpc("rr_rm_sale_context_test71", {p_art_no:x.art_no,p_customer_name:ctx.customer_name,p_pi_id:piId || null}) : await rpc("rr_pi_lot_context_v9517", {
             p_lot_no: x.lot_no,
             p_customer_name: ctx.customer_name,
             p_data_mode: "TEST",
-          });
+          }));
           x.approved = +c.approved_rate || 0;
           x.customerRate =
             c.customer_lot_rate == null ? null : +c.customer_lot_rate;
           const mapped = +c.effective_rate || x.approved;
           if (!preserve || x.rate == null) x.rate = mapped;
-          if (x.stock_type === "TRADED" && !finalized) {
+          if (x.stock_type === "TRADED" && !x.art_no && !finalized) {
             const trade = await rpc("rr_trade_effective_rate_v849", {
               p_lot_no: x.lot_no,
               p_party_name: ctx.customer_name,
@@ -99,7 +109,7 @@
           if (!discountDirty && !finalized) x.discount = x.allowed;
           x.category = c.category || x.category || "";
           x.available = +c.available_qty || 0;
-          x.box = +c.pack_pcs_per_box || 0;
+          x.box = x.art_no ? 0 : (+c.pack_pcs_per_box || 0);
           x.rate_path = c.rate_path || "NONE";
           x.rrqAvailable = +c.rrq_available || 0;
           x.image = c.image || x.image || "";
@@ -133,6 +143,7 @@
     const lot = lotOptions[index];
     if (!lot || saving || finalized) return;
     $("itemLot").value = lot.lot_no;
+    if (lot.art_no || /^RM[0-9]+$/.test(lot.lot_no)) $("itemStockType").value = "TRADED";
     hideLotSuggestions();
     $("itemQty").focus();
   }
@@ -166,9 +177,9 @@
         };
         status("Searching lots…");
         try {
-          const result = await rpc("rr_ws_stock_search_v9411", {p_search:term,p_multi_lots:"",p_sort:"LOT_ASC",p_data_mode:"TEST"});
+          const [result, arts] = await Promise.all([rpc("rr_ws_stock_search_v9411", {p_search:term,p_multi_lots:"",p_sort:"LOT_ASC",p_data_mode:"TEST"}), rpc("rr_rm_sale_search_test71",{p_search:term,p_pi_id:piId || null})]);
           if (version !== lotSearchVersion || finalized || saving) return;
-          lotOptions = (Array.isArray(result) ? result : []).filter(x => String(x.lot_no || "").toUpperCase().includes(term) && Number(x.available_qty) > 0)
+          lotOptions = [...(Array.isArray(arts) ? arts : []), ...(Array.isArray(result) ? result : [])].filter(x => String(x.lot_no || "").toUpperCase().includes(term) && Number(x.available_qty) > 0)
             .sort((a,b) => Number(!String(a.lot_no).toUpperCase().startsWith(term)) - Number(!String(b.lot_no).toUpperCase().startsWith(term)))
             .slice(0,20);
           if (!lotOptions.length) { status("No available lots found."); return; }
@@ -186,8 +197,8 @@
               option.appendChild(img);
             } catch (_) { option.appendChild(placeholder); }
             const text = document.createElement("span"), name = document.createElement("b"), detail = document.createElement("small");
-            name.textContent = lot.lot_no;
-            detail.textContent = [lot.category, lot.sizes, `${lot.available_qty} PCS`].filter(Boolean).join(" · ");
+            name.textContent = lot.art_no ? "Art " + lot.art_no : lot.lot_no;
+            detail.textContent = [lot.category, lot.sizes, lot.lot_numbers?.length ? "Lots: " + lot.lot_numbers.slice(0,3).join(", ") + (lot.lot_numbers.length>3?" +"+(lot.lot_numbers.length-3):"") : "", `${lot.available_qty} PCS`].filter(Boolean).join(" · ");
             text.append(name,detail); option.appendChild(text);
             option.addEventListener("pointerdown", e => e.preventDefault());
             option.onclick = () => pickLot(i);
@@ -234,11 +245,12 @@
   async function addOrReplaceItem() {
     if (saving || finalized) return;
     hideLotSuggestions();
-    const lot = $("itemLot").value.trim().toUpperCase();
+    let lot = $("itemLot").value.trim().toUpperCase();
     const qty = Number($("itemQty").value);
-    const stockType = $("itemStockType").value;
+    let art = lot.startsWith("ART:") ? lot.slice(4).trim() : null;
+    let stockType = art ? "TRADED" : $("itemStockType").value;
     const index = editingItem;
-    if (!/^[A-Z0-9][A-Z0-9._/-]*$/.test(lot) || !Number.isSafeInteger(qty) || qty < 1) {
+    if (!/^(?:ART:)?[A-Z0-9][A-Z0-9._/-]*$/.test(lot) || !Number.isSafeInteger(qty) || qty < 1) {
       $("itemEditorMessage").textContent = "Enter a valid lot number and whole PCS qty greater than zero.";
       return;
     }
@@ -250,9 +262,15 @@
     $("addItem").disabled = true;
     $("itemEditorMessage").textContent = "Checking lot, stock and approved rate…";
     try {
+      if (!art) {
+        const matches = await rpc("rr_rm_sale_search_test71", {p_search:lot,p_pi_id:piId || null});
+        const exact = (matches || []).find(x=>String(x.art_no).toUpperCase() === lot);
+        if (exact) { art=exact.art_no;lot="ART:"+art;stockType="TRADED"; }
+      }
+      if (lines.some((x,i)=>i!==index && x.lot_no.toUpperCase()===lot && (x.stock_type||"REGULAR")===stockType)) throw Error("This item already exists. Use EDIT / REPLACE.");
       const old = index === null ? null : lines[index];
       const sameLot = old && old.lot_no.trim().toUpperCase() === lot && (old.stock_type || "REGULAR") === stockType;
-      const candidate = { ...(sameLot ? old : {}), lot_no: lot, qty, stock_type: stockType, discount: partyDiscount ?? 0 };
+      const candidate = { ...(sameLot ? old : {}), lot_no: lot, art_no:art, qty, stock_type: stockType, discount: partyDiscount ?? 0 };
       await contexts(!!sameLot, [candidate]);
       if (candidate.context_error) throw Error(candidate.context_error);
       if (candidate.available < qty) throw Error(`${lot}: only ${candidate.available} PCS available.`);
@@ -527,6 +545,7 @@
       } else await getReasons();
       const payload = lines.map((x) => ({
         lot_no: x.lot_no,
+        art_no: x.art_no || null,
         short_item_name: x.category || x.lot_no,
         stock_type: x.stock_type || "REGULAR",
         qty: x.qty,
@@ -585,7 +604,10 @@
         $("convertCi").disabled = !piId;
         return true;
       }
-      for (const x of lines) {
+      const savedDetail = lines.some(x => x.art_no) ? await rpc("rr_sales_pi_detail_v500", {p_pi_id:piId}) : null;
+      const auditLines = savedDetail ? savedDetail.lines.map(x=>({...x,rate:Number(x.rate),art_no:null})) : lines;
+      if (savedDetail) await contexts(true,auditLines);
+      for (const x of auditLines) {
         if (customerId && x.rate !== x.approved)
           await rpc("rr_customer_lot_rate_set_v9517", {
             p_customer_id: customerId,

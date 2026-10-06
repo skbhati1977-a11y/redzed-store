@@ -1,0 +1,45 @@
+begin;
+select set_config('request.jwt.claim.sub',(select auth_user_id::text from public.rr_user_profiles where is_active and lower(role_code)='owner' limit 1),true);
+do $test$
+declare art text:='ART-SALE-'||substr(gen_random_uuid()::text,1,8);lot1 text;lot2 text;cat text;supplier text;buyer text:='ART-BUYER-'||substr(gen_random_uuid()::text,1,8);payload jsonb;j jsonb;pid uuid;lineid uuid;revision bigint;failed boolean;customerid uuid;chatid uuid;doc jsonb;
+begin
+select category_name into cat from public.rr_art_categories where is_active order by category_name limit 1;
+select supplier_name into supplier from public.rr_suppliers where is_active order by supplier_name limit 1;
+lot1:=rr_rm_lot_hint_test71()->>'suggested_lot';lot2:='RM'||lpad((substring(lot1 from 3)::bigint+1)::text,3,'0');
+payload:=jsonb_build_array(jsonb_build_object('lot_no',lot1,'item_name','Art FIFO Shirt','category',cat,'size_text','L, XL','art_no',art,'art_revision',0,'bill_qty',540,'qty',530,'purchase_rate',100,'final_rate',2000,'final_image_url','https://example.com/art.jpg'));
+perform public.rr_rm_chat_save_test71(null,supplier,lot1,date '2038-01-15',payload,true);
+revision:=(public.rr_rm_art_catalog_test71(art)->'rows'->0->>'art_revision')::bigint;
+payload:=jsonb_set(jsonb_set(jsonb_set(payload,'{0,lot_no}',to_jsonb(lot2)),'{0,art_revision}',to_jsonb(revision)),'{0,qty}','550');
+perform public.rr_rm_chat_save_test71(null,supplier,lot2,date '2038-01-16',payload,true);
+insert into public.rr_customers(customer_name,is_active,allowed_discount_per_piece) values(buyer,true,0) returning id into customerid;
+select id into chatid from public.rr_customer_chat_v9433 where customer_id=customerid and data_mode='TEST' and relation_kind='DIRECT_CUSTOMER';
+insert into public.rr_customer_chat_members_v9433(chat_id,profile_id) values(chatid,(select id from public.rr_user_profiles where auth_user_id=auth.uid() limit 1)) on conflict do nothing;
+payload:=jsonb_build_array(jsonb_build_object('lot_no','ART:'||art,'art_no',art,'stock_type','TRADED','qty',600,'rate',2000));
+j:=public.rr_fg_save_pi_commercial_test71(null,buyer,'AUDIT',payload,0,0,0,0,false,'TEST');pid:=(j->>'pi_id')::uuid;
+if (select sum(qty) from public.rr_fg_pi_lines_v787 where pi_id=pid and lot_no=lot1)<>530 or (select sum(qty) from public.rr_fg_pi_lines_v787 where pi_id=pid and lot_no=lot2)<>70 then raise exception 'Art FIFO split failed';end if;
+if (select count(distinct art_sale_key_test71) from public.rr_fg_pi_lines_v787 where pi_id=pid)<>1 then raise exception 'Logical Art line identity lost';end if;
+doc:=public.rr_pi_customer_document_test71(pid,chatid)->'document';
+if jsonb_array_length(doc->'lines')<>1 or (doc->'lines'->0->>'qty')::integer<>600 or jsonb_array_length(doc->'lines'->0->'lot_allocations')<>2 then raise exception 'Customer PI Art grouping failed';end if;
+if (public.rr_rm_sale_context_test71(art,buyer,null)->>'available_qty')::numeric<>480 then raise exception 'PI stock freeze failed';end if;
+failed:=false;begin perform public.rr_fg_save_pi_commercial_test71(null,buyer,'AUDIT',jsonb_set(payload,'{0,qty}','481'),0,0,0,0,true,'TEST');exception when others then failed:=SQLERRM like '%insufficient unreserved stock%';end;
+if not failed then raise exception 'Art overselling not blocked';end if;
+failed:=false;begin perform public.rr_fg_save_pi_v787(null,buyer,'AUDIT',jsonb_build_array(jsonb_build_object('lot_no',lot1,'stock_type','TRADED','qty',1,'rate',2000)),0,0,true,'TEST');exception when others then failed:=SQLERRM like '%insufficient unreserved stock%';end;
+if not failed then raise exception 'Direct Lot sale bypassed Art reservation';end if;
+-- Edit must retain audit history and recreate the same reservation atomically.
+perform public.rr_fg_save_pi_commercial_test71(pid,buyer,'AUDIT',payload,0,0,0,0,false,'TEST');
+perform public.rr_fg_save_pi_commercial_test71(pid,buyer,'AUDIT',payload,0,0,0,0,true,'TEST');
+doc:=public.rr_pi_customer_document_test71(pid,chatid)->'document';
+if doc->>'document_kind'<>'CI' or jsonb_array_length(doc->'lines')<>1 then raise exception 'Customer CI Art grouping failed';end if;
+if (public.rr_rm_art_catalog_test71(art)->'rows'->0->>'available_qty')::numeric<>480 then raise exception 'CI aggregate deduction failed';end if;
+if (select count(*) from public.rr_fg_stock_ledger_v787 where meta->>'pi_id'=pid::text and txn_type='CI_SALE')<>2 then raise exception 'CI allocations duplicated';end if;
+failed:=false;begin perform public.rr_fg_save_pi_commercial_test71(pid,buyer,'AUDIT',payload,0,0,0,0,true,'TEST');exception when others then failed:=true;end;
+if not failed then raise exception 'Duplicate CI accepted';end if;
+select id into lineid from public.rr_fg_pi_lines_v787 where pi_id=pid and lot_no=lot1;
+perform public.rr_fg_post_return_v787('KNOWN',lineid,null,null,5,'Art sale return','TEST');
+if (select available_qty from public.rr_rm_stock_v849_2c6 where lot_no=lot1 and data_mode='TEST')<>5 then raise exception 'Return did not restore original Lot';end if;
+perform public.rr_fg_save_pi_v787(null,buyer,'AUDIT',jsonb_build_array(jsonb_build_object('lot_no',lot1,'stock_type','TRADED','qty',3,'rate',2000)),0,0,true,'TEST');
+if (public.rr_rm_art_catalog_test71(art)->'rows'->0->>'available_qty')::numeric<>482 then raise exception 'Lot sale and Art balance diverged';end if;
+perform set_config('rm.art.sale.audit','PASS: Art FIFO; one logical Art; PI freeze/edit; Art and Lot oversell guard; one CI posting; original-Lot return; shared live balance',true);
+end $test$;
+select current_setting('rm.art.sale.audit') result;
+rollback;
