@@ -70,3 +70,16 @@ test('WORKING lists stock first and loads costing only when rate details open',a
  assert.equal(x.calls.filter(c=>c.n==='rr_rm_costing_test71').length,1);assert.ok(!x.w.document.querySelector('[data-approve]').disabled);assert.match(x.w.document.querySelector('[data-cost-body]').textContent,/Purchase ₹100/);
  }finally{x.close()}
 });
+
+test('Private Working heads respect effective Super Admin scope even when RPC permits Admin approval',async()=>{
+ for(const role of ['OWNER','SUPER_ADMIN','ADMIN','ACCOUNTS','SALES','MANAGER']){
+  const x=await setup(role);try{
+   const old=x.ctx.rpc;x.ctx.rpc=async(n,p)=>{const j=await old(n,p);if(n==='rr_rm_chat_fast_queue_test71'){j.can_view_cost=true;j.can_approve=true;}return j};
+   await x.ctx.refresh();const privateRole=['OWNER','SUPER_ADMIN'].includes(role),d=x.w.document;
+   assert.equal(!!d.querySelector('[data-cost-body]'),privateRole,role);
+   assert.equal(!!d.querySelector('[data-approve]'),privateRole,role);
+   assert.match(d.body.textContent,/Available balance: 20 PCS/);
+   if(privateRole){x.w.RR_EFFECTIVE_ROLE=()=> 'ADMIN';await x.ctx.refresh();assert.equal(d.querySelectorAll('[data-cost-load]').length,0);assert.ok(!x.calls.some(c=>c.n==='rr_rm_costing_test71'));}
+  }finally{x.close()}
+ }
+});
