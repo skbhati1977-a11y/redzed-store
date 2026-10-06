@@ -104,7 +104,7 @@ if(!window.__RR_GLOBAL_CARET_END_LOADER_9310__){window.__RR_GLOBAL_CARET_END_LOA
 if(rrIsRealChatPath(window.location.pathname)){
  window.__RR_SLICE_MENU_LOADER_9309__=true;
  if(!document.querySelector('link[href*="rz-manifest-v61"]')){const manifest61=document.createElement('link');manifest61.rel='manifest';manifest61.href=`${RR_REPO_BASE}rz-manifest-v61.webmanifest?v=71`;document.head.appendChild(manifest61)}
- const unread61=document.createElement('script');unread61.src=`${RR_REPO_BASE}real-chat-staff-unread-deeplink-v61.js?v=61u2`;unread61.async=false;(document.head||document.documentElement).appendChild(unread61);
+ const unread61=document.createElement('script');unread61.src=`${RR_REPO_BASE}real-chat-staff-unread-deeplink-v61.js?v=TEST71-EXACT-UNREAD-20261006`;unread61.async=false;(document.head||document.documentElement).appendChild(unread61);
  const push61=document.createElement('script');push61.src=`${RR_REPO_BASE}real-chat-staff-floating-notify-v61.js?v=70`;push61.async=false;(document.head||document.documentElement).appendChild(push61);
  if(!window.__RR_CONTACT_INVITE_PAGE_LOADER_71__){const add67=document.createElement('script');add67.id='rrContactInviteLoader71';add67.src='real-chat-add-customer-test67.js?v=TEST71-CONTACT-PREFILL-20261005';add67.async=false;(document.head||document.documentElement).appendChild(add67);}
  const hideRealChatGlobalRail=()=>{document.getElementById('rrSlicePanel')?.remove();document.getElementById('rrSliceBack')?.remove();document.getElementById('rrSliceRail')?.remove();document.body?.classList.remove('rrSliceReserved')};
