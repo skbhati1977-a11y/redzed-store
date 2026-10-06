@@ -108,3 +108,11 @@ test('Send on any Working card sends the full selection and all count badges sta
  d.querySelectorAll('.rm-chat-card [data-send-selected]')[1].click();await wait();assert.match(d.querySelector('[data-body]').textContent,/2 selected garments/);d.querySelector('[data-chat]').click();d.querySelector('[data-send]').click();await wait();assert.deepEqual(Array.from(x.calls.find(c=>c.n==='rr_sales_collection_send_test71').p.p_lots),['RM1','RM2']);
  }finally{x.close()}
 });
+
+test('Working captions keep identical fields and order when garment mappings are missing',async()=>{
+ const x=await setup('SALES');try{const old=x.ctx.rpc;x.ctx.rpc=async(n,p)=>{const j=await old(n,p);if(n==='rr_rm_chat_fast_queue_test71'){j.cards[0].art_no='RA40';j.cards[0].cloth_name='Cotton';j.cards[0].colours_text='Blue';j.cards[0].caption_note='Full sleeve';j.cards.push({...j.cards[0],stock_id:'s2',lot_no:'RM2',art_no:null,size_text:' ',cloth_name:undefined,colours_text:'',caption_note:null});}return j};await x.ctx.refresh();
+ const captions=[...x.w.document.querySelectorAll('.rm-caption')];assert.equal(captions.length,2);
+ const labels=caption=>[...caption.querySelectorAll('dt')].map(e=>e.textContent);assert.deepEqual(labels(captions[0]),['Art No.','Sizes','Fabric','Colours']);assert.deepEqual(labels(captions[1]),labels(captions[0]));assert.deepEqual([...captions[1].querySelectorAll('dd')].map(e=>e.textContent),['—','—','—','—']);assert.match(captions[1].querySelector('.rm-caption-note').textContent,/Caption note—/);
+ assert.deepEqual([...captions[0].children].map(e=>e.tagName),[...captions[1].children].map(e=>e.tagName));
+ }finally{x.close()}
+});
