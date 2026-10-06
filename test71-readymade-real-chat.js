@@ -111,7 +111,14 @@
     (window.RRMarketCustomer71?.get()||[]).forEach(id=>url.searchParams.append('recipient_chat',id));
     lots.forEach(lot=>url.searchParams.append('selected_lot',lot));return url.href;
   }
+  function validateMarketSelection(ctx,cards) {
+    const bad=[...state.selection].map(lot=>cards.find(c=>String(c.lot_no)===String(lot))).filter(c=>!c||!Number.isFinite(Number(c.approved_rate))||Number(c.approved_rate)<=0);
+    if(!bad.length)return true;
+    const warning=bad.map(c=>{if(!c)return 'Selected garment unavailable. Refresh balance.';const reason=c.costing_summary?.costing_complete===false?'Monthly costing pending. Complete costing, then approve a positive sale rate.':!c.approval_ready?'Final sale-rate approval pending. Approve a positive sale rate first.':'Sale rate is zero. Correct and approve a positive sale rate first.';return c.lot_no+': '+reason;}).join('\n');
+    ctx.notice(warning);alert(warning);return false;
+  }
   async function send(ctx,cards) {
+    if(!validateMarketSelection(ctx,cards))return;
     const url=marketUrl([...state.selection]);if(ctx.navigate)ctx.navigate(url);else location.assign(url);
   }
   async function render(ctx) {
@@ -138,6 +145,7 @@
       box.querySelector('[data-refresh]')?.addEventListener('click',()=>ctx.refresh());
       box.querySelectorAll('[data-select]').forEach(i=>i.onchange=()=>{i.checked?state.selection.add(i.dataset.select):state.selection.delete(i.dataset.select);box.querySelectorAll('[data-count]').forEach(n=>n.textContent=state.selection.size);box.querySelector('[data-market]').href=marketUrl([...state.selection]);});
       box.querySelector('[data-all]')?.addEventListener('click',()=>{const all=[...box.querySelectorAll('[data-select]:not(:disabled)')],checked=all.length&&all.every(i=>i.checked);all.forEach(i=>{i.checked=!checked;i.onchange()})});
+      box.querySelector('[data-market]')?.addEventListener('click',e=>{if(!validateMarketSelection(ctx,cards))e.preventDefault()});
       box.querySelectorAll('[data-send-selected]').forEach(b=>b.addEventListener('click',()=>send(ctx,cards)));
       box.querySelectorAll('[data-image]').forEach(b=>b.onclick=()=>{const c=cards.find(x=>x.lot_no===b.dataset.image),m=modal(c.lot_no);m.querySelector('[data-body]').innerHTML=`<img src="${esc(c.image_url)}" alt="${esc(c.item_name)}" style="width:100%;max-height:65vh;object-fit:contain"><pre style="white-space:pre-wrap">${esc(caption(c))}</pre>`});
       const costJobs=new Map();
