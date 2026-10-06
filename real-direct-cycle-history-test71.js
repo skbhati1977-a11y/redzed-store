@@ -111,7 +111,7 @@
   if(action.dataset.liveAction==='details'){
    if(staff&&state.latest_collection_token&&window.RRStaffCollectionViewer71){const u=new URL('s.html',location.href);u.searchParams.set('t',state.latest_collection_token);window.RRStaffCollectionViewer71.open(u.href);}
    else if(staff)showDetails();
-   else {const b=document.getElementById('fcReopen')||document.getElementById('fcOpen');if(state.latest_collection_token&&state.latest_collection_token!==token){const u=new URL('s.html',location.href);u.searchParams.set('t',state.latest_collection_token);u.searchParams.set('open','collection');location.href=u.href;}else b?.onclick?.();}
+   else {const b=document.getElementById('fcReopen')||document.getElementById('fcOpen');if(state.latest_collection_token&&state.latest_collection_token!==token){const u=new URL('s.html',location.href);u.searchParams.set('t',state.latest_collection_token);u.searchParams.set('open','collection');location.href=u.href;}else if(b&&!b.disabled)b.click();else showDetails();}
    return;
   }
   if(action.dataset.liveAction==='close'){document.getElementById('rrLiveDetail71')?.remove();return;}
@@ -123,7 +123,7 @@
    // A new cycle gets its own share binding, while the previous record stays in history.
    if(state.latest_collection_token&&state.latest_collection_token!==token){const u=new URL('s.html',location.href);u.searchParams.set('t',state.latest_collection_token);u.searchParams.set('open','collection');location.href=u.href;return;}
    const b=document.getElementById('fcReopen')||document.getElementById('fcOpen');
-   if(b?.onclick)b.onclick();
+   if(b&&!b.disabled)b.click();else showDetails();
   }
  },true);
  function hook(){
