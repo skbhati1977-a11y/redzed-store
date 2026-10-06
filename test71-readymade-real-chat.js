@@ -268,16 +268,22 @@
     if(!validateMarketSelection(ctx,cards))return;
     const url=marketUrl([...state.selection]);if(ctx.navigate)ctx.navigate(url);else location.assign(url);
   }
-  async function render(ctx) {
+  async function render(ctx, options={}) {
+    const viewKey=JSON.stringify([ctx.s.userId,ctx.s.actor?.id,roleOf(ctx.s),window.RR_VIEW_AS_ACTOR_ID,ctx.s.status,ctx.s.search||'',state.category,state.mapping]);
+    if(!options.rebuild&&state.viewKey===viewKey&&state.liveBox===ctx.box&&state.liveUpdate&&ctx.box.querySelector('.rm-working')){
+      Object.assign(state.liveCtx,ctx);return state.liveUpdate(true);
+    }
+    const retainWorking=state.viewKey===viewKey&&state.liveBox===ctx.box;
+    state.liveUpdate=null;state.viewKey=viewKey;state.liveBox=ctx.box;state.liveCtx=ctx;
     state.liveCleanup?.();state.liveCleanup=null;
-    prefetchSuppliers(ctx.s);
+    if(ctx.s.status==='OPEN')prefetchSuppliers(ctx.s);
     style();const seq=++state.seq,s=ctx.s,box=ctx.box,viewStatus=s.status,viewSearch=s.search;
     if(viewStatus==='OPEN'&&['OWNER','SUPER_ADMIN','ADMIN','ACCOUNTS'].includes(roleOf(s))){
       box.innerHTML='<section class="card rm-chat-home"><h3>New Readymade Purchase</h3><button data-new>+ New Purchase</button><p data-notice>Saved drafts loading…</p></section>';
       box.querySelector('[data-new]').onclick=()=>purchase(ctx);
-    }else box.innerHTML='<div class="card">Readymade garments loading…</div>';
+    }else if(!retainWorking||!box.querySelector('.rm-working'))box.innerHTML='<div class="card">Readymade garments loading…</div>';
     try{
-      const d=await ctx.rpc('rr_rm_chat_fast_queue_test71',{p_status:viewStatus,p_search:viewSearch||'',p_category:state.category});
+      const d=options.data||await ctx.rpc('rr_rm_chat_fast_queue_test71',{p_status:viewStatus,p_search:viewSearch||'',p_category:state.category});
       if(seq!==state.seq||!ctx.owned())return;
       s.departmentCountCache.set('READYMADE',{...d.counts,at:Date.now()});
       const privateHeads=['OWNER','SUPER_ADMIN'].includes(roleOf(s));
@@ -334,15 +340,15 @@
       box.querySelectorAll('[data-receipt]').forEach(b=>b.onclick=()=>action(b,notice,async()=>{receiptView(await ctx.rpc('rr_rm_stock_receipt_test71',{p_stock_id:b.dataset.receipt}),ctx)}));
       box.querySelectorAll('[data-return]').forEach(b=>b.onclick=()=>action(b,notice,async()=>{const c=cards.find(x=>x.stock_id===b.dataset.return),qty=Number(box.querySelector(`[data-return-qty="${CSS.escape(c.stock_id)}"]`).value),reason=box.querySelector(`[data-return-reason="${CSS.escape(c.stock_id)}"]`).value.trim();if(!Number.isInteger(qty)||qty<=0||qty>c.available_qty||!reason)throw Error('Return whole PCS within available balance and enter reason.');const fingerprint=JSON.stringify([c.stock_id,qty,reason]);if(!state.returnKeys.has(fingerprint))state.returnKeys.set(fingerprint,crypto.randomUUID());await ctx.rpc('rr_rm_purchase_return_test71',{p_stock_id:c.stock_id,p_qty:qty,p_reason:reason,p_return_date:new Date().toLocaleDateString('en-CA',{timeZone:'Asia/Kolkata'}),p_idempotency_key:state.returnKeys.get(fingerprint),p_remarks:'Readymade Real Chat'});ctx.changed();await ctx.refresh();ctx.notice('Purchase Return posted · Balance, Accounts and RRQ updated.')}));
       if(viewStatus==='WORKING'){
-        const signature=rows=>JSON.stringify(rows.map(c=>[c.stock_id,c.art_no,c.approval_ready,c.approved_rate,c.market_ready]).sort((a,b)=>String(a[0]).localeCompare(String(b[0]))));const renderedSignature=signature(cards);
-        let loading=false;const update=async()=>{if(loading||seq!==state.seq||!ctx.owned()||document.hidden)return;loading=true;try{const next=await ctx.rpc('rr_rm_chat_fast_queue_test71',{p_status:'WORKING',p_search:viewSearch||'',p_category:state.category});if(seq!==state.seq||!ctx.owned())return;
+        const signature=(rows,data)=>JSON.stringify([data.can_purchase,data.can_approve,data.can_view_cost,data.can_complete_mapping,rows.map(c=>[c.stock_id,c.art_no,c.item_name,c.image_url,c.category,c.size_text,c.cloth_name,c.colours_text,c.caption_note,c.approval_ready,c.approved_rate,c.market_ready,c.missing_fields,c.costing?.costing_complete]).sort((a,b)=>String(a[0]).localeCompare(String(b[0])))]);const renderedSignature=signature(cards,d);
+        let pending=null;const update=(force=false)=>{if(pending)return pending;pending=refreshLive(force).finally(()=>{pending=null});return pending};const refreshLive=async(force=false)=>{if(seq!==state.seq||!ctx.owned()||(document.hidden&&!force))return;try{const next=await ctx.rpc('rr_rm_chat_fast_queue_test71',{p_status:'WORKING',p_search:viewSearch||'',p_category:state.category});if(seq!==state.seq||!ctx.owned())return;
           const rows=next.cards||[];eligible.clear();rows.filter(c=>c.available_qty>0&&c.market_ready).forEach(c=>eligible.add(c.lot_no));state.selection.forEach(l=>{if(!eligible.has(l))state.selection.delete(l)});for(const c of cards){const fresh=rows.find(x=>x.stock_id===c.stock_id);if(fresh)Object.assign(c,fresh)}
           for(const el of box.querySelectorAll('[data-art-balance]')){const members=rows.filter(c=>artKey(c)===el.dataset.artBalance);const balance=members[0]?.art_available_qty??members.reduce((n,c)=>n+Number(c.available_qty||0),0);el.querySelector('b').textContent=balance+' PCS'}
           for(const el of box.querySelectorAll('[data-lot-balance]')){const c=rows.find(x=>x.lot_no===el.dataset.lotBalance);if(c)el.querySelector('b').textContent=(el.closest('.rm-purchase-entry')?c.available_qty:(c.art_available_qty??c.available_qty))+' PCS'}
           for(const input of box.querySelectorAll('[data-return-qty]')){const c=rows.find(x=>x.stock_id===input.dataset.returnQty);if(c)input.max=c.available_qty}
           for(const i of box.querySelectorAll('[data-select]')){i.disabled=!eligible.has(i.dataset.select);i.checked=state.selection.has(i.dataset.select)}box.querySelectorAll('[data-count]').forEach(n=>n.textContent=state.selection.size);box.querySelector('[data-market]').href=marketUrl([...state.selection]);
-          if(signature(rows.filter(c=>state.mapping==='ALL'||(state.mapping==='READY'?c.market_ready:!c.market_ready)))!==renderedSignature&&!box.querySelector('details[open]')&&!box.contains(document.activeElement))await ctx.refresh();
-        }catch{}finally{loading=false}};const timer=setInterval(update,10000);const visible=()=>{if(!document.hidden)update()};document.addEventListener('visibilitychange',visible);state.liveCleanup=()=>{clearInterval(timer);document.removeEventListener('visibilitychange',visible)};
+          if(signature(rows.filter(c=>state.mapping==='ALL'||(state.mapping==='READY'?c.market_ready:!c.market_ready)),next)!==renderedSignature&&!box.querySelector('details[open]')&&!box.contains(document.activeElement))await render(ctx,{rebuild:true,data:next});
+        }catch{if(notice)notice.textContent='Live balance update delayed. Existing cards remain available.'}};state.liveUpdate=update;const timer=setInterval(update,15000);const visible=()=>{if(!document.hidden)update()};document.addEventListener('visibilitychange',visible);state.liveCleanup=()=>{clearInterval(timer);document.removeEventListener('visibilitychange',visible)};
       }
     }catch(e){if(seq===state.seq&&ctx.owned()&&viewStatus==='OPEN'&&box.querySelector('[data-new]')){box.querySelector('[data-notice]').textContent='Saved drafts could not load. New Purchase is available.';return}if(seq===state.seq&&ctx.owned())box.innerHTML='<div class="card">'+esc(e.message||'Readymade could not load.')+' <button data-retry>Retry</button></div>';box.querySelector('[data-retry]')?.addEventListener('click',()=>ctx.refresh())}
   }
