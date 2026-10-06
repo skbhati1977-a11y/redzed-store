@@ -66,13 +66,13 @@
   host.style.bottom=bottom+'px';const reserved=bottom+(host.hidden?0:host.offsetHeight);msgs.style.marginBottom=reserved+'px';msgs.style.paddingBottom='24px';
  }
  function focusReturnedCollection(host){
-  if(returnFocused||!staff||!q.get('focus_message_id')||host.hidden)return;
+  if(returnFocused||!staff||!(q.get('focus_message_id')||q.get('focus_collection')==='1')||host.hidden)return;
   if(chatId()!==q.get('chat_id')||String(state?.collection_cycle_id)!==q.get('collection_cycle_id'))return;
   requestAnimationFrame(()=>{
    if(returnFocused||host.hidden||chatId()!==q.get('chat_id')||String(state?.collection_cycle_id)!==q.get('collection_cycle_id'))return;
    const button=host.querySelector('.rrLiveBelt71');if(!button)return;
    returnFocused=true;host.classList.add('rrCollectionReturnFocus71');button.focus({preventScroll:true});
-   const flash=document.getElementById('flash');if(flash){flash.textContent='Collection sent ✓ · '+String(state.collection_display_no||'')+' · UPDATE '+Number(state.collection_update_no||0);flash.style.display='block';setTimeout(()=>{flash.style.display='none'},3500);}
+   const flash=document.getElementById('flash');if(flash){flash.textContent=(q.get('collection_notice')==='existing'?'Existing collection · selected designs already sent or outside requested categories · ':'Collection sent ✓ · ')+String(state.collection_display_no||'')+' · UPDATE '+Number(state.collection_update_no||0);flash.style.display='block';setTimeout(()=>{flash.style.display='none'},3500);}
    setTimeout(()=>host.classList.remove('rrCollectionReturnFocus71'),6000);
   });
  }
