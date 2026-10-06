@@ -7,7 +7,7 @@ buyer text:='RM-ART-BUYER-'||substr(gen_random_uuid()::text,1,8);path text;event
 begin
 select category_name into cat from public.rr_art_categories where is_active order by category_name limit 1;
 select supplier_name into supplier from public.rr_suppliers where is_active order by supplier_name limit 1;
-lot1:=art||'-1';lot2:=art||'-2';lot3:=art||'-3';
+lot1:=rr_rm_lot_hint_test71()->>'suggested_lot';lot2:='RM'||lpad((substring(lot1 from 3)::bigint+1)::text,5,'0');lot3:='RM'||lpad((substring(lot1 from 3)::bigint+2)::text,5,'0');
 payload:=jsonb_build_array(jsonb_build_object('lot_no',lot1,'item_name','Mapped Shirt','category',cat,'size_text','L, XL, XXL','colours_text','Red','cloth_name','Cotton','art_no',art,'art_revision',0,'bill_qty',540,'qty',530,'purchase_rate',100,'final_rate',2000,'final_image_url','https://example.com/art.jpg'));
 j:=public.rr_rm_chat_save_test71(null,supplier,lot1,date '2038-01-15',payload,true);pid1:=(j->>'purchase_id')::uuid;
 select stock_id into sid1 from public.rr_rm_stock_v849_2c6 where source_purchase_id=pid1;
