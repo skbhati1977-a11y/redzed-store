@@ -12,6 +12,20 @@ function customerPushRoute71(target: string | null, route: string | null): strin
  }catch(_){return route||'./';}
 }
 
+
+function uniquePushSubscriptions71(all: any[]): any[] {
+ const keyedActors=new Set(all.filter(x=>x.device_key).map(x=>String(x.worker_id||x.actor_kind+'|'+x.actor_id)));
+ const chosen=new Map<string,any>();
+ for(const row of all){
+  const actor=String(row.worker_id||row.actor_kind+'|'+row.actor_id);
+  if(!row.device_key&&keyedActors.has(actor))continue;
+  const key=actor+'|'+(row.device_key||'legacy');
+  const previous=chosen.get(key);
+  if(!previous||String(row.updated_at||'')>String(previous.updated_at||''))chosen.set(key,row);
+ }
+ return [...chosen.values()];
+}
+
 Deno.serve(async (request) => {
   try {
     if (request.method !== "POST") return new Response("method", { status: 405 });
@@ -57,9 +71,17 @@ Deno.serve(async (request) => {
       return new Response(JSON.stringify({ok:true,sent,subscriptions:subscriptions.length,kind:"TARGETED_BUSINESS_PUSH"}),{headers:{"Content-Type":"application/json"}});
     }
     if (!body.outbox_id || !body.dispatch_token) return new Response("unauthorized", { status: 401 });
-    const { data: outbox } = await db.from("rr_chat_push_outbox_v61").select("*").eq("id", body.outbox_id).eq("dispatch_token", body.dispatch_token).is("processed_at", null).maybeSingle();
+    // Atomic token claim prevents concurrent requests from sending the same outbox twice.
+    const claimToken=crypto.randomUUID();
+    const { data: outbox, error: claimError } = await db.from("rr_chat_push_outbox_v61").update({dispatch_token:claimToken,processed_at:new Date().toISOString()}).eq("id", body.outbox_id).eq("dispatch_token", body.dispatch_token).is("processed_at", null).select("*").maybeSingle();
+    if(claimError)throw claimError;
     if (!outbox) return new Response("already processed", { status: 200 });
-    const { data: message } = await db.from("rr_customer_chat_messages_v9433").select("sender_kind,sender_customer_id,sender_profile_id,sender_name,payload,created_at").eq("id", outbox.message_id).maybeSingle();
+    const { data: message } = await db.from("rr_customer_chat_messages_v9433").select("sender_kind,sender_customer_id,sender_profile_id,sender_name,payload,created_at,archived_at").eq("id", outbox.message_id).maybeSingle();
+    // Superseded technical requirement messages must never create a second notification.
+    if(!message||message.archived_at){
+      await db.from("rr_chat_push_outbox_v61").update({processed_at:new Date().toISOString()}).eq("id",outbox.id).eq("dispatch_token",claimToken);
+      return new Response(JSON.stringify({ok:true,sent:0,reason:"ARCHIVED_OR_MISSING_MESSAGE"}),{headers:{"Content-Type":"application/json"}});
+    }
     const { data: chat } = await db.from("rr_customer_chat_v9433").select("customer_id,relation_kind").eq("id", outbox.chat_id).maybeSingle();
     const { data: relation } = await db.from("rr_market_partner_relation_chat_v67").select("relation_kind,owner_customer_id,partner_customer_id").eq("chat_id", outbox.chat_id).eq("status", "ACTIVE").maybeSingle();
     const sender = String(message?.sender_kind || "").toUpperCase();
@@ -83,6 +105,7 @@ Deno.serve(async (request) => {
       const { data } = await db.from("rr_web_push_subscriptions_v61").select("*").eq("enabled", true).eq("actor_kind", actorKind).eq("actor_id", actorId);
       const all=data||[],preferred=new Set(all.filter((x:any)=>x.device_key).map((x:any)=>String(x.actor_kind)+"|"+String(x.actor_id)));subscriptions=all.filter((x:any)=>Boolean(x.device_key)||!preferred.has(String(x.actor_kind)+"|"+String(x.actor_id)));
     }
+    subscriptions=uniquePushSubscriptions71(subscriptions);
     webpush.setVapidDetails("https://skbhati1977-a11y.github.io/redzed-store/", Deno.env.get("VAPID_PUBLIC_KEY")!, Deno.env.get("VAPID_PRIVATE_KEY")!);
     let sent = 0;
     for (const subscription of subscriptions) {
@@ -93,7 +116,7 @@ Deno.serve(async (request) => {
         if (error?.statusCode === 404 || error?.statusCode === 410) await db.from("rr_web_push_subscriptions_v61").update({ enabled: false, updated_at: new Date().toISOString() }).eq("id", subscription.id);
       }
     }
-    await db.from("rr_chat_push_outbox_v61").update({ processed_at: new Date().toISOString(), dispatch_token: crypto.randomUUID() }).eq("id", outbox.id).eq("dispatch_token", body.dispatch_token);
+    await db.from("rr_chat_push_outbox_v61").update({ processed_at: new Date().toISOString(), dispatch_token: crypto.randomUUID() }).eq("id", outbox.id).eq("dispatch_token", claimToken);
     return new Response(JSON.stringify({ ok: true, sent, subscriptions: subscriptions.length, actor_kind: actorKind }), { headers: { "Content-Type": "application/json" } });
   } catch (error) {
     return new Response(JSON.stringify({ error: String(error instanceof Error ? error.message : error) }), { status: 500, headers: { "Content-Type": "application/json" } });

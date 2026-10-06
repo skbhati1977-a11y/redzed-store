@@ -1,0 +1,7 @@
+const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
+const source=fs.readFileSync('supabase/functions/rr-web-push-dispatch-v61/index.ts','utf8');
+const helper=source.slice(source.indexOf('function uniquePushSubscriptions71'),source.indexOf('Deno.serve')).replace(/: any\[\]/g,'').replace(/new Map<string,any>/g,'new Map');
+const context={};vm.runInNewContext(helper,context);
+test('Old five legacy origins yield only newest fallback subscription',()=>{const rows=[1,2,3,4,5].map(n=>({worker_id:'staff',updated_at:String(n),endpoint:'origin'+n}));const got=context.uniquePushSubscriptions71(rows);assert.equal(got.length,1);assert.equal(got[0].endpoint,'origin5')});
+test('Different identified devices are preserved; same device picks newest and legacy is suppressed',()=>{const rows=[{worker_id:'staff',updated_at:'1'},{worker_id:'staff',device_key:'phone',updated_at:'2'},{worker_id:'staff',device_key:'phone',updated_at:'3'},{worker_id:'staff',device_key:'laptop',updated_at:'4'}];const got=context.uniquePushSubscriptions71(rows);assert.equal(got.length,2);assert.equal(got.find(x=>x.device_key==='phone').updated_at,'3')});
+test('Atomic claim marks processed with token to avoid dispatch-token trigger recursion',()=>{assert.match(source,/update\(\{dispatch_token:claimToken,processed_at:new Date\(\)\.toISOString\(\)\}\)/);assert.ok(source.includes('message.archived_at'));});
