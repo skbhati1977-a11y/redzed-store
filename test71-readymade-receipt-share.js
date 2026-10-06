@@ -91,9 +91,9 @@
  }
  function shareNow(files,png){
   if(typeof navigator.share!=='function')throw Error('इस window में image picker नहीं है. JPG save करके Gallery के Share से WhatsApp चुनें.');
-  let payloadFiles=files;
-  // Match the working CB report: start share on this tap, before any await/RPC.
-  try{if(navigator.canShare&&!navigator.canShare({files})&&png){const compatible=png();if(navigator.canShare({files:[compatible]}))payloadFiles=[compatible]}}catch{}
+  // CB shares a synchronous PNG File. Use that same picker payload; keep JPG for saving.
+  let payloadFiles=png?[png()]:files;
+  try{if(navigator.canShare&&!navigator.canShare({files:payloadFiles})&&navigator.canShare({files}))payloadFiles=files}catch{}
   const promise=navigator.share({files:payloadFiles,title:'Proforma DR/CR Note'});
   return Promise.resolve(promise).then(()=>({shared:true}),e=>({shared:false,error:e?.name==='AbortError'?null:e}));
  }
