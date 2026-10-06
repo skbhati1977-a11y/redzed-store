@@ -1,0 +1,24 @@
+const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm'),path=require('node:path');
+const {JSDOM}=require('jsdom');
+const root=path.resolve(__dirname,'../..');
+async function setup(search){
+ const html=fs.readFileSync(path.join(root,'real-web-window-v9329.html'),'utf8').replace(/<script\b[\s\S]*?<\/script>/g,'');
+ const dom=new JSDOM(html,{url:'https://example.com/real-web-window-v9329.html'+search}),w=dom.window,location={search,href:w.location.href},calls=[],timers=[];
+ const card=lot=>({lot_no:lot,available_qty:24,sale_rate:150,category:'Polo',size_text:'L / XL',media:[]});
+ const rpc=async(name,args={})=>{calls.push({name,args});if(name==='rr_chat_staff_inbox_v9434')return [{chat_id:'A',customer_name:'Buyer A'},{chat_id:'B',customer_name:'Buyer B'}];if(name==='rr_sales_collection_cards_test71')return {context:{customer_id:'buyer-'+args.p_chat_id,collection_cycle_id:'cycle-'+args.p_chat_id,categories:[]},rows:args.p_chat_id==='A'?[card('NEW-A'),card('COMMON')]:[card('NEW-B'),card('COMMON')]};if(name==='rr_web_window_cards_v9329')return [card('ALREADY-SENT'),card('NEW-A')];if(name==='rr_market_create_share_v9420')return {token:'token'};if(name==='rr_sales_collection_send_test71')return {token:'sent',chat_message_id:'message-'+args.p_chat_id,collection_cycle_id:'cycle-'+args.p_chat_id};return {}};
+ const context={window:w,document:w.document,location,RF853:{rpc,mode:()=> 'TEST'},URL,URLSearchParams,Map,Set,console,Event:w.Event,CSS:{escape:x=>x},navigator:{},setTimeout:(f,ms)=>{timers.push({f,ms});return timers.length},clearTimeout(){}};
+ for(const f of ['real-market-customer-first-test71.js','real-web-window-v9329.js','real-web-window-share-chooser-v9510.js'])vm.runInNewContext(fs.readFileSync(path.join(root,f),'utf8'),context);
+ w.document.dispatchEvent(new w.Event('DOMContentLoaded'));for(let i=0;i<4;i++)await new Promise(setImmediate);return {dom,w,location,calls,timers,context};
+}
+test('Readymade MW asks who first and never loads global cards before customer choice',async()=>{
+ const x=await setup('?share_mode=chooser&from=READYMADE&selected_lot=ALREADY-SENT');try{const d=x.w.document;assert.equal(d.getElementById('cards').querySelectorAll('.ww-card').length,0);assert.equal(d.getElementById('rrMwShare9510').style.display,'flex');assert.match(d.querySelector('.rrMwHead9510 b').textContent,/Choose customer first/);assert.equal(x.calls.filter(c=>c.name==='rr_web_window_cards_v9329').length,0);d.querySelector('#rrMwCustomers9510 [data-chat="A"]').checked=true;d.getElementById('rrMwInternal9510').click();const u=new URL(x.location.href);assert.deepEqual(u.searchParams.getAll('recipient_chat'),['A']);assert.ok(!x.calls.some(c=>c.name==='rr_sales_collection_send_test71'));}finally{x.dom.window.close()}
+});
+test('Customer scoped MW excludes already sent lot before selection and preserves filtering on refresh',async()=>{
+ const x=await setup('?share_mode=chooser&from=READYMADE&recipient_chat=A&selected_lot=ALREADY-SENT&selected_lot=NEW-A');try{const d=x.w.document;assert.deepEqual([...d.querySelectorAll('.ww-card')].map(c=>c.dataset.card),['COMMON','NEW-A']);assert.ok(!d.querySelector('[data-select="ALREADY-SENT"]'));assert.ok(d.querySelector('[data-select="NEW-A"]').checked);d.getElementById('refreshBtn').click();await new Promise(setImmediate);assert.ok(!d.querySelector('[data-select="ALREADY-SENT"]'));assert.ok(x.calls.filter(c=>c.name==='rr_sales_collection_cards_test71').every(c=>c.args.p_chat_id==='A'));}finally{x.dom.window.close()}
+});
+test('Multiple customers see union of eligible lots and each send uses its own filtered eligibility',async()=>{
+ const x=await setup('?share_mode=chooser&recipient_chat=A&recipient_chat=B&selected_lot=NEW-A&selected_lot=NEW-B&selected_lot=COMMON');try{const d=x.w.document;assert.equal(d.querySelectorAll('.ww-card').length,3);d.getElementById('rrMwTopBtn9510').click();for(let i=0;i<3;i++)await new Promise(setImmediate);assert.equal(d.querySelectorAll('#rrMwCustomers9510 input:checked').length,2);d.getElementById('rrMwInternal9510').click();for(let i=0;i<3;i++)await new Promise(setImmediate);const sends=x.calls.filter(c=>c.name==='rr_sales_collection_send_test71');assert.equal(sends.length,2);assert.deepEqual(Array.from(sends[0].args.p_lots).sort(),['COMMON','NEW-A']);assert.deepEqual(Array.from(sends[1].args.p_lots).sort(),['COMMON','NEW-B']);}finally{x.dom.window.close()}
+});
+test('Outside share mode is explicitly chosen before browsing and never applies internal customer filter',async()=>{
+ const x=await setup('?share_mode=chooser&outside=1');try{assert.equal(x.w.document.querySelectorAll('.ww-card').length,2);assert.equal(x.w.document.getElementById('rrMwInternal9510').hidden,true);assert.ok(!x.calls.some(c=>c.name==='rr_sales_collection_cards_test71'));}finally{x.dom.window.close()}
+});

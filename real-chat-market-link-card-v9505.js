@@ -58,7 +58,7 @@
       ]);
       const rows = Array.isArray(data?.rows) ? data.rows : [];
       const updateNo = Number(state?.collection_update_no || 0);
-      document.getElementById("rrScTitle9680").textContent = (state?.collection_display_no || data?.collection_display_no || "REDZED COLLECTION") + (updateNo > 0 ? ` · UPDATE ${updateNo}` : "");
+      document.getElementById("rrScTitle9680").textContent = (state?.collection_display_no || data?.collection_display_no || "REDZED COLLECTION") + (updateNo > 0 ? ` · U${updateNo}` : "");
       let followup = '';
       if (state?.collection_cycle_id && window.RRSalesCollection) {
         const chat = window.RRActiveSalesChat71?.() || document.querySelector('#inboxRows .chatrow.on')?.dataset.chat;
@@ -104,7 +104,7 @@
     ]).then(([data, state]) => {
       const updateNo = Number(state?.collection_update_no || 0);
       const title = state?.collection_display_no || data?.collection_display_no || "REDZED COLLECTION";
-      box.querySelector(".rrMkText9505 b").textContent = title + (updateNo > 0 ? ` · UPDATE ${updateNo}` : "");
+      box.querySelector(".rrMkText9505 b").textContent = title + (updateNo > 0 ? ` · U${updateNo}` : "");
       box.querySelector(".rrMkText9505 small").textContent = `${styles ? `${styles} selected styles · ` : ""}${String(state?.collection_status || "COLLECTION").replaceAll("_", " ")}`;
     }).catch(() => {});
   }

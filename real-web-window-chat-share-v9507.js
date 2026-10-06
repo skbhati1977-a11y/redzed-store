@@ -55,7 +55,7 @@
         back.search='';
         back.searchParams.set('v','9684');
         back.searchParams.set('chat_id',chatId);
-        back.searchParams.set('followup','1');
+        back.searchParams.set('followup','1');if(result.chat_message_id)back.searchParams.set('focus_message_id',result.chat_message_id);
         back.searchParams.set('collection_cycle_id',result.collection_cycle_id);
         back.searchParams.set('refresh','1');
         back.hash='rr-chat';

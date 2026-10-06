@@ -111,31 +111,7 @@
     lots.forEach(lot=>url.searchParams.append('selected_lot',lot));return url.href;
   }
   async function send(ctx,cards) {
-    const chosen=cards.filter(c=>state.selection.has(c.lot_no)&&c.available_qty>0);
-    if(!chosen.length){ctx.notice('Select garments with available stock.');return}
-    const pending=chosen.filter(c=>!c.approval_ready);
-    const m=modal('Send Readymade Collection'),body=m.querySelector('[data-body]'),msg=m.querySelector('[data-message]');
-    body.innerHTML=`<p>${chosen.length} selected garments · image + caption collection</p>${pending.length?`<p>Final-rate approval pending: ${esc(pending.map(c=>c.lot_no).join(', '))}. Internal sales collection needs Super Admin approval. Outside preview uses the existing Market Window flow.</p>`:''}<a class="btn" data-outside href="${esc(marketUrl(chosen.map(c=>c.lot_no)))}">Outside / WhatsApp · Market Window</a><label>Search customer<input data-search type="search"></label><div data-customers>Loading customers…</div>`;
-    try{
-      const contacts=await ctx.rpc('rr_chat_staff_inbox_v9434',{});
-      body.querySelector('[data-customers]').innerHTML=(contacts||[]).map(c=>`<label class="rm-chat-customer" data-name="${esc(c.customer_name)}"><input type="checkbox" data-chat="${esc(c.chat_id)}"><span>${esc(c.customer_name||'Customer')}</span></label>`).join('')||'No customer chats available.';
-      body.querySelector('[data-search]').oninput=e=>body.querySelectorAll('[data-name]').forEach(row=>row.hidden=!row.dataset.name.toLowerCase().includes(e.target.value.toLowerCase()));
-      m.querySelector('[data-footer]').innerHTML='<button type="button" data-send>Send selected collection</button>';
-      m.querySelector('[data-send]').onclick=e=>action(e.currentTarget,msg,async()=>{
-        if(pending.length)throw Error('Final-rate approval pending: '+pending.map(c=>c.lot_no).join(', ')+'. Ask Super Admin to approve before sending internally.');
-        const selected=[...body.querySelectorAll('[data-chat]:checked')];if(!selected.length)throw Error('Select customer first.');const reports=[];
-        for(const contact of selected){
-          try{
-            let off=0,context,eligible=new Set();
-            for(;;){const page=await ctx.rpc('rr_sales_collection_cards_test71',{p_chat_id:contact.dataset.chat,p_limit:150,p_offset:off});context=page.context;(page.rows||[]).forEach(c=>eligible.add(String(c.lot_no).toUpperCase()));if(page.rows.length<150)break;off+=150;}
-            const lots=chosen.map(c=>c.lot_no).filter(l=>eligible.has(l.toUpperCase()));
-            if(!lots.length){reports.push(contact.closest('[data-name]').dataset.name+': no new eligible designs');continue}
-            await ctx.rpc('rr_sales_collection_send_test71',{p_chat_id:contact.dataset.chat,p_customer_id:context.customer_id,p_collection_cycle_id:context.collection_cycle_id,p_requirement_id:context.requirement_id,p_lots:lots,p_origin:new URL(window.RR_CUSTOMER_SHARE_BASE||'https://redzed-customer-collection.jggfab2011.chatgpt.site/').origin});reports.push(contact.closest('[data-name]').dataset.name+': '+lots.length+' sent');
-          }catch(error){reports.push(contact.closest('[data-name]').dataset.name+': '+error.message)}
-        }
-        msg.textContent=reports.join('\n');
-      });
-    }catch(e){msg.textContent=e.message}
+    const url=marketUrl([...state.selection]);if(ctx.navigate)ctx.navigate(url);else location.assign(url);
   }
   async function render(ctx) {
     style();const seq=++state.seq,s=ctx.s,box=ctx.box,viewStatus=s.status,viewSearch=s.search;
