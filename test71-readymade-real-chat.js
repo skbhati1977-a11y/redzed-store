@@ -57,7 +57,7 @@
     body.innerHTML=`<div class="rm-fields"><label>Supplier / Seller *<select data-supplier disabled><option value="">Loading existing suppliers…</option></select></label><label>Supplier bill number *<input data-bill value="${esc(draft?.bill_no||'')}"></label><label>Purchase / bill date *<input data-date type="date" value="${esc(draft?.purchase_date||new Date().toLocaleDateString('en-CA',{timeZone:'Asia/Kolkata'}))}"></label></div><div data-lines></div><button type="button" data-add>Add garment</button><section class="card" data-costing-status><b>Monthly costing / Final rate</b><p data-cost-month></p><p>Purchase cost + monthly weighted Sales/Admin/Accounts salary + applicable overhead = total cost.</p>${['OWNER','SUPER_ADMIN'].includes(roleOf(ctx.s))?'<p>Fixed Owner margin: ₹22/PCS. Base sales rate = total cost + ₹22.</p>':''}<p>Actual weighted base rate is calculated after purchase confirmation and shown in WORKING. Missing monthly values keep approval pending. Final-rate approval changes RRQ on available PCS.</p></section>`;
     const supplierSelect=body.querySelector('[data-supplier]');
     let supplierNames=new Set();
-    async function loadSuppliers(){
+    async function loadSuppliers(preferred=supplierSelect.value||draft?.supplier_name){
       supplierSelect.disabled=true;
       try{
         const result=await ctx.s.db.from('rr_suppliers').select('id,supplier_name').eq('is_active',true).order('supplier_name');
@@ -65,20 +65,48 @@
         const rows=(result.data||[]).filter(x=>String(x.supplier_name||'').trim());
         supplierNames=new Set(rows.map(x=>x.supplier_name));
         supplierSelect.innerHTML='<option value="">Select existing supplier</option>'+rows.map(x=>`<option value="${esc(x.supplier_name)}">${esc(x.supplier_name)}</option>`).join('');
-        supplierSelect.value=supplierNames.has(draft?.supplier_name)?draft.supplier_name:'';
+        supplierSelect.value=supplierNames.has(preferred)?preferred:'';
         supplierSelect.disabled=false;
         if(!rows.length)msg.textContent='No active suppliers in Supplier Master.';
         else if(draft?.supplier_name&&!supplierNames.has(draft.supplier_name))msg.textContent='Saved supplier is inactive or unavailable. Select an active supplier.';
       }catch(e){msg.textContent='Supplier list could not load. Tap Retry suppliers.';supplierSelect.innerHTML='<option value="">Suppliers unavailable</option>';}
     }
     const retry=document.createElement('button');retry.type='button';retry.textContent='Retry suppliers';retry.dataset.retrySuppliers='';retry.onclick=()=>loadSuppliers();supplierSelect.parentElement.appendChild(retry);
+    function addMaster(kind,onSaved){
+      const supplier=kind==='Supplier',dialog=modal('+ Add New '+kind),content=dialog.querySelector('[data-body]'),message=dialog.querySelector('[data-message]');
+      content.innerHTML='<label>'+kind+' name *<input data-master-name maxlength="120"></label>'+(supplier?'<label>Mobile · optional<input data-master-mobile type="tel"></label><label>Address · optional<input data-master-address></label><label>GSTIN · optional<input data-master-gstin maxlength="15"></label>':'');
+      dialog.querySelector('[data-footer]').innerHTML='<button type="button" data-master-save>Save '+kind+'</button><button type="button" data-master-cancel>Cancel</button>';
+      dialog.querySelector('[data-master-cancel]').onclick=()=>{if(!state.busy)dialog.remove()};
+      dialog.querySelector('[data-master-save]').onclick=e=>action(e.currentTarget,message,async()=>{
+        const name=content.querySelector('[data-master-name]').value.trim().replace(/\s+/g,' ');
+        if(!name)throw Error('Enter '+kind.toLowerCase()+' name.');
+        const result=await ctx.rpc(supplier?'rr_supplier_upsert_v1':'rr_add_art_category',supplier?{p_supplier_name:name,p_mobile:content.querySelector('[data-master-mobile]').value.trim()||null,p_address:content.querySelector('[data-master-address]').value.trim()||null,p_gstin:content.querySelector('[data-master-gstin]').value.trim()||null}:{p_category_name:name,p_default_design_name:null});
+        const saved=Array.isArray(result)?result[0]:result;
+        if(!saved?.id)throw Error(kind+' could not be saved. Please retry.');
+        await onSaved(saved);dialog.remove();
+      });
+      content.querySelector('[data-master-name]').focus();
+    }
+    const addSupplier=document.createElement('button');addSupplier.type='button';addSupplier.dataset.addSupplier='';addSupplier.textContent='+ Add New Supplier';
+    addSupplier.onclick=()=>addMaster('Supplier',async saved=>{
+      await loadSuppliers(saved.supplier_name);
+      if(supplierSelect.disabled)throw Error('Supplier saved. Retry suppliers to refresh the list.');
+      msg.textContent='Supplier saved and selected.';
+    });supplierSelect.parentElement.appendChild(addSupplier);
     loadSuppliers();
     const lines=body.querySelector('[data-lines]');let categories=[],categoryDefaults=new Map(),mastersReady=false;
     function fillCategory(row){
-      const sel=row.querySelector('[data-field="category"]'),saved=sel.dataset.savedCategory;
+      const sel=row.querySelector('[data-field="category"]'),saved=sel.value||sel.dataset.savedCategory;
       sel.innerHTML='<option value="">Select existing category</option>'+categories.map(c=>`<option value="${esc(c.category_name)}">${esc(c.category_name)}</option>`).join('');
       sel.value=categories.some(c=>c.category_name===saved)?saved:'';sel.disabled=!mastersReady;
-      sel.onchange=()=>{const cat=categories.find(c=>c.category_name===sel.value),def=categoryDefaults.get(String(cat?.id)),sizes=row.querySelector('[data-field="size_text"]');if(def){const v=sizeFamilies.find(x=>x.replace(/\s/g,'')===String(def.default_size_family).replace(/\s/g,''));if(v)sizes.value=v}};
+      sel.onchange=()=>{sel.dataset.savedCategory=sel.value;const cat=categories.find(c=>c.category_name===sel.value),def=categoryDefaults.get(String(cat?.id)),sizes=row.querySelector('[data-field="size_text"]');if(def){const v=sizeFamilies.find(x=>x.replace(/\s/g,'')===String(def.default_size_family).replace(/\s/g,''));if(v)sizes.value=v}};
+      if(!row.querySelector('[data-add-category]')){
+        const add=document.createElement('button');add.type='button';add.dataset.addCategory='';add.textContent='+ Add New Category';
+        add.onclick=()=>addMaster('Category',async saved=>{
+          categories=categories.filter(c=>c.id!==saved.id);categories.push(saved);categories.sort((a,b)=>a.category_name.localeCompare(b.category_name));mastersReady=true;
+          [...lines.children].forEach(fillCategory);sel.value=saved.category_name;sel.dataset.savedCategory=saved.category_name;sel.onchange();msg.textContent='Category saved and selected.';
+        });sel.parentElement.appendChild(add);
+      }
     }
     function addLine(x={}){lines.insertAdjacentHTML('beforeend',lineMarkup(x));updateReceipt(lines.lastElementChild);if(mastersReady)fillCategory(lines.lastElementChild)}
     (draft?.lines?.length?draft.lines:[{}]).forEach(addLine);

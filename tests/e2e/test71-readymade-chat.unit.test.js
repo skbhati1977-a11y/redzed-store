@@ -3,6 +3,46 @@ const {JSDOM}=require('jsdom');
 const code=fs.readFileSync(path.resolve(__dirname,'../../test71-readymade-real-chat.js'),'utf8');
 const wait=()=>new Promise(r=>setTimeout(r,25));
 
+test('New supplier and category save through existing masters and select without clearing purchase fields',async()=>{
+ const x=await setup('OWNER','OPEN');try{
+  const suppliers=[{id:'supplier1',supplier_name:'Supplier'}],categories=[{id:'cat1',category_name:'Polo'}];
+  x.s.db.from=table=>({select(){return this},eq(){return this},order:async()=>({data:table==='rr_art_categories'?categories:suppliers,error:null})});
+  const old=x.ctx.rpc;x.ctx.rpc=async(n,p)=>{
+   if(n==='rr_supplier_upsert_v1'){x.calls.push({n,p});const saved={id:'supplier-new',supplier_name:p.p_supplier_name};suppliers.push(saved);return saved}
+   if(n==='rr_add_art_category'){x.calls.push({n,p});const saved={id:'category-new',category_name:p.p_category_name};categories.push(saved);return saved}
+   return old(n,p);
+  };
+  const d=x.w.document;d.querySelector('[data-new]').click();await wait();d.querySelector('[data-bill]').value='B-KEEP';
+  d.querySelector('[data-field="lot_no"]').value='RM-KEEP';d.querySelector('[data-field="category"]').value='Polo';
+  d.querySelector('[data-add]').click();d.querySelectorAll('[data-field="category"]')[1].value='Polo';
+  d.querySelector('[data-add-supplier]').click();let dialog=[...d.querySelectorAll('.rm-chat-modal')].at(-1);
+  dialog.querySelector('[data-master-name]').value='  New   Seller  ';dialog.querySelector('[data-master-mobile]').value='9999999999';
+  dialog.querySelector('[data-master-save]').click();dialog.querySelector('[data-master-save]').click();await wait();
+  assert.equal(d.querySelector('[data-supplier]').value,'New Seller');assert.equal(x.calls.filter(c=>c.n==='rr_supplier_upsert_v1').length,1);
+  assert.equal(x.calls.find(c=>c.n==='rr_supplier_upsert_v1').p.p_mobile,'9999999999');
+  d.querySelector('[data-add-category]').click();dialog=[...d.querySelectorAll('.rm-chat-modal')].at(-1);
+  dialog.querySelector('[data-master-name]').value='New Neck';dialog.querySelector('[data-master-save]').click();await wait();
+  assert.equal(d.querySelectorAll('[data-field="category"]')[0].value,'New Neck');assert.equal(d.querySelectorAll('[data-field="category"]')[1].value,'Polo');
+  assert.ok([...d.querySelectorAll('[data-field="category"]')[1].options].some(o=>o.value==='New Neck'));
+  assert.equal(d.querySelector('[data-bill]').value,'B-KEEP');assert.equal(d.querySelector('[data-field="lot_no"]').value,'RM-KEEP');
+  d.querySelector('[data-retry-suppliers]').click();await wait();assert.equal(d.querySelector('[data-supplier]').value,'New Seller');
+ }finally{x.close()}
+});
+test('Master creation blank names, Cancel and backend failures preserve the purchase form',async()=>{
+ const x=await setup('OWNER','OPEN');try{
+  const d=x.w.document;d.querySelector('[data-new]').click();await wait();d.querySelector('[data-bill]').value='B-KEEP';
+  for(const button of ['[data-add-supplier]','[data-add-category]']){
+   d.querySelector(button).click();const dialog=[...d.querySelectorAll('.rm-chat-modal')].at(-1);
+   dialog.querySelector('[data-master-save]').click();await wait();assert.match(dialog.querySelector('[data-message]').textContent,/Enter .* name/);
+   dialog.querySelector('[data-master-cancel]').click();assert.equal(d.querySelectorAll('.rm-chat-modal').length,1);
+  }
+  const old=x.ctx.rpc;x.ctx.rpc=(n,p)=>n==='rr_supplier_upsert_v1'?Promise.reject(Error('Supplier save unavailable. Please retry.')):old(n,p);
+  d.querySelector('[data-add-supplier]').click();const dialog=[...d.querySelectorAll('.rm-chat-modal')].at(-1);
+  dialog.querySelector('[data-master-name]').value='New Seller';dialog.querySelector('[data-master-save]').click();await wait();
+  assert.match(dialog.querySelector('[data-message]').textContent,/Please retry/);assert.equal(d.querySelector('[data-bill]').value,'B-KEEP');
+ }finally{x.close()}
+});
+
 test('Receipt preview and save use bill/received PCS, purchase rate and correct note direction',async()=>{
  for(const [qty,label] of [[530,'SHORT'],[550,'EXCESS'],[540,'MATCHED']]){
   const x=await setup('OWNER','OPEN');try{
