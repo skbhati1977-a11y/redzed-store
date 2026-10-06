@@ -92,7 +92,8 @@
               p_party_name: ctx.customer_name,
               p_data_mode: "TEST",
             });
-            x.approved = x.rate = +trade.target_sale_rate;
+            x.approved = +trade.target_sale_rate;
+            if (!preserve || x.rate == null) x.rate = x.approved;
           }
           x.allowed = +c.allowed_discount || 0;
           if (!discountDirty && !finalized) x.discount = x.allowed;
