@@ -2,6 +2,53 @@ const test=require('node:test'),assert=require('node:assert/strict'),fs=require(
 const {JSDOM}=require('jsdom');
 const code=fs.readFileSync(path.resolve(__dirname,'../../test71-readymade-real-chat.js'),'utf8');
 const wait=()=>new Promise(r=>setTimeout(r,25));
+
+test('Receipt preview and save use bill/received PCS, purchase rate and correct note direction',async()=>{
+ for(const [qty,label] of [[530,'SHORT'],[550,'EXCESS'],[540,'MATCHED']]){
+  const x=await setup('OWNER','OPEN');try{
+   const d=x.w.document;d.querySelector('[data-new]').click();await wait();
+   d.querySelector('[data-supplier]').value='Supplier';d.querySelector('[data-bill]').value='RECEIPT-'+qty;
+   const fields={lot_no:'RM-'+qty,item_name:'Receipt garment',category:'Polo',size_text:'L, XL, XXL',bill_qty:'540',qty:String(qty),purchase_rate:'125',final_rate:'999',final_image_url:'https://example.com/a.jpg'};
+   for(const[k,v]of Object.entries(fields))d.querySelector('[data-field="'+k+'"]').value=v;
+   d.querySelector('[data-field="qty"]').dispatchEvent(new x.w.Event('input',{bubbles:true}));
+   const text=d.querySelector('[data-line-total]').textContent;
+   assert.match(text,new RegExp(label));assert.match(text,/Party bill ₹67,500/);
+   assert.match(text,new RegExp(qty===540?'Adjustment ₹0':(qty<540?'Debit Note':'Credit Note')+' ₹1,250'));
+   d.querySelector('[data-post]').click();await wait();
+   const p=x.calls.find(c=>c.n==='rr_rm_chat_save_test71').p;
+   assert.equal(p.p_lines[0].bill_qty,540);assert.equal(p.p_lines[0].qty,qty);assert.equal(p.p_lines[0].purchase_rate,125);
+  }finally{x.close()}
+ }
+});
+test('Receipt input rejects missing or fractional Party Bill PCS before saving',async()=>{
+ const x=await setup('OWNER','OPEN');try{
+  const d=x.w.document;d.querySelector('[data-new]').click();await wait();
+  d.querySelector('[data-supplier]').value='Supplier';d.querySelector('[data-bill]').value='INVALID';
+  const fields={lot_no:'RM2',item_name:'Receipt garment',category:'Polo',size_text:'L, XL, XXL',qty:'530',purchase_rate:'100',final_image_url:'https://example.com/a.jpg'};
+  for(const[k,v]of Object.entries(fields))d.querySelector('[data-field="'+k+'"]').value=v;
+  for(const bill of ['', '540.5','-540']){
+   d.querySelector('[data-field="bill_qty"]').value=bill;d.querySelector('[data-post]').click();await wait();
+   assert.equal(x.calls.filter(c=>c.n==='rr_rm_chat_save_test71').length,0);
+   assert.match(d.querySelector('[data-message]').textContent,/Party Bill PCS/);
+  }
+ }finally{x.close()}
+});
+test('Saved OPEN quantities reopen, and posted receipt remains available only to purchase roles',async()=>{
+ const x=await setup('OWNER','OPEN');try{
+  const old=x.ctx.rpc;x.ctx.rpc=async(n,p)=>{
+   if(n==='rr_rm_stock_receipt_test71')return{bill_no:'B1',bill_value:54000,received_value:53000,lines:[{lot_no:'RM1',bill_qty:540,received_qty:530,purchase_rate:100,difference_qty:-10,note_type:'DEBIT_NOTE',note_amount:1000,received_value:53000,voucher_no:'DN-T1'}]};
+   const j=await old(n,p);if(n==='rr_rm_chat_fast_queue_test71')j.drafts=[{purchase_id:'p1',supplier_name:'Supplier',bill_no:'B1',purchase_date:'2030-01-15',lines:[{lot_no:'RM1',bill_qty_test71:540,qty:530,purchase_rate:100}]}];return j;
+  };
+  await x.ctx.refresh();x.w.document.querySelector('[data-draft-id]').click();await wait();
+  assert.equal(x.w.document.querySelector('[data-field="bill_qty"]').value,'540');assert.equal(x.w.document.querySelector('[data-field="qty"]').value,'530');
+  assert.match(x.w.document.querySelector('[data-line-total]').textContent,/SHORT 10 PCS · Debit Note ₹1,000/);
+  x.w.document.querySelector('[data-close]').click();x.s.status='WORKING';await x.ctx.refresh();
+  x.w.document.querySelector('[data-receipt]').click();await wait();
+  assert.match(x.w.document.querySelector('.rm-chat-sheet').textContent,/DN-T1/);
+  assert.match(x.w.document.querySelector('.rm-chat-sheet').textContent,/Party Bill Quantity: 540 PCS/);
+ }finally{x.close()}
+ const sales=await setup('SALES');try{assert.ok(!sales.w.document.querySelector('[data-receipt]'))}finally{sales.close()}
+});
 async function setup(role='OWNER',status='WORKING'){
  const dom=new JSDOM('<div id="messages"></div>',{url:'https://example.com/chat',runScripts:'outside-only'}),w=dom.window;
  w.CSS={escape:x=>x};w.URL.createObjectURL=()=> 'blob:test';w.eval(code);
@@ -17,7 +64,7 @@ test('Readymade is first before CB and excluded for worker scope',async()=>{
 });
 test('OPEN purchase form posts canonical payload and moves to WORKING once',async()=>{
  const x=await setup('OWNER','OPEN');try{const d=x.w.document;d.querySelector('[data-new]').click();await wait();assert.equal(d.querySelector('[data-supplier]').tagName,'SELECT');assert.ok([...d.querySelector('[data-supplier]').options].some(x=>x.value==='RDN'));assert.equal(d.querySelector('[data-field="category"]').tagName,'SELECT');assert.equal(d.querySelector('[data-field="size_text"]').tagName,'SELECT');d.querySelector('[data-field="category"]').value='Polo';d.querySelector('[data-field="category"]').dispatchEvent(new x.w.Event('change'));assert.equal(d.querySelector('[data-field="size_text"]').value,'L, XL, XXL');const values={'data-supplier':'Supplier','data-bill':'B1','data-date':'2030-01-15'};for(const[k,v]of Object.entries(values))d.querySelector('['+k+']').value=v;
- const fields={lot_no:'RM2',item_name:'Polo garment',category:'Polo',size_text:'L, XL, XXL',qty:'24',purchase_rate:'100',final_rate:'150',final_image_url:'https://example.com/a.jpg'};for(const[k,v]of Object.entries(fields))d.querySelector('[data-field="'+k+'"]').value=v;
+ const fields={lot_no:'RM2',item_name:'Polo garment',category:'Polo',size_text:'L, XL, XXL',bill_qty:'24',qty:'24',purchase_rate:'100',final_rate:'150',final_image_url:'https://example.com/a.jpg'};for(const[k,v]of Object.entries(fields))d.querySelector('[data-field="'+k+'"]').value=v;
  const b=d.querySelector('[data-post]');b.click();b.click();await wait();assert.equal(x.calls.filter(c=>c.n==='rr_rm_chat_save_test71').length,1);const p=x.calls.find(c=>c.n==='rr_rm_chat_save_test71').p;assert.equal(p.p_lines[0].markup_mode,'DEFAULT_22');assert.equal(p.p_lines[0].category,'Polo');assert.equal(p.p_lines[0].size_text,'L, XL, XXL');assert.equal(p.p_post,true);assert.equal(x.s.status,'WORKING');assert.ok(!d.querySelector('.rm-chat-modal'));
  }finally{x.close()}
 });
