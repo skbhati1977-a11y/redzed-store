@@ -22,3 +22,13 @@ test('Multiple customers see union of eligible lots and each send uses its own f
 test('Outside share mode is explicitly chosen before browsing and never applies internal customer filter',async()=>{
  const x=await setup('?share_mode=chooser&outside=1');try{assert.equal(x.w.document.querySelectorAll('.ww-card').length,2);assert.equal(x.w.document.getElementById('rrMwInternal9510').hidden,true);assert.ok(!x.calls.some(c=>c.name==='rr_sales_collection_cards_test71'));}finally{x.dom.window.close()}
 });
+
+test('Previously loaded Readymade picker hands selected customer to Market without a second picker',async()=>{
+ const dom=new JSDOM('<div class="rm-chat-modal"><a data-outside href="real-web-window-v9329.html?share_mode=chooser&from=READYMADE&selected_lot=NEW-A">Market</a><div data-customers><input type="checkbox" data-chat="A" checked><input type="checkbox" data-chat="B"></div><button data-send>Send</button></div>',{url:'https://example.com/real-chat.html'});
+ const location={href:dom.window.location.href};let oldSend=0;
+ dom.window.document.querySelector('[data-send]').onclick=()=>oldSend++;
+ vm.runInNewContext(fs.readFileSync(path.join(root,'test71-readymade-market-handoff.js'),'utf8'),{document:dom.window.document,location,URL,Set});
+ try{for(const selector of ['[data-outside]','[data-send]']){dom.window.document.querySelector(selector).click();const u=new URL(location.href);assert.deepEqual(u.searchParams.getAll('recipient_chat'),['A']);assert.deepEqual(u.searchParams.getAll('selected_lot'),['NEW-A']);}assert.equal(oldSend,0);
+ const x=await setup(new URL(location.href).search);try{assert.notEqual(x.w.document.getElementById('rrMwShare9510').style.display,'flex');assert.ok(x.w.document.querySelector('[data-select="NEW-A"]').checked);assert.ok(x.calls.filter(c=>c.name==='rr_sales_collection_cards_test71').every(c=>c.args.p_chat_id==='A'));}finally{x.dom.window.close()}
+ }finally{dom.window.close()}
+});
