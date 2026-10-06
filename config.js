@@ -33,7 +33,7 @@ const rrActAsTestMode=/test70/i.test(location.pathname)||rrModeParam==="TEST"||s
 if(rrActAsTestMode&&!window.__RR_GLOBAL_ACT_AS_LOADER_V187__){
  sessionStorage.setItem(RR_ACT_AS_TEST_KEY,"1");
  window.__RR_GLOBAL_ACT_AS_LOADER_V187__=true;
- const actAs=document.createElement("script");actAs.src=`${RR_REPO_BASE}real-superadmin-view-as-v176.js?v=187`;actAs.async=false;(document.head||document.documentElement).appendChild(actAs);
+ const actAs=document.createElement("script");actAs.src=`${RR_REPO_BASE}real-superadmin-view-as-v176.js?v=TEST71-CUSTOMERS-SCROLL-20261006`;actAs.async=false;(document.head||document.documentElement).appendChild(actAs);
 }
 const rrIsDashboardPath=path=>/\/real-dashboard(?:-v9182)?\.html$/i.test(path||"");
 const rrIsRealChatPath=path=>/\/(?:real-sales-live-chat-v9434|test70-cb-purchase-real-chat-pilot)\.html$/i.test(path||"");

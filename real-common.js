@@ -28,7 +28,7 @@
   document.addEventListener('rr:action-success',event=>RR.realChatActionComplete(event.detail||{}));
   document.addEventListener('rr:action-cancel',()=>RR.realChatActionCancel());
   RR.installHassleFreeNumberInputs();RR.installBusinessUppercaseInputs();RR.installDivisionDisplayAuthority();window.RR=RR;
-  const previewScript=document.createElement('script');previewScript.src=new URL('real-superadmin-view-as-v176.js',document.currentScript?.src||location.href).href;previewScript.async=false;document.head.appendChild(previewScript);
+  const previewScript=document.createElement('script');previewScript.src=new URL('real-superadmin-view-as-v176.js?v=TEST71-CUSTOMERS-SCROLL-20261006',document.currentScript?.src||location.href).href;previewScript.async=false;document.head.appendChild(previewScript);
 })();
 
 /* REAL FACTORY GLOBAL TABLE PLATFORM V775.1 */
