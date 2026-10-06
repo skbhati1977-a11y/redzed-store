@@ -123,7 +123,7 @@
    // A new cycle gets its own share binding, while the previous record stays in history.
    if(state.latest_collection_token&&state.latest_collection_token!==token){const u=new URL('s.html',location.href);u.searchParams.set('t',state.latest_collection_token);u.searchParams.set('open','collection');location.href=u.href;return;}
    const b=document.getElementById('fcReopen')||document.getElementById('fcOpen');
-   if(window.RRCustomerCollectionViewer71)window.RRCustomerCollectionViewer71.open(state);else {showDetails();const sheet=document.getElementById('rrLiveDetail71');if(sheet)sheet.querySelector('section').insertAdjacentHTML('beforeend','<p>Collection viewer load नहीं हुआ। पेज refresh करें।</p>');}
+   if(b&&!b.disabled&&!['PI_GENERATED','CI_GENERATED','CLOSED','CLOSED_NO_RESPONSE','CANCELLED'].includes(String(state.collection_status||'').toUpperCase()))b.click();else if(window.RRCustomerCollectionViewer71)window.RRCustomerCollectionViewer71.open(state);else {showDetails();const sheet=document.getElementById('rrLiveDetail71');if(sheet)sheet.querySelector('section').insertAdjacentHTML('beforeend','<p>Collection viewer load नहीं हुआ। पेज refresh करें।</p>');}
   }
  },true);
  function hook(){

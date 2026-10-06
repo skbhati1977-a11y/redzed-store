@@ -7,10 +7,11 @@
  const title=document.createElement('h3');title.textContent=(state.collection_display_no||'COLLECTION')+' · U'+Number(state.collection_update_no||0)+' · VIEW ONLY';
  const content=document.createElement('div');content.textContent='Loading collection…';body.append(close,title,content);sheet.append(body);sheet.onclick=e=>{if(e.target===sheet)sheet.remove()};document.body.append(sheet);close.focus();
  try{
-  const data=await rpc('rr_market_share_view_v9420',{p_token:token});
+  const [data,summary]=await Promise.all([rpc('rr_market_share_view_v9420',{p_token:token}),rpc('rr_collection_customer_requirement_summary_v9637',{p_token:token})]);
+  const quantities=new Map((summary?.lines||[]).map(line=>[String(line.lot_no),Number(line.requested_qty||0)]));
   if(!sheet.isConnected)return;
   content.innerHTML=(Array.isArray(data?.rows)?data.rows:[]).map(card).join('')||'No styles available.';
-  content.querySelectorAll('.fc-qty').forEach(el=>el.remove());
+  content.querySelectorAll('.fc-qty').forEach(el=>{const input=el.querySelector('[data-fcq]');const value=quantities.get(String(input?.dataset.fcq||''))||0;const label=document.createElement('strong');label.textContent='Required qty · '+value+' PCS';el.replaceChildren(label);});
   content.querySelectorAll('input,textarea,select').forEach(el=>el.remove());
   content.querySelectorAll('[data-fcthumb]').forEach(el=>{
    const lot=el.dataset.fcthumb,index=Number(el.dataset.idx||0),row=data.rows.find(r=>String(r.lot_no)===String(lot));
