@@ -2,6 +2,8 @@
   'use strict';
   const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const money = n => n == null ? '—' : '₹' + Number(n).toLocaleString('en-IN',{maximumFractionDigits:2});
+  // Existing CB size-family dropdown authority (rr_cb_cat_def_size_chk).
+  const sizeFamilies=['L, XL, XXL','2XL, 3XL, 4XL','3XL, 4XL, 5XL','M, L, XL, XXL','M, L, XL','L, XL','L, XXL','FREE SIZE'];
   const roles = ['OWNER','SUPER_ADMIN','ADMIN','ACCOUNTS','SALES','MANAGER'];
   const roleOf = s => String(window.RR_EFFECTIVE_ROLE ? window.RR_EFFECTIVE_ROLE(s.actor?.role || s.actor?.role_code) : window.RR_VIEW_AS_ROLE || s.actor?.role || s.actor?.role_code || '').toUpperCase();
   const state = {selection:new Set(),category:'',cols:2,seq:0,busy:false,returnKeys:new Map()};
@@ -31,11 +33,11 @@
   }
   function lineMarkup(x={}) {
     const field=(key,label,type='text')=>`<label>${label}<input data-field="${key}" type="${type}" value="${esc(x[key]??'')}" ${['qty','purchase_rate'].includes(key)?'min="0.01" step="'+(key==='qty'?'1':'0.01')+'"':''}></label>`;
-    return `<section class="rm-chat-line"><div class="rm-fields">${field('lot_no','Lot No. *')}${field('item_name','Garment name *')}${field('category','Category *')}${field('size_text','Sizes')}${field('colours_text','Colours')}${field('cloth_name','Cloth / Fabric')}${field('art_no','Art No.')}${field('qty','Final purchase quantity · PCS *','number')}${field('purchase_rate','Purchase rate / PCS *','number')}${field('final_rate','Final sales rate / PCS · optional','number')}</div><label>Final garment photo *<input data-photo type="file" accept="image/*"></label><img data-preview ${x.final_image_url?'':'hidden'} src="${esc(x.final_image_url||'')}" alt="Final garment preview"><label>Image URL<input data-field="final_image_url" type="url" value="${esc(x.final_image_url||'')}" placeholder="Upload photo or enter image URL"></label><label>Caption note<textarea data-field="caption_note">${esc(x.caption_note||'')}</textarea></label><p data-line-total>Purchase value —</p><button type="button" data-remove>Remove garment</button></section>`;
+    return `<section class="rm-chat-line"><div class="rm-fields">${field('lot_no','Lot No. *')}${field('item_name','Garment name *')}<label>Category *<select data-field="category" data-saved-category="${esc(x.category||'')}" disabled><option value="">Loading existing categories…</option></select></label><label>Sizes *<select data-field="size_text"><option value="">Select size family</option>${sizeFamilies.map(v=>`<option value="${esc(v)}" ${v.replace(/[\s,\/]/g,'').toUpperCase()===String(x.size_text||'').replace(/[\s,\/]/g,'').toUpperCase()?'selected':''}>${esc(v)}</option>`).join('')}</select></label>${field('colours_text','Colours')}${field('cloth_name','Cloth / Fabric')}${field('art_no','Art No.')}${field('qty','Final purchase quantity · PCS *','number')}${field('purchase_rate','Purchase rate / PCS *','number')}${field('final_rate','Final sales rate / PCS · optional','number')}</div><label>Final garment photo *<input data-photo type="file" accept="image/*"></label><img data-preview ${x.final_image_url?'':'hidden'} src="${esc(x.final_image_url||'')}" alt="Final garment preview"><label>Image URL<input data-field="final_image_url" type="url" value="${esc(x.final_image_url||'')}" placeholder="Upload photo or enter image URL"></label><label>Caption note<textarea data-field="caption_note">${esc(x.caption_note||'')}</textarea></label><p data-line-total>Purchase value —</p><button type="button" data-remove>Remove garment</button></section>`;
   }
   function purchase(ctx,draft=null) {
     const m=modal(draft?'Continue Readymade Purchase':'New Readymade Purchase'),body=m.querySelector('[data-body]'),msg=m.querySelector('[data-message]');let pid=draft?.purchase_id||null;
-    body.innerHTML=`<div class="rm-fields"><label>Supplier / Seller *<select data-supplier disabled><option value="">Loading existing suppliers…</option></select></label><label>Supplier bill number *<input data-bill value="${esc(draft?.bill_no||'')}"></label><label>Purchase / bill date *<input data-date type="date" value="${esc(draft?.purchase_date||new Date().toLocaleDateString('en-CA',{timeZone:'Asia/Kolkata'}))}"></label></div><div data-lines></div><button type="button" data-add>Add garment</button><p>Final rate follows existing monthly weighted costing and RRQ approval. Missing costing stays pending. ${['OWNER','SUPER_ADMIN'].includes(roleOf(ctx.s))?'Owner margin remains ₹22/PCS.':''}</p>`;
+    body.innerHTML=`<div class="rm-fields"><label>Supplier / Seller *<select data-supplier disabled><option value="">Loading existing suppliers…</option></select></label><label>Supplier bill number *<input data-bill value="${esc(draft?.bill_no||'')}"></label><label>Purchase / bill date *<input data-date type="date" value="${esc(draft?.purchase_date||new Date().toLocaleDateString('en-CA',{timeZone:'Asia/Kolkata'}))}"></label></div><div data-lines></div><button type="button" data-add>Add garment</button><section class="card" data-costing-status><b>Monthly costing / Final rate</b><p data-cost-month></p><p>Purchase cost + monthly weighted Sales/Admin/Accounts salary + applicable overhead = total cost.</p>${['OWNER','SUPER_ADMIN'].includes(roleOf(ctx.s))?'<p>Fixed Owner margin: ₹22/PCS. Base sales rate = total cost + ₹22.</p>':''}<p>Actual weighted base rate is calculated after purchase confirmation and shown in WORKING. Missing monthly values keep approval pending. Final-rate approval changes RRQ on available PCS.</p></section>`;
     const supplierSelect=body.querySelector('[data-supplier]');
     let supplierNames=new Set();
     async function loadSuppliers(){
@@ -54,8 +56,25 @@
     }
     const retry=document.createElement('button');retry.type='button';retry.textContent='Retry suppliers';retry.dataset.retrySuppliers='';retry.onclick=()=>loadSuppliers();supplierSelect.parentElement.appendChild(retry);
     loadSuppliers();
-    const lines=body.querySelector('[data-lines]');(draft?.lines?.length?draft.lines:[{}]).forEach(x=>lines.insertAdjacentHTML('beforeend',lineMarkup(x)));
-    body.querySelector('[data-add]').onclick=()=>lines.insertAdjacentHTML('beforeend',lineMarkup());
+    const lines=body.querySelector('[data-lines]');let categories=[],categoryDefaults=new Map(),mastersReady=false;
+    function fillCategory(row){
+      const sel=row.querySelector('[data-field="category"]'),saved=sel.dataset.savedCategory;
+      sel.innerHTML='<option value="">Select existing category</option>'+categories.map(c=>`<option value="${esc(c.category_name)}">${esc(c.category_name)}</option>`).join('');
+      sel.value=categories.some(c=>c.category_name===saved)?saved:'';sel.disabled=!mastersReady;
+      sel.onchange=()=>{const cat=categories.find(c=>c.category_name===sel.value),def=categoryDefaults.get(String(cat?.id)),sizes=row.querySelector('[data-field="size_text"]');if(def){const v=sizeFamilies.find(x=>x.replace(/\s/g,'')===String(def.default_size_family).replace(/\s/g,''));if(v)sizes.value=v}};
+    }
+    function addLine(x={}){lines.insertAdjacentHTML('beforeend',lineMarkup(x));if(mastersReady)fillCategory(lines.lastElementChild)}
+    (draft?.lines?.length?draft.lines:[{}]).forEach(addLine);
+    async function loadCategories(){
+      try{
+        const [result,defaults]=await Promise.all([ctx.s.db.from('rr_art_categories').select('id,category_code,category_name').eq('is_active',true).order('category_name'),ctx.rpc('rr_cb_category_defaults_get_v1',{})]);
+        if(result.error)throw result.error;categories=result.data||[];categoryDefaults=new Map((defaults?.rows||[]).map(x=>[String(x.art_category_id),x]));mastersReady=true;
+        [...lines.children].forEach(fillCategory);if(!categories.length)msg.textContent='No active garment categories in existing Category Master.';
+      }catch(e){msg.textContent='Category mapping could not load. Tap Retry categories.';}
+    }
+    body.querySelector('[data-add]').onclick=()=>addLine();
+    const retryCategories=document.createElement('button');retryCategories.type='button';retryCategories.textContent='Retry categories';retryCategories.onclick=loadCategories;body.querySelector('[data-add]').after(retryCategories);loadCategories();
+    const month=()=>{body.querySelector('[data-cost-month]').textContent='Costing month: '+(body.querySelector('[data-date]').value.slice(0,7)||'Select bill date')};month();body.querySelector('[data-date]').addEventListener('change',month);
     body.addEventListener('click',e=>{if(e.target.closest('[data-remove]')&&lines.children.length>1)e.target.closest('.rm-chat-line').remove()});
     body.addEventListener('input',e=>{const row=e.target.closest('.rm-chat-line');if(!row)return;const qty=Number(row.querySelector('[data-field="qty"]').value),rate=Number(row.querySelector('[data-field="purchase_rate"]').value);row.querySelector('[data-line-total]').textContent='Purchase value '+money(qty*rate);if(e.target.dataset.field==='final_image_url'){const img=row.querySelector('[data-preview]');img.src=/^https?:\/\//.test(e.target.value)?e.target.value:'';img.hidden=!img.src}});
     body.addEventListener('change',e=>{if(!e.target.matches('[data-photo]'))return;const row=e.target.closest('.rm-chat-line'),file=e.target.files[0];if(!file)return;const img=row.querySelector('[data-preview]');if(img.dataset.blob)URL.revokeObjectURL(img.dataset.blob);img.dataset.blob=URL.createObjectURL(file);img.src=img.dataset.blob;img.hidden=false});
@@ -68,6 +87,7 @@
         const payload=[];
         for(const row of lines.children){
           const x=Object.fromEntries([...row.querySelectorAll('[data-field]')].map(i=>[i.dataset.field,i.value.trim()]));x.qty=Number(x.qty);x.purchase_rate=Number(x.purchase_rate);x.final_rate=x.final_rate===''?null:Number(x.final_rate);x.markup_mode='DEFAULT_22';
+          if(!mastersReady||!categories.some(c=>c.category_name===x.category)||!sizeFamilies.includes(x.size_text))throw Error('Select existing category and size family.');
           if(!x.lot_no||!x.item_name||!x.category||!Number.isInteger(x.qty)||x.qty<=0||!Number.isFinite(x.purchase_rate)||x.purchase_rate<=0)throw Error('Lot, garment, category, whole PCS and positive purchase rate required.');
           if(x.final_rate!=null&&(!Number.isFinite(x.final_rate)||x.final_rate<0))throw Error('Valid final sales rate required.');
           const file=row.querySelector('[data-photo]').files[0];
