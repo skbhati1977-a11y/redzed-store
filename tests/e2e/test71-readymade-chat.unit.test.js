@@ -3,6 +3,34 @@ const {JSDOM}=require('jsdom');
 const code=fs.readFileSync(path.resolve(__dirname,'../../test71-readymade-real-chat.js'),'utf8');
 const wait=()=>new Promise(r=>setTimeout(r,25));
 
+test('Art precedes Item dropdown, fills mapped details and refreshes live balance without overwriting edited rates',async()=>{
+ const x=await setup('OWNER','OPEN');try{
+  let balance=50;const mapped={art_no:'RA-NEW',art_revision:3,item_name:'Mapped Polo',category:'Polo',size_text:'L, XL, XXL',colours_text:'Red',cloth_name:'Cotton',purchase_rate:100,final_rate:150,final_image_url:'https://example.com/mapped.jpg',effective_from:'2026-10-06T12:00:00Z'};
+  const old=x.ctx.rpc;x.ctx.rpc=async(n,p)=>n==='rr_rm_art_catalog_test71'?{rows:[{...mapped,available_qty:balance}],items:['Mapped Polo','Shirt']}:old(n,p);
+  const d=x.w.document;d.querySelector('[data-new]').click();await wait();
+  const fields=[...d.querySelectorAll('[data-field]')].map(el=>el.dataset.field);assert.ok(fields.indexOf('art_no')<fields.indexOf('item_name'));
+  const art=d.querySelector('[data-field="art_no"]');assert.ok(art.getAttribute('list'));assert.match(d.querySelector('[data-art-options]').innerHTML,/RA-NEW/);
+  art.value='RA-NEW';art.dispatchEvent(new x.w.Event('change',{bubbles:true}));
+  for(const key of ['item_name','category','size_text','purchase_rate','final_rate','final_image_url'])assert.equal(d.querySelector('[data-field="'+key+'"]').value,String(mapped[key]),key);
+  assert.match(d.querySelector('[data-art-balance]').textContent,/50 PCS/);
+  d.querySelector('[data-field="purchase_rate"]').value='125';balance=43;d.querySelector('[data-refresh-art]').click();await wait();
+  assert.match(d.querySelector('[data-art-balance]').textContent,/43 PCS/);assert.equal(d.querySelector('[data-field="purchase_rate"]').value,'125');
+  assert.equal(d.querySelector('.rm-chat-line').dataset.artRevision,'3');
+ }finally{x.close()}
+});
+test('Reopened draft keeps its Art rate snapshot and revision until defaults are explicitly reloaded',async()=>{
+ const x=await setup('OWNER','OPEN');try{
+  const old=x.ctx.rpc;x.ctx.rpc=async(n,p)=>{
+   if(n==='rr_rm_art_catalog_test71')return{rows:[{art_no:'RA1',art_revision:2,item_name:'Mapped',category:'Polo',size_text:'L, XL, XXL',purchase_rate:120,final_rate:180,final_image_url:'https://example.com/new.jpg',available_qty:100}],items:['Mapped']};
+   const j=await old(n,p);if(n==='rr_rm_chat_fast_queue_test71')j.drafts=[{purchase_id:'p1',supplier_name:'Supplier',bill_no:'B1',purchase_date:'2030-01-15',lines:[{lot_no:'RM1',art_no:'RA1',art_revision:1,item_name:'Saved',category:'Polo',size_text:'L, XL, XXL',qty:530,bill_qty_test71:540,purchase_rate:100,final_rate:150,final_image_url:'https://example.com/old.jpg'}]}];return j;
+  };
+  await x.ctx.refresh();const d=x.w.document;d.querySelector('[data-draft-id]').click();await wait();
+  assert.equal(d.querySelector('[data-field="purchase_rate"]').value,'100');assert.equal(d.querySelector('.rm-chat-line').dataset.artRevision,'1');
+  d.querySelector('[data-reload-art]').click();await wait();
+  assert.equal(d.querySelector('[data-field="purchase_rate"]').value,'120');assert.equal(d.querySelector('.rm-chat-line').dataset.artRevision,'2');
+ }finally{x.close()}
+});
+
 test('New supplier and category save through existing masters and select without clearing purchase fields',async()=>{
  const x=await setup('OWNER','OPEN');try{
   const suppliers=[{id:'supplier1',supplier_name:'Supplier'}],categories=[{id:'cat1',category_name:'Polo'}];

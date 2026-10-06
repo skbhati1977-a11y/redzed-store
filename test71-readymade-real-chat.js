@@ -35,9 +35,9 @@
     try{await fn()}catch(e){message.textContent=e.message||'Please retry.'}finally{state.busy=false;button.disabled=false}
   }
   function lineMarkup(x={}) {
-    x={...x,bill_qty:x.bill_qty??x.bill_qty_test71??x.qty};
-    const field=(key,label,type='text')=>`<label>${label}<input data-field="${key}" type="${type}" value="${esc(x[key]??'')}" ${['qty','bill_qty','purchase_rate'].includes(key)?'min="'+(key==='purchase_rate'?'0.01':'1')+'" step="'+(key==='purchase_rate'?'0.01':'1')+'"':''}></label>`;
-    return `<section class="rm-chat-line"><div class="rm-fields">${field('lot_no','Lot No. *')}${field('item_name','Garment name *')}<label>Category *<select data-field="category" data-saved-category="${esc(x.category||'')}" disabled><option value="">Loading existing categories…</option></select></label><label>Sizes *<select data-field="size_text"><option value="">Select size family</option>${sizeFamilies.map(v=>`<option value="${esc(v)}" ${v.replace(/[\s,\/]/g,'').toUpperCase()===String(x.size_text||'').replace(/[\s,\/]/g,'').toUpperCase()?'selected':''}>${esc(v)}</option>`).join('')}</select></label>${field('colours_text','Colours')}${field('cloth_name','Cloth / Fabric')}${field('art_no','Art No.')}${field('bill_qty','Party Bill Quantity · PCS *','number')}${field('qty','Received Quantity · PCS *','number')}${field('purchase_rate','Purchase rate / PCS *','number')}${field('final_rate','Final sales rate / PCS · optional','number')}</div><label>Final garment photo *<input data-photo type="file" accept="image/*"></label><img data-preview ${x.final_image_url?'':'hidden'} src="${esc(x.final_image_url||'')}" alt="Final garment preview"><label>Image URL<input data-field="final_image_url" type="url" value="${esc(x.final_image_url||'')}" placeholder="Upload photo or enter image URL"></label><label>Caption note<textarea data-field="caption_note">${esc(x.caption_note||'')}</textarea></label><p data-line-total>Purchase value —</p><button type="button" data-remove>Remove garment</button></section>`;
+    x={...x,bill_qty:x.bill_qty??x.bill_qty_test71??x.qty};const listId='rm-list-'+crypto.randomUUID();
+    const field=(key,label,type='text')=>`<label>${label}<input data-field="${key}" type="${type}" ${key==='art_no'?'list="'+listId+'-arts" maxlength="80"':key==='item_name'?'list="'+listId+'-items" maxlength="200"':''} value="${esc(x[key]??'')}" ${['qty','bill_qty','purchase_rate'].includes(key)?'min="'+(key==='purchase_rate'?'0.01':'1')+'" step="'+(key==='purchase_rate'?'0.01':'1')+'"':''}></label>`;
+    return `<section class="rm-chat-line" data-art-revision="${esc(x.art_revision??'')}" data-bound-art="${esc(x.art_no||'')}"><div class="rm-fields">${field('lot_no','Lot No. *')}${field('art_no','Art No. · select or add new')}${field('item_name','Item Name · select or add new *')}<label>Category *<select data-field="category" data-saved-category="${esc(x.category||'')}" disabled><option value="">Loading existing categories…</option></select></label><label>Sizes *<select data-field="size_text"><option value="">Select size family</option>${sizeFamilies.map(v=>`<option value="${esc(v)}" ${v.replace(/[\s,\/]/g,'').toUpperCase()===String(x.size_text||'').replace(/[\s,\/]/g,'').toUpperCase()?'selected':''}>${esc(v)}</option>`).join('')}</select></label>${field('colours_text','Colours')}${field('cloth_name','Cloth / Fabric')}${field('bill_qty','Party Bill Quantity · PCS *','number')}${field('qty','Received Quantity · PCS *','number')}${field('purchase_rate','Purchase rate / PCS *','number')}${field('final_rate','Final sales rate / PCS · optional','number')}</div><datalist id="${listId}-arts" data-art-options></datalist><datalist id="${listId}-items" data-item-options></datalist><p data-art-effective></p><p data-art-balance aria-live="polite">Select Art No. to load live available PCS.</p><button type="button" data-refresh-art>Refresh live balance</button><button type="button" data-reload-art>Reload Art defaults</button><label>Final garment photo *<input data-photo type="file" accept="image/*"></label><img data-preview ${x.final_image_url?'':'hidden'} src="${esc(x.final_image_url||'')}" alt="Final garment preview"><label>Image URL<input data-field="final_image_url" type="url" value="${esc(x.final_image_url||'')}" placeholder="Upload photo or enter image URL"></label><label>Caption note<textarea data-field="caption_note">${esc(x.caption_note||'')}</textarea></label><p data-line-total>Purchase value —</p><button type="button" data-remove>Remove garment</button></section>`;
   }
   function updateReceipt(row) {
     const billInput=row.querySelector('[data-field="bill_qty"]'),qtyInput=row.querySelector('[data-field="qty"]'),rateInput=row.querySelector('[data-field="purchase_rate"]');
@@ -48,9 +48,10 @@
     const billValue=Math.round((bill*rate+Number.EPSILON)*100)/100,receivedValue=Math.round((qty*rate+Number.EPSILON)*100)/100,diff=qty-bill;
     total.textContent='Party bill '+money(billValue)+' · Received stock '+qty+' PCS · '+(diff<0?'SHORT '+(-diff)+' PCS · Debit Note ':diff>0?'EXCESS '+diff+' PCS · Credit Note ':'MATCHED · Adjustment ')+money(Math.abs(receivedValue-billValue))+' · Net purchase / Supplier payable '+money(receivedValue);
   }
-  function receiptView(receipt) {
+  function receiptView(receipt,ctx) {
     const m=modal('Purchase receipt · '+(receipt.bill_no||'')),body=m.querySelector('[data-body]');
     body.innerHTML=(receipt.lines||[]).map(l=>'<section class="rm-chat-line"><b>'+esc(l.lot_no)+'</b><p>Party Bill Quantity: '+esc(l.bill_qty)+' PCS<br>Received Quantity: '+esc(l.received_qty)+' PCS<br>Purchase Rate: '+money(l.purchase_rate)+'/PCS</p><p>'+esc(l.note_type==='MATCHED'?'MATCHED':l.note_type==='DEBIT_NOTE'?'SHORT · Debit Note':'EXCESS · Credit Note')+' · '+Math.abs(Number(l.difference_qty))+' PCS · '+money(l.note_amount)+'</p>'+(l.voucher_no?'<p>Accounts voucher: <b>'+esc(l.voucher_no)+'</b></p>':'')+'<p>Net purchase / Supplier payable: '+money(l.received_value)+'</p></section>').join('')+'<p>Party bill: '+money(receipt.bill_value)+' · Net received value: '+money(receipt.received_value)+'</p><p>Received stock and supplier accounts finalized together.</p>';
+    if(ctx&&window.RRReadymadeReceipt71)window.RRReadymadeReceipt71.attach(ctx,m,receipt);
   }
   function purchase(ctx,draft=null) {
     const m=modal(draft?'Continue Readymade Purchase':'New Readymade Purchase'),body=m.querySelector('[data-body]'),msg=m.querySelector('[data-message]');let pid=draft?.purchase_id||null;
@@ -94,7 +95,43 @@
       msg.textContent='Supplier saved and selected.';
     });supplierSelect.parentElement.appendChild(addSupplier);
     loadSuppliers();
-    const lines=body.querySelector('[data-lines]');let categories=[],categoryDefaults=new Map(),mastersReady=false;
+    const lines=body.querySelector('[data-lines]');let categories=[],categoryDefaults=new Map(),mastersReady=false,artRows=[],itemNames=[],artLoaded=false;
+    function artOf(row){const key=row.querySelector('[data-field="art_no"]').value.trim().toUpperCase();return artRows.find(a=>a.art_no.toUpperCase()===key)}
+    function showArtBalance(row,a=artOf(row)){
+      const art=row.querySelector('[data-field="art_no"]').value.trim(),out=row.querySelector('[data-art-balance]');
+      out.textContent=!art?'Select Art No. to load live available PCS.':!artLoaded?'Live balance unavailable. Tap Refresh live balance.':'Team live available balance · Art '+art+': '+Number(a?.available_qty||0)+' PCS';
+      const effective=row.querySelector('[data-art-effective]');
+      effective.textContent=a?.effective_from?'Current Art defaults effective: '+new Date(a.effective_from).toLocaleString('en-IN',{timeZone:'Asia/Kolkata'})+' · New purchases use these defaults; previous purchases keep their rates.':art&&artLoaded?'New Art · Details entered here will become defaults after purchase confirmation.':'';
+    }
+    function fillArtLists(row){
+      row.querySelector('[data-art-options]').innerHTML=artRows.map(a=>'<option value="'+esc(a.art_no)+'">'+esc(a.item_name)+'</option>').join('');
+      row.querySelector('[data-item-options]').innerHTML=itemNames.map(name=>'<option value="'+esc(name)+'"></option>').join('');showArtBalance(row);
+    }
+    async function loadArtCatalog(silent=false){
+      try{const result=await ctx.rpc('rr_rm_art_catalog_test71',{p_art_no:null});artRows=result.rows||[];itemNames=result.items||[];artLoaded=true;[...lines.children].forEach(fillArtLists)}
+      catch{artLoaded=false;[...lines.children].forEach(row=>showArtBalance(row));if(!silent)msg.textContent='Art defaults could not load. Enter new details or tap Reload Art defaults.'}
+    }
+    function bindArt(row){
+      const art=row.querySelector('[data-field="art_no"]').value.trim(),a=artOf(row);row.dataset.boundArt=art;
+      row.dataset.artRevision=String(a?.art_revision||0);
+      if(a){
+        for(const key of ['item_name','category','size_text','cloth_name','colours_text','caption_note','purchase_rate','final_rate','final_image_url']){
+          const input=row.querySelector('[data-field="'+key+'"]');input.value=a[key]??'';
+          if(key==='category'){input.dataset.savedCategory=input.value}
+        }
+        row.querySelector('[data-photo]').value='';const img=row.querySelector('[data-preview]');if(img.dataset.blob){URL.revokeObjectURL(img.dataset.blob);delete img.dataset.blob}img.src=a.final_image_url||'';img.hidden=!a.final_image_url;
+      }
+      updateReceipt(row);showArtBalance(row,a);
+    }
+    async function loadArtDefaults(row){await loadArtCatalog();if(artLoaded)bindArt(row)}
+    async function refreshArtBalance(row){
+      try{
+        const art=row.querySelector('[data-field="art_no"]').value.trim();if(!art){showArtBalance(row);return}
+        const result=await ctx.rpc('rr_rm_art_catalog_test71',{p_art_no:art}),a=result.rows?.[0];artLoaded=true;
+        if(a){artRows=artRows.filter(x=>x.art_no.toUpperCase()!==art.toUpperCase());artRows.push(a)}
+        showArtBalance(row,a);
+      }catch{row.querySelector('[data-art-balance]').textContent='Live balance could not refresh. Please retry.'}
+    }
     function fillCategory(row){
       const sel=row.querySelector('[data-field="category"]'),saved=sel.value||sel.dataset.savedCategory;
       sel.innerHTML='<option value="">Select existing category</option>'+categories.map(c=>`<option value="${esc(c.category_name)}">${esc(c.category_name)}</option>`).join('');
@@ -108,7 +145,7 @@
         });sel.parentElement.appendChild(add);
       }
     }
-    function addLine(x={}){lines.insertAdjacentHTML('beforeend',lineMarkup(x));updateReceipt(lines.lastElementChild);if(mastersReady)fillCategory(lines.lastElementChild)}
+    function addLine(x={}){lines.insertAdjacentHTML('beforeend',lineMarkup(x));const row=lines.lastElementChild;updateReceipt(row);fillArtLists(row);if(mastersReady)fillCategory(row);row.querySelector('[data-refresh-art]').onclick=()=>refreshArtBalance(row);row.querySelector('[data-reload-art]').onclick=()=>loadArtDefaults(row)}
     (draft?.lines?.length?draft.lines:[{}]).forEach(addLine);
     async function loadCategories(){
       try{
@@ -118,12 +155,17 @@
       }catch(e){msg.textContent='Category mapping could not load. Tap Retry categories.';}
     }
     body.querySelector('[data-add]').onclick=()=>addLine();
+    loadArtCatalog();
+    const liveTimer=setInterval(()=>{if(m.isConnected&&!document.hidden)loadArtCatalog(true)},10000);
+    const recover=()=>{if(m.isConnected&&!document.hidden)loadArtCatalog(true)};document.addEventListener('visibilitychange',recover);
+    const liveChannel=ctx.s.db.channel?ctx.s.db.channel('rm-art-modal-'+crypto.randomUUID()).on('postgres_changes',{event:'INSERT',schema:'public',table:'rr_fg_stock_ledger_v787',filter:'data_mode=eq.TEST'},recover).subscribe():null;
+    const removePurchase=m.remove.bind(m);m.remove=()=>{clearInterval(liveTimer);document.removeEventListener('visibilitychange',recover);if(liveChannel)ctx.s.db.removeChannel(liveChannel);removePurchase()};
     const retryCategories=document.createElement('button');retryCategories.type='button';retryCategories.textContent='Retry categories';retryCategories.onclick=loadCategories;body.querySelector('[data-add]').after(retryCategories);loadCategories();
     const month=()=>{body.querySelector('[data-cost-month]').textContent='Costing month: '+(body.querySelector('[data-date]').value.slice(0,7)||'Select bill date')};month();body.querySelector('[data-date]').addEventListener('change',month);
     body.addEventListener('click',e=>{if(e.target.closest('[data-remove]')&&lines.children.length>1)e.target.closest('.rm-chat-line').remove()});
     body.addEventListener('input',e=>{const row=e.target.closest('.rm-chat-line');if(!row)return;updateReceipt(row);if(e.target.dataset.field==='final_image_url'){const img=row.querySelector('[data-preview]');img.src=/^https?:\/\//.test(e.target.value)?e.target.value:'';img.hidden=!img.src}});
-    body.addEventListener('change',e=>{if(!e.target.matches('[data-photo]'))return;const row=e.target.closest('.rm-chat-line'),file=e.target.files[0];if(!file)return;const img=row.querySelector('[data-preview]');if(img.dataset.blob)URL.revokeObjectURL(img.dataset.blob);img.dataset.blob=URL.createObjectURL(file);img.src=img.dataset.blob;img.hidden=false});
-    m.querySelector('[data-footer]').innerHTML='<button type="button" data-draft>Save draft</button><button type="button" data-post>Save & Confirm Purchase</button>';
+    body.addEventListener('change',e=>{if(e.target.dataset.field==='art_no'){bindArt(e.target.closest('.rm-chat-line'));return}if(!e.target.matches('[data-photo]'))return;const row=e.target.closest('.rm-chat-line'),file=e.target.files[0];if(!file)return;const img=row.querySelector('[data-preview]');if(img.dataset.blob)URL.revokeObjectURL(img.dataset.blob);img.dataset.blob=URL.createObjectURL(file);img.src=img.dataset.blob;img.hidden=false});
+    m.querySelector('[data-footer]').innerHTML='<button type="button" data-draft>Save draft</button><button type="button" data-post>Save & Confirm Purchase</button><button type="button" data-prepare-share>Save & Confirm · Prepare JPG for WhatsApp</button><small>First receipt preparation confirms purchase and generates its Debit/Credit Note. Sale rate remains subject to final approval.</small>';
     async function save(post,button) {
       await action(button,msg,async()=>{
         const supplier=body.querySelector('[data-supplier]').value.trim(),bill=body.querySelector('[data-bill]').value.trim(),date=body.querySelector('[data-date]').value;
@@ -131,7 +173,7 @@
         if(!bill||!date)throw Error('Supplier bill number and date required.');
         const payload=[];
         for(const row of lines.children){
-          const x=Object.fromEntries([...row.querySelectorAll('[data-field]')].map(i=>[i.dataset.field,i.value.trim()]));x.bill_qty=Number(x.bill_qty);x.qty=Number(x.qty);x.purchase_rate=Number(x.purchase_rate);x.final_rate=x.final_rate===''?null:Number(x.final_rate);x.markup_mode='DEFAULT_22';
+          const x=Object.fromEntries([...row.querySelectorAll('[data-field]')].map(i=>[i.dataset.field,i.value.trim()]));x.bill_qty=Number(x.bill_qty);x.qty=Number(x.qty);x.purchase_rate=Number(x.purchase_rate);x.final_rate=x.final_rate===''?null:Number(x.final_rate);x.markup_mode='DEFAULT_22';if(x.art_no){x.art_revision=Number(row.dataset.artRevision||artRows.find(a=>a.art_no.toUpperCase()===x.art_no.toUpperCase())?.art_revision||0)}
           if(!mastersReady||!categories.some(c=>c.category_name===x.category)||!sizeFamilies.includes(x.size_text))throw Error('Select existing category and size family.');
           if(!x.lot_no||!x.item_name||!x.category||!Number.isSafeInteger(x.bill_qty)||x.bill_qty<=0||!Number.isSafeInteger(x.qty)||x.qty<=0||!Number.isFinite(x.purchase_rate)||x.purchase_rate<=0)throw Error('Lot, garment, category, positive whole Party Bill PCS, Received PCS and purchase rate required.');
           if(x.final_rate!=null&&(!Number.isFinite(x.final_rate)||x.final_rate<0))throw Error('Valid final sales rate required.');
@@ -141,16 +183,16 @@
         }
         if(new Set(payload.map(x=>x.lot_no.toUpperCase())).size!==payload.length)throw Error('Each garment lot number must be unique.');
         const j=await ctx.rpc('rr_rm_chat_save_test71',{p_purchase_id:pid,p_supplier_name:supplier,p_bill_no:bill,p_purchase_date:date,p_lines:payload,p_post:post});pid=j.purchase_id;
-        if(post){m.remove();if(j.receipt)receiptView(j.receipt);state.selection.clear();ctx.s.status='WORKING';ctx.s.userStatusLock='WORKING';ctx.changed();await ctx.refresh();ctx.notice('Purchase confirmed · Received stock, supplier Accounts and Short / Excess notes updated.'+(j.rate_notes?.length?' '+j.rate_notes.join(' · '):''));}
+        if(post){m.remove();if(j.receipt)receiptView(j.receipt,ctx);state.selection.clear();ctx.s.status='WORKING';ctx.s.userStatusLock='WORKING';ctx.changed();await ctx.refresh();ctx.notice('Purchase confirmed · Received stock, supplier Accounts and Short / Excess notes updated.'+(j.rate_notes?.length?' '+j.rate_notes.join(' · '):''));}
         else{msg.textContent='Draft saved. Continue here or reopen from OPEN.';ctx.s.departmentCountCache.delete('READYMADE');}
       });
     }
-    m.querySelector('[data-draft]').onclick=e=>save(false,e.currentTarget);m.querySelector('[data-post]').onclick=e=>save(true,e.currentTarget);
+    m.querySelector('[data-draft]').onclick=e=>save(false,e.currentTarget);m.querySelector('[data-post]').onclick=e=>save(true,e.currentTarget);m.querySelector('[data-prepare-share]').onclick=e=>save(true,e.currentTarget);
   }
   async function completeMapping(ctx,c,owner) {
     const m=modal('Complete mapping · '+c.lot_no),body=m.querySelector('[data-body]'),msg=m.querySelector('[data-message]');
     body.innerHTML='<p>Missing: '+esc((c.missing_fields||[]).join(' · '))+'</p>'+lineMarkup({...c,final_image_url:c.image_url})+'<p>Purchase quantity and purchase rate are posted records. Financial correction uses Purchase Return / corrected purchase.</p><p>Final approval uses monthly weighted costing and fixed ₹22/PCS owner margin.</p>';
-    ['lot_no','bill_qty','qty','purchase_rate','final_rate'].forEach(k=>body.querySelector('[data-field="'+k+'"]').closest('label').remove());body.querySelector('[data-remove]').remove();body.querySelector('[data-line-total]').remove();
+    ['lot_no','bill_qty','qty','purchase_rate','final_rate'].forEach(k=>body.querySelector('[data-field="'+k+'"]').closest('label').remove());body.querySelector('[data-remove]').remove();body.querySelector('[data-line-total]').remove();body.querySelector('[data-art-balance]').remove();body.querySelector('[data-art-effective]').remove();body.querySelector('[data-refresh-art]').remove();body.querySelector('[data-reload-art]').remove();
     try {const r=await ctx.s.db.from('rr_art_categories').select('id,category_name').eq('is_active',true).order('category_name');if(r.error)throw r.error;const sel=body.querySelector('[data-field="category"]');sel.innerHTML='<option value="">Select existing category</option>'+(r.data||[]).map(x=>'<option>'+esc(x.category_name)+'</option>').join('');sel.value=c.category;sel.disabled=false;}catch(e){msg.textContent='Category master unavailable. Close and retry.';}
     const costing=new URL('real-accounts-costing-v850.html',location.href);costing.searchParams.set('lot',c.lot_no);costing.searchParams.set('data_mode','TEST');
     m.querySelector('[data-footer]').innerHTML='<button data-save-mapping>Save mapping</button>'+(!c.approval_ready?(owner?'<a href="'+esc(costing.href)+'" target="_blank" rel="noopener">Complete monthly costing</a><button data-open-approval>Go to final approval</button>':'<button data-request-approval>Request Super Admin approval</button>'):'');
@@ -221,7 +263,7 @@
         }catch(e){const body=article.querySelector('[data-cost-body]')||article.querySelector('[data-rate-status]');if(body)body.textContent='Costing could not load. Close and reopen to retry.';}
       }));
       box.querySelectorAll('[data-approve]').forEach(b=>b.onclick=()=>action(b,notice,async()=>{const c=cards.find(x=>x.stock_id===b.dataset.approve),rate=Number(box.querySelector(`[data-rate="${CSS.escape(c.stock_id)}"]`).value);if(!Number.isFinite(rate)||rate<=0)throw Error('Valid final rate required.');if(c.approval_ready)throw Error('Final rate is already approved.');const j=await ctx.rpc('rr_rm_approve_rate_test71',{p_lot_no:c.lot_no,p_final_rate:rate,p_reason:'Readymade Real Chat final rate'});c.approval_ready=true;c.approved_rate=rate;const details=b.closest('details');details.removeAttribute('data-cost-load');details.setAttribute('data-approved-rate','');details.innerHTML='<summary>Final sales rate / RRQ</summary><p>Approved final rate: <b>'+money(rate)+'/PCS</b></p><p>Rate approved · Read only</p>';await ctx.refresh();ctx.notice('Approved · RRQ change '+money(j.quota_delta)+' · RRQ balance '+money(j.rrq_balance))}));
-      box.querySelectorAll('[data-receipt]').forEach(b=>b.onclick=()=>action(b,notice,async()=>{receiptView(await ctx.rpc('rr_rm_stock_receipt_test71',{p_stock_id:b.dataset.receipt}))}));
+      box.querySelectorAll('[data-receipt]').forEach(b=>b.onclick=()=>action(b,notice,async()=>{receiptView(await ctx.rpc('rr_rm_stock_receipt_test71',{p_stock_id:b.dataset.receipt}),ctx)}));
       box.querySelectorAll('[data-return]').forEach(b=>b.onclick=()=>action(b,notice,async()=>{const c=cards.find(x=>x.stock_id===b.dataset.return),qty=Number(box.querySelector(`[data-return-qty="${CSS.escape(c.stock_id)}"]`).value),reason=box.querySelector(`[data-return-reason="${CSS.escape(c.stock_id)}"]`).value.trim();if(!Number.isInteger(qty)||qty<=0||qty>c.available_qty||!reason)throw Error('Return whole PCS within available balance and enter reason.');const fingerprint=JSON.stringify([c.stock_id,qty,reason]);if(!state.returnKeys.has(fingerprint))state.returnKeys.set(fingerprint,crypto.randomUUID());await ctx.rpc('rr_rm_purchase_return_test71',{p_stock_id:c.stock_id,p_qty:qty,p_reason:reason,p_return_date:new Date().toLocaleDateString('en-CA',{timeZone:'Asia/Kolkata'}),p_idempotency_key:state.returnKeys.get(fingerprint),p_remarks:'Readymade Real Chat'});ctx.changed();await ctx.refresh();ctx.notice('Purchase Return posted · Balance, Accounts and RRQ updated.')}));
     }catch(e){if(seq===state.seq&&ctx.owned()&&viewStatus==='OPEN'&&box.querySelector('[data-new]')){box.querySelector('[data-notice]').textContent='Saved drafts could not load. New Purchase is available.';return}if(seq===state.seq&&ctx.owned())box.innerHTML='<div class="card">'+esc(e.message||'Readymade could not load.')+' <button data-retry>Retry</button></div>';box.querySelector('[data-retry]')?.addEventListener('click',()=>ctx.refresh())}
   }
