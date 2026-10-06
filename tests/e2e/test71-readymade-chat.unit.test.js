@@ -29,8 +29,8 @@ test('Working approval updates RRQ and purchase return uses stable duplicate pro
  d.querySelector('[data-return-qty]').value='2';d.querySelector('[data-return-reason]').value='Damage';const r=d.querySelector('[data-return]');r.click();r.click();await wait();assert.equal(x.calls.filter(c=>c.n==='rr_rm_purchase_return_test71').length,1);assert.equal(x.calls.find(c=>c.n==='rr_rm_purchase_return_test71').p.p_qty,2);assert.ok(x.calls.find(c=>c.n==='rr_rm_purchase_return_test71').p.p_idempotency_key);
  }finally{x.close()}
 });
-test('Unapproved garments cannot be selected or sent and pending costing blocks rate approval',async()=>{
- const x=await setup();try{const old=x.ctx.rpc;x.ctx.rpc=async(n,p)=>{const j=await old(n,p);if(n==='rr_rm_chat_fast_queue_test71'){j.cards[0].approval_ready=false;j.cards[0].costing.costing_complete=false;}return j};await x.ctx.refresh();assert.ok(x.w.document.querySelector('[data-select]').disabled);assert.ok(x.w.document.querySelector('[data-approve]').disabled);assert.match(x.w.document.body.textContent,/Approval pending/)}finally{x.close()}
+test('Unapproved available garments can be selected for outside preview but internal send requires approval',async()=>{
+ const x=await setup();try{const old=x.ctx.rpc;x.ctx.rpc=async(n,p)=>{const j=await old(n,p);if(n==='rr_rm_chat_fast_queue_test71'){j.cards[0].approval_ready=false;j.cards[0].costing.costing_complete=false;}return j};await x.ctx.refresh();assert.ok(!x.w.document.querySelector('[data-select]').disabled);x.w.document.querySelector('[data-select]').click();x.w.document.querySelector('[data-send-selected]').click();await wait();assert.ok(x.w.document.querySelector('[data-outside]'));assert.match(x.w.document.querySelector('[data-body]').textContent,/Final-rate approval pending: RM1/);x.w.document.querySelector('[data-send]').click();await wait();assert.match(x.w.document.querySelector('[data-message]').textContent,/Final-rate approval pending: RM1/);assert.ok(!x.calls.some(c=>c.n==='rr_sales_collection_send_test71'));assert.ok(x.w.document.querySelector('[data-approve]').disabled);assert.match(x.w.document.body.textContent,/Approval pending/)}finally{x.close()}
 });
 test('Real Chat shell opens Readymade first, switches OPEN/WORKING, and Back returns to directory',async()=>{
  const root=path.resolve(__dirname,'../..'),html=fs.readFileSync(path.join(root,'test70-cb-purchase-real-chat-pilot.html'),'utf8').replace(/<script\b[\s\S]*?<\/script>/g,'');
@@ -82,4 +82,13 @@ test('Private Working heads respect effective Super Admin scope even when RPC pe
    if(privateRole){x.w.RR_EFFECTIVE_ROLE=()=> 'ADMIN';await x.ctx.refresh();assert.equal(d.querySelectorAll('[data-cost-load]').length,0);assert.ok(!x.calls.some(c=>c.n==='rr_rm_costing_test71'));}
   }finally{x.close()}
  }
+});
+
+test('Select all includes every available garment and carries selection into existing Market share chooser',async()=>{
+ const x=await setup();try{
+ const old=x.ctx.rpc;x.ctx.rpc=async(n,p)=>{const j=await old(n,p);if(n==='rr_rm_chat_fast_queue_test71')j.cards.push({...j.cards[0],stock_id:'s2',lot_no:'RM2',approval_ready:false},{...j.cards[0],stock_id:'s3',lot_no:'RM3',available_qty:0});return j};
+ await x.ctx.refresh();const d=x.w.document,checks=d.querySelectorAll('[data-select]');checks[1].click();assert.equal(d.querySelector('[data-count]').textContent,'1');checks[1].click();d.querySelector('[data-all]').click();assert.equal(d.querySelector('[data-count]').textContent,'2');assert.ok(checks[0].checked&&checks[1].checked);assert.ok(checks[2].disabled);
+ const u=new URL(d.querySelector('[data-market]').href);assert.equal(u.searchParams.get('share_mode'),'chooser');assert.deepEqual(u.searchParams.getAll('selected_lot'),['RM1','RM2']);
+ d.querySelector('[data-all]').click();assert.equal(d.querySelector('[data-count]').textContent,'0');checks[0].click();d.querySelector('[data-send-selected]').click();await wait();const outside=new URL(d.querySelector('[data-outside]').href);assert.deepEqual(outside.searchParams.getAll('selected_lot'),['RM1']);
+ }finally{x.close()}
 });
