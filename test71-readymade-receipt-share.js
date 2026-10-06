@@ -25,7 +25,7 @@
    const canvas=document.createElement('canvas');canvas.width=1400;canvas.height=650+chunks[page].length*790;
    const c=canvas.getContext('2d',{alpha:false});if(!c)throw Error('JPG receipt इस browser में नहीं बन सकी.');
    c.fillStyle='#fff';c.fillRect(0,0,canvas.width,canvas.height);c.fillStyle='#142738';c.fillRect(0,0,1400,150);
-   c.fillStyle='#fff';c.font='700 58px Arial';c.fillText('REDZED',60,85);c.font='28px Arial';c.fillText('SHORT / EXCESS PURCHASE RECEIPT',460,82);
+   c.fillStyle='#fff';c.font='700 58px Arial';c.fillText('REDZED',60,85);c.font='28px Arial';c.fillText('PROFORMA DR/CR NOTE',460,82);
    let y=text(c,'Purchase: '+receipt.purchase_no+'   |   Bill: '+receipt.bill_no,60,210,1280,30,true);
    y=text(c,'Supplier: '+receipt.supplier_name,60,y+8,1280);
    y=text(c,'Bill date: '+receipt.purchase_date+'   |   Receipt prepared: '+new Date(receipt.prepared_at||Date.now()).toLocaleString('en-IN',{timeZone:'Asia/Kolkata'}),60,y+8,1280,25);
@@ -47,7 +47,7 @@
    y=text(c,'Original Bill: '+amount(receipt.bill_value)+'   |   Net Supplier Payable: '+amount(receipt.received_value),60,y+65,1280,29,true);
    text(c,'Linked to original bill and purchase-rate snapshot. Page '+(page+1)+' / '+chunks.length,60,y+22,1280,22);
    const blob=await new Promise((resolve,reject)=>canvas.toBlob(b=>b?resolve(b):reject(Error('JPG receipt नहीं बनी.')),'image/jpeg',.92));
-   files.push(new File([blob],'REDZED-'+safe(receipt.purchase_no||receipt.bill_no)+'-'+(page+1)+'.jpg',{type:'image/jpeg'}));canvas.width=canvas.height=1;
+   files.push(new File([blob],'REDZED-Proforma-DR-CR-Note-'+safe(receipt.purchase_no||receipt.bill_no)+'-'+(page+1)+'.jpg',{type:'image/jpeg'}));canvas.width=canvas.height=1;
   }
   return files;
  }
@@ -73,53 +73,43 @@
   if(!files.length)throw Error('Receipt JPG अभी तैयार नहीं है.');
   return{receipt,files,urls:(receipt.files||[]).map(f=>storage.getPublicUrl(f.path).data.publicUrl)};
  }
- function attach(ctx,modal,receipt){
-  const footer=modal.querySelector('[data-footer]'),message=modal.querySelector('[data-message]');
-  const prepareButton=document.createElement('button'),shareButton=document.createElement('button'),recordButton=document.createElement('button'),links=document.createElement('div'),whatsapp=document.createElement('a'),browser=document.createElement('a');
-  prepareButton.type=shareButton.type=recordButton.type='button';prepareButton.dataset.prepareJpg='';shareButton.dataset.shareJpg='';recordButton.dataset.shareOk='';
-  prepareButton.textContent='Retry / Prepare JPG';shareButton.textContent='Send Receipt · Choose app';shareButton.disabled=true;recordButton.textContent='भेज दिया · OK';recordButton.hidden=true;
-  whatsapp.dataset.whatsappReceipt='';whatsapp.textContent='WhatsApp · Contact चुनें · Receipt link';browser.dataset.browserReceipt='';browser.textContent='Open in browser · Share JPG';for(const a of [whatsapp,browser]){a.target='_blank';a.rel='noopener noreferrer';a.hidden=true}
-  footer.dataset.receiptSend='';footer.append(shareButton,whatsapp,browser,recordButton,prepareButton,links);
-  const body=modal.querySelector('[data-body]');if(body){body.before(footer);body.before(message)}
-  if(!document.getElementById('rmReceiptSendStyle')){const style=document.createElement('style');style.id='rmReceiptSendStyle';style.textContent='[data-receipt-send]{display:grid!important;gap:9px;padding:14px!important;border:1px solid #3c8265;border-radius:12px;background:#102e25;margin-bottom:12px}[data-receipt-send]>button,[data-receipt-send]>a{box-sizing:border-box;width:100%;padding:13px!important;border-radius:9px;text-align:center;font:600 16px system-ui;text-decoration:none}[data-share-jpg]{background:#18794e!important;color:white!important;border:1px solid #58ac86!important}[data-receipt-send]>a{color:#d4f0e2;background:#173e32;border:1px solid #4c8068}[data-receipt-send] [hidden]{display:none!important}';document.head.appendChild(style)}
-  let pack=null,busy=false,pending=null,linkData=null;const urls=[];
-  const originalRemove=modal.remove.bind(modal);modal.remove=()=>{urls.forEach(url=>URL.revokeObjectURL(url));originalRemove()};
-  async function load(){
-   if(busy)return;busy=true;prepareButton.disabled=true;shareButton.disabled=true;message.textContent='Receipt JPG तैयार हो रही है…';
-   try{
-    pack=await prepare(ctx,receipt.purchase_id);if(!modal.isConnected)return;
-    urls.splice(0).forEach(url=>URL.revokeObjectURL(url));links.replaceChildren();
-    for(const file of pack.files){const url=URL.createObjectURL(file);urls.push(url);const a=document.createElement('a');a.href=url;a.download=file.name;a.textContent='Save JPG · '+file.name;a.style.display='block';links.appendChild(a)}
-    const page=new URL('test71-readymade-supplier-receipt.html',location.href);page.hash=encodeURIComponent(JSON.stringify({title:'REDZED '+pack.receipt.purchase_no,files:pack.receipt.files.map((f,i)=>({...f,url:pack.urls[i]}))}));
-    browser.href=page.href;whatsapp.href='https://wa.me/?text='+encodeURIComponent('REDZED Purchase Receipt · Bill '+pack.receipt.bill_no+'\n'+page.href);whatsapp.hidden=browser.hidden=false;
-    linkData={title:'REDZED Purchase Receipt',text:'Purchase receipt · Bill '+pack.receipt.bill_no,url:page.href};
-    shareButton.disabled=false;message.textContent='Purchase saved. अब Send Receipt दबाएँ—app picker में WhatsApp / दूसरी app चुनें. JPG share बंद हो तो Open in browser या WhatsApp Receipt link चुनें.'+(pack.receipt.last_shared_at?' Last shared: '+new Date(pack.receipt.last_shared_at).toLocaleString('en-IN',{timeZone:'Asia/Kolkata'}):'');
-   }catch(e){message.textContent=e.message||'JPG तैयार नहीं हुई. Retry JPG दबाएँ.'}finally{busy=false;prepareButton.disabled=false}
+ function proforma(receipt,photos=[]){
+  if(!receipt.lines?.length)throw Error('Proforma note के लिए garment details भरें.');
+  const canvas=document.createElement('canvas');canvas.width=1080;canvas.height=430+receipt.lines.length*600;
+  const c=canvas.getContext('2d');if(!c)throw Error('JPG इस browser में नहीं बनी.');c.fillStyle='#fff';c.fillRect(0,0,canvas.width,canvas.height);c.fillStyle='#b42335';c.fillRect(0,0,1080,130);c.fillStyle='#fff';c.font='700 44px Arial';c.fillText('REDZED',45,58);c.font='700 34px Arial';c.fillText('PROFORMA DR/CR NOTE',45,106);
+  let y=text(c,'Supplier: '+receipt.supplier_name+'   |   Bill: '+receipt.bill_no,45,185,990,26,true);y=text(c,'Bill date: '+receipt.purchase_date,45,y+8,990,24);
+  for(let i=0;i<receipt.lines.length;i++){const l=receipt.lines[i],top=y+20;c.fillStyle='#eff3f6';c.fillRect(30,top,1020,575);let yy=text(c,'Art '+(l.art_no||'—')+' · '+l.item_name,300,top+50,710,28,true);yy=text(c,'Lot '+l.lot_no+' · '+(l.category||'—')+' · '+(l.size_text||'—'),300,yy+8,710,24);
+   const img=photos[i];if(img?.complete&&img.naturalWidth){try{const scale=Math.min(230/img.naturalWidth,230/img.naturalHeight);c.drawImage(img,45,top+45,img.naturalWidth*scale,img.naturalHeight*scale)}catch{}}
+   yy=text(c,'Party Bill Qty: '+l.bill_qty+' PCS\nReceived Qty: '+l.received_qty+' PCS\nPurchase Rate: '+amount(l.purchase_rate)+' / PCS',300,yy+10,710,26);
+   yy=text(c,(l.note_type==='DEBIT_NOTE'?'SHORT · DEBIT NOTE':l.note_type==='CREDIT_NOTE'?'EXCESS · CREDIT NOTE':'MATCHED')+' · '+Math.abs(Number(l.difference_qty||0))+' PCS · '+amount(l.note_amount),45,Math.max(top+340,yy+15),990,28,true);
+   yy=text(c,'Party bill '+amount(l.bill_value)+' · Net received '+amount(l.received_value),45,yy+12,990,24);text(c,'Proforma · Linked to supplier bill; Accounts posting follows purchase confirmation.',45,yy+18,980,20);y=top+585;
   }
-  prepareButton.onclick=load;
-  const chooseExternal=()=>{if(!pack||busy||pending)return;pending=crypto.randomUUID();recordButton.hidden=false;shareButton.disabled=true;message.textContent='WhatsApp / browser खुल रहा है. भेजने के बाद वापस आकर भेज दिया · OK दबाएँ. Receipt link है; JPG attachment के लिए Open in browser चुनें.'};
-  whatsapp.onclick=browser.onclick=chooseExternal;
-  // Keep native share synchronous with this tap: never render/upload/fetch before share().
-  shareButton.onclick=()=>{
-   if(!pack||busy||pending)return;
-   const policy=document.permissionsPolicy||document.featurePolicy;
-   let payload={files:pack.files,title:'REDZED Purchase Receipt'};
-   const allowed=!(policy?.allowsFeature&&!policy.allowsFeature('web-share'));
-   let filesAllowed=allowed&&typeof navigator.share==='function';try{if(navigator.canShare)filesAllowed=filesAllowed&&navigator.canShare({files:pack.files})}catch{filesAllowed=false}
-   if(!filesAllowed)payload=linkData;
-   let supported=allowed&&typeof navigator.share==='function';try{if(navigator.canShare)supported=supported&&navigator.canShare(payload)}catch{supported=false}
-   if(!supported){whatsapp.click();return}
-   busy=true;shareButton.disabled=true;const eventId=crypto.randomUUID();let promise;
-   try{promise=navigator.share(payload)}catch(e){busy=false;shareButton.disabled=false;message.textContent='Share नहीं खुला. WhatsApp · Contact चुनें से receipt link भेजें, या Open in browser से JPG share करें.';return}
-   Promise.resolve(promise).then(()=>{pending=eventId;recordButton.hidden=false;message.textContent=(filesAllowed?'JPG':'Receipt link')+' share-picker से लौट आए. WhatsApp पर भेज दिया हो तो भेज दिया · OK दबाएँ.'},e=>{message.textContent=e?.name==='AbortError'?'Share cancel हुई. Receipt और Debit/Credit Note सुरक्षित हैं.':'Share बंद है. WhatsApp · Contact चुनें से receipt link भेजें, या Open in browser से JPG share करें.'}).finally(()=>{busy=false;shareButton.disabled=!!pending});
-  };
-    recordButton.onclick=async()=>{
-   if(!pending||busy)return;busy=true;recordButton.disabled=true;
-   try{await ctx.rpc('rr_rm_receipt_share_record_test71',{p_purchase_id:receipt.purchase_id,p_event_id:pending});pending=null;recordButton.hidden=true;message.textContent='Share record saved. इसी JPG को दोबारा भेज सकते हैं; नया Debit/Credit Note नहीं बनेगा.'}
-   catch{message.textContent='Share record save नहीं हुआ. भेज दिया · OK दोबारा दबाएँ; file दोबारा नहीं भेजी जाएगी.'}
-   finally{busy=false;recordButton.disabled=false;shareButton.disabled=!!pending}
-  };
-  load();
+  text(c,'Party bill: '+amount(receipt.bill_value)+' · Net supplier payable: '+amount(receipt.received_value),45,y+55,990,27,true);
+  const bytes=type=>{const raw=atob(canvas.toDataURL(type,.92).split(',')[1]);return Uint8Array.from(raw,ch=>ch.charCodeAt(0))};
+  const name='REDZED-Proforma-DR-CR-Note-'+safe(receipt.purchase_no||receipt.bill_no);const jpg=new File([bytes('image/jpeg')],name+'.jpg',{type:'image/jpeg'});
+  return{files:[jpg],png:()=>new File([bytes('image/png')],name+'.png',{type:'image/png'})};
  }
- window.RRReadymadeReceipt71={render,prepare,attach};
+ function shareNow(files,png){
+  if(typeof navigator.share!=='function')throw Error('इस window में image picker नहीं है. JPG save करके Gallery के Share से WhatsApp चुनें.');
+  let payloadFiles=files;
+  // Match the working CB report: start share on this tap, before any await/RPC.
+  try{if(navigator.canShare&&!navigator.canShare({files})&&png){const compatible=png();if(navigator.canShare({files:[compatible]}))payloadFiles=[compatible]}}catch{}
+  const promise=navigator.share({files:payloadFiles,title:'Proforma DR/CR Note'});
+  return Promise.resolve(promise).then(()=>({shared:true}),e=>({shared:false,error:e?.name==='AbortError'?null:e}));
+ }
+ function attach(ctx,modal,receipt,options={}){
+  const footer=modal.querySelector('[data-footer]'),message=modal.querySelector('[data-message]'),body=modal.querySelector('[data-body]');
+  const share=document.createElement('button'),retry=document.createElement('button'),links=document.createElement('div');share.type=retry.type='button';share.dataset.shareJpg='';share.textContent='Save & Send · Proforma DR/CR Note';share.disabled=true;retry.textContent='Retry JPG';retry.hidden=true;footer.append(share,retry,links);if(body)body.before(footer);
+  let pack=null,busy=false;const urls=[];const oldRemove=modal.remove.bind(modal);modal.remove=()=>{urls.forEach(u=>URL.revokeObjectURL(u));oldRemove()};
+  async function ready(){if(busy)return;busy=true;share.disabled=true;message.textContent='Proforma DR/CR Note JPG तैयार हो रही है…';try{
+   const snapshot=await ctx.rpc('rr_rm_receipt_prepare_test71',{p_purchase_id:receipt.purchase_id});const images=await Promise.all(snapshot.lines.map(async l=>{const p=await photo(l.image_url);return p}));
+   try{pack=proforma(snapshot,images.map(p=>p?.img))}finally{images.forEach(p=>{if(p)URL.revokeObjectURL(p.objectURL)})}
+   if(!modal.isConnected)return;links.replaceChildren();for(const f of pack.files){const a=document.createElement('a');a.href=URL.createObjectURL(f);urls.push(a.href);a.download=f.name;a.textContent='Save JPG · Proforma DR/CR Note';links.appendChild(a)}share.disabled=false;retry.hidden=true;message.textContent=options.shareStarted?'Purchase saved. Proforma image भेज दी हो तो यही JPG दुबारा save कर सकते हैं.':'Save & Send दबाएँ—नीचे image picker से WhatsApp/contact चुनें. JPG पर long-press करके भी Share / Save कर सकते हैं.';
+   const preview=document.createElement('img');preview.src=urls[urls.length-1];preview.alt='Proforma DR/CR Note';preview.style.width='100%';preview.dataset.proformaPreview='';body?.prepend(preview);
+  }catch(e){message.textContent=e.message||'JPG नहीं बनी. Retry दबाएँ.';retry.hidden=false}finally{busy=false}}
+  retry.onclick=ready;share.onclick=()=>{if(!pack||busy)return;busy=true;let result;try{result=shareNow(pack.files,pack.png)}catch(e){message.textContent=e.message;busy=false;return}result.then(async r=>{if(r.shared){message.textContent='Proforma image share app को दी गई. WhatsApp में contact चुनकर Send करें.';try{await prepare(ctx,receipt.purchase_id);await ctx.rpc('rr_rm_receipt_share_record_test71',{p_purchase_id:receipt.purchase_id,p_event_id:crypto.randomUUID()})}catch{message.textContent+=' Share record save नहीं हुआ; purchase सुरक्षित है.'}}else message.textContent=r.error?'Image share नहीं खुला. JPG save करें या preview पर long-press करके Share चुनें.':'Share cancel हुई. फिर से Save & Send दबा सकते हैं.'}).finally(()=>busy=false)};
+  ready();
+ }
+ async function prime(receipt){const photos=await Promise.all(receipt.lines.map(l=>photo(l.image_url||l.final_image_url)));try{return proforma(receipt,photos.map(p=>p?.img))}finally{photos.forEach(p=>{if(p)URL.revokeObjectURL(p.objectURL)})}}
+ window.RRReadymadeReceipt71={render,prepare,attach,proforma,shareNow,prime};
 })();
