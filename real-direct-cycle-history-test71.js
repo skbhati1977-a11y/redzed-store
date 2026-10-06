@@ -98,7 +98,8 @@
   if(busy||!window.RF853?.rpc||(staff&&!chatId()))return;
   busy=true;const chat=chatId(),run=++version;
   try{
-   const data=await RF853.rpc(staff?'rr_sales_collection_live_status_test71':'rr_collection_current_state_v9633',staff?{p_chat_id:chat}:{p_token:token});
+   const exactCycle=staff&&chat===q.get('chat_id')?q.get('collection_cycle_id'):null;
+   const data=await RF853.rpc(staff?(exactCycle?'rr_sales_collection_cycle_status_test71':'rr_sales_collection_live_status_test71'):'rr_collection_current_state_v9633',staff?{p_chat_id:chat,...(exactCycle?{p_collection_cycle_id:exactCycle}:{})}:{p_token:token});
    if(run!==version||(staff&&chat!==chatId()))return;
    state=data;activeChat=chat;paint();
   }catch(e){const host=panel();if(host&&(!staff||chat===chatId())){host.hidden=false;host.textContent='Live status load नहीं हुआ। दोबारा कोशिश करें।';host._html='';measure();}}
