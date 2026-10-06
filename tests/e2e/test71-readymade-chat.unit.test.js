@@ -1,0 +1,51 @@
+const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
+const {JSDOM}=require('jsdom');
+const code=fs.readFileSync(path.resolve(__dirname,'../../test71-readymade-real-chat.js'),'utf8');
+const wait=()=>new Promise(r=>setTimeout(r,25));
+async function setup(role='OWNER',status='WORKING'){
+ const dom=new JSDOM('<div id="messages"></div>',{url:'https://example.com/chat',runScripts:'outside-only'}),w=dom.window;
+ w.CSS={escape:x=>x};w.URL.createObjectURL=()=> 'blob:test';w.eval(code);
+ const calls=[],c={stock_id:'s1',lot_no:'RM1',item_name:'Shirt',category:'Polo',size_text:'L / XL',available_qty:20,received_qty:24,approved_rate:150,approval_ready:true,image_url:'https://example.com/shirt.jpg',costing:role==='OWNER'?{purchase_cost_per_pc:100,salary_per_pc:10,overhead_per_pc:18,source_rate:150,costing_complete:true}:{costing_complete:true}};
+ const s={actor:{role},status,search:'',departmentCountCache:new Map(),departments:[{department_code:'PURCHASE'},{department_code:'CUTTING'}]};
+ const rpc=async(n,p)=>{calls.push({n,p});if(n==='rr_rm_chat_queue_test71')return{can_purchase:['OWNER','ADMIN','ACCOUNTS'].includes(role),can_approve:['OWNER','ADMIN'].includes(role),cards:[c],drafts:[],categories:['Polo'],counts:{OPEN:1,WORKING:1}};
+ if(n==='rr_rm_chat_save_test71')return{purchase_id:'p1',rate_notes:[]};if(n==='rr_chat_staff_inbox_v9434')return[{chat_id:'chat1',customer_name:'Buyer <One>'}];if(n==='rr_sales_collection_cards_test71')return{context:{customer_id:'buyer1',collection_cycle_id:'cycle1',requirement_id:null},rows:[{lot_no:'RM1'}]};return{quota_delta:40,rrq_balance:500};};
+ const ctx={s,rpc,box:w.document.getElementById('messages'),owned:()=>true,changed:()=>{},notice:()=>{},refresh:()=>w.RRReadymadeChat.render(ctx)};
+ await ctx.refresh();return{w,s,calls,ctx,close:()=>w.close()};
+}
+test('Readymade is first before CB and excluded for worker scope',async()=>{
+ const x=await setup();try{x.w.RRReadymadeChat.directory(x.s);assert.deepEqual(Array.from(x.s.departments,d=>d.department_code),['READYMADE','PURCHASE','CUTTING']);x.s.actor.role='WORKER';x.w.RRReadymadeChat.directory(x.s);assert.equal(x.s.departments[0].department_code,'PURCHASE')}finally{x.close()}
+});
+test('OPEN purchase form posts canonical payload and moves to WORKING once',async()=>{
+ const x=await setup('OWNER','OPEN');try{const d=x.w.document;d.querySelector('[data-new]').click();const values={'data-supplier':'Supplier','data-bill':'B1','data-date':'2030-01-15'};for(const[k,v]of Object.entries(values))d.querySelector('['+k+']').value=v;
+ const fields={lot_no:'RM2',item_name:'Polo garment',category:'Polo',qty:'24',purchase_rate:'100',final_rate:'150',final_image_url:'https://example.com/a.jpg'};for(const[k,v]of Object.entries(fields))d.querySelector('[data-field="'+k+'"]').value=v;
+ const b=d.querySelector('[data-post]');b.click();b.click();await wait();assert.equal(x.calls.filter(c=>c.n==='rr_rm_chat_save_test71').length,1);const p=x.calls.find(c=>c.n==='rr_rm_chat_save_test71').p;assert.equal(p.p_lines[0].markup_mode,'DEFAULT_22');assert.equal(p.p_lines[0].category,'Polo');assert.equal(p.p_post,true);assert.equal(x.s.status,'WORKING');assert.ok(!d.querySelector('.rm-chat-modal'));
+ }finally{x.close()}
+});
+test('Sales sees stock balance, caption and multi-select but no costing or return controls',async()=>{
+ const x=await setup('SALES');try{const d=x.w.document;assert.match(d.body.textContent,/Available balance: 20 PCS/);assert.ok(!d.querySelector('[data-approve]'));assert.ok(!d.querySelector('[data-return]'));assert.ok(!d.body.textContent.includes('Purchase ₹'));d.querySelector('[data-select]').click();assert.equal(d.querySelector('[data-count]').textContent,'1');d.querySelector('[data-send-selected]').click();await wait();d.querySelector('[data-chat]').click();d.querySelector('[data-send]').click();await wait();const p=x.calls.find(c=>c.n==='rr_sales_collection_send_test71').p;assert.deepEqual(Array.from(p.p_lots),['RM1']);assert.equal(p.p_customer_id,'buyer1');assert.equal(p.p_collection_cycle_id,'cycle1');assert.match(d.querySelector('[data-message]').textContent,/1 sent/)}finally{x.close()}
+});
+test('Working approval updates RRQ and purchase return uses stable duplicate protection',async()=>{
+ const x=await setup();try{const d=x.w.document;d.querySelector('[data-rate]').value='152';const b=d.querySelector('[data-approve]');b.click();b.click();await wait();assert.equal(x.calls.filter(c=>c.n==='rr_rm_approve_rate_test71').length,1);assert.equal(x.calls.find(c=>c.n==='rr_rm_approve_rate_test71').p.p_final_rate,152);
+ d.querySelector('[data-return-qty]').value='2';d.querySelector('[data-return-reason]').value='Damage';const r=d.querySelector('[data-return]');r.click();r.click();await wait();assert.equal(x.calls.filter(c=>c.n==='rr_rm_purchase_return_test71').length,1);assert.equal(x.calls.find(c=>c.n==='rr_rm_purchase_return_test71').p.p_qty,2);assert.ok(x.calls.find(c=>c.n==='rr_rm_purchase_return_test71').p.p_idempotency_key);
+ }finally{x.close()}
+});
+test('Unapproved garments cannot be selected or sent and pending costing blocks rate approval',async()=>{
+ const x=await setup();try{const old=x.ctx.rpc;x.ctx.rpc=async(n,p)=>{const j=await old(n,p);if(n==='rr_rm_chat_queue_test71'){j.cards[0].approval_ready=false;j.cards[0].costing.costing_complete=false;}return j};await x.ctx.refresh();assert.ok(x.w.document.querySelector('[data-select]').disabled);assert.ok(x.w.document.querySelector('[data-approve]').disabled);assert.match(x.w.document.body.textContent,/Approval pending/)}finally{x.close()}
+});
+test('Real Chat shell opens Readymade first, switches OPEN/WORKING, and Back returns to directory',async()=>{
+ const root=path.resolve(__dirname,'../..'),html=fs.readFileSync(path.join(root,'test70-cb-purchase-real-chat-pilot.html'),'utf8').replace(/<script\b[\s\S]*?<\/script>/g,'');
+ const dom=new JSDOM(html,{url:'https://example.com/chat',runScripts:'outside-only',pretendToBeVisual:true}),w=dom.window;
+ try{
+ w.CSS={escape:x=>x};
+ w.supabaseClient={auth:{getSession:async()=>({data:{session:{user:{id:'owner1'}}}}),getUser:async()=>({data:{user:{id:'owner1'}}})},channel:()=>({on(){return this},subscribe(){return this}}),rpc:async(n)=>{
+ let data={cards:[]};if(n==='rr_real_chat_directory_v85')data={actor:{role:'OWNER',name:'Owner'},departments:[{department_code:'PURCHASE',department_name:'CB',workers:[],staff:[]},{department_code:'CUTTING',department_name:'Cutting',workers:[],staff:[]}],people:[]};
+ if(n==='rr_rm_chat_queue_test71')data={can_purchase:true,can_approve:true,cards:[],drafts:[],categories:[],counts:{OPEN:1,WORKING:0}};
+ return {data,error:null};}};
+ w.eval(code);w.eval(fs.readFileSync(path.join(root,'test70-real-chat-live-v70.js'),'utf8'));await wait();await wait();
+ assert.equal(w.document.querySelector('[data-department]').dataset.department,'READYMADE');
+ w.document.querySelector('[data-department="READYMADE"]').click();await wait();assert.ok(w.document.querySelector('[data-new]'));assert.equal(w.document.getElementById('chatName').textContent,'Readymade Garments');
+ w.document.querySelector('[data-chat-status="WORKING"]').click();await wait();assert.ok(w.document.querySelector('[data-category]'));assert.equal(w.__rrRealChatView.status,'WORKING');
+ w.document.querySelector('[data-chat-status="OPEN"]').click();await wait();assert.ok(w.document.querySelector('[data-new]'));
+ w.document.getElementById('back').click();await wait();assert.ok(!w.document.getElementById('inbox').hidden);assert.equal(w.document.querySelector('[data-department]').dataset.department,'READYMADE');
+ }finally{w.close()}
+});

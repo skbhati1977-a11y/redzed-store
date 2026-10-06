@@ -24,3 +24,13 @@ Original static suite has 100 failures on both original HEAD and changed code; f
 August 2026 existing RM lots report PENDING_MANUFACTURING_VALUE because historical manufacturing STORE_RECEIVE rows have missing/nonpositive valuations. Correct business-approved source values are required before weighted rates can be finalized. No zero substitutions or invented values applied. Business must maintain actual salary, expense and provision amounts.
 
 REAL activation/production deployment were not performed. Generic purchase-return reversal/cancellation for Readymade was not added; normal purchase-return posting is wired and tested.
+
+## Real Chat extension — 6 October 2026
+
+Readymade Garments appears first before CB for Owner/Super Admin/Admin/Accounts/Sales/Manager. OPEN includes New Purchase and saved drafts. Modal fields: Supplier/Seller, bill/date, lot/item, category, sizes, colours, cloth, art, final photo/upload, final whole PCS, purchase rate/value, optional final sales rate and caption note. Save & Confirm posts through the same purchase engine, then moves to WORKING. Entered final sales rate is approved through existing RRQ only when complete costing and Owner authority allow it; otherwise it is retained for later approval.
+
+WORKING provides image/caption cards, category filter, lot/item search, 1/2/3-column views, multi-select/Select All, existing customer collection SEND chooser, available stock balance, Owner costing/rate approval and purchase-role Return. SEND preserves collection-cycle/category/already-sent filtering and uses existing customer chat engine. Only approved in-stock garments can be selected. Return includes mandatory reason and retry key. Refresh, visibility recovery and the existing periodic refresh read canonical balances. Images/category/sizes/colours/caption mirror existing Market profiles/collection captions.
+
+Verification: 11 focused tests pass, including the complete Real Chat shell (first placement, OPEN/WORKING and Back); Readymade live rollback transaction checks pass including purchase final RRQ approval and shared caption metadata. A real active Sales identity reports can_purchase=false and private_cost_visible=false. Full suite comparison shows the same 100 baseline failures, no new failed names in that run.
+
+Visual limitation: agent-browser and Playwright Chromium could not start because the runtime denied socket creation. No live signed-in mobile visual check is claimed. jsdom checks exercise the actual HTML/JS shell; financial checks use live TEST SQL with rollback.
