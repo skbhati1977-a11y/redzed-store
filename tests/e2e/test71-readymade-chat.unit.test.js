@@ -25,7 +25,7 @@ test('Sales sees stock balance, caption and multi-select but no costing or retur
  const x=await setup('SALES');try{const d=x.w.document;assert.match(d.body.textContent,/Available balance: 20 PCS/);assert.ok(!d.querySelector('[data-approve]'));assert.ok(!d.querySelector('[data-return]'));assert.ok(!d.body.textContent.includes('Purchase ₹'));d.querySelector('[data-select]').click();assert.equal(d.querySelector('[data-count]').textContent,'1');d.querySelector('[data-send-selected]').click();await wait();d.querySelector('[data-chat]').click();d.querySelector('[data-send]').click();await wait();const p=x.calls.find(c=>c.n==='rr_sales_collection_send_test71').p;assert.deepEqual(Array.from(p.p_lots),['RM1']);assert.equal(p.p_customer_id,'buyer1');assert.equal(p.p_collection_cycle_id,'cycle1');assert.match(d.querySelector('[data-message]').textContent,/1 sent/)}finally{x.close()}
 });
 test('Working approval updates RRQ and purchase return uses stable duplicate protection',async()=>{
- const x=await setup();try{const d=x.w.document;d.querySelector('[data-rate]').value='152';const b=d.querySelector('[data-approve]');b.click();b.click();await wait();assert.equal(x.calls.filter(c=>c.n==='rr_rm_approve_rate_test71').length,1);assert.equal(x.calls.find(c=>c.n==='rr_rm_approve_rate_test71').p.p_final_rate,152);
+ const x=await setup();try{const old=x.ctx.rpc;x.ctx.rpc=async(n,p)=>{const j=await old(n,p);if(n==='rr_rm_chat_fast_queue_test71'&&!x.calls.some(c=>c.n==='rr_rm_approve_rate_test71'))j.cards[0].approval_ready=false;return j};await x.ctx.refresh();const d=x.w.document;d.querySelector('[data-rate]').value='152';const b=d.querySelector('[data-approve]');b.click();b.click();await wait();assert.equal(x.calls.filter(c=>c.n==='rr_rm_approve_rate_test71').length,1);assert.equal(x.calls.find(c=>c.n==='rr_rm_approve_rate_test71').p.p_final_rate,152);
  d.querySelector('[data-return-qty]').value='2';d.querySelector('[data-return-reason]').value='Damage';const r=d.querySelector('[data-return]');r.click();r.click();await wait();assert.equal(x.calls.filter(c=>c.n==='rr_rm_purchase_return_test71').length,1);assert.equal(x.calls.find(c=>c.n==='rr_rm_purchase_return_test71').p.p_qty,2);assert.ok(x.calls.find(c=>c.n==='rr_rm_purchase_return_test71').p.p_idempotency_key);
  }finally{x.close()}
 });
@@ -63,7 +63,7 @@ test('WORKING lists stock first and loads costing only when rate details open',a
  const x=await setup();try{
  const old=x.ctx.rpc;x.ctx.rpc=async(n,p)=>{
   if(n==='rr_rm_costing_test71'){x.calls.push({n,p});return{costing_complete:true,source_rate:150,purchase_cost_per_pc:100,salary_per_pc:10,overhead_per_pc:18}}
-  const j=await old(n,p);if(n==='rr_rm_chat_fast_queue_test71'){j.can_view_cost=true;j.cards[0].costing={costing_complete:false,frozen:false};}return j;
+  const j=await old(n,p);if(n==='rr_rm_chat_fast_queue_test71'){j.can_view_cost=true;j.cards[0].approval_ready=false;j.cards[0].costing={costing_complete:false,frozen:false};}return j;
  };
  await x.ctx.refresh();assert.equal(x.calls.filter(c=>c.n==='rr_rm_costing_test71').length,0);
  const details=x.w.document.querySelector('[data-cost-load]');details.open=true;details.dispatchEvent(new x.w.Event('toggle'));await wait();
@@ -77,7 +77,7 @@ test('Private Working heads respect effective Super Admin scope even when RPC pe
    const old=x.ctx.rpc;x.ctx.rpc=async(n,p)=>{const j=await old(n,p);if(n==='rr_rm_chat_fast_queue_test71'){j.can_view_cost=true;j.can_approve=true;}return j};
    await x.ctx.refresh();const privateRole=['OWNER','SUPER_ADMIN'].includes(role),d=x.w.document;
    assert.equal(!!d.querySelector('[data-cost-body]'),privateRole,role);
-   assert.equal(!!d.querySelector('[data-approve]'),privateRole,role);
+   assert.equal(!!d.querySelector('[data-approved-rate]'),privateRole,role);assert.ok(!d.querySelector('[data-approve]'));
    assert.match(d.body.textContent,/Available balance: 20 PCS/);
    if(privateRole){x.w.RR_EFFECTIVE_ROLE=()=> 'ADMIN';await x.ctx.refresh();assert.equal(d.querySelectorAll('[data-cost-load]').length,0);assert.ok(!x.calls.some(c=>c.n==='rr_rm_costing_test71'));}
   }finally{x.close()}
@@ -91,4 +91,12 @@ test('Select all includes every available garment and carries selection into exi
  const u=new URL(d.querySelector('[data-market]').href);assert.equal(u.searchParams.get('share_mode'),'chooser');assert.deepEqual(u.searchParams.getAll('selected_lot'),['RM1','RM2']);
  d.querySelector('[data-all]').click();assert.equal(d.querySelector('[data-count]').textContent,'0');checks[0].click();d.querySelector('[data-send-selected]').click();await wait();const outside=new URL(d.querySelector('[data-outside]').href);assert.deepEqual(outside.searchParams.getAll('selected_lot'),['RM1']);
  }finally{x.close()}
+});
+
+test('Approved reduced or increased rates stay read only across reloads',async()=>{
+ for(const rate of [125,175]){
+ const x=await setup();try{const old=x.ctx.rpc;x.ctx.rpc=async(n,p)=>{const j=await old(n,p);if(n==='rr_rm_chat_fast_queue_test71'){j.cards[0].approved_rate=rate;j.cards[0].approval_ready=true;}return j};
+ await x.ctx.refresh();await x.ctx.refresh();const d=x.w.document;assert.ok(d.querySelector('[data-approved-rate]'));assert.match(d.querySelector('[data-approved-rate]').textContent,new RegExp('₹'+rate));assert.ok(!d.querySelector('[data-rate]'));assert.ok(!d.querySelector('[data-approve]'));assert.equal(x.calls.filter(c=>c.n==='rr_rm_approve_rate_test71').length,0);
+ }finally{x.close()}
+ }
 });
