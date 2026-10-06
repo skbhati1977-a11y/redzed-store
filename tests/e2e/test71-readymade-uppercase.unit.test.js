@@ -17,3 +17,12 @@ test('Pilot loads canonical CAPS adapter before dynamic Readymade forms',()=>{
  const html=fs.readFileSync(path.join(root,'test70-cb-purchase-real-chat-pilot.html'),'utf8');assert.ok(html.indexOf('test71-business-uppercase.js')<html.indexOf('test71-readymade-real-chat.js'));
  assert.match(fs.readFileSync(path.join(root,'test71-readymade-real-chat.js'),'utf8'),/textarea data-field="caption_note" data-rr-uppercase="off"/);
 });
+test('Cursor in the middle stays there after insertion, including uppercase expansion and selection direction',()=>{
+ const dom=new JSDOM('<input>',{runScripts:'outside-only'}),w=dom.window;try{w.eval(source);const input=w.document.querySelector('input');input.value='straße polo';input.setSelectionRange(5,8,'backward');input.dispatchEvent(new w.Event('input',{bubbles:true}));assert.equal(input.value,'STRASSE POLO');assert.equal(input.selectionStart,6);assert.equal(input.selectionEnd,9);assert.equal(input.selectionDirection,'backward');
+ input.value='REDxZED';input.setSelectionRange(4,4);input.dispatchEvent(new w.Event('input',{bubbles:true}));assert.equal(input.value,'REDXZED');assert.equal(input.selectionStart,4);
+ }finally{w.close()}
+});
+test('Keyboard composition finishes before CAPS conversion and preserves the chosen edit position',()=>{
+ const dom=new JSDOM('<textarea></textarea>',{runScripts:'outside-only'}),w=dom.window;try{w.eval(source);const input=w.document.querySelector('textarea');input.dispatchEvent(new w.Event('compositionstart',{bubbles:true}));input.value='redzed';input.setSelectionRange(3,3);input.dispatchEvent(new w.Event('input',{bubbles:true}));assert.equal(input.value,'redzed');input.dispatchEvent(new w.Event('compositionend',{bubbles:true}));assert.equal(input.value,'REDZED');assert.equal(input.selectionStart,3);assert.match(w.document.head.textContent,/user-select:text!important/);
+ }finally{w.close()}
+});
