@@ -57,7 +57,8 @@
         (windowContext.categories.length ? 'Requested categories: ' + windowContext.categories.map(esc).join(' / ') : 'All categories') +
         ' · Already sent designs hidden</div>';
       if (!message.parentNode) document.getElementById('cards')?.before(message);
-      return response.rows;
+      const sent=new Set((windowContext.sent_lots||[]).map(l=>String(l).trim().toUpperCase()));
+      return response.rows.filter(r=>!sent.has(String(r.lot_no).trim().toUpperCase()));
     }
     return base(name, args);
   };

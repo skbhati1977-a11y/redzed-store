@@ -1,12 +1,12 @@
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm'),path=require('node:path');
 const {JSDOM}=require('jsdom');
 const root=path.resolve(__dirname,'../..');
-async function setup(search,recipients=[]){
+async function setup(search,recipients=[],sentLots=[]){
  const html=fs.readFileSync(path.join(root,'real-web-window-v9329.html'),'utf8').replace(/<script\b[\s\S]*?<\/script>/g,'');
  const dom=new JSDOM(html,{url:'https://example.com/real-web-window-v9329.html'+search}),w=dom.window,location={search,href:w.location.href},calls=[],timers=[];
  if(recipients.length)w.sessionStorage.setItem('rr_market_recipients_test71',JSON.stringify({ids:recipients,at:Date.now()}));
  const card=lot=>({lot_no:lot,available_qty:24,sale_rate:150,category:'Polo',size_text:'L / XL',media:[]});
- const rpc=async(name,args={})=>{calls.push({name,args});if(name==='rr_chat_staff_inbox_v9434')return [{chat_id:'A',customer_name:'Buyer A'},{chat_id:'B',customer_name:'Buyer B'}];if(name==='rr_sales_collection_cards_test71')return {context:{customer_id:'buyer-'+args.p_chat_id,collection_cycle_id:'cycle-'+args.p_chat_id,categories:[]},rows:args.p_chat_id==='A'?[card('NEW-A'),card('COMMON')]:[card('NEW-B'),card('COMMON')]};if(name==='rr_web_window_cards_v9329')return [card('ALREADY-SENT'),card('NEW-A')];if(name==='rr_market_create_share_v9420')return {token:'token'};if(name==='rr_sales_collection_send_test71')return {token:'sent',chat_message_id:'message-'+args.p_chat_id,collection_cycle_id:'cycle-'+args.p_chat_id};return {}};
+ const rpc=async(name,args={})=>{calls.push({name,args});if(name==='rr_chat_staff_inbox_v9434')return [{chat_id:'A',customer_name:'Buyer A'},{chat_id:'B',customer_name:'Buyer B'}];if(name==='rr_sales_collection_cards_test71')return {context:{customer_id:'buyer-'+args.p_chat_id,collection_cycle_id:'cycle-'+args.p_chat_id,categories:[],sent_lots:sentLots},rows:args.p_chat_id==='A'?[card('NEW-A'),card('COMMON')]:[card('NEW-B'),card('COMMON')]};if(name==='rr_web_window_cards_v9329')return [card('ALREADY-SENT'),card('NEW-A')];if(name==='rr_market_create_share_v9420')return {token:'token'};if(name==='rr_sales_collection_send_test71')return {token:'sent',chat_message_id:'message-'+args.p_chat_id,collection_cycle_id:'cycle-'+args.p_chat_id};return {}};
  const context={window:w,document:w.document,location,RF853:{rpc,mode:()=> 'TEST'},URL,URLSearchParams,Map,Set,console,Event:w.Event,CSS:{escape:x=>x},navigator:{},setTimeout:(f,ms)=>{timers.push({f,ms});return timers.length},clearTimeout(){}};
  for(const f of ['test71-readymade-market-handoff.js','real-market-customer-first-test71.js','real-web-window-v9329.js','real-web-window-share-chooser-v9510.js'])vm.runInNewContext(fs.readFileSync(path.join(root,f),'utf8'),context);
  w.document.dispatchEvent(new w.Event('DOMContentLoaded'));for(let i=0;i<4;i++)await new Promise(setImmediate);return {dom,w,location,calls,timers,context};
@@ -36,4 +36,8 @@ test('Previously loaded Readymade picker hands selected customer to Market witho
 
 test('Manufacturing and Readymade reuse the same customer context and Change customer clears it',async()=>{
  for(const from of ['READYMADE','MARKET']){const x=await setup('?share_mode=chooser&from='+from,['A']);try{assert.deepEqual(Array.from(x.w.RRMarketRecipientFirst71.recipients),['A']);assert.notEqual(x.w.document.getElementById('rrMwShare9510').style.display,'flex');assert.ok(x.calls.filter(c=>c.name==='rr_sales_collection_cards_test71').every(c=>c.args.p_chat_id==='A'));x.w.RRMarketRecipientFirst71.change();assert.equal(x.w.RRMarketCustomer71.get().length,0);}finally{x.dom.window.close()}}
+});
+
+test('Sent history hides a design even when returned with stock and no requirement; refresh clears selection and bucket',async()=>{
+ const sent=[];const x=await setup('?share_mode=chooser&recipient_chat=A&selected_lot=NEW-A',[],sent);try{const d=x.w.document;assert.ok(d.querySelector('[data-select="NEW-A"]').checked);d.getElementById('bucketBtn').click();assert.match(d.getElementById('bucketRows').textContent,/NEW-A/);sent.push('NEW-A');d.getElementById('refreshBtn').click();for(let i=0;i<4;i++)await new Promise(setImmediate);assert.ok(!d.querySelector('[data-select="NEW-A"]'));assert.equal(d.getElementById('selCount').textContent,'0 LOTS');assert.equal(d.getElementById('bucketRows').textContent,'No lot selected.');}finally{x.dom.window.close()}
 });
