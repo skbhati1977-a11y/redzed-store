@@ -100,3 +100,11 @@ test('Approved reduced or increased rates stay read only across reloads',async()
  }finally{x.close()}
  }
 });
+
+test('Send on any Working card sends the full selection and all count badges stay in sync',async()=>{
+ const x=await setup('SALES');try{
+ const old=x.ctx.rpc;x.ctx.rpc=async(n,p)=>{const j=await old(n,p);if(n==='rr_rm_chat_fast_queue_test71')j.cards.push({...j.cards[0],stock_id:'s2',lot_no:'RM2'});if(n==='rr_sales_collection_cards_test71')j.rows.push({lot_no:'RM2'});return j};await x.ctx.refresh();const d=x.w.document;
+ assert.equal(d.querySelectorAll('.rm-chat-card [data-send-selected]').length,2);d.querySelector('[data-all]').click();assert.ok([...d.querySelectorAll('[data-count]')].every(n=>n.textContent==='2'));
+ d.querySelectorAll('.rm-chat-card [data-send-selected]')[1].click();await wait();assert.match(d.querySelector('[data-body]').textContent,/2 selected garments/);d.querySelector('[data-chat]').click();d.querySelector('[data-send]').click();await wait();assert.deepEqual(Array.from(x.calls.find(c=>c.n==='rr_sales_collection_send_test71').p.p_lots),['RM1','RM2']);
+ }finally{x.close()}
+});
