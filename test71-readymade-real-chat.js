@@ -35,7 +35,25 @@
   }
   function purchase(ctx,draft=null) {
     const m=modal(draft?'Continue Readymade Purchase':'New Readymade Purchase'),body=m.querySelector('[data-body]'),msg=m.querySelector('[data-message]');let pid=draft?.purchase_id||null;
-    body.innerHTML=`<div class="rm-fields"><label>Supplier / Seller *<input data-supplier value="${esc(draft?.supplier_name||'')}"></label><label>Supplier bill number *<input data-bill value="${esc(draft?.bill_no||'')}"></label><label>Purchase / bill date *<input data-date type="date" value="${esc(draft?.purchase_date||new Date().toLocaleDateString('en-CA',{timeZone:'Asia/Kolkata'}))}"></label></div><div data-lines></div><button type="button" data-add>Add garment</button><p>Final rate follows existing monthly weighted costing and RRQ approval. Missing costing stays pending. ${['OWNER','SUPER_ADMIN'].includes(roleOf(ctx.s))?'Owner margin remains ₹22/PCS.':''}</p>`;
+    body.innerHTML=`<div class="rm-fields"><label>Supplier / Seller *<select data-supplier disabled><option value="">Loading existing suppliers…</option></select></label><label>Supplier bill number *<input data-bill value="${esc(draft?.bill_no||'')}"></label><label>Purchase / bill date *<input data-date type="date" value="${esc(draft?.purchase_date||new Date().toLocaleDateString('en-CA',{timeZone:'Asia/Kolkata'}))}"></label></div><div data-lines></div><button type="button" data-add>Add garment</button><p>Final rate follows existing monthly weighted costing and RRQ approval. Missing costing stays pending. ${['OWNER','SUPER_ADMIN'].includes(roleOf(ctx.s))?'Owner margin remains ₹22/PCS.':''}</p>`;
+    const supplierSelect=body.querySelector('[data-supplier]');
+    let supplierNames=new Set();
+    async function loadSuppliers(){
+      supplierSelect.disabled=true;
+      try{
+        const result=await ctx.s.db.from('rr_suppliers').select('id,supplier_name').eq('is_active',true).order('supplier_name');
+        if(result.error)throw result.error;
+        const rows=(result.data||[]).filter(x=>String(x.supplier_name||'').trim());
+        supplierNames=new Set(rows.map(x=>x.supplier_name));
+        supplierSelect.innerHTML='<option value="">Select existing supplier</option>'+rows.map(x=>`<option value="${esc(x.supplier_name)}">${esc(x.supplier_name)}</option>`).join('');
+        supplierSelect.value=supplierNames.has(draft?.supplier_name)?draft.supplier_name:'';
+        supplierSelect.disabled=false;
+        if(!rows.length)msg.textContent='No active suppliers in Supplier Master.';
+        else if(draft?.supplier_name&&!supplierNames.has(draft.supplier_name))msg.textContent='Saved supplier is inactive or unavailable. Select an active supplier.';
+      }catch(e){msg.textContent='Supplier list could not load. Tap Retry suppliers.';supplierSelect.innerHTML='<option value="">Suppliers unavailable</option>';}
+    }
+    const retry=document.createElement('button');retry.type='button';retry.textContent='Retry suppliers';retry.dataset.retrySuppliers='';retry.onclick=()=>loadSuppliers();supplierSelect.parentElement.appendChild(retry);
+    loadSuppliers();
     const lines=body.querySelector('[data-lines]');(draft?.lines?.length?draft.lines:[{}]).forEach(x=>lines.insertAdjacentHTML('beforeend',lineMarkup(x)));
     body.querySelector('[data-add]').onclick=()=>lines.insertAdjacentHTML('beforeend',lineMarkup());
     body.addEventListener('click',e=>{if(e.target.closest('[data-remove]')&&lines.children.length>1)e.target.closest('.rm-chat-line').remove()});
@@ -45,7 +63,8 @@
     async function save(post,button) {
       await action(button,msg,async()=>{
         const supplier=body.querySelector('[data-supplier]').value.trim(),bill=body.querySelector('[data-bill]').value.trim(),date=body.querySelector('[data-date]').value;
-        if(!supplier||!bill||!date)throw Error('Supplier, bill number and date required.');
+        if(supplierSelect.disabled||!supplierNames.has(supplier))throw Error('Select an existing active supplier from the dropdown.');
+        if(!bill||!date)throw Error('Supplier bill number and date required.');
         const payload=[];
         for(const row of lines.children){
           const x=Object.fromEntries([...row.querySelectorAll('[data-field]')].map(i=>[i.dataset.field,i.value.trim()]));x.qty=Number(x.qty);x.purchase_rate=Number(x.purchase_rate);x.final_rate=x.final_rate===''?null:Number(x.final_rate);x.markup_mode='DEFAULT_22';
