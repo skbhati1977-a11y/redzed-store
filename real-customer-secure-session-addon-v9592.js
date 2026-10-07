@@ -133,11 +133,17 @@
     });}finally{code.value='';modal.remove();}
   }
 
+  function approvalCardLink(requestId) {
+    const link=new URL('https://glorious-halibut-5vvvx96x4j69f76xx-8000.app.github.dev/test70-cb-purchase-real-chat-pilot.html');
+    for(const [key,value] of Object.entries({rc_login_request:requestId,source:'customer_whatsapp_approval',v:'TEST71',rc_status:'OPEN',rc_view:'chat',rc_kind:'group',rc_id:'ADMIN',rc_parent:'ADMIN'}))link.searchParams.set(key,value);
+    return link.href;
+  }
+
   async function chooseVerification(identity,trustedDevice,args) {
     const modal=document.createElement('div');modal.id='rrCustomerVerificationChoice71';
     modal.setAttribute('role','dialog');modal.setAttribute('aria-modal','true');
     modal.style.cssText='position:fixed;inset:0;z-index:2147483647;background:#050a10;display:grid;place-items:center;padding:18px;color:#fff;font-family:system-ui';
-    modal.innerHTML='<section style="width:min(420px,100%);padding:22px;background:#121c29;border-radius:16px"><b>VERIFY REGISTERED NUMBER</b><p>WhatsApp पर request code भेजें। Admin sender नंबर जाँचकर device approve करेगा। यह manual verification है।</p><button data-verification-wa>VERIFY VIA WHATSAPP</button><p>SMS OTP के लिए SMS service configured होना जरूरी है।</p><button data-verification-sms>USE SMS OTP</button><button data-verification-cancel>CANCEL</button><p data-verification-error role="status"></p></section>';
+    modal.innerHTML='<section style="width:min(420px,100%);padding:22px;background:#121c29;border-radius:16px"><b>VERIFY REGISTERED NUMBER</b><p>WhatsApp पर request code भेजें। Admin sender नंबर जाँचकर device approve करेगा। यह manual verification है।</p><button data-verification-wa>VERIFY VIA WHATSAPP</button><p hidden>SMS OTP के लिए SMS service configured होना जरूरी है।</p><button data-verification-sms hidden>USE SMS OTP</button><button data-verification-cancel>CANCEL</button><p data-verification-error role="status"></p></section>';
     document.body.appendChild(modal);
     try{return await new Promise((resolve,reject)=>{
       let busy=false;
@@ -152,7 +158,7 @@
           try{
             const request=await run();
             if(whatsapp&&request.whatsapp_code){
-              const text=`Redzed TEST71 device login verification\nCustomer: ${request.customer_name||identity.name}\nRegistered number: ${identity.mobile}\nRequest: ${request.request_id}\nCode: ${request.whatsapp_code}\nPlease check my actual WhatsApp sender number and approve this device manually.`;
+              const text=`Redzed TEST71 device login verification\nCustomer: ${request.customer_name||identity.name}\nRegistered number: ${identity.mobile}\nRequest: ${request.request_id}\nCode: ${request.whatsapp_code}\nPlease check my actual WhatsApp sender number and approve this device manually.\n\nCustomer card खोलें · Discount / Approve:\n${approvalCardLink(request.request_id)}`;
               const url=`https://wa.me/${request.whatsapp_destination}?text=${encodeURIComponent(text)}`;
               if(target){target.location.replace(url);handedOff=true;}
               const button=modal.querySelector('[data-verification-wa]');
@@ -190,7 +196,7 @@
       const details=document.createElement('p');details.style.whiteSpace='pre-line';
       details.textContent=`WhatsApp manual verification\nCode: ${request.whatsapp_code}\nअपने registered WhatsApp नंबर ${identity.mobile} से भेजें। Admin वास्तविक sender नंबर जाँचकर इसी device को approve करेगा।\nCode expiry: ${new Date(request.whatsapp_expires_at).toLocaleString()}`;
       const link=document.createElement('a');link.textContent='OPEN WHATSAPP & SEND REQUEST';link.target='_blank';link.rel='noopener noreferrer';link.style.color='#9ed5ff';
-      const text=`Redzed TEST71 device login verification\nCustomer: ${request.customer_name||identity.name}\nRegistered number: ${identity.mobile}\nRequest: ${request.request_id}\nCode: ${request.whatsapp_code}\nPlease check my actual WhatsApp sender number and approve this device manually.`;
+      const text=`Redzed TEST71 device login verification\nCustomer: ${request.customer_name||identity.name}\nRegistered number: ${identity.mobile}\nRequest: ${request.request_id}\nCode: ${request.whatsapp_code}\nPlease check my actual WhatsApp sender number and approve this device manually.\n\nCustomer card खोलें · Discount / Approve:\n${approvalCardLink(request.request_id)}`;
       link.href=`https://wa.me/${request.whatsapp_destination}?text=${encodeURIComponent(text)}`;
       whatsappBox.append(details,link);message?.parentElement?.appendChild(whatsappBox);
     }

@@ -26,9 +26,9 @@ test('Admin manual approval requires separate actual sender and received code in
  const dom=new JSDOM('<body><header></header></body>',{url:'https://example.test/admin.html',runScripts:'outside-only'}),w=dom.window;
  const calls=[];w.RF853={rpc:async(name,args)=>{calls.push([name,args]);if(name==='rr_customer_permission_cards_test71')return [{customer_id:'c1',customer_name:'Customer',registered_mobile:'9000000000',devices:[{request_id:'r1',status:'PENDING',otp_verified:false,whatsapp_pending:true}]}];return {};}};
  w.setInterval=()=>0;w.eval(fs.readFileSync('real-customer-login-approvals-test71.js','utf8'));await tick();await tick();
- w.document.querySelector('#rrCustomerLoginApprovals71').click();await tick();w.document.querySelector('[data-whatsapp-approve]').click();
- const sender=w.document.querySelector('[data-wa-sender]'),code=w.document.querySelector('[data-wa-code]');assert.equal(sender.value,'');assert.equal(code.value,'');
- w.document.querySelector('[data-wa-confirm]').click();await tick();assert(!calls.some(([name])=>name==='rr_customer_whatsapp_approve_test71'));
- sender.value='+919000000000';code.value='ABCDEF1234567890';w.document.querySelector('[data-wa-confirm]').click();await tick();
+ w.document.querySelector('#rrCustomerLoginApprovals71').click();await tick();
+ const sender=w.document.querySelector('[data-wa-sender]'),code=w.document.querySelector('[data-wa-code]');assert.equal(sender.value,'');assert.equal(code.value,'');assert.equal(w.document.querySelector('#rrWhatsappManualApproval71'),null);
+ w.document.querySelector('[data-whatsapp-approve]').click();await tick();assert(!calls.some(([name])=>name==='rr_customer_whatsapp_approve_test71'));
+ sender.value='+919000000000';code.value='ABCDEF1234567890';w.document.querySelector('[data-whatsapp-approve]').click();await tick();
  const approval=calls.find(([name])=>name==='rr_customer_whatsapp_approve_test71');assert.deepEqual(JSON.parse(JSON.stringify(approval[1])),{p_request_id:'r1',p_observed_sender_mobile:'+919000000000',p_received_code:'ABCDEF1234567890'});dom.window.close();
 });
