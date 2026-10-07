@@ -1,0 +1,6 @@
+const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
+const source=fs.readFileSync('s.html','utf8');
+function fixture(){const start=source.indexOf('          const retryCustomerStartup ='),end=source.indexOf('          const relation =',start),boot={};const ctx={document:{getElementById:()=>boot},setTimeout:fn=>fn()};vm.runInNewContext(source.slice(start,end)+'\nthis.retry=retryCustomerStartup;',ctx);return ctx;}
+test('transient relation timeout retries with a fixed limit and uses actual result',async()=>{const f=fixture();let calls=0;const result=await f.retry(async()=>{if(++calls<3)throw {code:'57014',message:'canceling statement due to statement timeout'};return 'DISTRIBUTOR_CUSTOMER';});assert.equal(calls,3);assert.equal(result,'DISTRIBUTOR_CUSTOMER');});
+test('persistent timeout cannot loop forever or invent a customer authority',async()=>{const f=fixture();let calls=0;await assert.rejects(f.retry(async()=>{calls++;throw Error('statement timeout');}),/timeout/);assert.equal(calls,3);});
+test('authorization errors are not retried',async()=>{const f=fixture();let calls=0;await assert.rejects(f.retry(async()=>{calls++;throw Error('Super Admin approval required');}),/approval/);assert.equal(calls,1);});

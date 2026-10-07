@@ -87,10 +87,21 @@
           await loadScript("real-common.js?v=9668");
           await loadScript("rf-v853-core.js?v=9668");
 
+          const retryCustomerStartup = async (run) => {
+            for (let attempt = 0; ; attempt++) {
+              try { return await run(); }
+              catch (error) {
+                const transient = error?.code === '57014' || /statement timeout|failed to fetch|networkerror/i.test(error?.message || '');
+                if (!transient || attempt >= 2) throw error;
+                document.getElementById('customerBoot').textContent = 'कनेक्शन में देरी है। Chat फिर से खोल रहे हैं…';
+                await new Promise(resolve => setTimeout(resolve, 1000 * (attempt + 1)));
+              }
+            }
+          };
           const relation = token
-            ? await RF853.rpc("rr_market_share_relation_v81", {
+            ? await retryCustomerStartup(() => RF853.rpc("rr_market_share_relation_v81", {
                 p_token: token,
-              })
+              }))
             : "REDZED_CUSTOMER";
           // A customer session belongs to one share link only.  The legacy
           // direct flow stored it globally, which allowed a distributor link
@@ -168,11 +179,19 @@
           };
           start();
         } catch (error) {
-          document.getElementById("customerBoot").textContent =
-            error.message || "Collection could not open.";
+          const boot = document.getElementById("customerBoot");
+          if (boot) {
+            boot.textContent = /statement timeout|failed to fetch|networkerror/i.test(error?.message || '')
+              ? 'सर्वर से जवाब मिलने में देरी हुई। कृपया दोबारा खोलें।'
+              : 'Chat अभी नहीं खुल सकी। कृपया दोबारा खोलें।';
+            const retry = document.createElement('button');
+            retry.type = 'button';retry.textContent = 'दोबारा खोलें';
+            retry.style.cssText = 'display:block;margin:18px auto;padding:12px 20px;border-radius:10px;font-size:16px';
+            retry.onclick = () => { retry.disabled = true; location.reload(); };
+            boot.appendChild(retry);
+          }
         }
       })();
     </script>
   </body>
 </html>
-
