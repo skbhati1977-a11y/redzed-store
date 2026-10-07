@@ -143,7 +143,29 @@
       let busy=false;
       modal.querySelector('[data-verification-cancel]').onclick=()=>{if(!busy)reject(Error('Verification cancelled. Chat locked है।'));};
       for(const [selector,run] of [['[data-verification-wa]',()=>rpc('rr_customer_whatsapp_request_test71',args)],['[data-verification-sms]',()=>verifyPhoneOtp(identity,trustedDevice)]]){
-        modal.querySelector(selector).onclick=async()=>{if(busy)return;busy=true;modal.querySelectorAll('button').forEach(b=>b.disabled=true);try{resolve(await run());}catch(error){modal.querySelector('[data-verification-error]').textContent=error.message;}finally{busy=false;modal.querySelectorAll('button').forEach(b=>b.disabled=false);}};
+        modal.querySelector(selector).onclick=async()=>{
+          if(busy)return;busy=true;
+          const whatsapp=selector==='[data-verification-wa]';
+          // Reserve the window in the original tap so mobile popup blockers do not intercept the RPC response.
+          const target=whatsapp?window.open('about:blank','_blank'):null;let handedOff=false;
+          modal.querySelectorAll('button').forEach(b=>b.disabled=true);
+          try{
+            const request=await run();
+            if(whatsapp&&request.whatsapp_code){
+              const text=`Redzed TEST71 device login verification\nCustomer: ${request.customer_name||identity.name}\nRegistered number: ${identity.mobile}\nRequest: ${request.request_id}\nCode: ${request.whatsapp_code}\nPlease check my actual WhatsApp sender number and approve this device manually.`;
+              const url=`https://wa.me/${request.whatsapp_destination}?text=${encodeURIComponent(text)}`;
+              if(target){target.location.replace(url);handedOff=true;}
+              const button=modal.querySelector('[data-verification-wa]');
+              request.inline_whatsapp=true;
+              const waiting=waitForApproval(request,{...identity,modal,error:modal.querySelector('[data-verification-error]')},trustedDevice);
+              button.disabled=false;button.textContent='SEND VIA WHATSAPP';button.onclick=()=>window.open(url,'_blank','noopener');
+              modal.querySelector('[data-verification-sms]').hidden=true;
+              await waiting;
+              resolve({...request,approval_status:'APPROVED'});
+            }else{target?.close();resolve(request);}
+          }catch(error){if(!handedOff)target?.close();modal.querySelector('[data-verification-error]').textContent=error.message;}
+          finally{busy=false;modal.querySelectorAll('button').forEach(b=>b.disabled=false);}
+        };
       }
     });}finally{modal.remove();}
   }
@@ -163,7 +185,7 @@
     if(message){message.setAttribute?.('role','status');message.setAttribute?.('aria-live','polite');message.style.whiteSpace='pre-line';}
     modal.querySelectorAll('input,button').forEach(el=>el.disabled=true);
     let whatsappBox=null;
-    if(request.whatsapp_code){
+    if(request.whatsapp_code&&!request.inline_whatsapp){
       whatsappBox=document.createElement('div');whatsappBox.dataset.whatsappVerification='true';
       const details=document.createElement('p');details.style.whiteSpace='pre-line';
       details.textContent=`WhatsApp manual verification\nCode: ${request.whatsapp_code}\nअपने registered WhatsApp नंबर ${identity.mobile} से भेजें। Admin वास्तविक sender नंबर जाँचकर इसी device को approve करेगा।\nCode expiry: ${new Date(request.whatsapp_expires_at).toLocaleString()}`;
@@ -208,9 +230,9 @@
     };
     let result = await rpc("rr_customer_session_issue_bound_v9680", args);
     if(result?.approval_status==='OTP_REQUIRED')result=await chooseVerification(identity,trustedDevice,args);
-    else if(result?.whatsapp_pending)result=await rpc('rr_customer_whatsapp_request_test71',args);
+    else if(result?.whatsapp_pending)result=await chooseVerification(identity,trustedDevice,args);
     if(result?.approval_status && !result.session_token){
-      await waitForApproval(result,identity,trustedDevice);
+      if(result.approval_status!=='APPROVED')await waitForApproval(result,identity,trustedDevice);
       result=await rpc('rr_customer_session_issue_bound_v9680',args);
     }
     if(!result?.session_token)throw Error('Super Admin approval required for this device.');

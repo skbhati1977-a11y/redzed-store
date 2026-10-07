@@ -3,7 +3,7 @@ const source=fs.readFileSync('real-customer-secure-session-addon-v9592.js','utf8
 const tick=()=>new Promise(setImmediate);
 test('WhatsApp link and code do not unlock login before validated Admin approval',async()=>{
  const dom=new JSDOM('<body></body>',{url:'https://example.test/s.html?t=share',runScripts:'outside-only'}),w=dom.window;
- let issues=0,approve;const calls=[];
+ let issues=0,approve,openedUrl;const calls=[];w.open=()=>({location:{replace:url=>openedUrl=url},close(){}});
  w.RF853={rpc:async(name,args)=>{calls.push([name,args]);
   if(name==='rr_customer_session_issue_bound_v9680')return ++issues===1?{approval_status:'OTP_REQUIRED'}:{session_token:'approved-server-session'};
   if(name==='rr_customer_whatsapp_request_test71')return {request_id:'request-1',approval_status:'PENDING',customer_name:'Canonical Customer',whatsapp_code:'ABCDEF1234567890',whatsapp_destination:'919654401954',whatsapp_expires_at:new Date(Date.now()+900000).toISOString()};
@@ -14,11 +14,11 @@ test('WhatsApp link and code do not unlock login before validated Admin approval
  const realTimeout=w.setTimeout;w.setTimeout=fn=>realTimeout(fn,0);
  w.eval(source.replace('  const invalidSession =','  window.test={issue};\n  const invalidSession ='));
  const pending=w.test.issue({name:'Customer',mobile:'9000000000'},'trusted-device-12345678901234567890');
- await tick();await w.document.querySelector('[data-verification-wa]').onclick();await new Promise(resolve=>setTimeout(resolve,15));
- const link=w.document.querySelector('[data-whatsapp-verification] a');assert(link);assert.equal(new URL(link.href).hostname,'wa.me');assert.match(decodeURIComponent(new URL(link.href).search),/ABCDEF1234567890/);
+ await tick();const click=w.document.querySelector('[data-verification-wa]').onclick();await new Promise(resolve=>setTimeout(resolve,15));
+ assert.equal(new URL(openedUrl).hostname,'wa.me');assert.match(decodeURIComponent(new URL(openedUrl).search),/ABCDEF1234567890/);assert.equal(w.document.querySelector('#rrSecureApprovalWaiting71'),null);assert(w.document.querySelector('#rrCustomerVerificationChoice71'));assert.equal(w.document.querySelector('[data-verification-wa]').disabled,false);
  assert.equal(w.localStorage.getItem('rr_customer_secure_session_v9592'),null);
  assert(!calls.some(([name])=>name==='rr_customer_whatsapp_approve_test71'));
- approve();await pending;
+ approve();await click;await pending;
  assert.equal(JSON.parse(w.localStorage.getItem('rr_customer_secure_session_v9592')).session_token,'approved-server-session');
  assert(calls.some(([name])=>name==='rr_customer_session_validate_v9590'));assert.equal(w.document.querySelector('[data-whatsapp-verification]'),null);dom.window.close();
 });
