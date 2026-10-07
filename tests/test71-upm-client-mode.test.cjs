@@ -1,0 +1,5 @@
+const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
+const source=fs.readFileSync('config.js','utf8'),start=source.indexOf('const test71UpmRequest='),end=source.indexOf(';window.supabaseClient=',start);
+for(const [host,path,search,marked] of [['test71-workspace.app.github.dev','/test70-accept-work-v205.html','',true],['test71-workspace.app.github.dev','/real-universal-production-v770-v9059.html','?mode=TEST',true],['test71-workspace.app.github.dev','/real-universal-production-v770-v9059.html','?mode=REAL',false],['production.example','/test70-cb-purchase-real-chat-pilot.html','',false]])test('UPM client scope '+host+path+search,()=>{
+ let options;vm.runInNewContext(source.slice(start,end)+';', {location:{hostname:host,pathname:path,search},URLSearchParams,SUPABASE_URL:'https://example.test',SUPABASE_ANON_KEY:'test',window:{supabase:{createClient:(url,key,opts)=>(options=opts,{})}}});assert.equal(options.global?.headers?.['x-client-info'],marked?'redzed-test71':undefined);assert.equal(options.auth.persistSession,true);
+});

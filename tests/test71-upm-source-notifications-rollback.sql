@@ -10,6 +10,10 @@ declare a record;r public.rr_upm_assignment_receipts_v9112%rowtype;q public.rr_u
 begin
  select worker_id,linked_auth_user_id into owner_id,owner_auth from public.rr_worker_directory_unified_v1 where upper(role_code)='OWNER' and is_active limit 1;
  perform set_config('request.jwt.claim.sub',owner_auth::text,true);
+ perform set_config('request.headers','{"origin":"https://test71-workspace.app.github.dev","x-client-info":"redzed-test71"}',true);
+ if not rr_chat_notifications_test71.test_request() then raise exception 'Codespaces TEST marker rejected';end if;
+ perform set_config('request.headers','{"origin":"https://test71-workspace.app.github.dev"}',true);
+ if rr_chat_notifications_test71.test_request() then raise exception 'Unmarked Codespaces REAL accepted';end if;
  -- Every mapped department and every linked worker/staff identity: authorized
  -- members/global admins receive the notice; outsiders and the actor do not.
  perform set_config('request.headers','{"origin":"https://redzed-test65-git-test71-real-chat-e2e-6adad3-skbhati1977-4414.vercel.app"}',true);

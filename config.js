@@ -7,7 +7,9 @@
 const SUPABASE_URL="https://hruartsemierwhtzonei.supabase.co";
 const SUPABASE_ANON_KEY="sb_publishable_uo3dcrFuRvGsvRzPcdTV0A_5ZVwgzga";
 const CFG=Object.seal({SETTINGS:{},WHATSAPP:[],DEFAULT_WHATSAPP:null});
-const supabaseClient=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});window.supabaseClient=supabaseClient;window.supabaseDb=supabaseClient;window.redzedSupabase=supabaseClient;window.sb=supabaseClient;
+// Codespaces TEST actions carry an allowed client-info marker for TEST71 UPM triggers.
+const test71UpmRequest=location.hostname.endsWith('.app.github.dev')&&(/^\/test70-/.test(location.pathname)||new URLSearchParams(location.search).get('mode')==='TEST');
+const supabaseClient=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true},...(test71UpmRequest?{global:{headers:{'x-client-info':'redzed-test71'}}}:{})});window.supabaseClient=supabaseClient;window.supabaseDb=supabaseClient;window.redzedSupabase=supabaseClient;window.sb=supabaseClient;
 // Supabase may fall back to the configured Site URL when a recovery redirect is
 // not allow-listed.  Keep the verified recovery session, but move it to the
 // dedicated password form instead of leaving the user on the application shell.

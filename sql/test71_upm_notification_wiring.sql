@@ -8,6 +8,7 @@ alter table rr_chat_notifications_test71.inbox add column if not exists chat_sta
 create or replace function rr_chat_notifications_test71.test_request() returns boolean
 language sql stable set search_path='' as $$
  select coalesce(current_setting('rr_chat_notifications_test71.test_run',true),'')='on'
+ or (nullif(current_setting('request.headers',true),'')::jsonb->>'x-client-info'='redzed-test71' and coalesce(nullif(current_setting('request.headers',true),'')::jsonb->>'origin',nullif(current_setting('request.headers',true),'')::jsonb->>'referer','') ~ '^https://[^/]+\.app\.github\.dev(/|$)')
  -- Cross-origin Supabase requests normally carry an origin-only referrer.
  or coalesce(nullif(current_setting('request.headers',true),'')::jsonb->>'origin',nullif(current_setting('request.headers',true),'')::jsonb->>'referer','') ~ '^https://[^/]*git-test71-[^/]*\.vercel\.app(/|$)'
  or coalesce(nullif(current_setting('request.headers',true),'')::jsonb->>'referer','') ~ '^https://([^/]+\.app\.github\.dev|[^/]*git-test71-[^/]*\.vercel\.app)/(test70-cb-purchase-real-chat-pilot\.html|[^?]+\?[^#]*mode=TEST)';
