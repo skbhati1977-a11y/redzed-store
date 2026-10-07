@@ -1,6 +1,6 @@
 (()=>{'use strict';
  if(window.RRChatNotifications71)return;
- let notices=[],customers=[],busy=false,reading=false,focusDone=false;
+ let notices=[],customers=[],busy=false,reading=false,focusDone=false,focusedNotice=null;
  const ready=()=>!!(window.RF853?.rpc||window.supabaseClient?.rpc);
  async function rpc(name,args={}){if(window.RF853?.rpc)return window.RF853.rpc(name,args);const db=window.supabaseClient;if(!db?.rpc)throw Error('Chat connection loading');const {data,error}=await db.rpc(name,args);if(error)throw error;return data;}
  const q=new URLSearchParams(location.search),noticeId=q.get('rc_notice'),bridgeId=q.get('rc_bridge');
@@ -9,6 +9,8 @@
  function bubble(host,n,key){if(!host)return;let b=host.querySelector('[data-unread-bubble="'+key+'"]');if(!n){b?.remove();return}if(!b){b=document.createElement('span');b.className='rrMsgBubble71';b.dataset.unreadBubble=key;host.appendChild(b)}const value=String(n);if(b.textContent!==value)b.textContent=value;b.setAttribute('aria-label',value+' unread messages')}
  const belongs=(n,worker)=>Array.isArray(n.worker_ids)&&n.worker_ids.some(id=>id&&String(id)===String(worker));
  function paint(){
+  if(focusedNotice){const node=target(focusedNotice);if(node)node.classList.add('rrNoticeFocus71')}
+
   const byDept=new Map();for(const n of notices)byDept.set(n.department_code,(byDept.get(n.department_code)||0)+1);
   const customerTotal=customers.reduce((n,x)=>n+Number(x.unread_count||0),0);
   // Customer conversations belong to the Sales customer-chat engine, not work-card counts.
@@ -35,8 +37,9 @@
  async function visible(){if(reading||document.hidden||!ready())return;
   const context=window.RRAdminApprovalHost71?.context(),chat=document.getElementById('chat');if(!context||chat?.hidden||!['group','person'].includes(context.kind))return;
   const shown=notices.filter(n=>{const u=new URL(n.route_url,location.href);return n.department_code===String(context.parentDepartment||context.id||'').toUpperCase()&&(context.kind!=='person'||belongs(n,context.id))&&u.searchParams.get('rc_status')===context.status&&target(n)});
-  const focus=shown.find(n=>n.id===noticeId||bridgeId&&String(n.bridge_id)===bridgeId);
-  if(focus&&!focusDone){const node=target(focus);const closed=node.closest?.('details');if(closed)closed.open=true;node.setAttribute('tabindex','-1');node.classList.add('rrNoticeFocus71');node.scrollIntoView({block:'center',behavior:'auto'});node.focus({preventScroll:true});focusDone=true;}
+  const pinned=(q.get('rc_assignment')||q.get('rc_submit'))&&q.get('rc_parent')===String(context.parentDepartment||context.id||'').toUpperCase()&&q.get('rc_status')===context.status?{assignment_id:q.get('rc_assignment'),submit_request_id:q.get('rc_submit'),route_url:location.href}:null;
+  const focus=shown.find(n=>n.id===noticeId||bridgeId&&String(n.bridge_id)===bridgeId)||(pinned&&target(pinned)?pinned:null);
+  if(focus&&!focusDone){focusedNotice=focus;const node=target(focus);const closed=node.closest?.('details');if(closed)closed.open=true;node.setAttribute('tabindex','-1');node.classList.add('rrNoticeFocus71');node.scrollIntoView({block:'center',behavior:'auto'});node.focus({preventScroll:true});focusDone=true;}
   // Read only cards actually in the viewport; opening a department does not clear unseen cards.
   const ids=shown.filter(n=>{const r=target(n).getBoundingClientRect(),box=chat.getBoundingClientRect();return r.top<box.bottom&&r.bottom>box.top}).map(n=>n.id);
   if(!ids.length)return;reading=true;try{await rpc('rr_chat_notification_read_test71',{p_ids:ids});notices=notices.filter(n=>!ids.includes(n.id));navigator.serviceWorker?.controller?.postMessage({type:'RZ_NOTICE_READ71',ids});paint()}catch(e){console.warn('Chat read status unavailable',e)}finally{reading=false}

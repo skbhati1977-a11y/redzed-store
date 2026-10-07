@@ -20,7 +20,7 @@ declare w record;dep text:=public.rr_real_chat_canonical_department_v83(p_depart
 begin
  if not rr_chat_notifications_test71.test_request() or dep is null or dep='' then return;end if;
  select array_agg(distinct x) into p_workers from (select unnest(p_workers) x union select public.rr_canonical_worker_id_v264(unnest(p_workers))) ids where x is not null;
- route:='test70-cb-purchase-real-chat-pilot.html?rc_view=chat&rc_kind=group&rc_id='||dep||'&rc_parent='||dep||'&rc_status='||p_state;
+ route:='test70-cb-purchase-real-chat-pilot.html?rc_view=chat&rc_kind=group&rc_id='||dep||'&rc_parent='||dep||'&rc_status='||p_state||case when p_assignment is not null then '&rc_assignment='||p_assignment else '' end||case when p_request is not null then '&rc_submit='||p_request else '' end;
  for w in select distinct d.worker_id from public.rr_worker_directory_unified_v1 d
  where d.is_active and upper(coalesce(d.access_status,'ACTIVE'))='ACTIVE' and d.linked_auth_user_id is not null
  and d.linked_auth_user_id is distinct from auth.uid()

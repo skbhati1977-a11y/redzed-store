@@ -6,10 +6,20 @@ create trigger test_receipt after insert or update on upm_receipt_notice_fixture
 create temporary table upm_submit_notice_fixture(like public.rr_upm_submit_requests_v794 including defaults);
 create trigger test_submit after insert or update on upm_submit_notice_fixture for each row execute function rr_chat_notifications_test71.upm_submit();
 do $$
-declare a record;r public.rr_upm_assignment_receipts_v9112%rowtype;q public.rr_upm_submit_requests_v794%rowtype;n integer;before_n integer;owner_id uuid;owner_auth uuid;notice uuid;
+declare a record;r public.rr_upm_assignment_receipts_v9112%rowtype;q public.rr_upm_submit_requests_v794%rowtype;n integer;before_n integer;owner_id uuid;owner_auth uuid;notice uuid;dep text;person record;notice_key text;
 begin
  select worker_id,linked_auth_user_id into owner_id,owner_auth from public.rr_worker_directory_unified_v1 where upper(role_code)='OWNER' and is_active limit 1;
  perform set_config('request.jwt.claim.sub',owner_auth::text,true);
+ -- Every mapped department and every linked worker/staff identity: authorized
+ -- members/global admins receive the notice; outsiders and the actor do not.
+ perform set_config('request.headers','{"origin":"https://redzed-test65-git-test71-real-chat-e2e-6adad3-skbhati1977-4414.vercel.app"}',true);
+ for dep in select distinct public.rr_real_chat_canonical_department_v83(department_code) from public.rr_real_chat_department_membership_v70 where is_active loop
+  notice_key:='UPM_ROLE_MATRIX_TEST71:'||gen_random_uuid();
+  perform rr_chat_notifications_test71.emit_upm(notice_key,dep,'OPEN','MATRIX',null,null,array[]::uuid[],owner_id);
+  for person in select d.*,exists(select 1 from public.rr_real_chat_department_membership_v70 m where m.worker_id=d.worker_id and m.is_active and public.rr_real_chat_canonical_department_v83(m.department_code)=dep) member from public.rr_worker_directory_unified_v1 d where d.is_active and upper(coalesce(d.access_status,'ACTIVE'))='ACTIVE' and d.linked_auth_user_id is not null loop
+   if exists(select 1 from rr_chat_notifications_test71.inbox i where i.event_key=notice_key||':'||dep and i.recipient_worker_id=person.worker_id) is distinct from (person.linked_auth_user_id<>owner_auth and person.worker_id<>owner_id and (person.member or upper(person.role_code) in('OWNER','SUPER_ADMIN','ADMIN'))) then raise exception 'UPM department/role routing mismatch: % %',dep,person.role_code;end if;
+  end loop;
+ end loop;
  -- Production/unknown requests must not emit any UPM event.
  perform set_config('request.headers','{"referer":"https://production.example/real-universal-production-v770-v9059.html?mode=REAL"}',true);
  for a in select distinct on(department_code) x.* from public.rr_upm_work_assignments_v8 x join public.rr_upm_assignment_receipts_v9112 y on y.assignment_id=x.id where upper(x.status) not in('CANCELLED','CANCELED','VOID') order by department_code,assigned_at desc loop
