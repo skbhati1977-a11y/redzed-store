@@ -87,7 +87,7 @@
       const modal = document.createElement("div");
       modal.id = "rrSecureReentry9592";
       modal.style.cssText = "position:fixed;inset:0;z-index:2147483646;background:rgba(5,10,16,.94);display:flex;align-items:center;justify-content:center;padding:18px;font-family:Arial,sans-serif";
-      modal.innerHTML = `<div style="width:min(420px,100%);background:#121c29;border:1px solid #4b617c;border-radius:16px;padding:18px;color:#fff"><b style="display:block;font-size:20px;margin-bottom:6px">OPEN SECURE CHAT</b><small style="display:block;color:#aeb9c7;margin-bottom:14px">${expected?.name ? "यह collection इसी customer के लिए है। Registered mobile verify करें।" : "Enter the customer name and mobile used for this collection."}</small><input name="rrName" placeholder="Customer name" autocomplete="name" style="box-sizing:border-box;width:100%;padding:12px;margin:0 0 9px;border:1px solid #50647e;border-radius:9px;background:#0d1219;color:#fff;font-size:16px"><input name="rrMobile" placeholder="Mobile number" inputmode="tel" autocomplete="tel" style="box-sizing:border-box;width:100%;padding:12px;margin:0 0 12px;border:1px solid #50647e;border-radius:9px;background:#0d1219;color:#fff;font-size:16px"><div data-err style="min-height:18px;color:#ffb7b7;font-size:12px;margin-bottom:8px"></div><button type="button" style="width:100%;padding:12px;border:0;border-radius:9px;background:#fff;color:#111;font-weight:900;font-size:15px">CONTINUE TO CHAT</button></div>`;
+      modal.innerHTML = `<div style="width:min(420px,100%);background:#121c29;border:1px solid #4b617c;border-radius:16px;padding:18px;color:#fff"><b style="display:block;font-size:20px;margin-bottom:6px">OPEN SECURE CHAT</b><small style="display:block;color:#aeb9c7;margin-bottom:14px">${expected?.name ? "यह collection इसी customer के लिए है। Registered mobile verify करें।" : "Enter the customer name and mobile used for this collection."}</small><input name="rrName" placeholder="Customer name" autocomplete="name" style="box-sizing:border-box;width:100%;padding:12px;margin:0 0 9px;border:1px solid #50647e;border-radius:9px;background:#0d1219;color:#fff;font-size:16px"><input name="rrMobile" placeholder="Mobile number" inputmode="tel" autocomplete="tel" style="box-sizing:border-box;width:100%;padding:12px;margin:0 0 12px;border:1px solid #50647e;border-radius:9px;background:#0d1219;color:#fff;font-size:16px"><div data-err style="min-height:18px;color:#ffb7b7;font-size:12px;margin-bottom:8px"></div><button type="button" style="width:100%;padding:12px;border:0;border-radius:9px;background:#fff;color:#111;font-weight:900;font-size:15px">VERIFY MOBILE & CONTINUE</button></div>`;
       document.body.appendChild(modal);
       const nameInput = modal.querySelector("[name=rrName]");
       const mobileInput = modal.querySelector("[name=rrMobile]");
@@ -104,6 +104,33 @@
         resolve({ name, mobile, modal, error });
       };
     });
+  }
+
+  async function verifyPhoneOtp(identity, trustedDevice) {
+    const otpCall=async body=>{const response=await fetch(SUPABASE_URL+'/functions/v1/rr-customer-phone-otp-test71',{method:'POST',headers:{'Content-Type':'application/json',apikey:SUPABASE_ANON_KEY},body:JSON.stringify(body)});const data=await response.json();if(!response.ok)throw Error(data.error||'SMS verification अभी उपलब्ध नहीं है।');return data;};
+    let challenge=null,lastSent=0;
+    const send=async()=>{
+      challenge=await otpCall({action:'send',token,customer_name:identity.name,mobile:identity.mobile,device_id:trustedDevice});
+      lastSent=Date.now();
+    };
+    await send();
+    document.getElementById('rrCustomerPhoneOtp71')?.remove();
+    const modal=document.createElement('div');modal.id='rrCustomerPhoneOtp71';modal.style.cssText='position:fixed;inset:0;z-index:2147483647;background:#050a10;display:grid;place-items:center;padding:18px;color:#fff;font-family:system-ui';
+    modal.innerHTML='<section style="width:min(420px,100%);padding:22px;border:1px solid #4b617c;border-radius:16px;background:#121c29;box-sizing:border-box"><h2>VERIFY REGISTERED MOBILE</h2><p data-otp-info></p><input data-otp-code aria-label="SMS OTP" placeholder="6 digit SMS OTP" autocomplete="one-time-code" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" style="width:100%;box-sizing:border-box;padding:14px;font-size:22px;border-radius:9px"><p data-otp-error role="status" aria-live="polite"></p><button data-otp-verify>VERIFY OTP</button> <button data-otp-resend>RESEND OTP</button> <button data-otp-cancel>CANCEL</button></section>';
+    document.body.appendChild(modal);
+    const code=modal.querySelector('[data-otp-code]'),notice=modal.querySelector('[data-otp-error]'),verify=modal.querySelector('[data-otp-verify]'),resend=modal.querySelector('[data-otp-resend]');
+    modal.querySelector('[data-otp-info]').textContent=`${challenge.customer_name} · ${challenge.phone}\nइस registered नंबर पर मिला SMS OTP भरें। OTP verify होने के बाद ही Super Admin को request जाएगी। OTP किसी अन्य व्यक्ति को न दें।`;
+    code.focus?.();
+    try{return await new Promise((resolve,reject)=>{
+      let busy=false;
+      modal.querySelector('[data-otp-cancel]').onclick=()=>{if(!busy)reject(Error('OTP verification cancelled. Chat locked है।'));};
+      resend.onclick=async()=>{if(busy)return;const left=Math.ceil((60000-(Date.now()-lastSent))/1000);if(left>0){notice.textContent=`Resend के लिए ${left} seconds इंतज़ार करें।`;return;}busy=true;resend.disabled=true;try{await send();notice.textContent='नया OTP भेजा गया।';code.value='';}catch(error){notice.textContent=error.message;}finally{busy=false;resend.disabled=false;}};
+      verify.onclick=async()=>{if(busy)return;const value=String(code.value||'').trim();if(!/^\d{6}$/.test(value)){notice.textContent='SMS में मिला 6 digit OTP भरें।';return;}busy=true;verify.disabled=true;try{
+        const data=await otpCall({action:'verify',challenge_id:challenge.challenge_id,device_id:trustedDevice,otp:value});
+        if(data?.otp_verified!==true)throw Error('SMS OTP verification required.');resolve(data);
+      }catch(error){notice.textContent=error.message;}finally{busy=false;verify.disabled=false;}};
+      code.addEventListener?.('keydown',event=>{if(event.key==='Enter')verify.click();});
+    });}finally{code.value='';modal.remove();}
   }
 
   async function waitForApproval(request, identity, trustedDevice) {
@@ -128,6 +155,7 @@
       for(;;){
         if(message)message.textContent=`${request.customer_name||identity.name} · ${identity.mobile}\n${request.approval_status==='PAUSED'?'Super Admin ने access PAUSE किया है। Resume होने तक chat locked है।':'Super Admin approval का इंतज़ार है। Chat अभी locked है।'}`;
         if(request.approval_status==='APPROVED')return;
+        if(request.approval_status==='OTP_REQUIRED')throw Error('SMS OTP verification required. Reload and verify the registered mobile.');
         if(['REJECTED','REVOKED'].includes(request.approval_status))throw Error('Login approval rejected or revoked. Contact Super Admin.');
         await new Promise(resolve=>setTimeout(resolve,5000));
         try{
@@ -153,6 +181,7 @@
       p_device_id: trustedDevice,
     };
     let result = await rpc("rr_customer_session_issue_bound_v9680", args);
+    if(result?.approval_status==='OTP_REQUIRED')result=await verifyPhoneOtp(identity,trustedDevice);
     if(result?.approval_status && !result.session_token){
       await waitForApproval(result,identity,trustedDevice);
       result=await rpc('rr_customer_session_issue_bound_v9680',args);
