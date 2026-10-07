@@ -11,7 +11,17 @@
   const deviceKey = "rr_customer_device_v9592";
   const rememberedKey = "rr_customer_device_login_test71";
   const sessionsKey = "rr_customer_share_sessions_test71";
-  let pending = null, validatedAt = 0;
+  let pending = null, validatedAt = 0, transportToken = '';
+
+  function bindTransport(sessionToken) {
+    if (transportToken === sessionToken) return;
+    const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      auth: {persistSession:false, autoRefreshToken:false, detectSessionInUrl:false},
+      global: {headers:{'x-rr-customer-session':sessionToken, 'x-rr-customer-device':device()}},
+    });
+    window.supabaseClient = window.supabaseDb = window.redzedSupabase = window.sb = client;
+    transportToken = sessionToken;
+  }
 
   function parse(key) {
     try { return JSON.parse(localStorage.getItem(key) || "null"); } catch (_) { return null; }
@@ -63,7 +73,7 @@
   async function expectedCustomer() {
     if (!token) return null;
     try {
-      const share = await rpc("rr_market_share_view_v9420", { p_token: token });
+      const share = await rpc("rr_customer_login_hint_test71", { p_token: token });
       const name = String(share?.customer_name || "").trim();
       return name ? { name } : null;
     } catch (_) {
@@ -96,29 +106,70 @@
     });
   }
 
+  async function waitForApproval(request, identity, trustedDevice) {
+    let modal=identity.modal, owned=false;
+    if(!modal){
+      document.getElementById('rrSecureApprovalWaiting71')?.remove();
+      modal=document.createElement('div');modal.id='rrSecureApprovalWaiting71';owned=true;
+      modal.style.cssText='position:fixed;inset:0;z-index:2147483646;background:#050a10;display:grid;place-items:center;padding:18px;color:#fff;font-family:system-ui';
+      modal.innerHTML='<section style="width:min(420px,100%);box-sizing:border-box;padding:22px;border:1px solid #4b617c;border-radius:16px;background:#121c29"><b style="font-size:22px">WAITING FOR APPROVAL</b><p data-wait role="status" aria-live="polite"></p></section>';
+      document.body.appendChild(modal);
+    }
+    const message=modal.querySelector('[data-wait]')||identity.error;
+    const submit=modal.querySelector('button'),oldText=submit?.textContent;
+    if(submit)submit.textContent='WAITING FOR APPROVAL';
+    if(message){message.setAttribute?.('role','status');message.setAttribute?.('aria-live','polite');message.style.whiteSpace='pre-line';}
+    modal.querySelectorAll('input,button').forEach(el=>el.disabled=true);
+    let failures=0;
+    try{
+      for(;;){
+        if(message)message.textContent=`${request.customer_name||identity.name} · ${identity.mobile}\nSuper Admin approval का इंतज़ार है। Chat अभी locked है।`;
+        if(request.approval_status==='APPROVED')return;
+        if(['REJECTED','REVOKED'].includes(request.approval_status))throw Error('Login approval rejected or revoked. Contact Super Admin.');
+        await new Promise(resolve=>setTimeout(resolve,5000));
+        try{
+          request={...request,...await rpc('rr_customer_login_status_test71',{p_request_id:request.request_id,p_device_id:trustedDevice})};failures=0;
+        }catch(error){
+          failures++;
+          if(message)message.textContent='Approval status अभी load नहीं हुआ। Internet आने पर अपने-आप check होगा।';
+          if(failures>=12)throw Error('Approval status unavailable. Check your connection and try again.');
+        }
+      }
+    }finally{
+      if(owned)modal.remove();else {modal.querySelectorAll('input,button').forEach(el=>el.disabled=false);if(submit)submit.textContent=oldText;}
+    }
+  }
+
   async function issue(identity, trustedDevice) {
-    const result = await rpc("rr_customer_session_issue_bound_v9680", {
+    const args={
       p_token: token,
       p_customer_name: identity.name,
       p_mobile: identity.mobile,
       p_device_id: trustedDevice,
-    });
+    };
+    let result = await rpc("rr_customer_session_issue_bound_v9680", args);
+    if(result?.approval_status && !result.session_token){
+      await waitForApproval(result,identity,trustedDevice);
+      result=await rpc('rr_customer_session_issue_bound_v9680',args);
+    }
+    if(!result?.session_token)throw Error('Super Admin approval required for this device.');
     
     const validated = await rpc("rr_customer_session_validate_v9590", { p_session_token: result.session_token, p_device_id: trustedDevice });
     save({ session_token: result.session_token, issued_at: new Date().toISOString() });
     remember(result.customer_name || identity.name, identity.mobile);
+    bindTransport(result.session_token);
     window.RR_CUSTOMER_TRUSTED_SESSION = validated;validatedAt=Date.now();
     return validated;
   }
 
-  const invalidSession = error => /session invalid|session.*expired|trusted device.*(?:required|match)/i.test(String(error?.message||error));
-  const wrongIdentity = error => /mobile.*(?:match|required)|different customer|customer.*(?:inactive|unavailable)/i.test(String(error?.message||error));
+  const invalidSession = error => /session invalid|session.*expired|trusted device.*(?:required|match)|approval required/i.test(String(error?.message||error));
+  const wrongIdentity = error => /mobile.*(?:match|required)|different customer|customer.*(?:inactive|unavailable)|approval rejected/i.test(String(error?.message||error));
   async function restore() {
     const trustedDevice=device(),current=saved();
     if(current?.session_token){
       try{
         const validated=await rpc('rr_customer_session_validate_v9590',{p_session_token:current.session_token,p_device_id:trustedDevice});
-        save(current);const boundIdentity=parse(identityKey);if(boundIdentity?.name&&boundIdentity?.mobile)remember(boundIdentity.name,boundIdentity.mobile);window.RR_CUSTOMER_TRUSTED_SESSION=validated;validatedAt=Date.now();return validated;
+        save(current);bindTransport(current.session_token);const boundIdentity=parse(identityKey);if(boundIdentity?.name&&boundIdentity?.mobile)remember(boundIdentity.name,boundIdentity.mobile);window.RR_CUSTOMER_TRUSTED_SESSION=validated;validatedAt=Date.now();return validated;
       }catch(error){if(!invalidSession(error))throw error;clear();}
     }
     if(!token)return null;

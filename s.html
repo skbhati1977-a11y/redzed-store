@@ -47,11 +47,11 @@
         const baseScripts = [
           "real-notification-permission-guard-v69.js?v=69",
           "real-collection-cycle-share-adapter-v9686.js?v=TEST71-IOS-CONTRACT-20261007",
-          "real-customer-secure-session-addon-v9592.js?v=TEST71-REMEMBER-20261005",
+          "real-customer-secure-session-addon-v9592.js?v=TEST71-LOGIN-APPROVAL-20261007",
           "real-customer-chat-thumbnail-cache-v51.js?v=51",
           "real-customer-chat-image-upload-v54.js?v=58instant1",
           "real-chat-delivery-ticks-test71.js?v=TEST71-BELT-PUSH-20261005",
-          "real-customer-fullscreen-secure-chat-v9648.js?v=TEST71-IOS-CONTRACT-20261007",
+          "real-customer-fullscreen-secure-chat-v9648.js?v=TEST71-LOGIN-APPROVAL-20261007",
           "real-customer-notification-open-test71.js?v=TEST71-TAP-20261005",
           "real-customer-chat-image-upload-hook-v54.js?v=56",
           "real-customer-attach-outside-close-v9649.js?v=9668",
@@ -60,7 +60,7 @@
           "real-customer-group-media-files-v59.js?v=59h-hold-swipe",
           "real-customer-chat-delete-disappearing-v59.js?v=60-exact-map3",
           "real-customer-chat-url-wrap-v9668.js?v=TEST71-INVITE-REFRESH-QTY-20261005",
-          "real-customer-chat-collection-card-v9605.js?v=TEST71-IOS-CONTRACT-20261007",
+          "real-customer-chat-collection-card-v9605.js?v=TEST71-LOGIN-APPROVAL-20261007",
           "real-direct-customer-single-card-v9684.js?v=9684",
           "real-customer-chat-collection-tune-v9606.js?v=9668",
           "real-customer-chat-collection-layout-v9623.js?v=TEST71-IOS-CONTRACT-20261007",
@@ -117,7 +117,10 @@
               "real-market-partner-collection-core-adapter-test67.js?v=83",
             );
           }
-          for (const src of baseScripts) await loadScript(src);
+          for (const src of baseScripts) {
+            await loadScript(src);
+            if (src.startsWith('real-customer-secure-session-addon-v9592.js')) await window.RR_CUSTOMER_SECURE_SESSION_V9592.ensure();
+          }
 
           // Keep the original RedZed ↔ Customer collection controls exactly
           // once.  A late wrapper previously added a second CLOSE button.
