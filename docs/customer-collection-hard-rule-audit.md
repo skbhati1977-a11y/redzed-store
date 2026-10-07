@@ -41,3 +41,14 @@ Database unique indexes, private serialized gates and table triggers enforce the
 Executed rollback suites: customer-one-open-collection-rollback.sql, customer-collection-lifecycle-rollback.sql, customer-distributor-lifecycle-rollback.sql and customer-login-approval-rollback.sql. These verify three legacy create APIs, independent customers, same-number open context, actual Close Requirement, automatic chat archival, frozen old quantities, rejection of closed sends and reopening, actual sales send to the next customer number from a stale old route, actual PI linkage closing the cycle, distributor updates within their root, customer closure, and creation of the next distributor number. Every test fixture change rolls back.
 
 The 13 customer mobile/approval contract tests also pass. No physical phone test is claimed. No real customer session approvals were seeded for test convenience.
+
+
+## Closed read-only cards and per-cycle item visibility — 7 October 2026
+
+Closing a TEST71 direct/distributor cycle freezes requirement quantities and collection edits. The latest white collection card stays visible and opens a read-only viewer on both sides. Preparing PI from a closed customer requirement remains permitted. The previous card is archived only when an actual next-number collection is sent; its business history is preserved. Live status follows the latest sent cycle, while exact-cycle staff reads preserve the requested cycle identity.
+
+The live card shows collection number and U0, then U1/U2 for collection sends. No update dropdown is rendered. The collection viewer aggregates this cycle's sent items, puts the newest send first, and retains saved required quantities. Each item can be sent once per cycle regardless of zero/nonzero requirement; a fresh cycle makes eligible items shareable again.
+
+Zero-quantity items have a red × hide button. Positive typed qty immediately hides that button. Hidden item records are private database rows scoped by collection UUID and lot, separate from send history and saved quantities; they never prevent sharing in a new cycle. The API checks authorized collection access, lot membership, active status and saved zero qty.
+
+Verification: SQL rollback suites exercise closure, exact read-only state, immutable qty, replacement-card archiving, duplicate item rejection, and fresh-cycle sending. Node tests cover iPhone alignment/metrics and cross visibility. No physical iPhone/Android test is claimed.

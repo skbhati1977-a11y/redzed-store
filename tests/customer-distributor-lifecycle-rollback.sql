@@ -23,6 +23,10 @@ BEGIN
  UPDATE public.rr_market_partner_order_v67 SET status='READY',customer_closed_at=now() WHERE id=oid;
  IF NOT EXISTS(SELECT 1 FROM rr_collection_rules_test71.partner_cycles WHERE root_id=pc.root_collection_id AND status='CLOSED') THEN RAISE EXCEPTION 'Customer close did not close distributor root';END IF;
  BEGIN
+ UPDATE public.rr_market_partner_collection_line_v67 SET lot_no=lot_no WHERE collection_id=pc.id;
+ IF FOUND THEN RAISE EXCEPTION 'Closed distributor collection items remained editable';END IF;
+ EXCEPTION WHEN others THEN IF SQLERRM<>'Closed distributor collection items are view only' THEN RAISE;END IF;END;
+ BEGIN
   INSERT INTO public.rr_market_partner_collection_v67(id,owner_customer_id,partner_customer_id,share_id,root_collection_id,collection_no,collection_update_no,status)
   VALUES(gen_random_uuid(),pc.owner_customer_id,pc.partner_customer_id,new_share,pc.root_collection_id,pc.collection_no,next_update+1,'SENT');
   RAISE EXCEPTION 'Closed distributor update accepted';

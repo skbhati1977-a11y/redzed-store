@@ -28,7 +28,7 @@ test('button uses collection U4 instead of unrelated activity 01',()=>{
  assert.doesNotMatch(s,/rrCustomerRequirementClosed58 #rrReqAvg9641/);
 });
 
-test('customer history leaves one collection button; staff history remains',()=>{
+test('customer and staff live cards use one latest collection button without dropdowns',()=>{
  const s=source('real-direct-cycle-history-test71.js');let removed=0,panelCalls=0;
  const ctx={staff:false,state:{collection_cycle_id:'cycle'},document:{getElementById:()=>({remove:()=>removed++}),querySelectorAll:sel=>sel==='.rrCycleHistory71'?[{remove:()=>removed++}]:[]},panel:()=>{panelCalls++;return{};}};
  vm.runInNewContext(part(s,' function paint(){',' async function refresh'),ctx);ctx.paint();
@@ -37,7 +37,7 @@ test('customer history leaves one collection button; staff history remains',()=>
  const htmlctx={staff:true,esc,date:()=>'',Number};
  vm.runInNewContext(part(s,' function markup(data){',' function beltMarkup'),htmlctx);
  const d={collection_display_no:'RZ COLLECTION 12',update_history:[{kind:'COLLECTION',update_no:4}]};
- assert.match(htmlctx.markup(d),/UPDATE HISTORY/);
+ assert.doesNotMatch(htmlctx.markup(d),/<details|<summary/);
  htmlctx.staff=false;assert.doesNotMatch(htmlctx.markup(d),/<details>/);
 });
 

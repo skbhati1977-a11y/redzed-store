@@ -46,7 +46,7 @@
    (staff?(data.requirement_id?'<button type="button" data-live-action="requirement">VIEW REQUIREMENT / PI</button>':'')+
     '<button type="button" data-live-action="collection">'+(data.can_send?'SELECT & SEND COLLECTION':'NEW COLLECTION')+'</button>':
     '<button type="button" data-live-action="collection">VIEW COLLECTION</button>')+
-   (staff&&history?'<details><summary>UPDATE HISTORY</summary>'+history+'</details>':'');
+   '';
  }
  function beltMarkup(data){
   const req=data.requirement_display_no?data.requirement_display_no+' · U'+Number(data.requirement_update_no||0):'REQ PENDING';
@@ -106,7 +106,7 @@
   if(busy||!window.RF853?.rpc||(staff&&!chatId()))return;
   busy=true;const chat=chatId(),run=++version;
   try{
-   const exactCycle=staff&&chat===q.get('chat_id')?q.get('collection_cycle_id'):null;
+   const exactCycle=null; // The live white card always follows the latest sent cycle.
    const data=await RF853.rpc(staff?(exactCycle?'rr_sales_collection_cycle_status_test71':'rr_sales_collection_live_status_test71'):'rr_collection_current_state_v9633',staff?{p_chat_id:chat,...(exactCycle?{p_collection_cycle_id:exactCycle}:{})}:{p_token:token});
    if(run!==version||(staff&&chat!==chatId()))return;
    state=data;activeChat=chat;paint();

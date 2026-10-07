@@ -14,14 +14,17 @@
     // both messages and composer, rather than leave an invisible chat behind.
     document.querySelectorAll('#rrFSChat .fc-hide').forEach(node => node.classList.remove('fc-hide'));
     document.querySelector('#rrFSChat .fscompWrap')?.classList.remove('rrReqMode9634');
-    if ($("fsCollectionCard")) $("fsCollectionCard").style.display = "none";
+    if ($("fsCollectionCard")) $("fsCollectionCard").style.display = "block";
     if ($("rrCommercialActions9630")) $("rrCommercialActions9630").style.display = "none";
+    const button=$("fcOpen")||$("fcReopen");
+    if(button){button.disabled=false;button.textContent=`${state?.collection_display_no||"COLLECTION"} · U${Number(state?.collection_update_no||0)} · CLOSED · VIEW ONLY`;}
     document.body.classList.add("rrCustomerRequirementClosed58");
     document.dispatchEvent(new CustomEvent("rr:v9675-cycle-closed", { detail: state }));
   }
   function paint(state, sent) {
     last = { state, sent };
-    if (!state || terminal(state.collection_status)) return closeActiveUi(state);
+    if (!state) return;
+    if (terminal(state.collection_status)) return closeActiveUi(state);
     document.body.classList.remove("rrCustomerRequirementClosed58");
     const card = $("fsCollectionCard"), actions = $("rrCommercialActions9630");
     if (card) card.style.display = "block";
@@ -33,7 +36,7 @@
       if (send) { send.disabled = true; send.textContent = "REQUIREMENT SENT ✓"; }
       if (close) { close.disabled = false; close.textContent = "CLOSE REQUIREMENT"; }
     } else {
-      if (collectionButton) collectionButton.disabled = false;
+      if (collectionButton) {collectionButton.disabled = false;collectionButton.textContent=`UPDATE ${display} · U${Number(state.collection_update_no||0)}`;}
       if (send) { send.disabled = false; send.textContent = "SEND REQUIREMENT"; }
       if (close) { close.disabled = true; close.textContent = "SEND REQUIREMENT FIRST"; }
     }
@@ -53,8 +56,9 @@
       paint(state,response>=0 && response>=Number(state?.collection_update_no||0));
     });
     document.addEventListener("rr:v9605-requirement-sent", () => setTimeout(refresh, 120));
-    document.addEventListener("rr:v9630-customer-closed", () => closeActiveUi(last?.state));
+    document.addEventListener("rr:v9630-customer-closed", () => closeActiveUi({...last?.state,collection_status:"CLOSED"}));
     document.addEventListener("click", (event) => {
+      if (event.target.closest?.("#fcOpen,#fcReopen") && terminal(last?.state?.collection_status)) {event.preventDefault();event.stopImmediatePropagation();window.RRCustomerCollectionViewer71?.open(last.state);return;}
       if (event.target.closest?.("#rrSendReq9630") && last?.sent) { event.preventDefault(); event.stopImmediatePropagation(); }
     }, true);
     let tries = 0;

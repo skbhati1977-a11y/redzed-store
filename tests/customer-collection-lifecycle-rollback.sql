@@ -20,10 +20,14 @@ BEGIN
  UPDATE public.rr_market_requirement_lines_v9420 SET requested_qty=line_qty WHERE id=line_id;
  ctx:=public.rr_sales_collection_context_test71(c.chat_id,NULL,c.id);
  IF ctx->>'collection_cycle_id'<>c.id::text THEN RAISE EXCEPTION 'Update changed active collection'; END IF;
- -- Real customer-close RPC, using an authorized staff actor, closes and archives.
+ -- Closure preserves a read-only card until an actual new collection send.
  PERFORM public.rr_collection_customer_close_v9630((SELECT token FROM public.rr_market_share_v9420 WHERE id=share_id));
  IF EXISTS(SELECT 1 FROM public.rr_collection_cycle_v9586 WHERE id=c.id AND closed_at IS NULL) THEN RAISE EXCEPTION 'Customer close failed'; END IF;
- IF EXISTS(SELECT 1 FROM public.rr_customer_chat_messages_v9433 WHERE archived_at IS NULL AND payload->>'direct_collection_cycle_id'=c.id::text AND message_type IN('LINK','REQUIREMENT','ATTACHMENT') AND coalesce(payload->>'source','')<>'DIRECT_CATEGORY_REQUEST_TEST71') THEN RAISE EXCEPTION 'Closed chat cards still active'; END IF;
+ IF NOT EXISTS(SELECT 1 FROM public.rr_customer_chat_messages_v9433 WHERE archived_at IS NULL AND payload->>'direct_collection_cycle_id'=c.id::text AND (payload->>'read_only')::boolean) THEN RAISE EXCEPTION 'Closed read-only card missing'; END IF;
+ ctx:=public.rr_sales_collection_cycle_status_test71(c.chat_id,c.id);
+ IF ctx->>'collection_cycle_id'<>c.id::text OR NOT (ctx->>'read_only')::boolean OR (ctx->>'can_send')::boolean THEN RAISE EXCEPTION 'Exact closed view has incorrect context';END IF;
+ ctx:=public.rr_chat_requirement_detail_v9508(c.chat_id,rid);
+ IF (ctx->>'can_add_update')::boolean OR NOT (ctx->>'read_only')::boolean THEN RAISE EXCEPTION 'Closed staff requirement editable';END IF;
  BEGIN
   UPDATE public.rr_market_requirement_lines_v9420 SET requested_qty=line_qty+1 WHERE id=line_id;
   RAISE EXCEPTION 'Closed requirement quantity changed';
@@ -39,12 +43,21 @@ BEGIN
  ctx:=public.rr_sales_collection_context_test71(c.chat_id,rid,c.id);
  IF ctx->>'collection_cycle_id' IS NOT NULL OR NOT (ctx->>'can_send')::boolean THEN RAISE EXCEPTION 'Closed context does not allow fresh collection'; END IF;
  -- A new number is valid only after closure.
- SELECT w.lot_no INTO send_lot FROM public.rr_web_window_cards_v9329(NULL,NULL,NULL,'TEST',50,0) w WHERE w.available_qty>0 LIMIT 1;
+ SELECT w.lot_no INTO send_lot FROM public.rr_web_window_cards_v9329(NULL,NULL,NULL,'TEST',50,0) w WHERE w.available_qty>0 ORDER BY EXISTS(SELECT 1 FROM public.rr_collection_send_v9586 cs JOIN public.rr_market_share_lots_v9420 l ON l.share_id=cs.share_id WHERE cs.collection_cycle_id=c.id AND l.lot_no=w.lot_no) DESC LIMIT 1;
  IF send_lot IS NULL THEN RAISE EXCEPTION 'Available send design fixture required';END IF;
  result:=public.rr_sales_collection_send_test71(c.chat_id,c.customer_id,ARRAY[send_lot],rid,'https://redzed-customer-collection.jggfab2011.chatgpt.site',c.id);
  nc:=(result->>'collection_cycle_id')::uuid;
  IF (result->>'collection_no')::integer<>n THEN RAISE EXCEPTION 'New send did not use customer next collection number';END IF;
  IF nc=c.id THEN RAISE EXCEPTION 'Send after close reused closed collection';END IF;
+ ctx:=public.rr_customer_collection_hidden_items_test71(result->>'token',send_lot,true);
+ IF NOT (ctx->'hidden_lots' ? send_lot) THEN RAISE EXCEPTION 'Zero qty hide did not persist';END IF;
+ ctx:=public.rr_customer_collection_hidden_items_test71(result->>'token',send_lot,false);
+ IF ctx->'hidden_lots' ? send_lot THEN RAISE EXCEPTION 'Unhide failed';END IF;
+ IF EXISTS(SELECT 1 FROM public.rr_customer_chat_messages_v9433 WHERE archived_at IS NULL AND payload->>'direct_collection_cycle_id'=c.id::text AND message_type IN('LINK','REQUIREMENT','ATTACHMENT') AND coalesce(payload->>'source','')<>'DIRECT_CATEGORY_REQUEST_TEST71') THEN RAISE EXCEPTION 'Old closed card remained after new send';END IF;
+ BEGIN
+ PERFORM public.rr_collection_add_update_v9587(nc,ARRAY[send_lot]);
+ RAISE EXCEPTION 'Already sent zero-qty item duplicated';
+ EXCEPTION WHEN others THEN IF SQLERRM NOT LIKE 'Lot(s) already sent in this Collection:%' THEN RAISE;END IF;END;
  IF NOT EXISTS(SELECT 1 FROM public.rr_collection_cycle_v9586 WHERE id=other_c.id AND closed_at IS NULL) THEN RAISE EXCEPTION 'Other customer affected'; END IF;
  SELECT pc.share_id INTO distributor_share FROM public.rr_market_partner_collection_v67 pc LIMIT 1;
  IF distributor_share IS NOT NULL THEN

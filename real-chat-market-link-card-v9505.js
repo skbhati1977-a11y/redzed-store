@@ -52,15 +52,16 @@
     body.textContent = "Loading collection...";
     try {
       if (!token) throw Error("Collection token missing.");
-      const [data, state] = await Promise.all([
+      const [data, state, summary] = await Promise.all([
         RF853.rpc("rr_collection_cycle_share_view_v9686", { p_token: token }),
-        RF853.rpc("rr_collection_current_state_v9633", { p_token: token }).catch(() => null)
+        RF853.rpc("rr_collection_current_state_v9633", { p_token: token }).catch(() => null),
+        RF853.rpc("rr_collection_customer_requirement_summary_v9637",{p_token:token})
       ]);
-      const rows = Array.isArray(data?.rows) ? data.rows : [];
+      const rows = Array.isArray(data?.rows) ? data.rows : [];const quantities=new Map((summary?.lines||[]).map(l=>[String(l.lot_no),Number(l.requested_qty||0)]));
       const updateNo = Number(state?.collection_update_no || 0);
-      document.getElementById("rrScTitle9680").textContent = (state?.collection_display_no || data?.collection_display_no || "REDZED COLLECTION") + (updateNo > 0 ? ` · U${updateNo}` : "");
+      document.getElementById("rrScTitle9680").textContent = (state?.collection_display_no || data?.collection_display_no || "REDZED COLLECTION") + ` · U${updateNo}`;
       let followup = '';
-      if (state?.collection_cycle_id && window.RRSalesCollection) {
+      if (state?.collection_cycle_id && !['CLOSED','CLOSED_NO_RESPONSE','CANCELLED','PI_GENERATED','CI_GENERATED'].includes(String(state.collection_status||'').toUpperCase()) && !state.read_only && window.RRSalesCollection) {
         const chat = window.RRActiveSalesChat71?.() || document.querySelector('#inboxRows .chatrow.on')?.dataset.chat;
         if (chat) {
           const context = await RF853.rpc('rr_sales_collection_context_test71', {p_chat_id: chat, p_collection_cycle_id: state.collection_cycle_id});
@@ -70,7 +71,7 @@
       body.innerHTML = followup + `<div class="rrScNote9680"><b>${esc(state?.live_status||String(state?.collection_status||"").replaceAll("_"," "))}</b><small style="display:block">LAST COLLECTION · ${esc(state?.last_collection_at?new Date(state.last_collection_at).toLocaleString():"—")}<br>LAST REQUIREMENT · ${esc(state?.last_requirement_at?new Date(state.last_requirement_at).toLocaleString():"—")}</small>${state?.requirement_id?`<button type="button" data-rr-view-requirement71="${esc(state.requirement_id)}">${esc(state.requirement_display_no||"VIEW REQUIREMENT / PI")}</button>`:""}${state?.pi_no?`<p>PI · ${esc(state.pi_no)}</p>`:""}${state?.ci_no?`<p>CI · ${esc(state.ci_no)}</p>`:""}</div><div class="rrScGrid9680">${rows.map((row) => {
         const media = Array.isArray(row.media) ? row.media : [];
         const image = media[0]?.image_url || media[0]?.storage_path || row.primary_image_url || "";
-        return `<article class="rrScLot9680">${image ? `<img loading="lazy" src="${esc(image)}" alt="${esc(row.lot_no)}">` : ""}<div><b>${esc(row.lot_no || "-")}</b><small>${esc(row.category || row.item_name || row.cloth_name || "-")}</small><small>${esc(row.size_text || "-")} · AVL ${Number(row.available_qty || 0)}</small></div></article>`;
+        return `<article class="rrScLot9680">${image ? `<img loading="lazy" src="${esc(image)}" alt="${esc(row.lot_no)}">` : ""}<div><b>${esc(row.lot_no || "-")}</b><small>${esc(row.category || row.item_name || row.cloth_name || "-")}</small><small>${esc(row.size_text || "-")} · AVL ${Number(row.available_qty || 0)}</small><small>REQUIRED QTY · ${quantities.get(String(row.lot_no))||0} PCS</small></div></article>`;
       }).join("") || "<div>No collection lots found.</div>"}</div>`;
     } catch (error) {
       body.innerHTML = '<div class="rrScNote9680">'+esc(error?.message||'Collection unavailable.')+'</div>';
@@ -104,7 +105,7 @@
     ]).then(([data, state]) => {
       const updateNo = Number(state?.collection_update_no || 0);
       const title = state?.collection_display_no || data?.collection_display_no || "REDZED COLLECTION";
-      box.querySelector(".rrMkText9505 b").textContent = title + (updateNo > 0 ? ` · U${updateNo}` : "");
+      box.querySelector(".rrMkText9505 b").textContent = title + ` · U${updateNo}`;
       box.querySelector(".rrMkText9505 small").textContent = `${styles ? `${styles} selected styles · ` : ""}${String(state?.collection_status || "COLLECTION").replaceAll("_", " ")}`;
     }).catch(() => {});
   }
@@ -127,11 +128,12 @@
     if (document.getElementById("rrMarketLinkCss9505")) return;
     const style = document.createElement("style");
     style.id = "rrMarketLinkCss9505";
-    style.textContent = ".rrMarketLinkCard9505{width:100%;display:flex;align-items:center;gap:10px;margin:7px 0 3px;padding:11px 12px;border:1px solid #49627d;border-radius:13px;background:#101923;color:#fff;text-align:left;cursor:pointer}.rrMkIcon9505{font-size:25px;flex:0 0 auto}.rrMkText9505{display:block;min-width:0;flex:1}.rrMkText9505 b,.rrMkText9505 small{display:block}.rrMkText9505 b{font-size:14px}.rrMkText9505 small{font-size:11px;color:#9fb0c2;margin-top:2px}.rrMkGo9505{font-weight:900;color:#8fc8ff;white-space:nowrap}";
+    style.textContent = ".rrMarketLinkCard9505{width:100%;display:flex;align-items:center;gap:10px;margin:7px 0 3px;padding:11px 12px;border:1px solid #49627d;border-radius:13px;background:#fff;color:#111;text-align:left;cursor:pointer}.rrMkIcon9505{font-size:25px;flex:0 0 auto}.rrMkText9505{display:block;min-width:0;flex:1}.rrMkText9505 b,.rrMkText9505 small{display:block}.rrMkText9505 b{font-size:14px}.rrMkText9505 small{font-size:11px;color:#526174;margin-top:2px}.rrMkGo9505{font-weight:900;color:#8fc8ff;white-space:nowrap}";
     document.head.appendChild(style);
   }
   function init() { document.addEventListener("click",event=>{const button=event.target.closest?.("[data-rr-view-requirement71]");if(!button)return;event.preventDefault();closeStaffCollection();window.RRRequirementDetail71?.open(button.dataset.rrViewRequirement71);});css(); scan(); new MutationObserver(scan).observe(document.body, { childList: true, subtree: true }); }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init, { once: true });
   else init();
 })();
+
 

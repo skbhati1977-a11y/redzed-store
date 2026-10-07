@@ -12,7 +12,8 @@
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     });
-  let metrics = null;
+  let metrics = null,readOnly=false;
+  async function refreshReadonly(){const state=await RF853.rpc('rr_market_partner_customer_current_state_v80',{p_token:token});readOnly=!!state.read_only||['CLOSED','PI_GENERATED','CI_GENERATED','CANCELLED','CLOSED_NO_RESPONSE'].includes(state.collection_status);$$('[data-qty]').forEach(input=>{input.readOnly=readOnly;input.disabled=readOnly});['#send','#confirmSend'].forEach(id=>{const button=$(id);if(button)button.disabled=readOnly});if(readOnly&&$('#send'))$('#send').textContent='CLOSED · VIEW ONLY';return readOnly;}
 
   function flash(text) {
     const box = $("#flash");
@@ -98,7 +99,8 @@
       .filter((line) => line.qty > 0);
   }
 
-  function openRequirement() {
+  async function openRequirement() {
+    if(await refreshReadonly())return flash("Closed collection is view only");
     if (!selectedLines().length) return flash("SELECT QTY FIRST");
     $("#identityFields")?.classList.add("hidden");
     $("#reqModal .voicebox")?.classList.add("hidden");
@@ -108,6 +110,7 @@
   }
 
   async function submitRequirement() {
+    if(await refreshReadonly())return flash("Closed collection is view only");
     const lines = selectedLines();
     if (!lines.length) return flash("SELECT QTY FIRST");
     const button = $("#confirmSend");
@@ -201,9 +204,11 @@
     }
     inject();
     paint(metrics);
+    await refreshReadonly();
   }
 
   if (document.readyState === "loading")
     document.addEventListener("DOMContentLoaded", boot, { once: true });
   else boot();
 })();
+
