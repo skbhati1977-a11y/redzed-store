@@ -23,8 +23,12 @@
  }
  function target(n){const root=document.getElementById('messages');if(!root)return null;const route=new URL(n.route_url,location.href),request=route.searchParams.get('rc_login_request');
   if(request)return [...root.querySelectorAll('[data-login-request]')].find(x=>x.dataset.loginRequest===request)?.closest('[data-customer-permission]')||null;
+  if(n.submit_request_id){const exact=[...root.querySelectorAll('[data-submit-request-id]')].find(x=>x.dataset.submitRequestId===n.submit_request_id);if(exact)return exact;}
+  if(n.assignment_id){const exact=[...root.querySelectorAll('[data-assignment-id]')].find(x=>x.dataset.assignmentId===n.assignment_id);if(exact)return exact;const consolidated=[...root.querySelectorAll('[data-assignment-ids]')].find(x=>{try{return JSON.parse(x.dataset.assignmentIds).includes(n.assignment_id)}catch(_){return false}});if(consolidated)return consolidated;}
   if(n.event_key){const exact=[...root.querySelectorAll('[data-event-key]')].find(x=>x.dataset.eventKey===n.event_key);if(exact)return exact;}
   if(n.cb_no)return [...root.querySelectorAll('[data-cb-no]')].find(x=>x.dataset.cbNo===n.cb_no)||null;
+  // A targeted UPM notice must never focus another assignment sharing its lot.
+  if(n.assignment_id||n.submit_request_id)return null;
   if(n.lot_no)return [...root.querySelectorAll('.work-card,.closed-row,[data-lot]')].find(x=>String(x.dataset.noticeLot||x.dataset.lot||'')===String(n.lot_no))||null;
   return null;
  }
@@ -41,7 +45,7 @@
   await Promise.allSettled([
    rpc('rr_chat_notification_inbox_test71').then(result=>{notices=Array.isArray(result)?result:[];paint();}).catch(e=>console.warn('Action unread counts unavailable',e)),
    rpc('rr_chat_staff_unread_test71').then(result=>{customers=Array.isArray(result)?result:[];paint();}).catch(e=>console.warn('Customer unread counts unavailable',e))
-  ]);await visible();
+  ]);const pending=notices.find(n=>n.id===noticeId);const context=window.RRAdminApprovalHost71?.context();if(pending&&context&&['group','person'].includes(context.kind)){const u=new URL(pending.route_url,location.href);if(u.searchParams.get('rc_status')!==context.status){u.searchParams.set('rc_notice',pending.id);if(context.kind==='person'){u.searchParams.set('rc_kind','person');u.searchParams.set('rc_id',context.id);}location.replace(u.href);return;}}await visible();
  }finally{busy=false}}
 
  window.RRChatNotifications71={refresh,visible,paint};
