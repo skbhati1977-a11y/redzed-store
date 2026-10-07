@@ -1,0 +1,34 @@
+const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),{JSDOM}=require('jsdom');
+const source=fs.readFileSync('real-customer-secure-session-addon-v9592.js','utf8');
+const tick=()=>new Promise(setImmediate);
+test('WhatsApp link and code do not unlock login before validated Admin approval',async()=>{
+ const dom=new JSDOM('<body></body>',{url:'https://example.test/s.html?t=share',runScripts:'outside-only'}),w=dom.window;
+ let issues=0,approve;const calls=[];
+ w.RF853={rpc:async(name,args)=>{calls.push([name,args]);
+  if(name==='rr_customer_session_issue_bound_v9680')return ++issues===1?{approval_status:'OTP_REQUIRED'}:{session_token:'approved-server-session'};
+  if(name==='rr_customer_whatsapp_request_test71')return {request_id:'request-1',approval_status:'PENDING',customer_name:'Canonical Customer',whatsapp_code:'ABCDEF1234567890',whatsapp_destination:'919654401954',whatsapp_expires_at:new Date(Date.now()+900000).toISOString()};
+  if(name==='rr_customer_login_status_test71')return new Promise(resolve=>approve=()=>resolve({approval_status:'APPROVED'}));
+  if(name==='rr_customer_session_validate_v9590')return {valid:true,customer_id:'customer',data_mode:'TEST'};
+ }};
+ w.supabase={createClient:()=>({rpc:w.RF853.rpc})};w.SUPABASE_URL='https://example.test';w.SUPABASE_ANON_KEY='public';
+ const realTimeout=w.setTimeout;w.setTimeout=fn=>realTimeout(fn,0);
+ w.eval(source.replace('  const invalidSession =','  window.test={issue};\n  const invalidSession ='));
+ const pending=w.test.issue({name:'Customer',mobile:'9000000000'},'trusted-device-12345678901234567890');
+ await tick();await w.document.querySelector('[data-verification-wa]').onclick();await new Promise(resolve=>setTimeout(resolve,15));
+ const link=w.document.querySelector('[data-whatsapp-verification] a');assert(link);assert.equal(new URL(link.href).hostname,'wa.me');assert.match(decodeURIComponent(new URL(link.href).search),/ABCDEF1234567890/);
+ assert.equal(w.localStorage.getItem('rr_customer_secure_session_v9592'),null);
+ assert(!calls.some(([name])=>name==='rr_customer_whatsapp_approve_test71'));
+ approve();await pending;
+ assert.equal(JSON.parse(w.localStorage.getItem('rr_customer_secure_session_v9592')).session_token,'approved-server-session');
+ assert(calls.some(([name])=>name==='rr_customer_session_validate_v9590'));assert.equal(w.document.querySelector('[data-whatsapp-verification]'),null);dom.window.close();
+});
+test('Admin manual approval requires separate actual sender and received code input',async()=>{
+ const dom=new JSDOM('<body><header></header></body>',{url:'https://example.test/admin.html',runScripts:'outside-only'}),w=dom.window;
+ const calls=[];w.RF853={rpc:async(name,args)=>{calls.push([name,args]);if(name==='rr_customer_permission_cards_test71')return [{customer_id:'c1',customer_name:'Customer',registered_mobile:'9000000000',devices:[{request_id:'r1',status:'PENDING',otp_verified:false,whatsapp_pending:true}]}];return {};}};
+ w.setInterval=()=>0;w.eval(fs.readFileSync('real-customer-login-approvals-test71.js','utf8'));await tick();await tick();
+ w.document.querySelector('#rrCustomerLoginApprovals71').click();await tick();w.document.querySelector('[data-whatsapp-approve]').click();
+ const sender=w.document.querySelector('[data-wa-sender]'),code=w.document.querySelector('[data-wa-code]');assert.equal(sender.value,'');assert.equal(code.value,'');
+ w.document.querySelector('[data-wa-confirm]').click();await tick();assert(!calls.some(([name])=>name==='rr_customer_whatsapp_approve_test71'));
+ sender.value='+919000000000';code.value='ABCDEF1234567890';w.document.querySelector('[data-wa-confirm]').click();await tick();
+ const approval=calls.find(([name])=>name==='rr_customer_whatsapp_approve_test71');assert.deepEqual(JSON.parse(JSON.stringify(approval[1])),{p_request_id:'r1',p_observed_sender_mobile:'+919000000000',p_received_code:'ABCDEF1234567890'});dom.window.close();
+});

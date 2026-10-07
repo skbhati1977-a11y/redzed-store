@@ -133,6 +133,21 @@
     });}finally{code.value='';modal.remove();}
   }
 
+  async function chooseVerification(identity,trustedDevice,args) {
+    const modal=document.createElement('div');modal.id='rrCustomerVerificationChoice71';
+    modal.setAttribute('role','dialog');modal.setAttribute('aria-modal','true');
+    modal.style.cssText='position:fixed;inset:0;z-index:2147483647;background:#050a10;display:grid;place-items:center;padding:18px;color:#fff;font-family:system-ui';
+    modal.innerHTML='<section style="width:min(420px,100%);padding:22px;background:#121c29;border-radius:16px"><b>VERIFY REGISTERED NUMBER</b><p>WhatsApp पर request code भेजें। Admin sender नंबर जाँचकर device approve करेगा। यह manual verification है।</p><button data-verification-wa>VERIFY VIA WHATSAPP</button><p>SMS OTP के लिए SMS service configured होना जरूरी है।</p><button data-verification-sms>USE SMS OTP</button><button data-verification-cancel>CANCEL</button><p data-verification-error role="status"></p></section>';
+    document.body.appendChild(modal);
+    try{return await new Promise((resolve,reject)=>{
+      let busy=false;
+      modal.querySelector('[data-verification-cancel]').onclick=()=>{if(!busy)reject(Error('Verification cancelled. Chat locked है।'));};
+      for(const [selector,run] of [['[data-verification-wa]',()=>rpc('rr_customer_whatsapp_request_test71',args)],['[data-verification-sms]',()=>verifyPhoneOtp(identity,trustedDevice)]]){
+        modal.querySelector(selector).onclick=async()=>{if(busy)return;busy=true;modal.querySelectorAll('button').forEach(b=>b.disabled=true);try{resolve(await run());}catch(error){modal.querySelector('[data-verification-error]').textContent=error.message;}finally{busy=false;modal.querySelectorAll('button').forEach(b=>b.disabled=false);}};
+      }
+    });}finally{modal.remove();}
+  }
+
   async function waitForApproval(request, identity, trustedDevice) {
     let modal=identity.modal, owned=false;
     if(!modal){
@@ -147,6 +162,16 @@
     if(submit)submit.textContent='WAITING FOR APPROVAL';
     if(message){message.setAttribute?.('role','status');message.setAttribute?.('aria-live','polite');message.style.whiteSpace='pre-line';}
     modal.querySelectorAll('input,button').forEach(el=>el.disabled=true);
+    let whatsappBox=null;
+    if(request.whatsapp_code){
+      whatsappBox=document.createElement('div');whatsappBox.dataset.whatsappVerification='true';
+      const details=document.createElement('p');details.style.whiteSpace='pre-line';
+      details.textContent=`WhatsApp manual verification\nCode: ${request.whatsapp_code}\nअपने registered WhatsApp नंबर ${identity.mobile} से भेजें। Admin वास्तविक sender नंबर जाँचकर इसी device को approve करेगा।\nCode expiry: ${new Date(request.whatsapp_expires_at).toLocaleString()}`;
+      const link=document.createElement('a');link.textContent='OPEN WHATSAPP & SEND REQUEST';link.target='_blank';link.rel='noopener noreferrer';link.style.color='#9ed5ff';
+      const text=`Redzed TEST71 device login verification\nCustomer: ${request.customer_name||identity.name}\nRegistered number: ${identity.mobile}\nRequest: ${request.request_id}\nCode: ${request.whatsapp_code}\nPlease check my actual WhatsApp sender number and approve this device manually.`;
+      link.href=`https://wa.me/${request.whatsapp_destination}?text=${encodeURIComponent(text)}`;
+      whatsappBox.append(details,link);message?.parentElement?.appendChild(whatsappBox);
+    }
     let failures=0;
     const remind=()=>{if(document.hidden||request.approval_status!=='PENDING')return;rpc('rr_customer_login_remind_test71',{p_request_id:request.request_id,p_device_id:trustedDevice}).catch(()=>{});};
     document.addEventListener('visibilitychange',remind);
@@ -155,7 +180,7 @@
       for(;;){
         if(message)message.textContent=`${request.customer_name||identity.name} · ${identity.mobile}\n${request.approval_status==='PAUSED'?'Super Admin ने access PAUSE किया है। Resume होने तक chat locked है।':'Super Admin approval का इंतज़ार है। Chat अभी locked है।'}`;
         if(request.approval_status==='APPROVED')return;
-        if(request.approval_status==='OTP_REQUIRED')throw Error('SMS OTP verification required. Reload and verify the registered mobile.');
+        if(request.approval_status==='OTP_REQUIRED')throw Error('Verification expired or unavailable. Reload to create a new WhatsApp request or verify SMS OTP.');
         if(['REJECTED','REVOKED'].includes(request.approval_status))throw Error('Login approval rejected or revoked. Contact Super Admin.');
         await new Promise(resolve=>setTimeout(resolve,5000));
         try{
@@ -167,6 +192,7 @@
         }
       }
     }finally{
+      whatsappBox?.remove();
       document.removeEventListener?.('visibilitychange',remind);
       window.removeEventListener?.('pageshow',remind);
       if(owned)modal.remove();else {modal.querySelectorAll('input,button').forEach(el=>el.disabled=false);if(submit)submit.textContent=oldText;}
@@ -181,7 +207,8 @@
       p_device_id: trustedDevice,
     };
     let result = await rpc("rr_customer_session_issue_bound_v9680", args);
-    if(result?.approval_status==='OTP_REQUIRED')result=await verifyPhoneOtp(identity,trustedDevice);
+    if(result?.approval_status==='OTP_REQUIRED')result=await chooseVerification(identity,trustedDevice,args);
+    else if(result?.whatsapp_pending)result=await rpc('rr_customer_whatsapp_request_test71',args);
     if(result?.approval_status && !result.session_token){
       await waitForApproval(result,identity,trustedDevice);
       result=await rpc('rr_customer_session_issue_bound_v9680',args);
