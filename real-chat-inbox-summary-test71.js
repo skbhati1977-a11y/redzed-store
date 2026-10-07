@@ -33,7 +33,13 @@
   const ids=shown.filter(n=>{const r=target(n).getBoundingClientRect(),box=chat.getBoundingClientRect();return r.top<box.bottom&&r.bottom>box.top}).map(n=>n.id);
   if(!ids.length)return;reading=true;try{await rpc('rr_chat_notification_read_test71',{p_ids:ids});notices=notices.filter(n=>!ids.includes(n.id));navigator.serviceWorker?.controller?.postMessage({type:'RZ_NOTICE_READ71',ids});paint()}catch(e){console.warn('Chat read status unavailable',e)}finally{reading=false}
  }
- async function refresh(){if(busy||!ready())return;busy=true;try{const result=await rpc('rr_chat_notification_inbox_test71');notices=Array.isArray(result)?result:[];try{const rows=await rpc('rr_chat_staff_unread_test71');customers=Array.isArray(rows)?rows:[]}catch(_){}paint();await visible()}catch(e){console.warn('Chat unread counts unavailable',e)}finally{busy=false}}
+ async function refresh(){if(busy||!ready())return;busy=true;try{
+  await Promise.allSettled([
+   rpc('rr_chat_notification_inbox_test71').then(result=>{notices=Array.isArray(result)?result:[];paint();}).catch(e=>console.warn('Action unread counts unavailable',e)),
+   rpc('rr_chat_staff_unread_test71').then(result=>{customers=Array.isArray(result)?result:[];paint();}).catch(e=>console.warn('Customer unread counts unavailable',e))
+  ]);await visible();
+ }finally{busy=false}}
+
  window.RRChatNotifications71={refresh,visible,paint};
  document.addEventListener('scroll',()=>visible(),true);setInterval(()=>{if(!document.hidden){paint();refresh()}},3000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)refresh()});setTimeout(refresh,1000);
 })();
