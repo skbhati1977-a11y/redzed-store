@@ -23,3 +23,10 @@
 #inbox .row .go{margin:0;text-align:center}
 #inbox .row .rrMsgBubble71{vertical-align:middle;max-width:100%;margin-left:6px}
 #inbox .list-end{padding:16px 14px;line-height:1.5;font-size:12px}
+
+/* Keep the invite action separate from Add and the live status. */
+#inbox>.head{grid-template-columns:44px minmax(0,1fr) 76px 44px;column-gap:8px}
+#inbox>.head>h1{grid-column:2/4}
+#inbox>.head>.test{grid-column:4}
+#inbox>.head>#rr67Add{grid-column:4!important;grid-row:1!important}
+#inbox.inbox>.head>#rr67InviteContacts{grid-column:3!important;grid-row:2!important;width:76px!important;height:36px!important;padding:0 8px!important;font-size:11px!important;font-weight:700;line-height:1;white-space:nowrap;border:1px solid #4384b6!important;border-radius:10px!important;background:#1769aa!important;color:#fff;box-shadow:0 2px 6px #0003}
