@@ -16,7 +16,7 @@ self.addEventListener('push',e=>{
 self.addEventListener('notificationclick',e=>{e.notification.close();e.waitUntil((async()=>{
  const data=e.notification.data||{},chatId=String(data.chatId||''),materialAlertId=String(data.materialAlertId||'');
  const target=new URL(String(data.url||(materialAlertId?'test70-cb-purchase-real-chat-pilot.html?source=material_push&rc_material_alert='+encodeURIComponent(materialAlertId):'real-sales-live-chat-v9434.html?source=push61&chat='+encodeURIComponent(chatId)+'&v=61push6')),self.registration.scope);
- const requestId=String(data.loginRequestId||data.login_request_id||target.searchParams.get('rc_login_request')||'');
+ const requestId=String(data.loginRequestId||data.login_request_id||target.searchParams.get('rc_login_request')||(String(e.notification.tag||'').startsWith('rz-login-approval-')?String(e.notification.tag).slice('rz-login-approval-'.length):''));
  if(requestId){target.pathname=new URL('test70-cb-purchase-real-chat-pilot.html',self.registration.scope).pathname;target.search='';for(const [key,value] of Object.entries({rc_view:'chat',rc_kind:'group',rc_id:'ADMIN',rc_parent:'ADMIN',rc_status:'OPEN',rc_login_request:requestId,source:'customer_login_approval',v:'TEST71'}))target.searchParams.set(key,value);}
  if(target.origin!==self.location.origin)return;
  const url=target.href,ws=await clients.matchAll({type:'window',includeUncontrolled:true});
