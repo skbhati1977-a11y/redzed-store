@@ -7,6 +7,7 @@
  const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  const style=document.createElement('style');style.textContent='.rrMsgBubble71{display:inline-flex;align-items:center;justify-content:center;min-width:25px;height:25px;padding:0 7px;margin-left:8px;border-radius:999px;background:#25a85a;color:white;font:800 13px system-ui;flex-shrink:0}.rrNoticeFocus71{outline:3px solid #ffe095!important;scroll-margin:24px}';document.head.appendChild(style);
  function bubble(host,n,key){if(!host)return;let b=host.querySelector('[data-unread-bubble="'+key+'"]');if(!n){b?.remove();return}if(!b){b=document.createElement('span');b.className='rrMsgBubble71';b.dataset.unreadBubble=key;host.appendChild(b)}const value=String(n);if(b.textContent!==value)b.textContent=value;b.setAttribute('aria-label',value+' unread messages')}
+ const belongs=(n,worker)=>Array.isArray(n.worker_ids)&&n.worker_ids.some(id=>id&&String(id)===String(worker));
  function paint(){
   const byDept=new Map();for(const n of notices)byDept.set(n.department_code,(byDept.get(n.department_code)||0)+1);
   const customerTotal=customers.reduce((n,x)=>n+Number(x.unread_count||0),0);
@@ -14,6 +15,9 @@
   byDept.set('SALES',(byDept.get('SALES')||0)+customerTotal);
   const total=notices.length+customerTotal;bubble(document.querySelector('#inbox .head h1'),total,'total');try{const result=total?navigator.setAppBadge?.(total):navigator.clearAppBadge?.();result?.catch(()=>{});}catch(_){}
   document.querySelectorAll('[data-department],[data-dept-group]').forEach(row=>{const dep=String(row.dataset.department||row.dataset.deptGroup).toUpperCase();bubble(row.querySelector('b'),byDept.get(dep)||0,'department');const badge=row.querySelector('[data-unread-bubble="department"]');if(badge){badge.setAttribute('role','button');badge.tabIndex=0;const open=event=>{event.preventDefault();event.stopPropagation();const first=notices.find(n=>n.department_code===dep);if(first)location.href=first.route_url+(first.route_url.includes('?')?'&':'?')+'rc_notice='+encodeURIComponent(first.id);else if(dep==='SALES'&&customers.find(n=>Number(n.unread_count)>0))location.href='real-sales-live-chat-v9434.html?chat='+encodeURIComponent(customers.find(n=>Number(n.unread_count)>0).chat_id);};badge.onclick=open;badge.onkeydown=e=>{if(e.key==='Enter'||e.key===' ')open(e)};}});
+  const context=window.RRAdminApprovalHost71?.context();
+  document.querySelectorAll('[data-person]').forEach(row=>{const matches=notices.filter(n=>n.department_code===String(context?.parentDepartment||context?.id||'').toUpperCase()&&belongs(n,row.dataset.person));bubble(row.querySelector('b'),matches.length,'chat');const badge=row.querySelector('[data-unread-bubble="chat"]');if(badge){badge.setAttribute('role','button');badge.tabIndex=0;const open=e=>{e.preventDefault();e.stopPropagation();const u=new URL(matches[0].route_url,location.href);u.searchParams.set('rc_kind','person');u.searchParams.set('rc_id',row.dataset.person);u.searchParams.set('rc_parent',matches[0].department_code);u.searchParams.set('rc_notice',matches[0].id);location.href=u.href;};badge.onclick=open;badge.onkeydown=e=>{if(e.key==='Enter'||e.key===' ')open(e)};}});
+  const root=document.getElementById('messages');if(root&&context&&['group','person'].includes(context.kind)){root.querySelectorAll('[data-unread-bubble="card"]').forEach(b=>b.remove());const counts=new Map();for(const n of notices){if(new URL(n.route_url,location.href).searchParams.get('rc_status')!==context.status||n.department_code!==String(context.parentDepartment||context.id||'').toUpperCase()||context.kind==='person'&&!belongs(n,context.id))continue;const node=target(n);if(node)counts.set(node,(counts.get(node)||0)+1);}for(const [node,count]of counts)bubble(node.querySelector('h2,b')||node,count,'card');}
   document.getElementById('rrApprovalBadge71')?.remove();
   document.getElementById('rrInboxSummary71')?.remove();
  }
@@ -26,7 +30,7 @@
  }
  async function visible(){if(reading||document.hidden||!ready())return;
   const context=window.RRAdminApprovalHost71?.context(),chat=document.getElementById('chat');if(!context||chat?.hidden||!['group','person'].includes(context.kind))return;
-  const shown=notices.filter(n=>{const u=new URL(n.route_url,location.href);return n.department_code===String(context.parentDepartment||context.id||'').toUpperCase()&&u.searchParams.get('rc_status')===context.status&&target(n)});
+  const shown=notices.filter(n=>{const u=new URL(n.route_url,location.href);return n.department_code===String(context.parentDepartment||context.id||'').toUpperCase()&&(context.kind!=='person'||belongs(n,context.id))&&u.searchParams.get('rc_status')===context.status&&target(n)});
   const focus=shown.find(n=>n.id===noticeId||bridgeId&&String(n.bridge_id)===bridgeId);
   if(focus&&!focusDone){const node=target(focus);const closed=node.closest?.('details');if(closed)closed.open=true;node.setAttribute('tabindex','-1');node.classList.add('rrNoticeFocus71');node.scrollIntoView({block:'center',behavior:'auto'});node.focus({preventScroll:true});focusDone=true;}
   // Read only cards actually in the viewport; opening a department does not clear unseen cards.

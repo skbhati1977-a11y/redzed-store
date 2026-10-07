@@ -15,3 +15,14 @@ test('approval router waits for host and card, then focuses the actual customer 
 test('existing approval notification recovers request identity from its saved tag',async()=>{const f=fixture();await click(f,{url:'https://example.test/test70-cb-purchase-real-chat-pilot.html'},'rz-login-approval-request-1');exact(f.opened[0]);});
 
 test('universal action notice without navigate opens its exact department card route',async()=>{let staleFocus=0;const f=fixture([{url:'https://example.test/test70-cb-purchase-real-chat-pilot.html',focus:async()=>staleFocus++}]);const url='https://example.test/test70-cb-purchase-real-chat-pilot.html?rc_view=chat&rc_kind=group&rc_id=FOLDING&rc_parent=FOLDING&rc_status=WORKING&rc_bridge=event-1&rc_notice=notice-1';await click(f,{url,noticeId:'notice-1'});assert.equal(f.opened[0],url);assert.equal(staleFocus,0)});
+
+test('action push preserves department, status, bridge and notice on successful notification navigation',async()=>{
+ for(const department of ['CUTTING','FABRICATION','PRINTING','STITCHING','OVERLOCK','FOLDING','KAAJ_BUTTON','TEAK_TANKI','THREAD_CUT','QC','PRESS','PACKING','DESPATCH','COSTING','ADMIN','ACCOUNTS','SALES'])for(const status of ['OPEN','WORKING','CLOSE']){
+  let destination,focused=0;const f=fixture([{url:'https://example.test/test70-cb-purchase-real-chat-pilot.html',navigate:async url=>{destination=url;return{focus:async()=>focused++}}}]);
+  const url='test70-cb-purchase-real-chat-pilot.html?rc_view=chat&rc_kind=group&rc_id='+department+'&rc_parent='+department+'&rc_status='+status+'&rc_bridge=bridge-1&rc_notice=notice-1';
+  const notice=await push(f,{url,notice_id:'notice-1'});assert.equal(notice.data.noticeId,'notice-1');assert.equal(notice.tag,'rz-notice-notice-1');assert.equal(notice.renotify,false);await click(f,notice.data);assert.equal(destination,new URL(url,'https://example.test/').href);assert.equal(focused,1);
+ }
+});
+test('reading one work notice closes only that recipient notice',async()=>{
+ const handlers={},closed=[];const self={registration:{getNotifications:async()=>['a','b'].map(id=>({data:{noticeId:id},close:()=>closed.push(id)}))},addEventListener:(name,fn)=>handlers[name]=fn};vm.runInNewContext(sw,{self,URL});let work;handlers.message({data:{type:'RZ_NOTICE_READ71',ids:['a']},waitUntil:p=>work=p});await work;assert.deepEqual(closed,['a']);
+});
