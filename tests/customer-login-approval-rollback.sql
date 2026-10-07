@@ -5,6 +5,7 @@ DECLARE
  dev text:=encode(extensions.gen_random_bytes(24),'hex'); dev2 text:=encode(extensions.gen_random_bytes(24),'hex');
  response jsonb; again jsonb; approved jsonb; admin_uid uuid; other_uid uuid; request_id uuid;
  mobile text; state jsonb; summary jsonb; qty bigint; forbidden boolean:=false;
+ otp_uid uuid;otp_sid uuid:=extensions.gen_random_uuid();otp_challenge jsonb;otp_claims text;
 BEGIN
  SELECT * INTO s FROM public.rr_market_share_v9420 WHERE status='ACTIVE' AND data_mode='TEST'
   AND customer_id IS NOT NULL AND origin_relation_kind='DIRECT_CUSTOMER' ORDER BY created_at DESC LIMIT 1;
@@ -16,6 +17,14 @@ BEGIN
   PERFORM public.rr_customer_session_issue_bound_v9680(s.token,c.customer_name,'0000000000',dev);
   RAISE EXCEPTION 'Wrong number accepted';
  EXCEPTION WHEN others THEN IF SQLERRM NOT LIKE 'Mobile does not match%' THEN RAISE; END IF; END;
+ -- Rollback-only trusted SMS proof fixture; no SMS is sent and no production proof persists.
+ SELECT id INTO otp_uid FROM auth.users WHERE phone='91'||mobile;
+ IF otp_uid IS NULL THEN otp_uid:=extensions.gen_random_uuid();INSERT INTO auth.users(id,phone,phone_confirmed_at,is_anonymous) VALUES(otp_uid,'91'||mobile,clock_timestamp(),false);ELSE UPDATE auth.users SET phone_confirmed_at=clock_timestamp(),is_anonymous=false WHERE id=otp_uid;END IF;
+ INSERT INTO auth.sessions(id,user_id,created_at) VALUES(otp_sid,otp_uid,clock_timestamp());
+ otp_challenge:=public.rr_customer_login_otp_prepare_test71(s.token,c.customer_name,mobile,dev);
+ otp_claims:=current_setting('request.jwt.claims',true);PERFORM set_config('request.jwt.claims','{"role":"service_role"}',true);
+ PERFORM public.rr_customer_login_otp_complete_service_test71((otp_challenge->>'challenge_id')::uuid,dev,otp_uid,otp_sid);
+ PERFORM set_config('request.jwt.claims',coalesce(otp_claims,'{}'),true);
  response:=public.rr_customer_session_issue_bound_v9680(s.token,c.customer_name,mobile,dev);
  IF response->>'approval_status'<>'PENDING' OR response ? 'session_token' THEN RAISE EXCEPTION 'Unapproved device received session'; END IF;
  request_id:=(response->>'request_id')::uuid;
@@ -69,7 +78,7 @@ BEGIN
  BEGIN PERFORM public.rr_customer_session_validate_v9590(approved->>'session_token',dev2); RAISE EXCEPTION 'Other device accepted';
  EXCEPTION WHEN others THEN IF SQLERRM<>'Trusted device does not match.' THEN RAISE; END IF; END;
  again:=public.rr_customer_session_issue_bound_v9680(s.token,c.customer_name,mobile,dev2);
- IF again->>'approval_status'<>'PENDING' OR again ? 'session_token' THEN RAISE EXCEPTION 'Approval transferred to another phone'; END IF;
+ IF again->>'approval_status'<>'OTP_REQUIRED' OR again ? 'session_token' THEN RAISE EXCEPTION 'Approval transferred to another phone'; END IF;
  BEGIN PERFORM public.rr_customer_login_status_test71(request_id,dev2); RAISE EXCEPTION 'Other device can poll approval';
  EXCEPTION WHEN others THEN IF SQLERRM<>'Login request unavailable for this device.' THEN RAISE; END IF; END;
  PERFORM set_config('request.headers',jsonb_build_object('x-rr-customer-session',approved->>'session_token','x-rr-customer-device',dev)::text,true);

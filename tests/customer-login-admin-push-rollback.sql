@@ -1,11 +1,20 @@
 BEGIN;
 DO $test$
 DECLARE sh public.rr_market_share_v9420%rowtype;c public.rr_customers%rowtype;rid uuid;device text:=encode(extensions.gen_random_bytes(24),'hex');result jsonb;n integer;n2 integer;uid uuid;
+ otp_uid uuid;otp_sid uuid:=extensions.gen_random_uuid();otp_challenge jsonb;otp_claims text;
 BEGIN
  SELECT s.* INTO sh FROM public.rr_market_share_v9420 s JOIN public.rr_customers cu ON cu.id=s.customer_id AND cu.is_active WHERE s.data_mode='TEST' AND s.status='ACTIVE' AND length(right(regexp_replace(coalesce(cu.mobile,''),'[^0-9]','','g'),10))=10 AND public.rr_market_share_relation_v81(s.token)<>'DISTRIBUTOR_CUSTOMER' LIMIT 1;
  SELECT * INTO c FROM public.rr_customers WHERE id=sh.customer_id;
  SELECT auth_user_id INTO uid FROM public.rr_user_profiles WHERE is_active AND upper(role_code) IN('SUPER_ADMIN','OWNER') AND upper(coalesce(access_status,'ACTIVE'))='ACTIVE' LIMIT 1;
  IF sh.id IS NULL OR uid IS NULL THEN RAISE EXCEPTION 'Fixture missing';END IF;
+ -- Rollback-only trusted SMS proof fixture; no SMS is sent and no production proof persists.
+ SELECT id INTO otp_uid FROM auth.users WHERE phone='91'||right(regexp_replace(c.mobile,'[^0-9]','','g'),10);
+ IF otp_uid IS NULL THEN otp_uid:=extensions.gen_random_uuid();INSERT INTO auth.users(id,phone,phone_confirmed_at,is_anonymous) VALUES(otp_uid,'91'||right(regexp_replace(c.mobile,'[^0-9]','','g'),10),clock_timestamp(),false);ELSE UPDATE auth.users SET phone_confirmed_at=clock_timestamp(),is_anonymous=false WHERE id=otp_uid;END IF;
+ INSERT INTO auth.sessions(id,user_id,created_at) VALUES(otp_sid,otp_uid,clock_timestamp());
+ otp_challenge:=public.rr_customer_login_otp_prepare_test71(sh.token,c.customer_name,right(regexp_replace(c.mobile,'[^0-9]','','g'),10),device);
+ otp_claims:=current_setting('request.jwt.claims',true);PERFORM set_config('request.jwt.claims','{"role":"service_role"}',true);
+ PERFORM public.rr_customer_login_otp_complete_service_test71((otp_challenge->>'challenge_id')::uuid,device,otp_uid,otp_sid);
+ PERFORM set_config('request.jwt.claims',coalesce(otp_claims,'{}'),true);
  result:=public.rr_customer_login_request_test71(sh.token,c.customer_name,right(regexp_replace(c.mobile,'[^0-9]','','g'),10),device);rid:=(result->>'request_id')::uuid;
  SELECT count(*) INTO n FROM public.rr_targeted_push_outbox_v708 WHERE payload->>'login_request_id'=rid::text;
  IF n=0 THEN RAISE EXCEPTION 'Pending login did not enqueue push';END IF;
