@@ -1,6 +1,8 @@
 (()=>{'use strict';
  if(window.RRChatNotifications71)return;
  let notices=[],customers=[],busy=false,reading=false,focusDone=false;
+ const ready=()=>!!(window.RF853?.rpc||window.supabaseClient?.rpc);
+ async function rpc(name,args={}){if(window.RF853?.rpc)return window.RF853.rpc(name,args);const db=window.supabaseClient;if(!db?.rpc)throw Error('Chat connection loading');const {data,error}=await db.rpc(name,args);if(error)throw error;return data;}
  const q=new URLSearchParams(location.search),noticeId=q.get('rc_notice'),bridgeId=q.get('rc_bridge');
  const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  const style=document.createElement('style');style.textContent='.rrMsgBubble71{display:inline-flex;align-items:center;justify-content:center;min-width:25px;height:25px;padding:0 7px;margin-left:8px;border-radius:999px;background:#25a85a;color:white;font:800 13px system-ui;flex-shrink:0}.rrNoticeFocus71{outline:3px solid #ffe095!important;scroll-margin:24px}';document.head.appendChild(style);
@@ -22,16 +24,16 @@
   if(n.lot_no)return [...root.querySelectorAll('.work-card,.closed-row,[data-lot]')].find(x=>String(x.dataset.noticeLot||x.dataset.lot||'')===String(n.lot_no))||null;
   return null;
  }
- async function visible(){if(reading||document.hidden||!window.RF853?.rpc)return;
+ async function visible(){if(reading||document.hidden||!ready())return;
   const context=window.RRAdminApprovalHost71?.context(),chat=document.getElementById('chat');if(!context||chat?.hidden||!['group','person'].includes(context.kind))return;
   const shown=notices.filter(n=>{const u=new URL(n.route_url,location.href);return n.department_code===String(context.parentDepartment||context.id||'').toUpperCase()&&u.searchParams.get('rc_status')===context.status&&target(n)});
   const focus=shown.find(n=>n.id===noticeId||bridgeId&&String(n.bridge_id)===bridgeId);
   if(focus&&!focusDone){const node=target(focus);const closed=node.closest?.('details');if(closed)closed.open=true;node.setAttribute('tabindex','-1');node.classList.add('rrNoticeFocus71');node.scrollIntoView({block:'center',behavior:'auto'});node.focus({preventScroll:true});focusDone=true;}
   // Read only cards actually in the viewport; opening a department does not clear unseen cards.
   const ids=shown.filter(n=>{const r=target(n).getBoundingClientRect(),box=chat.getBoundingClientRect();return r.top<box.bottom&&r.bottom>box.top}).map(n=>n.id);
-  if(!ids.length)return;reading=true;try{await RF853.rpc('rr_chat_notification_read_test71',{p_ids:ids});notices=notices.filter(n=>!ids.includes(n.id));navigator.serviceWorker?.controller?.postMessage({type:'RZ_NOTICE_READ71',ids});paint()}catch(e){console.warn('Chat read status unavailable',e)}finally{reading=false}
+  if(!ids.length)return;reading=true;try{await rpc('rr_chat_notification_read_test71',{p_ids:ids});notices=notices.filter(n=>!ids.includes(n.id));navigator.serviceWorker?.controller?.postMessage({type:'RZ_NOTICE_READ71',ids});paint()}catch(e){console.warn('Chat read status unavailable',e)}finally{reading=false}
  }
- async function refresh(){if(busy||!window.RF853?.rpc)return;busy=true;try{const result=await RF853.rpc('rr_chat_notification_inbox_test71');notices=Array.isArray(result)?result:[];try{const rows=await RF853.rpc('rr_chat_staff_unread_test71');customers=Array.isArray(rows)?rows:[]}catch(_){}paint();await visible()}catch(e){console.warn('Chat unread counts unavailable',e)}finally{busy=false}}
+ async function refresh(){if(busy||!ready())return;busy=true;try{const result=await rpc('rr_chat_notification_inbox_test71');notices=Array.isArray(result)?result:[];try{const rows=await rpc('rr_chat_staff_unread_test71');customers=Array.isArray(rows)?rows:[]}catch(_){}paint();await visible()}catch(e){console.warn('Chat unread counts unavailable',e)}finally{busy=false}}
  window.RRChatNotifications71={refresh,visible,paint};
  document.addEventListener('scroll',()=>visible(),true);setInterval(()=>{if(!document.hidden){paint();refresh()}},3000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)refresh()});setTimeout(refresh,1000);
 })();
