@@ -45,10 +45,14 @@ form.addEventListener("submit", async (e) => {
   msg.textContent = "Login successful…";
   await new Promise((resolve) => setTimeout(resolve, 900));
 
-  const requested = new URLSearchParams(location.search).get("next") || "";
-  const safeNext = /^(?:real-[a-z0-9._-]+\.html|test70-cb-purchase-real-chat-pilot\.html)(?:\?[a-z0-9_=&.%+-]*)?$/i.test(requested)
-    ? requested
-    : "real-dashboard.html";
+  const params = new URLSearchParams(location.search);
+  const requested = params.get("next") || params.get("return") || "";
+  let safeNext = "real-dashboard.html";
+  try {
+    const target = new URL(requested, location.href);
+    if (requested && target.origin === location.origin && /^\/(?:real-[a-z0-9._-]+\.html|test70-cb-purchase-real-chat-pilot\.html)$/i.test(target.pathname))
+      safeNext = target.pathname + target.search + target.hash;
+  } catch (_) {}
   location.href = safeNext;
 });
 

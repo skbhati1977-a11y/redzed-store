@@ -324,7 +324,7 @@ async function openChat(kind,id,push=true,parentDepartment=null){if(String(id).t
   const role=String(S.actor?.role||S.actor?.role_code||'').toUpperCase(),create=$('contextAction'),manage=$('manageStaffAction');
   manage.hidden=!(kind==='group'&&membershipAdminRole());manage.onclick=()=>openMembershipAdmin(id);
   create.hidden=!(kind==='group'&&id==='PURCHASE'&&['OWNER','SUPER_ADMIN','ADMIN'].includes(role));
-  create.href='real-cb-new-v9130-loader.html?from=TEST70_REAL_CHAT&return='+encodeURIComponent(location.pathname+location.search)+'&fix=20260817';
+  create.href='real-cb-new-v9130-loader.html?from=TEST70_REAL_CHAT&return='+encodeURIComponent(location.pathname+location.search+location.hash)+'&fix=20260817';
   const emptyType=['WORKING','CLOSE'].includes(S.status)&&S.workFilter!=='ALL'?S.workFilter.toLowerCase():'mapped';
   const expandedClosed=expandedClosedCardKeys();
   if(!S.search){S.activeRenderedSearchRows=rows.slice();S.activeRenderedSearchKey=[kind,String(id),S.status].join('|').toUpperCase()}
@@ -411,7 +411,7 @@ async function boot(){
   if(!S.db)return $('state').textContent="Supabase unavailable.";
   const sessionResult=await Promise.race([S.db.auth.getSession(),new Promise(resolve=>setTimeout(()=>resolve({data:{session:null},error:new Error('Auth session timeout')}),2500))]);
   const sessionUser=sessionResult?.data?.session?.user;
-  if(!sessionUser)return location.href='real-login.html?return='+encodeURIComponent(location.pathname+location.search);
+  if(!sessionUser)return location.href='real-login.html?return='+encodeURIComponent(location.pathname+location.search+location.hash);
   S.userId=sessionUser.id;
   S.db.auth.getUser().then(({error,data})=>{if(error||!data?.user)console.warn('Background auth verification pending/failed',error?.message||'no user')}).catch(e=>console.warn('Background auth verification failed',e));
   const p=new URLSearchParams(location.search);if(p.get('rc_login_request')){p.set('rc_view','chat');p.set('rc_kind','group');p.set('rc_id','ADMIN');p.set('rc_parent','ADMIN');p.set('rc_status','OPEN');S.userStatusLock='OPEN';S.search='';S.searchTerms=[];}const requestedStatus=p.get('rc_status');
