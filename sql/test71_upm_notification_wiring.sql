@@ -107,3 +107,46 @@ begin
  return p_default;
 end $$;
 revoke all on function rr_chat_notifications_test71.current_state(uuid,uuid,text,text) from public,anon,authenticated;
+
+-- Recover existing cards into the signed-in recipient's TEST inbox only.
+-- This never touches business rows or queues historical web pushes.
+create or replace function rr_chat_notifications_test71.recover_upm_cards() returns void
+language plpgsql security definer set search_path='' as $$
+begin
+ if auth.uid() is null or not rr_chat_notifications_test71.test_request() then return;end if;
+ with cards as (
+  select distinct on (a.department_code,a.worker_id,coalesce(a.assignment_batch_id,a.id))
+   'UPM_CARD_TEST71:'||coalesce(a.assignment_batch_id,a.id)||':'||a.worker_id as key,
+   public.rr_real_chat_canonical_department_v83(a.department_code) dep,a.lot_no,a.id assignment_id,null::uuid request_id,
+   array[a.worker_id,public.rr_canonical_worker_id_v264(a.worker_id),a.assigner_worker_id] workers,
+   rr_chat_notifications_test71.current_state(a.id,null,public.rr_real_chat_canonical_department_v83(a.department_code),'OPEN') state
+  from public.rr_upm_work_assignments_v8 a
+  where not exists(select 1 from public.rr_upm_submit_requests_v794 q where a.id=any(q.assignment_ids) and upper(q.status) not in('CANCELLED','CANCELED','REJECTED','VOID'))
+  order by a.department_code,a.worker_id,coalesce(a.assignment_batch_id,a.id),a.created_at,a.id
+ ), requests as (
+  select 'UPM_CARD_TEST71:SUBMIT:'||q.id as key,public.rr_real_chat_canonical_department_v83(d.dep) dep,q.lot_no,q.assignment_ids[1] assignment_id,q.id request_id,
+   array[q.worker_id,public.rr_canonical_worker_id_v264(q.worker_id),q.selected_receiver_worker_id,q.accepted_lm_id] workers,
+   rr_chat_notifications_test71.current_state(q.assignment_ids[1],q.id,public.rr_real_chat_canonical_department_v83(d.dep),'OPEN') state
+  from public.rr_upm_submit_requests_v794 q
+  cross join lateral (select q.department_code dep union select coalesce(q.target_department_code,'FABRICATION')) d
+ ), eligible as (
+  select c.*,w.worker_id recipient from (select * from cards union all select * from requests) c
+  join public.rr_worker_directory_unified_v1 w on w.linked_auth_user_id=auth.uid()
+  and w.is_active and upper(coalesce(w.access_status,'ACTIVE'))='ACTIVE'
+  where c.state is not null and c.dep is not null and c.dep<>''
+  and (w.worker_id=any(c.workers) or w.linked_auth_user_id=any(c.workers)
+   or exists(select 1 from unnest(c.workers) x where public.rr_canonical_worker_id_v264(x)=w.worker_id)
+   or upper(coalesce(w.role_code,'')) in('OWNER','SUPER_ADMIN','ADMIN')
+   or exists(select 1 from public.rr_real_chat_department_membership_v70 m where m.worker_id=w.worker_id and m.is_active and public.rr_real_chat_canonical_department_v83(m.department_code)=c.dep))
+ )
+ insert into rr_chat_notifications_test71.inbox(event_key,recipient_worker_id,department_code,title,route_url,lot_no,assignment_id,submit_request_id,worker_ids,chat_status)
+ select e.key||':'||e.dep,e.recipient,e.dep,'REDZED · UPM · '||e.dep,
+  'test70-cb-purchase-real-chat-pilot.html?rc_view=chat&rc_kind=group&rc_id='||e.dep||'&rc_parent='||e.dep||'&rc_status='||e.state
+  ||case when e.assignment_id is not null then '&rc_assignment='||e.assignment_id else '' end
+  ||case when e.request_id is not null then '&rc_submit='||e.request_id else '' end,
+  e.lot_no,e.assignment_id,e.request_id,to_jsonb(e.workers),e.state from eligible e
+ where not exists(select 1 from rr_chat_notifications_test71.inbox i where i.recipient_worker_id=e.recipient and i.department_code=e.dep
+  and ((e.request_id is not null and i.submit_request_id=e.request_id) or (e.request_id is null and i.assignment_id=e.assignment_id)))
+ on conflict(event_key,recipient_worker_id) do nothing;
+end $$;
+revoke all on function rr_chat_notifications_test71.recover_upm_cards() from public,anon,authenticated;

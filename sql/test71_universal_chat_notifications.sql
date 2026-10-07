@@ -59,9 +59,10 @@ end $$;
 drop trigger if exists rr_universal_chat_notice_test71 on public.rr_real_chat_message_bridge_v70;
 create trigger rr_universal_chat_notice_test71 after insert or update of source_event_type,action_code,sent_at on public.rr_real_chat_message_bridge_v70 for each row execute function rr_chat_notifications_test71.notify_bridge();
 create or replace function public.rr_chat_notification_inbox_test71() returns jsonb
-language plpgsql stable security definer set search_path='' as $$
+language plpgsql volatile security definer set search_path='' as $$
 begin
  perform public.rr_assert_active_user_v1();
+ perform rr_chat_notifications_test71.recover_upm_cards();
  return (select coalesce(jsonb_agg(jsonb_build_object('id',i.id,'department_code',i.department_code,'title',i.title,'route_url',case when i.assignment_id is not null or i.submit_request_id is not null then regexp_replace(i.route_url,'([?&]rc_status=)[^&]*', E'\\1'||rr_chat_notifications_test71.current_state(i.assignment_id,i.submit_request_id,i.department_code,i.chat_status)) else i.route_url end,'bridge_id',i.bridge_id,'event_key',b.canonical_key,'assignment_id',i.assignment_id,'submit_request_id',i.submit_request_id,'worker_ids',coalesce(i.worker_ids,jsonb_build_array(b.sender_worker_id,public.rr_canonical_worker_id_v264(b.sender_worker_id),b.receiver_worker_id,public.rr_canonical_worker_id_v264(b.receiver_worker_id))),'lot_no',coalesce(i.lot_no,b.group_payload->>'lot_no'),'cb_no',coalesce(b.group_payload->>'cb_no',b.group_payload->>'cb_code'),'created_at',i.created_at) order by i.created_at),'[]'::jsonb)
  from rr_chat_notifications_test71.inbox i left join public.rr_real_chat_message_bridge_v70 b on b.id=i.bridge_id and b.data_mode='TEST' where i.read_at is null
  and ((i.assignment_id is null and i.submit_request_id is null) or rr_chat_notifications_test71.current_state(i.assignment_id,i.submit_request_id,i.department_code,i.chat_status) is not null)
