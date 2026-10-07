@@ -36,8 +36,8 @@ begin
   on conflict(event_key,recipient_worker_id) do nothing returning id into notice;
   if notice is not null then
    insert into public.rr_targeted_push_outbox_v708(event_key,recipient_worker_id,title,body,route_url,payload)
-   values(p_key||':'||dep,w.worker_id,'REDZED · UPM · '||dep,'Lot '||coalesce(p_lot,'')||' · '||p_state||' · नई work update',route||'&rc_notice='||notice,
-    jsonb_build_object('source','UPM_LIFECYCLE_TEST71','notice_id',notice,'department_code',dep,'assignment_id',p_assignment,'submit_request_id',p_request,'lot_no',p_lot))
+   values(p_key||':'||dep,w.worker_id,'REDZED · UPM · '||dep,'Lot '||coalesce(p_lot,'')||' · '||p_state||' · नई work update',route,
+    jsonb_build_object('source','REAL_CHAT_ACTION_TEST71','source_module','UPM_LIFECYCLE_TEST71','notice_id',notice,'department_code',dep,'assignment_id',p_assignment,'submit_request_id',p_request,'lot_no',p_lot))
    on conflict(event_key,recipient_worker_id) do nothing;
   end if;
  end loop;

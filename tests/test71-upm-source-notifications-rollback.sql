@@ -40,7 +40,7 @@ begin
   select count(*) into n from rr_chat_notifications_test71.inbox where event_key like 'UPM_RECEIPT_TEST71:'||r.receipt_batch_id||'%';if n<>before_n then raise exception 'Duplicate assign';end if;
   update upm_receipt_notice_fixture set status='CONFIRMED',confirmed_at=now() where receipt_batch_id=r.receipt_batch_id;
   if not exists(select 1 from rr_chat_notifications_test71.inbox where event_key like 'UPM_RECEIPT_TEST71:'||r.receipt_batch_id||'%' and chat_status='WORKING') then raise exception 'Accept WORKING notice missing %',a.department_code;end if;
-  if exists(select 1 from public.rr_targeted_push_outbox_v708 where event_key like 'UPM_RECEIPT_TEST71:'||r.receipt_batch_id||'%' and (payload->>'notice_id' is null or route_url not like '%rc_notice=%')) then raise exception 'Exact notice route missing';end if;
+  if exists(select 1 from public.rr_targeted_push_outbox_v708 where event_key like 'UPM_RECEIPT_TEST71:'||r.receipt_batch_id||'%' and (payload->>'notice_id' is null or route_url not like '%rc_notice=%' or payload->>'source'<>'REAL_CHAT_ACTION_TEST71' or payload->>'source_module'<>'UPM_LIFECYCLE_TEST71')) then raise exception 'Exact notice route missing';end if;
   perform set_config('request.headers','{"referer":"https://production.example/real-universal-production-v770-v9059.html?mode=REAL"}',true);
  end loop;
  select * into q from public.rr_upm_submit_requests_v794 where selected_receiver_worker_id is not null limit 1;
