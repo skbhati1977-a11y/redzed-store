@@ -62,12 +62,14 @@ Deno.serve(async (request) => {
     if (body.targeted_outbox_id && body.dispatch_token) {
       const { data: outbox } = await db.from("rr_targeted_push_outbox_v708").select("*").eq("id", body.targeted_outbox_id).eq("dispatch_token", body.dispatch_token).is("processed_at", null).maybeSingle();
       if (!outbox) return new Response("already processed", { status: 200 });
-      if(outbox.payload?.source==="CUSTOMER_LOGIN_APPROVAL_TEST71"){
+      if(["CUSTOMER_LOGIN_APPROVAL_TEST71","REAL_CHAT_ACTION_TEST71"].includes(outbox.payload?.source)){
         const {data:claimed,error:claimError}=await db.from("rr_targeted_push_outbox_v708").update({processed_at:new Date().toISOString(),dispatch_token:crypto.randomUUID()}).eq("id",outbox.id).eq("dispatch_token",body.dispatch_token).is("processed_at",null).select("id").maybeSingle();
         if(claimError)throw claimError;if(!claimed)return new Response("already processed",{status:200});
+        if(outbox.payload?.source==="CUSTOMER_LOGIN_APPROVAL_TEST71"){
         const {data:pending,error:pendingError}=await db.rpc("rr_customer_login_push_pending_test71",{p_request_id:outbox.payload.login_request_id,p_recipient_worker_id:outbox.recipient_worker_id});
         if(pendingError)throw pendingError;
         if(!pending)return new Response(JSON.stringify({ok:true,sent:0,skipped:"APPROVAL_RESOLVED"}),{headers:{"Content-Type":"application/json"}});
+        }
       }
       const { data: worker } = await db.from("rr_worker_directory_unified_v1").select("worker_id,linked_auth_user_id").or("worker_id.eq."+outbox.recipient_worker_id+",linked_auth_user_id.eq."+outbox.recipient_worker_id).limit(1).maybeSingle();
       const ids=[...new Set([outbox.recipient_worker_id,worker?.worker_id].filter(Boolean))];

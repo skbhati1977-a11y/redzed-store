@@ -1,4 +1,4 @@
-const VERSION='rz61-login-approval-focus-test71';
+const VERSION='rz61-universal-action-focus-test71';
 self.addEventListener('install',e=>{self.skipWaiting()});
 self.addEventListener('activate',e=>e.waitUntil(self.clients.claim()));
 self.addEventListener('push',e=>{
@@ -10,7 +10,7 @@ self.addEventListener('push',e=>{
  if(loginRequestId){destination.pathname=new URL('test70-cb-purchase-real-chat-pilot.html',self.registration.scope).pathname;destination.search='';for(const [key,value] of Object.entries({rc_view:'chat',rc_kind:'group',rc_id:'ADMIN',rc_parent:'ADMIN',rc_status:'OPEN',rc_login_request:loginRequestId,source:'customer_login_approval',v:'TEST71'}))destination.searchParams.set(key,value);}
  const url=destination.href;
  try{if(unread>0&&self.navigator&&typeof self.navigator.setAppBadge==='function')await self.navigator.setAppBadge(unread)}catch(_){}
- await self.registration.showNotification('RZ · '+customer,{body,icon:new URL('rz-icon-v61.svg?v=61push6',self.registration.scope).href,badge:new URL('rz-icon-v61.svg?v=61push6',self.registration.scope).href,tag:d.login_request_id?'rz-login-approval-'+String(d.login_request_id):'rz-chat-'+(chatId||Date.now()),renotify:true,requireInteraction:false,silent:false,vibrate:[220,100,220],timestamp:Date.now(),data:{chatId,url,loginRequestId,materialAlertId:String(d.material_alert_id||''),version:VERSION}});
+ await self.registration.showNotification('RZ · '+customer,{body,icon:new URL('rz-icon-v61.svg?v=61push6',self.registration.scope).href,badge:new URL('rz-icon-v61.svg?v=61push6',self.registration.scope).href,tag:d.login_request_id?'rz-login-approval-'+String(d.login_request_id):d.notice_id?'rz-notice-'+String(d.notice_id):'rz-chat-'+(chatId||Date.now()),renotify:!d.notice_id,requireInteraction:false,silent:false,vibrate:[220,100,220],timestamp:Date.now(),data:{chatId,url,loginRequestId,noticeId:String(d.notice_id||''),materialAlertId:String(d.material_alert_id||''),version:VERSION}});
  })();e.waitUntil(work);
 });
 self.addEventListener('notificationclick',e=>{e.notification.close();e.waitUntil((async()=>{
@@ -21,8 +21,10 @@ self.addEventListener('notificationclick',e=>{e.notification.close();e.waitUntil
  if(target.origin!==self.location.origin)return;
  const url=target.href,ws=await clients.matchAll({type:'window',includeUncontrolled:true});
  for(const w of ws){try{const u=new URL(w.url);if(u.origin!==self.location.origin||!(u.pathname.endsWith('/real-sales-live-chat-v9434.html')||u.pathname.endsWith('/test70-cb-purchase-real-chat-pilot.html')))continue;
- if(!requestId){await w.focus();if(typeof w.navigate==='function')await w.navigate(url);return;}
+ if(!requestId&&!target.searchParams.has('rc_notice')&&!target.searchParams.has('rc_bridge')){if(typeof w.navigate==='function'){const navigated=await w.navigate(url);if(navigated){await navigated.focus();return;}}continue;}
  if(typeof w.navigate!=='function')continue;const navigated=await w.navigate(url);if(!navigated)continue;await navigated.focus();return;
  }catch(_){}}
  const opened=await clients.openWindow(url);if(opened&&typeof opened.focus==='function')await opened.focus();
  })());});
+
+self.addEventListener('message',e=>{if(e.data?.type!=='RZ_NOTICE_READ71')return;e.waitUntil((async()=>{const ids=new Set(e.data.ids||[]);for(const n of await self.registration.getNotifications())if(ids.has(n.data?.noticeId))n.close();})());});

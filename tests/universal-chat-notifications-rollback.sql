@@ -1,0 +1,30 @@
+begin;
+alter table public.rr_targeted_push_outbox_v708 disable trigger rr_targeted_push_deliver_v708;
+create temporary table notice_bridge_test (like public.rr_real_chat_message_bridge_v70 including defaults);
+create trigger test_notify after insert on notice_bridge_test for each row execute function rr_chat_notifications_test71.notify_bridge();
+do $$
+declare b public.rr_real_chat_message_bridge_v70%rowtype;a uuid:='3a1ca08c-ffda-49be-a54c-5c6863902596';other uuid:='074df345-9f80-4302-8382-882b56f0f034';mine uuid;theirs uuid;n integer;before_n integer;begin
+ select * into b from public.rr_real_chat_message_bridge_v70 where data_mode='TEST' and source_module='UPM' and archived_at is null limit 1;
+ b.id:=gen_random_uuid();b.canonical_key:='NOTIFICATION_TEST:'||b.id;b.department_code:='FOLDING';b.receiver_worker_id:=a;b.receiver_user_id:='0245ca7a-627a-4755-8472-7aea7d204c52';b.sender_worker_id:=other;b.sender_user_id:='77d6628e-a5ae-4cfc-81f5-a30660f405a5';b.sent_at:=now();b.projection_type:='ACTION';
+ insert into notice_bridge_test select b.*;
+ if not exists(select 1 from public.rr_targeted_push_outbox_v708 where payload->>'bridge_id'=b.id::text and recipient_worker_id=a and route_url like '%rc_notice=%') then raise exception 'Targeted action push missing exact notice route';end if;
+ if exists(select 1 from public.rr_targeted_push_outbox_v708 where payload->>'bridge_id'=b.id::text and recipient_worker_id=other) then raise exception 'Sender received own action';end if;
+ select count(*) into before_n from public.rr_targeted_push_outbox_v708 where payload->>'bridge_id'=b.id::text;
+ insert into notice_bridge_test select b.*;
+ select count(*) into n from public.rr_targeted_push_outbox_v708 where payload->>'bridge_id'=b.id::text;
+ if n<>before_n then raise exception 'Duplicate action caused second push';end if;
+ b.id:=gen_random_uuid();b.data_mode:='REAL';insert into notice_bridge_test select b.*;
+ if exists(select 1 from public.rr_targeted_push_outbox_v708 where payload->>'bridge_id'=b.id::text) then raise exception 'Production action was changed';end if;
+ insert into rr_chat_notifications_test71.inbox(event_key,recipient_worker_id,department_code,title,route_url) values('READ_TEST_A',a,'FOLDING','A','test70-cb-purchase-real-chat-pilot.html?rc_status=OPEN') returning id into mine;
+ insert into rr_chat_notifications_test71.inbox(event_key,recipient_worker_id,department_code,title,route_url) values('READ_TEST_B',other,'FOLDING','B','test70-cb-purchase-real-chat-pilot.html?rc_status=OPEN') returning id into theirs;
+ perform set_config('request.jwt.claim.sub','0245ca7a-627a-4755-8472-7aea7d204c52',true);
+ if not public.rr_chat_notification_inbox_test71() @> jsonb_build_array(jsonb_build_object('id',mine)) then raise exception 'Own unread hidden';end if;
+ if public.rr_chat_notification_inbox_test71() @> jsonb_build_array(jsonb_build_object('id',theirs)) then raise exception 'Other actor unread leaked';end if;
+ if public.rr_chat_notification_read_test71(array[theirs])<>0 then raise exception 'Other actor read modified';end if;
+ if public.rr_chat_notification_read_test71(array[mine])<>1 then raise exception 'Own read failed';end if;
+ if public.rr_chat_notification_read_test71(array[mine])<>0 then raise exception 'Repeated read not idempotent';end if;
+ if public.rr_chat_notification_inbox_test71() @> jsonb_build_array(jsonb_build_object('id',mine)) then raise exception 'Read still counted';end if;
+ if has_function_privilege('anon','public.rr_chat_notification_inbox_test71()','execute') then raise exception 'Anonymous access allowed';end if;
+end $$;
+rollback;
+select 'PASS: TEST-only recipient routing, sender exclusion, duplicate suppression, actor isolation, durable read, anonymous denial' result;
