@@ -123,6 +123,7 @@
     code.focus?.();
     try{return await new Promise((resolve,reject)=>{
       let busy=false;
+      modal.querySelector('[data-verification-change]').onclick=()=>{if(busy)return;clear();localStorage.removeItem(identityKey);localStorage.removeItem(rememberedKey);localStorage.removeItem(legacyIdentityKey);const error=Error('अपना registered नंबर भरें और नई WhatsApp request भेजें।');error.code='CHANGE_NUMBER';reject(error);};
       modal.querySelector('[data-otp-cancel]').onclick=()=>{if(!busy)reject(Error('OTP verification cancelled. Chat locked है।'));};
       resend.onclick=async()=>{if(busy)return;const left=Math.ceil((60000-(Date.now()-lastSent))/1000);if(left>0){notice.textContent=`Resend के लिए ${left} seconds इंतज़ार करें।`;return;}busy=true;resend.disabled=true;try{await send();notice.textContent='नया OTP भेजा गया।';code.value='';}catch(error){notice.textContent=error.message;}finally{busy=false;resend.disabled=false;}};
       verify.onclick=async()=>{if(busy)return;const value=String(code.value||'').trim();if(!/^\d{6}$/.test(value)){notice.textContent='SMS में मिला 6 digit OTP भरें।';return;}busy=true;verify.disabled=true;try{
@@ -133,9 +134,10 @@
     });}finally{code.value='';modal.remove();}
   }
 
-  function approvalCardLink(requestId) {
+  function approvalCardLink(requestId,code) {
     const link=new URL('https://glorious-halibut-5vvvx96x4j69f76xx-8000.app.github.dev/test70-cb-purchase-real-chat-pilot.html');
     for(const [key,value] of Object.entries({rc_login_request:requestId,source:'customer_whatsapp_approval',v:'TEST71',rc_status:'OPEN',rc_view:'chat',rc_kind:'group',rc_id:'ADMIN',rc_parent:'ADMIN'}))link.searchParams.set(key,value);
+    if(/^[A-Fa-f0-9]{16}$/.test(code||''))link.hash=new URLSearchParams({wa_code:code}).toString();
     return link.href;
   }
 
@@ -143,10 +145,11 @@
     const modal=document.createElement('div');modal.id='rrCustomerVerificationChoice71';
     modal.setAttribute('role','dialog');modal.setAttribute('aria-modal','true');
     modal.style.cssText='position:fixed;inset:0;z-index:2147483647;background:#050a10;display:grid;place-items:center;padding:18px;color:#fff;font-family:system-ui';
-    modal.innerHTML='<section style="width:min(420px,100%);padding:22px;background:#121c29;border-radius:16px"><b>VERIFY REGISTERED NUMBER</b><p>WhatsApp पर request code भेजें। Admin sender नंबर जाँचकर device approve करेगा। यह manual verification है।</p><button data-verification-wa>VERIFY VIA WHATSAPP</button><p hidden>SMS OTP के लिए SMS service configured होना जरूरी है।</p><button data-verification-sms hidden>USE SMS OTP</button><button data-verification-cancel>CANCEL</button><p data-verification-error role="status"></p></section>';
+    modal.innerHTML='<section style="width:min(420px,100%);padding:22px;background:#121c29;border-radius:16px"><b>VERIFY REGISTERED NUMBER</b><p>WhatsApp पर request code भेजें। Admin sender नंबर जाँचकर device approve करेगा। यह manual verification है।</p><button data-verification-wa>VERIFY VIA WHATSAPP</button><p hidden>SMS OTP के लिए SMS service configured होना जरूरी है।</p><button data-verification-sms hidden>USE SMS OTP</button><button data-verification-change>नंबर बदलें / CHANGE NUMBER</button><button data-verification-cancel>CANCEL</button><p data-verification-error role="status"></p></section>';
     document.body.appendChild(modal);
     try{return await new Promise((resolve,reject)=>{
       let busy=false;
+      modal.querySelector('[data-verification-change]').onclick=()=>{if(busy)return;clear();localStorage.removeItem(identityKey);localStorage.removeItem(rememberedKey);localStorage.removeItem(legacyIdentityKey);const error=Error('अपना registered नंबर भरें और नई WhatsApp request भेजें।');error.code='CHANGE_NUMBER';reject(error);};
       modal.querySelector('[data-verification-cancel]').onclick=()=>{if(!busy)reject(Error('Verification cancelled. Chat locked है।'));};
       for(const [selector,run] of [['[data-verification-wa]',()=>rpc('rr_customer_whatsapp_request_test71',args)],['[data-verification-sms]',()=>verifyPhoneOtp(identity,trustedDevice)]]){
         modal.querySelector(selector).onclick=async()=>{
@@ -158,7 +161,7 @@
           try{
             const request=await run();
             if(whatsapp&&request.whatsapp_code){
-              const text=`Redzed TEST71 device login verification\nCustomer: ${request.customer_name||identity.name}\nRegistered number: ${identity.mobile}\nRequest: ${request.request_id}\nCode: ${request.whatsapp_code}\nPlease check my actual WhatsApp sender number and approve this device manually.\n\nCustomer card खोलें · Discount / Approve:\n${approvalCardLink(request.request_id)}`;
+              const text=`Redzed TEST71 device login verification\nCustomer: ${request.customer_name||identity.name}\nRegistered number: ${identity.mobile}\nRequest: ${request.request_id}\nCode: ${request.whatsapp_code}\nPlease check my actual WhatsApp sender number and approve this device manually.\n\nCustomer card खोलें · Discount / Approve:\n${approvalCardLink(request.request_id,request.whatsapp_code)}`;
               const url=`https://wa.me/${request.whatsapp_destination}?text=${encodeURIComponent(text)}`;
               if(target){target.location.replace(url);handedOff=true;}
               const button=modal.querySelector('[data-verification-wa]');
@@ -196,7 +199,7 @@
       const details=document.createElement('p');details.style.whiteSpace='pre-line';
       details.textContent=`WhatsApp manual verification\nCode: ${request.whatsapp_code}\nअपने registered WhatsApp नंबर ${identity.mobile} से भेजें। Admin वास्तविक sender नंबर जाँचकर इसी device को approve करेगा।\nCode expiry: ${new Date(request.whatsapp_expires_at).toLocaleString()}`;
       const link=document.createElement('a');link.textContent='OPEN WHATSAPP & SEND REQUEST';link.target='_blank';link.rel='noopener noreferrer';link.style.color='#9ed5ff';
-      const text=`Redzed TEST71 device login verification\nCustomer: ${request.customer_name||identity.name}\nRegistered number: ${identity.mobile}\nRequest: ${request.request_id}\nCode: ${request.whatsapp_code}\nPlease check my actual WhatsApp sender number and approve this device manually.\n\nCustomer card खोलें · Discount / Approve:\n${approvalCardLink(request.request_id)}`;
+      const text=`Redzed TEST71 device login verification\nCustomer: ${request.customer_name||identity.name}\nRegistered number: ${identity.mobile}\nRequest: ${request.request_id}\nCode: ${request.whatsapp_code}\nPlease check my actual WhatsApp sender number and approve this device manually.\n\nCustomer card खोलें · Discount / Approve:\n${approvalCardLink(request.request_id,request.whatsapp_code)}`;
       link.href=`https://wa.me/${request.whatsapp_destination}?text=${encodeURIComponent(text)}`;
       whatsappBox.append(details,link);message?.parentElement?.appendChild(whatsappBox);
     }
@@ -209,7 +212,7 @@
         if(message)message.textContent=`${request.customer_name||identity.name} · ${identity.mobile}\n${request.approval_status==='PAUSED'?'Super Admin ने access PAUSE किया है। Resume होने तक chat locked है।':'Super Admin approval का इंतज़ार है। Chat अभी locked है।'}`;
         if(request.approval_status==='APPROVED')return;
         if(request.approval_status==='OTP_REQUIRED')throw Error('Verification expired or unavailable. Reload to create a new WhatsApp request or verify SMS OTP.');
-        if(['REJECTED','REVOKED'].includes(request.approval_status))throw Error('Login approval rejected or revoked. Contact Super Admin.');
+        if(['REJECTED','REVOKED'].includes(request.approval_status))throw Error('Request reject या revoke हो गई है। नंबर बदलें दबाकर अपना registered नंबर भरें और फिर request भेजें।');
         await new Promise(resolve=>setTimeout(resolve,5000));
         try{
           request={...request,...await rpc('rr_customer_login_status_test71',{p_request_id:request.request_id,p_device_id:trustedDevice})};failures=0;
@@ -252,7 +255,7 @@
   }
 
   const invalidSession = error => /session invalid|session.*expired|trusted device.*(?:required|match)|approval required|access paused/i.test(String(error?.message||error));
-  const wrongIdentity = error => /mobile.*(?:match|required)|different customer|customer.*(?:inactive|unavailable)|approval rejected/i.test(String(error?.message||error));
+  const wrongIdentity = error => error?.code==='CHANGE_NUMBER' || /mobile.*(?:match|required)|different customer|customer.*(?:inactive|unavailable)|approval rejected/i.test(String(error?.message||error));
   async function restore() {
     const trustedDevice=device(),current=saved();
     if(current?.session_token){
@@ -269,6 +272,7 @@
       try{const validated=await issue(input,trustedDevice);input.modal.remove();return validated}
       catch(error){
         input.error.textContent=error.message;
+        if(error.code==='CHANGE_NUMBER'){input.modal.querySelector('[name=rrMobile]').value='';input.modal.querySelector('[name=rrMobile]').focus();}
         const modal=input.modal,err=input.error;
         input=await new Promise(resolve=>{modal.querySelector('button').onclick=()=>{
           const name=modal.querySelector('[name=rrName]').value.trim(),mobile=modal.querySelector('[name=rrMobile]').value.trim();
