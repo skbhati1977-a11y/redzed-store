@@ -36,12 +36,14 @@ BEGIN
  BEGIN
   UPDATE public.rr_collection_cycle_v9586 SET status='OPENED_NO_RESPONSE',closed_at=NULL WHERE id=fixture.id;
   RAISE EXCEPTION 'Reopen bypassed active collection';
- EXCEPTION WHEN unique_violation THEN
-  GET STACKED DIAGNOSTICS con=CONSTRAINT_NAME;
-  IF con<>'test71_one_open_collection_per_customer' THEN RAISE; END IF;
+ EXCEPTION WHEN others THEN
+  IF SQLERRM NOT LIKE 'Closed or PI collection cannot reopen.%' THEN RAISE;END IF;
  END;
  UPDATE public.rr_collection_cycle_v9586 SET status='CLOSED',closed_at=now() WHERE id=created;
- UPDATE public.rr_collection_cycle_v9586 SET status='OPENED_NO_RESPONSE',closed_at=NULL WHERE id=fixture.id;
+ BEGIN
+  UPDATE public.rr_collection_cycle_v9586 SET status='OPENED_NO_RESPONSE',closed_at=NULL WHERE id=fixture.id;
+  RAISE EXCEPTION 'Terminal cycle reopened without a new number';
+ EXCEPTION WHEN others THEN IF SQLERRM NOT LIKE 'Closed or PI collection cannot reopen.%' THEN RAISE;END IF;END;
  IF has_table_privilege('anon','rr_collection_rules_test71.customer_cycle_lock','UPDATE') OR has_function_privilege('anon','rr_collection_rules_test71.enforce_one_open_collection()','EXECUTE') THEN RAISE EXCEPTION 'Private guard exposed'; END IF;
 END $test$;
 ROLLBACK;
