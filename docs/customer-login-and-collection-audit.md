@@ -60,3 +60,9 @@ Pending login/reopen events enqueue existing targeted web pushes only to active 
 - Database rollback checks pass for targeted pending-only push and exact Admin OPEN route, pause/resume/revoke with existing sessions, uniform discount and unchanged historic REDZED bill headers/lines/versions, and distributor discount timestamps with unchanged private collection/CI snapshots.
 - Real Chat projection gate passes. The retained repository static suite remains red: both pre-change aef39e1409338461a17dd29040a1f29a49b0593e and release have 535 tests, 413 pass, 121 fail, 1 cancelled; identical failing test names, no new failures. Compared with full installed dependencies and a 15-second per-file timeout. Those existing failures are not silently disabled.
 - Live customer Site published as version 21. Handset notification delivery is not verified. Active SUPER_ADMIN has zero enabled subscriptions; OWNER has two. Enable notifications on the intended Super Admin handset before expecting push there.
+
+### Exact approval notification destination
+- Login request identity is persisted independently of the notification URL. Push receipt and click both construct Admin GROUP OPEN with `rc_login_request`.
+- Existing window navigation must succeed before it is focused. Missing, null or rejected WindowClient.navigate falls back to opening the exact destination.
+- A request-only URL overrides stale department/status and clears unrelated search at Real Chat boot. The approval router waits for authenticated host readiness and card rendering, highlights the permanent customer card, and restores focus if startup rerender replaces the element. A real user pointer/key interaction ends automatic focus.
+- Targeted tests cover main-page URLs, mobile navigation fallback, successful navigation, stale WORKING state, late card rendering and unaffected non-approval notification routes.

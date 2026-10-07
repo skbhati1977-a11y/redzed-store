@@ -14,5 +14,5 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - run: node --test tests/customer-mobile-contract.test.cjs tests/customer-login-approval.test.cjs tests/customer-collection-readonly.test.cjs tests/customer-login-admin-open.test.cjs
+      - run: node --test tests/customer-mobile-contract.test.cjs tests/customer-login-approval.test.cjs tests/customer-collection-readonly.test.cjs tests/customer-login-admin-open.test.cjs tests/customer-login-notification-focus.test.cjs
 

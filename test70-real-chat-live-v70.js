@@ -360,7 +360,7 @@ async function loadBridge(){let lastError;for(let attempt=0;attempt<2;attempt++)
 async function loadBridgeAuxiliary(){const projection={},errors=[];try{const eligible=await rpc('rr_real_chat_assignable_lots_v125');projection.eligible=eligible}catch(error){errors.push(error)}try{const mediaMap=await rpc('rr_real_chat_media_map_v1');projection.mediaMap=mediaMap}catch(error){errors.push(error)}return{projection,errors}}
 function refreshBridgeAuxiliary(){if(S.bridgeAuxRefresh)return S.bridgeAuxRefresh;const request=(async()=>{const result=await loadBridgeAuxiliary();if(Object.keys(result.projection).length){applyBridgeProjection(result.projection);renderBridgeProjection()}result.errors.forEach(console.error);return result})();S.bridgeAuxRefresh=request;request.then(()=>{if(S.bridgeAuxRefresh===request)S.bridgeAuxRefresh=null});return request}
 function refreshBridgeProjection(force=false){if(S.bridgeRefresh)return S.bridgeRefresh;if(!force&&S.bridgeLoadedAt&&Date.now()-S.bridgeLoadedAt<15000)return Promise.resolve({cached:true});const request=(async()=>{try{const projection=await loadBridge();applyBridgeProjection(projection);S.bridgeLoadedAt=Date.now();S.bridgeWarning='';renderBridgeProjection();refreshBridgeAuxiliary();return{data:projection}}catch(error){console.error(error);S.bridgeWarning='history temporarily unavailable';renderBridgeProjection();return{error}}})();S.bridgeRefresh=request;request.then(()=>{if(S.bridgeRefresh===request)S.bridgeRefresh=null});return request}
-window.RRAdminApprovalHost71={context:()=>({kind:S.active?.kind,id:S.active?.id,status:S.status,role:S.actor?.role||S.actor?.role_code,search:S.search}),changed:count=>{S.loginPendingCount=count;rebuildWorkCounts(S.status);if(!S.active)inbox();},};
+window.RRAdminApprovalHost71={context:()=>({kind:S.active?.kind,id:S.active?.id,status:S.status,role:S.actor?.role||S.actor?.role_code,search:S.search}),openApproval:async()=>{if(!S.approvalNavigationReady||!['OWNER','SUPER_ADMIN'].includes(String(S.actor?.role||S.actor?.role_code||'').toUpperCase()))return false;S.userStatusLock='OPEN';S.status='OPEN';S.search='';S.searchTerms=[];S.mirrorSearch=null;for(const id of ['find','chatFind'])if($(id))$(id).value='';clearRateFocusGuard();syncStatusButtons();await openChat('group','ADMIN',false,'ADMIN');history.replaceState(currentViewState(),'',viewUrl('OPEN'));return true;},changed:count=>{S.loginPendingCount=count;rebuildWorkCounts(S.status);if(!S.active)inbox();},};
 async function load(fast=false){
   if(fast&&S.active?.id==='READYMADE')return openReadymadeChatTest71(false);
   const seq=++S.loadSeq,status=S.status,search=S.search,active=S.active?{...S.active}:null,navAtStart=S.navigationSeq||0;
@@ -414,7 +414,7 @@ async function boot(){
   if(!sessionUser)return location.href='real-login.html?return='+encodeURIComponent(location.pathname+location.search);
   S.userId=sessionUser.id;
   S.db.auth.getUser().then(({error,data})=>{if(error||!data?.user)console.warn('Background auth verification pending/failed',error?.message||'no user')}).catch(e=>console.warn('Background auth verification failed',e));
-  const p=new URLSearchParams(location.search),requestedStatus=p.get('rc_status');
+  const p=new URLSearchParams(location.search);if(p.get('rc_login_request')){p.set('rc_view','chat');p.set('rc_kind','group');p.set('rc_id','ADMIN');p.set('rc_parent','ADMIN');p.set('rc_status','OPEN');S.userStatusLock='OPEN';S.search='';S.searchTerms=[];}const requestedStatus=p.get('rc_status');
   if(['OPEN','WORKING','CLOSE'].includes(requestedStatus))S.status=requestedStatus;
   const requestedView=p.get('rc_view'),requestedId=p.get('rc_id'),requestedKind=p.get('rc_kind'),requestedParent=p.get('rc_parent');
   const initialState=requestedView==='chat'&&requestedKind&&requestedId?{view:'chat',kind:requestedKind,id:requestedId,parentDepartment:requestedParent||null,status:S.status}:requestedView==='department'&&requestedId?{view:'department',department:requestedId,status:S.status}:requestedView==='workflow'&&requestedId?{view:'workflow',group:Number(String(requestedId).split(':')[0]),item:Number(String(requestedId).split(':')[1]),status:S.status}:requestedView==='division'&&requestedId?{view:'division',id:requestedId,status:S.status}:{view:'inbox',status:S.status};
@@ -466,6 +466,7 @@ async function boot(){
   stage.ondblclick=()=>{S.zoom=S.zoom>1?1:2;S.panX=S.panY=0;applyViewerTransform()};
   const cacheReady=hydrateCache();if(resumeState.view==='inbox'&&cacheReady){$('state').textContent='Opening saved Real Chat…';await inbox()}
   await load(false);
+  S.approvalNavigationReady=true;
   if(resumeState.view!=='inbox')restoreView(resumeState);else if(p.get('chat')==='personal'&&p.get('worker_id'))openChat('person',p.get('worker_id'),false);else{S.active=null;await inbox()}setTimeout(()=>ensureEmptyStateV708(S.status),80);
   // Canonical mutations already project through targeted database triggers.
   // Full historical reconciliation takes longer than the authenticated query
