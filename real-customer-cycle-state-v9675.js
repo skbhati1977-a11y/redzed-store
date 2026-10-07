@@ -29,7 +29,7 @@
     const display = state.collection_display_no || "COLLECTION";
     const collectionButton = $("fcOpen") || $("fcReopen"), send = $("rrSendReq9630"), close = $("rrCloseReq9630");
     if (sent) {
-      if (collectionButton) { collectionButton.disabled = true; collectionButton.textContent = `${display} · REQUIREMENT SENT ✓`; }
+      if (collectionButton) { collectionButton.disabled = false; collectionButton.textContent = `UPDATE ${display} · U${Number(state.collection_update_no||0)} · VIEW COLLECTION`; }
       if (send) { send.disabled = true; send.textContent = "REQUIREMENT SENT ✓"; }
       if (close) { close.disabled = false; close.textContent = "CLOSE REQUIREMENT"; }
     } else {

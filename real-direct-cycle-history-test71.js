@@ -20,7 +20,7 @@
  .rrCycleLive71 .rrCycleStatus71{color:#8bd4ac;font-weight:700}.rrCycleLive71 button{border:1px solid #50647e;border-radius:7px;padding:6px 9px;background:#182535;color:#fff;font-size:11px;margin:4px 5px 0 0}
  #rrSalesCycleLive71{position:fixed;left:320px;right:0;z-index:10015;bottom:70px}
  #msgs{min-height:0;scroll-padding-bottom:24px}#msgs>.msg{flex-shrink:0}
- #rrFSChat #fsCollectionCard{display:none!important}
+
  .rrCycleLive71 details{margin-top:4px}.rrCycleLive71 summary{cursor:pointer;color:#aec9e6}
  @media(max-width:760px){#rrSalesCycleLive71{left:0}}
  `;
@@ -46,7 +46,7 @@
    (staff?(data.requirement_id?'<button type="button" data-live-action="requirement">VIEW REQUIREMENT / PI</button>':'')+
     '<button type="button" data-live-action="collection">'+(data.can_send?'SELECT & SEND COLLECTION':'NEW COLLECTION')+'</button>':
     '<button type="button" data-live-action="collection">VIEW COLLECTION</button>')+
-   (history?'<details><summary>UPDATE HISTORY</summary>'+history+'</details>':'');
+   (staff&&history?'<details><summary>UPDATE HISTORY</summary>'+history+'</details>':'');
  }
  function beltMarkup(data){
   const req=data.requirement_display_no?data.requirement_display_no+' · U'+Number(data.requirement_update_no||0):'REQ PENDING';
@@ -77,6 +77,14 @@
   });
  }
  function paint(){
+  if(!staff){
+   document.getElementById('rrCustomerCycleLive71')?.remove();
+   document.querySelectorAll('.rrCycleHistory71').forEach(el=>el.remove());
+   if(state?.collection_cycle_id)document.querySelectorAll('#fsMsgs .fsm').forEach(row=>{
+    if(row.dataset.rrCycle71&&row.dataset.rrWorkflow71==='1')row.style.setProperty('display','none','important');
+   });
+   return;
+  }
   const host=panel();if(!host)return;
   const privateView=staff&&window.RRSalesChatActions71?.context()?.channel!=='GROUP';
   host.hidden=!state?.collection_cycle_id||privateView;

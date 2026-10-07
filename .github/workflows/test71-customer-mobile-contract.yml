@@ -1,0 +1,17 @@
+name: TEST71 customer mobile contract
+on:
+  push:
+    branches: [test71-real-chat-e2e-finalization]
+  pull_request:
+    branches: [test71-real-chat-e2e-finalization]
+permissions:
+  contents: read
+jobs:
+  customer-mobile:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --test tests/customer-mobile-contract.test.cjs
