@@ -36,3 +36,21 @@ Allowing Collection 16 while 12 was open violated the intended business rule; th
 The guard uses a private per-customer/mode UPSERT lock row to serialize competing creation requests. No history is renumbered or auto-closed. Subsequent authorized cleanup reconciled these historical duplicate opens. Reeka now has only Collection 12 open; 3, 5, 13, 14 and 15 are closed with an audit reason. Collection 16 remains closed.
 
 Applied backend migration: `sql/test71_one_open_collection.sql`. Run `tests/customer-one-open-collection-rollback.sql` to verify all three legacy first-create APIs are blocked, existing open-cycle updates succeed, creation succeeds after closure and reopening is blocked while another cycle is active. All fixture closures and new records roll back.
+
+
+## Admin OPEN customer permission cards — 7 October 2026
+
+TEST71 Admin Department OPEN now retains one card per registered TEST customer, including approved, paused, rejected and revoked devices. Name/mobile search filters these cards in the existing chat search. The card has per-device verified approval/revoke and customer-wide Pause, Resume, Revoke All and allowed discount controls. Cards remain in OPEN after actions and are not forwarded to WORKING/CLOSE.
+
+Pause is checked by the server session validator, including already-issued sessions; resume restores approved device access. Revoke All revokes TEST sessions and marks all device approvals revoked; verified reapproval is required. Customer waiting screens show PAUSED accurately.
+
+Discount uses the existing rr_customers.allowed_discount_per_piece and audited setter, preserving the established ₹0–₹10 per-piece limit. It applies uniformly to all active item rates and quantity calculations; existing PI/CI snapshots are not rewritten. Readymade market snapshot is used only as a TEST pricing fallback when RRQ/universal rates are absent.
+
+Pending login/reopen events enqueue existing targeted web pushes only to active Super Admin/Owner profiles. Five-second duplicate event coalescing prevents duplicate page/visibility notifications. Status polling sends no push. A service-only pending/recipient check prevents resolved request dispatch. Deep links select Admin GROUP OPEN and exact request focus; repeated reminders share a notification tag. Recipient device notification permission/subscription is required. Physical handset delivery is not claimed by automated tests.
+
+## Permission safety and discount effective time
+- Pause, Revoke All and Revoke Device require an explicit warning/confirmation. Cancel never mutates access.
+- Cards remain in Admin GROUP OPEN after approval, pause and revoke; registered name/mobile search filters the permanent customer card.
+- Discount remains editable through the existing Super Admin ₹0–₹10 per-piece authority. The card displays its latest effective timestamp. Canonical discount history records the edit; collection previews and newly saved bills use the current allowance. Existing PI header, lines and version snapshots are not updated by a discount edit.
+- Registered REDZED customers, including registered distributors, use this same authority. Distributor private customer pricing retains its existing owner authority and now audits every TEST margin/discount edit with an effective timestamp; existing private collection and customer CI pricing snapshots remain untouched. This change does not replace the separate distributor private customer login authority.
+- Poll refresh does not rerender unchanged cards or erase a focused discount draft. A queued login push is rejected after approval or a global pause.

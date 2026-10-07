@@ -1,0 +1,33 @@
+BEGIN;
+DO $test$
+DECLARE sh public.rr_market_share_v9420%rowtype;cu public.rr_customers%rowtype;rid uuid;device text:=encode(extensions.gen_random_bytes(24),'hex');actor uuid;result jsonb;session jsonb;pricing jsonb;before_bills jsonb;after_bills jsonb;
+BEGIN
+ SELECT s.* INTO sh FROM public.rr_market_share_v9420 s JOIN public.rr_customers c ON c.id=s.customer_id AND c.is_active WHERE s.data_mode='TEST' AND s.status='ACTIVE' AND length(right(regexp_replace(coalesce(c.mobile,''),'[^0-9]','','g'),10))=10 AND public.rr_market_share_relation_v81(s.token)<>'DISTRIBUTOR_CUSTOMER' AND EXISTS(SELECT 1 FROM public.rr_collection_send_v9586 cs WHERE cs.share_id=s.id) LIMIT 1;
+ SELECT * INTO cu FROM public.rr_customers WHERE id=sh.customer_id;
+ SELECT auth_user_id INTO actor FROM public.rr_user_profiles WHERE is_active AND upper(role_code) IN('SUPER_ADMIN','OWNER') AND upper(coalesce(access_status,'ACTIVE'))='ACTIVE' LIMIT 1;
+ result:=public.rr_customer_login_request_test71(sh.token,cu.customer_name,right(regexp_replace(cu.mobile,'[^0-9]','','g'),10),device);rid:=(result->>'request_id')::uuid;
+ PERFORM set_config('request.jwt.claim.sub',actor::text,true);
+ PERFORM public.rr_customer_login_approval_decide_test71(rid,'APPROVED',true);
+ session:=public.rr_customer_session_issue_bound_v9680(sh.token,cu.customer_name,right(regexp_replace(cu.mobile,'[^0-9]','','g'),10),device);
+ IF session->>'session_token' IS NULL THEN RAISE EXCEPTION 'Approved device could not log in';END IF;
+ PERFORM public.rr_customer_session_validate_v9590(session->>'session_token',device);
+ PERFORM public.rr_customer_permission_set_test71(cu.id,'PAUSE');
+ BEGIN PERFORM public.rr_customer_session_validate_v9590(session->>'session_token',device);RAISE EXCEPTION 'Paused existing session remained usable';EXCEPTION WHEN others THEN IF SQLERRM<>'Customer access paused by Super Admin.' THEN RAISE;END IF;END;
+ result:=public.rr_customer_login_status_test71(rid,device);IF result->>'approval_status'<>'PAUSED' THEN RAISE EXCEPTION 'Customer paused screen state missing';END IF;
+ result:=public.rr_customer_permission_cards_test71();IF NOT EXISTS(SELECT 1 FROM jsonb_array_elements(result) x WHERE x->>'customer_id'=cu.id::text AND (x->>'paused')::boolean) THEN RAISE EXCEPTION 'Paused card disappeared from OPEN';END IF;
+ PERFORM public.rr_customer_permission_set_test71(cu.id,'RESUME');PERFORM public.rr_customer_session_validate_v9590(session->>'session_token',device);
+ SELECT jsonb_build_object('headers',(SELECT jsonb_agg(to_jsonb(p) ORDER BY to_jsonb(p)::text) FROM public.rr_fg_pi_v787 p),'lines',(SELECT jsonb_agg(to_jsonb(p) ORDER BY to_jsonb(p)::text) FROM public.rr_fg_pi_lines_v787 p),'versions',(SELECT jsonb_agg(to_jsonb(p) ORDER BY to_jsonb(p)::text) FROM public.rr_fg_pi_versions_v787 p)) INTO before_bills;
+ PERFORM public.rr_customer_permission_set_test71(cu.id,'DISCOUNT',3.25);
+ SELECT jsonb_build_object('headers',(SELECT jsonb_agg(to_jsonb(p) ORDER BY to_jsonb(p)::text) FROM public.rr_fg_pi_v787 p),'lines',(SELECT jsonb_agg(to_jsonb(p) ORDER BY to_jsonb(p)::text) FROM public.rr_fg_pi_lines_v787 p),'versions',(SELECT jsonb_agg(to_jsonb(p) ORDER BY to_jsonb(p)::text) FROM public.rr_fg_pi_versions_v787 p)) INTO after_bills;
+ IF before_bills IS DISTINCT FROM after_bills THEN RAISE EXCEPTION 'Discount changed previous bills';END IF;
+ IF NOT EXISTS(SELECT 1 FROM public.rr_customer_discount_history_v9420 h WHERE h.customer_id=cu.id AND h.discount_per_piece=3.25 AND h.effective_from>=transaction_timestamp()) THEN RAISE EXCEPTION 'Discount effective time not audited';END IF;
+ pricing:=public.rr_collection_customer_pricing_v9637(sh.token);
+ IF jsonb_array_length(pricing->'rows')=0 THEN RAISE EXCEPTION 'Pricing test has no cards';END IF;
+ IF EXISTS(SELECT 1 FROM jsonb_array_elements(pricing->'rows') x WHERE (x->>'allowed_discount')::numeric<>3.25 OR (x->>'approved_rate') IS NOT NULL AND (x->>'net_rate')::numeric<>greatest((x->>'approved_rate')::numeric-3.25,0)) THEN RAISE EXCEPTION 'Discount differs across collection items';END IF;
+ PERFORM public.rr_customer_permission_set_test71(cu.id,'REVOKE');
+ BEGIN PERFORM public.rr_customer_session_validate_v9590(session->>'session_token',device);RAISE EXCEPTION 'Revoked session still usable';EXCEPTION WHEN others THEN IF SQLERRM<>'Customer session invalid or expired.' THEN RAISE;END IF;END;
+ result:=public.rr_customer_permission_cards_test71();IF NOT EXISTS(SELECT 1 FROM jsonb_array_elements(result) x WHERE x->>'customer_id'=cu.id::text AND EXISTS(SELECT 1 FROM jsonb_array_elements(x->'devices') d WHERE d->>'request_id'=rid::text AND d->>'status'='REVOKED')) THEN RAISE EXCEPTION 'Revoked customer card disappeared';END IF;
+ PERFORM public.rr_customer_login_approval_decide_test71(rid,'APPROVED',true);
+ result:=public.rr_customer_session_issue_bound_v9680(sh.token,cu.customer_name,right(regexp_replace(cu.mobile,'[^0-9]','','g'),10),device);IF result->>'session_token' IS NULL THEN RAISE EXCEPTION 'Reapproval after revoke failed';END IF;
+END $test$;
+ROLLBACK;

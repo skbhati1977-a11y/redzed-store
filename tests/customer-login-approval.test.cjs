@@ -72,6 +72,6 @@ test('refresh draft cannot copy quantities from Collection 16 into Collection 12
 
 test('Super Admin approval queue does not appear for an unauthorized account',async()=>{
  let boot,created=0;
- const context={window:{RF853:{rpc:async()=>{throw Error('Super Admin ID required.');}}},RF853:{rpc:async()=>{throw Error('Super Admin ID required.');}},document:{readyState:'loading',addEventListener:(name,fn)=>{if(name==='DOMContentLoaded')boot=fn;},createElement:()=>{created++;return{};}},setTimeout(){},setInterval(){throw Error('Unauthorized polling started');}};
+ const context={location:{pathname:'/real-sales-live-chat-v9434.html',search:''},URLSearchParams,window:{RF853:{rpc:async()=>{throw Error('Super Admin ID required.');}}},RF853:{rpc:async()=>{throw Error('Super Admin ID required.');}},document:{readyState:'loading',addEventListener:(name,fn)=>{if(name==='DOMContentLoaded')boot=fn;},createElement:()=>{created++;return{};}},setTimeout(){},setInterval(){throw Error('Unauthorized polling started');}};
  vm.runInNewContext(src('real-customer-login-approvals-test71.js'),context);await boot();assert.equal(created,0);
 });

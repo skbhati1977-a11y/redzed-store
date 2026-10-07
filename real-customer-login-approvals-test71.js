@@ -1,61 +1,24 @@
 (() => {
-  'use strict';
-  if(window.__RR_CUSTOMER_LOGIN_APPROVALS71__)return;
-  window.__RR_CUSTOMER_LOGIN_APPROVALS71__=true;
-  const esc=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  let rows=[],button=null,sheet=null,busy=false;
-  const rpc=async(name,args={})=>{if(window.RF853?.rpc)return RF853.rpc(name,args);const {data,error}=await window.supabaseClient.rpc(name,args);if(error)throw error;return data;};
-  function render(){
-    if(!sheet)return;
-    const content=sheet.querySelector('[data-requests]');
-    content.innerHTML=rows.length?rows.slice().sort((a,b)=>(b.status==='PENDING')-(a.status==='PENDING')).map(row=>`
-      <article style="padding:14px;margin:10px 0;border:1px solid #40536b;border-radius:12px;background:#121c29">
-        <b>${esc(row.customer_name)}</b><p style="margin:7px 0">Registered number: <a style="color:#9ed5ff" href="tel:+91${esc(row.registered_mobile)}">${esc(row.registered_mobile)}</a></p>
-        <p style="margin:7px 0">Request name: ${esc(row.requested_name)}<br>Request number: ${esc(row.requested_mobile)}<br>Device: ${esc(row.device_label)} · ${esc(new Date(row.requested_at).toLocaleString())}</p>
-        <b>${esc(row.status)}</b>
-        <div style="display:flex;flex-wrap:wrap;gap:7px;margin-top:12px">
-          ${row.status==='PENDING'?`<button data-decision="APPROVED" data-request="${esc(row.request_id)}">VERIFY NUMBER & APPROVE</button><button data-decision="REJECTED" data-request="${esc(row.request_id)}">REJECT</button>`:''}
-          ${row.status==='APPROVED'?`<button data-decision="REVOKED" data-request="${esc(row.request_id)}">REVOKE DEVICE ACCESS</button>`:''}
-        </div>
-      </article>`).join(''):'No login requests.';
-    sheet.querySelectorAll('button').forEach(el=>{el.style.cssText='padding:10px;border:1px solid #52647d;border-radius:9px;background:#fff;color:#111;font-weight:800;cursor:pointer';});
-  }
-  function close(){sheet?.remove();sheet=null;}
-  function open(){
-    close();sheet=document.createElement('div');sheet.id='rrCustomerLoginApprovalSheet71';
-    sheet.setAttribute('role','dialog');sheet.setAttribute('aria-modal','true');sheet.setAttribute('aria-label','Customer login approvals');
-    sheet.style.cssText='position:fixed;inset:0;z-index:2147483600;background:#000b;display:grid;place-items:center;padding:12px;color:#fff;font-family:system-ui';
-    sheet.innerHTML='<section style="box-sizing:border-box;width:min(680px,100%);max-height:90vh;overflow:auto;padding:18px;border:1px solid #40536b;border-radius:16px;background:#0c1118"><div style="display:flex;justify-content:space-between;gap:12px"><b style="font-size:20px">CUSTOMER LOGIN REQUESTS</b><button data-close>CLOSE ×</button></div><p>New customer/device login के लिए original registered number पर customer की पहचान verify करें। उसके बाद Approve करें। App अपने-आप SIM number verify नहीं करता।</p><div data-status role="status" aria-live="polite"></div><div data-requests></div></section>';
-    sheet.onclick=async event=>{
-      if(event.target===sheet||event.target.closest('[data-close]'))return close();
-      const action=event.target.closest('[data-decision]');if(!action||busy)return;
-      const row=rows.find(x=>x.request_id===action.dataset.request);if(!row)return;
-      const approve=action.dataset.decision==='APPROVED';
-      if(approve&&!confirm(`${row.customer_name} की पहचान original registered number ${row.registered_mobile} पर call/message करके verify कर ली है? इस नए device को access मिलेगा।`))return;
-      if(!approve&&!confirm(`${action.dataset.decision==='REJECTED'?'Reject login request':'Revoke this device access'}?`))return;
-      busy=true;action.disabled=true;
-      try{await rpc('rr_customer_login_approval_decide_test71',{p_request_id:row.request_id,p_decision:action.dataset.decision,p_mobile_verified:approve});await refresh();}
-      catch(error){sheet?.querySelector('[data-status]')&&(sheet.querySelector('[data-status]').textContent=error.message);}
-      finally{busy=false;if(action.isConnected)action.disabled=false;}
-    };
-    document.body.appendChild(sheet);render();sheet.querySelector('[data-close]').focus();refresh().catch(error=>{if(sheet)sheet.querySelector('[data-status]').textContent=error.message;});
-  }
-  async function refresh(){
-    const result=await rpc('rr_customer_login_approval_list_test71');rows=Array.isArray(result)?result:[];
-    const count=rows.filter(row=>row.status==='PENDING').length;
-    if(button){button.textContent=`LOGIN REQUESTS (${count})`;button.style.background=count?'#ffe095':'#182231';button.style.color=count?'#111':'#fff';}
-    render();
-  }
-  async function boot(){
-    if(!window.RF853?.rpc&&!window.supabaseClient?.rpc){setTimeout(boot,500);return;}
-    // Server authorization decides whether this account can even list requests.
-    try{await refresh();}catch(_){return;}
-    button=document.createElement('button');button.type='button';button.id='rrCustomerLoginApprovals71';button.onclick=open;
-    button.style.cssText='margin:6px;padding:9px;border:1px solid #52647d;border-radius:9px;font-size:11px;font-weight:900;cursor:pointer';
-    const host=document.querySelector('.inbox .head')||document.querySelector('header')||document.body;host.appendChild(button);
-    await refresh();
-    setInterval(()=>{if(!document.hidden)refresh().catch(()=>{if(sheet)sheet.querySelector('[data-status]').textContent='Login requests अभी load नहीं हुईं।';});},15000);
-  }
-  document.addEventListener('keydown',event=>{if(event.key==='Escape')close();});
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
+ 'use strict';
+ if(window.__RR_CUSTOMER_LOGIN_APPROVALS71__)return;
+ window.__RR_CUSTOMER_LOGIN_APPROVALS71__=true;
+ const esc=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+ const pilot=/test70-cb-purchase-real-chat-pilot\.html$/.test(location.pathname);
+ const focusId=new URLSearchParams(location.search).get('rc_login_request');
+ let rows=[],button=null,sheet=null,busy=false,authorized=false,focused=false,loadedAt=0,loading=null;
+ const rpc=async(name,args={})=>{if(window.RF853?.rpc)return window.RF853.rpc(name,args);const db=window.supabaseClient||window.supabaseDb||window.redzedSupabase||window.sb;if(!db?.rpc)throw Error('App loading');const {data,error}=await db.rpc(name,args);if(error)throw error;return data;};
+ const pendingCount=()=>authorized?rows.reduce((n,row)=>n+(row.devices||[]).filter(d=>d.status==='PENDING').length,0):0;
+ function card(row){const devices=row.devices||[];return `<article class="work-card rrLoginApprovalCard71" tabindex="-1" data-customer-permission="${esc(row.customer_id)}" style="width:100%;border-color:#d7ab48"><h2>CUSTOMER PERMISSION · OPEN</h2><b>${esc(row.customer_name)}</b><p>Registered number: <a style="color:#9ed5ff" href="tel:+91${esc(row.registered_mobile)}">${esc(row.registered_mobile)}</a></p><b>${row.paused?'ACCESS PAUSED':'ACCESS ACTIVE'}</b><div class="card-actions"><button data-customer-permission-action="${row.paused?'RESUME':'PAUSE'}" data-customer="${esc(row.customer_id)}">${row.paused?'RESUME ACCESS':'PAUSE ACCESS'}</button><button data-customer-permission-action="REVOKE" data-customer="${esc(row.customer_id)}">REVOKE ALL DEVICES</button></div><label style="display:block;margin-top:12px">Allowed discount · ₹ / PCS <input type="number" inputmode="decimal" min="0" max="10" step="0.01" data-customer-discount="${esc(row.customer_id)}" value="${Number(row.discount_per_piece||0)}" style="max-width:110px;padding:9px;background:#081522;color:#fff;border:1px solid #49627a;border-radius:8px"></label><div class="card-actions"><button data-customer-permission-action="DISCOUNT" data-customer="${esc(row.customer_id)}">SAVE DISCOUNT</button></div><small>${row.discount_effective_from?`Effective: ${esc(new Date(row.discount_effective_from).toLocaleString())} · `:''}सभी items और lots पर प्रति piece लागू · Save के समय से नई pricing · पुराने bills सुरक्षित · सीमा ₹0–₹10/PCS</small>${devices.length?devices.map(d=>`<section data-login-request="${esc(d.request_id)}" style="border-top:1px solid #40536b;margin-top:12px;padding-top:8px"><b>DEVICE ${esc(d.device_label)} · ${esc(d.status)}</b><p>${esc(d.requested_name)} · ${esc(d.requested_mobile)} · ${esc(new Date(d.requested_at).toLocaleString())}</p><div class="card-actions">${d.status!=='APPROVED'?`<button data-login-decision="APPROVED" data-request="${esc(d.request_id)}">VERIFY NUMBER & APPROVE</button>`:''}${d.status==='PENDING'?`<button data-login-decision="REJECTED" data-request="${esc(d.request_id)}">REJECT</button>`:''}${d.status==='APPROVED'?`<button data-login-decision="REVOKED" data-request="${esc(d.request_id)}">REVOKE DEVICE</button>`:''}</div><p data-login-error role="status"></p></section>`).join(''):'<p>अभी कोई device login request नहीं है।</p>'}<p data-permission-error role="status"></p></article>`;}
+ function matches(context){const role=String(window.RR_ON_BEHALF_ACTIVE?window.RR_VIEW_AS_ROLE:context?.role||'').toUpperCase();return authorized&&context?.kind==='group'&&String(context.id).toUpperCase()==='ADMIN'&&context.status==='OPEN'&&['SUPER_ADMIN','OWNER'].includes(role);}
+ function markup(context){if(!matches(context))return '';const query=String(context.search||'').trim().toLowerCase();return rows.filter(row=>(!query||[row.customer_name,row.registered_mobile,...(row.devices||[]).flatMap(d=>[d.requested_name,d.requested_mobile])].some(v=>String(v||'').toLowerCase().includes(query)))).map(card).join('');}
+ function focus(){if(!focusId||focused||!matches(window.RRAdminApprovalHost71?.context()))return;const row=[...document.querySelectorAll('#messages [data-login-request]')].find(el=>el.dataset.loginRequest===focusId);if(!row)return;const target=row.closest?.('[data-customer-permission]')||row;focused=true;target.scrollIntoView({block:'center',behavior:'smooth'});target.style.outline='3px solid #ffe095';target.focus({preventScroll:true});}
+ function repaint(){const drafts=new Map([...document.querySelectorAll('[data-customer-discount]')].filter(el=>el===document.activeElement).map(el=>[el.dataset.customerDiscount,el.value]));if(pilot){const host=document.getElementById('messages'),context=window.RRAdminApprovalHost71?.context();if(!host)return;host.querySelectorAll('.rrLoginApprovalCard71').forEach(el=>el.remove());const html=markup(context);if(html){host.insertAdjacentHTML('afterbegin',html);host.querySelectorAll('.empty').forEach(el=>el.remove());requestAnimationFrame(focus)}}if(sheet)sheet.querySelector('[data-requests]').innerHTML=rows.length?rows.map(card).join(''):'No login requests.';for(const el of document.querySelectorAll('[data-customer-discount]'))if(drafts.has(el.dataset.customerDiscount)){el.value=drafts.get(el.dataset.customerDiscount);el.focus();}}
+ async function refresh(force=true){if(!force&&Date.now()-loadedAt<10000)return rows;if(loading)return loading;loading=(async()=>{const result=await rpc('rr_customer_permission_cards_test71');const old=JSON.stringify(rows);rows=Array.isArray(result)?result:[];authorized=true;loadedAt=Date.now();if(button)button.textContent=`LOGIN REQUESTS (${pendingCount()})`;if(old!==JSON.stringify(rows)){window.RRAdminApprovalHost71?.changed(rows.length);repaint();}return rows;})().finally(()=>loading=null);return loading;}
+ function close(){sheet?.remove();sheet=null;}
+ function open(){if(pilot){location.href='test70-cb-purchase-real-chat-pilot.html?rc_view=chat&rc_kind=group&rc_id=ADMIN&rc_parent=ADMIN&rc_status=OPEN&v=TEST71';return;}close();sheet=document.createElement('div');sheet.id='rrCustomerLoginApprovalSheet71';sheet.setAttribute('role','dialog');sheet.setAttribute('aria-modal','true');sheet.style.cssText='position:fixed;inset:0;z-index:2147483600;background:#000b;display:grid;place-items:center;padding:12px;color:#fff';sheet.innerHTML='<section style="width:min(680px,100%);max-height:90vh;overflow:auto;padding:18px;background:#0c1118"><b>CUSTOMER LOGIN REQUESTS</b><button data-login-close>CLOSE ×</button><p>Original registered number पर customer की पहचान verify करके Approve करें।</p><div data-requests></div></section>';document.body.appendChild(sheet);repaint();refresh().catch(()=>{});}
+ document.addEventListener('click',async event=>{if(event.target.closest?.('[data-login-close]'))return close();const action=event.target.closest?.('[data-login-decision]');if(!action||busy||!authorized)return;const owner=rows.find(x=>(x.devices||[]).some(d=>d.request_id===action.dataset.request));const device=owner?.devices.find(d=>d.request_id===action.dataset.request);const row=device?{...owner,...device}:null;if(!row)return;event.preventDefault();event.stopImmediatePropagation();const approve=action.dataset.loginDecision==='APPROVED';if(!confirm(approve?`${row.customer_name} की पहचान original registered number ${row.registered_mobile} पर verify कर ली है?`:`${action.dataset.loginDecision==='REJECTED'?'Reject request':'WARNING: Revoke device access; दोबारा verified approval आवश्यक होगा'}?`))return;busy=true;action.disabled=true;try{await rpc('rr_customer_login_approval_decide_test71',{p_request_id:row.request_id,p_decision:action.dataset.loginDecision,p_mobile_verified:approve});await refresh();}catch(error){const notice=action.closest('[data-login-request]')?.querySelector('[data-login-error]');if(notice)notice.textContent=error.message;}finally{busy=false;if(action.isConnected)action.disabled=false;}},true);
+ document.addEventListener('click',async event=>{const action=event.target.closest?.('[data-customer-permission-action]');if(!action||busy||!authorized)return;const row=rows.find(x=>x.customer_id===action.dataset.customer);if(!row)return;event.preventDefault();event.stopImmediatePropagation();const kind=action.dataset.customerPermissionAction;let discount=null;if(kind==='DISCOUNT'){const field=action.closest('[data-customer-permission]')?.querySelector('[data-customer-discount]');discount=Number(field?.value);if(!Number.isFinite(discount)||discount<0||discount>10)return alert('Discount ₹0–₹10 per piece भरें।');}if(['PAUSE','REVOKE'].includes(kind)&&!confirm(kind==='PAUSE'?`WARNING: ${row.customer_name} (${row.registered_mobile}) का access PAUSE होगा। Customer chat इस्तेमाल नहीं कर पाएगा जब तक आप Resume नहीं करेंगे। जारी रखें?`:`WARNING: ${row.customer_name} (${row.registered_mobile}) के सभी devices का access REVOKE होगा। दोबारा verified approval के बिना login नहीं होगा। जारी रखें?`))return;busy=true;action.disabled=true;try{await rpc('rr_customer_permission_set_test71',{p_customer_id:row.customer_id,p_action:kind,p_discount:discount});await refresh();}catch(error){const notice=action.closest('[data-customer-permission]')?.querySelector('[data-permission-error]');if(notice)notice.textContent=error.message;}finally{busy=false;if(action.isConnected)action.disabled=false;}},true);
+ window.RRAdminLoginApprovals71={refresh,pendingCount,cardCount:()=>authorized?rows.length:0,markup,focus,html:async context=>{if(String(context?.id).toUpperCase()!=='ADMIN'||context?.status!=='OPEN')return '';try{await refresh(false);}catch(_){return '';}return markup(context);}};
+ async function boot(){if(!window.RF853?.rpc&&!window.supabaseClient?.rpc&&!window.sb?.rpc){setTimeout(boot,500);return;}try{await refresh();}catch(_){return;}if(!pilot){button=document.createElement('button');button.type='button';button.id='rrCustomerLoginApprovals71';button.onclick=open;button.style.cssText='margin:6px;padding:9px;border:1px solid #52647d;border-radius:9px;background:#ffe095;color:#111;font-weight:900';button.textContent=`LOGIN REQUESTS (${pendingCount()})`;(document.querySelector('.inbox .head')||document.querySelector('header')||document.body).appendChild(button);}setInterval(()=>{if(!document.hidden)refresh().catch(()=>{});},15000);}
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
 })();

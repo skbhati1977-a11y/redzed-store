@@ -121,9 +121,12 @@
     if(message){message.setAttribute?.('role','status');message.setAttribute?.('aria-live','polite');message.style.whiteSpace='pre-line';}
     modal.querySelectorAll('input,button').forEach(el=>el.disabled=true);
     let failures=0;
+    const remind=()=>{if(document.hidden||request.approval_status!=='PENDING')return;rpc('rr_customer_login_remind_test71',{p_request_id:request.request_id,p_device_id:trustedDevice}).catch(()=>{});};
+    document.addEventListener('visibilitychange',remind);
+    window.addEventListener?.('pageshow',remind);
     try{
       for(;;){
-        if(message)message.textContent=`${request.customer_name||identity.name} · ${identity.mobile}\nSuper Admin approval का इंतज़ार है। Chat अभी locked है।`;
+        if(message)message.textContent=`${request.customer_name||identity.name} · ${identity.mobile}\n${request.approval_status==='PAUSED'?'Super Admin ने access PAUSE किया है। Resume होने तक chat locked है।':'Super Admin approval का इंतज़ार है। Chat अभी locked है।'}`;
         if(request.approval_status==='APPROVED')return;
         if(['REJECTED','REVOKED'].includes(request.approval_status))throw Error('Login approval rejected or revoked. Contact Super Admin.');
         await new Promise(resolve=>setTimeout(resolve,5000));
@@ -136,6 +139,8 @@
         }
       }
     }finally{
+      document.removeEventListener?.('visibilitychange',remind);
+      window.removeEventListener?.('pageshow',remind);
       if(owned)modal.remove();else {modal.querySelectorAll('input,button').forEach(el=>el.disabled=false);if(submit)submit.textContent=oldText;}
     }
   }
@@ -162,7 +167,7 @@
     return validated;
   }
 
-  const invalidSession = error => /session invalid|session.*expired|trusted device.*(?:required|match)|approval required/i.test(String(error?.message||error));
+  const invalidSession = error => /session invalid|session.*expired|trusted device.*(?:required|match)|approval required|access paused/i.test(String(error?.message||error));
   const wrongIdentity = error => /mobile.*(?:match|required)|different customer|customer.*(?:inactive|unavailable)|approval rejected/i.test(String(error?.message||error));
   async function restore() {
     const trustedDevice=device(),current=saved();
