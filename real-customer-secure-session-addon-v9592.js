@@ -87,15 +87,13 @@
       const modal = document.createElement("div");
       modal.id = "rrSecureReentry9592";
       modal.style.cssText = "position:fixed;inset:0;z-index:2147483646;background:rgba(5,10,16,.94);display:flex;align-items:center;justify-content:center;padding:18px;font-family:Arial,sans-serif";
-      modal.innerHTML = `<div style="width:min(420px,100%);background:#121c29;border:1px solid #4b617c;border-radius:16px;padding:18px;color:#fff"><b style="display:block;font-size:20px;margin-bottom:6px">OPEN SECURE CHAT</b><small style="display:block;color:#aeb9c7;margin-bottom:14px">${expected?.name ? "यह collection इसी customer के लिए है। Registered mobile verify करें।" : "Enter the customer name and mobile used for this collection."}</small><input name="rrName" placeholder="Customer name" autocomplete="name" style="box-sizing:border-box;width:100%;padding:12px;margin:0 0 9px;border:1px solid #50647e;border-radius:9px;background:#0d1219;color:#fff;font-size:16px"><input name="rrMobile" placeholder="Mobile number" inputmode="tel" autocomplete="tel" style="box-sizing:border-box;width:100%;padding:12px;margin:0 0 12px;border:1px solid #50647e;border-radius:9px;background:#0d1219;color:#fff;font-size:16px"><div data-err style="min-height:18px;color:#ffb7b7;font-size:12px;margin-bottom:8px"></div><button type="button" style="width:100%;padding:12px;border:0;border-radius:9px;background:#fff;color:#111;font-weight:900;font-size:15px">VERIFY MOBILE & CONTINUE</button></div>`;
+      modal.innerHTML = `<div style="width:min(420px,100%);background:#121c29;border:1px solid #4b617c;border-radius:16px;padding:18px;color:#fff"><b style="display:block;font-size:20px;margin-bottom:6px">OPEN SECURE CHAT</b><small style="display:block;color:#aeb9c7;margin-bottom:14px">${expected?.name ? "अपना नाम और registered WhatsApp नंबर भरें। यह invite अपने customer record से जुड़ा है।" : "Enter the customer name and mobile used for this collection."}</small><input name="rrName" placeholder="Customer name" autocomplete="name" style="box-sizing:border-box;width:100%;padding:12px;margin:0 0 9px;border:1px solid #50647e;border-radius:9px;background:#0d1219;color:#fff;font-size:16px"><input name="rrMobile" placeholder="Mobile number" inputmode="tel" autocomplete="tel" style="box-sizing:border-box;width:100%;padding:12px;margin:0 0 12px;border:1px solid #50647e;border-radius:9px;background:#0d1219;color:#fff;font-size:16px"><div data-err style="min-height:18px;color:#ffb7b7;font-size:12px;margin-bottom:8px"></div><button type="button" style="width:100%;padding:12px;border:0;border-radius:9px;background:#fff;color:#111;font-weight:900;font-size:15px">VERIFY MOBILE & CONTINUE</button></div>`;
       document.body.appendChild(modal);
       const nameInput = modal.querySelector("[name=rrName]");
       const mobileInput = modal.querySelector("[name=rrMobile]");
       const error = modal.querySelector("[data-err]");
       if (expected?.name) {
         nameInput.value = expected.name;
-        nameInput.readOnly = true;
-        nameInput.setAttribute("aria-readonly", "true");
       }
       modal.querySelector("button").onclick = () => {
         const name = nameInput.value.trim();
@@ -122,8 +120,8 @@
     modal.querySelector('[data-otp-info]').textContent=`${challenge.customer_name} · ${challenge.phone}\nइस registered नंबर पर मिला SMS OTP भरें। OTP verify होने के बाद ही Super Admin को request जाएगी। OTP किसी अन्य व्यक्ति को न दें।`;
     code.focus?.();
     try{return await new Promise((resolve,reject)=>{
-      let busy=false;
-      modal.querySelector('[data-verification-change]').onclick=()=>{if(busy)return;clear();localStorage.removeItem(identityKey);localStorage.removeItem(rememberedKey);localStorage.removeItem(legacyIdentityKey);const error=Error('अपना registered नंबर भरें और नई WhatsApp request भेजें।');error.code='CHANGE_NUMBER';reject(error);};
+      let busy=false,activeRequest=null;
+      modal.querySelector('[data-verification-change]').onclick=()=>{if(busy&&!activeRequest)return;if(activeRequest)activeRequest.cancelled=true;clear();localStorage.removeItem(identityKey);localStorage.removeItem(rememberedKey);localStorage.removeItem(legacyIdentityKey);const error=Error('अपना registered नंबर भरें और नई WhatsApp request भेजें।');error.code='CHANGE_NUMBER';reject(error);};
       modal.querySelector('[data-otp-cancel]').onclick=()=>{if(!busy)reject(Error('OTP verification cancelled. Chat locked है।'));};
       resend.onclick=async()=>{if(busy)return;const left=Math.ceil((60000-(Date.now()-lastSent))/1000);if(left>0){notice.textContent=`Resend के लिए ${left} seconds इंतज़ार करें।`;return;}busy=true;resend.disabled=true;try{await send();notice.textContent='नया OTP भेजा गया।';code.value='';}catch(error){notice.textContent=error.message;}finally{busy=false;resend.disabled=false;}};
       verify.onclick=async()=>{if(busy)return;const value=String(code.value||'').trim();if(!/^\d{6}$/.test(value)){notice.textContent='SMS में मिला 6 digit OTP भरें।';return;}busy=true;verify.disabled=true;try{
@@ -145,34 +143,37 @@
     const modal=document.createElement('div');modal.id='rrCustomerVerificationChoice71';
     modal.setAttribute('role','dialog');modal.setAttribute('aria-modal','true');
     modal.style.cssText='position:fixed;inset:0;z-index:2147483647;background:#050a10;display:grid;place-items:center;padding:18px;color:#fff;font-family:system-ui';
-    modal.innerHTML='<section style="width:min(420px,100%);padding:22px;background:#121c29;border-radius:16px"><b>VERIFY REGISTERED NUMBER</b><p>WhatsApp पर request code भेजें। Admin sender नंबर जाँचकर device approve करेगा। यह manual verification है।</p><button data-verification-wa>VERIFY VIA WHATSAPP</button><p hidden>SMS OTP के लिए SMS service configured होना जरूरी है।</p><button data-verification-sms hidden>USE SMS OTP</button><button data-verification-change>नंबर बदलें / CHANGE NUMBER</button><button data-verification-cancel>CANCEL</button><p data-verification-error role="status"></p></section>';
+    modal.innerHTML='<section style="width:min(420px,100%);padding:22px;background:#121c29;border-radius:16px"><b>VERIFY REGISTERED NUMBER</b><p>WhatsApp पर request code भेजें। Admin sender नंबर जाँचकर device approve करेगा। यह manual verification है।</p><button data-verification-wa>VERIFY VIA WHATSAPP</button><p hidden>SMS OTP के लिए SMS service configured होना जरूरी है।</p><button data-verification-sms hidden>USE SMS OTP</button><button data-verification-change>नाम / नंबर बदलें</button><button data-verification-cancel>CANCEL</button><p data-verification-error role="status"></p></section>';
+    const actions=document.createElement('div');actions.style.cssText='display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:18px';
+    for(const button of [...modal.querySelectorAll('button')]){button.style.cssText='min-height:48px;padding:12px;border:1px solid #50647e;border-radius:10px;font-size:15px;font-weight:700;';actions.appendChild(button);}
+    actions.querySelector('[data-verification-wa]').style.gridColumn='1 / -1';
+    modal.querySelector('section').insertBefore(actions,modal.querySelector('[data-verification-error]'));
     document.body.appendChild(modal);
     try{return await new Promise((resolve,reject)=>{
-      let busy=false;
-      modal.querySelector('[data-verification-change]').onclick=()=>{if(busy)return;clear();localStorage.removeItem(identityKey);localStorage.removeItem(rememberedKey);localStorage.removeItem(legacyIdentityKey);const error=Error('अपना registered नंबर भरें और नई WhatsApp request भेजें।');error.code='CHANGE_NUMBER';reject(error);};
+      let busy=false,activeRequest=null;
+      modal.querySelector('[data-verification-change]').onclick=()=>{if(busy&&!activeRequest)return;if(activeRequest)activeRequest.cancelled=true;clear();localStorage.removeItem(identityKey);localStorage.removeItem(rememberedKey);localStorage.removeItem(legacyIdentityKey);const error=Error('अपना registered नंबर भरें और नई WhatsApp request भेजें।');error.code='CHANGE_NUMBER';reject(error);};
       modal.querySelector('[data-verification-cancel]').onclick=()=>{if(!busy)reject(Error('Verification cancelled. Chat locked है।'));};
       for(const [selector,run] of [['[data-verification-wa]',()=>rpc('rr_customer_whatsapp_request_test71',args)],['[data-verification-sms]',()=>verifyPhoneOtp(identity,trustedDevice)]]){
         modal.querySelector(selector).onclick=async()=>{
           if(busy)return;busy=true;
           const whatsapp=selector==='[data-verification-wa]';
-          // Reserve the window in the original tap so mobile popup blockers do not intercept the RPC response.
-          const target=whatsapp?window.open('about:blank','_blank'):null;let handedOff=false;
+          // Prepare the verified request in this page; open only the actual WhatsApp URL on a fresh tap.
           modal.querySelectorAll('button').forEach(b=>b.disabled=true);
           try{
             const request=await run();
             if(whatsapp&&request.whatsapp_code){
               const text=`Redzed TEST71 device login verification\nCustomer: ${request.customer_name||identity.name}\nRegistered number: ${identity.mobile}\nRequest: ${request.request_id}\nCode: ${request.whatsapp_code}\nPlease check my actual WhatsApp sender number and approve this device manually.\n\nCustomer card खोलें · Discount / Approve:\n${approvalCardLink(request.request_id,request.whatsapp_code)}`;
               const url=`https://wa.me/${request.whatsapp_destination}?text=${encodeURIComponent(text)}`;
-              if(target){target.location.replace(url);handedOff=true;}
               const button=modal.querySelector('[data-verification-wa]');
-              request.inline_whatsapp=true;
+              request.inline_whatsapp=true;activeRequest=request;
               const waiting=waitForApproval(request,{...identity,modal,error:modal.querySelector('[data-verification-error]')},trustedDevice);
-              button.disabled=false;button.textContent='SEND VIA WHATSAPP';button.onclick=()=>window.open(url,'_blank','noopener');
+              modal.querySelector('[data-verification-change]').disabled=false;
+              button.disabled=false;button.dataset.whatsappUrl=url;button.textContent='SEND VIA WHATSAPP';button.onclick=()=>{window.location.href=url;};
               modal.querySelector('[data-verification-sms]').hidden=true;
               await waiting;
               resolve({...request,approval_status:'APPROVED'});
-            }else{target?.close();resolve(request);}
-          }catch(error){if(!handedOff)target?.close();modal.querySelector('[data-verification-error]').textContent=error.message;}
+            }else{resolve(request);}
+          }catch(error){modal.querySelector('[data-verification-error]').textContent=error.message;}
           finally{busy=false;modal.querySelectorAll('button').forEach(b=>b.disabled=false);}
         };
       }
@@ -209,13 +210,14 @@
     window.addEventListener?.('pageshow',remind);
     try{
       for(;;){
+        if(request.cancelled){const error=Error('पहचान बदलें।');error.code='CHANGE_NUMBER';throw error;}
         if(message)message.textContent=`${request.customer_name||identity.name} · ${identity.mobile}\n${request.approval_status==='PAUSED'?'Super Admin ने access PAUSE किया है। Resume होने तक chat locked है।':'Super Admin approval का इंतज़ार है। Chat अभी locked है।'}`;
         if(request.approval_status==='APPROVED')return;
-        if(request.approval_status==='OTP_REQUIRED')throw Error('Verification expired or unavailable. Reload to create a new WhatsApp request or verify SMS OTP.');
+        if(request.approval_status==='OTP_REQUIRED')throw Error('Request reject या expire हो गई है। नंबर बदलें दबाकर सही नंबर से नई request भेजें।');
         if(['REJECTED','REVOKED'].includes(request.approval_status))throw Error('Request reject या revoke हो गई है। नंबर बदलें दबाकर अपना registered नंबर भरें और फिर request भेजें।');
         await new Promise(resolve=>setTimeout(resolve,5000));
         try{
-          request={...request,...await rpc('rr_customer_login_status_test71',{p_request_id:request.request_id,p_device_id:trustedDevice})};failures=0;
+          Object.assign(request,await rpc('rr_customer_login_status_test71',{p_request_id:request.request_id,p_device_id:trustedDevice}));failures=0;
         }catch(error){
           failures++;
           if(message)message.textContent='Approval status अभी load नहीं हुआ। Internet आने पर अपने-आप check होगा।';
@@ -272,7 +274,7 @@
       try{const validated=await issue(input,trustedDevice);input.modal.remove();return validated}
       catch(error){
         input.error.textContent=error.message;
-        if(error.code==='CHANGE_NUMBER'){input.modal.querySelector('[name=rrMobile]').value='';input.modal.querySelector('[name=rrMobile]').focus();}
+        if(error.code==='CHANGE_NUMBER'){input.modal.querySelector('[name=rrName]').value='';input.modal.querySelector('[name=rrMobile]').value='';input.modal.querySelector('[name=rrName]').focus();}
         const modal=input.modal,err=input.error;
         input=await new Promise(resolve=>{modal.querySelector('button').onclick=()=>{
           const name=modal.querySelector('[name=rrName]').value.trim(),mobile=modal.querySelector('[name=rrMobile]').value.trim();
