@@ -28,3 +28,11 @@ Direct TEST share, lot, requirement and requirement-line tables also enforce the
 Run `node --test tests/customer-login-approval.test.cjs tests/customer-mobile-contract.test.cjs` and `tests/customer-login-approval-rollback.sql`. The SQL suite uses a transaction and rolls back every test request, approval and session. Never seed real device approvals for convenience.
 
 Apply SQL files in order: `sql/test71_customer_login_approval.sql`, then `sql/test71_customer_approval_row_access.sql`. The second file also contains the explicit restrictive approval-table deny policy.
+
+## One open collection rule correction
+
+Allowing Collection 16 while 12 was open violated the intended business rule; the fallback behavior above explains the symptom but does not make it valid. Legacy first-create APIs and share-adoption APIs had no shared active-cycle guard. A database trigger now covers every insert and reopening of a TEST direct customer cycle. The active statuses are DRAFT, SENT_NOT_OPENED, OPENED_NO_RESPONSE and REQUIREMENT_RECEIVED with no closed_at. New creation is blocked until existing active cycles are closed. Existing open-cycle updates continue to work. PI_GENERATED, CI_GENERATED, CLOSED, CLOSED_NO_RESPONSE and CANCELLED are terminal for this active-collection rule.
+
+The guard uses a private per-customer/mode UPSERT lock row to serialize competing creation requests. No history is renumbered or auto-closed. The audited customer still has historical open cycles 3, 5, 12, 13, 14 and 15; these are pre-existing inconsistencies and prevent new first collections until explicitly reconciled. The latest shared cycle remains 12.
+
+Applied backend migration: `sql/test71_one_open_collection.sql`. Run `tests/customer-one-open-collection-rollback.sql` to verify all three legacy first-create APIs are blocked, existing open-cycle updates succeed, creation succeeds after closure and reopening is blocked while another cycle is active. All fixture closures and new records roll back.
