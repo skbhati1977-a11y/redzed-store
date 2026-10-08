@@ -1,0 +1,33 @@
+begin;
+alter table public.rr_targeted_push_outbox_v708 disable trigger rr_targeted_push_deliver_v708;
+create temp table rr_upm_actions_v726 as select * from public.rr_upm_actions_v726 with no data;
+create trigger fixture_action after insert on pg_temp.rr_upm_actions_v726 for each row execute function rr_chat_notifications_test71.upm_action_event();
+create temp table rr_upm_alter_events_v740 as select * from public.rr_upm_alter_events_v740 with no data;
+create trigger fixture_alter after insert on pg_temp.rr_upm_alter_events_v740 for each row execute function rr_chat_notifications_test71.upm_action_event();
+create temp table rr_upm_rectification_cases_v9101 as select * from public.rr_upm_rectification_cases_v9101 with no data;
+create trigger fixture_rectify after insert or update on pg_temp.rr_upm_rectification_cases_v9101 for each row execute function rr_chat_notifications_test71.upm_action_event();
+do $$
+declare actor uuid;obj jsonb;fixture uuid;n integer;begin
+ select w.linked_auth_user_id into actor from public.rr_worker_directory_unified_v1 w join public.rr_user_profiles p on p.auth_user_id=w.linked_auth_user_id where w.is_active and p.is_active and upper(p.access_status)='ACTIVE' order by w.worker_id limit 1;
+ perform set_config('request.jwt.claim.sub',actor::text,true);
+ perform set_config('request.headers','{"origin":"https://test71-workspace.app.github.dev","x-client-info":"redzed-test71"}',true);
+ fixture:=gen_random_uuid();select to_jsonb(x) into obj from public.rr_upm_actions_v726 x limit 1;
+ if obj is null then raise exception 'No action source fixture';end if;
+ obj:=obj||jsonb_build_object('id',fixture,'actor_user_id',actor,'action_type','SHORT','created_at',now());
+ insert into pg_temp.rr_upm_actions_v726 select (jsonb_populate_record(null::public.rr_upm_actions_v726,obj)).*;
+ if not exists(select 1 from rr_chat_notifications_test71.inbox where event_key like '%'||fixture||'%' and action_label='SHORT' and actor_user_id=actor) then raise exception 'SHORT action snapshot missing';end if;
+ fixture:=gen_random_uuid();select to_jsonb(x) into obj from public.rr_upm_alter_events_v740 x limit 1;
+ if obj is null then raise exception 'No alter source fixture';end if;
+ obj:=obj||jsonb_build_object('id',fixture,'actor_id',actor,'event_type','ALTER_REQUESTED','created_at',now());
+ insert into pg_temp.rr_upm_alter_events_v740 select (jsonb_populate_record(null::public.rr_upm_alter_events_v740,obj)).*;
+ if not exists(select 1 from rr_chat_notifications_test71.inbox where event_key like '%'||fixture||'%' and action_label='ALTER REQUESTED') then raise exception 'ALTER snapshot missing';end if;
+ fixture:=gen_random_uuid();select to_jsonb(x) into obj from public.rr_upm_rectification_cases_v9101 x limit 1;
+ if obj is null then raise exception 'No rectification source fixture';end if;
+ obj:=obj||jsonb_build_object('id',fixture,'created_by',actor,'status','OPEN','created_at',now());
+ insert into pg_temp.rr_upm_rectification_cases_v9101 select (jsonb_populate_record(null::public.rr_upm_rectification_cases_v9101,obj)).*;
+ select count(*) into n from rr_chat_notifications_test71.inbox where event_key like '%'||fixture||'%';
+ if n=0 then raise exception 'RECTIFY snapshot missing';end if;
+ update pg_temp.rr_upm_rectification_cases_v9101 set status='CLOSED',closed_at=now() where id=fixture;
+ if (select count(*) from rr_chat_notifications_test71.inbox where event_key like '%'||fixture||'%')<=n then raise exception 'RECTIFY transition overwrote old action';end if;
+end $$;
+rollback;

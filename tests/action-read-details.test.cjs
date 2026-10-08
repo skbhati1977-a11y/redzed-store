@@ -1,0 +1,25 @@
+const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs');
+const {JSDOM}=require('jsdom');
+function fixture(){
+ const dom=new JSDOM('<section id="inbox"><header class="head"><h1>Chat</h1></header><button data-department="STICKER"><b>Sticker</b></button></section><section id="chat"><div id="messages"><article data-assignment-id="a"><h2>Lot 2633</h2></article></div></section>',{url:'https://test71-workspace.app.github.dev/test70-cb-purchase-real-chat-pilot.html',runScripts:'outside-only',pretendToBeVisual:true});
+ const w=dom.window;w.setInterval=w.setTimeout=()=>0;let hiddenSecond=true;const reads=[];const recipients=[{worker_name:'Kartik',role_code:'WORKER',delivered_at:'2026-10-08T03:00:00Z',read_at:null},{worker_name:'Manager',role_code:'MANAGER',delivered_at:null,read_at:null}];
+ const rows=['Assign','Accept & Count'].map((action_label,i)=>({id:'n'+i,action_key:'action'+i,action_label,assignment_id:'a',department_code:'STICKER',route_url:'?rc_status=WORKING',worker_ids:['kartik'],created_at:'2026-10-08T02:00:00Z',actor_name:'Lineman',recipients:JSON.parse(JSON.stringify(recipients))}));let notices=rows.slice();
+ w.RRAdminApprovalHost71={context:()=>({kind:'group',id:'STICKER',status:'WORKING'})};w.RF853={rpc:async(n,a)=>{
+ if(n==='rr_chat_notification_inbox_test71')return notices;if(n==='rr_chat_staff_unread_test71')return [];
+ if(n==='rr_chat_action_history_test71')return rows;if(n==='rr_chat_action_delivered_test71')return notices.length;
+ if(n==='rr_chat_action_receipts_test71')return recipients;
+ if(n==='rr_chat_notification_read_test71'){reads.push(...a.p_ids);notices=notices.filter(r=>!a.p_ids.includes(r.id));return a.p_ids.length;}throw Error(n);
+ }};
+ w.document.getElementById('chat').getBoundingClientRect=()=>({top:0,bottom:600,height:600,width:300});
+ w.HTMLElement.prototype.getBoundingClientRect=function(){const off=this.dataset.actionKey==='action1'&&hiddenSecond;return {top:off?900:100,bottom:off?1000:180,height:80,width:300};};w.HTMLElement.prototype.scrollIntoView=function(){};
+ w.HTMLDialogElement.prototype.showModal=function(){this.open=true;};w.HTMLDialogElement.prototype.close=function(){this.open=false;};
+ w.eval(fs.readFileSync('real-chat-inbox-summary-test71.js','utf8'));w.eval(fs.readFileSync('real-chat-action-receipts-test71.js','utf8'));
+ return{w,dom,reads,rows,showSecond:()=>hiddenSecond=false};
+}
+test('two actions on one card: only visible action reads; popup keeps the other recipient unread',async()=>{const f=fixture(),{w}=f;try{
+ await w.RRChatNotifications71.refresh();assert.deepEqual(f.reads,['n0']);assert.equal(w.document.querySelectorAll('[data-action-key]').length,2);assert.equal(w.document.querySelector('[data-unread-bubble="total"]').textContent,'1');assert.equal(w.document.querySelector('[data-action-key="action1"] .rrActionNew71').textContent,'NEW');
+ await w.RRActionReceipts71.details('action0');assert.match(w.document.querySelector('dialog').textContent,/Kartik/);assert.match(w.document.querySelector('dialog').textContent,/Manager/);assert.match(w.document.querySelector('dialog').textContent,/Not delivered/);assert.deepEqual(f.reads,['n0']);
+ f.showSecond();await w.RRChatNotifications71.visible();assert.deepEqual(f.reads,['n0']);w.document.querySelector('dialog').close();await w.RRChatNotifications71.visible();assert.deepEqual(f.reads,['n0','n1']);assert.equal(w.document.querySelector('[data-unread-bubble="total"]'),null);
+ }finally{f.dom.window.close();}});
+test('group blue tick requires every recipient; delivered and partial read retain grey tick',()=>{const f=fixture();try{const state=f.w.RRActionReceipts71.state;assert.equal(state([{read_at:'today'},{delivered_at:'today'}]).blue,false);assert.equal(state([{read_at:'today'},{read_at:'today'}]).blue,true);assert.equal(state([{delivered_at:'today'}]).label,'Delivered');assert.equal(state([]).blue,false);}finally{f.dom.window.close();}});
+test('read RPC failure keeps NEW and bubble; no optimistic acknowledgement',async()=>{const f=fixture();try{const old=f.w.RF853.rpc;f.w.RF853.rpc=async(n,a)=>n==='rr_chat_notification_read_test71'?0:old(n,a);await f.w.RRChatNotifications71.refresh();assert.equal(f.w.document.querySelector('[data-unread-bubble="total"]').textContent,'2');assert.equal(f.w.document.querySelectorAll('.rrActionNew71').length,2);}finally{f.dom.window.close();}});

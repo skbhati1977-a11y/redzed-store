@@ -1,0 +1,33 @@
+begin;
+alter table public.rr_targeted_push_outbox_v708 disable trigger rr_targeted_push_deliver_v708;
+do $$
+declare a record;b record;c record;mine uuid;theirs uuid;key text:='ACTION_RECEIPT_FIXTURE:'||gen_random_uuid();result jsonb;n integer;begin
+ select w.* into a from public.rr_worker_directory_unified_v1 w join public.rr_user_profiles p on p.auth_user_id=w.linked_auth_user_id where w.is_active and p.is_active and upper(p.access_status)='ACTIVE' order by w.worker_id limit 1;
+ select w.* into b from public.rr_worker_directory_unified_v1 w join public.rr_user_profiles p on p.auth_user_id=w.linked_auth_user_id where w.is_active and p.is_active and upper(p.access_status)='ACTIVE' and w.linked_auth_user_id<>a.linked_auth_user_id order by w.worker_id limit 1;
+ select w.* into c from public.rr_worker_directory_unified_v1 w join public.rr_user_profiles p on p.auth_user_id=w.linked_auth_user_id where w.is_active and p.is_active and upper(p.access_status)='ACTIVE' and w.linked_auth_user_id not in(a.linked_auth_user_id,b.linked_auth_user_id) order by w.worker_id limit 1;
+ if c.worker_id is null then raise exception 'Missing fixture identities';end if;
+ perform set_config('request.jwt.claim.sub',c.linked_auth_user_id::text,true);
+ insert into rr_chat_notifications_test71.inbox(event_key,recipient_worker_id,department_code,title,route_url,worker_ids,chat_status) values(key,a.worker_id,'STICKER','Assign','test70-cb-purchase-real-chat-pilot.html?rc_status=WORKING',jsonb_build_array(a.worker_id),'WORKING') returning id into mine;
+ insert into rr_chat_notifications_test71.inbox(event_key,recipient_worker_id,department_code,title,route_url,worker_ids,chat_status) values(key,b.worker_id,'STICKER','Assign','test70-cb-purchase-real-chat-pilot.html?rc_status=WORKING',jsonb_build_array(a.worker_id),'WORKING') returning id into theirs;
+ perform set_config('request.jwt.claim.sub',a.linked_auth_user_id::text,true);
+ if public.rr_chat_action_delivered_test71(array[theirs])<>0 then raise exception 'Other recipient delivery changed';end if;
+ if public.rr_chat_action_delivered_test71(array[mine])<>1 then raise exception 'Own delivery failed';end if;
+ if public.rr_chat_notification_read_test71(array[theirs])<>0 then raise exception 'Other recipient read changed';end if;
+ if public.rr_chat_notification_read_test71(array[mine])<>1 then raise exception 'Own read failed';end if;
+ if public.rr_chat_notification_read_test71(array[mine])<>0 then raise exception 'Read not idempotent';end if;
+ result:=public.rr_chat_action_receipts_test71(key);
+ if jsonb_array_length(result)<>2 then raise exception 'Recipient list missing';end if;
+ select count(*) into n from jsonb_array_elements(result) x where x->>'read_at' is not null;
+ if n<>1 then raise exception 'Read recipient isolation failed';end if;
+ result:=public.rr_chat_action_history_test71('STICKER',a.worker_id);
+ if not exists(select 1 from jsonb_array_elements(result) x where x->>'action_key'=key) then raise exception 'Read history vanished';end if;
+ if public.rr_chat_notification_inbox_test71() @> jsonb_build_array(jsonb_build_object('id',mine)) then raise exception 'Read still counted';end if;
+ perform set_config('request.jwt.claim.sub',b.linked_auth_user_id::text,true);
+ if not public.rr_chat_notification_inbox_test71() @> jsonb_build_array(jsonb_build_object('id',theirs)) then raise exception 'Other unread lost';end if;
+ perform set_config('request.jwt.claim.sub',c.linked_auth_user_id::text,true);
+ result:=public.rr_chat_action_receipts_test71(key);
+ if jsonb_array_length(result)<>2 then raise exception 'Sender receipts inaccessible';end if;
+ if has_function_privilege('anon','public.rr_chat_action_receipts_test71(text)','execute') then raise exception 'Anonymous receipts access';end if;
+ raise notice 'PASS action receipts: own delivery/read, recipient isolation, history, idempotence, sender access, anonymous denial';
+end $$;
+rollback;

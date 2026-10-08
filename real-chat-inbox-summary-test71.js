@@ -29,6 +29,7 @@
   if(n.assignment_id){const exact=[...root.querySelectorAll('[data-assignment-id]')].find(x=>x.dataset.assignmentId===n.assignment_id);if(exact)return exact;const consolidated=[...root.querySelectorAll('[data-assignment-ids]')].find(x=>{try{return JSON.parse(x.dataset.assignmentIds).includes(n.assignment_id)}catch(_){return false}});if(consolidated)return consolidated;}
   if(n.event_key){const exact=[...root.querySelectorAll('[data-event-key]')].find(x=>x.dataset.eventKey===n.event_key);if(exact)return exact;}
   if(n.cb_no)return [...root.querySelectorAll('[data-cb-no]')].find(x=>x.dataset.cbNo===n.cb_no)||null;
+  const activity=window.RRActionReceipts71?.entry(n);if(activity?.closest('[data-unmapped-actions]'))return activity;
   // A targeted UPM notice must never focus another assignment sharing its lot.
   if(n.assignment_id||n.submit_request_id)return null;
   if(n.lot_no)return [...root.querySelectorAll('.work-card,.closed-row,[data-lot]')].find(x=>String(x.dataset.noticeLot||x.dataset.lot||'')===String(n.lot_no))||null;
@@ -38,19 +39,20 @@
   const context=window.RRAdminApprovalHost71?.context(),chat=document.getElementById('chat');if(!context||chat?.hidden||!['group','person'].includes(context.kind))return;
   const shown=notices.filter(n=>{const u=new URL(n.route_url,location.href);return n.department_code===String(context.parentDepartment||context.id||'').toUpperCase()&&(context.kind!=='person'||belongs(n,context.id))&&u.searchParams.get('rc_status')===context.status&&target(n)});
   const pinned=(q.get('rc_assignment')||q.get('rc_submit'))&&q.get('rc_parent')===String(context.parentDepartment||context.id||'').toUpperCase()&&q.get('rc_status')===context.status?{assignment_id:q.get('rc_assignment'),submit_request_id:q.get('rc_submit'),route_url:location.href}:null;
+  window.RRActionReceipts71?.render();
   const focus=shown.find(n=>n.id===noticeId||bridgeId&&String(n.bridge_id)===bridgeId)||(pinned&&target(pinned)?pinned:null);
-  if(focus&&!focusDone){focusedNotice=focus;const node=target(focus);const closed=node.closest?.('details');if(closed)closed.open=true;node.setAttribute('tabindex','-1');node.classList.add('rrNoticeFocus71');node.scrollIntoView({block:'center',behavior:'auto'});node.focus({preventScroll:true});focusDone=true;}
+  if(focus&&!focusDone){focusedNotice=focus;const node=window.RRActionReceipts71?.entry(focus)||target(focus);const closed=node.closest?.('details');if(closed)closed.open=true;node.setAttribute('tabindex','-1');node.classList.add('rrNoticeFocus71');node.scrollIntoView({block:'center',behavior:'auto'});node.focus({preventScroll:true});focusDone=true;}
   // Read only cards actually in the viewport; opening a department does not clear unseen cards.
-  const ids=shown.filter(n=>{const r=target(n).getBoundingClientRect(),box=chat.getBoundingClientRect();return r.top<box.bottom&&r.bottom>box.top}).map(n=>n.id);
-  if(!ids.length)return;reading=true;try{await rpc('rr_chat_notification_read_test71',{p_ids:ids});notices=notices.filter(n=>!ids.includes(n.id));navigator.serviceWorker?.controller?.postMessage({type:'RZ_NOTICE_READ71',ids});paint()}catch(e){console.warn('Chat read status unavailable',e)}finally{reading=false}
+  const ids=shown.filter(n=>{const node=window.RRActionReceipts71?window.RRActionReceipts71.entry(n):target(n);if(!node||node.closest('details:not([open])')||document.querySelector('dialog[open],.rf794-back.on,.sheetback.on'))return false;const r=node.getBoundingClientRect(),box=chat.getBoundingClientRect(),top=Math.max(r.top,box.top,0),bottom=Math.min(r.bottom,box.bottom,innerHeight);return window.RRActionReceipts71?r.width>0&&bottom-top>=Math.min(40,r.height*0.5):r.top<box.bottom&&r.bottom>box.top;}).map(n=>n.id);
+  if(!ids.length)return;reading=true;try{const changed=await rpc('rr_chat_notification_read_test71',{p_ids:ids});if(!changed)return;notices=notices.filter(n=>!ids.includes(n.id));window.RRActionReceipts71?.readConfirmed(ids);navigator.serviceWorker?.controller?.postMessage({type:'RZ_NOTICE_READ71',ids});paint()}catch(e){console.warn('Chat read status unavailable',e)}finally{reading=false}
  }
  async function refresh(){if(busy||!ready())return;busy=true;try{
   await Promise.allSettled([
    rpc('rr_chat_notification_inbox_test71').then(result=>{notices=Array.isArray(result)?result:[];paint();}).catch(e=>console.warn('Action unread counts unavailable',e)),
    rpc('rr_chat_staff_unread_test71').then(result=>{customers=Array.isArray(result)?result:[];paint();}).catch(e=>console.warn('Customer unread counts unavailable',e))
-  ]);const pending=notices.find(n=>n.id===noticeId);const context=window.RRAdminApprovalHost71?.context();if(pending&&context&&['group','person'].includes(context.kind)){const u=new URL(pending.route_url,location.href);if(u.searchParams.get('rc_status')!==context.status){u.searchParams.set('rc_notice',pending.id);if(context.kind==='person'){u.searchParams.set('rc_view','chat');u.searchParams.set('rc_kind','person');u.searchParams.set('rc_id',context.id);}location.replace(u.href);return;}}await visible();
+  ]);if(window.RRActionReceipts71&&notices.length)await rpc('rr_chat_action_delivered_test71',{p_ids:notices.map(n=>n.id)}).catch(e=>console.warn('Delivery status unavailable',e));await window.RRActionReceipts71?.refresh();const pending=notices.find(n=>n.id===noticeId);const context=window.RRAdminApprovalHost71?.context();if(pending&&context&&['group','person'].includes(context.kind)){const u=new URL(pending.route_url,location.href);if(u.searchParams.get('rc_status')!==context.status){u.searchParams.set('rc_notice',pending.id);if(context.kind==='person'){u.searchParams.set('rc_view','chat');u.searchParams.set('rc_kind','person');u.searchParams.set('rc_id',context.id);}location.replace(u.href);return;}}await visible();
  }finally{busy=false}}
 
- window.RRChatNotifications71={refresh,visible,paint};
+ window.RRChatNotifications71={refresh,visible,paint,target,rpc,unread:()=>notices};
  document.addEventListener('scroll',()=>visible(),true);setInterval(()=>{if(!document.hidden){paint();refresh()}},3000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)refresh()});setTimeout(refresh,1000);
 })();
