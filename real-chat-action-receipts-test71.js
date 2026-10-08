@@ -15,8 +15,8 @@
    let host=card.querySelector('.rrActionHistory71');if(!host){host=document.createElement('section');host.className='rrActionHistory71';host.setAttribute('aria-label','Action history');card.appendChild(host);}
    wanted.add(row.action_key);let el=[...host.querySelectorAll('[data-action-key]')].find(e=>e.dataset.actionKey===row.action_key);
    if(!el){el=document.createElement('div');el.className='rrActionEntry71';el.dataset.actionKey=row.action_key;host.appendChild(el);}
-   const isUnread=unread.has(row.action_key)||unread.has(row.id),detail=Object.entries(row.action_detail||{}).filter(([,v])=>v!==null&&v!==undefined&&v!=='').map(([k,v])=>esc(k.replace(/_/g,' '))+': '+esc(v)).join(' · ');
-   const html='<strong>'+esc(row.action_label||row.title||'Work update')+'</strong> '+(isUnread?'<span class="rrActionNew71">NEW</span>':'')+'<div>Lot '+esc(row.lot_no||'—')+' · '+esc(row.actor_name||'Actor not recorded')+' · '+esc(when(row.created_at))+'</div>'+(detail?'<div>'+detail+'</div>':'')+tick(row);
+   const isUnread=unread.has(row.action_key)||unread.has(row.id),detail=Object.entries(row.action_detail||{}).filter(([k])=>!['source_verified','occurred_at'].includes(k)).filter(([,v])=>v!==null&&v!==undefined&&v!=='').map(([k,v])=>esc(k.replace(/_/g,' '))+': '+esc(v)).join(' · ');
+   const html='<strong>'+esc(row.action_label||row.title||'Work update')+'</strong> '+(isUnread?'<span class="rrActionNew71">NEW</span>':'')+'<div>Lot '+esc(row.lot_no||'—')+' · '+esc(row.actor_name||'Actor not recorded')+' · '+esc(when(row.action_detail?.occurred_at||row.created_at))+'</div>'+(detail?'<div>'+detail+'</div>':'')+tick(row);
    if(el.innerHTML!==html)el.innerHTML=html;el.classList.toggle('unread',isUnread);el.dataset.noticeId=row.id;
   }
   root.querySelectorAll('[data-action-key]').forEach(el=>{if(!wanted.has(el.dataset.actionKey))el.remove();});
