@@ -75,3 +75,14 @@
 #chat.chat{height:100%;min-height:0;overflow-y:auto!important;overflow-x:hidden;overscroll-behavior-y:contain;scrollbar-gutter:stable;}
 #chat.chat>.head,#chat.chat>.chat-filters,#chat.chat>.chat-search,#chat.chat>#workLanes71,#chat.chat>#workLaneSummary71,#chat.chat>#workFilters{position:static!important;flex:0 0 auto;}
 #chat.chat>#messages{flex:0 0 auto!important;min-height:0;height:auto!important;max-height:none!important;overflow:visible!important;padding-bottom:calc(24px + env(safe-area-inset-bottom));}
+/* Pending controls and full card list are separate screens of the same chat. */
+#cardScreenHeader71[hidden],#openCards71[hidden]{display:none!important;}
+#chat.rrTwoScreen71:not(.rrCardsScreen71)>#messages{display:none!important;}
+#chat.rrCardsScreen71>.head,#chat.rrCardsScreen71>.chat-filters,#chat.rrCardsScreen71>.chat-search,#chat.rrCardsScreen71>#workLanes71,#chat.rrCardsScreen71>#workLaneSummary71,#chat.rrCardsScreen71>#workFilters,#chat.rrCardsScreen71>#searchNotice,#chat.rrCardsScreen71>#openCards71{display:none!important;}
+#chat.rrCardsScreen71>#messages{display:flex!important;flex:1 1 auto!important;min-height:0;overflow-y:auto!important;padding:12px;}
+#chat.rrCardsScreen71{overflow:hidden!important;}
+#chat #cardScreenHeader71{flex:none;display:flex;align-items:center;gap:10px;min-height:52px;padding:8px 12px;border-bottom:1px solid #294159;background:#0d1927;}
+#cardScreenHeader71 button{width:36px;height:36px;border:1px solid #40596e;border-radius:10px;background:#122638;color:#fff;font-size:20px;}
+#cardScreenHeader71 b{font-size:14px;line-height:1.4;}
+#chat.rrCardsScreen71 .work-card{width:100%!important;max-width:640px;align-self:center;}
+#chat #openCards71{margin:12px;}
