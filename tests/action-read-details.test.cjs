@@ -23,3 +23,18 @@ test('two actions on one card: only visible action reads; popup keeps the other 
  }finally{f.dom.window.close();}});
 test('group blue tick requires every recipient; delivered and partial read retain grey tick',()=>{const f=fixture();try{const state=f.w.RRActionReceipts71.state;assert.equal(state([{read_at:'today'},{delivered_at:'today'}]).blue,false);assert.equal(state([{read_at:'today'},{read_at:'today'}]).blue,true);assert.equal(state([{delivered_at:'today'}]).label,'Delivered');assert.equal(state([]).blue,false);}finally{f.dom.window.close();}});
 test('read RPC failure keeps NEW and bubble; no optimistic acknowledgement',async()=>{const f=fixture();try{const old=f.w.RF853.rpc;f.w.RF853.rpc=async(n,a)=>n==='rr_chat_notification_read_test71'?0:old(n,a);await f.w.RRChatNotifications71.refresh();assert.equal(f.w.document.querySelector('[data-unread-bubble="total"]').textContent,'2');assert.equal(f.w.document.querySelectorAll('.rrActionNew71').length,2);}finally{f.dom.window.close();}});
+
+test('late inbox response cannot restore an action read while polling was pending',async()=>{const f=fixture();try{
+ await f.w.RRChatNotifications71.refresh();const old=f.w.RF853.rpc;let release;f.w.RF853.rpc=(n,a)=>n==='rr_chat_notification_inbox_test71'?new Promise(resolve=>release=resolve):old(n,a);
+ const polling=f.w.RRChatNotifications71.refresh();f.showSecond();await f.w.RRChatNotifications71.visible();release(f.rows.slice());await polling;
+ assert.equal(f.w.document.querySelector('[data-unread-bubble="total"]'),null);assert.deepEqual(f.reads,['n0','n1']);
+ }finally{f.dom.window.close();}});
+
+test('another device already read: zero update reconciles own count from server',async()=>{const f=fixture();try{
+ const old=f.w.RF853.rpc;let read=false;f.w.RF853.rpc=async(n,a)=>{if(n==='rr_chat_notification_read_test71'){read=true;return 0;}if(n==='rr_chat_notification_inbox_test71'&&read)return [];return old(n,a);};
+ await f.w.RRChatNotifications71.refresh();assert.equal(f.w.document.querySelector('[data-unread-bubble="total"]'),null);
+ }finally{f.dom.window.close();}});
+
+test('genuine CLOSE unread actions remain discoverable and readable from WORKING chat',async()=>{const f=fixture();try{
+ f.rows[0].route_url='?rc_status=CLOSE';await f.w.RRChatNotifications71.refresh();assert.ok(f.w.RRActionReceipts71.entry(f.rows[0]).closest('[data-unmapped-actions]'));assert.match(f.w.RRActionReceipts71.entry(f.rows[0]).textContent,/CLOSE/);assert.deepEqual(f.reads,['n0']);assert.equal(f.w.document.querySelector('[data-unread-bubble="total"]').textContent,'1');
+ }finally{f.dom.window.close();}});

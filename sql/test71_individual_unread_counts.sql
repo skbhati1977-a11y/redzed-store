@@ -1,30 +1,5 @@
--- Resolve existing recovered TEST71 entries against actual workflow records.
--- Preserve notice IDs/read_at/delivered_at; do not create pushes or business rows.
-create or replace function rr_chat_notifications_test71.recover_upm_cards() returns void
-language plpgsql security definer set search_path='' as $$
-begin
- if auth.uid() is null then return;end if;
- update rr_chat_notifications_test71.inbox i
- set action_label=case when r.status in ('CONFIRMED','CONFIRMED_SHORT') then 'Accept & Count · recovered' else 'Assign · recovered' end,
- actor_user_id=case when r.status in ('CONFIRMED','CONFIRMED_SHORT') then r.confirmed_by else a.assigned_by end,
- action_detail=jsonb_build_object('source_verified',true,'occurred_at',case when r.status in ('CONFIRMED','CONFIRMED_SHORT') then r.confirmed_at else coalesce(a.assigned_at,a.created_at) end,
- 'expected_pcs',coalesce(r.expected_qty,a.assigned_qty),'received_pcs',r.confirmed_qty,'difference_pcs',r.confirmed_qty-r.expected_qty,'colour',a.colour_code,'worker',a.worker_name_snapshot,'note',r.note)
- from public.rr_upm_work_assignments_v8 a left join public.rr_upm_assignment_receipts_v9112 r on r.assignment_id=a.id
- where i.event_key like 'UPM_CARD_TEST71:%' and i.submit_request_id is null and i.assignment_id=a.id
- and coalesce(i.action_detail->>'source_verified','false')<>'true'
- and exists(select 1 from public.rr_worker_directory_unified_v1 w where w.worker_id=i.recipient_worker_id and w.linked_auth_user_id=auth.uid() and w.is_active and upper(coalesce(w.access_status,'ACTIVE'))='ACTIVE');
- update rr_chat_notifications_test71.inbox i
- set action_label='Submit · '||replace(q.status,'_',' ')||' · recovered',
- actor_user_id=case when q.status='WAITING_LM' then coalesce(q.worker_auth_id,q.created_by) else q.selected_receiver_auth_id end,
- action_detail=jsonb_build_object('source_verified',true,'occurred_at',coalesce(q.completed_at,q.worker_decided_at,q.counted_at,q.accepted_at,q.created_at),
- 'assigned_pcs',q.assigned_total,'ready_pcs',q.worker_ready_total,'counted_pcs',q.lm_counted_total,'difference_pcs',q.difference_qty,'worker',q.worker_name,'receiver',q.selected_receiver_name,'note',q.dispute_note)
- from public.rr_upm_submit_requests_v794 q
- where i.event_key like 'UPM_CARD_TEST71:%' and i.submit_request_id=q.id
- and coalesce(i.action_detail->>'source_verified','false')<>'true'
- and exists(select 1 from public.rr_worker_directory_unified_v1 w where w.worker_id=i.recipient_worker_id and w.linked_auth_user_id=auth.uid() and w.is_active and upper(coalesce(w.access_status,'ACTIVE'))='ACTIVE');
-end $$;
-revoke all on function rr_chat_notifications_test71.recover_upm_cards() from public,anon,authenticated;
-
+-- Universal TEST71 inbox: historical recovered CLOSED cards are history, not new notifications.
+-- Preserve every receipt. Live CLOSE action notices remain eligible.
 create or replace function public.rr_chat_notification_inbox_test71() returns jsonb
 language plpgsql volatile security definer set search_path='' as $$
 begin

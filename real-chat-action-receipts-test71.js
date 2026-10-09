@@ -1,5 +1,6 @@
 (()=>{'use strict';
  let rows=[],key='',busy=false,popup=null,loadingPopup=false,returnFocus=null;
+ const displayedOtherActions=new Set();
  const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  const when=s=>s?new Date(s).toLocaleString('en-IN'):'—';
  const context=()=>window.RRAdminApprovalHost71?.context();
@@ -7,27 +8,27 @@
  const rpc=(n,a)=>window.RRChatNotifications71.rpc(n,a);
  function state(recipients){const total=recipients.length,read=recipients.filter(r=>r.read_at).length,delivered=recipients.filter(r=>r.delivered_at||r.read_at).length;return {total,read,label:read===total&&total?'Read':delivered===total&&total?'Delivered':'Sent',blue:total>0&&read===total};}
  function tick(row){const s=state(row.recipients||[]);return '<button type="button" class="rrActionTick71 '+(s.blue?'read':'')+'" data-action-receipt="'+esc(row.action_key)+'" aria-label="Read details: '+esc(row.action_label)+'">'+(s.label==='Sent'?'✓':'✓✓')+' <small>Read '+s.read+'/'+s.total+'</small></button>';}
- function eligible(row,c){if(row.department_code!==String(c.parentDepartment||c.id).toUpperCase())return false;if(c.kind==='person'&&!(row.worker_ids||[]).includes(c.id))return false;return new URL(row.route_url,location.href).searchParams.get('rc_status')===c.status;}
+ function eligible(row,c,unread){if(row.department_code!==String(c.parentDepartment||c.id).toUpperCase())return false;if(c.kind==='person'&&!(row.worker_ids||[]).includes(c.id))return false;return unread||new URL(row.route_url,location.href).searchParams.get('rc_status')===c.status;}
  function render(){const c=context(),root=document.getElementById('messages');if(!root||contextKey(c)!==key)return;
   const unread=new Set(window.RRChatNotifications71.unread().map(n=>n.action_key||n.id));const wanted=new Set();
-  for(const row of rows){if(!eligible(row,c))continue;let card=window.RRChatNotifications71.target(row);
-   if(!card||card.closest('[data-unmapped-actions]')){card=root.querySelector('[data-unmapped-actions]');if(!card){card=document.createElement('section');card.dataset.unmappedActions='';card.innerHTML='<h3>Other action updates</h3><p>These events are outside the current work-card list.</p>';root.appendChild(card);}}
+  for(const row of rows){const ownUnread=unread.has(row.action_key)||unread.has(row.id);if(!eligible(row,c,ownUnread||displayedOtherActions.has(row.action_key)))continue;const sameStatus=new URL(row.route_url,location.href).searchParams.get('rc_status')===c.status;if(!sameStatus&&ownUnread)displayedOtherActions.add(row.action_key);let card=sameStatus?window.RRChatNotifications71.target(row):null;
+   if(!card||card.closest('[data-unmapped-actions]')){card=root.querySelector('[data-unmapped-actions]');if(!card){card=document.createElement('section');card.dataset.unmappedActions='';card.innerHTML='<h3>Other action updates</h3><p>Unread actions can include updates from other card statuses.</p>';root.appendChild(card);}}
    let host=card.querySelector('.rrActionHistory71');if(!host){host=document.createElement('section');host.className='rrActionHistory71';host.setAttribute('aria-label','Action history');card.appendChild(host);}
    wanted.add(row.action_key);let el=[...host.querySelectorAll('[data-action-key]')].find(e=>e.dataset.actionKey===row.action_key);
    if(!el){el=document.createElement('div');el.className='rrActionEntry71';el.dataset.actionKey=row.action_key;host.appendChild(el);}
    const isUnread=unread.has(row.action_key)||unread.has(row.id),detail=Object.entries(row.action_detail||{}).filter(([k])=>!['source_verified','occurred_at'].includes(k)).filter(([,v])=>v!==null&&v!==undefined&&v!=='').map(([k,v])=>esc(k.replace(/_/g,' '))+': '+esc(v)).join(' · ');
-   const html='<strong>'+esc(row.action_label||row.title||'Work update')+'</strong> '+(isUnread?'<span class="rrActionNew71">NEW</span>':'')+'<div>Lot '+esc(row.lot_no||'—')+' · '+esc(row.actor_name||'Actor not recorded')+' · '+esc(when(row.action_detail?.occurred_at||row.created_at))+'</div>'+(detail?'<div>'+detail+'</div>':'')+tick(row);
+   const html='<strong>'+esc(row.action_label||row.title||'Work update')+'</strong> '+(isUnread?'<span class="rrActionNew71">NEW</span>':'')+'<div>Lot '+esc(row.lot_no||'—')+' · '+esc(row.actor_name||'Actor not recorded')+' · '+esc(new URL(row.route_url,location.href).searchParams.get('rc_status')||'')+' · '+esc(when(row.action_detail?.occurred_at||row.created_at))+'</div>'+(detail?'<div>'+detail+'</div>':'')+tick(row);
    if(el.innerHTML!==html)el.innerHTML=html;el.classList.toggle('unread',isUnread);el.dataset.noticeId=row.id;
   }
   root.querySelectorAll('[data-action-key]').forEach(el=>{if(!wanted.has(el.dataset.actionKey))el.remove();});
   root.querySelectorAll('.rrActionHistory71').forEach(el=>{if(!el.children.length)el.remove();});
  }
  async function refresh(){const c=context(),next=contextKey(c);if(!next){key='';rows=[];return;}if(busy)return;busy=true;
-  try{const result=await rpc('rr_chat_action_history_test71',{p_department:String(c.parentDepartment||c.id).toUpperCase(),p_worker:c.kind==='person'?c.id:null});if(contextKey(context())!==next)return;key=next;rows=Array.isArray(result)?result:[];render();await window.RRChatNotifications71.visible();}
+  try{const result=await rpc('rr_chat_action_history_test71',{p_department:String(c.parentDepartment||c.id).toUpperCase(),p_worker:c.kind==='person'?c.id:null});if(contextKey(context())!==next)return;if(key!==next)displayedOtherActions.clear();key=next;rows=Array.isArray(result)?result:[];render();await window.RRChatNotifications71.visible();}
   catch(e){console.warn('Action history unavailable',e);}finally{busy=false;}
  }
  function entry(n){return [...document.querySelectorAll('#messages [data-action-key]')].find(e=>e.dataset.actionKey===(n.action_key||n.id))||null;}
- function readConfirmed(){render();}
+ async function readConfirmed(ids,keys=[]){render();const affected=rows.filter(row=>ids.includes(row.id)||keys.includes(row.action_key));await Promise.allSettled(affected.map(async row=>{row.recipients=await rpc('rr_chat_action_receipts_test71',{p_event_key:row.action_key});}));render();}
  async function details(actionKey){if(loadingPopup)return;loadingPopup=true;returnFocus=document.activeElement;
   if(!popup){popup=document.createElement('dialog');popup.className='rrReadDetails71';document.body.appendChild(popup);popup.addEventListener('click',e=>{if(e.target.closest('[data-close-receipts]')){popup.close();returnFocus?.focus();}});}
   const row=rows.find(r=>r.action_key===actionKey);popup.innerHTML='<button type="button" data-close-receipts aria-label="Close">×</button><h3>'+esc(row?.action_label||'Read Details')+'</h3><p>Loading…</p>';if(!popup.open)popup.showModal();

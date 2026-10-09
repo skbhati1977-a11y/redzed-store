@@ -1,12 +1,13 @@
 (()=>{'use strict';
  if(window.RRChatNotifications71)return;
  let notices=[],customers=[],busy=false,reading=false,focusDone=false,focusedNotice=null;
+ const confirmedReads=new Set();
  const ready=()=>!!(window.RF853?.rpc||window.supabaseClient?.rpc);
  async function rpc(name,args={}){if(window.RF853?.rpc)return window.RF853.rpc(name,args);const db=window.supabaseClient;if(!db?.rpc)throw Error('Chat connection loading');const {data,error}=await db.rpc(name,args);if(error)throw error;return data;}
  const q=new URLSearchParams(location.search),noticeId=q.get('rc_notice'),bridgeId=q.get('rc_bridge');
  const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  const style=document.createElement('style');style.textContent='.rrMsgBubble71{display:inline-flex;align-items:center;justify-content:center;min-width:25px;height:25px;padding:0 7px;margin-left:8px;border-radius:999px;background:#25a85a;color:white;font:800 13px system-ui;flex-shrink:0}.rrNoticeFocus71{outline:3px solid #ffe095!important;scroll-margin:24px}';document.head.appendChild(style);
- function bubble(host,n,key){if(!host)return;let b=host.querySelector('[data-unread-bubble="'+key+'"]');if(!n){b?.remove();return}if(!b){b=document.createElement('span');b.className='rrMsgBubble71';b.dataset.unreadBubble=key;host.appendChild(b)}const value=String(n);if(b.textContent!==value)b.textContent=value;b.setAttribute('aria-label',value+' unread messages')}
+ function bubble(host,n,key){if(!host)return;let b=host.querySelector('[data-unread-bubble="'+key+'"]');if(!n){b?.remove();return}if(!b){b=document.createElement('span');b.className='rrMsgBubble71';b.dataset.unreadBubble=key;host.appendChild(b)}const value=String(n);if(b.textContent!==value)b.textContent=value;b.setAttribute('aria-label',value+' unread actions')}
  const belongs=(n,worker)=>Array.isArray(n.worker_ids)&&n.worker_ids.some(id=>id&&String(id)===String(worker));
  function paint(){
   if(focusedNotice){const node=target(focusedNotice);if(node)node.classList.add('rrNoticeFocus71')}
@@ -37,18 +38,31 @@
  }
  async function visible(){if(reading||document.hidden||!ready())return;
   const context=window.RRAdminApprovalHost71?.context(),chat=document.getElementById('chat');if(!context||chat?.hidden||!['group','person'].includes(context.kind))return;
-  const shown=notices.filter(n=>{const u=new URL(n.route_url,location.href);return n.department_code===String(context.parentDepartment||context.id||'').toUpperCase()&&(context.kind!=='person'||belongs(n,context.id))&&u.searchParams.get('rc_status')===context.status&&target(n)});
-  const pinned=(q.get('rc_assignment')||q.get('rc_submit'))&&q.get('rc_parent')===String(context.parentDepartment||context.id||'').toUpperCase()&&q.get('rc_status')===context.status?{assignment_id:q.get('rc_assignment'),submit_request_id:q.get('rc_submit'),route_url:location.href}:null;
   window.RRActionReceipts71?.render();
+  const shown=notices.filter(n=>{const u=new URL(n.route_url,location.href);return n.department_code===String(context.parentDepartment||context.id||'').toUpperCase()&&(context.kind!=='person'||belongs(n,context.id))&&(u.searchParams.get('rc_status')===context.status||window.RRActionReceipts71?.entry(n)?.closest('[data-unmapped-actions]'))&&target(n)});
+  const pinned=(q.get('rc_assignment')||q.get('rc_submit'))&&q.get('rc_parent')===String(context.parentDepartment||context.id||'').toUpperCase()&&q.get('rc_status')===context.status?{assignment_id:q.get('rc_assignment'),submit_request_id:q.get('rc_submit'),route_url:location.href}:null;
   const focus=shown.find(n=>n.id===noticeId||bridgeId&&String(n.bridge_id)===bridgeId)||(pinned&&target(pinned)?pinned:null);
   if(focus&&!focusDone){focusedNotice=focus;const node=window.RRActionReceipts71?.entry(focus)||target(focus);const closed=node.closest?.('details');if(closed)closed.open=true;node.setAttribute('tabindex','-1');node.classList.add('rrNoticeFocus71');node.scrollIntoView({block:'center',behavior:'auto'});node.focus({preventScroll:true});focusDone=true;}
   // Read only cards actually in the viewport; opening a department does not clear unseen cards.
   const ids=shown.filter(n=>{const node=window.RRActionReceipts71?window.RRActionReceipts71.entry(n):target(n);if(!node||node.closest('details:not([open])')||document.querySelector('dialog[open],.rf794-back.on,.sheetback.on'))return false;const r=node.getBoundingClientRect(),box=chat.getBoundingClientRect(),top=Math.max(r.top,box.top,0),bottom=Math.min(r.bottom,box.bottom,innerHeight);return window.RRActionReceipts71?r.width>0&&bottom-top>=Math.min(40,r.height*0.5):r.top<box.bottom&&r.bottom>box.top;}).map(n=>n.id);
-  if(!ids.length)return;reading=true;try{const changed=await rpc('rr_chat_notification_read_test71',{p_ids:ids});if(!changed)return;notices=notices.filter(n=>!ids.includes(n.id));window.RRActionReceipts71?.readConfirmed(ids);navigator.serviceWorker?.controller?.postMessage({type:'RZ_NOTICE_READ71',ids});paint()}catch(e){console.warn('Chat read status unavailable',e)}finally{reading=false}
+  if(!ids.length)return;reading=true;
+  try{
+   const keys=notices.filter(n=>ids.includes(n.id)).map(n=>n.action_key||n.id);
+   const changed=await rpc('rr_chat_notification_read_test71',{p_ids:ids});let confirmed=ids;
+   if(!changed){
+    const result=await rpc('rr_chat_notification_inbox_test71');
+    if(!Array.isArray(result))return;
+    confirmed=ids.filter(id=>!result.some(n=>n.id===id));
+    notices=result.filter(n=>!confirmedReads.has(n.id));
+   }else notices=notices.filter(n=>!ids.includes(n.id));
+   confirmed.forEach(id=>confirmedReads.add(id));paint();
+   if(confirmed.length){await window.RRActionReceipts71?.readConfirmed(confirmed,keys);navigator.serviceWorker?.controller?.postMessage({type:'RZ_NOTICE_READ71',ids:confirmed});}
+   window.RRActionReceipts71?.render();paint();
+  }catch(e){console.warn('Chat read status unavailable',e)}finally{reading=false}
  }
  async function refresh(){if(busy||!ready())return;busy=true;try{
   await Promise.allSettled([
-   rpc('rr_chat_notification_inbox_test71').then(result=>{notices=Array.isArray(result)?result:[];paint();}).catch(e=>console.warn('Action unread counts unavailable',e)),
+   rpc('rr_chat_notification_inbox_test71').then(result=>{notices=(Array.isArray(result)?result:[]).filter(n=>!confirmedReads.has(n.id));paint();}).catch(e=>console.warn('Action unread counts unavailable',e)),
    rpc('rr_chat_staff_unread_test71').then(result=>{customers=Array.isArray(result)?result:[];paint();}).catch(e=>console.warn('Customer unread counts unavailable',e))
   ]);if(window.RRActionReceipts71&&notices.length)await rpc('rr_chat_action_delivered_test71',{p_ids:notices.map(n=>n.id)}).catch(e=>console.warn('Delivery status unavailable',e));await window.RRActionReceipts71?.refresh();const pending=notices.find(n=>n.id===noticeId);const context=window.RRAdminApprovalHost71?.context();if(pending&&context&&['group','person'].includes(context.kind)){const u=new URL(pending.route_url,location.href);if(u.searchParams.get('rc_status')!==context.status){u.searchParams.set('rc_notice',pending.id);if(context.kind==='person'){u.searchParams.set('rc_view','chat');u.searchParams.set('rc_kind','person');u.searchParams.set('rc_id',context.id);}location.replace(u.href);return;}}await visible();
  }finally{busy=false}}
