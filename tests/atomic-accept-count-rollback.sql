@@ -45,10 +45,10 @@ begin
  if (select to_jsonb(x) from public.rr_upm_submit_requests_v794 x where id=q.id)<>original then raise exception 'Material failure left partial acceptance'; end if;
  insert into accept_count_result values('late_failure_rolls_back_whole_save',true);
  result:=public.rr_chat_department_projection_test71('FABRICATION','WORKING');
- if not exists(select 1 from jsonb_array_elements(result->'cards') x where x->>'submit_request_id'=q.id::text and x->>'submit_status'='NOT_ACCEPTED' and x->>'resolved_work_state'='NOT_ACCEPTED') then raise exception 'Legacy incomplete card still labeled Accepted'; end if;
+ if not exists(select 1 from jsonb_array_elements(result->'cards') x where x->>'submit_request_id'=q.id::text and x->>'submit_status'='NOT_ACCEPTED' and x->>'resolved_work_state'='WORKING') then raise exception 'Legacy incomplete card still labeled Accepted'; end if;
  insert into accept_count_result values('legacy_incomplete_projection_not_accepted',true);
  result:=public.rr_chat_department_projection_test71(q.department_code,'CLOSE');
- if exists(select 1 from jsonb_array_elements(result->'cards') x where x->>'submit_request_id'=q.id::text and (x->>'resolved_work_state'='NOT_ACCEPTED' or exists(select 1 from jsonb_array_elements(coalesce(x->'actions','[]')) a where a->>'code'='ACCEPT_AND_COUNT'))) then raise exception 'Source worker CLOSE card was reopened as a receiver action'; end if;
+ if exists(select 1 from jsonb_array_elements(result->'cards') x where x->>'submit_request_id'=q.id::text and (x->>'resolved_work_state'='WORKING' or exists(select 1 from jsonb_array_elements(coalesce(x->'actions','[]')) a where a->>'code'='ACCEPT_AND_COUNT'))) then raise exception 'Source worker CLOSE card was reopened as a receiver action'; end if;
  insert into accept_count_result values('source_worker_close_preserved',true);
  -- A fresh request must never persist an intermediate LM_ACCEPTED state.
  begin

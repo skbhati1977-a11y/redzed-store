@@ -1,6 +1,6 @@
 # TEST71 action queue audit — 9 October 2026
 
-## Result: the current implementation does not fully satisfy the requested queue contract
+## Original audit result (before the remediation below)
 
 Requested regular workflow: newly ready or accepted goods awaiting assignment belong in OPEN; a worker's submitted handover awaiting one atomic Accept & Count belongs in STAFF WORKING; assigned, physically received goods awaiting Submit belong in WORKER WORKING. Save of a complete handover must remove it from STAFF WORKING and expose next assignment in OPEN. Alter and Rectification follow their own current action. Read status never changes pending work.
 
@@ -32,3 +32,26 @@ All twelve post-cutting manufacturing department OPEN/WORKING projections were q
 ## Changes completed during the audit
 
 The footer separates named previous action (red ticks), actual next pending action (yellow), and Read (blue) / All read (green). Unread badges and pending-card totals are explicitly named. Selecting a different action filter clears the previous list while loading; simply opening the current screen preserves its cards and read ticks. These display changes do not resolve the queue discrepancies listed above.
+
+## Remediation and latest display contract
+
+TEST71 adapters now use one queue source for department/root totals and opened group lists, including Alter, Rectification and recovery. Unread action-message totals remain explicitly separate from pending-card totals. Submitted source assignments no longer remain in Worker Submit. Initial receipt rows no longer remain in Open or in Staff submitted Accept & Count.
+
+| Current regular queue | Previous completed action (red) | Required action (yellow) |
+| --- | --- | --- |
+| Open / ready to assign | Lot released or final Accept & Count, actual actor | Assign Worker / Staff |
+| Worker Working / Submit | Assigned by staff | Submit / assigned worker |
+| Staff Working / Accept & Count | Submitted by worker, with actual delegate if applicable | Accept & Count / selected receiver or shared Fabrication Staff |
+| Alter / Rectify | Actual latest journey event and actor | Current journey action / current responsible person |
+
+Each current card has one stage footer: previous action, next named action with yellow double tick, then own Read blue / All read green. Old partial receiver claims cannot replace Submit as the last completed action of an uncounted submitted handover. Assignment receipt confirmation cannot replace staff assignment as the last stage action of a Worker Submit card. On-behalf submissions retain both the worker subject and actual performing staff; a missing legacy auth mapping is not replaced with the current viewer. Source receipt identity includes the last actor/action/time so a new stage action does not inherit an earlier action's read state.
+
+All 14 pending handovers are covered, including lot 2639 with a null target/receiver. Opening the form does not mutate a claim. Full valid Save is atomic; cancellation, invalid counts, rate failure and late material failure do not leave partial acceptance. Completed handovers leave Working and generate next-stage assignment in Open. Existing Short/Excess final-decision authority remains intact; disputed counts are Not Accepted until that decision completes. Existing Actual Rate prerequisite remains intact (lot 2639 requires the real rate before Save).
+
+Live consolidated regular counts: **Open 1 lot; Staff handover Accept & Count 14; Worker Submit 6.** There are additionally **14 legacy assigned-receipt cards from 26 colour rows**. These have not yet been physically received/count-confirmed by their assigned workers; they are separately labeled Assigned receipt / Count in Worker Working and do not increase the Staff Accept & Count or Worker Submit count. No assigned quantity was silently accepted or used as a saved physical count. Their explicit atomic receipt form requires every pending colour. Authorized staff may assist while preserving the assigned worker custody and the actual saving actor.
+
+Alter discovery now starts from all active canonical journeys, not whichever lots happened to be loaded in S.cards. The snapshot contains seven active journeys (four remake-issue, two receive-from-master, one karigar-submit stages). Fabrication aggregates all; individual groups select their current responsible department. Rectification uses the canonical active-case RPC; current snapshot still has no active cases. Closed cases remain excluded.
+
+Validation: **43 frontend tests; 18 database transaction/rollback checks**, covering queue completeness, true stage actors, authorization, full-count validation, rollback, idempotent retry and next Open transition. Desktop Chromium with a 390px viewport checks three footer lines and computed red/yellow/blue colors. Business test mutations are rolled back. Changes apply only to TEST71 wrapper functions and the TEST71 preview branch, with legacy production function definitions preserved.
+
+Remaining data exception: Imamul lot 2622 has a RESOLVED receipt that the legacy operational quantity engine does not recognize as normal received stock, plus an existing recovery. It remains on its recovery journey; this change does not invent a final decision or enable a normal Submit against zero operational stock. Signed-in Android and every live actor's full Alter chain are not certified by these checks.

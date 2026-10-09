@@ -72,11 +72,11 @@ test('all action descriptions use consistent plain verbs; incomplete acceptance 
  for(const [value,expected] of [['SUBMIT','Submitted'],['ASSIGN_WORKER','Assigned'],['ACCEPT & COUNT','Accept & Count completed'],['HANDOVER_COMPLETED','Accept & Count completed'],['Submit · Accept & Count pending','Accept & Count pending'],['LM_ACCEPTED','Accept & Count started'],['ALTER','Altered'],['ALTER_SUBMIT','Alter submitted'],['RECTIFICATION_CLOSE','Rectified'],['RECTIFICATION','Rectify started'],['LOGIN_APPROVED','Approved'],['PI_SHARED','Shared'],['CARD_UPDATED','Updated']])assert.equal(describe(value),expected);
  }finally{f.dom.window.close();}});
 
-test('worker Working card shows completed Accept & Count, yellow Submit pending, then blue Read',async()=>{const f=fixture();try{
+test('worker Working card shows staff assignment, named yellow Submit due, then blue Read',async()=>{const f=fixture();try{
  const card=f.w.document.querySelector('article');card.insertAdjacentHTML('beforeend','<div class="card-actions"><button data-chat-submit="a">SUBMIT</button><button data-chat-alter>ALTER</button><button data-chat-rectify>RECTIFY</button></div>');
- Object.assign(f.rows[0],{actor_user_id:'sudesh',actor_name:'Sudesh Bhati',actor_action_label:'CONFIRM_RECEIVED_PCS',viewer_read_at:'today'});
- await f.w.RRChatNotifications71.refresh();const entry=f.w.RRActionReceipts71.entry(f.rows[0]);assert.match(entry.children[0].textContent,/पिछला action: Sudesh Bhati · Accept & Count completed/);
- assert.equal(entry.children[1].textContent,'अगला action बाकी: SUBMIT');assert.ok(entry.children[2].classList.contains('read'));assert.equal(card.querySelectorAll('.rrCardPending71').length,1);
+ card.dataset.pendingPerson='Imamul';Object.assign(f.rows[0],{actor_user_id:'sudesh',actor_name:'Sudesh Bhati',actor_action_label:'Assign Work',viewer_read_at:'today'});
+ await f.w.RRChatNotifications71.refresh();const entry=f.w.RRActionReceipts71.entry(f.rows[0]);assert.match(entry.children[0].textContent,/पिछला action: Sudesh Bhati · Assigned/);
+ assert.equal(entry.children[1].textContent,'अगला action बाकी: SUBMIT · Imamul ✓✓');assert.ok(entry.children[2].classList.contains('read'));assert.equal(card.querySelectorAll('.rrCardPending71').length,1);
  const pendingLine=card.querySelector('.rrCardPending71'),readLine=entry.children[2];f.w.RRActionReceipts71.render();assert.equal(card.querySelectorAll('.rrCardPending71').length,1);assert.equal(card.querySelector('.rrCardPending71'),pendingLine);assert.equal(entry.children[2],readLine);assert.equal(card.querySelectorAll('.card-actions button').length,3);
  card.querySelector('.card-actions').remove();f.w.RRActionReceipts71.render();assert.equal(card.querySelector('.rrCardPending71'),null);
  }finally{f.dom.window.close();}});
@@ -85,4 +85,14 @@ test('pending description follows the actual available action for each workflow'
  for(const [attr,label,expected] of [['data-fab-receive','ACCEPT & COUNT','ACCEPT & COUNT'],['data-receipt-accept','ACCEPT & COUNT','ACCEPT & COUNT'],['data-assign-action','ASSIGN WORK','ASSIGN WORKER'],['data-rate-popup','FILL ACTUAL RATE','FILL ACTUAL RATE'],['data-alter-action','RECEIVE FROM MASTER','RECEIVE FROM MASTER'],['data-action','RECTIFY FINAL CLOSE','RECTIFY FINAL CLOSE']]){card.innerHTML='<div class="card-actions"><button '+attr+'> '+label+' </button></div>';assert.equal(pending(card),expected);}
  card.innerHTML='<div class="card-actions"><button disabled>SUBMIT</button></div>';assert.equal(pending(card),'');
  f.w.RRAdminApprovalHost71.context=()=>({status:'CLOSE'});card.innerHTML='<div class="card-actions"><button data-chat-submit>SUBMIT</button></div>';assert.equal(pending(card),'');
+ }finally{f.dom.window.close();}});
+
+for(const [status,action,control,pending,person] of [['OPEN','Accept & Count completed','data-assign-action','ASSIGN WORKER','Staff'],['WORKING','Assign Work','data-chat-submit','SUBMIT','Imamul'],['WORKING','Submit','data-fab-receive','ACCEPT & COUNT','Ali']])test('stage footer '+action+' uses one true last action, one named yellow due action and one blue read',async()=>{const f=fixture();try{
+ const w=f.w,card=w.document.querySelector('article');card.dataset.stageFooter='true';card.dataset.pendingPerson=person;card.insertAdjacentHTML('beforeend','<div class="card-actions"><button '+control+'>'+pending+'</button></div>');
+ w.RRAdminApprovalHost71.context=()=>({kind:'group',id:'STICKER',status,userId:'viewer'});
+ const source={card_receipt:true,action_key:'stage-a',assignment_id:'a',actor_user_id:'staff',actor_name:'Sudesh',actor_action_label:action,action_subject_name:action==='Submit'?'Imamul':null,department_code:'STICKER',route_url:'?rc_status='+status,recipients:[{recipient_id:'viewer',read_at:'today'},{recipient_id:'other',delivered_at:'today'}],viewer_read_at:'today'};
+ const old=w.RF853.rpc;w.RF853.rpc=async(n,a)=>n==='rr_chat_source_card_receipts_test71'?[source]:old(n,a);await w.RRChatNotifications71.refresh();
+ assert.equal(card.querySelectorAll('.rrActorTick71').length,1);assert.equal(card.querySelectorAll('.rrCardPending71').length,1);assert.equal(card.querySelectorAll('.rrActionTick71').length,1);assert.equal(card.querySelectorAll('.rrActionHistory71').length,0);
+ const footer=card.querySelector('.rrSourceCardReceipt71');assert.equal(footer.children[1].textContent,'अगला action बाकी: '+pending+' · '+person+' ✓✓');assert.ok(footer.children[2].classList.contains('read'));if(action==='Submit')assert.match(footer.children[0].textContent,/Imamul · Submitted \(by Sudesh\)/);else assert.match(footer.children[0].textContent,new RegExp(action==='Assign Work'?'Sudesh · Assigned':'Sudesh · Accept & Count completed'));
+ if(status==='WORKING')assert.equal(w.RRActionReceipts71.entry(f.rows[0]),footer);
  }finally{f.dom.window.close();}});

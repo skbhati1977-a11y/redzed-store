@@ -15,6 +15,7 @@
   if(/HANDOVER COMPLETED|ACCEPT.*COUNT.*COMPLET/i.test(label))return 'Accept & Count completed';
   if(/RECTIF/i.test(label))return /CLOSE|COMPLET|RESOLV/i.test(label)?'Rectified':'Rectify started';
   if(/ALTER/i.test(label))return /SUBMIT/i.test(label)?'Alter submitted':/CLOSE|COMPLET/i.test(label)?'Alter completed':'Altered';
+  if(/LOT.*RELEASE|CUTTING.*RELEASE/i.test(label))return 'Lot released';
   if(/SUBMIT/i.test(label))return 'Submitted';
   if(/ACCEPT.*COUNT|CONFIRM.*RECEI|RECEIPT.*CONFIRM/i.test(label))return 'Accept & Count completed';
   if(/ACCEPT/i.test(label))return 'Accepted';
@@ -37,8 +38,9 @@
  function pendingAction71(card){
   if(!card||context()?.status==='CLOSE')return '';
   const controls=[...card.querySelectorAll('.card-actions button,.card-actions a')].filter(e=>!e.disabled&&!e.hidden);
-  const primary=controls.find(e=>e.matches('[data-fab-receive],[data-receipt-accept]'))||controls.find(e=>e.matches('[data-chat-submit]'))||controls.find(e=>e.matches('[data-assign-action]'))||controls.find(e=>e.matches('[data-rate-popup]'))||controls.find(e=>!e.matches('[data-chat-alter],[data-chat-rectify]'))||controls[0];
-  if(!primary)return '';
+  const primary=(card.dataset.ratePending==='true'&&controls.find(e=>e.matches('[data-rate-popup]')))||controls.find(e=>e.matches('[data-fab-receive],[data-receipt-accept]'))||controls.find(e=>e.matches('[data-chat-submit]'))||controls.find(e=>e.matches('[data-assign-action]'))||controls.find(e=>e.matches('[data-rate-popup]'))||controls.find(e=>!e.matches('[data-chat-alter],[data-chat-rectify]'))||controls[0];
+  if(!primary)return ({LM_ACCEPT:'ALTER ACCEPT',REMAKE_ISSUE:'REMAKE तैयार करें',RECEIVE_FROM_MASTER:'REMAKE प्राप्त करें',DELIVER_TO_KARIGAR:'WORKER को दें',KARIGAR_SUBMIT_GOOD:'ALTER SUBMIT',RECEIVE_FROM_KARIGAR:'ALTER प्राप्त करें',RECTIFICATION_CLOSE:'RECTIFY · FINAL CLOSE'})[card.dataset.requiredAction]||String(card.dataset.requiredAction||'').replace(/_/g,' ');
+  if(primary.matches('[data-receipt-accept]')&&card.dataset.requiredAction==='ASSIGNED RECEIPT / COUNT')return 'ASSIGNED RECEIPT / COUNT';
   if(primary.matches('[data-fab-receive],[data-receipt-accept]'))return 'ACCEPT & COUNT';
   if(primary.matches('[data-chat-submit]'))return 'SUBMIT';
   if(primary.matches('[data-assign-action]'))return 'ASSIGN WORKER';
@@ -51,7 +53,7 @@
    const action=pendingAction71(card);let line=card.querySelector('.rrCardPending71');
    if(!action){line?.remove();return}
    if(!line){line=document.createElement('div');line.className='rrCardPending71';}
-   const text='अगला action बाकी: '+action;if(line.textContent!==text)line.textContent=text;
+   const person=card.dataset.pendingPerson;const text='अगला action बाकी: '+action+(person?' · '+person:'')+' ✓✓';if(line.textContent!==text)line.textContent=text;
    const read=card.querySelector('.rrActionEntry71 .rrActionTick71');
    if(read){if(line.nextElementSibling!==read)read.before(line);}else if(line.parentElement!==card)card.appendChild(line);
   });
@@ -60,7 +62,8 @@
   const acted=ownAction(row),ownRead=acted||!!row.viewer_read_at||(row.recipients||[]).some(r=>r.recipient_id===context()?.userId&&r.read_at),s=state(row.recipients||[],ownRead,false);
   const label=s.green?'All read':s.blue?'Read':isUnread?'Unread':s.label==='Delivered'?'Delivered':'Sent';
   const description=actionDescription71(pendingHandoverLabel(row,row.actor_action_label||row.action_label||'Action taken',card));
-  const actor=row.actor_user_id?'<span class="rrCardActor71"><span><small class="rrPreviousAction71">पिछला action: </small>'+esc(row.actor_name||'Action taker')+' · '+esc(description)+'</span><span class="rrActorTick71" aria-label="Action taken">✓✓</span></span>':'<span class="rrCardAction71">'+esc(actionDescription71(pendingHandoverLabel(row,row.action_label||row.title||'Work update',card)))+'</span>';
+  const subject=row.action_subject_name,person=subject||row.actor_name||'Action taker',by=subject&&row.actor_name&&subject.toLowerCase()!==row.actor_name.toLowerCase()?' (by '+row.actor_name+')':'';
+  const actor=row.actor_user_id||row.actor_name?'<span class="rrCardActor71"><span><small class="rrPreviousAction71">पिछला action: </small>'+esc(person)+' · '+esc(description)+esc(by)+'</span><span class="rrActorTick71" aria-label="Action taken">✓✓</span></span>':'<span class="rrCardAction71">'+esc(actionDescription71(pendingHandoverLabel(row,row.action_label||row.title||'Work update',card)))+'</span>';
   return actor+'<button type="button" class="rrActionTick71 '+(s.green?'all-read':s.blue?'read':'')+'" data-action-receipt="'+esc(row.action_key)+'" aria-label="Read details: '+esc(row.action_label)+'"><small class="'+(!acted?'rrActionOwnState71 ':'')+(isUnread&&!ownRead&&!s.green?'rrActionNew71':'')+'">'+esc(label)+'</small><span aria-hidden="true">'+(s.label==='Sent'&&!ownRead?'✓':'✓✓')+'</span></button>';
  }
  function participantState(recipient,row){if(row?.actor_user_id&&recipient.recipient_id===row.actor_user_id)return {className:'action-taken',ticks:'✓✓',label:'Action taken',time:row.action_detail?.occurred_at||row.created_at};if(recipient.read_at)return {className:'read',ticks:'✓✓',label:'Read',time:recipient.read_at};if(recipient.delivered_at)return {className:'delivered',ticks:'✓✓',label:'Delivered',time:recipient.delivered_at};return {className:'sent',ticks:'✓',label:'Sent',time:null};}
@@ -68,7 +71,7 @@
  function render(){const c=context(),root=document.getElementById('messages');if(!root||contextKey(c)!==key)return;
   const unread=new Set(window.RRChatNotifications71.unread().map(n=>n.action_key||n.id));const wanted=new Set();
   root.querySelectorAll('[data-unmapped-actions]').forEach(el=>el.remove());
-  for(const row of rows){if(row.card_receipt||!eligible(row,c))continue;const card=window.RRChatNotifications71.target(row);if(!card)continue;card.querySelectorAll('p .tick').forEach(el=>el.hidden=true);
+  for(const row of rows){if(row.card_receipt||!eligible(row,c))continue;const card=window.RRChatNotifications71.target(row);if(!card||card.dataset.stageFooter==='true'&&rows.some(r=>r.card_receipt&&eligible(r,c)&&window.RRChatNotifications71.target(r)===card))continue;card.querySelectorAll('p .tick').forEach(el=>el.hidden=true);
    let host=card.querySelector('.rrActionHistory71');if(!host){host=document.createElement('section');host.className='rrActionHistory71';host.setAttribute('aria-label','Action history');card.appendChild(host);}
    wanted.add(row.action_key);let el=[...host.querySelectorAll('[data-action-key]')].find(e=>e.dataset.actionKey===row.action_key);
    if(!el){el=document.createElement('div');el.className='rrActionEntry71';el.dataset.actionKey=row.action_key;host.appendChild(el);}
@@ -76,7 +79,7 @@
    const html=tick(row,card,isUnread);
    if(!receiptHtmlMatches71(el,html))el.innerHTML=html;el.classList.toggle('unread',isUnread);el.dataset.noticeId=row.id;
   }
-  for(const row of rows.filter(r=>r.card_receipt)){if(!eligible(row,c))continue;const card=window.RRChatNotifications71.target(row);if(!card||card.querySelector('.rrActionHistory71 [data-action-key]'))continue;
+  for(const row of rows.filter(r=>r.card_receipt)){if(!eligible(row,c))continue;const card=window.RRChatNotifications71.target(row);if(!card||card.dataset.stageFooter!=='true'&&card.querySelector('.rrActionHistory71 [data-action-key]'))continue;
    card.querySelectorAll('p .tick').forEach(el=>el.hidden=true);wanted.add(row.action_key);
    let el=card.querySelector('.rrSourceCardReceipt71');if(!el){el=document.createElement('div');el.className='rrSourceCardReceipt71 rrActionEntry71';card.appendChild(el);}el.dataset.actionKey=row.action_key;
    const html=tick(row,card);if(!receiptHtmlMatches71(el,html))el.innerHTML=html;
@@ -94,7 +97,7 @@
   const keys=rows.filter(r=>r.card_receipt&&!r.viewer_read_at&&eligible(r,c)).filter(r=>{const node=entry(r);if(!node||node.closest('details:not([open])'))return false;const a=node.getBoundingClientRect(),b=chat.getBoundingClientRect();return a.width>0&&Math.min(a.bottom,b.bottom,innerHeight)-Math.max(a.top,b.top,0)>=Math.min(40,a.height*.5);}).map(r=>r.action_key);
   if(!keys.length)return;readingCards=true;const scope=key;try{const updated=await rpc('rr_chat_source_card_receipts_test71',{...sourceArgs(c),p_read_keys:keys});if(contextKey(context())!==scope||!Array.isArray(updated))return;rows=rows.filter(r=>!r.card_receipt).concat(updated);render();}catch(e){console.warn('Card read status unavailable',e);}finally{readingCards=false;}
  }
- function entry(n){return [...document.querySelectorAll('#messages [data-action-key]')].find(e=>e.dataset.actionKey===(n.action_key||n.id))||null;}
+ function entry(n){const exact=[...document.querySelectorAll('#messages [data-action-key]')].find(e=>e.dataset.actionKey===(n.action_key||n.id));if(exact)return exact;const c=context(),card=c&&eligible(n,c)?window.RRChatNotifications71.target(n):null;return card?.dataset.stageFooter==='true'?card.querySelector('.rrSourceCardReceipt71'):null;}
  async function readConfirmed(ids,keys=[]){render();const affected=rows.filter(row=>ids.includes(row.id)||keys.includes(row.action_key));await Promise.allSettled(affected.map(async row=>{row.recipients=await rpc('rr_chat_action_receipts_test71',{p_event_key:row.action_key});}));render();}
  async function details(actionKey){if(loadingPopup)return;loadingPopup=true;returnFocus=document.activeElement;
   if(!popup){popup=document.createElement('dialog');popup.className='rrReadDetails71';document.body.appendChild(popup);popup.addEventListener('click',e=>{if(e.target.closest('[data-close-receipts]')){popup.close();returnFocus?.focus();}});}
