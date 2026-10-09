@@ -7,7 +7,8 @@
  const rpc=(n,a)=>window.RRChatNotifications71.rpc(n,a);
  function state(recipients,ownRead=false,ownAction=false){const total=recipients.length,read=recipients.filter(r=>r.read_at).length,delivered=recipients.filter(r=>r.delivered_at||r.read_at).length,allRead=total>0&&read===total;return {total,read,label:allRead?'Read':delivered===total&&total?'Delivered':'Sent',red:!!ownAction,blue:!!ownRead&&!allRead&&!ownAction,green:allRead&&!ownAction};}
  function ownAction(row){const user=context()?.userId;return !!user&&row.actor_user_id===user;}
- function tick(row){const acted=ownAction(row),ownRead=acted||!!row.viewer_read_at||(row.recipients||[]).some(r=>r.recipient_id===context()?.userId&&r.read_at);const s=state(row.recipients||[],ownRead,false);return '<button type="button" class="rrActionTick71 '+(s.red?'action-taken':s.green?'all-read':s.blue?'read':'')+'" data-action-receipt="'+esc(row.action_key)+'" aria-label="Read details: '+esc(row.action_label)+'">'+(s.label==='Sent'&&!ownRead?'✓':'✓✓')+' <small>'+(s.red?'Action taken':s.green?'All read':s.blue?'Read':'Read '+s.read+'/'+s.total)+'</small></button>'+(row.actor_user_id?'<span class="rrCardActor71">'+esc(row.actor_name||'Action taker')+' · '+esc((row.actor_action_label||row.action_label||'Action taken').replace(/ · recovered$/i,'').replace(/_/g,' '))+' <span class="rrActorTick71">✓✓</span></span>':'');}
+ function pendingHandoverLabel(row,value,card){return card?.dataset.acceptCountComplete==='false'&&/LM[_ ]ACCEPTED|RECEIVER[_ ]ACCEPTED|FABRICATION[_ ]SHARED[_ ]CLAIM/i.test(String(value||''))?'Submit · Accept & Count pending':value;}
+ function tick(row,card){const acted=ownAction(row),ownRead=acted||!!row.viewer_read_at||(row.recipients||[]).some(r=>r.recipient_id===context()?.userId&&r.read_at);const s=state(row.recipients||[],ownRead,false);return '<button type="button" class="rrActionTick71 '+(s.red?'action-taken':s.green?'all-read':s.blue?'read':'')+'" data-action-receipt="'+esc(row.action_key)+'" aria-label="Read details: '+esc(row.action_label)+'">'+(s.label==='Sent'&&!ownRead?'✓':'✓✓')+' <small>'+(s.red?'Action taken':s.green?'All read':s.blue?'Read':'Read '+s.read+'/'+s.total)+'</small></button>'+(row.actor_user_id?'<span class="rrCardActor71">'+esc(row.actor_name||'Action taker')+' · '+esc(pendingHandoverLabel(row,row.actor_action_label||row.action_label||'Action taken',card).replace(/ · recovered$/i,'').replace(/_/g,' '))+' <span class="rrActorTick71">✓✓</span></span>':'');}
  function participantState(recipient,row){if(row?.actor_user_id&&recipient.recipient_id===row.actor_user_id)return {className:'action-taken',ticks:'✓✓',label:'Action taken',time:row.action_detail?.occurred_at||row.created_at};if(recipient.read_at)return {className:'read',ticks:'✓✓',label:'Read',time:recipient.read_at};if(recipient.delivered_at)return {className:'delivered',ticks:'✓✓',label:'Delivered',time:recipient.delivered_at};return {className:'sent',ticks:'✓',label:'Sent',time:null};}
  function eligible(row,c){if(row.department_code!==String(c.parentDepartment||c.id).toUpperCase())return false;if(c.kind==='person'&&!(row.worker_ids||[]).includes(c.id))return false;return new URL(row.route_url,location.href).searchParams.get('rc_status')===c.status;}
  function render(){const c=context(),root=document.getElementById('messages');if(!root||contextKey(c)!==key)return;
@@ -18,14 +19,14 @@
    wanted.add(row.action_key);let el=[...host.querySelectorAll('[data-action-key]')].find(e=>e.dataset.actionKey===row.action_key);
    if(!el){el=document.createElement('div');el.className='rrActionEntry71';el.dataset.actionKey=row.action_key;host.appendChild(el);}
    const isUnread=unread.has(row.action_key)||unread.has(row.id);
-   const label=(row.action_label||row.title||'Work update').replace(/ · recovered$/i,'').replace(/_/g,' ');
-   const html='<strong>'+esc(label)+'</strong>'+(ownAction(row)?'':'<span class="rrActionOwnState71 '+(isUnread?'rrActionNew71':'')+'">'+(row.viewer_is_recipient===false?'Sent':isUnread?'Unread':'Read')+'</span>')+tick(row);
+   const label=pendingHandoverLabel(row,row.action_label||row.title||'Work update',card).replace(/ · recovered$/i,'').replace(/_/g,' ');
+   const html='<strong>'+esc(label)+'</strong>'+(ownAction(row)?'':'<span class="rrActionOwnState71 '+(isUnread?'rrActionNew71':'')+'">'+(row.viewer_is_recipient===false?'Sent':isUnread?'Unread':'Read')+'</span>')+tick(row,card);
    if(el.innerHTML!==html)el.innerHTML=html;el.classList.toggle('unread',isUnread);el.dataset.noticeId=row.id;
   }
   for(const row of rows.filter(r=>r.card_receipt)){if(!eligible(row,c))continue;const card=window.RRChatNotifications71.target(row);if(!card||card.querySelector('.rrActionHistory71 [data-action-key]'))continue;
    card.querySelectorAll('p .tick').forEach(el=>el.hidden=true);wanted.add(row.action_key);
    let el=card.querySelector('.rrSourceCardReceipt71');if(!el){el=document.createElement('div');el.className='rrSourceCardReceipt71 rrActionEntry71';card.appendChild(el);}el.dataset.actionKey=row.action_key;
-   const html='<strong>Read status</strong>'+tick(row);if(el.innerHTML!==html)el.innerHTML=html;
+   const html='<strong>Read status</strong>'+tick(row,card);if(el.innerHTML!==html)el.innerHTML=html;
   }
   root.querySelectorAll('[data-action-key]').forEach(el=>{if(!wanted.has(el.dataset.actionKey))el.remove();});
   root.querySelectorAll('.rrActionHistory71').forEach(el=>{if(!el.children.length)el.remove();});
