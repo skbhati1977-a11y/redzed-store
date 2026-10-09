@@ -59,3 +59,15 @@
  margin:0!important;padding:0 6px;border-radius:999px;
  font-size:12px!important;line-height:1;color:#fff;background:#209c53;
 }
+/* Shared staff/worker pending lanes: equal tabs, clear counts, compact action filters. */
+#chat #workLanes71{display:flex;gap:4px;margin:12px 12px 4px;padding:4px;border:1px solid #294159;border-radius:14px;background:#0b1b2b;}
+#chat #workLanes71[hidden],#chat #workLaneSummary71[hidden]{display:none!important;}
+#chat #workLanes71 button{display:flex!important;align-items:center;justify-content:center;gap:10px;flex:1;min-width:0;height:44px;padding:8px!important;border:1px solid transparent!important;border-radius:10px!important;background:transparent!important;color:#b9c9db!important;font-size:14px!important;font-weight:700;box-shadow:none!important;}
+#chat #workLanes71 button.on{background:#edf5fd!important;color:#102033!important;border-color:#b9d1e6!important;}
+#chat #workLanes71 b{display:inline-flex;align-items:center;justify-content:center;min-width:24px;height:24px;padding:0 6px;border-radius:8px;background:#294159;color:#fff;font-size:12px;}
+#chat #workLanes71 .on b{background:#1767a2;}
+#chat #workLaneSummary71{margin:8px 16px;color:#b8ccdb;font-size:12px;line-height:1.6;overflow-wrap:anywhere;}
+#chat:has(#workLanes71:not([hidden])) #workFilters{display:flex;flex-wrap:wrap;gap:7px;margin:4px 12px 12px;padding:0;}
+#chat:has(#workLanes71:not([hidden])) #workFilters button{height:34px!important;min-height:34px!important;padding:6px 10px!important;border:1px solid #40596e!important;border-radius:9px!important;background:#122638!important;color:#bfcedc!important;font-size:12px!important;box-shadow:none!important;}
+#chat:has(#workLanes71:not([hidden])) #workFilters button.on{border-color:#53bdff!important;background:#17436a!important;color:#fff!important;}
+#chat #workFilters button[hidden]{display:none!important;}
