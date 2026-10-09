@@ -50,6 +50,7 @@
   const requested=notices.find(n=>n.id===noticeId);
   if(requested&&!focusDone&&new URL(requested.route_url,location.href).searchParams.get('rc_status')===context.status&&window.RRAdminApprovalHost71?.focusNotice?.(requested))return;
   window.RRActionReceipts71?.render();
+  await window.RRActionReceipts71?.visibleCards();
   const shown=notices.filter(n=>{const u=new URL(n.route_url,location.href);return n.department_code===String(context.parentDepartment||context.id||'').toUpperCase()&&(context.kind!=='person'||belongs(n,context.id))&&u.searchParams.get('rc_status')===context.status&&target(n)});
   const pinned=(q.get('rc_assignment')||q.get('rc_submit'))&&q.get('rc_parent')===String(context.parentDepartment||context.id||'').toUpperCase()&&q.get('rc_status')===context.status?{assignment_id:q.get('rc_assignment'),submit_request_id:q.get('rc_submit'),route_url:location.href}:null;
   const focus=shown.find(n=>n.id===noticeId||bridgeId&&String(n.bridge_id)===bridgeId)||(pinned&&target(pinned)?pinned:null);
