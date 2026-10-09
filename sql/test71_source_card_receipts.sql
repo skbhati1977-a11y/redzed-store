@@ -11,7 +11,7 @@ create or replace function public.rr_chat_source_card_receipts_test71(
  p_department text,p_status text,p_worker uuid default null,p_read_keys text[] default '{}'
 ) returns jsonb language plpgsql volatile security definer set search_path='' as $$
 declare dep text:=public.rr_real_chat_canonical_department_v83(p_department);cards jsonb;source jsonb;j jsonb;
- k text;keys text[]:='{}';recipients uuid[];assignment_ids uuid[];actor uuid;actor_at timestamptz;candidate record;role text;
+ k text;keys text[]:='{}';recipients uuid[];assignment_ids uuid[];actor uuid;actor_at timestamptz;actor_label text;candidate record;role text;
 begin
  perform public.rr_assert_active_user_v1();
  if upper(p_status) not in ('OPEN','WORKING','CLOSE') then raise exception 'Invalid status';end if;
@@ -49,13 +49,15 @@ begin
  for j in select value from jsonb_array_elements(cards) loop
   k:='SOURCE_CARD_TEST71:'||md5(dep||upper(p_status)||(j->>'event_key')||(j->'source_versions')::text);keys:=array_append(keys,k);
   select coalesce(array_agg(value::uuid),'{}') into assignment_ids from jsonb_array_elements_text(j->'assignment_ids');
-  actor:=null;actor_at:=null;
-  select chosen.uid,chosen.at into actor,actor_at from (
-   select nullif(j->>'source_actor_id','')::uuid uid,now() at union all select case when r.status in('CONFIRMED','CONFIRMED_SHORT') then r.confirmed_by else a.assigned_by end uid,
-   coalesce(r.confirmed_at,a.assigned_at,a.created_at) at from public.rr_upm_work_assignments_v8 a left join public.rr_upm_assignment_receipts_v9112 r on r.assignment_id=a.id where a.id=any(assignment_ids)
+  actor:=null;actor_at:=null;actor_label:=null;
+  select chosen.uid,chosen.at,chosen.label into actor,actor_at,actor_label from (
+   select nullif(j->>'source_actor_id','')::uuid uid,now() at,case when j->>'journey_id' is not null then (select replace(e.event_type,'_',' ') from public.rr_upm_alter_events_v740 e where e.journey_id::text=j->>'journey_id' order by e.created_at desc limit 1) when j->>'rectification_case_id' is not null then 'Rectify' end label union all select case when r.status in('CONFIRMED','CONFIRMED_SHORT') then r.confirmed_by else a.assigned_by end uid,
+   coalesce(r.confirmed_at,a.assigned_at,a.created_at) at,case when r.status in('CONFIRMED','CONFIRMED_SHORT') then 'Accept & Count' else 'Assign Work' end label from public.rr_upm_work_assignments_v8 a left join public.rr_upm_assignment_receipts_v9112 r on r.assignment_id=a.id where a.id=any(assignment_ids)
    union all select case when q.status='WAITING_LM' then coalesce(q.created_by,q.worker_auth_id) else q.selected_receiver_auth_id end,
-   coalesce(q.completed_at,q.worker_decided_at,q.counted_at,q.accepted_at,q.created_at) from public.rr_upm_submit_requests_v794 q where q.id::text=j->>'submit_request_id'
+   coalesce(q.completed_at,q.worker_decided_at,q.counted_at,q.accepted_at,q.created_at),case when q.status='WAITING_LM' then 'Submit' else 'Accept & Count' end from public.rr_upm_submit_requests_v794 q where q.id::text=j->>'submit_request_id'
   ) chosen where chosen.uid is not null order by chosen.at desc nulls last limit 1;
+  j:=j||jsonb_build_object('actor_action_label',actor_label);
+  update rr_chat_notifications_test71.card_receipts set source_card=j where card_key=k;
   select array_agg(distinct w.linked_auth_user_id) into recipients from public.rr_worker_directory_unified_v1 w
   where w.is_active and upper(coalesce(w.access_status,'ACTIVE'))='ACTIVE' and w.linked_auth_user_id is not null
    and (w.linked_auth_user_id=auth.uid() or upper(replace(coalesce(w.role_code,''),' ','_')) in('OWNER','SUPER_ADMIN','ADMIN')
@@ -70,7 +72,7 @@ begin
   'event_key',own.source_card->>'event_key','source_event_keys',own.source_card->'source_event_keys',
   'assignment_ids',own.source_card->'assignment_ids','assignment_id',own.source_card->>'assignment_id',
   'submit_request_id',own.source_card->>'submit_request_id','lot_no',own.source_card->>'lot_no',
-  'department_code',dep,'action_label','Card','actor_user_id',own.actor_user_id,
+  'department_code',dep,'action_label','Card','actor_action_label',own.source_card->>'actor_action_label','actor_user_id',own.actor_user_id,
   'actor_name',(select min(w.worker_name) from public.rr_worker_directory_unified_v1 w where w.linked_auth_user_id=own.actor_user_id),
   'viewer_read_at',own.read_at,'viewer_is_recipient',true,'created_at',own.source_card->>'event_at',
   'route_url','?rc_status='||upper(p_status),'worker_ids',jsonb_build_array(own.source_card->>'worker_id'),
