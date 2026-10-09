@@ -74,3 +74,9 @@ Validation: 48 targeted frontend tests, including the actual openChat Working→
 - Authenticated Open projection has one distinct ready-to-assign lot, 2640. Packing applicability is true, but its Press Good submit count is zero and Packing due rows are absent. The existing colour-level Press-before-Packing gate is retained.
 - Migration: `test71_stage_footer_delegated_alter_subject`; existing active-user, role, department, worker and own-read authorization remains intact. No schema/table/grant expansion.
 - New regression checks cover three-second prompt dismissal, saved Alter without history-sync dependency, fast active-group refresh, and preservation of all three footer lines after failed refresh and DOM replacement.
+
+## Authorized staff receipt context without worker identity
+
+The 00:11 IST screenshot's `Login required` was reproduced with a valid Super Admin auth UID, `rr_upm_current_worker_id_v9112() = NULL` and `rr_upm_fabrication_receiver_allowed_v770() = TRUE`. The TEST71 receipt-context guard incorrectly required both authentication and a worker mapping before checking authorized staff. It now requires authentication independently and allows a missing worker mapping only for the already authorized staff predicate. Assigned-worker/team authorization, complete physical colour counts and actual confirmed-by attribution are preserved.
+
+Migration: `test71_assignment_count_authorized_staff_without_worker_mapping`. Verified every pending assignment context under that Super Admin identity, a complete atomic receipt Save with confirmed_by attribution, and unauthenticated rejection inside BEGIN/ROLLBACK. All three DB checks and four targeted frontend checks passed; no receipt counts committed by verification. Security advisors reviewed: authenticated SECURITY DEFINER endpoint is intentional, with unchanged restricted grants and active-user/staff/worker guards. Existing deployed TEST71 pages use the corrected backend immediately.

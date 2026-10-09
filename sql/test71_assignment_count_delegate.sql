@@ -40,7 +40,8 @@ RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path='' AS $$
 declare a public.rr_upm_work_assignments_v8%rowtype; rows jsonb; worker uuid:=public.rr_upm_current_worker_id_v9112();
 begin
  perform public.rr_assert_active_user_v1();
- if auth.uid() is null or worker is null then raise exception 'Login required.';end if;
+ if auth.uid() is null then raise exception 'Login required.';end if;
+ if worker is null and not public.rr_upm_fabrication_receiver_allowed_v770() then raise exception 'Assigned worker mapping or authorized staff required.';end if;
  select * into a from public.rr_upm_work_assignments_v8 where id=p_assignment_id;
  if a.id is null then raise exception 'Assignment missing.';end if;
  if not public.rr_upm_fabrication_receiver_allowed_v770() and worker is distinct from public.rr_canonical_worker_id_v264(a.worker_id) and not public.rr_upm_team_assignment_action_allowed_v774(a.id,worker) then raise exception 'Assigned worker or authorized staff required.';end if;
