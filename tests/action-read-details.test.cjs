@@ -71,3 +71,18 @@ test('footer uses two clear lines: named action with red ticks, then Read with b
 test('all action descriptions use consistent plain verbs; incomplete acceptance never says completed',()=>{const f=fixture();try{const describe=f.w.RRActionReceipts71.actionDescription;
  for(const [value,expected] of [['SUBMIT','Submitted'],['ASSIGN_WORKER','Assigned'],['ACCEPT & COUNT','Accept & Count completed'],['HANDOVER_COMPLETED','Accept & Count completed'],['Submit · Accept & Count pending','Accept & Count pending'],['LM_ACCEPTED','Accept & Count started'],['ALTER','Altered'],['ALTER_SUBMIT','Alter submitted'],['RECTIFICATION_CLOSE','Rectified'],['RECTIFICATION','Rectify started'],['LOGIN_APPROVED','Approved'],['PI_SHARED','Shared'],['CARD_UPDATED','Updated']])assert.equal(describe(value),expected);
  }finally{f.dom.window.close();}});
+
+test('worker Working card shows completed Accept & Count, yellow Submit pending, then blue Read',async()=>{const f=fixture();try{
+ const card=f.w.document.querySelector('article');card.insertAdjacentHTML('beforeend','<div class="card-actions"><button data-chat-submit="a">SUBMIT</button><button data-chat-alter>ALTER</button><button data-chat-rectify>RECTIFY</button></div>');
+ Object.assign(f.rows[0],{actor_user_id:'sudesh',actor_name:'Sudesh Bhati',actor_action_label:'CONFIRM_RECEIVED_PCS',viewer_read_at:'today'});
+ await f.w.RRChatNotifications71.refresh();const entry=f.w.RRActionReceipts71.entry(f.rows[0]);assert.match(entry.children[0].textContent,/पिछला action: Sudesh Bhati · Accept & Count completed/);
+ assert.equal(entry.children[1].textContent,'अगला action बाकी: SUBMIT');assert.ok(entry.children[2].classList.contains('read'));assert.equal(card.querySelectorAll('.rrCardPending71').length,1);
+ const pendingLine=card.querySelector('.rrCardPending71'),readLine=entry.children[2];f.w.RRActionReceipts71.render();assert.equal(card.querySelectorAll('.rrCardPending71').length,1);assert.equal(card.querySelector('.rrCardPending71'),pendingLine);assert.equal(entry.children[2],readLine);assert.equal(card.querySelectorAll('.card-actions button').length,3);
+ card.querySelector('.card-actions').remove();f.w.RRActionReceipts71.render();assert.equal(card.querySelector('.rrCardPending71'),null);
+ }finally{f.dom.window.close();}});
+test('pending description follows the actual available action for each workflow',()=>{const f=fixture();try{
+ const card=f.w.document.querySelector('article'),pending=f.w.RRActionReceipts71.pendingAction;
+ for(const [attr,label,expected] of [['data-fab-receive','ACCEPT & COUNT','ACCEPT & COUNT'],['data-receipt-accept','ACCEPT & COUNT','ACCEPT & COUNT'],['data-assign-action','ASSIGN WORK','ASSIGN WORKER'],['data-rate-popup','FILL ACTUAL RATE','FILL ACTUAL RATE'],['data-alter-action','RECEIVE FROM MASTER','RECEIVE FROM MASTER'],['data-action','RECTIFY FINAL CLOSE','RECTIFY FINAL CLOSE']]){card.innerHTML='<div class="card-actions"><button '+attr+'> '+label+' </button></div>';assert.equal(pending(card),expected);}
+ card.innerHTML='<div class="card-actions"><button disabled>SUBMIT</button></div>';assert.equal(pending(card),'');
+ f.w.RRAdminApprovalHost71.context=()=>({status:'CLOSE'});card.innerHTML='<div class="card-actions"><button data-chat-submit>SUBMIT</button></div>';assert.equal(pending(card),'');
+ }finally{f.dom.window.close();}});

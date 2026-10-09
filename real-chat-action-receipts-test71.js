@@ -34,11 +34,33 @@
   if(/CANCEL/i.test(label))return 'Cancelled';
   return label;
  }
+ function pendingAction71(card){
+  if(!card||context()?.status==='CLOSE')return '';
+  const controls=[...card.querySelectorAll('.card-actions button,.card-actions a')].filter(e=>!e.disabled&&!e.hidden);
+  const primary=controls.find(e=>e.matches('[data-fab-receive],[data-receipt-accept]'))||controls.find(e=>e.matches('[data-chat-submit]'))||controls.find(e=>e.matches('[data-assign-action]'))||controls.find(e=>e.matches('[data-rate-popup]'))||controls.find(e=>!e.matches('[data-chat-alter],[data-chat-rectify]'))||controls[0];
+  if(!primary)return '';
+  if(primary.matches('[data-fab-receive],[data-receipt-accept]'))return 'ACCEPT & COUNT';
+  if(primary.matches('[data-chat-submit]'))return 'SUBMIT';
+  if(primary.matches('[data-assign-action]'))return 'ASSIGN WORKER';
+  if(primary.matches('[data-rate-popup]'))return 'FILL ACTUAL RATE';
+  return primary.textContent.trim().replace(/\s+/g,' ');
+ }
+ function receiptHtmlMatches71(el,html){const pending=el.querySelector('.rrCardPending71');return (pending?el.innerHTML.replace(pending.outerHTML,''):el.innerHTML)===html;}
+ function syncPendingActions71(root){
+  root.querySelectorAll('article').forEach(card=>{
+   const action=pendingAction71(card);let line=card.querySelector('.rrCardPending71');
+   if(!action){line?.remove();return}
+   if(!line){line=document.createElement('div');line.className='rrCardPending71';}
+   const text='अगला action बाकी: '+action;if(line.textContent!==text)line.textContent=text;
+   const read=card.querySelector('.rrActionEntry71 .rrActionTick71');
+   if(read){if(line.nextElementSibling!==read)read.before(line);}else if(line.parentElement!==card)card.appendChild(line);
+  });
+ }
  function tick(row,card,isUnread=false){
   const acted=ownAction(row),ownRead=acted||!!row.viewer_read_at||(row.recipients||[]).some(r=>r.recipient_id===context()?.userId&&r.read_at),s=state(row.recipients||[],ownRead,false);
   const label=s.green?'All read':s.blue?'Read':isUnread?'Unread':s.label==='Delivered'?'Delivered':'Sent';
   const description=actionDescription71(pendingHandoverLabel(row,row.actor_action_label||row.action_label||'Action taken',card));
-  const actor=row.actor_user_id?'<span class="rrCardActor71"><span>'+esc(row.actor_name||'Action taker')+' · '+esc(description)+'</span><span class="rrActorTick71" aria-label="Action taken">✓✓</span></span>':'<span class="rrCardAction71">'+esc(actionDescription71(pendingHandoverLabel(row,row.action_label||row.title||'Work update',card)))+'</span>';
+  const actor=row.actor_user_id?'<span class="rrCardActor71"><span><small class="rrPreviousAction71">पिछला action: </small>'+esc(row.actor_name||'Action taker')+' · '+esc(description)+'</span><span class="rrActorTick71" aria-label="Action taken">✓✓</span></span>':'<span class="rrCardAction71">'+esc(actionDescription71(pendingHandoverLabel(row,row.action_label||row.title||'Work update',card)))+'</span>';
   return actor+'<button type="button" class="rrActionTick71 '+(s.green?'all-read':s.blue?'read':'')+'" data-action-receipt="'+esc(row.action_key)+'" aria-label="Read details: '+esc(row.action_label)+'"><small class="'+(!acted?'rrActionOwnState71 ':'')+(isUnread&&!ownRead&&!s.green?'rrActionNew71':'')+'">'+esc(label)+'</small><span aria-hidden="true">'+(s.label==='Sent'&&!ownRead?'✓':'✓✓')+'</span></button>';
  }
  function participantState(recipient,row){if(row?.actor_user_id&&recipient.recipient_id===row.actor_user_id)return {className:'action-taken',ticks:'✓✓',label:'Action taken',time:row.action_detail?.occurred_at||row.created_at};if(recipient.read_at)return {className:'read',ticks:'✓✓',label:'Read',time:recipient.read_at};if(recipient.delivered_at)return {className:'delivered',ticks:'✓✓',label:'Delivered',time:recipient.delivered_at};return {className:'sent',ticks:'✓',label:'Sent',time:null};}
@@ -52,15 +74,16 @@
    if(!el){el=document.createElement('div');el.className='rrActionEntry71';el.dataset.actionKey=row.action_key;host.appendChild(el);}
    const isUnread=unread.has(row.action_key)||unread.has(row.id);
    const html=tick(row,card,isUnread);
-   if(el.innerHTML!==html)el.innerHTML=html;el.classList.toggle('unread',isUnread);el.dataset.noticeId=row.id;
+   if(!receiptHtmlMatches71(el,html))el.innerHTML=html;el.classList.toggle('unread',isUnread);el.dataset.noticeId=row.id;
   }
   for(const row of rows.filter(r=>r.card_receipt)){if(!eligible(row,c))continue;const card=window.RRChatNotifications71.target(row);if(!card||card.querySelector('.rrActionHistory71 [data-action-key]'))continue;
    card.querySelectorAll('p .tick').forEach(el=>el.hidden=true);wanted.add(row.action_key);
    let el=card.querySelector('.rrSourceCardReceipt71');if(!el){el=document.createElement('div');el.className='rrSourceCardReceipt71 rrActionEntry71';card.appendChild(el);}el.dataset.actionKey=row.action_key;
-   const html=tick(row,card);if(el.innerHTML!==html)el.innerHTML=html;
+   const html=tick(row,card);if(!receiptHtmlMatches71(el,html))el.innerHTML=html;
   }
   root.querySelectorAll('[data-action-key]').forEach(el=>{if(!wanted.has(el.dataset.actionKey))el.remove();});
   root.querySelectorAll('.rrActionHistory71').forEach(el=>{if(!el.children.length)el.remove();});
+  syncPendingActions71(root);
  }
  async function refresh(){const c=context(),next=contextKey(c);if(!next){key='';rows=[];return;}if(busy)return;busy=true;
   try{const args=sourceArgs(c);const [history,cards]=await Promise.allSettled([rpc('rr_chat_action_history_test71',{p_department:args.p_department,p_worker:args.p_worker}),rpc('rr_chat_source_card_receipts_test71',args)]);if(contextKey(context())!==next)return;key=next;rows=[...(history.status==='fulfilled'&&Array.isArray(history.value)?history.value:[]),...(cards.status==='fulfilled'&&Array.isArray(cards.value)?cards.value:[])];render();await window.RRChatNotifications71.visible();}
@@ -82,7 +105,7 @@
    popup.innerHTML='<button type="button" data-close-receipts aria-label="Close">×</button><h3>'+esc((row?.action_label||'Read Details').replace(/ · recovered$/i,''))+'</h3><p>Lot '+esc(row?.lot_no||'—')+' · '+esc(when(row?.action_detail?.occurred_at||row?.created_at))+'</p><ul class="rrParticipants71">'+participants.map(r=>{const s=participantState(r,row);return '<li><span>'+esc(r.worker_name)+(r.role_code?' · '+esc(r.role_code):'')+'</span><span class="rrParticipantTick71 '+s.className+'">'+s.ticks+' '+s.label+'</span>'+(s.time?'<small>'+esc(when(s.time))+'</small>':'')+'</li>';}).join('')+'</ul>';render();
   }catch(e){popup.querySelector('p').textContent='Read details could not load. Close and retry.';}finally{loadingPopup=false;}
  }
- const style=document.createElement('style');style.textContent='.rrActionHistory71{border-top:1px solid #415565;margin-top:12px;padding-top:8px}.rrActionEntry71{display:flex;flex-direction:column;align-items:stretch;gap:6px;padding:8px;margin:4px 0;border-radius:8px;font-size:12px;overflow-wrap:anywhere}.rrActionEntry71>strong{flex:1;min-width:80px}.rrActionOwnState71{font-size:12px;color:inherit}.rrActionEntry71.unread{background:#173d32;border-left:3px solid #25a85a}.rrActionEntry71>div{margin-top:5px;color:#bdcbd5}.rrActionNew71{color:inherit;font-weight:800}.rrActionTick71{background:transparent!important;color:#b7c2cf!important;font-size:15px!important;padding:4px!important;border:0!important;border-radius:6px!important}.rrActionTick71.read{color:#53bdff!important}.rrActionTick71.all-read{color:#62e89a!important}.rrActionTick71.action-taken{color:#ff6868!important}.rrCardActor71,.rrCardAction71{display:flex;align-items:baseline;gap:8px;font-size:13px;line-height:1.5;color:#e5edf4}.rrCardActor71>span:first-child{min-width:0}.rrActorTick71{flex-shrink:0}.rrActionTick71{display:flex!important;align-items:baseline;align-self:flex-start;gap:8px;text-align:left;line-height:1.5!important}.rrActionTick71 small{color:inherit!important}.rrActorTick71{color:#ff6868;font-size:15px}.rrActionTick71 small{font-size:12px}.rrReadDetails71{background:#112231;color:#eff6fc;border:1px solid #597184;border-radius:14px;width:min(90vw,440px);max-height:80vh;overflow:auto}.rrReadDetails71::backdrop{background:#0009}.rrReadDetails71 li{padding:8px 0}.rrParticipants71{list-style:none;padding:0}.rrParticipants71 li{display:flex;align-items:center;gap:8px;flex-wrap:wrap;border-bottom:1px solid #294159}.rrParticipants71 li>span:first-child{flex:1;min-width:100px}.rrParticipants71 small{flex-basis:100%;color:#96a9bd}.rrParticipantTick71{color:#b7c2cf;white-space:nowrap;font-size:13px}.rrParticipantTick71.read{color:#53bdff}.rrParticipantTick71.action-taken{color:#ff6868}.rrReadDetails71 [data-close-receipts]{float:right}';document.head.appendChild(style);
+ const style=document.createElement('style');style.textContent='.rrActionHistory71{border-top:1px solid #415565;margin-top:12px;padding-top:8px}.rrActionEntry71{display:flex;flex-direction:column;align-items:stretch;gap:6px;padding:8px;margin:4px 0;border-radius:8px;font-size:12px;overflow-wrap:anywhere}.rrActionEntry71>strong{flex:1;min-width:80px}.rrActionOwnState71{font-size:12px;color:inherit}.rrActionEntry71.unread{background:#173d32;border-left:3px solid #25a85a}.rrActionEntry71>div{margin-top:5px;color:#bdcbd5}.rrActionNew71{color:inherit;font-weight:800}.rrActionTick71{background:transparent!important;color:#b7c2cf!important;font-size:15px!important;padding:4px!important;border:0!important;border-radius:6px!important}.rrActionTick71.read{color:#53bdff!important}.rrActionTick71.all-read{color:#62e89a!important}.rrActionTick71.action-taken{color:#ff6868!important}.rrCardActor71,.rrCardAction71{display:flex;align-items:baseline;gap:8px;font-size:13px;line-height:1.5;color:#e5edf4}.rrCardActor71>span:first-child{min-width:0}.rrActorTick71{flex-shrink:0}.rrActionTick71{display:flex!important;align-items:baseline;align-self:flex-start;gap:8px;text-align:left;line-height:1.5!important}.rrActionTick71 small{color:inherit!important}.rrActorTick71{color:#ff6868;font-size:15px}.rrPreviousAction71{font-size:12px;color:#a8bdce}.rrCardPending71{color:#ffd45a;font-size:13px;font-weight:700;line-height:1.5;padding:5px 0;overflow-wrap:anywhere}.rrActionTick71 small{font-size:12px}.rrReadDetails71{background:#112231;color:#eff6fc;border:1px solid #597184;border-radius:14px;width:min(90vw,440px);max-height:80vh;overflow:auto}.rrReadDetails71::backdrop{background:#0009}.rrReadDetails71 li{padding:8px 0}.rrParticipants71{list-style:none;padding:0}.rrParticipants71 li{display:flex;align-items:center;gap:8px;flex-wrap:wrap;border-bottom:1px solid #294159}.rrParticipants71 li>span:first-child{flex:1;min-width:100px}.rrParticipants71 small{flex-basis:100%;color:#96a9bd}.rrParticipantTick71{color:#b7c2cf;white-space:nowrap;font-size:13px}.rrParticipantTick71.read{color:#53bdff}.rrParticipantTick71.action-taken{color:#ff6868}.rrReadDetails71 [data-close-receipts]{float:right}';document.head.appendChild(style);
  document.addEventListener('click',e=>{const t=e.target.closest('[data-action-receipt]');if(t){e.preventDefault();e.stopPropagation();details(t.dataset.actionReceipt);}});
- window.RRActionReceipts71={refresh,render,entry,readConfirmed,visibleCards,state,participantState,details,actionDescription:actionDescription71};
+ window.RRActionReceipts71={refresh,render,entry,readConfirmed,visibleCards,state,participantState,details,actionDescription:actionDescription71,pendingAction:pendingAction71};
 })();
