@@ -71,3 +71,7 @@
 #chat:has(#workLanes71:not([hidden])) #workFilters button{height:34px!important;min-height:34px!important;padding:6px 10px!important;border:1px solid #40596e!important;border-radius:9px!important;background:#122638!important;color:#bfcedc!important;font-size:12px!important;box-shadow:none!important;}
 #chat:has(#workLanes71:not([hidden])) #workFilters button.on{border-color:#53bdff!important;background:#17436a!important;color:#fff!important;}
 #chat #workFilters button[hidden]{display:none!important;}
+/* One chat scroller lets controls leave the screen together with the cards. */
+#chat.chat{height:100%;min-height:0;overflow-y:auto!important;overflow-x:hidden;overscroll-behavior-y:contain;scrollbar-gutter:stable;}
+#chat.chat>.head,#chat.chat>.chat-filters,#chat.chat>.chat-search,#chat.chat>#workLanes71,#chat.chat>#workLaneSummary71,#chat.chat>#workFilters{position:static!important;flex:0 0 auto;}
+#chat.chat>#messages{flex:0 0 auto!important;min-height:0;height:auto!important;max-height:none!important;overflow:visible!important;padding-bottom:calc(24px + env(safe-area-inset-bottom));}
