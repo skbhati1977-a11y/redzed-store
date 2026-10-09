@@ -134,7 +134,7 @@ declare j jsonb:=to_jsonb(new);dep text;aid uuid;wid uuid;sender uuid;key text;l
  dep:=public.rr_real_chat_canonical_department_v83(dep);lot:=j->>'lot_no';
  key:='UPM_EVENT_TEST71:'||tg_table_name||':'||(j->>'id')||':'||coalesce(j->>'status',j->>'event_type',j->>'action_type','ACTION')||':'||case when tg_op='UPDATE' then clock_timestamp()::text else coalesce(j->>'created_at',clock_timestamp()::text) end;
  perform rr_chat_notifications_test71.emit_upm(key,dep,'WORKING',lot,aid,null,array[wid],sender);
- detail:=jsonb_build_object('qty',coalesce(j->'qty',j->'recalled_good_qty'),'colour',j->>'colour_code','from',j->>'from_stage','to',j->>'to_stage','note',coalesce(j->>'remarks',j->>'reason'));
+ detail:=jsonb_build_object('journey_id',j->>'journey_id','rectification_case_id',case when tg_table_name='rr_upm_rectification_cases_v9101' then j->>'id' else null end,'qty',coalesce(j->'qty',j->'recalled_good_qty'),'colour',j->>'colour_code','from',j->>'from_stage','to',j->>'to_stage','note',coalesce(j->>'remarks',j->>'reason'));
  update rr_chat_notifications_test71.inbox set action_label=replace(label,'_',' '),action_detail=detail,actor_user_id=auth.uid() where event_key=key||':'||dep;
  return new;
 end $$;
