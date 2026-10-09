@@ -17,12 +17,12 @@ function fixture(){
  return{w,dom,reads,rows,showSecond:()=>hiddenSecond=false};
 }
 test('two actions on one card: only visible action reads; popup keeps the other recipient unread',async()=>{const f=fixture(),{w}=f;try{
- await w.RRChatNotifications71.refresh();assert.deepEqual(f.reads,['n0']);assert.equal(w.document.querySelectorAll('[data-action-key]').length,2);assert.equal(w.document.querySelector('[data-unread-bubble="total"]').textContent,'1');assert.equal(w.document.querySelector('[data-action-key="action1"] .rrActionNew71').textContent,'Unread');
+ await w.RRChatNotifications71.refresh();assert.deepEqual(f.reads,['n0']);assert.equal(w.document.querySelectorAll('[data-action-key]').length,2);assert.equal(w.document.querySelector('[data-unread-bubble="total"]').textContent,'Unread 1');assert.equal(w.document.querySelector('[data-action-key="action1"] .rrActionNew71').textContent,'Unread');
  await w.RRActionReceipts71.details('action0');assert.match(w.document.querySelector('dialog').textContent,/Kartik/);assert.match(w.document.querySelector('dialog').textContent,/Manager/);assert.match(w.document.querySelector('dialog').textContent,/Sent/);assert.deepEqual(f.reads,['n0']);
  f.showSecond();await w.RRChatNotifications71.visible();assert.deepEqual(f.reads,['n0']);w.document.querySelector('dialog').close();await w.RRChatNotifications71.visible();assert.deepEqual(f.reads,['n0','n1']);assert.equal(w.document.querySelector('[data-unread-bubble="total"]'),null);
  }finally{f.dom.window.close();}});
 test('own read turns blue; all participants read turns green; other recipients read does not turn blue',()=>{const f=fixture();try{const state=f.w.RRActionReceipts71.state;assert.equal(state([{read_at:'today'},{delivered_at:'today'}]).blue,false);assert.equal(state([{read_at:'today'},{read_at:'today'}],true).green,true);assert.equal(state([{read_at:'today'},{read_at:'today'}],true).blue,false);assert.equal(state([{read_at:'today'},{delivered_at:'today'}],true).blue,true);assert.equal(state([{delivered_at:'today'}]).label,'Delivered');assert.equal(state([]).blue,false);}finally{f.dom.window.close();}});
-test('read RPC failure keeps NEW and bubble; no optimistic acknowledgement',async()=>{const f=fixture();try{const old=f.w.RF853.rpc;f.w.RF853.rpc=async(n,a)=>n==='rr_chat_notification_read_test71'?0:old(n,a);await f.w.RRChatNotifications71.refresh();assert.equal(f.w.document.querySelector('[data-unread-bubble="total"]').textContent,'2');assert.equal(f.w.document.querySelectorAll('.rrActionNew71').length,2);}finally{f.dom.window.close();}});
+test('read RPC failure keeps NEW and bubble; no optimistic acknowledgement',async()=>{const f=fixture();try{const old=f.w.RF853.rpc;f.w.RF853.rpc=async(n,a)=>n==='rr_chat_notification_read_test71'?0:old(n,a);await f.w.RRChatNotifications71.refresh();assert.equal(f.w.document.querySelector('[data-unread-bubble="total"]').textContent,'Unread 2');assert.equal(f.w.document.querySelectorAll('.rrActionNew71').length,2);}finally{f.dom.window.close();}});
 
 test('late inbox response cannot restore an action read while polling was pending',async()=>{const f=fixture();try{
  await f.w.RRChatNotifications71.refresh();const old=f.w.RF853.rpc;let release;f.w.RF853.rpc=(n,a)=>n==='rr_chat_notification_inbox_test71'?new Promise(resolve=>release=resolve):old(n,a);
@@ -36,7 +36,7 @@ test('another device already read: zero update reconciles own count from server'
  }finally{f.dom.window.close();}});
 
 test('other status actions stay on their own tab without detached text sections or read acknowledgement',async()=>{const f=fixture();try{
- f.rows[0].route_url='?rc_status=CLOSE';await f.w.RRChatNotifications71.refresh();assert.equal(f.w.RRActionReceipts71.entry(f.rows[0]),null);assert.equal(f.w.document.querySelector('[data-unmapped-actions]'),null);assert.deepEqual(f.reads,[]);assert.equal(f.w.document.querySelector('[data-unread-bubble="total"]').textContent,'2');
+ f.rows[0].route_url='?rc_status=CLOSE';await f.w.RRChatNotifications71.refresh();assert.equal(f.w.RRActionReceipts71.entry(f.rows[0]),null);assert.equal(f.w.document.querySelector('[data-unmapped-actions]'),null);assert.deepEqual(f.reads,[]);assert.equal(f.w.document.querySelector('[data-unread-bubble="total"]').textContent,'Unread 2');
  }finally{f.dom.window.close();}});
 test('unmapped targeted action is never attached to a same-lot sibling or marked read',async()=>{const f=fixture();try{
  f.rows[0].assignment_id='other-assignment';await f.w.RRChatNotifications71.refresh();assert.equal(f.w.RRActionReceipts71.entry(f.rows[0]),null);assert.equal(f.w.document.querySelector('[data-unmapped-actions]'),null);assert.deepEqual(f.reads,[]);

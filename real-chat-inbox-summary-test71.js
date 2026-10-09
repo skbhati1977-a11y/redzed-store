@@ -7,7 +7,7 @@
  const q=new URLSearchParams(location.search),noticeId=q.get('rc_notice'),bridgeId=q.get('rc_bridge');
  const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  const style=document.createElement('style');style.textContent='.rrMsgBubble71{display:inline-flex;align-items:center;justify-content:center;min-width:25px;height:25px;padding:0 7px;margin-left:8px;border-radius:999px;background:#25a85a;color:white;font:800 13px system-ui;flex-shrink:0}.rrNoticeFocus71{outline:3px solid #ffe095!important;scroll-margin:24px}';document.head.appendChild(style);
- function bubble(host,n,key){if(!host)return;let b=host.querySelector('[data-unread-bubble="'+key+'"]');if(!n){b?.remove();return}if(!b){b=document.createElement('span');b.className='rrMsgBubble71';b.dataset.unreadBubble=key;host.appendChild(b)}const value=String(n);if(b.textContent!==value)b.textContent=value;b.setAttribute('aria-label',value+' unread actions')}
+ function bubble(host,n,key){if(!host)return;let b=host.querySelector('[data-unread-bubble="'+key+'"]');if(!n){b?.remove();return}if(!b){b=document.createElement('span');b.className='rrMsgBubble71';b.dataset.unreadBubble=key;host.appendChild(b)}const value='Unread '+String(n);if(b.textContent!==value)b.textContent=value;b.setAttribute('aria-label',value+' unread actions')}
  const belongs=(n,worker)=>Array.isArray(n.worker_ids)&&n.worker_ids.some(id=>id&&String(id)===String(worker));
  function paint(){
   if(focusedNotice){const node=target(focusedNotice);if(node)node.classList.add('rrNoticeFocus71')}
