@@ -21,9 +21,15 @@ declare a record;b record;c record;mine uuid;theirs uuid;key text:='ACTION_RECEI
  if n<>1 then raise exception 'Read recipient isolation failed';end if;
  result:=public.rr_chat_action_history_test71('STICKER',a.worker_id);
  if not exists(select 1 from jsonb_array_elements(result) x where x->>'action_key'=key) then raise exception 'Read history vanished';end if;
+ if not exists(select 1 from jsonb_array_elements(result) x where x->>'action_key'=key and x->>'viewer_is_recipient'='true' and x->>'viewer_read_at' is not null) then raise exception 'Own blue tick receipt missing';end if;
  if public.rr_chat_notification_inbox_test71() @> jsonb_build_array(jsonb_build_object('id',mine)) then raise exception 'Read still counted';end if;
  perform set_config('request.jwt.claim.sub',b.linked_auth_user_id::text,true);
  if not public.rr_chat_notification_inbox_test71() @> jsonb_build_array(jsonb_build_object('id',theirs)) then raise exception 'Other unread lost';end if;
+ result:=public.rr_chat_action_history_test71('STICKER',a.worker_id);
+ if not exists(select 1 from jsonb_array_elements(result) x where x->>'action_key'=key and x->>'viewer_read_at' is null) then raise exception 'Other viewer inherited own blue tick';end if;
+ perform public.rr_chat_notification_read_test71(array[theirs]);
+ result:=public.rr_chat_action_receipts_test71(key);
+ if exists(select 1 from jsonb_array_elements(result) x where x->>'read_at' is null) then raise exception 'All-read green tick receipts incomplete';end if;
  perform set_config('request.jwt.claim.sub',c.linked_auth_user_id::text,true);
  result:=public.rr_chat_action_receipts_test71(key);
  if jsonb_array_length(result)<>2 then raise exception 'Sender receipts inaccessible';end if;

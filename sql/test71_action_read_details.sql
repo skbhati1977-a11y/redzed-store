@@ -81,6 +81,8 @@ begin
   select distinct on(i.event_key) i.id,i.event_key action_key,i.action_label,i.action_detail,i.actor_user_id,
    (select w.worker_name from public.rr_worker_directory_unified_v1 w where w.linked_auth_user_id=i.actor_user_id limit 1) actor_name,
    i.created_at,i.read_at,i.department_code,i.assignment_id,i.submit_request_id,i.bridge_id,i.lot_no,
+   exists(select 1 from rr_chat_notifications_test71.inbox own join public.rr_worker_directory_unified_v1 ow on ow.worker_id=own.recipient_worker_id where own.event_key=i.event_key and ow.linked_auth_user_id=auth.uid()) viewer_is_recipient,
+   (select min(own.read_at) from rr_chat_notifications_test71.inbox own join public.rr_worker_directory_unified_v1 ow on ow.worker_id=own.recipient_worker_id where own.event_key=i.event_key and ow.linked_auth_user_id=auth.uid()) viewer_read_at,
    coalesce(i.worker_ids,jsonb_build_array(b.sender_worker_id,b.receiver_worker_id)) worker_ids,
    b.canonical_key event_key,coalesce(b.group_payload->>'cb_no',b.group_payload->>'cb_code') cb_no,
    case when i.assignment_id is not null or i.submit_request_id is not null then

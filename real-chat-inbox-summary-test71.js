@@ -39,7 +39,7 @@
   if(n.assignment_id){const exact=[...root.querySelectorAll('[data-assignment-id]')].find(x=>x.dataset.assignmentId===n.assignment_id);if(exact)return exact;const consolidated=[...root.querySelectorAll('[data-assignment-ids]')].find(x=>{try{return JSON.parse(x.dataset.assignmentIds).includes(n.assignment_id)}catch(_){return false}});if(consolidated)return consolidated;}
   if(n.event_key){const exact=[...root.querySelectorAll('[data-event-key]')].find(x=>x.dataset.eventKey===n.event_key);if(exact)return exact;}
   if(n.cb_no)return [...root.querySelectorAll('[data-cb-no]')].find(x=>x.dataset.cbNo===n.cb_no)||null;
-  const activity=window.RRActionReceipts71?.entry(n);if(activity?.closest('[data-unmapped-actions]'))return activity;
+  if(n.event_key){const combined=[...root.querySelectorAll('[data-source-event-keys]')].find(x=>{try{return JSON.parse(x.dataset.sourceEventKeys).includes(n.event_key)}catch(_){return false}});if(combined)return combined;}
   // A targeted UPM notice must never focus another assignment sharing its lot.
   if(n.assignment_id||n.submit_request_id)return null;
   if(n.lot_no)return [...root.querySelectorAll('.work-card,.closed-row,[data-lot]')].find(x=>String(x.dataset.noticeLot||x.dataset.lot||'')===String(n.lot_no))||null;
@@ -47,8 +47,10 @@
  }
  async function visible(){if(reading||document.hidden||!ready())return;
   const context=window.RRAdminApprovalHost71?.context(),chat=document.getElementById('chat');if(!context||chat?.hidden||!['group','person'].includes(context.kind))return;
+  const requested=notices.find(n=>n.id===noticeId);
+  if(requested&&!focusDone&&new URL(requested.route_url,location.href).searchParams.get('rc_status')===context.status&&window.RRAdminApprovalHost71?.focusNotice?.(requested))return;
   window.RRActionReceipts71?.render();
-  const shown=notices.filter(n=>{const u=new URL(n.route_url,location.href);return n.department_code===String(context.parentDepartment||context.id||'').toUpperCase()&&(context.kind!=='person'||belongs(n,context.id))&&(u.searchParams.get('rc_status')===context.status||window.RRActionReceipts71?.entry(n)?.closest('[data-unmapped-actions]'))&&target(n)});
+  const shown=notices.filter(n=>{const u=new URL(n.route_url,location.href);return n.department_code===String(context.parentDepartment||context.id||'').toUpperCase()&&(context.kind!=='person'||belongs(n,context.id))&&u.searchParams.get('rc_status')===context.status&&target(n)});
   const pinned=(q.get('rc_assignment')||q.get('rc_submit'))&&q.get('rc_parent')===String(context.parentDepartment||context.id||'').toUpperCase()&&q.get('rc_status')===context.status?{assignment_id:q.get('rc_assignment'),submit_request_id:q.get('rc_submit'),route_url:location.href}:null;
   const focus=shown.find(n=>n.id===noticeId||bridgeId&&String(n.bridge_id)===bridgeId)||(pinned&&target(pinned)?pinned:null);
   if(focus&&!focusDone){focusedNotice=focus;const node=window.RRActionReceipts71?.entry(focus)||target(focus);const closed=node.closest?.('details');if(closed)closed.open=true;node.setAttribute('tabindex','-1');node.classList.add('rrNoticeFocus71');node.scrollIntoView({block:'center',behavior:'auto'});node.focus({preventScroll:true});focusDone=true;}
