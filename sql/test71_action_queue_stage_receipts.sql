@@ -59,7 +59,10 @@ begin
      and b.source_event_type in('CUTTING_RELEASE_SUCCEEDED','CUTTING_RELEASED_PENDING_ASSIGNMENT','CUTTING_RELEASED')
      and coalesce(b.group_payload->>'canonical_lot_id',b.personal_payload->>'canonical_lot_id')=j->>'canonical_lot_id'
   ) chosen where chosen.uid is not null order by chosen.at desc nulls last limit 1;
-  j:=j||jsonb_build_object('actor_action_label',actor_label,'action_subject_name',(select q.worker_name from public.rr_upm_submit_requests_v794 q where q.id::text=j->>'submit_request_id' and q.status<>'COMPLETED'));
+  j:=j||jsonb_build_object('actor_action_label',actor_label,'action_subject_name',coalesce((select q.worker_name from public.rr_upm_submit_requests_v794 q where q.id::text=j->>'submit_request_id' and q.status<>'COMPLETED'),
+   (select prior.responsible_name from public.rr_upm_alter_events_v740 latest
+     join lateral (select previous.responsible_name from public.rr_upm_alter_events_v740 previous where previous.journey_id=latest.journey_id and previous.created_at<latest.created_at order by previous.created_at desc limit 1) prior on true
+     where latest.journey_id::text=j->>'journey_id' and latest.event_type in('KARIGAR_SUBMIT_GOOD','RECEIVE_FROM_KARIGAR') and latest.id=(select e.id from public.rr_upm_alter_events_v740 e where e.journey_id=latest.journey_id order by e.created_at desc limit 1))));
   k:='SOURCE_CARD_TEST71:'||md5(dep||upper(p_status)||(j->>'event_key')||(j->'source_versions')::text||coalesce(actor::text,'')||coalesce(actor_at::text,'')||coalesce(actor_label,''));keys:=array_append(keys,k);
   update rr_chat_notifications_test71.card_receipts set source_card=j,actor_user_id=actor where card_key=k;
   select array_agg(distinct w.linked_auth_user_id) into recipients from public.rr_worker_directory_unified_v1 w
