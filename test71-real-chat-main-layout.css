@@ -86,3 +86,8 @@
 #cardScreenHeader71 b{font-size:14px;line-height:1.4;}
 #chat.rrCardsScreen71 .work-card{width:100%!important;max-width:640px;align-self:center;}
 #chat #openCards71{margin:12px;}
+
+/* Main page: header, search and departments share the same scroll surface. */
+#inbox{overflow-y:auto;overflow-x:hidden;overscroll-behavior-y:contain;scrollbar-gutter:stable}
+#inbox>.head,#inbox>.search,#inbox>.filters,#inbox>.state{position:static}
+#inbox>#rows{flex:0 0 auto;overflow:visible;scrollbar-gutter:auto}
