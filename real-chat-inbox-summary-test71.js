@@ -35,7 +35,7 @@
  }
  function target(n){const root=document.getElementById('messages');if(!root)return null;const route=new URL(n.route_url,location.href),request=route.searchParams.get('rc_login_request');
   if(request)return [...root.querySelectorAll('[data-login-request]')].find(x=>x.dataset.loginRequest===request)?.closest('[data-customer-permission]')||null;
-  if(n.action_detail?.journey_id||n.action_detail?.rectification_case_id){const key=n.action_detail.journey_id?'ALTER:'+n.action_detail.journey_id:'RECTIFICATION:'+n.action_detail.rectification_case_id;return [...root.querySelectorAll('[data-event-key]')].find(x=>x.dataset.eventKey===key)||null;}if(n.submit_request_id){const exact=[...root.querySelectorAll('[data-submit-request-id]')].find(x=>x.dataset.submitRequestId===n.submit_request_id);if(exact)return exact;}
+  if(n.action_detail?.journey_id||n.action_detail?.rectification_case_id){const key=n.action_detail.journey_id?'ALTER:'+n.action_detail.journey_id:'RECTIFICATION:'+n.action_detail.rectification_case_id;return [...root.querySelectorAll('[data-event-key]')].find(x=>x.dataset.eventKey===key)||null;}if(n.submit_request_id){const accepted=[...root.querySelectorAll('[data-accepted-submit-ids]')].find(x=>{try{return JSON.parse(x.dataset.acceptedSubmitIds).includes(n.submit_request_id)}catch(_){return false}});if(accepted)return accepted;const exact=[...root.querySelectorAll('[data-submit-request-id]')].find(x=>x.dataset.submitRequestId===n.submit_request_id);if(exact)return exact;}
   if(n.assignment_id){const exact=[...root.querySelectorAll('[data-assignment-id]')].find(x=>x.dataset.assignmentId===n.assignment_id);if(exact)return exact;const consolidated=[...root.querySelectorAll('[data-assignment-ids]')].find(x=>{try{return JSON.parse(x.dataset.assignmentIds).includes(n.assignment_id)}catch(_){return false}});if(consolidated)return consolidated;}
   if(n.event_key){const exact=[...root.querySelectorAll('[data-event-key]')].find(x=>x.dataset.eventKey===n.event_key);if(exact)return exact;}
   if(n.cb_unit_id)return [...root.querySelectorAll('[data-cb-unit-id]')].find(x=>x.dataset.cbUnitId===String(n.cb_unit_id))||null;
@@ -46,18 +46,19 @@
   if(n.lot_no)return [...root.querySelectorAll('.work-card,.closed-row,[data-lot]')].find(x=>String(x.dataset.noticeLot||x.dataset.lot||'')===String(n.lot_no))||null;
   return null;
  }
+ function acceptedSubmitVisible71(n){if(!n.submit_request_id)return false;const card=target(n);try{return JSON.parse(card?.dataset.acceptedSubmitIds||'[]').includes(n.submit_request_id)}catch(_){return false}}
  async function visible(){if(reading||document.hidden||!ready())return;
   const context=window.RRAdminApprovalHost71?.context(),chat=document.getElementById('chat');if(!context||chat?.hidden||!['group','person'].includes(context.kind))return;
   const requested=notices.find(n=>n.id===noticeId);
   if(requested&&!focusDone&&new URL(requested.route_url,location.href).searchParams.get('rc_status')===context.status&&window.RRAdminApprovalHost71?.focusNotice?.(requested))return;
   window.RRActionReceipts71?.render();
   await window.RRActionReceipts71?.visibleCards();
-  const shown=notices.filter(n=>{const u=new URL(n.route_url,location.href);return n.department_code===String(context.parentDepartment||context.id||'').toUpperCase()&&(context.kind!=='person'||belongs(n,context.id))&&u.searchParams.get('rc_status')===context.status&&target(n)});
+  const shown=notices.filter(n=>{const u=new URL(n.route_url,location.href);return n.department_code===String(context.parentDepartment||context.id||'').toUpperCase()&&(context.kind!=='person'||belongs(n,context.id))&&(u.searchParams.get('rc_status')===context.status||acceptedSubmitVisible71(n))&&target(n)});
   const pinned=(q.get('rc_assignment')||q.get('rc_submit'))&&q.get('rc_parent')===String(context.parentDepartment||context.id||'').toUpperCase()&&q.get('rc_status')===context.status?{assignment_id:q.get('rc_assignment'),submit_request_id:q.get('rc_submit'),route_url:location.href}:null;
   const focus=shown.find(n=>n.id===noticeId||bridgeId&&String(n.bridge_id)===bridgeId)||(pinned&&target(pinned)?pinned:null);
   if(focus&&!focusDone){focusedNotice=focus;const node=window.RRActionReceipts71?.entry(focus)||target(focus);const closed=node.closest?.('details');if(closed)closed.open=true;node.setAttribute('tabindex','-1');node.classList.add('rrNoticeFocus71');node.scrollIntoView({block:'center',behavior:'auto'});node.focus({preventScroll:true});focusDone=true;}
   // Read only cards actually in the viewport; opening a department does not clear unseen cards.
-  const ids=shown.filter(n=>{const node=window.RRActionReceipts71?window.RRActionReceipts71.entry(n):target(n);if(!node||node.closest('details:not([open])')||document.querySelector('dialog[open],.rf794-back.on,.sheetback.on'))return false;const r=node.getBoundingClientRect(),box=chat.getBoundingClientRect(),top=Math.max(r.top,box.top,0),bottom=Math.min(r.bottom,box.bottom,innerHeight);return window.RRActionReceipts71?r.width>0&&bottom-top>=Math.min(40,r.height*0.5):r.top<box.bottom&&r.bottom>box.top;}).map(n=>n.id);
+  const ids=shown.filter(n=>{const node=window.RRActionReceipts71?.entry(n)||target(n);if(!node||node.closest('details:not([open])')||document.querySelector('dialog[open],.rf794-back.on,.sheetback.on'))return false;const r=node.getBoundingClientRect(),box=chat.getBoundingClientRect(),top=Math.max(r.top,box.top,0),bottom=Math.min(r.bottom,box.bottom,innerHeight);return window.RRActionReceipts71?r.width>0&&bottom-top>=Math.min(40,r.height*0.5):r.top<box.bottom&&r.bottom>box.top;}).map(n=>n.id);
   if(!ids.length)return;reading=true;
   try{
    const keys=notices.filter(n=>ids.includes(n.id)).map(n=>n.action_key||n.id);
