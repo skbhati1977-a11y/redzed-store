@@ -36,10 +36,10 @@
   return label;
  }
  function pendingAction71(card){
-  if(!card||context()?.status==='CLOSE')return '';
+  if(!card||String(card.dataset.cardStatus||context()?.status).toUpperCase()==='CLOSE')return '';
   const controls=[...card.querySelectorAll('.card-actions button,.card-actions a')].filter(e=>!e.disabled&&!e.hidden);
   const primary=(card.dataset.ratePending==='true'&&controls.find(e=>e.matches('[data-rate-popup]')))||controls.find(e=>e.matches('[data-fab-receive],[data-receipt-accept]'))||controls.find(e=>e.matches('[data-chat-submit]'))||controls.find(e=>e.matches('[data-assign-action]'))||controls.find(e=>e.matches('[data-rate-popup]'))||controls.find(e=>!e.matches('[data-chat-alter],[data-chat-rectify]'))||controls[0];
-  if(!primary)return ({LM_ACCEPT:'ALTER ACCEPT',REMAKE_ISSUE:'REMAKE तैयार करें',RECEIVE_FROM_MASTER:'REMAKE प्राप्त करें',DELIVER_TO_KARIGAR:'WORKER को दें',KARIGAR_SUBMIT_GOOD:'ALTER SUBMIT',RECEIVE_FROM_KARIGAR:'ALTER प्राप्त करें',RECTIFICATION_CLOSE:'RECTIFY · FINAL CLOSE'})[card.dataset.requiredAction]||String(card.dataset.requiredAction||'').replace(/_/g,' ');
+  if(!primary)return String(card.dataset.pendingAction||'').replace(/_/g,' ')||({LM_ACCEPT:'ALTER ACCEPT',REMAKE_ISSUE:'REMAKE तैयार करें',RECEIVE_FROM_MASTER:'REMAKE प्राप्त करें',DELIVER_TO_KARIGAR:'WORKER को दें',KARIGAR_SUBMIT_GOOD:'ALTER SUBMIT',RECEIVE_FROM_KARIGAR:'ALTER प्राप्त करें',RECTIFICATION_CLOSE:'RECTIFY · FINAL CLOSE'})[card.dataset.requiredAction]||String(card.dataset.requiredAction||'').replace(/_/g,' ');
   if(primary.matches('[data-receipt-accept]')&&card.dataset.requiredAction==='ASSIGNED RECEIPT / COUNT')return 'ASSIGNED RECEIPT / COUNT';
   if(primary.matches('[data-fab-receive],[data-receipt-accept]'))return 'ACCEPT & COUNT';
   if(primary.matches('[data-chat-submit]'))return 'SUBMIT';
@@ -53,7 +53,7 @@
    const action=pendingAction71(card);let line=card.querySelector('.rrCardPending71');
    if(!action){line?.remove();return}
    if(!line){line=document.createElement('div');line.className='rrCardPending71';}
-   const person=card.dataset.pendingPerson;const text='अगला action बाकी: '+action+(person?' · '+person:'')+' ✓✓';if(line.textContent!==text)line.textContent=text;
+   const person=card.dataset.pendingPerson,department=String(card.dataset.pendingDepartments||card.dataset.workDepartment||'').replace(/_/g,' ');const text='अगला action बाकी: '+[person,department,action].filter(Boolean).join(' · ')+' ✓✓';if(line.textContent!==text)line.textContent=text;
    const read=card.querySelector('.rrActionEntry71 .rrActionTick71');
    if(read){if(line.nextElementSibling!==read)read.before(line);}else if(line.parentElement!==card)card.appendChild(line);
   });
@@ -63,7 +63,8 @@
   const label=s.green?'All read':s.blue?'Read':isUnread?'Unread':s.label==='Delivered'?'Delivered':'Sent';
   const description=actionDescription71(pendingHandoverLabel(row,row.actor_action_label||row.action_label||'Action taken',card));
   const subject=row.action_subject_name,person=subject||row.actor_name||'Action taker',by=subject&&row.actor_name&&subject.toLowerCase()!==row.actor_name.toLowerCase()?' ('+row.actor_name+')':'';
-  const actor=row.actor_user_id||row.actor_name?'<span class="rrCardActor71"><span><small class="rrPreviousAction71">पिछला action: </small>'+esc(person)+esc(by)+' · '+esc(description)+'</span><span class="rrActorTick71" aria-label="Action taken">✓✓</span></span>':'<span class="rrCardAction71">'+esc(actionDescription71(pendingHandoverLabel(row,row.action_label||row.title||'Work update',card)))+'</span>';
+  const department=String(row.action_detail?.department_name||row.action_detail?.department_code||row.department_code||'').replace(/_/g,' ');
+  const actor=row.actor_user_id||row.actor_name?'<span class="rrCardActor71"><span><small class="rrPreviousAction71">पिछला action: </small>'+esc(person)+esc(by)+(department?' · '+esc(department):'')+' · '+esc(description)+'</span><span class="rrActorTick71" aria-label="Action taken">✓✓</span></span>':'<span class="rrCardAction71">'+esc(actionDescription71(pendingHandoverLabel(row,row.action_label||row.title||'Work update',card)))+'</span>';
   return actor+'<button type="button" class="rrActionTick71 '+(s.green?'all-read':s.blue?'read':'')+'" data-action-receipt="'+esc(row.action_key)+'" aria-label="Read details: '+esc(row.action_label)+'"><small class="'+(!acted?'rrActionOwnState71 ':'')+(isUnread&&!ownRead&&!s.green?'rrActionNew71':'')+'">'+esc(label)+'</small><span aria-hidden="true">'+(s.label==='Sent'&&!ownRead?'✓':'✓✓')+'</span></button>';
  }
  function participantState(recipient,row){if(row?.actor_user_id&&recipient.recipient_id===row.actor_user_id)return {className:'action-taken',ticks:'✓✓',label:'Action taken',time:row.action_detail?.occurred_at||row.created_at};if(recipient.read_at)return {className:'read',ticks:'✓✓',label:'Read',time:recipient.read_at};if(recipient.delivered_at)return {className:'delivered',ticks:'✓✓',label:'Delivered',time:recipient.delivered_at};return {className:'sent',ticks:'✓',label:'Sent',time:null};}
