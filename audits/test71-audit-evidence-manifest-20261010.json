@@ -1,0 +1,416 @@
+{
+  "date": "2026-10-10",
+  "full_audit_complete": false,
+  "entries": [
+    {
+      "path": "audits/test71-action-queue-audit-20261009.md",
+      "bytes": 15681,
+      "sha256": "25f6cb70338d89f7e144fde90a7703665a6400b729caae3cd3262731dc6bfb9c"
+    },
+    {
+      "path": "audits/test71-attendance-browser-20261010.jpg",
+      "bytes": 77475,
+      "sha256": "84f646dfbea8769c20ea0fc8ecccc76f950b7f62b39e818510874cb8e31cb0de"
+    },
+    {
+      "path": "audits/test71-audit-scenario-matrix-20261010.json",
+      "bytes": 67058,
+      "sha256": "0ad2793613e622c2f68631f4307466b79123e6bfe604eaab8b11ad51b042cddc"
+    },
+    {
+      "path": "audits/test71-audit-scenario-matrix-20261010.md",
+      "bytes": 37825,
+      "sha256": "e468baee1bc89a7cabd61b3710bea8d85ca460e40c0c4379c32b3d59e63c6c27"
+    },
+    {
+      "path": "audits/test71-browser-evidence-20261010.json",
+      "bytes": 105493,
+      "sha256": "98a34253dc0ed63461f0b21bbc781eb7922bab7bceb111db8da25d23c8fc2461"
+    },
+    {
+      "path": "audits/test71-core-runtime-evidence-20261010.json",
+      "bytes": 5904,
+      "sha256": "296f0a399c656ebb6172acdb79769a1b82009d27e10f3461ffd3ea7dbacc49db"
+    },
+    {
+      "path": "audits/test71-critical-fix-checkpoint-20261010.md",
+      "bytes": 5957,
+      "sha256": "9d509b946231101d9d667b09df724224944852d24eea11a7532ed700c670192c"
+    },
+    {
+      "path": "audits/test71-critical-fix-runtime-evidence-20261010.json",
+      "bytes": 21954,
+      "sha256": "4bc2153312cb13433554dc725e8fe948d55ca8fe184c3d52bf262713ed9e8ece"
+    },
+    {
+      "path": "audits/test71-critical-fix-security-advisors-20261010.json",
+      "bytes": 2077946,
+      "sha256": "e85cfb3defdd6f72df943da49bcb910812f3150c5e01da94584a730ca57107cd"
+    },
+    {
+      "path": "audits/test71-final-acl-replays-20261010.json",
+      "bytes": 4954,
+      "sha256": "eddf5970dad1e91e9917a39392cc4290ef41568ce82892055b04e97e8f9fabad"
+    },
+    {
+      "path": "audits/test71-fix-continuation-evidence-20261010.json",
+      "bytes": 4798,
+      "sha256": "ac5c7e7b3d253289d21762e003f832a2ec6c745a147593f235bcd10a7a78ec9e"
+    },
+    {
+      "path": "audits/test71-invariants-runtime-evidence-20261010.json",
+      "bytes": 3393,
+      "sha256": "0332b082fd6c72974a9f705b5a4d9c8db7ea73b696c030f405f05c6b064c5152"
+    },
+    {
+      "path": "audits/test71-post-fix-security-advisors-20261010.json",
+      "bytes": 2001667,
+      "sha256": "9411459211aa9573f60a3ca8c4d89c5b99d9bf1198ccb418f0f02506955b7eb4"
+    },
+    {
+      "path": "audits/test71-salary-ledger-fix-evidence-20261010.json",
+      "bytes": 1644,
+      "sha256": "6adbcb9168dd6b28a9c56f732a32de913ffea28116b504e0b05da3fc4b7f86bd"
+    },
+    {
+      "path": "audits/test71-source-suite-evidence-20261010.json",
+      "bytes": 914055,
+      "sha256": "f30399ac89bfbff1bb2ce32be4cce3dd1fd6f76b25e5b413cfb28ca89c4f8662"
+    },
+    {
+      "path": "audits/test71-sql-runtime-evidence-20261010.json",
+      "bytes": 13193,
+      "sha256": "2a27870a149d5ad18d53b01f9b1eaad8664f5067560c2a7f319e7b7152341e7f"
+    },
+    {
+      "path": "audits/test71-sql-runtime-rerun-evidence-20261010.json",
+      "bytes": 6665,
+      "sha256": "4be8a33525d9ce1e18fe1523fd70fb464dcf9750607237ec174181441a9b1180"
+    },
+    {
+      "path": "audits/test71-universal-accounts-mapping-20261010.md",
+      "bytes": 49256,
+      "sha256": "fd2444b5f3d12c207a752893f1201349083fc2f5419d52f81e0f3e12294a4519"
+    },
+    {
+      "path": "audits/test71-universal-queues-20261010.md",
+      "bytes": 3479,
+      "sha256": "64198626cff179ba6ad71eb2394572987cf4c0b7e1c145e85fc81b3191066f03"
+    },
+    {
+      "path": "supabase/migrations/20261010093416_test71_financial_permission_guards.sql",
+      "bytes": 62880,
+      "sha256": "dfcca14a60625366fd89d4bcde64bf1e03e9188af348dfc687de6009b3013094"
+    },
+    {
+      "path": "supabase/migrations/20261010093600_test71_financial_returns_and_role_parity.sql",
+      "bytes": 12368,
+      "sha256": "794897d2210cae92d7d036865dab5a43e16c38734c3c305fbccf52c16369f794"
+    },
+    {
+      "path": "supabase/migrations/20261010093907_test71_payment_ledger_validation.sql",
+      "bytes": 3137,
+      "sha256": "1712fd8b70127527972fff522998c7ad76c9e813b67772e88b8cfadc15651dee"
+    },
+    {
+      "path": "supabase/migrations/20261010094036_test71_internal_finance_rpc_acl.sql",
+      "bytes": 2250,
+      "sha256": "c5b207c17a3083fb1079c9c2978d0614ca1e489c5c58157b380883359244ba07"
+    },
+    {
+      "path": "supabase/migrations/20261010094140_test71_mc1_exchange_state_guards.sql",
+      "bytes": 6103,
+      "sha256": "a1430a7ce1bc134a3c8f96db6cd88018c15784aa16787d25955ad933bb4c2ff9"
+    },
+    {
+      "path": "supabase/migrations/20261010094351_test71_converted_claim_immutability.sql",
+      "bytes": 2714,
+      "sha256": "713932d71890a79de33a264586cf1ced0152084e1f82f92b51abe1c58ed641b9"
+    },
+    {
+      "path": "supabase/migrations/20261010094659_test71_financial_request_idempotency.sql",
+      "bytes": 6128,
+      "sha256": "a150092f5a8a88eb3ea73082a22a04c1fdd2663c4958637457ba649a7249f7aa"
+    },
+    {
+      "path": "supabase/migrations/20261010094914_test71_financial_request_live_entrypoints.sql",
+      "bytes": 8162,
+      "sha256": "0d67498fd7671922a1dd82d62c40c5fedc4714a22936fddf271c1ce9a288bc0a"
+    },
+    {
+      "path": "supabase/migrations/20261010095213_test71_committee_atomic_payment_post.sql",
+      "bytes": 3834,
+      "sha256": "881aab9ddf63c1b3d3261b17d4b2ffe0ee5d34a3f3211d36105477bbaeb21fb1"
+    },
+    {
+      "path": "supabase/migrations/20261010095507_test71_financial_view_access.sql",
+      "bytes": 34202,
+      "sha256": "66d0f62a0ce11f8ff65b61ba73c6f56ceea7b9b6943a950ac1fcc6233438eb2a"
+    },
+    {
+      "path": "supabase/migrations/20261010100021_test71_salary_cash_settlement_bridge.sql",
+      "bytes": 7360,
+      "sha256": "efd9750b83226d09626a5a1165d218c5be250e1d24634e0519356cc08ce2ff8a"
+    },
+    {
+      "path": "supabase/migrations/20261010101622_test71_ledger_period_balance.sql",
+      "bytes": 3787,
+      "sha256": "35c6bd912e66e201829ad368867a1565338a88030605369e97251a3c0974769c"
+    },
+    {
+      "path": "supabase/migrations/20261010102435_test71_attendance_future_guards.sql",
+      "bytes": 18831,
+      "sha256": "b06f786ea9eb052ca3adb8d7bd4d5d8fd2d8fcd4fbf634da7c4e31e4fad52041"
+    },
+    {
+      "path": "supabase/migrations/20261010102608_test71_remaining_financial_view_privacy.sql",
+      "bytes": 26158,
+      "sha256": "b7aafc7ef0de78bb652e73c871e1825e38b48131bc596ac8750d470111f5e3aa"
+    },
+    {
+      "path": "supabase/migrations/20261010102758_test71_first_advance_eligibility.sql",
+      "bytes": 3438,
+      "sha256": "a27cebdf72caa4dedb4c09eafe6dff2206602832563f3f8bab95142e786187eb"
+    },
+    {
+      "path": "supabase/migrations/20261010103143_test71_financial_rpc_anonymous_acl.sql",
+      "bytes": 506,
+      "sha256": "b861beb0353895010d8c46deba2bf453f68d613cfeb8566875081658282290bf"
+    },
+    {
+      "path": "tests/evidence/test71-accounts-advance-rollback-20261010.sql",
+      "bytes": 1853,
+      "sha256": "0dc0fde8ebf74c603cc32dc2a7be19d813f2c3928f231e770283e4bb049ef1c4"
+    },
+    {
+      "path": "tests/evidence/test71-accounts-alter-claim-rollback-20261010.sql",
+      "bytes": 1578,
+      "sha256": "8aa394f79dda9c9b083ee7e407080990d754a22b500590ea983880f8bf1dd5d1"
+    },
+    {
+      "path": "tests/evidence/test71-accounts-alter-immutable-fixed-20261010.sql",
+      "bytes": 1841,
+      "sha256": "547bf66d93ecc55274a5893ebe09f9a0aec0ad20311b2bebc6314c5656714607"
+    },
+    {
+      "path": "tests/evidence/test71-accounts-attendance-continuation-20261010.sql",
+      "bytes": 1850,
+      "sha256": "fcbd6a29cc68cb5ca6f0260565e14abd660e6c503a1df22980c7df0e480c49d2"
+    },
+    {
+      "path": "tests/evidence/test71-accounts-committee-continuation-20261010.sql",
+      "bytes": 1208,
+      "sha256": "33ebaad5ff1ced1ec78d8647746d0301d03d81f6495bd37fead593cfcf60e6b6"
+    },
+    {
+      "path": "tests/evidence/test71-accounts-material-continuation-20261010.sql",
+      "bytes": 1982,
+      "sha256": "b57351abafc54ec8b84959f1b5217783c86a53603e6a3ee1092afb30e66e0b75"
+    },
+    {
+      "path": "tests/evidence/test71-accounts-mc-gr-exchange-rollback-20261010.sql",
+      "bytes": 1835,
+      "sha256": "5a4b315461f1709a57cf4af6f8f2ace7af590fcb9c844df628bbdabcf719cf19"
+    },
+    {
+      "path": "tests/evidence/test71-accounts-opening-continuation-20261010.sql",
+      "bytes": 871,
+      "sha256": "6b0f983ad6822886946df4c839fcaae966557c6d49b9893889cf8e237a0646a1"
+    },
+    {
+      "path": "tests/evidence/test71-accounts-payment-rollback-20261010.sql",
+      "bytes": 3024,
+      "sha256": "12d3a125900063826d565f2a2194203364ed1c8e88b52f2a4546682b8b92a914"
+    },
+    {
+      "path": "tests/evidence/test71-accounts-roles-rollback-20261010.sql",
+      "bytes": 1106,
+      "sha256": "30711030591e2e77b0ca9057429e29584e8d2db02381e0f0c7d5e06c1153c034"
+    },
+    {
+      "path": "tests/evidence/test71-accounts-salary-payment-rollback-20261010.sql",
+      "bytes": 2054,
+      "sha256": "ec5a515c32d6612ca233a93d3c9c4194cda3f954ac7d00c336a002d780b7ce60"
+    },
+    {
+      "path": "tests/evidence/test71-attendance-future-fixed-20261010.sql",
+      "bytes": 1101,
+      "sha256": "46588ff219e7b83817f9eb0fdc400029e6d4b5751a1898afa3722cf1aca340fc"
+    },
+    {
+      "path": "tests/evidence/test71-cb-costing-preservation.sql",
+      "bytes": 1401,
+      "sha256": "f7c499a64c7acedf8c82777743b02ec2cb9f27ab8d32ba6ac3dd3bd7151fd4c8"
+    },
+    {
+      "path": "tests/evidence/test71-cb-costing-rollback.sql",
+      "bytes": 5276,
+      "sha256": "9431220e97160e9a47810a0d14fa4ba561ccbe23a86437a0ac8f41a68babaaed"
+    },
+    {
+      "path": "tests/evidence/test71-cb-share-directory-audit.md",
+      "bytes": 2046,
+      "sha256": "0e4b9eb4fe7ae7b69a5fdd2e19821d0111fdf6765223a84c09cb04ce0f964a6e"
+    },
+    {
+      "path": "tests/evidence/test71-collection-latest-send-rollback.sql",
+      "bytes": 2587,
+      "sha256": "2ebf641e1d9e6cccf1df48f466bb80bccdc83ffa40e100ad189259566062acb0"
+    },
+    {
+      "path": "tests/evidence/test71-cutting-handoff-v632.json",
+      "bytes": 1752,
+      "sha256": "b3a393db894fb554df6e7b064af7819ad95636330492a747197550545364dc13"
+    },
+    {
+      "path": "tests/evidence/test71-downstream-final-cost-audit.sql",
+      "bytes": 2824,
+      "sha256": "494196f0d8e48b04229a2e6724383ab456e3ba5675f7329c3c1bc007443690fc"
+    },
+    {
+      "path": "tests/evidence/test71-financial-permissions-fixed-20261010.sql",
+      "bytes": 2005,
+      "sha256": "d1e9c74f3b71e47d90eb010b39f9a9da166939dc6400dcd2072a00bbbc40d50b"
+    },
+    {
+      "path": "tests/evidence/test71-financial-remaining-privacy-fixed-20261010.sql",
+      "bytes": 1630,
+      "sha256": "35fc005a5050eb9de846c8646a4498d3a70c0433c882627111ead87150817003"
+    },
+    {
+      "path": "tests/evidence/test71-financial-request-fixed-20261010.sql",
+      "bytes": 1888,
+      "sha256": "9344cbb117ef2db4ca88181154b71f4d8391a72b786f58f52e503ca0c570c5ea"
+    },
+    {
+      "path": "tests/evidence/test71-financial-requests-all-fixed-20261010.sql",
+      "bytes": 3480,
+      "sha256": "ba50eb96766d10e273098f79a4ede1d4a2a38f396bb0c73c39ac3f022282502d"
+    },
+    {
+      "path": "tests/evidence/test71-financial-views-fixed-20261010.sql",
+      "bytes": 1533,
+      "sha256": "349e8c98d396bb99ef26ceb8a3f8fe91160680acd30bf8ea8a86f99c5fee2575"
+    },
+    {
+      "path": "tests/evidence/test71-first-advance-fixed-20261010.sql",
+      "bytes": 2252,
+      "sha256": "0cb4300f340e76b8fab6c4a5abf9db2f83ba3707c8e736597b1b578ff0bdd04b"
+    },
+    {
+      "path": "tests/evidence/test71-ledger-period-fixed-20261010.sql",
+      "bytes": 2618,
+      "sha256": "feb00cd7e0046a59dbdba24d9343db16aedb0d78185bf678e2cbf7777d2886eb"
+    },
+    {
+      "path": "tests/evidence/test71-market-customer-first-audit.md",
+      "bytes": 3066,
+      "sha256": "ce700efbecb43a61cab30c347fdb0b6eeac87903eebcc4f3baa571f3b3598d57"
+    },
+    {
+      "path": "tests/evidence/test71-readymade-art-receipt-audit.md",
+      "bytes": 2789,
+      "sha256": "c984574fb59ac201d1c04c0ee07ed0a5ab84d8d883496734cf7f5b20e3f35154"
+    },
+    {
+      "path": "tests/evidence/test71-readymade-art-sale-rollback.sql",
+      "bytes": 5576,
+      "sha256": "23ec619b6709511831a2b7b8593cfd052badb2baa0a6eb1c4bf946896ae5acdf"
+    },
+    {
+      "path": "tests/evidence/test71-readymade-art-share-rollback.sql",
+      "bytes": 6729,
+      "sha256": "4e5f55b402e6371aa724de1d111a63da143748184c2a1d80b28a170e17c8319e"
+    },
+    {
+      "path": "tests/evidence/test71-readymade-audit.md",
+      "bytes": 4712,
+      "sha256": "bdebe4ccc9b72ab18593120650c1efad796ffaa91a8a43c8e281d700bbe238e4"
+    },
+    {
+      "path": "tests/evidence/test71-readymade-chat-rollback.sql",
+      "bytes": 3206,
+      "sha256": "499957834ab9b3e4a4a9bcc4803ab77e74f90cb0559dc3107139bfea3f2781c6"
+    },
+    {
+      "path": "tests/evidence/test71-readymade-lot-identity-rollback.sql",
+      "bytes": 1710,
+      "sha256": "9d2ea256237c86e860ebd796143141b70b4ba2eae938901119f2d38c95df7d52"
+    },
+    {
+      "path": "tests/evidence/test71-readymade-market-readiness-rollback.sql",
+      "bytes": 3289,
+      "sha256": "76f3c2e4222369e6050cb6d1e9d475043b186601acbca64d40b5cf1bfe9ff2a4"
+    },
+    {
+      "path": "tests/evidence/test71-readymade-one-art-card-audit.md",
+      "bytes": 1659,
+      "sha256": "448ef36798e570b73146aac281bdaf92e568a12e87feb848f8e0e5c434992e0d"
+    },
+    {
+      "path": "tests/evidence/test71-readymade-one-art-card-rollback.sql",
+      "bytes": 7778,
+      "sha256": "fda72f3518a651b900e3b746b566c99dccfa477de38856b1070fd997b76d50c4"
+    },
+    {
+      "path": "tests/evidence/test71-readymade-proforma-image-audit.md",
+      "bytes": 2389,
+      "sha256": "33aa120df71aae511a14b71bf8313fa58d0ca181ba0e924785dfbf4defc0c158"
+    },
+    {
+      "path": "tests/evidence/test71-readymade-receipt-audit.md",
+      "bytes": 2881,
+      "sha256": "0aa6c1b30b12b3a8cd19f439193cf3bd4c1e20c329c2322bff448453036dd42f"
+    },
+    {
+      "path": "tests/evidence/test71-readymade-receipt-current-lot-rollback-20261010.sql",
+      "bytes": 7905,
+      "sha256": "872f483fb8291deabaa92a9487ea90e88bedf53f9fdd11fa9763f8923d601e97"
+    },
+    {
+      "path": "tests/evidence/test71-readymade-receipt-picker-audit.md",
+      "bytes": 2270,
+      "sha256": "11996d0cd0019b2ee8a04082236692bda352b93f9ef0f44988ab1652516f25aa"
+    },
+    {
+      "path": "tests/evidence/test71-readymade-receipt-rollback.sql",
+      "bytes": 7839,
+      "sha256": "c35ea240623e670f0b54b3377dfa57d197865d9606bfe40c5aeec168168c53c5"
+    },
+    {
+      "path": "tests/evidence/test71-readymade-reconcile-posted.sql",
+      "bytes": 1277,
+      "sha256": "60cf87c2717977caa683d95d56c47ffdb150e5fdbed47e88abba7c78dca86fc8"
+    },
+    {
+      "path": "tests/evidence/test71-readymade-rollback.sql",
+      "bytes": 6069,
+      "sha256": "0a40ddf9a0fb4e0de5a92928918fce9538e1027236234e6993567ad582b135fe"
+    },
+    {
+      "path": "tests/evidence/test71-readymade-saved-bill-audit.md",
+      "bytes": 1669,
+      "sha256": "ca04c54188ce0b0890cedae3a42fd4441a10b5eba1ed3a43d4def517471a6f4b"
+    },
+    {
+      "path": "tests/evidence/test71-readymade-saved-bill-rollback.sql",
+      "bytes": 8765,
+      "sha256": "a16fadffbb6adc356784fbe2e268dbeb26ca18503a7f8c54b46b95557582a166"
+    },
+    {
+      "path": "tests/evidence/test71-salary-cash-fixed-20261010.sql",
+      "bytes": 2601,
+      "sha256": "316687fec56f53265ead353bd4af65f1921886fa8e0f36cc7be45dec22abea1d"
+    },
+    {
+      "path": "tests/evidence/test71-superadmin-attendance-fixed-20261010.sql",
+      "bytes": 1851,
+      "sha256": "20b2c0b13dbcd6a9aef5c0da589c40b88436fb0f09a7777cd8b6be7c78b847fc"
+    },
+    {
+      "path": "tests/evidence/test71-universal-accounts-readonly-20261010.sql",
+      "bytes": 1618,
+      "sha256": "c0c921d8bf7bee345ac79eb69ec8555c86af7634fcce91a67d292c7823b9b565"
+    }
+  ]
+}

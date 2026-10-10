@@ -1,0 +1,1678 @@
+{
+  "metadata": {
+    "scope": "Accounts wiring across manufacturing/trading/attendance/payroll/opening/isolation; NOT universal completion certificate",
+    "head": "ecaf01f7 + local continuation changes",
+    "date": "2026-10-10 Asia/Kolkata",
+    "cases": 132,
+    "status_counts": {
+      "PASS": 85,
+      "FAIL": 23,
+      "BLOCKED": 5,
+      "NOT_RUN": 19
+    },
+    "completed_unblocked": false,
+    "phase": "Critical fixes partially verified in TEST; GitHub push rejected by automatic approval review; no full clean chit"
+  },
+  "cases": [
+    {
+      "id": "A001",
+      "module": "Accounts",
+      "feature": "Existing source uniqueness",
+      "scenario": "Group POSTED source/module/mode",
+      "expected": "0 duplicate sources",
+      "actual": "0",
+      "status": "PASS",
+      "evidence": "audits/test71-invariants-runtime-evidence-20261010.json",
+      "evidence_type": "Read-only SQL"
+    },
+    {
+      "id": "A002",
+      "module": "Accounts",
+      "feature": "Journal integrity",
+      "scenario": "Count posting lines and DR-CR",
+      "expected": "At least 2 balanced lines",
+      "actual": "0 invalid transactions",
+      "status": "PASS",
+      "evidence": "audits/test71-invariants-runtime-evidence-20261010.json",
+      "evidence_type": "Read-only SQL"
+    },
+    {
+      "id": "A003",
+      "module": "Accounts",
+      "feature": "Source link integrity",
+      "scenario": "ACTIVE link resolves transaction",
+      "expected": "0 dangling links",
+      "actual": "0",
+      "status": "PASS",
+      "evidence": "audits/test71-invariants-runtime-evidence-20261010.json",
+      "evidence_type": "Read-only SQL"
+    },
+    {
+      "id": "A004",
+      "module": "Accounts",
+      "feature": "Trial Balance",
+      "scenario": "TEST Jan1-Oct10",
+      "expected": "DR=CR",
+      "actual": "69 rows; both 32798426.72; delta0",
+      "status": "PASS",
+      "evidence": "audits/test71-invariants-runtime-evidence-20261010.json",
+      "evidence_type": "Read-only SQL"
+    },
+    {
+      "id": "A005",
+      "module": "Accounts",
+      "feature": "Anonymous report denial",
+      "scenario": "SET LOCAL ROLE anon trial balance",
+      "expected": "No financial rows / denial",
+      "actual": "Anonymous report denied; financial RPC ACL grants deny anon; role matrix matches canonical Accounts policy",
+      "status": "PASS",
+      "evidence": "audits/test71-critical-fix-runtime-evidence-20261010.json",
+      "evidence_type": "Post-fix SQL rollback; original failure retained in history",
+      "history": [
+        {
+          "status": "FAIL",
+          "actual": "69 rows",
+          "evidence": "audits/test71-invariants-runtime-evidence-20261010.json",
+          "evidence_type": "Read-only role SQL"
+        }
+      ]
+    },
+    {
+      "id": "A006",
+      "module": "Accounts",
+      "feature": "Trial Balance browser wiring",
+      "scenario": "Owner Run Report Jan1-Oct10",
+      "expected": "Backend rows rendered",
+      "actual": "69 rows rendered",
+      "status": "PASS",
+      "evidence": "audits/test71-browser-evidence-20261010.json",
+      "evidence_type": "Signed-in browser"
+    },
+    {
+      "id": "A007",
+      "module": "Accounts",
+      "feature": "Balance Sheet browser wiring",
+      "scenario": "Owner Run Report as-of Oct10",
+      "expected": "Report rendered",
+      "actual": "Assets/liabilities/equity tables rendered",
+      "status": "PASS",
+      "evidence": "audits/test71-browser-evidence-20261010.json",
+      "evidence_type": "Signed-in browser"
+    },
+    {
+      "id": "A008",
+      "module": "Accounts",
+      "feature": "Universal OPEN contributor coverage",
+      "scenario": "Inspect source projection and rendered cards",
+      "expected": "All relevant module pending financial actions",
+      "actual": "24 Committee cards; source view Committee-only",
+      "status": "FAIL",
+      "evidence": "audits/test71-universal-accounts-mapping-20261010.md; audits/test71-browser-evidence-20261010.json",
+      "evidence_type": "Code + browser"
+    },
+    {
+      "id": "A009",
+      "module": "Accounts",
+      "feature": "Ledger period opening",
+      "scenario": "Inspect v806/v807 running sum",
+      "expected": "Prior balance + selected movements",
+      "actual": "Prior posting10 + selected-period2 = closing12 in both v806/v807; approved universal opening still separate.",
+      "status": "PASS",
+      "evidence": "audits/test71-salary-ledger-fix-evidence-20261010.json",
+      "evidence_type": "SQL rollback assertions",
+      "history": [
+        {
+          "status": "FAIL",
+          "actual": "Window-only sum starts at0",
+          "evidence": "audits/test71-universal-accounts-mapping-20261010.md",
+          "evidence_type": "DB definition"
+        }
+      ]
+    },
+    {
+      "id": "A010",
+      "module": "Accounts",
+      "feature": "Payment reversal",
+      "scenario": "Post then reverse in rollback",
+      "expected": "Balanced inverse; valid source lifecycle",
+      "actual": "Reversal PASS",
+      "status": "PASS",
+      "evidence": "audits/test71-sql-runtime-rerun-evidence-20261010.json",
+      "evidence_type": "SQL rollback"
+    },
+    {
+      "id": "A011",
+      "module": "Accounts",
+      "feature": "Receipt reversal",
+      "scenario": "Post then reverse in rollback",
+      "expected": "Balanced inverse; valid source lifecycle",
+      "actual": "Reversal PASS",
+      "status": "PASS",
+      "evidence": "audits/test71-sql-runtime-rerun-evidence-20261010.json",
+      "evidence_type": "SQL rollback"
+    },
+    {
+      "id": "A012",
+      "module": "Accounts",
+      "feature": "Journal reversal",
+      "scenario": "Post then reverse in rollback",
+      "expected": "Balanced inverse; valid source lifecycle",
+      "actual": "Reversal PASS",
+      "status": "PASS",
+      "evidence": "audits/test71-sql-runtime-rerun-evidence-20261010.json",
+      "evidence_type": "SQL rollback"
+    },
+    {
+      "id": "A013",
+      "module": "Accounts",
+      "feature": "Payment retry",
+      "scenario": "Same reference repeated",
+      "expected": "Same scoped operation produces one payment",
+      "actual": "Two transactions created",
+      "status": "FAIL",
+      "evidence": "audits/test71-sql-runtime-rerun-evidence-20261010.json",
+      "evidence_type": "SQL rollback"
+    },
+    {
+      "id": "A014",
+      "module": "Accounts",
+      "feature": "Counterparty validation",
+      "scenario": "Party and cash same ledger",
+      "expected": "Reject identical debit/credit identity",
+      "actual": "Identical party and Cash/Bank ledger rejected; valid payment/reversal remains PASS",
+      "status": "PASS",
+      "evidence": "audits/test71-critical-fix-runtime-evidence-20261010.json",
+      "evidence_type": "Post-fix SQL rollback; original failure retained in history",
+      "history": [
+        {
+          "status": "FAIL",
+          "actual": "Accepted",
+          "evidence": "audits/test71-sql-runtime-rerun-evidence-20261010.json",
+          "evidence_type": "SQL rollback"
+        }
+      ]
+    },
+    {
+      "id": "A015",
+      "module": "Accounts",
+      "feature": "Cash/bank kind validation",
+      "scenario": "Noncash paid-from ledger",
+      "expected": "Reject invalid ledger kind",
+      "actual": "Non-Cash/Bank payment source rejected; valid payment/reversal remains PASS",
+      "status": "PASS",
+      "evidence": "audits/test71-critical-fix-runtime-evidence-20261010.json",
+      "evidence_type": "Post-fix SQL rollback; original failure retained in history",
+      "history": [
+        {
+          "status": "FAIL",
+          "actual": "Accepted",
+          "evidence": "audits/test71-sql-runtime-rerun-evidence-20261010.json",
+          "evidence_type": "SQL rollback"
+        }
+      ]
+    },
+    {
+      "id": "A016",
+      "module": "Salary",
+      "feature": "Payment due + reversal",
+      "scenario": "Pay existing due then reverse",
+      "expected": "Due and payment lifecycle correct",
+      "actual": "PASS",
+      "status": "PASS",
+      "evidence": "audits/test71-sql-runtime-evidence-20261010.json",
+      "evidence_type": "SQL rollback"
+    },
+    {
+      "id": "A017",
+      "module": "Salary",
+      "feature": "Overpayment",
+      "scenario": "Pay beyond due",
+      "expected": "Reject",
+      "actual": "Rejected",
+      "status": "PASS",
+      "evidence": "audits/test71-sql-runtime-evidence-20261010.json",
+      "evidence_type": "SQL rollback"
+    },
+    {
+      "id": "A018",
+      "module": "Salary",
+      "feature": "Repeat reversal",
+      "scenario": "Reverse same payment twice",
+      "expected": "Reject / original result",
+      "actual": "Second rejected",
+      "status": "PASS",
+      "evidence": "audits/test71-sql-runtime-evidence-20261010.json",
+      "evidence_type": "SQL rollback"
+    },
+    {
+      "id": "A019",
+      "module": "Salary",
+      "feature": "General Accounts bridge",
+      "scenario": "Pay salary, compare journal count",
+      "expected": "Linked cash/worker journal",
+      "actual": "New salary payment has balanced worker/cash journal; reversal linked and balanced; explicitly approved bank route used. No historical reposting. Full accrual/deduction journey remains A050.",
+      "status": "PASS",
+      "evidence": "audits/test71-salary-ledger-fix-evidence-20261010.json",
+      "evidence_type": "SQL rollback assertions",
+      "history": [
+        {
+          "status": "FAIL",
+          "actual": "Transaction delta0",
+          "evidence": "audits/test71-sql-runtime-evidence-20261010.json",
+          "evidence_type": "SQL rollback"
+        }
+      ]
+    },
+    {
+      "id": "A020",
+      "module": "Salary",
+      "feature": "Payment retry",
+      "scenario": "Repeat same payment reference",
+      "expected": "One operation",
+      "actual": "Second payment created",
+      "status": "FAIL",
+      "evidence": "audits/test71-sql-runtime-evidence-20261010.json",
+      "evidence_type": "SQL rollback"
+    },
+    {
+      "id": "A021",
+      "module": "Advance",
+      "feature": "First issue",
+      "scenario": "Configured salaried worker, amount1, balance0",
+      "expected": "Eligible first advance selectable",
+      "actual": "Active configured salaried worker with zero advance balance is selected; first issue accepted; request retry returns same batch. Accounts delta0 remains unresolved A022.",
+      "status": "PASS",
+      "evidence": "audits/test71-fix-continuation-evidence-20261010.json",
+      "evidence_type": "SQL rollback assertions",
+      "history": [
+        {
+          "status": "FAIL",
+          "actual": "Selected0; amount0",
+          "evidence": "audits/test71-sql-runtime-evidence-20261010.json",
+          "evidence_type": "SQL rollback"
+        }
+      ]
+    },
+    {
+      "id": "A022",
+      "module": "Advance",
+      "feature": "Issue/recover/reverse full journey",
+      "scenario": "First issue then approved payroll recovery",
+      "expected": "Source/subledger/cash reconcile",
+      "actual": "First issue now accepted, but general Accounts journal delta0. Recovery/reversal end-to-end remains unverified.",
+      "status": "BLOCKED",
+      "evidence": "audits/test71-sql-runtime-evidence-20261010.json",
+      "evidence_type": "SQL rollback"
+    },
+    {
+      "id": "A023",
+      "module": "MC1",
+      "feature": "Source mode coverage",
+      "scenario": "Existing original purchases",
+      "expected": "Every source mode tagged",
+      "actual": "30 ACTIVE +1 FULL_GR untagged",
+      "status": "FAIL",
+      "evidence": "audits/test71-invariants-runtime-evidence-20261010.json",
+      "evidence_type": "SQL rollback"
+    },
+    {
+      "id": "A024",
+      "module": "MC1",
+      "feature": "Purchase general Accounts",
+      "scenario": "Fresh purchase through current writer",
+      "expected": "Supplier+purchase journal",
+      "actual": "Accounts source transactions0",
+      "status": "FAIL",
+      "evidence": "audits/test71-sql-runtime-evidence-20261010.json",
+      "evidence_type": "SQL rollback"
+    },
+    {
+      "id": "A025",
+      "module": "MC1",
+      "feature": "GR / exchange quantities",
+      "scenario": "Partial GR and received replacements",
+      "expected": "Correct received-qty transitions",
+      "actual": "Partial exchange mechanics PASS",
+      "status": "PASS",
+      "evidence": "audits/test71-sql-runtime-evidence-20261010.json",
+      "evidence_type": "SQL rollback"
+    },
+    {
+      "id": "A026",
+      "module": "MC1",
+      "feature": "Exchange retry",
+      "scenario": "Repeat same challan",
+      "expected": "One stable received event",
+      "actual": "Same GR/challan retry leaves one exchange row",
+      "status": "PASS",
+      "evidence": "audits/test71-critical-fix-runtime-evidence-20261010.json",
+      "evidence_type": "Post-fix SQL rollback; original failure retained in history",
+      "history": [
+        {
+          "status": "FAIL",
+          "actual": "2 exchange rows",
+          "evidence": "audits/test71-sql-runtime-evidence-20261010.json",
+          "evidence_type": "SQL rollback"
+        }
+      ]
+    },
+    {
+      "id": "A027",
+      "module": "MC1",
+      "feature": "Closed GR exchange guard",
+      "scenario": "Closed GR no exchange expected",
+      "expected": "Reject new exchange",
+      "actual": "Closed GR without expected exchange rejected",
+      "status": "PASS",
+      "evidence": "audits/test71-critical-fix-runtime-evidence-20261010.json",
+      "evidence_type": "Post-fix SQL rollback; original failure retained in history",
+      "history": [
+        {
+          "status": "FAIL",
+          "actual": "Accepted",
+          "evidence": "audits/test71-sql-runtime-evidence-20261010.json",
+          "evidence_type": "SQL rollback"
+        }
+      ]
+    },
+    {
+      "id": "A028",
+      "module": "Generic Material",
+      "feature": "CREDIT posting",
+      "scenario": "10 purchase units × rate2",
+      "expected": "DR=CR20; paid0/10/20 and creditor20/10/0",
+      "actual": "Expected balanced splits",
+      "status": "PASS",
+      "evidence": "audits/test71-sql-runtime-rerun-evidence-20261010.json",
+      "evidence_type": "SQL rollback"
+    },
+    {
+      "id": "A029",
+      "module": "Generic Material",
+      "feature": "PARTIAL posting",
+      "scenario": "10 purchase units × rate2",
+      "expected": "DR=CR20; paid0/10/20 and creditor20/10/0",
+      "actual": "Expected balanced splits",
+      "status": "PASS",
+      "evidence": "audits/test71-sql-runtime-rerun-evidence-20261010.json",
+      "evidence_type": "SQL rollback"
+    },
+    {
+      "id": "A030",
+      "module": "Generic Material",
+      "feature": "PAID posting",
+      "scenario": "10 purchase units × rate2",
+      "expected": "DR=CR20; paid0/10/20 and creditor20/10/0",
+      "actual": "Expected balanced splits",
+      "status": "PASS",
+      "evidence": "audits/test71-sql-runtime-rerun-evidence-20261010.json",
+      "evidence_type": "SQL rollback"
+    },
+    {
+      "id": "A031",
+      "module": "Generic Material",
+      "feature": "Purchase retry",
+      "scenario": "Repeat same bill/payload",
+      "expected": "Same request not duplicated",
+      "actual": "Two purchase IDs",
+      "status": "FAIL",
+      "evidence": "audits/test71-sql-runtime-rerun-evidence-20261010.json",
+      "evidence_type": "SQL rollback"
+    },
+    {
+      "id": "A032",
+      "module": "Generic Material",
+      "feature": "Purchase return rate",
+      "scenario": "Return2 from saved rate2 purchase",
+      "expected": "Positive correct rate/value",
+      "actual": "Saved taxable value / purchase quantity gives rate2; return2 gives value4",
+      "status": "PASS",
+      "evidence": "audits/test71-critical-fix-runtime-evidence-20261010.json",
+      "evidence_type": "Post-fix SQL rollback; original failure retained in history",
+      "history": [
+        {
+          "status": "FAIL",
+          "actual": "Reads rate0; return_value_check failure",
+          "evidence": "audits/test71-sql-runtime-rerun-evidence-20261010.json",
+          "evidence_type": "SQL rollback"
+        }
+      ]
+    },
+    {
+      "id": "A033",
+      "module": "Generic Material",
+      "feature": "Return reversal",
+      "scenario": "Reverse valid fresh return",
+      "expected": "Restore source/stock/tax/Accounts",
+      "actual": "Fresh partial return and its reversal both succeeded",
+      "status": "PASS",
+      "evidence": "audits/test71-critical-fix-runtime-evidence-20261010.json",
+      "evidence_type": "Post-fix SQL rollback; original failure retained in history",
+      "history": [
+        {
+          "status": "BLOCKED",
+          "actual": "Fresh return cannot post due rate mismatch",
+          "evidence": "audits/test71-sql-runtime-rerun-evidence-20261010.json",
+          "evidence_type": "SQL rollback"
+        }
+      ]
+    },
+    {
+      "id": "A034",
+      "module": "Committee",
+      "feature": "Payment retry",
+      "scenario": "Same organizer reference twice",
+      "expected": "One command result",
+      "actual": "2 payments",
+      "status": "FAIL",
+      "evidence": "audits/test71-sql-runtime-evidence-20261010.json",
+      "evidence_type": "SQL rollback"
+    },
+    {
+      "id": "A035",
+      "module": "Committee",
+      "feature": "Mirror retry",
+      "scenario": "Same payment mirror twice",
+      "expected": "Same journal transaction",
+      "actual": "already_posted=true, same transaction",
+      "status": "PASS",
+      "evidence": "audits/test71-sql-runtime-evidence-20261010.json",
+      "evidence_type": "SQL rollback"
+    },
+    {
+      "id": "A036",
+      "module": "Committee",
+      "feature": "Payment-to-Accounts reversal",
+      "scenario": "Reverse mirrored payment",
+      "expected": "Financial/source reversal agree",
+      "actual": "Operational Committee payment and linked Accounts transaction both REVERSED",
+      "status": "PASS",
+      "evidence": "audits/test71-critical-fix-runtime-evidence-20261010.json",
+      "evidence_type": "Post-fix SQL rollback; original failure retained in history",
+      "history": [
+        {
+          "status": "FAIL",
+          "actual": "Payment REVERSED; Accounts POSTED",
+          "evidence": "audits/test71-sql-runtime-evidence-20261010.json",
+          "evidence_type": "SQL rollback"
+        }
+      ]
+    },
+    {
+      "id": "A037",
+      "module": "Committee",
+      "feature": "Prize/dividend complete branches",
+      "scenario": "Complete winner/member lifecycle with retries",
+      "expected": "Correct obligation source and journal per branch",
+      "actual": "Definition reviewed; fresh exhaustive branches not executed",
+      "status": "NOT_RUN",
+      "evidence": "audits/test71-universal-accounts-mapping-20261010.md",
+      "evidence_type": "SQL rollback"
+    },
+    {
+      "id": "A038",
+      "module": "Attendance",
+      "feature": "Completed punches",
+      "scenario": "Manual AUTO both punches",
+      "expected": "PRESENT",
+      "actual": "PRESENT",
+      "status": "PASS",
+      "evidence": "audits/test71-sql-runtime-evidence-20261010.json",
+      "evidence_type": "SQL rollback"
+    },
+    {
+      "id": "A039",
+      "module": "Attendance",
+      "feature": "Missing checkout",
+      "scenario": "Manual AUTO check-in only",
+      "expected": "INCOMPLETE",
+      "actual": "INCOMPLETE revision2",
+      "status": "PASS",
+      "evidence": "audits/test71-sql-runtime-evidence-20261010.json",
+      "evidence_type": "SQL rollback"
+    },
+    {
+      "id": "A040",
+      "module": "Attendance",
+      "feature": "Invalid explicit PRESENT",
+      "scenario": "PRESENT without checkout",
+      "expected": "Reject",
+      "actual": "Rejected",
+      "status": "PASS",
+      "evidence": "audits/test71-sql-runtime-evidence-20261010.json",
+      "evidence_type": "SQL rollback"
+    },
+    {
+      "id": "A041",
+      "module": "Attendance",
+      "feature": "Reversed punches",
+      "scenario": "Check-out earlier than in",
+      "expected": "Reject",
+      "actual": "Rejected",
+      "status": "PASS",
+      "evidence": "audits/test71-sql-runtime-evidence-20261010.json",
+      "evidence_type": "SQL rollback"
+    },
+    {
+      "id": "A042",
+      "module": "Attendance",
+      "feature": "Profile activation boundary",
+      "scenario": "Before effective_from",
+      "expected": "Reject / no payable day",
+      "actual": "Rejected",
+      "status": "PASS",
+      "evidence": "audits/test71-sql-runtime-evidence-20261010.json",
+      "evidence_type": "SQL rollback"
+    },
+    {
+      "id": "A043",
+      "module": "Attendance",
+      "feature": "Approved day authority mapping",
+      "scenario": "Save v778 then count v777 days",
+      "expected": "Authoritative monthly day updated",
+      "actual": "v777 delta0",
+      "status": "FAIL",
+      "evidence": "audits/test71-sql-runtime-evidence-20261010.json",
+      "evidence_type": "SQL rollback"
+    },
+    {
+      "id": "A044",
+      "module": "Attendance",
+      "feature": "Super Admin manage parity",
+      "scenario": "Dedicated Super Admin invokes save",
+      "expected": "Authorized management role allowed",
+      "actual": "Dedicated Super Admin saved PRESENT, INCOMPLETE, and rejected invalid punches/profile dates",
+      "status": "PASS",
+      "evidence": "audits/test71-critical-fix-runtime-evidence-20261010.json",
+      "evidence_type": "Post-fix SQL rollback; original failure retained in history",
+      "history": [
+        {
+          "status": "FAIL",
+          "actual": "Denied; owner allowed",
+          "evidence": "audits/test71-universal-accounts-mapping-20261010.md",
+          "evidence_type": "Role SQL + DB definition"
+        }
+      ]
+    },
+    {
+      "id": "A045",
+      "module": "Attendance",
+      "feature": "Future day display",
+      "scenario": "Oct10 view October month",
+      "expected": "Future dates pending/future, not absent",
+      "actual": "Local calendar excludes future days; today virtual PENDING; 4 unit checks PASS. Updated preview browser verification BLOCKED by rejected GitHub push; browser criterion not yet passed.",
+      "status": "FAIL",
+      "evidence": "audits/test71-browser-evidence-20261010.json",
+      "evidence_type": "Signed-in browser"
+    },
+    {
+      "id": "A046",
+      "module": "Attendance",
+      "feature": "Personal section / punch / voice / reminders",
+      "scenario": "Inspect current worker chat + UI callers",
+      "expected": "Worker-bound functional attendance thread",
+      "actual": "Generic external link; TEST helper evidence-only; full personal consumer not found",
+      "status": "FAIL",
+      "evidence": "audits/test71-universal-accounts-mapping-20261010.md",
+      "evidence_type": "Code audit"
+    },
+    {
+      "id": "A047",
+      "module": "Attendance",
+      "feature": "Real geofence check-in/out full salary pipeline",
+      "scenario": "Actual authorized punch → approved day → payroll",
+      "expected": "All stages and messages reconcile",
+      "actual": "Policies/sessions missing; pipeline split",
+      "status": "BLOCKED",
+      "evidence": "audits/test71-universal-accounts-mapping-20261010.md",
+      "evidence_type": "SQL rollback"
+    },
+    {
+      "id": "A048",
+      "module": "Payroll",
+      "feature": "Complete month gate",
+      "scenario": "Inspect safe generation coverage predicate",
+      "expected": "Every expected active day resolved",
+      "actual": "Approved day count>0; full coverage gate not found",
+      "status": "FAIL",
+      "evidence": "audits/test71-universal-accounts-mapping-20261010.md",
+      "evidence_type": "DB definition"
+    },
+    {
+      "id": "A049",
+      "module": "Payroll",
+      "feature": "Payslip PDF and delivery",
+      "scenario": "Inspected PDF / WhatsApp UI actions",
+      "expected": "File generated and delivery wired",
+      "actual": "Payload-ready message only",
+      "status": "FAIL",
+      "evidence": "audits/test71-universal-accounts-mapping-20261010.md",
+      "evidence_type": "Code audit"
+    },
+    {
+      "id": "A050",
+      "module": "Payroll",
+      "feature": "Accrual-to-payment full end-to-end",
+      "scenario": "Attend → approve → generate → pay → reverse",
+      "expected": "Salary due, Accounts and report reconcile",
+      "actual": "Authoritative-day/payment bridges fail",
+      "status": "BLOCKED",
+      "evidence": "audits/test71-sql-runtime-evidence-20261010.json; audits/test71-universal-accounts-mapping-20261010.md",
+      "evidence_type": "SQL rollback"
+    },
+    {
+      "id": "A051",
+      "module": "Opening",
+      "feature": "Stable reference duplication",
+      "scenario": "Repeat opening reference",
+      "expected": "No duplicate record",
+      "actual": "Saved qty remains10",
+      "status": "PASS",
+      "evidence": "audits/test71-sql-runtime-evidence-20261010.json",
+      "evidence_type": "SQL rollback"
+    },
+    {
+      "id": "A052",
+      "module": "Opening",
+      "feature": "Changed payload conflict",
+      "scenario": "Same ref qty10/value20 then15/30",
+      "expected": "Reject conflict, expose original payload",
+      "actual": "ok duplicate_blocked; no conflict check",
+      "status": "FAIL",
+      "evidence": "audits/test71-sql-runtime-evidence-20261010.json",
+      "evidence_type": "SQL rollback"
+    },
+    {
+      "id": "A053",
+      "module": "Opening",
+      "feature": "General opening reconciliation",
+      "scenario": "Qty/value opening and compare GL",
+      "expected": "Approved opening journal batch reconciles",
+      "actual": "GL delta0; no universal batch",
+      "status": "FAIL",
+      "evidence": "audits/test71-sql-runtime-evidence-20261010.json",
+      "evidence_type": "SQL rollback"
+    },
+    {
+      "id": "A054",
+      "module": "Opening",
+      "feature": "Missing history handling",
+      "scenario": "Inspect evidence status model",
+      "expected": "UNKNOWN/ZERO/N/A with approved baseline",
+      "actual": "Unified evidence/batch contract not found",
+      "status": "FAIL",
+      "evidence": "audits/test71-universal-accounts-mapping-20261010.md",
+      "evidence_type": "Schema/code audit"
+    },
+    {
+      "id": "A055",
+      "module": "Isolation",
+      "feature": "Rehearsal scope",
+      "scenario": "Public schema catalog",
+      "expected": "Full scoped dataset or separate environment",
+      "actual": "Dataset/workspace/rehearsal columns0",
+      "status": "FAIL",
+      "evidence": "audits/test71-universal-accounts-mapping-20261010.md",
+      "evidence_type": "Catalog SQL"
+    },
+    {
+      "id": "A056",
+      "module": "Isolation",
+      "feature": "Calendar scope",
+      "scenario": "Holiday schema + reader",
+      "expected": "Explicit dataset/mode or approved shared calendar",
+      "actual": "No data_mode/dataset column; reader shared",
+      "status": "FAIL",
+      "evidence": "audits/test71-universal-accounts-mapping-20261010.md",
+      "evidence_type": "Catalog/code"
+    },
+    {
+      "id": "A057",
+      "module": "Isolation",
+      "feature": "New-data rehearsal",
+      "scenario": "Import sample separate dataset and rerun",
+      "expected": "No mixed fixture balances/identities",
+      "actual": "Boundary absent; import not performed",
+      "status": "BLOCKED",
+      "evidence": "audits/test71-universal-accounts-mapping-20261010.md",
+      "evidence_type": "SQL rollback"
+    },
+    {
+      "id": "A058",
+      "module": "Readymade Receipt",
+      "feature": "Short/Excess/Matched",
+      "scenario": "Dedicated original-business-assertions rollback",
+      "expected": "Correct source/stock/financial deltas",
+      "actual": "PASS in receipt rollback",
+      "status": "PASS",
+      "evidence": "audits/test71-core-runtime-evidence-20261010.json",
+      "evidence_type": "SQL rollback"
+    },
+    {
+      "id": "A059",
+      "module": "Readymade Receipt",
+      "feature": "Draft edit / original bill",
+      "scenario": "Dedicated original-business-assertions rollback",
+      "expected": "Correct source/stock/financial deltas",
+      "actual": "PASS in receipt rollback",
+      "status": "PASS",
+      "evidence": "audits/test71-core-runtime-evidence-20261010.json",
+      "evidence_type": "SQL rollback"
+    },
+    {
+      "id": "A060",
+      "module": "Readymade Receipt",
+      "feature": "Supplier / stock / reports",
+      "scenario": "Dedicated original-business-assertions rollback",
+      "expected": "Correct source/stock/financial deltas",
+      "actual": "PASS in receipt rollback",
+      "status": "PASS",
+      "evidence": "audits/test71-core-runtime-evidence-20261010.json",
+      "evidence_type": "SQL rollback"
+    },
+    {
+      "id": "A061",
+      "module": "Readymade Receipt",
+      "feature": "Retry / invalid input / anonymous guard",
+      "scenario": "Dedicated original-business-assertions rollback",
+      "expected": "Correct source/stock/financial deltas",
+      "actual": "PASS in receipt rollback",
+      "status": "PASS",
+      "evidence": "audits/test71-core-runtime-evidence-20261010.json",
+      "evidence_type": "SQL rollback"
+    },
+    {
+      "id": "A062",
+      "module": "Readymade Receipt",
+      "feature": "Purchase return",
+      "scenario": "Dedicated original-business-assertions rollback",
+      "expected": "Correct source/stock/financial deltas",
+      "actual": "PASS in receipt rollback",
+      "status": "PASS",
+      "evidence": "audits/test71-core-runtime-evidence-20261010.json",
+      "evidence_type": "SQL rollback"
+    },
+    {
+      "id": "A063",
+      "module": "Readymade Sale",
+      "feature": "Art FIFO / one Art",
+      "scenario": "Fresh Art/FIFO rollback fixture",
+      "expected": "Canonical Art/Lot stock identities",
+      "actual": "PASS",
+      "status": "PASS",
+      "evidence": "audits/test71-core-runtime-evidence-20261010.json",
+      "evidence_type": "SQL rollback"
+    },
+    {
+      "id": "A064",
+      "module": "Readymade Sale",
+      "feature": "PI freeze/edit",
+      "scenario": "Fresh Art/FIFO rollback fixture",
+      "expected": "Canonical Art/Lot stock identities",
+      "actual": "PASS",
+      "status": "PASS",
+      "evidence": "audits/test71-core-runtime-evidence-20261010.json",
+      "evidence_type": "SQL rollback"
+    },
+    {
+      "id": "A065",
+      "module": "Readymade Sale",
+      "feature": "Art/Lot oversell",
+      "scenario": "Fresh Art/FIFO rollback fixture",
+      "expected": "Canonical Art/Lot stock identities",
+      "actual": "PASS",
+      "status": "PASS",
+      "evidence": "audits/test71-core-runtime-evidence-20261010.json",
+      "evidence_type": "SQL rollback"
+    },
+    {
+      "id": "A066",
+      "module": "Readymade Sale",
+      "feature": "CI single stock posting",
+      "scenario": "Fresh Art/FIFO rollback fixture",
+      "expected": "Canonical Art/Lot stock identities",
+      "actual": "PASS",
+      "status": "PASS",
+      "evidence": "audits/test71-core-runtime-evidence-20261010.json",
+      "evidence_type": "SQL rollback"
+    },
+    {
+      "id": "A067",
+      "module": "Readymade Sale",
+      "feature": "Original-Lot return",
+      "scenario": "Fresh Art/FIFO rollback fixture",
+      "expected": "Canonical Art/Lot stock identities",
+      "actual": "PASS",
+      "status": "PASS",
+      "evidence": "audits/test71-core-runtime-evidence-20261010.json",
+      "evidence_type": "SQL rollback"
+    },
+    {
+      "id": "A068",
+      "module": "Costing",
+      "feature": "App/Chat authority",
+      "scenario": "Compare final lot totals",
+      "expected": "Same values",
+      "actual": "43 lots equal",
+      "status": "PASS",
+      "evidence": "audits/test71-core-runtime-evidence-20261010.json",
+      "evidence_type": "SQL rollback"
+    },
+    {
+      "id": "A069",
+      "module": "Costing",
+      "feature": "BOM qty/rates",
+      "scenario": "Compare sources and adapters",
+      "expected": "Same values",
+      "actual": "39 lots equal",
+      "status": "PASS",
+      "evidence": "audits/test71-core-runtime-evidence-20261010.json",
+      "evidence_type": "SQL rollback"
+    },
+    {
+      "id": "A070",
+      "module": "Costing",
+      "feature": "Worker/direct pending adapters",
+      "scenario": "Compare assignments",
+      "expected": "Same classification",
+      "actual": "100 agree",
+      "status": "PASS",
+      "evidence": "audits/test71-core-runtime-evidence-20261010.json",
+      "evidence_type": "SQL rollback"
+    },
+    {
+      "id": "A071",
+      "module": "Costing",
+      "feature": "Category completeness",
+      "scenario": "Find unmapped category lots",
+      "expected": "0 unresolved eligible categories",
+      "actual": "4 lots2615/2634/2613/2614",
+      "status": "FAIL",
+      "evidence": "audits/test71-core-runtime-evidence-20261010.json",
+      "evidence_type": "SQL rollback"
+    },
+    {
+      "id": "A072",
+      "module": "Costing",
+      "feature": "Inventory/WIP/COGS P&L",
+      "scenario": "Inspect report formula and valuation bridges",
+      "expected": "Profit includes approved inventory valuation",
+      "actual": "Closing stock/WIP/COGS bridge not in inspected report function",
+      "status": "FAIL",
+      "evidence": "audits/test71-universal-accounts-mapping-20261010.md",
+      "evidence_type": "DB definition review"
+    },
+    {
+      "id": "A073",
+      "module": "Cutting",
+      "feature": "Unread-to-card mapping",
+      "scenario": "Canonical readiness and exact event keys",
+      "expected": "Each unread has eligible exact card",
+      "actual": "PASS rollback",
+      "status": "PASS",
+      "evidence": "audits/test71-core-runtime-evidence-20261010.json",
+      "evidence_type": "SQL rollback"
+    },
+    {
+      "id": "A074",
+      "module": "Cutting",
+      "feature": "Browser OPEN card count",
+      "scenario": "Open count3 details",
+      "expected": "Exactly3 eligible cards",
+      "actual": "1009-S2,1007-S1,1008-S1",
+      "status": "PASS",
+      "evidence": "audits/test71-browser-evidence-20261010.json",
+      "evidence_type": "Signed-in browser"
+    },
+    {
+      "id": "A075",
+      "module": "Cutting",
+      "feature": "Browser Working load",
+      "scenario": "Open Working and settle",
+      "expected": "Cards rendered without load error",
+      "actual": "Cards load नहीं हुए; later OPEN rendered",
+      "status": "FAIL",
+      "evidence": "audits/test71-browser-evidence-20261010.json",
+      "evidence_type": "Signed-in browser"
+    },
+    {
+      "id": "A076",
+      "module": "Sales",
+      "feature": "Canonical queue parity",
+      "scenario": "OPEN search variants, WORKING/CLOSE",
+      "expected": "Parity, login/TEST scope, <1s server gate",
+      "actual": "PASS assertions",
+      "status": "PASS",
+      "evidence": "audits/test71-core-runtime-evidence-20261010.json",
+      "evidence_type": "SQL rollback"
+    },
+    {
+      "id": "A077",
+      "module": "Browser",
+      "feature": "Cross-department controls",
+      "scenario": "Cutting→Accounts directory",
+      "expected": "No stale Cutting action filters",
+      "actual": "Directory controls reset in observed transition",
+      "status": "PASS",
+      "evidence": "audits/test71-browser-evidence-20261010.json",
+      "evidence_type": "Signed-in browser sample"
+    },
+    {
+      "id": "A078",
+      "module": "Browser",
+      "feature": "Imamul TEST Working lanes",
+      "scenario": "Official Act As, own personal chat",
+      "expected": "Separate receipt/submit/variance",
+      "actual": "Receipt4, Submit2, Short/Excess1",
+      "status": "PASS",
+      "evidence": "audits/test71-browser-evidence-20261010.json",
+      "evidence_type": "TEST on-behalf browser; not standalone login"
+    },
+    {
+      "id": "A079",
+      "module": "Browser",
+      "feature": "All independent role sessions",
+      "scenario": "Worker/LM/Manager/Admin/Accounts/Sales logins",
+      "expected": "Each positive+negative and session persistence",
+      "actual": "Owner signed in; official TEST Act As + SQL role matrix only",
+      "status": "NOT_RUN",
+      "evidence": "audits/test71-browser-evidence-20261010.json",
+      "evidence_type": "SQL rollback"
+    },
+    {
+      "id": "A080",
+      "module": "Browser",
+      "feature": "Mobile/offline/concurrency full journeys",
+      "scenario": "Slow/offline/double-submit/reload all modules",
+      "expected": "Stable UI and exactly-once writes",
+      "actual": "No real mobile/offline full run",
+      "status": "NOT_RUN",
+      "evidence": "audits/test71-universal-accounts-mapping-20261010.md",
+      "evidence_type": "SQL rollback"
+    },
+    {
+      "id": "A081",
+      "module": "Harness",
+      "feature": "Complete source suite",
+      "scenario": "Run108 files with bounded per-file timeout",
+      "expected": "All applicable assertions pass",
+      "actual": "77 files pass,30 fail,1 timeout after2 correct-cwd reruns",
+      "status": "FAIL",
+      "evidence": "audits/test71-source-suite-evidence-20261010.json",
+      "evidence_type": "Node source contracts"
+    },
+    {
+      "id": "A082",
+      "module": "Harness",
+      "feature": "CI module coverage",
+      "scenario": "Inspect workflow and SHA-run lookup",
+      "expected": "Required module suites actually run",
+      "actual": "MC1/CB/material/checkpoint8 steps if:false; connector returned no PR-triggered runs (not all CI runs)",
+      "status": "FAIL",
+      "evidence": ".github/workflows/test71-checkpoint0-e2e.yml",
+      "evidence_type": "Workflow/source audit"
+    },
+    {
+      "id": "A083",
+      "module": "FABRICATION",
+      "feature": "OPEN/WORKING canonical membership",
+      "scenario": "Department projection + pending handover supersession",
+      "expected": "OPEN assignment-only; WORKING pending source actions",
+      "actual": "Shared rollback assertions PASS for department projections",
+      "status": "PASS",
+      "evidence": "audits/test71-core-runtime-evidence-20261010.json",
+      "evidence_type": "13-department projection SQL"
+    },
+    {
+      "id": "A084",
+      "module": "PRINTING",
+      "feature": "OPEN/WORKING canonical membership",
+      "scenario": "Department projection + pending handover supersession",
+      "expected": "OPEN assignment-only; WORKING pending source actions",
+      "actual": "Shared rollback assertions PASS for department projections",
+      "status": "PASS",
+      "evidence": "audits/test71-core-runtime-evidence-20261010.json",
+      "evidence_type": "13-department projection SQL"
+    },
+    {
+      "id": "A085",
+      "module": "STICKER",
+      "feature": "OPEN/WORKING canonical membership",
+      "scenario": "Department projection + pending handover supersession",
+      "expected": "OPEN assignment-only; WORKING pending source actions",
+      "actual": "Shared rollback assertions PASS for department projections",
+      "status": "PASS",
+      "evidence": "audits/test71-core-runtime-evidence-20261010.json",
+      "evidence_type": "13-department projection SQL"
+    },
+    {
+      "id": "A086",
+      "module": "METAL_ID",
+      "feature": "OPEN/WORKING canonical membership",
+      "scenario": "Department projection + pending handover supersession",
+      "expected": "OPEN assignment-only; WORKING pending source actions",
+      "actual": "Shared rollback assertions PASS for department projections",
+      "status": "PASS",
+      "evidence": "audits/test71-core-runtime-evidence-20261010.json",
+      "evidence_type": "13-department projection SQL"
+    },
+    {
+      "id": "A087",
+      "module": "STITCHING",
+      "feature": "OPEN/WORKING canonical membership",
+      "scenario": "Department projection + pending handover supersession",
+      "expected": "OPEN assignment-only; WORKING pending source actions",
+      "actual": "Shared rollback assertions PASS for department projections",
+      "status": "PASS",
+      "evidence": "audits/test71-core-runtime-evidence-20261010.json",
+      "evidence_type": "13-department projection SQL"
+    },
+    {
+      "id": "A088",
+      "module": "OVERLOCK",
+      "feature": "OPEN/WORKING canonical membership",
+      "scenario": "Department projection + pending handover supersession",
+      "expected": "OPEN assignment-only; WORKING pending source actions",
+      "actual": "Shared rollback assertions PASS for department projections",
+      "status": "PASS",
+      "evidence": "audits/test71-core-runtime-evidence-20261010.json",
+      "evidence_type": "13-department projection SQL"
+    },
+    {
+      "id": "A089",
+      "module": "FOLDING",
+      "feature": "OPEN/WORKING canonical membership",
+      "scenario": "Department projection + pending handover supersession",
+      "expected": "OPEN assignment-only; WORKING pending source actions",
+      "actual": "Shared rollback assertions PASS for department projections",
+      "status": "PASS",
+      "evidence": "audits/test71-core-runtime-evidence-20261010.json",
+      "evidence_type": "13-department projection SQL"
+    },
+    {
+      "id": "A090",
+      "module": "KAAJ_BUTTON",
+      "feature": "OPEN/WORKING canonical membership",
+      "scenario": "Department projection + pending handover supersession",
+      "expected": "OPEN assignment-only; WORKING pending source actions",
+      "actual": "Shared rollback assertions PASS for department projections",
+      "status": "PASS",
+      "evidence": "audits/test71-core-runtime-evidence-20261010.json",
+      "evidence_type": "13-department projection SQL"
+    },
+    {
+      "id": "A091",
+      "module": "TEAK_TANKI",
+      "feature": "OPEN/WORKING canonical membership",
+      "scenario": "Department projection + pending handover supersession",
+      "expected": "OPEN assignment-only; WORKING pending source actions",
+      "actual": "Shared rollback assertions PASS for department projections",
+      "status": "PASS",
+      "evidence": "audits/test71-core-runtime-evidence-20261010.json",
+      "evidence_type": "13-department projection SQL"
+    },
+    {
+      "id": "A092",
+      "module": "THREAD_CUT",
+      "feature": "OPEN/WORKING canonical membership",
+      "scenario": "Department projection + pending handover supersession",
+      "expected": "OPEN assignment-only; WORKING pending source actions",
+      "actual": "Shared rollback assertions PASS for department projections",
+      "status": "PASS",
+      "evidence": "audits/test71-core-runtime-evidence-20261010.json",
+      "evidence_type": "13-department projection SQL"
+    },
+    {
+      "id": "A093",
+      "module": "QC",
+      "feature": "OPEN/WORKING canonical membership",
+      "scenario": "Department projection + pending handover supersession",
+      "expected": "OPEN assignment-only; WORKING pending source actions",
+      "actual": "Shared rollback assertions PASS for department projections",
+      "status": "PASS",
+      "evidence": "audits/test71-core-runtime-evidence-20261010.json",
+      "evidence_type": "13-department projection SQL"
+    },
+    {
+      "id": "A094",
+      "module": "PRESS",
+      "feature": "OPEN/WORKING canonical membership",
+      "scenario": "Department projection + pending handover supersession",
+      "expected": "OPEN assignment-only; WORKING pending source actions",
+      "actual": "Shared rollback assertions PASS for department projections",
+      "status": "PASS",
+      "evidence": "audits/test71-core-runtime-evidence-20261010.json",
+      "evidence_type": "13-department projection SQL"
+    },
+    {
+      "id": "A095",
+      "module": "PACKING",
+      "feature": "OPEN/WORKING canonical membership",
+      "scenario": "Department projection + pending handover supersession",
+      "expected": "OPEN assignment-only; WORKING pending source actions",
+      "actual": "Shared rollback assertions PASS for department projections",
+      "status": "PASS",
+      "evidence": "audits/test71-core-runtime-evidence-20261010.json",
+      "evidence_type": "13-department projection SQL"
+    },
+    {
+      "id": "A096",
+      "module": "CUTTING",
+      "feature": "Converted Alter claim immutable amount",
+      "scenario": "Reserve2×3→single claim6→update5×4",
+      "expected": "Converted source stays immutable / approved correction",
+      "actual": "Final claim6 and reserve6 remain unchanged; mutation to qty5/rate4 rejected; identical retry creates one claim",
+      "status": "PASS",
+      "evidence": "audits/test71-critical-fix-runtime-evidence-20261010.json",
+      "evidence_type": "Post-fix SQL rollback; original failure retained in history",
+      "history": [
+        {
+          "status": "FAIL",
+          "actual": "Claim6; converted reserve20",
+          "evidence": "audits/test71-sql-runtime-evidence-20261010.json",
+          "evidence_type": "14-department helper SQL, not full journey"
+        }
+      ]
+    },
+    {
+      "id": "A097",
+      "module": "CUTTING",
+      "feature": "Full Submit/Alter/Rectify→payroll→Accounts",
+      "scenario": "Independent department lifecycle all branches",
+      "expected": "End-to-end actor/source/qty/financial/reversal",
+      "actual": "Shared queues/helpers verified; independent complete branch run absent",
+      "status": "NOT_RUN",
+      "evidence": "audits/test71-universal-accounts-mapping-20261010.md",
+      "evidence_type": "SQL rollback"
+    },
+    {
+      "id": "A098",
+      "module": "FABRICATION",
+      "feature": "Converted Alter claim immutable amount",
+      "scenario": "Reserve2×3→single claim6→update5×4",
+      "expected": "Converted source stays immutable / approved correction",
+      "actual": "Final claim6 and reserve6 remain unchanged; mutation to qty5/rate4 rejected; identical retry creates one claim",
+      "status": "PASS",
+      "evidence": "audits/test71-critical-fix-runtime-evidence-20261010.json",
+      "evidence_type": "Post-fix SQL rollback; original failure retained in history",
+      "history": [
+        {
+          "status": "FAIL",
+          "actual": "Claim6; converted reserve20",
+          "evidence": "audits/test71-sql-runtime-evidence-20261010.json",
+          "evidence_type": "14-department helper SQL, not full journey"
+        }
+      ]
+    },
+    {
+      "id": "A099",
+      "module": "FABRICATION",
+      "feature": "Full Submit/Alter/Rectify→payroll→Accounts",
+      "scenario": "Independent department lifecycle all branches",
+      "expected": "End-to-end actor/source/qty/financial/reversal",
+      "actual": "Shared queues/helpers verified; independent complete branch run absent",
+      "status": "NOT_RUN",
+      "evidence": "audits/test71-universal-accounts-mapping-20261010.md",
+      "evidence_type": "SQL rollback"
+    },
+    {
+      "id": "A100",
+      "module": "PRINTING",
+      "feature": "Converted Alter claim immutable amount",
+      "scenario": "Reserve2×3→single claim6→update5×4",
+      "expected": "Converted source stays immutable / approved correction",
+      "actual": "Final claim6 and reserve6 remain unchanged; mutation to qty5/rate4 rejected; identical retry creates one claim",
+      "status": "PASS",
+      "evidence": "audits/test71-critical-fix-runtime-evidence-20261010.json",
+      "evidence_type": "Post-fix SQL rollback; original failure retained in history",
+      "history": [
+        {
+          "status": "FAIL",
+          "actual": "Claim6; converted reserve20",
+          "evidence": "audits/test71-sql-runtime-evidence-20261010.json",
+          "evidence_type": "14-department helper SQL, not full journey"
+        }
+      ]
+    },
+    {
+      "id": "A101",
+      "module": "PRINTING",
+      "feature": "Full Submit/Alter/Rectify→payroll→Accounts",
+      "scenario": "Independent department lifecycle all branches",
+      "expected": "End-to-end actor/source/qty/financial/reversal",
+      "actual": "Shared queues/helpers verified; independent complete branch run absent",
+      "status": "NOT_RUN",
+      "evidence": "audits/test71-universal-accounts-mapping-20261010.md",
+      "evidence_type": "SQL rollback"
+    },
+    {
+      "id": "A102",
+      "module": "METAL_ID",
+      "feature": "Converted Alter claim immutable amount",
+      "scenario": "Reserve2×3→single claim6→update5×4",
+      "expected": "Converted source stays immutable / approved correction",
+      "actual": "Final claim6 and reserve6 remain unchanged; mutation to qty5/rate4 rejected; identical retry creates one claim",
+      "status": "PASS",
+      "evidence": "audits/test71-critical-fix-runtime-evidence-20261010.json",
+      "evidence_type": "Post-fix SQL rollback; original failure retained in history",
+      "history": [
+        {
+          "status": "FAIL",
+          "actual": "Claim6; converted reserve20",
+          "evidence": "audits/test71-sql-runtime-evidence-20261010.json",
+          "evidence_type": "14-department helper SQL, not full journey"
+        }
+      ]
+    },
+    {
+      "id": "A103",
+      "module": "METAL_ID",
+      "feature": "Full Submit/Alter/Rectify→payroll→Accounts",
+      "scenario": "Independent department lifecycle all branches",
+      "expected": "End-to-end actor/source/qty/financial/reversal",
+      "actual": "Shared queues/helpers verified; independent complete branch run absent",
+      "status": "NOT_RUN",
+      "evidence": "audits/test71-universal-accounts-mapping-20261010.md",
+      "evidence_type": "SQL rollback"
+    },
+    {
+      "id": "A104",
+      "module": "STICKER",
+      "feature": "Converted Alter claim immutable amount",
+      "scenario": "Reserve2×3→single claim6→update5×4",
+      "expected": "Converted source stays immutable / approved correction",
+      "actual": "Final claim6 and reserve6 remain unchanged; mutation to qty5/rate4 rejected; identical retry creates one claim",
+      "status": "PASS",
+      "evidence": "audits/test71-critical-fix-runtime-evidence-20261010.json",
+      "evidence_type": "Post-fix SQL rollback; original failure retained in history",
+      "history": [
+        {
+          "status": "FAIL",
+          "actual": "Claim6; converted reserve20",
+          "evidence": "audits/test71-sql-runtime-evidence-20261010.json",
+          "evidence_type": "14-department helper SQL, not full journey"
+        }
+      ]
+    },
+    {
+      "id": "A105",
+      "module": "STICKER",
+      "feature": "Full Submit/Alter/Rectify→payroll→Accounts",
+      "scenario": "Independent department lifecycle all branches",
+      "expected": "End-to-end actor/source/qty/financial/reversal",
+      "actual": "Shared queues/helpers verified; independent complete branch run absent",
+      "status": "NOT_RUN",
+      "evidence": "audits/test71-universal-accounts-mapping-20261010.md",
+      "evidence_type": "SQL rollback"
+    },
+    {
+      "id": "A106",
+      "module": "STITCHING",
+      "feature": "Converted Alter claim immutable amount",
+      "scenario": "Reserve2×3→single claim6→update5×4",
+      "expected": "Converted source stays immutable / approved correction",
+      "actual": "Final claim6 and reserve6 remain unchanged; mutation to qty5/rate4 rejected; identical retry creates one claim",
+      "status": "PASS",
+      "evidence": "audits/test71-critical-fix-runtime-evidence-20261010.json",
+      "evidence_type": "Post-fix SQL rollback; original failure retained in history",
+      "history": [
+        {
+          "status": "FAIL",
+          "actual": "Claim6; converted reserve20",
+          "evidence": "audits/test71-sql-runtime-evidence-20261010.json",
+          "evidence_type": "14-department helper SQL, not full journey"
+        }
+      ]
+    },
+    {
+      "id": "A107",
+      "module": "STITCHING",
+      "feature": "Full Submit/Alter/Rectify→payroll→Accounts",
+      "scenario": "Independent department lifecycle all branches",
+      "expected": "End-to-end actor/source/qty/financial/reversal",
+      "actual": "Shared queues/helpers verified; independent complete branch run absent",
+      "status": "NOT_RUN",
+      "evidence": "audits/test71-universal-accounts-mapping-20261010.md",
+      "evidence_type": "SQL rollback"
+    },
+    {
+      "id": "A108",
+      "module": "OVERLOCK",
+      "feature": "Converted Alter claim immutable amount",
+      "scenario": "Reserve2×3→single claim6→update5×4",
+      "expected": "Converted source stays immutable / approved correction",
+      "actual": "Final claim6 and reserve6 remain unchanged; mutation to qty5/rate4 rejected; identical retry creates one claim",
+      "status": "PASS",
+      "evidence": "audits/test71-critical-fix-runtime-evidence-20261010.json",
+      "evidence_type": "Post-fix SQL rollback; original failure retained in history",
+      "history": [
+        {
+          "status": "FAIL",
+          "actual": "Claim6; converted reserve20",
+          "evidence": "audits/test71-sql-runtime-evidence-20261010.json",
+          "evidence_type": "14-department helper SQL, not full journey"
+        }
+      ]
+    },
+    {
+      "id": "A109",
+      "module": "OVERLOCK",
+      "feature": "Full Submit/Alter/Rectify→payroll→Accounts",
+      "scenario": "Independent department lifecycle all branches",
+      "expected": "End-to-end actor/source/qty/financial/reversal",
+      "actual": "Shared queues/helpers verified; independent complete branch run absent",
+      "status": "NOT_RUN",
+      "evidence": "audits/test71-universal-accounts-mapping-20261010.md",
+      "evidence_type": "SQL rollback"
+    },
+    {
+      "id": "A110",
+      "module": "FOLDING",
+      "feature": "Converted Alter claim immutable amount",
+      "scenario": "Reserve2×3→single claim6→update5×4",
+      "expected": "Converted source stays immutable / approved correction",
+      "actual": "Final claim6 and reserve6 remain unchanged; mutation to qty5/rate4 rejected; identical retry creates one claim",
+      "status": "PASS",
+      "evidence": "audits/test71-critical-fix-runtime-evidence-20261010.json",
+      "evidence_type": "Post-fix SQL rollback; original failure retained in history",
+      "history": [
+        {
+          "status": "FAIL",
+          "actual": "Claim6; converted reserve20",
+          "evidence": "audits/test71-sql-runtime-evidence-20261010.json",
+          "evidence_type": "14-department helper SQL, not full journey"
+        }
+      ]
+    },
+    {
+      "id": "A111",
+      "module": "FOLDING",
+      "feature": "Full Submit/Alter/Rectify→payroll→Accounts",
+      "scenario": "Independent department lifecycle all branches",
+      "expected": "End-to-end actor/source/qty/financial/reversal",
+      "actual": "Shared queues/helpers verified; independent complete branch run absent",
+      "status": "NOT_RUN",
+      "evidence": "audits/test71-universal-accounts-mapping-20261010.md",
+      "evidence_type": "SQL rollback"
+    },
+    {
+      "id": "A112",
+      "module": "KAJ_BUTTON",
+      "feature": "Converted Alter claim immutable amount",
+      "scenario": "Reserve2×3→single claim6→update5×4",
+      "expected": "Converted source stays immutable / approved correction",
+      "actual": "Final claim6 and reserve6 remain unchanged; mutation to qty5/rate4 rejected; identical retry creates one claim",
+      "status": "PASS",
+      "evidence": "audits/test71-critical-fix-runtime-evidence-20261010.json",
+      "evidence_type": "Post-fix SQL rollback; original failure retained in history",
+      "history": [
+        {
+          "status": "FAIL",
+          "actual": "Claim6; converted reserve20",
+          "evidence": "audits/test71-sql-runtime-evidence-20261010.json",
+          "evidence_type": "14-department helper SQL, not full journey"
+        }
+      ]
+    },
+    {
+      "id": "A113",
+      "module": "KAJ_BUTTON",
+      "feature": "Full Submit/Alter/Rectify→payroll→Accounts",
+      "scenario": "Independent department lifecycle all branches",
+      "expected": "End-to-end actor/source/qty/financial/reversal",
+      "actual": "Shared queues/helpers verified; independent complete branch run absent",
+      "status": "NOT_RUN",
+      "evidence": "audits/test71-universal-accounts-mapping-20261010.md",
+      "evidence_type": "SQL rollback"
+    },
+    {
+      "id": "A114",
+      "module": "TEAK_TANKI",
+      "feature": "Converted Alter claim immutable amount",
+      "scenario": "Reserve2×3→single claim6→update5×4",
+      "expected": "Converted source stays immutable / approved correction",
+      "actual": "Final claim6 and reserve6 remain unchanged; mutation to qty5/rate4 rejected; identical retry creates one claim",
+      "status": "PASS",
+      "evidence": "audits/test71-critical-fix-runtime-evidence-20261010.json",
+      "evidence_type": "Post-fix SQL rollback; original failure retained in history",
+      "history": [
+        {
+          "status": "FAIL",
+          "actual": "Claim6; converted reserve20",
+          "evidence": "audits/test71-sql-runtime-evidence-20261010.json",
+          "evidence_type": "14-department helper SQL, not full journey"
+        }
+      ]
+    },
+    {
+      "id": "A115",
+      "module": "TEAK_TANKI",
+      "feature": "Full Submit/Alter/Rectify→payroll→Accounts",
+      "scenario": "Independent department lifecycle all branches",
+      "expected": "End-to-end actor/source/qty/financial/reversal",
+      "actual": "Shared queues/helpers verified; independent complete branch run absent",
+      "status": "NOT_RUN",
+      "evidence": "audits/test71-universal-accounts-mapping-20261010.md",
+      "evidence_type": "SQL rollback"
+    },
+    {
+      "id": "A116",
+      "module": "THREAD_CUT",
+      "feature": "Converted Alter claim immutable amount",
+      "scenario": "Reserve2×3→single claim6→update5×4",
+      "expected": "Converted source stays immutable / approved correction",
+      "actual": "Final claim6 and reserve6 remain unchanged; mutation to qty5/rate4 rejected; identical retry creates one claim",
+      "status": "PASS",
+      "evidence": "audits/test71-critical-fix-runtime-evidence-20261010.json",
+      "evidence_type": "Post-fix SQL rollback; original failure retained in history",
+      "history": [
+        {
+          "status": "FAIL",
+          "actual": "Claim6; converted reserve20",
+          "evidence": "audits/test71-sql-runtime-evidence-20261010.json",
+          "evidence_type": "14-department helper SQL, not full journey"
+        }
+      ]
+    },
+    {
+      "id": "A117",
+      "module": "THREAD_CUT",
+      "feature": "Full Submit/Alter/Rectify→payroll→Accounts",
+      "scenario": "Independent department lifecycle all branches",
+      "expected": "End-to-end actor/source/qty/financial/reversal",
+      "actual": "Shared queues/helpers verified; independent complete branch run absent",
+      "status": "NOT_RUN",
+      "evidence": "audits/test71-universal-accounts-mapping-20261010.md",
+      "evidence_type": "SQL rollback"
+    },
+    {
+      "id": "A118",
+      "module": "QC",
+      "feature": "Converted Alter claim immutable amount",
+      "scenario": "Reserve2×3→single claim6→update5×4",
+      "expected": "Converted source stays immutable / approved correction",
+      "actual": "Final claim6 and reserve6 remain unchanged; mutation to qty5/rate4 rejected; identical retry creates one claim",
+      "status": "PASS",
+      "evidence": "audits/test71-critical-fix-runtime-evidence-20261010.json",
+      "evidence_type": "Post-fix SQL rollback; original failure retained in history",
+      "history": [
+        {
+          "status": "FAIL",
+          "actual": "Claim6; converted reserve20",
+          "evidence": "audits/test71-sql-runtime-evidence-20261010.json",
+          "evidence_type": "14-department helper SQL, not full journey"
+        }
+      ]
+    },
+    {
+      "id": "A119",
+      "module": "QC",
+      "feature": "Full Submit/Alter/Rectify→payroll→Accounts",
+      "scenario": "Independent department lifecycle all branches",
+      "expected": "End-to-end actor/source/qty/financial/reversal",
+      "actual": "Shared queues/helpers verified; independent complete branch run absent",
+      "status": "NOT_RUN",
+      "evidence": "audits/test71-universal-accounts-mapping-20261010.md",
+      "evidence_type": "SQL rollback"
+    },
+    {
+      "id": "A120",
+      "module": "PRESS",
+      "feature": "Converted Alter claim immutable amount",
+      "scenario": "Reserve2×3→single claim6→update5×4",
+      "expected": "Converted source stays immutable / approved correction",
+      "actual": "Final claim6 and reserve6 remain unchanged; mutation to qty5/rate4 rejected; identical retry creates one claim",
+      "status": "PASS",
+      "evidence": "audits/test71-critical-fix-runtime-evidence-20261010.json",
+      "evidence_type": "Post-fix SQL rollback; original failure retained in history",
+      "history": [
+        {
+          "status": "FAIL",
+          "actual": "Claim6; converted reserve20",
+          "evidence": "audits/test71-sql-runtime-evidence-20261010.json",
+          "evidence_type": "14-department helper SQL, not full journey"
+        }
+      ]
+    },
+    {
+      "id": "A121",
+      "module": "PRESS",
+      "feature": "Full Submit/Alter/Rectify→payroll→Accounts",
+      "scenario": "Independent department lifecycle all branches",
+      "expected": "End-to-end actor/source/qty/financial/reversal",
+      "actual": "Shared queues/helpers verified; independent complete branch run absent",
+      "status": "NOT_RUN",
+      "evidence": "audits/test71-universal-accounts-mapping-20261010.md",
+      "evidence_type": "SQL rollback"
+    },
+    {
+      "id": "A122",
+      "module": "PACKING",
+      "feature": "Converted Alter claim immutable amount",
+      "scenario": "Reserve2×3→single claim6→update5×4",
+      "expected": "Converted source stays immutable / approved correction",
+      "actual": "Final claim6 and reserve6 remain unchanged; mutation to qty5/rate4 rejected; identical retry creates one claim",
+      "status": "PASS",
+      "evidence": "audits/test71-critical-fix-runtime-evidence-20261010.json",
+      "evidence_type": "Post-fix SQL rollback; original failure retained in history",
+      "history": [
+        {
+          "status": "FAIL",
+          "actual": "Claim6; converted reserve20",
+          "evidence": "audits/test71-sql-runtime-evidence-20261010.json",
+          "evidence_type": "14-department helper SQL, not full journey"
+        }
+      ]
+    },
+    {
+      "id": "A123",
+      "module": "PACKING",
+      "feature": "Full Submit/Alter/Rectify→payroll→Accounts",
+      "scenario": "Independent department lifecycle all branches",
+      "expected": "End-to-end actor/source/qty/financial/reversal",
+      "actual": "Shared queues/helpers verified; independent complete branch run absent",
+      "status": "NOT_RUN",
+      "evidence": "audits/test71-universal-accounts-mapping-20261010.md",
+      "evidence_type": "SQL rollback"
+    },
+    {
+      "id": "A124",
+      "module": "Despatch",
+      "feature": "Full fresh receive journey",
+      "scenario": "Checkpoint7 fixture E2E-FRESH-03",
+      "expected": "Costing gate satisfied, despatch received",
+      "actual": "Missing FOLDING costing blocks fixture; gate retained",
+      "status": "BLOCKED",
+      "evidence": "audits/test71-universal-accounts-mapping-20261010.md",
+      "evidence_type": "SQL rollback"
+    },
+    {
+      "id": "A125",
+      "module": "CB",
+      "feature": "Every reconciliation/GR/exchange finance branch",
+      "scenario": "Fresh combinations, retries, rates, mode/roles",
+      "expected": "Exact stock/supplier/journal/report deltas",
+      "actual": "Bridge inspected and existing coverage; exhaustive fresh matrix absent",
+      "status": "NOT_RUN",
+      "evidence": "audits/test71-universal-accounts-mapping-20261010.md",
+      "evidence_type": "SQL rollback"
+    },
+    {
+      "id": "A126",
+      "module": "Accessories",
+      "feature": "Sticker / Metal ID every finance branch",
+      "scenario": "Fresh paid/credit/partial return/exchange cases",
+      "expected": "Exact source/posting/stock/reversal",
+      "actual": "Existing eligible mirrors cover; exhaustive branches absent",
+      "status": "NOT_RUN",
+      "evidence": "audits/test71-universal-accounts-mapping-20261010.md",
+      "evidence_type": "SQL rollback"
+    },
+    {
+      "id": "A127",
+      "module": "Financial reports",
+      "feature": "Generic suite fallback correctness",
+      "scenario": "Inspect v857 readers/views/fallback",
+      "expected": "Scoped complete canonical report, no guessed success",
+      "actual": "limit100, no explicit mode, raw guessed fallback",
+      "status": "FAIL",
+      "evidence": "audits/test71-universal-accounts-mapping-20261010.md",
+      "evidence_type": "Code audit"
+    },
+    {
+      "id": "A128",
+      "module": "Permissions",
+      "feature": "Direct financial view access",
+      "scenario": "Anonymous SELECT on reporting base and authorized Owner repeat",
+      "expected": "Anon denied; Owner retains financial rows",
+      "actual": "Before764 anonymous rows; after anon denied and Owner764 rows",
+      "status": "PASS",
+      "evidence": "audits/test71-critical-fix-runtime-evidence-20261010.json",
+      "evidence_type": "Real Postgres role SQL rollback"
+    },
+    {
+      "id": "A129",
+      "module": "Permissions",
+      "feature": "On-behalf Worker global finance scope",
+      "scenario": "Imamul effective identity with authenticated role selects global financial and salary views",
+      "expected": "No global financial data or payroll management privileges",
+      "actual": "Both views0 rows; pay/manage permissions false",
+      "status": "PASS",
+      "evidence": "audits/test71-critical-fix-runtime-evidence-20261010.json",
+      "evidence_type": "Official TEST on-behalf + real authenticated Postgres role; not independent Worker login"
+    },
+    {
+      "id": "A130",
+      "module": "Permissions",
+      "feature": "Remaining financial relation privacy",
+      "scenario": "Inspect anonymous grants and worker scoped views",
+      "expected": "No anonymous financial relation SELECT; no other-worker payroll/advance rows",
+      "actual": "0 anonymous SELECT grants in claim/advance/salary/payroll/account-name scope; Owner764 finance rows and38 payroll profiles; worker other payroll/advance0. This is not proof for every non-financial relation or RPC.",
+      "status": "PASS",
+      "evidence": "audits/test71-fix-continuation-evidence-20261010.json",
+      "evidence_type": "SQL rollback assertions"
+    },
+    {
+      "id": "A131",
+      "module": "Attendance",
+      "feature": "Future day mutation guards",
+      "scenario": "Save and both calculation engines on tomorrow",
+      "expected": "Reject future dates without creating records",
+      "actual": "All three reject with exact future-date guard; past present/incomplete/checkout/profile regression preserved. Canonical day delta remains0.",
+      "status": "PASS",
+      "evidence": "audits/test71-fix-continuation-evidence-20261010.json",
+      "evidence_type": "SQL rollback assertions"
+    },
+    {
+      "id": "A132",
+      "module": "Attendance",
+      "feature": "Calendar date boundaries",
+      "scenario": "Current month/future month/profile bounds/saved today",
+      "expected": "No future absence; today pending; retain saved status",
+      "actual": "4 unit scenarios PASS; separate from updated browser display check A045.",
+      "status": "PASS",
+      "evidence": "tests/test71-attendance-calendar.test.cjs",
+      "evidence_type": "Local unit test"
+    }
+  ]
+}

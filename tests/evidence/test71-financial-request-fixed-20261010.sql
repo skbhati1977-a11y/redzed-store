@@ -1,0 +1,20 @@
+BEGIN;
+SELECT set_config('request.jwt.claim.sub','af915a18-3823-48df-b039-1e4c7a88479b',true);
+DO $t$ DECLARE p uuid;c uuid;k uuid:=gen_random_uuid();payload jsonb;r jsonb;s jsonb;before_n int;after_n int;denied bool:=false;BEGIN
+ SELECT id INTO p FROM rr_ledgers_v805 WHERE is_active AND ledger_kind='SUPPLIER' LIMIT 1;
+ SELECT id INTO c FROM rr_ledgers_v805 WHERE is_active AND ledger_code='CASH_MAIN';
+ payload:=jsonb_build_object('p_against_ledger_id',p,'p_cash_bank_ledger_id',c,'p_amount',0.01,'p_ref_no','REQUEST-AUDIT','p_narration','Rollback only','p_data_mode','TEST');
+ SELECT count(*) INTO before_n FROM rr_account_transactions_v805;
+ r:=rr_financial_request_post_test71('rr_accounts_post_payment_v805','TEST',k,payload);
+ s:=rr_financial_request_post_test71('rr_accounts_post_payment_v805','TEST',k,payload);
+ SELECT count(*) INTO after_n FROM rr_account_transactions_v805;
+ IF after_n-before_n<>1 OR r->>'transaction_id'<>s->>'transaction_id' OR NOT (s->>'already_processed')::boolean THEN RAISE EXCEPTION 'Retry produced duplicate';END IF;
+ BEGIN PERFORM rr_financial_request_post_test71('rr_accounts_post_payment_v805','TEST',k,payload||'{"p_amount":0.02}'::jsonb);EXCEPTION WHEN others THEN denied:=sqlerrm LIKE 'Request ID already used%';END;
+ IF NOT denied THEN RAISE EXCEPTION 'Changed payload accepted';END IF;
+ PERFORM rr_accounts_reverse_transaction_v9761((r->>'transaction_id')::uuid,'Rollback audit');
+ s:=rr_financial_request_post_test71('rr_accounts_post_payment_v805','TEST',k,payload);
+ IF r->>'transaction_id'<>s->>'transaction_id' THEN RAISE EXCEPTION 'Retry resurrected reversed payment';END IF;
+ PERFORM set_config('audit.request.result',jsonb_build_object('same_request_one_transaction',true,'changed_payload_denied',true,'reversed_request_not_reposted',true)::text,true);
+END;$t$;
+SELECT current_setting('audit.request.result')::jsonb result;
+ROLLBACK;

@@ -1,0 +1,20 @@
+BEGIN;
+SELECT set_config('request.jwt.claim.sub','af915a18-3823-48df-b039-1e4c7a88479b',true);
+DO $t$ DECLARE due uuid;j jsonb;rev jsonb;pay uuid;tx uuid;rtx uuid;n int;bal numeric;bank uuid;denied bool:=false;
+BEGIN
+ SELECT d.id INTO due FROM rr_worker_salary_ledger_v781 d WHERE d.status='POSTED' AND d.entry_type='SALARY_DUE' AND d.data_mode='TEST' AND d.amount-coalesce((SELECT sum(CASE WHEN p.entry_type='PAYMENT' THEN p.amount ELSE -p.amount END) FROM rr_worker_salary_ledger_v781 p WHERE p.due_entry_id=d.id AND p.status='POSTED' AND p.entry_type IN('PAYMENT','PAYMENT_REVERSAL')),0)>0.05 LIMIT 1;
+ j:=rr_worker_salary_payment_post_v781(due,0.01,current_date,'CASH','CASH-BRIDGE-AUDIT','Rollback only');pay:=(j->>'payment_id')::uuid;
+ SELECT account_transaction_id INTO tx FROM rr_account_source_links_v806 WHERE source_module='WORKER_SALARY_PAYMENT_TEST71' AND source_record_id=pay::text AND data_mode='TEST' AND status='ACTIVE';
+ IF tx IS NULL THEN RAISE EXCEPTION 'Salary journal missing';END IF;
+ SELECT count(*),sum(dr_amount-cr_amount) INTO n,bal FROM rr_account_postings_v805 WHERE transaction_id=tx;
+ IF n<>2 OR bal<>0 THEN RAISE EXCEPTION 'Salary journal unbalanced';END IF;
+ rev:=rr_worker_salary_payment_reverse_v781(pay,'Rollback salary journal reversal');
+ SELECT new_transaction_id INTO rtx FROM rr_account_mirror_lifecycle_v806 WHERE source_record_id=pay::text AND source_module='WORKER_SALARY_PAYMENT_TEST71' AND action_type='REVERSE';
+ IF rtx IS NULL OR (SELECT status FROM rr_account_transactions_v805 WHERE id=tx)<>'REVERSED' OR (SELECT sum(dr_amount-cr_amount) FROM rr_account_postings_v805 WHERE transaction_id IN(tx,rtx))<>0 THEN RAISE EXCEPTION 'Salary inverse not linked';END IF;
+ SELECT id INTO bank FROM rr_ledgers_v805 WHERE ledger_code='TST-BANK-V820';
+ PERFORM rr_payroll_cash_bank_route_set_test71('TEST','BANK',bank,'Rollback-only Bank route test');
+ j:=rr_worker_salary_payment_post_v781(due,0.01,current_date,'BANK','BANK-BRIDGE-AUDIT','Rollback only');
+ IF NOT EXISTS(SELECT 1 FROM rr_account_source_links_v806 l JOIN rr_account_postings_v805 p ON p.transaction_id=l.account_transaction_id WHERE l.source_module='WORKER_SALARY_PAYMENT_TEST71' AND l.source_record_id=j->>'payment_id' AND p.ledger_id=bank AND p.cr_amount=0.01) THEN RAISE EXCEPTION 'Bank route not used';END IF;
+ PERFORM set_config('audit.salary.bridge',jsonb_build_object('cash_worker_journal_balanced',true,'reversal_linked_balanced',true,'approved_bank_route_used',true,'historical_reposting',false)::text,true);
+END;$t$;
+SELECT current_setting('audit.salary.bridge')::jsonb result;ROLLBACK;

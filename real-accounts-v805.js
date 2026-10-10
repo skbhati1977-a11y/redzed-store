@@ -141,7 +141,24 @@
   function wirePreviewTemplates(){
     $("previewPurchase")?.addEventListener("click",()=>{calc();message("pmsg",`Preview total ${money($("total").value)}. Posting continues through the dedicated material/purchase backend.`,"ok")});
     let receipt=true;const syncMoney=()=>{if($("receiptMode"))$("receiptMode").classList.toggle("active",receipt);if($("paymentMode"))$("paymentMode").classList.toggle("active",!receipt);if($("againstLabel"))$("againstLabel").childNodes[0].nodeValue=receipt?"Received From":"Paid To"};
-    $("receiptMode")?.addEventListener("click",()=>{receipt=true;syncMoney()});$("paymentMode")?.addEventListener("click",()=>{receipt=false;syncMoney()});$("saveMoney")?.addEventListener("click",()=>message("mmsg",`${receipt?"Receipt":"Payment"} preview ${money($("amount").value)}.`,"ok"));syncMoney();
+    $("receiptMode")?.addEventListener("click",()=>{receipt=true;syncMoney()});$("paymentMode")?.addEventListener("click",()=>{receipt=false;syncMoney()});
+    $("saveMoney")?.addEventListener("click",async()=>{
+      const button=$("saveMoney");if(button.disabled)return;const isReceipt=receipt;
+      setBusy(button,true,"Posting…");
+      try{
+        const party=$("against").value,cash=$("cashbank").value,amount=Number($("amount").value),reference=$("ref").value.trim();
+        if(!party||!cash||party===cash)throw new Error("Select different party and Cash/Bank ledgers.");
+        if(!Number.isFinite(amount)||amount<=0)throw new Error("Positive amount required.");
+        if(!reference)throw new Error("Payment / receipt reference required.");
+        const operation=isReceipt?"rr_accounts_post_receipt_v805":"rr_accounts_post_payment_v805";
+        const payload={p_cash_bank_ledger_id:cash,p_amount:amount,p_ref_no:reference,p_narration:$("note").value.trim()||null,p_data_mode:mode()};
+        payload[isReceipt?"p_party_ledger_id":"p_against_ledger_id"]=party;
+        const result=await window.RRFinancialRequests.rpc(resolveClient(),operation,payload);
+        if(result.error)throw result.error;
+        message("mmsg",`${isReceipt?"Receipt":"Payment"} ${result.data.already_processed?"already processed — see history":"posted"} · ${result.data.voucher_no} · ${money(amount)}`,"ok");
+      }catch(e){message("mmsg",errorText(e),"error")}
+      finally{setBusy(button,false)}
+    });syncMoney();
   }
 
   async function refresh(){if(state.busy)return;state.busy=true;const btn=$("refreshAll");setBusy(btn,true,"Refreshing…");try{
@@ -301,5 +318,18 @@ $("searchReports")?.addEventListener("click",()=>searchReports());$("reportSearc
     runSelectedReport
   };
 
-  document.addEventListener("DOMContentLoaded",()=>{initDates();wire();refresh()});
+  document.addEventListener("DOMContentLoaded",async()=>{
+    initDates();wire();await refresh();
+    const query=new URLSearchParams(location.search),ledger=query.get("ledger_id"),action=query.get("action");
+    const tab=action==="receipt"||action==="payment"?"money":query.get("tab");
+    if(ledger){
+      if(tab==="money")$("against").value=ledger;
+      else{$("bookView").value="LEDGER";$("bookLedger").value=ledger;$("bookLedger").parentElement.classList.remove("hidden")}
+    }
+    if(action==="payment")$("paymentMode").click();
+    if(action==="receipt")$("receiptMode").click();
+    const category=query.get("category");
+    if(category)$("bookSearch").value=({SALES:"SALE",PAYMENTS:"PAYMENT",RECEIPTS:"RECEIPT",EXPENSES:"EXPENSE",JOURNALS:"JOURNAL"})[category]||category;
+    if(tab&&["reports","purchase","money","ledgers"].includes(tab))document.querySelector(`[data-tab="${tab}"]`)?.click();
+  });
 })();

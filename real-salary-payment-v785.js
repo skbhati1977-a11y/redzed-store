@@ -7,7 +7,7 @@ const ttlMoney=v=>Number(v||0).toLocaleString('en-IN',{maximumFractionDigits:0})
 const err=e=>[e?.message,e?.details,e?.hint,e?.code].filter(Boolean).join(' — ')||'Unknown error';
 const today=()=>new Date().toLocaleDateString('en-CA',{timeZone:'Asia/Kolkata'});const monthStart=d=>`${(d||today()).slice(0,8)}01`;
 const say=(t,k='')=>{$('message').textContent=t||'';$('message').className=`message ${k}`.trim()};
-async function rpc(n,p={}){const r=await state.client.rpc(n,p);if(r.error)throw r.error;return r.data}
+async function rpc(n,p={}){const r=await window.RRFinancialRequests.rpc(state.client,n,p);if(r.error)throw r.error;return r.data}
 const category=()=>$('payrollCategory').value,method=()=>state.paymentMethod,scope=()=>$('paymentScope').value;
 const bulkMode=()=>$('bulkApplyMethod')?.value||'RATIO_FLAT';
 function setPaymentMethod(value='WORKER_LEDGER_WISE'){

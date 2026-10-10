@@ -1,0 +1,13 @@
+begin;
+create temporary table privacy_results(label text,value bigint) on commit drop;
+insert into privacy_results select 'anonymous_financial_relations_select_grants',count(*) from pg_class c where c.relnamespace='public'::regnamespace and c.relkind in('v','r') and c.relname~'(claim|advance|salary|payroll|account)' and has_table_privilege('anon',c.oid,'SELECT');
+select set_config('request.jwt.claim.sub','af915a18-3823-48df-b039-1e4c7a88479b',true);
+insert into privacy_results select 'owner_payroll_profiles',count(*) from public.rr_worker_payroll_board_v777_3;
+insert into privacy_results select 'owner_global_finance_rows',count(*) from public.rr_account_reporting_base_v806;
+select public.rr_test_set_on_behalf_context_v176('e959bce6-d191-4198-98bc-bb6c1ed27770');
+insert into privacy_results select 'worker_other_payroll_profiles',count(*) from public.rr_worker_payroll_board_v777_3 where worker_id::text<>coalesce(public.rr_upm_effective_identity_v200()->>'worker_id','');
+insert into privacy_results select 'worker_global_finance_rows',count(*) from public.rr_account_reporting_base_v806;
+insert into privacy_results select 'worker_other_advance_rows',count(*) from public.rr_worker_advance_balance_v785 where worker_id::text<>coalesce(public.rr_upm_effective_identity_v200()->>'worker_id','');
+do $a$ begin if exists(select 1 from privacy_results where label in ('anonymous_financial_relations_select_grants','worker_other_payroll_profiles','worker_global_finance_rows','worker_other_advance_rows') and value<>0) then raise exception 'Financial privacy failed';end if;end $a$;
+select * from privacy_results;
+rollback;

@@ -1,0 +1,25 @@
+BEGIN;
+REVOKE EXECUTE ON FUNCTION public.rr_accounts_bill_status_v500(uuid) FROM PUBLIC,anon;
+GRANT EXECUTE ON FUNCTION public.rr_accounts_bill_status_v500(uuid) TO authenticated;
+REVOKE EXECUTE ON FUNCTION public.rr_accounts_create_bill_v500(uuid,uuid,text,text,date,numeric,text,uuid) FROM PUBLIC,anon;
+REVOKE EXECUTE ON FUNCTION public.rr_accounts_create_bill_v500(uuid,uuid,text,text,date,numeric,text,uuid) FROM authenticated;
+REVOKE EXECUTE ON FUNCTION public.rr_accounts_fifo_after_insert_v500() FROM PUBLIC,anon;
+REVOKE EXECUTE ON FUNCTION public.rr_accounts_fifo_after_insert_v500() FROM authenticated;
+REVOKE EXECUTE ON FUNCTION public.rr_accounts_fifo_after_status_v500() FROM PUBLIC,anon;
+REVOKE EXECUTE ON FUNCTION public.rr_accounts_fifo_after_status_v500() FROM authenticated;
+REVOKE EXECUTE ON FUNCTION public.rr_accounts_fifo_rebuild_party_v500(uuid,text) FROM PUBLIC,anon;
+REVOKE EXECUTE ON FUNCTION public.rr_accounts_fifo_rebuild_party_v500(uuid,text) FROM authenticated;
+REVOKE EXECUTE ON FUNCTION public.rr_accounts_fifo_settle_v500(uuid,uuid,text,numeric,text,text) FROM PUBLIC,anon;
+REVOKE EXECUTE ON FUNCTION public.rr_accounts_fifo_settle_v500(uuid,uuid,text,numeric,text,text) FROM authenticated;
+REVOKE EXECUTE ON FUNCTION public.rr_accounts_fifo_sync_transaction_v500(uuid) FROM PUBLIC,anon;
+REVOKE EXECUTE ON FUNCTION public.rr_accounts_fifo_sync_transaction_v500(uuid) FROM authenticated;
+REVOKE EXECUTE ON FUNCTION public.rr_accounts_mirror_cb_damage_vendor_claim_v9134(uuid,text) FROM PUBLIC,anon;
+GRANT EXECUTE ON FUNCTION public.rr_accounts_mirror_cb_damage_vendor_claim_v9134(uuid,text) TO authenticated;
+REVOKE EXECUTE ON FUNCTION public.rr_report_send_superadmin_confirm_v1(uuid) FROM PUBLIC,anon;
+GRANT EXECUTE ON FUNCTION public.rr_report_send_superadmin_confirm_v1(uuid) TO authenticated;
+REVOKE EXECUTE ON FUNCTION public.rr_report_send_superadmin_prepare_v1(text,uuid) FROM PUBLIC,anon;
+GRANT EXECUTE ON FUNCTION public.rr_report_send_superadmin_prepare_v1(text,uuid) TO authenticated;
+REVOKE EXECUTE ON FUNCTION public.rr_salary_productive_lapse_provision_v676(text,text) FROM PUBLIC,anon;
+REVOKE EXECUTE ON FUNCTION public.rr_salary_productive_lapse_provision_v676(text,text) FROM authenticated;
+COMMIT;
+

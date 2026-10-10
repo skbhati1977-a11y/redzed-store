@@ -174,7 +174,7 @@ async function savePost(){
  const pq=Number($("purchaseQty").value||0),rate=Number($("rate").value||0),purchaseUnit=$("purchaseUnit").value,consumptionUnit=selected?.consumption_unit||$("consumptionUnit").value,conversion=purchaseUnit===consumptionUnit?1:Number($("purchaseConversion").value||0);if(pq<=0)throw Error("Purchase Qty required.");if(purchaseUnit!==consumptionUnit&&conversion<=0)throw Error("Purchase to Consumption conversion required when units differ.");
  if(!$("supplier").value)throw Error("Select Supplier / Party.");
  if(selected.source_managed)throw Error("Source-managed Material must be purchased in its canonical module. Mapping remains locked here.");
- const {data,error}=await client.rpc("rr_material_post_purchase_txn_v661",{
+ const {data,error}=await window.RRFinancialRequests.rpc(client,"rr_material_post_purchase_txn_v661",{
    p_supplier_ledger_id:$("supplier").value||null,p_material_id:selected.existing_material_id,p_purchase_ledger_id:$("purchaseLedger").value||null,
    p_purchase_qty:pq,p_purchase_unit:purchaseUnit,p_purchase_to_consumption:conversion,p_rate:rate,p_bill_no:$("billNo").value||null,p_bill_date:$("billDate").value||null,p_gst_amount:Number($("gst").value||0),
    p_payment_status:$("paymentStatus").value,p_paid_amount:Number($("paidAmount").value||0),p_cash_bank_ledger_id:$("cashBank").value||null,p_data_mode:$("dataMode").value

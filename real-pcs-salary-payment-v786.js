@@ -25,7 +25,7 @@ function say(t,k=''){
   if($('message')){$('message').textContent=text;$('message').className=className}
   if($('submitStatus')){$('submitStatus').textContent=text;$('submitStatus').className=className}
 }
-async function rpc(n,p={}){const r=await state.client.rpc(n,p);if(r.error)throw r.error;return r.data}
+async function rpc(n,p={}){const r=await window.RRFinancialRequests.rpc(state.client,n,p);if(r.error)throw r.error;return r.data}
 function choice(){return $('paymentChoice').value}
 function method(){return $('paymentMethod').value}
 function applyChoice(){
