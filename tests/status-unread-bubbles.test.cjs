@@ -8,10 +8,10 @@ test('OPEN and WORKING badges scope to root, department and worker; reading one 
  const count=(attribute,status)=>w.document.querySelector('['+attribute+'="'+status+'"] [data-unread-bubble="status"]')?.textContent;
  try{
   w.eval(fs.readFileSync('real-chat-inbox-summary-test71.js','utf8'));await w.RRChatNotifications71.refresh();
-  assert.equal(count('data-status','OPEN'),'2');assert.equal(count('data-status','WORKING'),'2');assert.equal(count('data-chat-status','OPEN'),'2');assert.equal(count('data-chat-status','WORKING'),'1');
-  context={kind:'person',id:'a',parentDepartment:'PRINTING',status:'OPEN'};w.RRChatNotifications71.paint();assert.equal(count('data-chat-status','OPEN'),'1');assert.equal(count('data-chat-status','WORKING'),'1');
-  await w.RRChatNotifications71.visible();assert.equal(count('data-chat-status','OPEN'),undefined);assert.equal(count('data-chat-status','WORKING'),'1');assert.equal(count('data-status','OPEN'),'1');
-  context.status='WORKING';await w.RRChatNotifications71.visible();assert.equal(count('data-chat-status','WORKING'),undefined);assert.equal(count('data-status','WORKING'),'1');
-  context={kind:'department',id:'PRINTING',status:'WORKING'};w.RRChatNotifications71.paint();assert.equal(count('data-chat-status','OPEN'),'1');assert.equal(count('data-chat-status','WORKING'),undefined);
+  assert.equal(count('data-status','OPEN'),'Unread 2');assert.equal(count('data-status','WORKING'),'Unread 2');assert.equal(count('data-chat-status','OPEN'),'Unread 2');assert.equal(count('data-chat-status','WORKING'),'Unread 1');
+  context={kind:'person',id:'a',parentDepartment:'PRINTING',status:'OPEN'};w.RRChatNotifications71.paint();assert.equal(count('data-chat-status','OPEN'),'Unread 1');assert.equal(count('data-chat-status','WORKING'),'Unread 1');
+  await w.RRChatNotifications71.visible();assert.equal(count('data-chat-status','OPEN'),undefined);assert.equal(count('data-chat-status','WORKING'),'Unread 1');assert.equal(count('data-status','OPEN'),'Unread 1');
+  context.status='WORKING';await w.RRChatNotifications71.visible();assert.equal(count('data-chat-status','WORKING'),undefined);assert.equal(count('data-status','WORKING'),'Unread 1');
+  context={kind:'department',id:'PRINTING',status:'WORKING'};w.RRChatNotifications71.paint();assert.equal(count('data-chat-status','OPEN'),'Unread 1');assert.equal(count('data-chat-status','WORKING'),undefined);
  }finally{w.close();}
 });

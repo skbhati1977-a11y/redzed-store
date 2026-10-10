@@ -38,6 +38,7 @@
   if(n.action_detail?.journey_id||n.action_detail?.rectification_case_id){const key=n.action_detail.journey_id?'ALTER:'+n.action_detail.journey_id:'RECTIFICATION:'+n.action_detail.rectification_case_id;return [...root.querySelectorAll('[data-event-key]')].find(x=>x.dataset.eventKey===key)||null;}if(n.submit_request_id){const exact=[...root.querySelectorAll('[data-submit-request-id]')].find(x=>x.dataset.submitRequestId===n.submit_request_id);if(exact)return exact;}
   if(n.assignment_id){const exact=[...root.querySelectorAll('[data-assignment-id]')].find(x=>x.dataset.assignmentId===n.assignment_id);if(exact)return exact;const consolidated=[...root.querySelectorAll('[data-assignment-ids]')].find(x=>{try{return JSON.parse(x.dataset.assignmentIds).includes(n.assignment_id)}catch(_){return false}});if(consolidated)return consolidated;}
   if(n.event_key){const exact=[...root.querySelectorAll('[data-event-key]')].find(x=>x.dataset.eventKey===n.event_key);if(exact)return exact;}
+  if(n.cb_unit_id)return [...root.querySelectorAll('[data-cb-unit-id]')].find(x=>x.dataset.cbUnitId===String(n.cb_unit_id))||null;
   if(n.cb_no)return [...root.querySelectorAll('[data-cb-no]')].find(x=>x.dataset.cbNo===n.cb_no)||null;
   if(n.event_key){const combined=[...root.querySelectorAll('[data-source-event-keys]')].find(x=>{try{return JSON.parse(x.dataset.sourceEventKeys).includes(n.event_key)}catch(_){return false}});if(combined)return combined;}
   // A targeted UPM notice must never focus another assignment sharing its lot.
