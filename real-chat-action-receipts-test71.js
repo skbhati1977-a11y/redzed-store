@@ -73,6 +73,9 @@
  function eligible(row,c){if(row.department_code!==String(c.parentDepartment||c.id).toUpperCase())return false;if(c.kind==='person'&&!(row.worker_ids||[]).includes(c.id))return false;return new URL(row.route_url,location.href).searchParams.get('rc_status')===c.status;}
  function render(){const c=context(),root=document.getElementById('messages');if(!root||contextKey(c)!==key)return;
   const unread=new Set(window.RRChatNotifications71.unread().map(n=>n.action_key||n.id));const wanted=new Set();
+  root.querySelectorAll('[data-accepted-submit-ids]').forEach(card=>delete card.dataset.acceptedSubmitIds);
+  for(const row of rows){if(!eligible(row,c)||!row.action_detail?.submit_request_id||!/^Accept & Count completed$/i.test(row.actor_action_label||''))continue;const card=window.RRChatNotifications71.target(row);if(!card)continue;const ids=JSON.parse(card.dataset.acceptedSubmitIds||'[]');if(!ids.includes(row.action_detail.submit_request_id))ids.push(row.action_detail.submit_request_id);card.dataset.acceptedSubmitIds=JSON.stringify(ids);}
+
   root.querySelectorAll('[data-unmapped-actions]').forEach(el=>el.remove());
   for(const row of rows){if(row.card_receipt||!eligible(row,c))continue;const card=window.RRChatNotifications71.target(row);if(!card||card.dataset.stageFooter==='true'&&rows.some(r=>r.card_receipt&&eligible(r,c)&&window.RRChatNotifications71.target(r)===card))continue;card.querySelectorAll('p .tick').forEach(el=>el.hidden=true);
    let host=card.querySelector('.rrActionHistory71');if(!host){host=document.createElement('section');host.className='rrActionHistory71';host.setAttribute('aria-label','Action history');card.appendChild(host);}
