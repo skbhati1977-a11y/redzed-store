@@ -1,0 +1,15 @@
+const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm'),{JSDOM}=require('jsdom');
+const source=fs.readFileSync('test70-real-chat-live-v70.js','utf8');
+const controls=['workLanes71','workLaneSummary71','workFilters','openCards71','queueState71','cardScreenHeader71','contextAction'];
+const departments=['CUTTING','FABRICATION','PRINTING','STICKER','METAL_ID','STITCHING','OVERLOCK','FOLDING','KAAJ_BUTTON','TEAK_TANKI','THREAD_CUT','QC','PRESS','PACKING','DISPATCH','ADMIN','PURCHASE','SALES','ACCOUNTS','COSTING'];
+function fixture(status){
+ const dom=new JSDOM('<section id="chat" class="rrTwoScreen71 rrCardsScreen71"><div id="chatName"></div><div id="kind"></div><button id="manageStaffAction"></button>'+controls.map(id=>'<div id="'+id+'">PREVIOUS CHAT</div>').join('')+'<div id="messages"></div></section><section id="inbox"></section>');
+ const c={document:dom.window.document,window:{},CSS:{escape:s=>s},S:{status,active:{kind:'group',id:'CUTTING'},cardScreen:true,queueLoading:true,activeRenderedSearchRows:[{lot_no:'OLD'}],activeRenderedSearchKey:'OLD',noticeSourceRows:{rows:[{lot_no:'OLD'}]},navigationSeq:1,actor:{role:'ADMIN'},departments:departments.map(id=>({department_code:id,department_name:id,workers:[],staff:[],worker_count:0,staff_count:0})),search:''},$:id=>dom.window.document.getElementById(id),safe:s=>String(s),arr:x=>Array.isArray(x)?x:[],syncStatusButtons(){},mirrorSearchStatuses:()=>[],membershipAdminRole:()=>true,memberRow:()=>'',pushCurrentView(){},departmentGroupVisibleCountsV730:async()=>({OPEN:0,WORKING:0}),openMembershipAdmin(){},inbox(){},openReadymadeChatTest71(){},openChat(){},rpc:async()=>({cards:[]})};vm.createContext(c);
+ for(const [start,end] of [['function resetChatControls71()','function finishQueueView71()'],['async function openDepartment(','async function markPersonalRead(']])vm.runInContext(source.slice(source.indexOf(start),source.indexOf(end,source.indexOf(start))),c);
+ return {c,dom};
+}
+for(const status of ['OPEN','WORKING','CLOSE'])test(status+': every department directory removes previous chat controls before showing its members',async()=>{
+ const {c,dom}=fixture(status);try{for(const department of departments){for(const id of controls)c.$(id).hidden=false;c.S.cardScreen=true;c.S.activeRenderedSearchRows=[{lot_no:'OLD'}];await c.openDepartment(department,false);for(const id of controls)assert.equal(c.$(id).hidden,true,department+' leaked '+id);assert.equal(c.S.status,status);assert.equal(c.S.activeRenderedSearchRows.length,0);assert.equal(c.S.noticeSourceRows,null);assert.equal(c.S.cardScreen,false);assert.equal(c.$('chat').classList.contains('rrCardsScreen71'),false);assert.match(c.$('messages').innerHTML,/Group Chat/);}}
+ finally{dom.window.close()}
+});
+test('Readymade entry clears previous controls before module delegation',async()=>{const {c,dom}=fixture('WORKING');try{await c.openDepartment('READYMADE',false);for(const id of controls)assert.equal(c.$(id).hidden,true);assert.equal(c.S.status,'WORKING')}finally{dom.window.close()}});
