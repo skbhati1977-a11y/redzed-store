@@ -59,6 +59,20 @@ begin
      and b.source_event_type in('CUTTING_RELEASE_SUCCEEDED','CUTTING_RELEASED_PENDING_ASSIGNMENT','CUTTING_RELEASED')
      and coalesce(b.group_payload->>'canonical_lot_id',b.personal_payload->>'canonical_lot_id')=j->>'canonical_lot_id'
   ) chosen where chosen.uid is not null order by chosen.at desc nulls last limit 1;
+  -- Bind provenance to the exact event selected above, never another submit on this lot.
+  j:=j||jsonb_build_object('action_detail',coalesce((
+   select jsonb_build_object('submit_request_id',q.id,'source_department_code',q.department_code,
+    'source_worker_name',q.worker_name,'source_action','Submit',
+    'received_qty',q.lm_counted_total,'submitted_qty',q.worker_ready_total,
+    'receiver_department_code',q.target_department_code,'occurred_at',actor_at)
+   from public.rr_upm_submit_requests_v794 q
+   where q.canonical_lot_id=j->>'canonical_lot_id'
+    and ((actor_label='Accept & Count completed' and q.status='COMPLETED'
+          and q.selected_receiver_auth_id=actor and q.completed_at=actor_at)
+      or (actor_label='Submit' and q.id::text=j->>'submit_request_id'))
+   order by q.id limit 1
+  ),case when actor_label='Lot released' then jsonb_build_object(
+    'source_department_code','CUTTING','source_action','Lot released','occurred_at',actor_at) end,'{}'::jsonb));
   j:=j||jsonb_build_object('actor_action_label',actor_label,'action_subject_name',coalesce((select q.worker_name from public.rr_upm_submit_requests_v794 q where q.id::text=j->>'submit_request_id' and q.status<>'COMPLETED'),
    (select prior.responsible_name from public.rr_upm_alter_events_v740 latest
      join lateral (select previous.responsible_name from public.rr_upm_alter_events_v740 previous where previous.journey_id=latest.journey_id and previous.created_at<latest.created_at order by previous.created_at desc limit 1) prior on true
@@ -79,7 +93,7 @@ begin
   'event_key',own.source_card->>'event_key','source_event_keys',own.source_card->'source_event_keys',
   'assignment_ids',own.source_card->'assignment_ids','assignment_id',own.source_card->>'assignment_id',
   'submit_request_id',own.source_card->>'submit_request_id','lot_no',own.source_card->>'lot_no',
-  'department_code',dep,'action_label','Card','actor_action_label',own.source_card->>'actor_action_label','actor_user_id',own.actor_user_id,
+  'action_detail',own.source_card->'action_detail','department_code',dep,'action_label','Card','actor_action_label',own.source_card->>'actor_action_label','actor_user_id',own.actor_user_id,
   'action_subject_name',own.source_card->>'action_subject_name','actor_name',coalesce((select min(w.worker_name) from public.rr_worker_directory_unified_v1 w where w.linked_auth_user_id=own.actor_user_id),own.source_card->>'action_subject_name'),
   'viewer_read_at',own.read_at,'viewer_is_recipient',true,'created_at',own.source_card->>'event_at',
   'route_url','?rc_status='||upper(p_status),'worker_ids',jsonb_build_array(own.source_card->>'worker_id'),
