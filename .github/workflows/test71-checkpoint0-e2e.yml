@@ -41,20 +41,12 @@ jobs:
       - run: npm run e2e:env-status
       - run: npm run test:e2e:static
       - run: npx playwright test --project=auth-setup
-      - run: npm run test:e2e:mc1
-        if: ${{ false }}
-        continue-on-error: true
+      - run: npx playwright test --project=mc1 --no-deps
       # MC1's auth-setup writes the reusable Super Admin storage state once.
       # Later suites must reuse it instead of replaying the one-time OIDC token.
       - run: npx playwright test --project=cb-department --no-deps
-        if: ${{ false }}
-        continue-on-error: true
       - run: npx playwright test --project=material-unit --no-deps
-        if: ${{ false }}
-        continue-on-error: true
       - run: npx playwright test --project=checkpoint-8 --no-deps
-        if: ${{ false }}
-        continue-on-error: true
       - run: npx playwright test --project=full-factory --no-deps
       - name: Upload Playwright evidence
         if: always()
