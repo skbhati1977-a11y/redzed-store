@@ -20,7 +20,7 @@ const err=e=>[e?.message,e?.details,e?.hint,e?.code].filter(Boolean).join(" — 
 const canManage=()=>["owner","admin","manager","production","super_admin"].includes(state.role);
 function say(text,type=""){const el=$("message");el.textContent=text||"";el.className=`message ${type}`.trim()}
 function openSheet(id){$(id).classList.remove("hidden");document.body.style.overflow="hidden"}
-function closeSheet(id){$(id).classList.add("hidden");if(!document.querySelector(".sheet:not(.hidden)"))document.body.style.overflow=""}
+function closeSheet(id){if(id==="detailsSheet")clearPayslipUrl();$(id).classList.add("hidden");if(!document.querySelector(".sheet:not(.hidden)"))document.body.style.overflow=""}
 async function rpc(name,payload={}){
   const r=await state.client.rpc(name,payload);
   if(r.error){
@@ -272,8 +272,34 @@ async function openSection(id,section){
   }catch(e){say(err(e),"error")}
 }
 
-async function getPdf(id){try{const d=await rpc("rr_get_payslip_payload_v779_3",{p_payroll_id:id});renderDetails("PDF Payslip",`${detailHero("PDF Payslip",d.payload?.net_payable?.amount||0)}<div class="detail-empty">PDF payload ready hai. Final renderer se payslip PDF generate hogi.</div>`);say("PDF payload ready. Frontend/server renderer isse PDF banayega.","success")}catch(e){say(err(e),"error")}}
-async function getWhatsapp(id){try{const d=await rpc("rr_get_whatsapp_payslip_payload_v779_3",{p_payroll_id:id});renderDetails("WhatsApp Payslip",`<div class="detail-section"><div class="detail-box"><small>Status</small><strong>${safe(d.send_status||"READY")}</strong></div><div class="detail-box" style="margin-top:9px"><small>Message Preview</small><strong class="details">${safe(d.message_text||"")}</strong></div></div>`);say("WhatsApp payload ready. Raw URL visible nahi hai.","success")}catch(e){say(err(e),"error")}}
+let payslipUrl=null;
+function clearPayslipUrl(){if(payslipUrl){URL.revokeObjectURL(payslipUrl);payslipUrl=null;}}
+async function preparePayslip(id){
+  const data=await rpc("rr_get_payslip_payload_v779_3",{p_payroll_id:id});
+  if(!window.RRPayslipPdf71)throw Error("PDF renderer unavailable. Refresh this page.");
+  const file=await window.RRPayslipPdf71.create(data);
+  clearPayslipUrl();payslipUrl=URL.createObjectURL(file);
+  return {data,file};
+}
+function pdfDownload(file){return `<a class="btn" href="${safe(payslipUrl)}" download="${safe(file.name)}">Download PDF</a>`;}
+async function getPdf(id){try{
+  const {data,file}=await preparePayslip(id);
+  renderDetails("PDF Payslip",`${detailHero("PDF Payslip",data.payload?.net_payable?.amount)}<div class="actions">${pdfDownload(file)}</div>`);
+  say("PDF ready. Download PDF se file save karein.","success");
+}catch(e){say(err(e),"error");}}
+async function getWhatsapp(id){try{
+  const message=await rpc("rr_get_whatsapp_payslip_payload_v779_3",{p_payroll_id:id});
+  const {file}=await preparePayslip(id);
+  const shareAvailable=typeof navigator.share==="function"&&typeof navigator.canShare==="function"&&navigator.canShare({files:[file]});
+  renderDetails("Share Payslip",`<div class="detail-section"><div class="detail-box"><small>Message Preview</small><strong class="details">${safe(message.message_text||"")}</strong></div><div class="actions">${pdfDownload(file)}${shareAvailable?'<button class="btn" id="sharePayslipFile">Share PDF</button>':'<span class="muted">PDF download karke WhatsApp mein attach karein.</span>'}</div></div>`);
+  if(shareAvailable)$("sharePayslipFile").onclick=async()=>{try{
+    await navigator.share({files:[file],title:"Monthly Payslip",text:message.message_text||""});
+    say("Device share complete. Delivery recipient app mein check karein.","success");
+  }catch(e){if(e.name==="AbortError")say("Share cancelled.");else say(err(e),"error");}};
+  say("PDF ready. Share PDF se device share picker khulega.","success");
+}catch(e){say(err(e),"error");}}
+window.addEventListener("pagehide",clearPayslipUrl);
+
 function openAction(type,id){$("actionType").value=type;$("actionPayrollId").value=id;const title={DISPUTE:"Raise Payroll Dispute",REVIEW:"Open Review",FINALIZE:"Finalize Payroll",PAYMENT:"Record Salary Payment",POST:"Post Payroll"}[type]||type;$("actionTitle").textContent=title;let fields=`<label><span>Reason / Note *</span><textarea id="actionReason" rows="4" required></textarea></label>`;if(type==="DISPUTE")fields=`<label><span>Section</span><select id="actionSection"><option>MONTHLY_SALARY</option><option>NET_EXTRA_WORK</option><option>MONTHLY_INCENTIVE</option><option>CLAIMS_RECOVERY</option><option>PAYMENT</option><option>OTHER</option></select></label>`+fields;if(type==="PAYMENT")fields=`<label><span>Payment Amount *</span><input id="actionAmount" type="number" min="0.01" step="0.01" required></label><label><span>Payment Date *</span><input id="actionPaymentDate" type="date" value="${new Date().toLocaleDateString("en-CA",{timeZone:"Asia/Kolkata"})}" required></label><label><span>Payment Mode *</span><select id="actionPaymentMode"><option>CASH</option><option>BANK</option><option>UPI</option><option>CHEQUE</option><option>OTHER</option></select></label><label><span>Voucher / Reference *</span><input id="actionReference" required></label>`+fields;$("actionFields").innerHTML=fields;$("actionMessage").textContent="";openSheet("actionSheet")}
 async function submitAction(e){e.preventDefault();const type=$("actionType").value,id=$("actionPayrollId").value,reason=$("actionReason")?.value.trim()||"";try{let d;if(type==="DISPUTE")d=await rpc("rr_raise_payroll_dispute_v779_3",{p_payroll_id:id,p_section:$("actionSection").value,p_dispute_text:reason,p_evidence:{}});if(type==="POST")d=await rpc("rr_post_monthly_payroll_v779_2",{p_payroll_id:id,p_reason:reason});if(type==="REVIEW")d=await rpc("rr_open_payroll_review_v779_2",{p_payroll_id:id,p_reason:reason});if(type==="FINALIZE")d=await rpc("rr_finalize_monthly_payroll_v779_2",{p_payroll_id:id,p_reason:reason});if(type==="PAYMENT"){if(!window.RRFinancialRequests)throw new Error("Payment protection unavailable. Reload this page.");const result=await window.RRFinancialRequests.rpc(state.client,"rr_monthly_salary_payment_post_test71",{p_payroll_id:id,p_payment_amount:Number($("actionAmount").value),p_payment_date:$("actionPaymentDate").value,p_payment_mode:$("actionPaymentMode").value,p_reference_no:$("actionReference").value.trim(),p_reason:reason,p_data_mode:REAL_FACTORY_PAYROLL_DATA_MODE});if(result.error)throw result.error;d=result.data;}closeSheet("actionSheet");say(`${type} completed.`,"success");if(state.tab==="management")loadManagement();else openSummary(id)}catch(ex){$("actionMessage").textContent=err(ex);$("actionMessage").className="message error"}}
 function bindPayrollButtons(){document.querySelectorAll("[data-summary]").forEach(b=>b.onclick=()=>openSummary(b.dataset.summary));document.querySelectorAll("[data-detail-section]").forEach(b=>b.onclick=()=>openSection(b.dataset.payroll,b.dataset.detailSection));document.querySelectorAll("[data-pdf]").forEach(b=>b.onclick=()=>getPdf(b.dataset.pdf));document.querySelectorAll("[data-wa]").forEach(b=>b.onclick=()=>getWhatsapp(b.dataset.wa));document.querySelectorAll("[data-dispute]").forEach(b=>b.onclick=()=>openAction("DISPUTE",b.dataset.dispute));document.querySelectorAll("[data-action]").forEach(b=>b.onclick=()=>openAction(b.dataset.action,b.dataset.payroll))}

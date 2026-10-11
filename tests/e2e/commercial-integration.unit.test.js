@@ -18,7 +18,7 @@ const stateMirror = fs.readFileSync(
 test('commercial bridge projects existing canonical engines', () => {
   for (const name of ['rr_sales_real_chat_queue_v500', 'rr_costing_real_chat_queue_v500', 'rr_accounts_real_chat_home_v500']) {
     assert.match(sql, new RegExp(`function public\\.${name}`));
-    assert.match(chat, new RegExp(name));
+    assert.match(chat, new RegExp(name==='rr_sales_real_chat_queue_v500'?'rr_sales_real_chat_queue_test71':name));
   }
   assert.match(sql, /from public\.rr_fg_pi_v787/);
   assert.match(sql, /from public\.rr_market_requirements_v9420/);

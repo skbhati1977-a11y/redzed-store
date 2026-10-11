@@ -64,7 +64,7 @@ test('footer uses two clear lines: named action with red ticks, then Read with b
  Object.assign(f.rows[0],{actor_user_id:'imamul',actor_name:'Imamul',actor_action_label:'SUBMIT',viewer_read_at:'today'});
  f.w.RF853.rpc=async(n,a)=>n==='rr_chat_notification_inbox_test71'?[f.rows[1]]:old(n,a);
  await f.w.RRChatNotifications71.refresh();const entry=f.w.RRActionReceipts71.entry(f.rows[0]);
- assert.equal(entry.children.length,2);assert.ok(entry.children[0].classList.contains('rrCardActor71'));assert.match(entry.children[0].textContent,/Imamul · Submitted.*✓✓/);
+ assert.equal(entry.children.length,2);assert.ok(entry.children[0].classList.contains('rrCardActor71'));assert.match(entry.children[0].textContent,/Imamul · STICKER · Submitted.*✓✓/);
  assert.ok(entry.children[1].classList.contains('read'));assert.match(entry.children[1].textContent,/Read.*✓✓/);assert.equal(entry.querySelectorAll('strong').length,0);
  f.rows[0].recipients.forEach(r=>r.read_at='today');f.w.RRActionReceipts71.render();assert.ok(entry.children[1].classList.contains('all-read'));assert.match(entry.children[1].textContent,/All read.*✓✓/);assert.equal(entry.querySelectorAll('.rrActorTick71').length,1);
  }finally{f.dom.window.close();}});
@@ -75,8 +75,8 @@ test('all action descriptions use consistent plain verbs; incomplete acceptance 
 test('worker Working card shows staff assignment, named yellow Submit due, then blue Read',async()=>{const f=fixture();try{
  const card=f.w.document.querySelector('article');card.insertAdjacentHTML('beforeend','<div class="card-actions"><button data-chat-submit="a">SUBMIT</button><button data-chat-alter>ALTER</button><button data-chat-rectify>RECTIFY</button></div>');
  card.dataset.pendingPerson='Imamul';Object.assign(f.rows[0],{actor_user_id:'sudesh',actor_name:'Sudesh Bhati',actor_action_label:'Assign Work',viewer_read_at:'today'});
- await f.w.RRChatNotifications71.refresh();const entry=f.w.RRActionReceipts71.entry(f.rows[0]);assert.match(entry.children[0].textContent,/पिछला action: Sudesh Bhati · Assigned/);
- assert.equal(entry.children[1].textContent,'अगला action बाकी: SUBMIT · Imamul ✓✓');assert.ok(entry.children[2].classList.contains('read'));assert.equal(card.querySelectorAll('.rrCardPending71').length,1);
+ await f.w.RRChatNotifications71.refresh();const entry=f.w.RRActionReceipts71.entry(f.rows[0]);assert.match(entry.children[0].textContent,/पिछला action: Sudesh Bhati · STICKER · Assigned/);
+ assert.equal(entry.children[1].textContent,'अगला action बाकी: Imamul · SUBMIT ✓✓');assert.ok(entry.children[2].classList.contains('read'));assert.equal(card.querySelectorAll('.rrCardPending71').length,1);
  const pendingLine=card.querySelector('.rrCardPending71'),readLine=entry.children[2];f.w.RRActionReceipts71.render();assert.equal(card.querySelectorAll('.rrCardPending71').length,1);assert.equal(card.querySelector('.rrCardPending71'),pendingLine);assert.equal(entry.children[2],readLine);assert.equal(card.querySelectorAll('.card-actions button').length,3);
  card.querySelector('.card-actions').remove();f.w.RRActionReceipts71.render();assert.equal(card.querySelector('.rrCardPending71'),null);
  }finally{f.dom.window.close();}});
@@ -93,7 +93,7 @@ for(const [status,action,control,pending,person] of [['OPEN','Accept & Count com
  const source={card_receipt:true,action_key:'stage-a',assignment_id:'a',actor_user_id:'staff',actor_name:'Sudesh',actor_action_label:action,action_subject_name:action==='Submit'?'Imamul':null,department_code:'STICKER',route_url:'?rc_status='+status,recipients:[{recipient_id:'viewer',read_at:'today'},{recipient_id:'other',delivered_at:'today'}],viewer_read_at:'today'};
  const old=w.RF853.rpc;w.RF853.rpc=async(n,a)=>n==='rr_chat_source_card_receipts_test71'?[source]:old(n,a);await w.RRChatNotifications71.refresh();
  assert.equal(card.querySelectorAll('.rrActorTick71').length,1);assert.equal(card.querySelectorAll('.rrCardPending71').length,1);assert.equal(card.querySelectorAll('.rrActionTick71').length,1);assert.equal(card.querySelectorAll('.rrActionHistory71').length,0);
- const footer=card.querySelector('.rrSourceCardReceipt71');assert.equal(footer.children[1].textContent,'अगला action बाकी: '+pending+' · '+person+' ✓✓');assert.ok(footer.children[2].classList.contains('read'));if(action==='Submit')assert.match(footer.children[0].textContent,/Imamul \(Sudesh\) · Submitted/);else assert.match(footer.children[0].textContent,new RegExp(action==='Assign Work'?'Sudesh · Assigned':'Sudesh · Accept & Count completed'));
+ const footer=card.querySelector('.rrSourceCardReceipt71');assert.equal(footer.children[1].textContent,'अगला action बाकी: '+person+' · '+pending+' ✓✓');assert.ok(footer.children[2].classList.contains('read'));if(action==='Submit')assert.match(footer.children[0].textContent,/Imamul \(Sudesh\) · STICKER · Submitted/);else assert.match(footer.children[0].textContent,new RegExp(action==='Assign Work'?'Sudesh · STICKER · Assigned':'Sudesh · STICKER · Accept & Count completed'));
  if(status==='WORKING')assert.equal(w.RRActionReceipts71.entry(f.rows[0]),footer);
  }finally{f.dom.window.close();}});
 
@@ -102,6 +102,6 @@ test('failed source refresh preserves named red, pending yellow and read blue ac
  const row={card_receipt:true,action_key:'source-a',assignment_id:'a',department_code:'STICKER',route_url:'?rc_status=WORKING',actor_user_id:'admin',actor_name:'Sudesh',action_subject_name:'Sanju',actor_action_label:'ALTER_SUBMIT',viewer_read_at:'today',recipients:[{recipient_id:'viewer',read_at:'today'},{recipient_id:'other',read_at:null}]};
  w.RRAdminApprovalHost71.context=()=>({kind:'group',id:'STICKER',status:'WORKING',userId:'viewer'});const old=w.RF853.rpc;let fail=false;
  w.RF853.rpc=async(n,a)=>{if(n==='rr_chat_action_history_test71')return [];if(n==='rr_chat_source_card_receipts_test71'){if(fail)throw Error('timeout');return [row]}return old(n,a)};
- await w.RRActionReceipts71.refresh();const html=card.innerHTML;assert.match(card.textContent,/Sanju \(Sudesh\) · Alter submitted/);fail=true;card.innerHTML='<h2>Lot</h2>';w.RRActionReceipts71.render();assert.equal(card.querySelectorAll('.rrActorTick71,.rrCardPending71,.rrActionTick71.read').length,3);
+ await w.RRActionReceipts71.refresh();const html=card.innerHTML;assert.match(card.textContent,/Sanju \(Sudesh\) · STICKER · Alter submitted/);fail=true;card.innerHTML='<h2>Lot</h2>';w.RRActionReceipts71.render();assert.equal(card.querySelectorAll('.rrActorTick71,.rrCardPending71,.rrActionTick71.read').length,3);
  await w.RRActionReceipts71.refresh();assert.equal(card.innerHTML,html.replace('<h2>Lot 2633</h2>','<h2>Lot</h2>'));assert.equal(card.querySelectorAll('.rrActorTick71').length,1);
  }finally{f.dom.window.close()}});

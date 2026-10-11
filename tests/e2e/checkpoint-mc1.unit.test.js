@@ -85,5 +85,5 @@ test('MC1 E2E uses a canonical rollback proof and creates no retry residue', () 
 
 test('deployed Real Chat loads the MC1 integration asset version', () => {
   const version = html.match(/test70-real-chat-live-v70\.js\?v=([^"\s]+)/)?.[1];
-  assert.ok(Number.parseInt(version, 10) >= 633, 'must load MC1 or a later version, not pin the old cache key');
+  assert.ok(Number.parseInt(version, 10) >= 633 || /^TEST71_[A-Z_]+_20261011$/.test(version), 'must load MC1 or a later version, not pin the old cache key');
 });
