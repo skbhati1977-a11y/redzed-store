@@ -53,12 +53,12 @@
     </div>
     <div id="attendanceStats" class="stats"></div>
     <div class="panel">
-      <h3>Holiday Master</h3>
+      <h3>Holiday Master · Annual Calendar</h3><p class="note">Monday: paid weekly off. Configured festival holidays: paid. Lunch: 30 minutes paid (1:30–2:00 PM). Dates below show the selected year.</p>
       <form id="holidayForm">
         <div class="grid">
           <label><span>Holiday Date</span><input id="holidayDate" type="date" required></label>
           <label><span>Holiday Name</span><input id="holidayName" required placeholder="Festival / declared holiday"></label>
-          <label><span>Extra Pay Factor</span><input id="holidayFactor" type="number" min="0" max="5" step="0.01" value="0.50" required></label>
+          <label><span>Additional pay for holiday work (0 = no bonus)</span><input id="holidayFactor" type="number" min="0" max="5" step="0.01" value="0.00" required></label>
           <label><span>Remarks</span><input id="holidayRemarks" placeholder="Optional"></label>
         </div>
         <div class="actions"><button class="btn" type="submit">Save Holiday</button></div>
@@ -96,7 +96,7 @@
         <button id="reopenPayroll" class="btn warning">Owner Reopen</button>
         <button id="markPaid" class="btn">Bulk Ratio Payment / Ledger</button>
       </div>
-      <p class="note">Base Salary − Absence/Half Day/Unpaid Leave − Late + Early/After-shift OT + Monday/Holiday extra half-day + Earnings − Deductions/Advance.</p>
+      <p class="note">Base Salary − Absence/Half Day/Unpaid Leave − Late + Early/After-shift OT + configured holiday-work earnings + Earnings − Deductions/Advance.</p>
 <p class="note"><b>Payment:</b> 20th Part Payment and Month Final Payment are posted through V782 Bulk Ratio Payment. Previous Outstanding and New Outstanding carry worker-wise in the ledger.</p>
       <p id="payrollMessage" class="message"></p>
     </div>
@@ -126,7 +126,7 @@
 <script src="config.js?v=887"></script><script src="real-data-mode-controller-v786-1-1.js?v=887"></script>
 <script src="real-common.js?v=887"></script>
 <script src="payroll-calc-v778.js?v=887"></script>
-<script src="real-attendance-salary-v778.js?v=TEST71-CHAT-ATTENDANCE-20261011"></script>
+<script src="real-attendance-salary-v778.js?v=TEST71-PAID-HOLIDAYS-20261011"></script>
 <script>
 (function(){
   var V='887';
