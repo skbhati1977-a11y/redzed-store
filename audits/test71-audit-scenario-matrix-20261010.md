@@ -1,5 +1,14 @@
 # TEST71 — scenario, expected, actual और evidence checklist
 
+> Current continuation — 11 October 2026: **NOT CLEARED for new business imports.** Authoritative scenario matrix: **89 PASS, 19 FAIL, 5 BLOCKED, 19 NOT_RUN** (132 total). See [current import readiness](test71-import-readiness-20261011.md). Earlier counts and deployment restrictions below are historical.
+>
+> Existing Ci / TEST target retained by user decision. Old imaginary records must be archived separately; global archive boundary is not implemented or activated. No old records were deleted and no new business dataset was imported.
+>
+> Forward advance Accounts bridge, audited manual attendance coverage, chosen fixed-30 partial salary and actual-punch HALF_DAY rules, and atomic MC1 purchase request wiring have rollback evidence. Preview commit `573835bd6a91388bddeefc83bfe7545f2db723e5` is READY on TEST71; deployed MC1 JavaScript matches committed source exactly.
+>
+> Additional confirmed payroll blocker: `real-monthly-payroll-v779.js` calls `rr_record_monthly_salary_payment_v779_2` with amount/reason only. That function updates settlements without a Cash/Bank journal; finalize also lacks accrual Accounts posting. Meanwhile `rr_salary_current_board_v785` reads v778 approved runs and v781 ledger, rather than v779 monthly payroll. These are separate pipelines, so individual salary payment success is not full monthly payroll proof. Safe v779_5 also classifies the worker at month end, which needs departed-worker coverage. No financial source or payment mode was guessed.
+
+
 **Full audit sign-off: NOT COMPLETE.** Each PASS applies only to its written scenario; SQL/unit tests do not replace browser/role/mobile/concurrency checks. Original failures remain in history.
 
 ```json
