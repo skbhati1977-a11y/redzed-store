@@ -464,13 +464,13 @@ test('mobile Cutting App opens exact isolated Art child and Ready child remains 
     await page.goto(`/real-cutting-master.html?mode=TEST&cb_unit_id=${encodeURIComponent(ready)}&v=619`);
     await expect(page.locator('#lotSheet')).not.toHaveClass(/cm-hidden/, { timeout: 30_000 });
     await page.locator('#lotSheet [data-close-lot]').last().click();
-    await expect(page.locator('.chip-ready')).toBeVisible({ timeout: 30_000 });
-    await expect(page.locator(`[data-single="${ready}"]`)).toBeEnabled();
+    await expect(page.locator(`.cm-card[data-division-id="${ready}"] .chip-ready`)).toBeVisible({ timeout: 30_000 });
+    await expect(page.locator(`[data-release-lot="${ready}"]`)).toBeEnabled();
     await page.reload();
     await expect(page.locator('#lotSheet')).not.toHaveClass(/cm-hidden/, { timeout: 30_000 });
     await page.locator('#lotSheet [data-close-lot]').last().click();
-    await expect(page.locator('.chip-ready')).toBeVisible({ timeout: 30_000 });
-    await expect(page.locator(`[data-single="${ready}"]`)).toBeEnabled();
+    await expect(page.locator(`.cm-card[data-division-id="${ready}"] .chip-ready`)).toBeVisible({ timeout: 30_000 });
+    await expect(page.locator(`[data-release-lot="${ready}"]`)).toBeEnabled();
     const width = await page.evaluate(() => ({ body: document.body.scrollWidth, viewport: document.documentElement.clientWidth }));
     expect(width.body).toBeLessThanOrEqual(width.viewport + 2);
   } finally {
