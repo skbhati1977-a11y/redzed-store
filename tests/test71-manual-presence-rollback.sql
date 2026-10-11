@@ -35,6 +35,10 @@ BEGIN
  j:=public.rr_attendance_presence_run_test71(gen_random_uuid(),w,true);IF (j->>'requests')::integer<>1 THEN RAISE EXCEPTION 'Manual review push failed';END IF;
  IF NOT EXISTS(SELECT 1 FROM public.rr_targeted_push_outbox_v708 WHERE payload->>'source'='PRESENCE_REVIEW_TEST71' AND payload->>'request_id'=rid::text) THEN RAISE EXCEPTION 'Review outbox absent';END IF;
  j:=public.rr_attendance_presence_review_test71(rid,'Supervisor presence checked in person');IF (j->>'salary_deduction_applied')::boolean THEN RAISE EXCEPTION 'Unexpected deduction';END IF;
+ j:=public.rr_attendance_presence_run_test71(gen_random_uuid(),w,false);
+ SELECT id INTO rid FROM public.rr_attendance_presence_checks_test71 WHERE worker_id=w AND status='PENDING' LIMIT 1;
+ UPDATE public.rr_regular_attendance_sessions_v778_2 SET checkout_at=now() WHERE worker_id=w AND business_date=(now() AT TIME ZONE 'Asia/Kolkata')::date AND data_mode='TEST';
+ IF NOT EXISTS(SELECT 1 FROM public.rr_attendance_presence_checks_test71 WHERE id=rid AND status='CANCELLED') THEN RAISE EXCEPTION 'Checkout did not cancel presence check';END IF;
  IF (SELECT count(*) FROM public.rr_attendance_day_v777_2)<>before_days OR (SELECT count(*) FROM public.rr_payroll_runs_v778)<>before_pay THEN RAISE EXCEPTION 'Presence changed payroll';END IF;
  IF EXISTS(SELECT 1 FROM cron.job WHERE jobname ILIKE '%presence%') THEN RAISE EXCEPTION 'Automatic presence job exists';END IF;
 END $test$;
