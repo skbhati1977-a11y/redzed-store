@@ -22,7 +22,7 @@ permissions:
 
 concurrency:
   group: test71-full-factory-${{ github.ref }}
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   mc1:

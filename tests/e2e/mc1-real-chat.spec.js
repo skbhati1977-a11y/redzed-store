@@ -134,9 +134,10 @@ test('MC1 purchase, consumption, costing, close and idempotency stay canonical',
   expect(Number(exactConsumption[0].qty)).toBe(Number(consumption.qty));
   expect(Number(exactConsumption[0].value)).toBe(Number(consumption.value));
 
-  await page.locator('[data-chat-status="CLOSE"]').click();
-  await expect(page.locator('#kind')).toContainText('Closing Stock');
-  await expect(page.locator('#messages')).toContainText(seed.fabric.fabric_name);
+  // The current chat has OPEN/WORKING tabs; closing stock is a read-only
+  // section inside the active MC1 WORKING feed.
+  await expect(page.locator('.mcv504-stock-section')).toContainText('Closing Stock');
+  await expect(page.locator('.mcv504-stock-section')).toContainText(seed.fabric.fabric_name);
   const close = await rpc(page, 'rr_mc1_real_chat_queue_v504', { p_status: 'CLOSE', p_search: seed.fabric.fabric_name });
   expect(close.cards).toHaveLength(1);
 
@@ -144,6 +145,6 @@ test('MC1 purchase, consumption, costing, close and idempotency stay canonical',
   await expect(page.locator('#state')).not.toContainText('Secure mapping loading', { timeout: 30_000 });
   await page.locator('#menu').evaluate((button) => button.click());
   await page.locator('[data-workflow="1:1"]').evaluate((button) => button.click());
-  await expect(page.locator('#kind')).toContainText('Closing Stock');
-  await expect(page.locator('#messages')).toContainText(seed.fabric.fabric_name);
+  await expect(page.locator('#kind')).toContainText('Lot Consumption');
+  await expect(page.locator('.mcv504-stock-section')).toContainText(seed.fabric.fabric_name);
 });

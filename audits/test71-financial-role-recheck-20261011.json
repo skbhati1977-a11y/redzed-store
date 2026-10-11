@@ -21,7 +21,9 @@
     "salary_advance_recovery_and_reversal": "PASS: 15000 accrual minus 100 advance equals 14900 cash; reversal restores advance",
     "opening_import_retry_and_changed_payload": "PASS",
     "cb_bom_retry_category_snapshot_and_inheritance": "PASS",
-    "committee_cash_bank_prize_and_dividend": "PASS: six rollback assertions, separate cloned TEST schemes"
+    "committee_cash_bank_prize_and_dividend": "PASS: six rollback assertions, separate cloned TEST schemes",
+    "derived_art_material_quantity_and_allocations": "PASS: second Art, computed quantities, allocation identities, retry, confirmed purchase lock, and required-material Cutting HOLD",
+    "canonical_derived_due_material_confirmation": "PASS: canonical Save, actual quantity/rate/amount, exact retry, and confirmed rate lock"
   },
   "costing": {
     "app_chat_parity_lots": 43,
@@ -42,10 +44,21 @@
     "posted_test_transactions_checked": 326
   },
   "live_browser_run": {
-    "id": 38114770069,
-    "sha": "3db4815624c2eaf8ea298c2278b2342b910b4dfa",
-    "status": "IN_PROGRESS",
-    "mc1": "FAIL; logs pending job completion"
+    "id": 38116222758,
+    "sha": "a2701bce48f07916cbbc933c1f3e820ca2c16766",
+    "mc1_form_stability": "PASS deployed",
+    "mc1_full": "FAIL: retired CLOSE tab expected; WORKING closing-stock section now prepared for verification",
+    "commercial_previous_run": {
+      "id": 38114770069,
+      "passed": [
+        "Sales lifecycle queues/RCI",
+        "Costing privacy",
+        "Accounts bill/FIFO/aging reconciliation",
+        "Worker commercial denial (Act As)",
+        "mobile commercial viewport"
+      ]
+    },
+    "independent_role_logins": "NOT_RUN"
   },
   "full_clean_chit": false,
   "remaining": [
@@ -56,5 +69,9 @@
     "four unmapped historical test 03 lots",
     "complete downstream commercial and departmental journeys"
   ],
-  "mutation_policy": "All database evidence above ran inside BEGIN/ROLLBACK; no business payment committed."
+  "mutation_policy": "All database test fixtures ran with BEGIN/ROLLBACK. Two targeted function migrations were applied; no approved business opening or payment was invented.",
+  "applied_migrations": [
+    "20261011055232_test71_derived_due_allocation_refresh",
+    "20261011060028_test71_confirm_derived_due_material"
+  ]
 }

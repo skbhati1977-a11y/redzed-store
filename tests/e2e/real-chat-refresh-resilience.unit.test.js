@@ -74,7 +74,8 @@ test('empty-state observer preserves MC1 purchase form and stock cards', () => {
   for (const html of [
     '<article class="mcv504-card" data-mc-draft><select data-mc-fabric><option>Fabric</option></select></article>',
     '<article class="mcv504-card">LOT CONSUMPTION</article>',
-    '<article class="mcv504-card">CLOSING STOCK</article>'
+    '<article class="mcv504-card">CLOSING STOCK</article>',
+    '<section class="mcv504-stock-section">No Matching Cloth stock.</section>'
   ]) {
     const dom = new JSDOM('<div id="messages">'+html+'</div>');
     const box = dom.window.document.getElementById('messages');
@@ -121,4 +122,48 @@ test('initial view restoration cannot replace a newer user navigation', async ()
   assert.equal(rootRenders,0);assert.equal(scope.S.active,active);
   await scope.restoreInitialView71({view:'inbox'},new URLSearchParams(),1);
   assert.equal(rootRenders,1);assert.equal(scope.S.active,null);
+});
+
+test('initial conversation renders before history hydration and is not reopened afterward', async () => {
+  const boot=functionSource(chat,'boot');
+  const renderAt=boot.indexOf("if(resumeState.view!=='inbox')restoreView(resumeState)"), loadAt=boot.indexOf('await load(false)');
+  assert.ok(renderAt>=0 && loadAt>renderAt);
+  const active={kind:'group',id:'STITCHING'};
+  const scope={S:{navigationSeq:1,active},restoreView(){throw Error('Conversation reopened');},inbox(){throw Error('Conversation replaced');}};
+  installFunctions(chat,scope,['restoreInitialView71']);
+  await scope.restoreInitialView71({view:'chat',kind:'group',id:'STITCHING'},new URLSearchParams(),1);
+  assert.equal(scope.S.active,active);
+});
+
+function mc1WorkingFixture(rpc) {
+  const {JSDOM}=require('jsdom');
+  const dom=new JSDOM('<div id="drawer"></div><div id="chatName"></div><div id="kind"></div><div id="manageStaffAction"></div><div id="contextAction"></div><div id="searchNotice"></div><div id="messages"></div><div id="inbox"></div><div id="chat"></div>');
+  const scope={S:{mc1LoadSeq:0,status:'WORKING',search:''},$:id=>dom.window.document.getElementById(id),mc1Css(){},syncStatusButtons(){},syncWorkFilters(){},arr:x=>x||[],safe:x=>x,rpc,
+    mc1ConsumptionCard:c=>'<article class="mcv504-card">'+c.lot_no+'</article>',mc1ClosingCard:c=>'<article class="mcv504-card">'+c.fabric_name+' '+c.closing_qty+'</article>',bindMc1History(){},err:e=>e.message};
+  installFunctions(chat,scope,['openMc1Chat']);return {dom,scope};
+}
+test('MC1 WORKING exposes canonical closing stock without a retired CLOSE tab', async () => {
+  const calls=[];
+  const {dom,scope}=mc1WorkingFixture(async(name,p)=>{calls.push(p.p_status);return {cards:p.p_status==='WORKING'?[{lot_no:'TEST-LOT'}]:[{fabric_name:'TEST CLOTH',closing_qty:3}]};});
+  await scope.openMc1Chat(1,1,false);
+  assert.deepEqual(calls,['WORKING','CLOSE']);
+  assert.match(scope.$('messages').textContent,/TEST-LOT/);
+  assert.match(dom.window.document.querySelector('.mcv504-stock-section').textContent,/TEST CLOTH 3/);
+  assert.equal(scope.S.status,'WORKING');dom.window.close();
+});
+test('MC1 stock failure preserves the available consumption records', async () => {
+  const {dom,scope}=mc1WorkingFixture(async(name,p)=>{if(p.p_status==='CLOSE')throw Error('Stock temporarily unavailable');return {cards:[{lot_no:'TEST-LOT'}]};});
+  await scope.openMc1Chat(1,1,false);
+  assert.match(scope.$('messages').textContent,/TEST-LOT/);
+  assert.match(scope.$('messages').textContent,/Stock temporarily unavailable/);dom.window.close();
+});
+test('a late MC1 stock reply cannot overwrite a newly selected conversation', async () => {
+  let finish;
+  const {dom,scope}=mc1WorkingFixture(async(name,p)=>{if(p.p_status==='CLOSE')return new Promise(resolve=>{finish=resolve});return {cards:[{lot_no:'TEST-LOT'}]};});
+  const pending=scope.openMc1Chat(1,1,false);
+  await new Promise(resolve=>setImmediate(resolve));
+  assert.match(scope.$('messages').textContent,/TEST-LOT/);
+  scope.S.active={kind:'group',id:'STITCHING'};scope.$('messages').textContent='New conversation';
+  finish({cards:[{fabric_name:'STALE CLOTH',closing_qty:3}]});await pending;
+  assert.equal(scope.$('messages').textContent,'New conversation');dom.window.close();
 });
