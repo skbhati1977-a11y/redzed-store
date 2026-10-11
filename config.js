@@ -47,7 +47,7 @@ if(!rrIsDashboardPath(window.location.pathname)){
  };
  document.addEventListener('DOMContentLoaded',pinDashboardReturn,{once:true});
  setTimeout(pinDashboardReturn,0);
- new MutationObserver(pinDashboardReturn).observe(document.documentElement,{childList:true,subtree:true});
+ let dashboardReturnFrame=0;new MutationObserver(()=>{if(dashboardReturnFrame)return;dashboardReturnFrame=requestAnimationFrame(()=>{dashboardReturnFrame=0;pinDashboardReturn()})}).observe(document.documentElement,{childList:true,subtree:true});
  document.addEventListener('click',e=>{const a=e.target.closest?.('a[href]');if(!a)return;try{const u=new URL(a.getAttribute('href'),window.location.href);if(/\/real-dashboard(?:-v\d+)?\.html$/i.test(u.pathname)){e.preventDefault();window.location.href=RR_LATEST_DASHBOARD_URL}}catch(_e){}},true);
  if(/\/real-cb-new-v9130-fix2\.html$/i.test(window.location.pathname)){
   document.addEventListener('click',e=>{const btn=e.target.closest('button');const inline=String(btn?.getAttribute('onclick')||'');if(btn&&/history\.back\s*\(/i.test(inline)){e.preventDefault();e.stopImmediatePropagation();window.location.href=RR_LATEST_DASHBOARD_URL}},true);
