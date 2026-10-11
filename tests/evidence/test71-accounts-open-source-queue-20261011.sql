@@ -1,0 +1,20 @@
+BEGIN;
+SELECT set_config('request.jwt.claim.sub','893c58dd-420b-4dfa-aff7-844e20e634c5',true);
+CREATE TEMP TABLE queue_test_result(label text,passed boolean) ON COMMIT DROP;
+DO $$ DECLARE r jsonb;x jsonb;expected int;
+BEGIN
+r:=public.rr_accounts_real_chat_home_v500('OPEN','TEST');
+SELECT count(*) INTO expected FROM public.rr_account_bills_v500 WHERE data_mode='TEST' AND status<>'REVERSED' AND outstanding_amount>0.005;
+IF expected<>(SELECT count(*) FROM jsonb_array_elements(r->'cards') z WHERE z->>'kind' IN('PAYABLE','RECEIVABLE')) THEN RAISE EXCEPTION 'Pending bills missing or duplicated';END IF;
+IF EXISTS(SELECT 1 FROM jsonb_array_elements(r->'cards') z WHERE z->>'data_mode'<>'TEST') THEN RAISE EXCEPTION 'TEST mixed scope';END IF;
+INSERT INTO queue_test_result VALUES('all_pending_bills_mapped',true),('test_cards_explicit_mode',true);
+r:=public.rr_accounts_real_chat_home_v500('OPEN','REAL');
+IF EXISTS(SELECT 1 FROM jsonb_array_elements(r->'cards') z WHERE z->>'data_mode'<>'REAL') THEN RAISE EXCEPTION 'REAL leaked TEST cards';END IF;
+INSERT INTO queue_test_result VALUES('real_does_not_leak_test_committee',true);
+BEGIN PERFORM public.rr_accounts_real_chat_home_v500('OPEN','UNKNOWN');RAISE EXCEPTION 'Invalid mode accepted';EXCEPTION WHEN OTHERS THEN IF SQLERRM='Invalid mode accepted' THEN RAISE;END IF;END;
+INSERT INTO queue_test_result VALUES('invalid_mode_blocked',true);
+PERFORM set_config('request.jwt.claim.sub','',true);
+BEGIN PERFORM public.rr_accounts_real_chat_home_v500('OPEN','TEST');RAISE EXCEPTION 'Anonymous accepted';EXCEPTION WHEN OTHERS THEN IF SQLERRM='Anonymous accepted' THEN RAISE;END IF;END;
+INSERT INTO queue_test_result VALUES('anonymous_blocked',true);
+END;$$;
+SELECT * FROM queue_test_result;ROLLBACK;
