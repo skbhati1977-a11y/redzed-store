@@ -1,4 +1,5 @@
 const { test, expect } = require('@playwright/test');
+const { randomUUID } = require('node:crypto');
 const { ensureSession } = require('./session');
 
 async function rpc(page, name, params = {}) {
@@ -99,7 +100,7 @@ test('MC1 draft, consumption and closing stock remain visible through navigation
     if (!fabric || !vendor) throw new Error('Safe MC1 E2E fabric/vendor fixture missing');
     return { fabric, vendor };
   });
-  const draftBill = `TEST71-DRAFT-${Date.now()}`;
+  const draftBill = `TEST71-DRAFT-${randomUUID()}`;
   await page.locator('[data-mc-fabric]').selectOption(String(seed.fabric.id || seed.fabric.matching_item_id));
   await page.locator('[data-mc-vendor]').selectOption(String(seed.vendor.supplier_ledger_id));
   await page.locator('[data-mc-bill]').fill(draftBill);
