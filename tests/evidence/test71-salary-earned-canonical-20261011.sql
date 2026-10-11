@@ -37,6 +37,12 @@ r:=public.rr_generate_worker_monthly_payroll_v779_1(w,'2026-09-01','TEST','Parti
 select * into pay from public.rr_monthly_payroll_v779_1 where payroll_id=(r->>'payroll_id')::uuid;
 if pay.monthly_salary_amount<>round(p.monthly_salary*16/30.0,2) or pay.scheduled_minutes_snapshot<>9600 then raise exception 'Fixed thirty day partial salary incorrect: % / %',pay.monthly_salary_amount,pay.scheduled_minutes_snapshot;end if;
 if pay.per_minute_rate<>round(p.monthly_salary/18000.0,8) then raise exception 'Partial month altered time rate';end if;
+update public.rr_worker_payroll_profile_v777_2 set effective_to='2026-09-25' where profile_id=p.profile_id;
+r:=public.rr_generate_worker_monthly_payroll_safe_v779_5(w,'2026-09-01','TEST','Departed worker rollback');
+select * into pay from public.rr_monthly_payroll_v779_1 where payroll_id=(r->>'payroll_id')::uuid;
+if pay.monthly_salary_amount IS DISTINCT FROM round(p.monthly_salary*11/30.0,2) then raise exception 'Departed safe payroll wrong';end if;
+if (select earned_to_cutoff from public.rr_salary_monthly_earned_v782(w,'2026-09-30','TEST')) IS DISTINCT FROM pay.monthly_salary_amount+pay.net_extra_work_amount then raise exception 'Departed payment board differs';end if;
+insert into payroll_coverage_result values('departed_worker_safe_generation_and_board','true');
 update public.rr_monthly_payroll_v779_1 set payroll_status='FINAL' where payroll_id=pay.payroll_id;
 blocked:=false;begin
 perform public.rr_attendance_save_v778(w,'2026-09-16',null,null,'ABSENT',false,'CORRECTION',null,'Final lock rollback','TEST');
