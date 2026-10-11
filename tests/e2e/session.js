@@ -27,6 +27,9 @@ async function bootstrap(page) {
   const expectedSha = process.env.E2E_EXPECTED_DEPLOYMENT_SHA || process.env.GITHUB_SHA || null;
   for (let attempt = 0; attempt < 24; attempt += 1) {
     response = await page.request.post("/api/e2e-session", { headers });
+    if (response.status() === 503 && response.headers()["x-test71-upstream-unavailable"] === "1") {
+      throw new Error("TEST71 Supabase authentication unavailable (503); workflow verification has not started");
+    }
     if (response.ok()) {
       const candidate = await response.json();
       if (!expectedSha || candidate?.deployment?.commit_sha === expectedSha) {

@@ -46,3 +46,86 @@ test("TEST71 without an authorized runner identity fails closed", async () => {
   const result = await invoke("preview", "test71-real-chat-e2e-finalization");
   assert.equal(result.code, 404);
 });
+
+async function authorizedInvoke(fetchStub) {
+  const values = {
+    VERCEL_ENV: 'preview', VERCEL_GIT_COMMIT_REF: 'test71-real-chat-e2e-finalization',
+    E2E_TEST_BOOTSTRAP_SECRET: 'fixture-bootstrap-secret-at-least-32-characters',
+    E2E_TEST_SUPER_ADMIN_EMAIL: 'fixture@example.invalid', E2E_TEST_SUPER_ADMIN_PASSWORD: 'fixture-only'
+  };
+  const previous = Object.fromEntries(Object.keys(values).map(key => [key, process.env[key]]));
+  const oldFetch = global.fetch;
+  const oldTimeout = AbortSignal.timeout;
+  const deadlines = [];
+  Object.assign(process.env, values);
+  global.fetch = fetchStub;
+  AbortSignal.timeout = ms => { deadlines.push(ms); return oldTimeout(1); };
+  try {
+    const result = response();
+    await handler({ method: 'POST', headers: { 'x-e2e-bootstrap-secret': values.E2E_TEST_BOOTSTRAP_SECRET } }, result);
+    return { result, deadlines };
+  } finally {
+    global.fetch = oldFetch;
+    AbortSignal.timeout = oldTimeout;
+    for (const [key, value] of Object.entries(previous)) {
+      if (value === undefined) delete process.env[key]; else process.env[key] = value;
+    }
+  }
+}
+
+function waitForAbort(options) {
+  assert.ok(options.signal, 'upstream request must have an abort deadline');
+  return new Promise((_, reject) => {
+    // Keep the event loop alive while Node's unref'ed AbortSignal timer fires.
+    const fallback = setTimeout(() => reject(new Error('abort deadline did not fire')), 100);
+    options.signal.addEventListener('abort', () => {
+      clearTimeout(fallback);
+      reject(options.signal.reason);
+    }, { once: true });
+  });
+}
+
+const fixtureSession = { access_token: 'fixture-access', refresh_token: 'fixture-refresh', user: { id: 'fixture-user' } };
+
+test('stalled upstream password login returns generic 503 within its abort deadline', async () => {
+  const { result, deadlines } = await authorizedInvoke((_, options) => waitForAbort(options));
+  assert.equal(result.code, 503);
+  assert.deepEqual(result.body, { error: 'Not found' });
+  assert.deepEqual(deadlines, [15000]);
+});
+
+test('stalled profile verification with stalled logout never returns session tokens', async () => {
+  const calls = [];
+  const { result, deadlines } = await authorizedInvoke(async (url, options) => {
+    calls.push(url);
+    if (calls.length === 1) return { ok: true, json: async () => fixtureSession };
+    return waitForAbort(options);
+  });
+  assert.equal(result.code, 503);
+  assert.deepEqual(result.body, { error: 'Not found' });
+  assert.match(calls[2], /auth\/v1\/logout$/);
+  assert.deepEqual(deadlines, [15000, 15000, 5000]);
+});
+
+test('authorized active Super Admin still receives a verified session', async () => {
+  let calls = 0;
+  const { result, deadlines } = await authorizedInvoke(async () => {
+    calls += 1;
+    return { ok: true, json: async () => calls === 1 ? fixtureSession : [{ role_code: 'SUPER_ADMIN', is_active: true, access_status: 'ACTIVE' }] };
+  });
+  assert.equal(result.code, 200);
+  assert.equal(result.body.access_token, fixtureSession.access_token);
+  assert.equal(result.body.refresh_token, fixtureSession.refresh_token);
+  assert.deepEqual(deadlines, [15000, 15000]);
+});
+
+test('inactive profile remains denied even when logout times out', async () => {
+  let calls = 0;
+  const { result } = await authorizedInvoke(async (_, options) => {
+    calls += 1;
+    if (calls === 3) return waitForAbort(options);
+    return { ok: true, json: async () => calls === 1 ? fixtureSession : [{ role_code: 'SUPER_ADMIN', is_active: false }] };
+  });
+  assert.equal(result.code, 403);
+  assert.deepEqual(result.body, { error: 'Not found' });
+});

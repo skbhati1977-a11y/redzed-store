@@ -41,45 +41,62 @@ function fixtureKey(label, testInfo) {
 
 async function setupCbUiFixture(page, label, testInfo, makeReady = false) {
   const key = fixtureKey(label, testInfo);
-  const first = await fixtureRpc(page, 'SETUP', key);
-  expect(first.error).toBeNull();
-  expect(first.data).toMatchObject({ ok: true, fixture_rows: 1 });
+  try {
+    const first = await fixtureRpc(page, 'SETUP', key);
+    expect(first.error).toBeNull();
+    expect(first.data).toMatchObject({ ok: true, fixture_rows: 1 });
 
-  const setupRetry = await fixtureRpc(page, 'SETUP', key);
-  expect(setupRetry.error).toBeNull();
-  expect(setupRetry.data).toMatchObject({
-    ok: true,
-    cb_id: first.data.cb_id,
-    setup_duplicate_blocked: true,
-    fixture_rows: 1
-  });
+    const setupRetry = await fixtureRpc(page, 'SETUP', key);
+    expect(setupRetry.error).toBeNull();
+    expect(setupRetry.data).toMatchObject({
+      ok: true,
+      cb_id: first.data.cb_id,
+      setup_duplicate_blocked: true,
+      fixture_rows: 1
+    });
 
-  if (!makeReady) return { key, data: setupRetry.data };
+    if (!makeReady) return { key, data: setupRetry.data };
 
-  const ready = await fixtureRpc(page, 'READY', key);
-  expect(ready.error).toBeNull();
-  expect(ready.data.ready_lifecycle).toMatchObject({
-    state: 'READY_FOR_CUTTING',
-    canonical_state: 'OPEN'
-  });
+    const ready = await fixtureRpc(page, 'READY', key);
+    expect(ready.error).toBeNull();
+    expect(ready.data.ready_lifecycle).toMatchObject({
+      state: 'READY_FOR_CUTTING',
+      canonical_state: 'OPEN'
+    });
 
-  const readyRetry = await fixtureRpc(page, 'READY', key);
-  expect(readyRetry.error).toBeNull();
-  expect(readyRetry.data).toMatchObject({
-    ok: true,
-    cb_id: first.data.cb_id,
-    ready_duplicate_blocked: true,
-    fixture_rows: 1
-  });
-  expect(readyRetry.data.art_due_lifecycle).toMatchObject({
-    state: 'ART_DUE',
-    canonical_state: 'OPEN'
-  });
-  expect(readyRetry.data.ready_lifecycle).toMatchObject({
-    state: 'READY_FOR_CUTTING',
-    canonical_state: 'OPEN'
-  });
-  return { key, data: readyRetry.data };
+    const readyRetry = await fixtureRpc(page, 'READY', key);
+    expect(readyRetry.error).toBeNull();
+    expect(readyRetry.data).toMatchObject({
+      ok: true,
+      cb_id: first.data.cb_id,
+      ready_duplicate_blocked: true,
+      fixture_rows: 1
+    });
+    expect(readyRetry.data.art_due_lifecycle).toMatchObject({
+      state: 'ART_DUE',
+      canonical_state: 'OPEN'
+    });
+    expect(readyRetry.data.ready_lifecycle).toMatchObject({
+      state: 'READY_FOR_CUTTING',
+      canonical_state: 'OPEN'
+    });
+    return { key, data: readyRetry.data };
+  } catch (setupError) {
+    // SETUP can commit before READY or a browser assertion fails. Retire only
+    // this run's marker-guarded fixture; preserve the original failure.
+    try {
+      const cleanup = await fixtureRpc(page, 'RETIRE', key);
+      if (cleanup.error || cleanup.data?.ok !== true || cleanup.data?.active_fixture_rows !== 0) {
+        throw new Error(`CB fixture retirement failed: ${JSON.stringify(cleanup)}`);
+      }
+    } catch (cleanupError) {
+      await testInfo.attach('cb-fixture-cleanup-failure', {
+        body: Buffer.from(JSON.stringify({ fixture_key: key, error: cleanupError.message })),
+        contentType: 'application/json'
+      }).catch(() => null);
+    }
+    throw setupError;
+  }
 }
 
 async function retireCbUiFixture(page, key) {
