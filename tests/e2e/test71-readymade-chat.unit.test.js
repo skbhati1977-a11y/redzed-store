@@ -158,7 +158,7 @@ test('Real Chat shell opens Readymade first, switches OPEN/WORKING, and Back ret
  return {data,error:null};}};
  w.eval(code);w.eval(fs.readFileSync(path.join(root,'test70-real-chat-live-v70.js'),'utf8'));await wait();await wait();
  assert.equal(w.document.querySelector('[data-department]').dataset.department,'READYMADE');
- w.document.querySelector('[data-department="READYMADE"]').click();await wait();assert.ok(w.document.querySelector('[data-new]'));assert.equal(w.document.getElementById('chatName').textContent,'Readymade Garments');
+ w.document.querySelector('[data-department="READYMADE"]').click();await wait();w.document.querySelector('[data-chat-status="OPEN"]').click();await wait();assert.ok(w.document.querySelector('[data-new]'));assert.equal(w.document.getElementById('chatName').textContent,'Readymade Garments');
  w.document.querySelector('[data-chat-status="WORKING"]').click();await wait();assert.ok(w.document.querySelector('[data-category]'));assert.equal(w.__rrRealChatView.status,'WORKING');
  w.document.querySelector('[data-chat-status="OPEN"]').click();await wait();assert.ok(w.document.querySelector('[data-new]'));
  w.document.getElementById('back').click();await wait();assert.ok(!w.document.getElementById('inbox').hidden);assert.equal(w.document.querySelector('[data-department]').dataset.department,'READYMADE');

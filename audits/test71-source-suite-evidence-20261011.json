@@ -1,778 +1,599 @@
 {
-  "files": 110,
-  "passed": 83,
-  "failed": 27,
-  "timeout": 0,
-  "cases": [
+  "date": "2026-10-11",
+  "base_commit": "d058a01bbc05a6b60bd491d172a532f80bec85a2",
+  "scope": "Authoritative clean checkout plus targeted fixes; source suite only",
+  "files": 116,
+  "passed_files": 116,
+  "failed_files": 0,
+  "test_counts": {
+    "tests": 663,
+    "pass": 663,
+    "fail": 0,
+    "skipped": 0
+  },
+  "results": [
     {
       "file": "tests/action-read-details.test.cjs",
-      "exit": 1,
-      "seconds": 3.51,
-      "timeout": false,
-      "output": "ue across DOM replacement (13.425369ms)\n  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /Sanju \\(Sudesh\\) · Alter submitted/. Input:\n  \n  'Lot 2633पिछला action: Sanju (Sudesh) · STICKER · Alter submitted✓✓अगला action बाकी: Sanju · ALTER SUBMIT ✓✓Read✓✓'\n  \n      at TestContext.<anonymous> (/workspace/scratch/4d4d4ce23379/redzed-test71-review/tests/action-read-details.test.cjs:105:72)\n      at async Test.run (node:internal/test_runner/test:1389:7)\n      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {\n    generatedMessage: true,\n    code: 'ERR_ASSERTION',\n    actual: 'Lot 2633पिछला action: Sanju (Sudesh) · STICKER · Alter submitted✓✓अगला action बाकी: Sanju · ALTER SUBMIT ✓✓Read✓✓',\n    expected: /Sanju \\(Sudesh\\) · Alter submitted/,\n    operator: 'match',\n    diff: 'simple'\n  }\n"
+      "exit": 0,
+      "seconds": 5.14
     },
     {
       "file": "tests/alter-card-visibility.test.cjs",
       "exit": 0,
-      "seconds": 0.23,
-      "timeout": false,
-      "output": "✔ seven active custody cards remain visible in ALTER for an observer without action permission (3.651512ms)\n✔ unmapped regular cards and zero-quantity completed custody do not inflate tab counts (0.485962ms)\n✔ render counts and filters share the same visible source; personal custody is retained (0.374679ms)\nℹ tests 3\nℹ suites 0\nℹ pass 3\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 140.023035\n"
+      "seconds": 0.4
     },
     {
       "file": "tests/assigned-receipt-queue.test.cjs",
       "exit": 0,
-      "seconds": 1.54,
-      "timeout": false,
-      "output": "✔ staff assigned-receipt form opens read-only and cancel never claims team or accepts (114.446133ms)\n✔ assigned receipt requires all colours and whole nonempty physical counts before atomic save (35.867317ms)\n✔ assigned receipt failed Save keeps form and allows retry without false acceptance (17.236872ms)\n✔ shared group rows consolidate pending quantities and include the same extras used by root counts (2.644838ms)\nℹ tests 4\nℹ suites 0\nℹ pass 4\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 852.729053\n"
+      "seconds": 1.36
     },
     {
       "file": "tests/atomic-accept-count.test.cjs",
       "exit": 0,
-      "seconds": 0.9,
-      "timeout": false,
-      "output": "blank, fractional, negative and partially unchecked count cannot Save (73.937303ms)\n✔ full count Saves once, clears pending caches and reloads the next-stage projection (29.098014ms)\n✔ Save failure keeps the card unaccepted, retains inputs and permits retry (24.164523ms)\n✔ material validation precedes acceptance and material consumption is in the same RPC (31.380356ms)\n✔ in-flight Save blocks a second Save and Cancel (23.937161ms)\n✔ mismatch remains explicitly Not Accepted and refreshes the existing final-decision workflow (19.535086ms)\n✔ already completed handover refreshes without exposing another acceptance form (7.029384ms)\n✔ legacy Accepted history on an incomplete card is labeled pending without changing unrelated history (1.233048ms)\nℹ tests 9\nℹ suites 0\nℹ pass 9\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 807.160626\n"
+      "seconds": 2.36
     },
     {
       "file": "tests/customer-collection-readonly.test.cjs",
       "exit": 0,
-      "seconds": 0.23,
-      "timeout": false,
-      "output": "✔ red cross is available only for zero required quantity (3.111732ms)\n✔ cross automatically hides when customer enters qty and reappears at zero (1.021099ms)\n✔ closed collection opens the read-only viewer instead of quantity editor (1.180703ms)\nℹ tests 3\nℹ suites 0\nℹ pass 3\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 122.876249\n"
+      "seconds": 0.41
     },
     {
       "file": "tests/customer-login-admin-open.test.cjs",
       "exit": 0,
-      "seconds": 0.25,
-      "timeout": false,
-      "output": "✔ approval card appears only in Super Admin Admin OPEN and approved devices remain on the same permanent customer card (22.035538ms)\n✔ notification focus points to exact request once (1.214802ms)\n✔ Pause and Revoke All need warning confirmation; cancel sends no mutation (2.271599ms)\nℹ tests 3\nℹ suites 0\nℹ pass 3\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 166.262143\n"
+      "seconds": 0.42
     },
     {
       "file": "tests/customer-login-approval.test.cjs",
       "exit": 0,
-      "seconds": 0.33,
-      "timeout": false,
-      "output": "✔ pending approval cannot store a session; approval binds transport to that device (7.176986ms)\n✔ rejected device stays logged out (6.606547ms)\n✔ old unapproved sessions are cleared before requesting new approval (4.101019ms)\n✔ customer loaders wait for approval before loading collection and chat modules (0.442784ms)\n✔ refresh draft cannot copy quantities from Collection 16 into Collection 12 (1.775407ms)\n✔ Super Admin approval queue does not appear for an unauthorized account (2.355642ms)\nℹ tests 6\nℹ suites 0\nℹ pass 6\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 204.770652\n"
+      "seconds": 0.63
     },
     {
       "file": "tests/customer-login-notification-focus.test.cjs",
       "exit": 0,
-      "seconds": 0.33,
-      "timeout": false,
-      "output": ")\n✔ successful navigation focuses the navigated client, with exact request destination (1.53846ms)\n✔ request-only or stale WORKING URL forces Admin OPEN at boot and clears unrelated search (3.633245ms)\n✔ non-approval push keeps its existing sales route (1.459206ms)\n✔ approval router waits for host and card, then focuses the actual customer card after rendering (13.529421ms)\n✔ existing approval notification recovers request identity from its saved tag (1.312302ms)\n✔ universal action notice without navigate opens its exact department card route (0.887408ms)\n✔ action push preserves department, status, bridge and notice on successful notification navigation (39.259765ms)\n✔ reading one work notice closes only that recipient notice (1.121292ms)\nℹ tests 11\nℹ suites 0\nℹ pass 11\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 248.003527\n"
+      "seconds": 1.22
     },
     {
       "file": "tests/customer-login-return.test.cjs",
       "exit": 0,
-      "seconds": 0.26,
-      "timeout": false,
-      "output": "✔ next preserves exact approval request and WhatsApp token after login (3.187721ms)\n✔ return preserves exact approval request and WhatsApp token after login (0.979169ms)\n✔ external return is rejected (0.873327ms)\nℹ tests 3\nℹ suites 0\nℹ pass 3\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 141.449121\n"
+      "seconds": 1.93
     },
     {
       "file": "tests/customer-mobile-contract.test.cjs",
       "exit": 0,
-      "seconds": 0.27,
-      "timeout": false,
-      "output": "✔ same display names still render customer on right and staff on left (21.220045ms)\n✔ button uses collection U4 instead of unrelated activity 01 (1.466301ms)\n✔ customer and staff live cards use one latest collection button without dropdowns (2.10391ms)\n✔ latest collection, summary and pricing reads use the same authorized token (2.346807ms)\n✔ quantity input is a bottom full-width child and preserves saved quantity (2.014573ms)\n✔ all four metrics remain visible on completed collections; values retain rate math (1.891512ms)\n✔ four-column row survives component reparenting without duplicate summaries (1.870892ms)\nℹ tests 7\nℹ suites 0\nℹ pass 7\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 158.373892\n"
+      "seconds": 0.78
     },
     {
       "file": "tests/customer-phone-otp.test.cjs",
       "exit": 0,
-      "seconds": 0.22,
-      "timeout": false,
-      "output": "✔ wrong registered number never triggers SMS or approval (6.681192ms)\n✔ disabled SMS service fails closed without approval (1.987411ms)\n✔ wrong OTP cannot call trusted completion (4.542571ms)\n✔ attempt exhaustion never calls SMS verification (1.298175ms)\n✔ verified SMS completes bound challenge without exposing Auth tokens (1.701309ms)\n✔ customer OTP provider error leaves session empty and sends no approval poll (10.029383ms)\n✔ customer cannot turn OTP response without ownership proof into a session (3.02123ms)\n✔ customer verified OTP still requires admin approval before validated session (5.025727ms)\nℹ tests 8\nℹ suites 0\nℹ pass 8\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 134.308551\n"
+      "seconds": 0.85
     },
     {
       "file": "tests/customer-startup-retry.test.cjs",
       "exit": 0,
-      "seconds": 0.24,
-      "timeout": false,
-      "output": "✔ transient relation timeout retries with a fixed limit and uses actual result (2.708712ms)\n✔ persistent timeout cannot loop forever or invent a customer authority (1.569701ms)\n✔ authorization errors are not retried (0.824047ms)\nℹ tests 3\nℹ suites 0\nℹ pass 3\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 147.232362\n"
+      "seconds": 0.6
     },
     {
       "file": "tests/customer-whatsapp.test.cjs",
-      "exit": 1,
-      "seconds": 0.85,
-      "timeout": false,
-      "output": "✖ WhatsApp link and code do not unlock login before validated Admin approval (151.296876ms)\n✔ Admin manual approval requires separate actual sender and received code input (69.730673ms)\nℹ tests 2\nℹ suites 0\nℹ pass 1\nℹ fail 1\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 760.334452\n\n✖ failing tests:\n\ntest at tests/customer-whatsapp.test.cjs:4:1\n✖ WhatsApp link and code do not unlock login before validated Admin approval (151.296876ms)\n  TypeError: Invalid URL\n      at new URL (node:internal/url:840:25)\n      at TestContext.<anonymous> (/workspace/scratch/4d4d4ce23379/redzed-test71-review/tests/customer-whatsapp.test.cjs:18:15)\n      at async Test.run (node:internal/test_runner/test:1389:7)\n      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {\n    code: 'ERR_INVALID_URL',\n    input: 'undefined'\n  }\n"
+      "exit": 0,
+      "seconds": 2.07
     },
     {
       "file": "tests/department-controls-isolation.test.cjs",
       "exit": 0,
-      "seconds": 0.86,
-      "timeout": false,
-      "output": "✔ OPEN: every department directory removes previous chat controls before showing its members (184.760958ms)\n✔ WORKING: every department directory removes previous chat controls before showing its members (55.29949ms)\n✔ CLOSE: every department directory removes previous chat controls before showing its members (53.206011ms)\n✔ Readymade entry clears previous controls before module delegation (6.69459ms)\nℹ tests 4\nℹ suites 0\nℹ pass 4\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 759.740151\n"
+      "seconds": 3.13
     },
     {
       "file": "tests/e2e/action-return.unit.test.js",
       "exit": 0,
-      "seconds": 0.26,
-      "timeout": false,
-      "output": "✔ embedded success keeps its captured parent contract after replaceState-style URL rewrite (5.514367ms)\n✔ non-embedded success keeps the captured same-origin return URL (1.580827ms)\nℹ tests 2\nℹ suites 0\nℹ pass 2\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 163.118108\n"
+      "seconds": 0.89
     },
     {
       "file": "tests/e2e/cb-department.unit.test.js",
-      "exit": 1,
-      "seconds": 0.34,
-      "timeout": false,
-      "output": "-collapse:collapse;min-width:1040px}.requirement-table th,.requirement-table td{padding:8px;border-top:1px solid #303039;text-align:left;vertical-align:middle}.requirement-table th{font-size:11px;color:#aaa;text-transform:uppercase}.req-status{font-size:11px;font-weight:900}.req-yield-pending{color:#ffc56d}.req-revised{color:#ff9f7a}.wa-send{white-space:nowrap}@media(max-width:700px){.plan-toolbar{grid-template-columns:1fr}.profile-share-row{grid-template-columns:1fr}.set-plan-controls{display:grid;grid-template-columns:1fr 1fr;width:100%}}\\n\\n\\n</style>\\n<style id=\"cbLiveCameraStyle9148\">\\n#rr-global-data-mode-badge-v786-1-1{display:none!important;visibility:hidden!important;pointer-events:none!import'... 188427 more characters,\n    expected: /calc\\(156px \\+ env\\(safe-area-inset-bottom\\)\\)/,\n    operator: 'match',\n    diff: 'simple'\n  }\n"
+      "exit": 0,
+      "seconds": 0.46
     },
     {
       "file": "tests/e2e/checkpoint-2.unit.test.js",
       "exit": 0,
-      "seconds": 0.26,
-      "timeout": false,
-      "output": "✔ accepted physical quantity remains canonical WORKING quantity (2.720989ms)\n✔ SHORT and EXCESS are separate, colour-preserving and assignment-idempotent (0.921995ms)\n✔ only a genuine receipt batch requires all colours (0.603135ms)\n✔ first tap is pending and excess is allowed (0.294259ms)\n✔ Personal Chat shows main WORKING card and separate variance card (0.625751ms)\nℹ tests 5\nℹ suites 0\nℹ pass 5\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 167.734093\n"
+      "seconds": 0.6
     },
     {
       "file": "tests/e2e/checkpoint-3.unit.test.js",
       "exit": 0,
-      "seconds": 0.26,
-      "timeout": false,
-      "output": "✔ canonical thumbnail stays compact, Art-first, colour-aware and safe (1.610375ms)\n✔ canonical media map includes colour-specific media and master writes are protected (0.375666ms)\nℹ tests 2\nℹ suites 0\nℹ pass 2\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 162.095955\n"
+      "seconds": 0.75
     },
     {
       "file": "tests/e2e/checkpoint-4.unit.test.js",
       "exit": 0,
-      "seconds": 0.36,
-      "timeout": false,
-      "output": "✔ cost privacy uses canonical effective Act As identity (2.102331ms)\n✔ legacy manufacturing cost APIs cannot bypass the canonical privacy boundary (1.020681ms)\n✔ salary allocation is Accept to Submit and mutually exclusive (0.370396ms)\n✔ Printing keeps one V307/V204 path with multi-design mapping (0.326673ms)\n✔ rate editor is backend restricted and UI focus is enforced (0.566822ms)\n✔ Real Chat history fast path preserves the canonical privacy boundary (0.25388ms)\nℹ tests 6\nℹ suites 0\nℹ pass 6\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 239.737723\n"
+      "seconds": 0.75
     },
     {
       "file": "tests/e2e/checkpoint-5.unit.test.js",
       "exit": 0,
-      "seconds": 0.3,
-      "timeout": false,
-      "output": "✔ Purchase personal lane reuses canonical bridge history (1.88789ms)\n✔ Fabrication receipt and worker assignment have distinct canonical states (0.357224ms)\n✔ Recovery retry uses canonical journey identity and does not delete audit rows (0.512659ms)\n✔ Recovery card exposes separate business identities and quantity journey (0.510504ms)\n✔ Checkpoint 5 fixtures are labelled, idempotent and rollback-only where mutating (0.513372ms)\nℹ tests 5\nℹ suites 0\nℹ pass 5\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 180.306977\n"
+      "seconds": 0.44
     },
     {
       "file": "tests/e2e/checkpoint-6.unit.test.js",
       "exit": 0,
-      "seconds": 1.61,
-      "timeout": false,
-      "output": "✔ Final Rate approval keeps one canonical RRQ writer and blocks retries (3.002117ms)\n✔ RRQ internals are server-only and role projections use effective Act As identity (0.463241ms)\n✔ Packing role surfaces show only the current action and first tap is pending (0.351681ms)\n✔ Packing table uses exact columns and vertical mobile composition (0.613033ms)\n✔ Legacy Packing surface no longer reads or invokes raw RRQ internals (0.304396ms)\n✔ Finished Goods Packing reuses canonical effective Act As identity (0.398162ms)\n✔ Real Chat coalesces directory reads and avoids supplemental read fan-out (0.634394ms)\nℹ tests 7\nℹ suites 0\nℹ pass 7\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 1502.460605\n"
+      "seconds": 0.51
     },
     {
       "file": "tests/e2e/checkpoint-7.unit.test.js",
       "exit": 0,
-      "seconds": 0.39,
-      "timeout": false,
-      "output": "✔ Checkpoint 7 opens the canonical DISPATCH directory group (1.073639ms)\n✔ Despatch partial and full actions stay inside the canonical Real Chat sheet (0.357815ms)\n✔ Store Receive posts canonical group ids and never opens the legacy App flow (0.201324ms)\n✔ Checkpoint 7 backend reuses canonical FG tables with effective identity and idempotency (0.51371ms)\nℹ tests 4\nℹ suites 0\nℹ pass 4\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 222.993532\n"
+      "seconds": 0.69
     },
     {
       "file": "tests/e2e/checkpoint-mc1.unit.test.js",
-      "exit": 1,
-      "seconds": 0.27,
-      "timeout": false,
-      "output": "t.test.js:86:1\n✖ deployed Real Chat loads the MC1 integration asset version (0.90537ms)\n  AssertionError [ERR_ASSERTION]: must load MC1 or a later version, not pin the old cache key\n      at TestContext.<anonymous> (/workspace/scratch/4d4d4ce23379/redzed-test71-review/tests/e2e/checkpoint-mc1.unit.test.js:88:10)\n      at Test.runInAsyncScope (node:async_hooks:227:14)\n      at Test.run (node:internal/test_runner/test:1382:25)\n      at Test.processPendingSubtests (node:internal/test_runner/test:960:18)\n      at Test.postRun (node:internal/test_runner/test:1522:19)\n      at Test.run (node:internal/test_runner/test:1447:12)\n      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {\n    generatedMessage: false,\n    code: 'ERR_ASSERTION',\n    actual: false,\n    expected: true,\n    operator: '==',\n    diff: 'simple'\n  }\n"
+      "exit": 0,
+      "seconds": 0.68
     },
     {
       "file": "tests/e2e/commercial-integration.unit.test.js",
-      "exit": 1,
-      "seconds": 1.81,
-      "timeout": false,
-      "output": "3\\'].includes(n))n=\\'rr_real_chat_work_search_v317\\';let r;if(n===\\'rr_real_chat_directory_v85\\'&&typeof window.RR_REAL_CHAT_DIRECTORY_V85_QUERY===\\'function\\')r=await directoryRequestTest71(()=>window.RR_REAL_CHAT_DIRECTORY_V85_QUERY(S.db));else r=n===\\'rr_real_chat_directory_v85\\'?await directoryRequestTest71(()=>S.db.rpc(n,p)):await S.db.rpc(n,p);if(r.error&&READ_TIMEOUT_RETRY.has(n)&&/statement timeout|57014|canceling statement/i.test(String(r.error.message||\\'\\'))){const waits={rr_real_chat_work_search_v317:250,rr_real_chat_conversation_history_v83:450,rr_real_chat_assignable_lots_v125:650,rr_real_chat_media_map_v1:850,rr_cb_department_cards_v600:250};await new Promise(resolve=>setTimeout(resolve,waits[n]||350));r'... 305176 more characters,\n    expected: /rr_sales_real_chat_queue_v500/,\n    operator: 'match',\n    diff: 'simple'\n  }\n"
+      "exit": 0,
+      "seconds": 0.35
     },
     {
       "file": "tests/e2e/cutting-department-lifecycle.unit.test.js",
-      "exit": 1,
-      "seconds": 0.25,
-      "timeout": false,
-      "output": "\\n  while(Date.now()-started<8000){\\n    const client=getClient();\\n    if(client)return client;\\n    await new Promise(resolve=>setTimeout(resolve,100));\\n  }\\n  return null;\\n}\\nasync function boot(){\\n  if(cbId)return goByCbId(cbId);\\n  if(cbNo)return goByCbNo(cbNo);\\n  if(unitId){\\n    try{\\n      const client=await waitForClient();\\n      if(client){\\n        const r=await client.from(\"rr_cb_units\").select(\"purchase_id\").eq(\"id\",unitId).maybeSingle();\\n        if(!r.error&&r.data?.purchase_id)return goByCbId(r.data.purchase_id);\\n      }\\n    }catch(error){console.warn(\"Retired Art Decision redirect\",error)}\\n  }\\n  location.replace(\"test70-cb-purchase-real-chat-pilot.html?from=ART_DECISION_RETIRED\");\\n}\\nboot();\\n})();\\n',\n    expected: /eq\\(\"cb_unit_id\",requestedId\\)\\.maybeSingle\\(\\)/,\n    operator: 'match',\n    diff: 'simple'\n  }\n"
+      "exit": 0,
+      "seconds": 0.44
     },
     {
       "file": "tests/e2e/cutting-handoff.unit.test.js",
       "exit": 0,
-      "seconds": 0.22,
-      "timeout": false,
-      "output": "appears in exactly one Cutting tab (1.649694ms)\n✔ CUTTING_RELEASE_SUCCEEDED/WORKING appears in exactly one Cutting tab (0.250983ms)\n✔ CUTTING_RELEASED_PENDING_ASSIGNMENT/WORKING appears in exactly one Cutting tab (0.116179ms)\n✔ CUTTING_RELEASE_SUCCEEDED/CLOSE appears in exactly one Cutting tab (0.193455ms)\n✔ explicit WORKING release is not overridden by the old terminal event rule (0.209476ms)\n✔ Cutting CLOSE hides even stale actions (1.37938ms)\n✔ release action returns to WORKING (0.989596ms)\n✔ App reads the backend state, including mixed multi-Lot handoff (0.971847ms)\n✔ assignment retry serializes before computing due quantities (0.568335ms)\n✔ Fabrication uses the existing projection and synthetic proof checks same identity (0.467698ms)\nℹ tests 10\nℹ suites 0\nℹ pass 10\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 121.969868\n"
+      "seconds": 0.71
     },
     {
       "file": "tests/e2e/e2e-session.unit.test.js",
       "exit": 0,
-      "seconds": 0.19,
-      "timeout": false,
-      "output": "✔ production always returns a generic 404 (1.711409ms)\n✔ other preview branches always return a generic 404 (0.220068ms)\n✔ TEST71 without an authorized runner identity fails closed (0.188219ms)\nℹ tests 3\nℹ suites 0\nℹ pass 3\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 112.820585\n"
+      "seconds": 0.41
     },
     {
       "file": "tests/e2e/full-factory-journey.unit.test.js",
       "exit": 0,
-      "seconds": 0.2,
-      "timeout": false,
-      "output": "✔ three full-factory identities are fixed, isolated and driven through deployed UI (1.340468ms)\n✔ retained Cutting runner resumes without replaying purchase actions (0.238463ms)\n✔ retained Cutting readiness checks canonical DUE entries and child lifecycle (0.174289ms)\n✔ the retained journeys use canonical Art UI and separate CB close from Cutting readiness (0.152317ms)\n✔ retained C confirms its existing DUE material only through the Real Chat action sheet (0.236079ms)\n✔ deployed proof uses the existing parameterized read-only snapshot (0.391273ms)\nℹ tests 6\nℹ suites 0\nℹ pass 6\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 117.305499\n"
+      "seconds": 1.06
     },
     {
       "file": "tests/e2e/github-oidc.unit.test.js",
       "exit": 0,
-      "seconds": 0.25,
-      "timeout": false,
-      "output": "✔ accepts a signed TEST71 workflow identity (3.731503ms)\n✔ rejects a signed identity from another branch (1.284475ms)\n✔ rejects an expired workflow identity (0.934149ms)\nℹ tests 3\nℹ suites 0\nℹ pass 3\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 155.547803\n"
+      "seconds": 1.17
     },
     {
       "file": "tests/e2e/material-unit.unit.test.js",
       "exit": 0,
-      "seconds": 0.19,
-      "timeout": false,
-      "output": "✔ one backend Unit Master is authoritative (0.961463ms)\n✔ new Material Unit fields are dropdown-only and support New Unit (0.317045ms)\n✔ duplicates, authority and retries are protected in backend (0.165921ms)\n✔ Material purchase Unit is selectable in CB and remains the Real Chat Unit (0.418604ms)\nℹ tests 4\nℹ suites 0\nℹ pass 4\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 106.269293\n"
+      "seconds": 0.66
     },
     {
       "file": "tests/e2e/print-frame-independence.unit.test.js",
       "exit": 0,
-      "seconds": 0.23,
-      "timeout": false,
-      "output": "on (0.855707ms)\n✔ case-insensitive duplicate frames stays blocked and unlocks SAVE for correction (0.760792ms)\n✔ missing new print image stays blocked and unlocks SAVE for correction (0.703659ms)\n✔ missing print number stays blocked and unlocks SAVE for correction (0.782919ms)\n✔ duplicate print number stays blocked and unlocks SAVE for correction (0.995564ms)\n✔ cancelled frame reassignment stays blocked and unlocks SAVE for correction (0.86384ms)\n✔ editing an existing print retains four frames with two colours (1.042981ms)\n✔ double submit cannot duplicate an in-flight save (0.970535ms)\n✔ frame RPC failure never reports success or closes the form (1.050164ms)\n✔ all Print Master help text separates colour count from frame count (0.349962ms)\nℹ tests 15\nℹ suites 0\nℹ pass 15\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 138.209333\n"
+      "seconds": 0.5
     },
     {
       "file": "tests/e2e/real-chat-performance.unit.test.js",
-      "exit": 1,
-      "seconds": 0.21,
-      "timeout": false,
-      "output": " 127.788091\n\n✖ failing tests:\n\ntest at tests/e2e/real-chat-performance.unit.test.js:53:1\n✖ Alter mirror bounds canonical reads, deduplicates retries, and preserves Lot order (2.523907ms)\n  ReferenceError: RR_PRODUCTION_DEPARTMENTS_V763 is not defined\n      at Object.alterMirrorV684 (evalmachine.<anonymous>:2:135)\n      at TestContext.<anonymous> (/workspace/scratch/4d4d4ce23379/redzed-test71-review/tests/e2e/real-chat-performance.unit.test.js:64:29)\n      at Test.runInAsyncScope (node:async_hooks:227:14)\n      at Test.run (node:internal/test_runner/test:1382:25)\n      at Test.processPendingSubtests (node:internal/test_runner/test:960:18)\n      at Test.postRun (node:internal/test_runner/test:1522:19)\n      at Test.run (node:internal/test_runner/test:1447:12)\n      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7)\n"
+      "exit": 0,
+      "seconds": 0.66
     },
     {
       "file": "tests/e2e/real-chat-refresh-resilience.unit.test.js",
-      "exit": 1,
-      "seconds": 0.25,
-      "timeout": false,
-      "output": "earch does not wait on history or launch three competing searches (5.727597ms)\n  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:\n  \n  1 !== 2\n  \n      at TestContext.<anonymous> (/workspace/scratch/4d4d4ce23379/redzed-test71-review/tests/e2e/real-chat-refresh-resilience.unit.test.js:47:10)\n      at Test.runInAsyncScope (node:async_hooks:227:14)\n      at Test.run (node:internal/test_runner/test:1382:25)\n      at Test.processPendingSubtests (node:internal/test_runner/test:960:18)\n      at Test.postRun (node:internal/test_runner/test:1522:19)\n      at Test.run (node:internal/test_runner/test:1447:12)\n      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {\n    generatedMessage: true,\n    code: 'ERR_ASSERTION',\n    actual: 1,\n    expected: 2,\n    operator: 'strictEqual',\n    diff: 'simple'\n  }\n"
+      "exit": 0,
+      "seconds": 0.53
     },
     {
       "file": "tests/e2e/recovery-redirect.unit.test.js",
       "exit": 0,
-      "seconds": 1.53,
-      "timeout": false,
-      "output": "✔ password recovery stays on its current authorized origin: https://test71-8000.app.github.dev (3.127186ms)\n✔ password recovery stays on its current authorized origin: https://test71-preview.vercel.app (2.18416ms)\n✔ password recovery does not pin Vercel or GitHub Pages callbacks (0.320526ms)\nℹ tests 3\nℹ suites 0\nℹ pass 3\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 384.677475\n"
+      "seconds": 0.66
     },
     {
       "file": "tests/e2e/released-dcard-regression.unit.test.js",
       "exit": 0,
-      "seconds": 0.22,
-      "timeout": false,
-      "output": "✔ released D-card gallery state comes from canonical single and multi Lot truth (1.54966ms)\n✔ database serializes release modes and rollback proof covers retry and residue (0.397155ms)\n✔ deep-linked Cutting action renders one exact history card and never reopens release (0.798699ms)\n✔ Cutting release uses assignment state and close remains read-only (0.430987ms)\nℹ tests 4\nℹ suites 0\nℹ pass 4\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 132.954758\n"
+      "seconds": 0.4
     },
     {
       "file": "tests/e2e/session-harness.unit.test.js",
       "exit": 0,
-      "seconds": 0.21,
-      "timeout": false,
-      "output": "✔ backend proof suites can retain auth without dashboard polling (0.926737ms)\n✔ runner refuses a branch alias that is not the exact workflow SHA (0.178683ms)\nℹ tests 2\nℹ suites 0\nℹ pass 2\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 116.794299\n"
+      "seconds": 0.47
     },
     {
       "file": "tests/e2e/test71-act-as-customer.unit.test.js",
       "exit": 0,
-      "seconds": 0.59,
-      "timeout": false,
-      "output": "✔ Owner has separate searchable existing Customers block and opens bound TEST customer collection (88.195411ms)\n✔ Admin cannot mount customer Act As (7.380069ms)\n✔ Customer preview visibly identifies TEST and returns to actual owner (26.29131ms)\nℹ tests 3\nℹ suites 0\nℹ pass 3\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 498.284713\n"
+      "seconds": 1.42
     },
     {
       "file": "tests/e2e/test71-canonical-cleanup-authorities.unit.test.js",
       "exit": 0,
-      "seconds": 0.19,
-      "timeout": false,
-      "output": "✔ canonical cleanup manifest locks authorities (0.912378ms)\n✔ retired behavior is documented (0.196003ms)\nℹ tests 2\nℹ suites 0\nℹ pass 2\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 115.449097\n"
+      "seconds": 0.51
     },
     {
       "file": "tests/e2e/test71-canonical-cleanup-substantive.unit.test.js",
       "exit": 0,
-      "seconds": 0.21,
-      "timeout": false,
-      "output": "✔ submit chain has canonical core and no v689-to-v327 recursion (1.539395ms)\n✔ FOC is single product-cost authority (0.244674ms)\n✔ legacy first-box trigger is retired (0.178526ms)\n✔ targeted push uses canonical identity and real chat route (0.235247ms)\nℹ tests 4\nℹ suites 0\nℹ pass 4\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 115.772146\n"
+      "seconds": 0.88
     },
     {
       "file": "tests/e2e/test71-cb-appx-cutting-pcs.unit.test.js",
       "exit": 0,
-      "seconds": 0.26,
-      "timeout": false,
-      "output": "✔ CB Appx Sheet shows Appx PCS followed by Cutting PCS (1.039142ms)\n✔ CB UI explicitly preserves Appx when Cutting arrives (0.16197ms)\n✔ derived requirement schema stores Appx and Cutting independently (0.12312ms)\n✔ actual requirement basis uses actual Cutting PCS, never planned PCS (0.123261ms)\n✔ root Set physical weight follows its assigned Regular Cloth roll (0.121429ms)\nℹ tests 5\nℹ suites 0\nℹ pass 5\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 145.790995\n"
+      "seconds": 0.59
     },
     {
       "file": "tests/e2e/test71-cb-art-two-way-mapping.unit.test.js",
-      "exit": 1,
-      "seconds": 0.39,
-      "timeout": false,
-      "output": "R_ASSERTION]: The expression evaluated to a falsy value:\n  \n    assert.ok(cb.includes('async function reportReconciliationVariance(){await flushFieldAutosave();'))\n  \n      at TestContext.<anonymous> (/workspace/scratch/4d4d4ce23379/redzed-test71-review/tests/e2e/test71-cb-art-two-way-mapping.unit.test.js:247:10)\n      at Test.runInAsyncScope (node:async_hooks:227:14)\n      at Test.run (node:internal/test_runner/test:1382:25)\n      at Test.processPendingSubtests (node:internal/test_runner/test:960:18)\n      at Test.postRun (node:internal/test_runner/test:1522:19)\n      at Test.run (node:internal/test_runner/test:1447:12)\n      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {\n    generatedMessage: true,\n    code: 'ERR_ASSERTION',\n    actual: false,\n    expected: true,\n    operator: '==',\n    diff: 'simple'\n  }\n"
+      "exit": 0,
+      "seconds": 0.66
     },
     {
       "file": "tests/e2e/test71-cb-combo-unified.unit.test.js",
-      "exit": 1,
-      "seconds": 0.24,
-      "timeout": false,
-      "output": "r [ERR_ASSERTION]: The expression evaluated to a falsy value:\n  \n    assert.ok(cb.includes(\"await Promise.all([loadCanonicalMasters(),loadCategories(),loadOptions()]);\"))\n  \n      at TestContext.<anonymous> (/workspace/scratch/4d4d4ce23379/redzed-test71-review/tests/e2e/test71-cb-combo-unified.unit.test.js:76:10)\n      at Test.runInAsyncScope (node:async_hooks:227:14)\n      at Test.run (node:internal/test_runner/test:1382:25)\n      at Test.processPendingSubtests (node:internal/test_runner/test:960:18)\n      at Test.postRun (node:internal/test_runner/test:1522:19)\n      at Test.run (node:internal/test_runner/test:1447:12)\n      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {\n    generatedMessage: true,\n    code: 'ERR_ASSERTION',\n    actual: false,\n    expected: true,\n    operator: '==',\n    diff: 'simple'\n  }\n"
+      "exit": 0,
+      "seconds": 0.78
     },
     {
       "file": "tests/e2e/test71-cb-costing-compatibility.unit.test.js",
       "exit": 0,
-      "seconds": 0.25,
-      "timeout": false,
-      "output": "✔ current mapping loads instead of a future scheduled rule (1.389105ms)\n✔ exact duplicate scopes resolve once while distinct departments and ALL/category rules remain (8.085177ms)\n✔ inactive rules never become the current edit form (0.161271ms)\n✔ CB opens the existing costing master, legacy URL retains view and return, master opens BOM (1.678913ms)\n✔ compatibility migration preserves existing salary, Gatta/Panni, tape and final-cost engines (0.686486ms)\nℹ tests 5\nℹ suites 0\nℹ pass 5\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 112.019191\n"
+      "seconds": 0.77
+    },
+    {
+      "file": "tests/e2e/test71-cb-current-behavior.unit.test.js",
+      "exit": 0,
+      "seconds": 0.79
     },
     {
       "file": "tests/e2e/test71-cb-pro-camera.unit.test.js",
       "exit": 0,
-      "seconds": 0.25,
-      "timeout": false,
-      "output": "✔ CB camera modal hard-hides inactive live/edit controls (0.896336ms)\n✔ CB camera uses one live viewport before capture and one preview viewport after capture (0.518312ms)\n✔ CB professional camera prefers rear high resolution and ImageCapture still photo (0.396381ms)\n✔ CB camera enables continuous focus/exposure/white balance where supported (0.390406ms)\n✔ CB camera exposes hardware torch and hardware zoom only when supported (0.25822ms)\n✔ CB saved colour image is 1200 square high quality JPEG with mild colour-preserving tone (0.246661ms)\nℹ tests 6\nℹ suites 0\nℹ pass 6\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 164.197505\n"
+      "seconds": 0.47
     },
     {
       "file": "tests/e2e/test71-cb-requirement-whatsapp-media-share.unit.test.js",
       "exit": 0,
-      "seconds": 0.23,
-      "timeout": false,
-      "output": "uirement share uses the native manual contact picker with exactly one receipt (0.910606ms)\n✔ one requirement receipt supports JPG or PDF, numbered thumbnails and LIVE UPDATE (0.271978ms)\n✔ receipt carries required fields and a colour-by-colour Appx/Actual table (0.349528ms)\n✔ backend receipt context returns item, art, print, sticker, metal and colour media (0.197832ms)\n✔ cutting projection covers single and multi lot colour breakups (0.144307ms)\n✔ LIVE UPDATE is permanent, token-only and switches only after full receipt confirmation (0.128868ms)\n✔ public supplier slip is read-only, polls one projection and does not load the app config (0.397373ms)\n✔ supplier mobile remains optional and no direct-number requirement is introduced (0.114846ms)\nℹ tests 8\nℹ suites 0\nℹ pass 8\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 103.166705\n"
+      "seconds": 0.36
     },
     {
       "file": "tests/e2e/test71-cb-variance-whatsapp.unit.test.js",
       "exit": 0,
-      "seconds": 1.29,
-      "timeout": false,
-      "output": "✔ CB reconciliation is rendered after Colours/Rolls and before Yield (2.1712ms)\n✔ CB variance builds a real PNG file attachment for native share (1.497171ms)\n✔ CB native file share starts before any awaited backend work so mobile user activation is retained (1.260889ms)\n✔ CB variance still records the report atomically in backend while file share is open (1.437899ms)\n✔ CB fallback downloads PNG and opens direct WhatsApp text only when native file share is unavailable (1.342555ms)\n✔ CB variance atomic RPC creates report, prepares delivery, marks SENT and returns phone/message (0.224062ms)\n✔ CB Debit Note decision and variance report remain separate actions (93.78965ms)\nℹ tests 7\nℹ suites 0\nℹ pass 7\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 509.634114\n"
+      "seconds": 0.68
     },
     {
       "file": "tests/e2e/test71-collection-return-belt.unit.test.js",
-      "exit": 1,
-      "seconds": 0.73,
-      "timeout": false,
-      "output": "tion-return-belt.unit.test.js:22:1095)\n      at async Test.run (node:internal/test_runner/test:1389:7)\n      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {\n    generatedMessage: true,\n    code: 'ERR_ASSERTION',\n    actual: null,\n    expected: true,\n    operator: '==',\n    diff: 'simple'\n  }\n\ntest at tests/e2e/test71-collection-return-belt.unit.test.js:25:1\n✖ Active collection View action opens editable requirement rather than read-only gallery (14.541072ms)\n  TypeError: Cannot read properties of null (reading 'append')\n      at TestContext.<anonymous> (/workspace/scratch/4d4d4ce23379/redzed-test71-review/tests/e2e/test71-collection-return-belt.unit.test.js:29:139)\n      at async Test.run (node:internal/test_runner/test:1389:7)\n      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7)\n"
+      "exit": 0,
+      "seconds": 1.21
     },
     {
       "file": "tests/e2e/test71-collection-view-only.unit.test.js",
-      "exit": 1,
-      "seconds": 0.71,
-      "timeout": false,
-      "output": "✖ failing tests:\n\ntest at tests/e2e/test71-collection-view-only.unit.test.js:3:1\n✖ Closed collection retains required qty with no editable fields or submit action (102.521087ms)\n  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /Required qty · 24 PCS/. Input:\n  \n  'CLOSE ×COL16 · U4 · VIEW ONLYNo styles available.'\n  \n      at TestContext.<anonymous> (/workspace/scratch/4d4d4ce23379/redzed-test71-review/tests/e2e/test71-collection-view-only.unit.test.js:9:92)\n      at async Test.run (node:internal/test_runner/test:1389:7)\n      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {\n    generatedMessage: true,\n    code: 'ERR_ASSERTION',\n    actual: 'CLOSE ×COL16 · U4 · VIEW ONLYNo styles available.',\n    expected: /Required qty · 24 PCS/,\n    operator: 'match',\n    diff: 'simple'\n  }\n"
+      "exit": 0,
+      "seconds": 1.34
     },
     {
       "file": "tests/e2e/test71-compensation-lifecycle.unit.test.js",
-      "exit": 1,
-      "seconds": 0.31,
-      "timeout": false,
-      "output": "('[data-save]');saving=true;save.disabled=true;back.querySelectorAll('[data-close]').forEach(x=>x.disabled=true);state.textContent='Saving canonical receipt…';try{await rpc('rr_chat_assignment_count_save_test71',{p_assignment_id:id,p_rows:counts,p_note:variance?note:null});back.remove();S.statusCache.clear();S.queueProjectionCache?.clear();S.chatRenderCache.clear();S.departmentCountCache?.clear();S.departmentCountJobs?.clear();S.workerLaneCache.clear();S.status='WORKING';syncStatusButtons();await load(true)}catch(e){saving=false;state.textContent=err(e);save.disabled=false;back.querySelectorAll('[data-close]').forEach(x=>x.disabled=false)}};refresh()}catch(e){alert(err(e));button.disabled=false;button.textContent=old}}\\nfunction bindMedia`,\n    expected: /rr_upm_assignment_action_route_v769/,\n    operator: 'match',\n    diff: 'simple'\n  }\n"
+      "exit": 0,
+      "seconds": 0.57
     },
     {
       "file": "tests/e2e/test71-contact-invite-loader.unit.test.js",
       "exit": 0,
-      "seconds": 1.72,
-      "timeout": false,
-      "output": "✔ staff page claims loader before config and loads fresh version once (3.402075ms)\n✔ other chat pages get fresh config loader instead of cached v67 (1.422904ms)\nℹ tests 2\nℹ suites 0\nℹ pass 2\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 415.947135\n"
+      "seconds": 0.6
     },
     {
       "file": "tests/e2e/test71-contact-invites.unit.test.js",
       "exit": 0,
-      "seconds": 0.84,
-      "timeout": false,
-      "output": "5ms)\n✔ invite controls are wired into staff chat and hidden directory stays hidden (0.287824ms)\n✔ 4700 contacts stay 4700 after repeated imports and 80000 duplicate entries (601.428488ms)\n✔ overlapping multi-number cards merge; same names with different numbers remain (2.031617ms)\n✔ atomic directory update uses stable IDs, keeps other owners, and repeats without growth (1.939875ms)\n✔ create invite shows missing-name and invalid-number validation inside form (1.522775ms)\n✔ create invite produces visible share links and restores button after error (1.680973ms)\n✔ double tap while invite request is pending creates only one request (10.631794ms)\n✔ single selected contact fills name and phones for create invite without hiding queue (1.196928ms)\nℹ tests 13\nℹ suites 0\nℹ pass 13\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 762.895995\n"
+      "seconds": 1.55
     },
     {
       "file": "tests/e2e/test71-costing-rounding-lapse-policy.unit.test.js",
       "exit": 0,
-      "seconds": 0.36,
-      "timeout": false,
-      "output": "✔ costing uses half-rupee component and whole-rupee final rounding (1.099537ms)\n✔ actual product cost excludes lapse and general overhead (0.201651ms)\nℹ tests 2\nℹ suites 0\nℹ pass 2\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 254.111181\n"
+      "seconds": 0.37
     },
     {
       "file": "tests/e2e/test71-customer-chat-refresh.unit.test.js",
       "exit": 0,
-      "seconds": 0.24,
-      "timeout": false,
-      "output": "✔ refresh coalesces repeated taps and preserves draft and scroll (1.503337ms)\n✔ late group response cannot paint over private channel (0.503421ms)\n✔ timeout unlocks Retry and late response cannot overwrite retry (0.594928ms)\n✔ offline retains cached chat and hidden polling pauses (0.463221ms)\n✔ closed chat ignores late response (0.350417ms)\nℹ tests 5\nℹ suites 0\nℹ pass 5\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 123.66685\n"
+      "seconds": 0.36
     },
     {
       "file": "tests/e2e/test71-customer-inbox.unit.test.js",
-      "exit": 1,
-      "seconds": 1.71,
-      "timeout": false,
-      "output": "ORKING both expose the same customer inbox even with no workflow cards (15.694088ms)\n  ReferenceError: resetChatControls71 is not defined\n      at openCommercialChat (eval at <anonymous> (/workspace/scratch/4d4d4ce23379/redzed-test71-review/tests/e2e/test71-customer-inbox.unit.test.js:3:938), <anonymous>:1:97)\n      at TestContext.<anonymous> (/workspace/scratch/4d4d4ce23379/redzed-test71-review/tests/e2e/test71-customer-inbox.unit.test.js:3:1003)\n      at Test.runInAsyncScope (node:async_hooks:227:14)\n      at Test.run (node:internal/test_runner/test:1382:25)\n      at Test.processPendingSubtests (node:internal/test_runner/test:960:18)\n      at Test.postRun (node:internal/test_runner/test:1522:19)\n      at Test.run (node:internal/test_runner/test:1447:12)\n      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3)\n"
+      "exit": 0,
+      "seconds": 1.15
     },
     {
       "file": "tests/e2e/test71-customer-invite-refresh-route.unit.test.js",
-      "exit": 1,
-      "seconds": 0.21,
-      "timeout": false,
-      "output": "tests:\n\ntest at tests/e2e/test71-customer-invite-refresh-route.unit.test.js:2:1\n✖ invite loads updated customer scripts through s.html (5.543927ms)\n  AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:\n  \n    assert.ok(s.includes(file+'?v=TEST71-PULL-FULL-REFRESH-20261005'))\n  \n      at TestContext.<anonymous> (/workspace/scratch/4d4d4ce23379/redzed-test71-review/tests/e2e/test71-customer-invite-refresh-route.unit.test.js:2:342)\n      at Test.runInAsyncScope (node:async_hooks:227:14)\n      at Test.run (node:internal/test_runner/test:1382:25)\n      at Test.start (node:internal/test_runner/test:1242:17)\n      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {\n    generatedMessage: true,\n    code: 'ERR_ASSERTION',\n    actual: false,\n    expected: true,\n    operator: '==',\n    diff: 'simple'\n  }\n"
+      "exit": 0,
+      "seconds": 0.28
     },
     {
       "file": "tests/e2e/test71-customer-pull-refresh.unit.test.js",
       "exit": 0,
-      "seconds": 0.2,
-      "timeout": false,
-      "output": "✔ header pull beyond threshold refreshes on release exactly once (1.844954ms)\n✔ short drag and cancelled pull do not refresh (0.90412ms)\n✔ horizontal swipe and chat-body touch do not refresh (0.254658ms)\n✔ pull reload preserves drafts and removes refresh button markup (0.698685ms)\nℹ tests 4\nℹ suites 0\nℹ pass 4\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 114.698162\n"
+      "seconds": 0.3
     },
     {
       "file": "tests/e2e/test71-customer-quantity-input.unit.test.js",
-      "exit": 1,
-      "seconds": 0.23,
-      "timeout": false,
-      "output": "s again (5.565539ms)\n  AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:\n  \n    assert.ok(source.includes('let q=el?clampQuantity(el):0'))\n  \n      at TestContext.<anonymous> (/workspace/scratch/4d4d4ce23379/redzed-test71-review/tests/e2e/test71-customer-quantity-input.unit.test.js:9:227)\n      at Test.runInAsyncScope (node:async_hooks:227:14)\n      at Test.run (node:internal/test_runner/test:1382:25)\n      at Test.processPendingSubtests (node:internal/test_runner/test:960:18)\n      at Test.postRun (node:internal/test_runner/test:1522:19)\n      at Test.run (node:internal/test_runner/test:1447:12)\n      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {\n    generatedMessage: true,\n    code: 'ERR_ASSERTION',\n    actual: false,\n    expected: true,\n    operator: '==',\n    diff: 'simple'\n  }\n"
+      "exit": 0,
+      "seconds": 0.32
     },
     {
       "file": "tests/e2e/test71-customer-quantity-layout.unit.test.js",
-      "exit": 1,
-      "seconds": 0.21,
-      "timeout": false,
-      "output": " of lot card and keeps saved quantity identity (0.959017ms)\n  ReferenceError: stockLimit is not defined\n      at card (eval at <anonymous> (/workspace/scratch/4d4d4ce23379/redzed-test71-review/tests/e2e/test71-customer-quantity-layout.unit.test.js:5:14), <anonymous>:3:1244)\n      at eval (eval at <anonymous> (/workspace/scratch/4d4d4ce23379/redzed-test71-review/tests/e2e/test71-customer-quantity-layout.unit.test.js:5:14), <anonymous>:3:1610)\n      at TestContext.<anonymous> (/workspace/scratch/4d4d4ce23379/redzed-test71-review/tests/e2e/test71-customer-quantity-layout.unit.test.js:6:107)\n      at Test.runInAsyncScope (node:async_hooks:227:14)\n      at Test.run (node:internal/test_runner/test:1382:25)\n      at Test.start (node:internal/test_runner/test:1242:17)\n      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17)\n"
+      "exit": 0,
+      "seconds": 0.31
     },
     {
       "file": "tests/e2e/test71-customer-remember-login.unit.test.js",
       "exit": 0,
-      "seconds": 0.89,
-      "timeout": false,
-      "output": "secure customer session Failed to fetch\n✔ same device reload and concurrent chat/media requests share one validation and never ask identity (113.862533ms)\n✔ new collection link automatically verifies remembered identity and return to old link uses its own session (29.379167ms)\n✔ temporary network failure retains saved session and retry restores without identity entry (11.994106ms)\n✔ different customer link cannot open with previous identity; asks that customer and retries first login (116.938577ms)\nℹ tests 4\nℹ suites 0\nℹ pass 4\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 808.152256\n"
+      "seconds": 0.91
     },
     {
       "file": "tests/e2e/test71-customer-stock-privacy-input.unit.test.js",
       "exit": 0,
-      "seconds": 0.2,
-      "timeout": false,
-      "output": "✔ legacy stock masking cannot overwrite typed quantities (2.260767ms)\nℹ tests 1\nℹ suites 0\nℹ pass 1\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 122.533949\n"
+      "seconds": 0.32
     },
     {
       "file": "tests/e2e/test71-customer-web-push.unit.test.js",
       "exit": 0,
-      "seconds": 0.9,
-      "timeout": false,
-      "output": "✔ verified customer subscription uses the bound session/device and shows enabled only after server accepts (86.960161ms)\n✔ wrong share/session does not register customer push (10.280818ms)\n✔ background push is displayed once with exact collection route (4.508323ms)\n✔ first Allow confirmation disappears and later session events stay quiet (100.78186ms)\nℹ tests 4\nℹ suites 0\nℹ pass 4\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 813.283752\n"
+      "seconds": 0.97
     },
     {
       "file": "tests/e2e/test71-delivery-ticks.unit.test.js",
       "exit": 0,
-      "seconds": 1.44,
-      "timeout": false,
-      "output": "✔ sent, delivered and read ticks are based only on confirmed recipient receipt (109.409446ms)\n✔ hidden tab acknowledges delivery but never marks a message read (39.123774ms)\n✔ visible customer message binds ACK to verified session and exact visible message IDs (16.36579ms)\n✔ customer entry loads push registration and ticks before customer chat (0.609595ms)\nℹ tests 4\nℹ suites 0\nℹ pass 4\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 811.58424\n"
+      "seconds": 0.94
     },
     {
       "file": "tests/e2e/test71-directory-timeout.unit.test.js",
       "exit": 0,
-      "seconds": 0.23,
-      "timeout": false,
-      "output": "✔ Pending directory request exits loading after 15 seconds and late response cannot replace timeout (3.319337ms)\n✔ Successful directory response retains canonical data and clears watchdog (1.320961ms)\n✔ Directory backend error propagates and clears watchdog (1.121492ms)\n✔ Early background refresh fetches canonical directory instead of committing empty boot state (2.5435ms)\nℹ tests 4\nℹ suites 0\nℹ pass 4\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 121.628502\n"
+      "seconds": 0.28
     },
     {
       "file": "tests/e2e/test71-foc-push-lifecycle-cleanup.unit.test.js",
       "exit": 0,
-      "seconds": 0.24,
-      "timeout": false,
-      "output": "✔ FOC policy and product-cost authority locked (1.024417ms)\n✔ push routes and identity locked (0.160948ms)\n✔ legacy lifecycle RPCs converge (0.132186ms)\nℹ tests 3\nℹ suites 0\nℹ pass 3\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 125.460501\n"
+      "seconds": 0.29
     },
     {
       "file": "tests/e2e/test71-market-customer-first.unit.test.js",
       "exit": 0,
-      "seconds": 11.88,
-      "timeout": false,
-      "output": "er loads global cards before customer choice (1717.91412ms)\n✔ Customer scoped MW excludes already sent lot before selection and preserves filtering on refresh (1455.485106ms)\n✔ Multiple customers see union of eligible lots and each send uses its own filtered eligibility (486.397011ms)\n✔ Outside share mode is explicitly chosen before browsing and never applies internal customer filter (490.744291ms)\n✔ Previously loaded Readymade picker hands selected customer to Market without a second picker (723.221357ms)\n✔ Manufacturing and Readymade reuse the same customer context and Change customer clears it (723.292113ms)\n✔ Sent history hides a design even when returned with stock and no requirement; refresh clears selection and bucket (552.47962ms)\nℹ tests 7\nℹ suites 0\nℹ pass 7\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 11779.815854\n"
+      "seconds": 1.29
     },
     {
       "file": "tests/e2e/test71-market-internal-focus.unit.test.js",
       "exit": 0,
-      "seconds": 0.85,
-      "timeout": false,
-      "output": "✔ Confirmed internal collection send returns to exact customer and new collection message (99.572301ms)\n✔ Failed internal collection send reports failure and stays in chooser (15.83905ms)\n✔ No eligible new designs still opens selected customer existing collection without pretending send succeeded (24.132324ms)\n✔ Selecting a customer hides previously sent cards and opens a customer scoped new-design list (37.186041ms)\nℹ tests 4\nℹ suites 0\nℹ pass 4\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 702.58685\n"
+      "seconds": 1.15
     },
     {
       "file": "tests/e2e/test71-market-window-metadata.unit.test.js",
-      "exit": 1,
-      "seconds": 0.23,
-      "timeout": false,
-      "output": "SERTION',\n    actual: false,\n    expected: true,\n    operator: '==',\n    diff: 'simple'\n  }\n\ntest at tests/e2e/test71-market-window-metadata.unit.test.js:27:1\n✖ Readymade handoff preselects all requested available lots for the existing outside share flow (2.946648ms)\n  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /data-select=\"RM1\" checked/. Input:\n  \n  ''\n  \n      at TestContext.<anonymous> (/workspace/scratch/4d4d4ce23379/redzed-test71-review/tests/e2e/test71-market-window-metadata.unit.test.js:29:9)\n      at async Test.run (node:internal/test_runner/test:1389:7)\n      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {\n    generatedMessage: true,\n    code: 'ERR_ASSERTION',\n    actual: '',\n    expected: /data-select=\"RM1\" checked/,\n    operator: 'match',\n    diff: 'simple'\n  }\n"
+      "exit": 0,
+      "seconds": 1.27
     },
     {
       "file": "tests/e2e/test71-notification-open.unit.test.js",
-      "exit": 1,
-      "seconds": 0.28,
-      "timeout": false,
-      "output": "ms)\n  TypeError: Cannot read properties of undefined (reading 'getNotifications')\n      at evalmachine.<anonymous>:33:41\n      at Object.notificationclick (evalmachine.<anonymous>:38:4)\n      at click (/workspace/scratch/4d4d4ce23379/redzed-test71-review/tests/e2e/test71-notification-open.unit.test.js:4:385)\n      at TestContext.<anonymous> (/workspace/scratch/4d4d4ce23379/redzed-test71-review/tests/e2e/test71-notification-open.unit.test.js:4:456)\n      at Test.runInAsyncScope (node:async_hooks:227:14)\n      at Test.run (node:internal/test_runner/test:1382:25)\n      at Test.processPendingSubtests (node:internal/test_runner/test:960:18)\n      at Test.postRun (node:internal/test_runner/test:1522:19)\n      at Test.run (node:internal/test_runner/test:1447:12)\n      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3)\n"
+      "exit": 0,
+      "seconds": 0.33
     },
     {
       "file": "tests/e2e/test71-notification-read.unit.test.js",
       "exit": 0,
-      "seconds": 0.26,
-      "timeout": false,
-      "output": "✔ read closes only matching message; queued push for read message stays silent (9.012787ms)\n✔ same push event is not alerted twice and new collection revision remains eligible (12.275893ms)\nℹ tests 2\nℹ suites 0\nℹ pass 2\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 163.977246\n"
+      "seconds": 0.29
     },
     {
       "file": "tests/e2e/test71-party-discount.unit.test.js",
-      "exit": 1,
-      "seconds": 2.66,
-      "timeout": false,
-      "output": "s)\n✖ requirement entry loads existing saved draft and updates it through atomic requirement RPC (54.843583ms)\n✔ successful party retry clears obsolete draft error but first saves any pending item edits (76.619945ms)\nℹ tests 19\nℹ suites 0\nℹ pass 18\nℹ fail 1\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 2565.30061\n\n✖ failing tests:\n\ntest at tests/e2e/test71-party-discount.unit.test.js:39:1\n✖ requirement entry loads existing saved draft and updates it through atomic requirement RPC (54.843583ms)\n  TypeError: Cannot read properties of undefined (reading 'a')\n      at TestContext.<anonymous> (/workspace/scratch/4d4d4ce23379/redzed-test71-review/tests/e2e/test71-party-discount.unit.test.js:39:466)\n      at async Test.run (node:internal/test_runner/test:1389:7)\n      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7)\n"
+      "exit": 0,
+      "seconds": 2.72
     },
     {
       "file": "tests/e2e/test71-party-notifications.unit.test.js",
-      "exit": 1,
-      "seconds": 0.73,
-      "timeout": false,
-      "output": "cations.unit.test.js:20:1\n✖ notification tap navigates the matching collection tab and never another party surface (3.630245ms)\n  TypeError: Cannot read properties of undefined (reading 'getNotifications')\n      at evalmachine.<anonymous>:33:41\n      at Object.notificationclick (evalmachine.<anonymous>:38:4)\n      at TestContext.<anonymous> (/workspace/scratch/4d4d4ce23379/redzed-test71-review/tests/e2e/test71-party-notifications.unit.test.js:26:21)\n      at Test.runInAsyncScope (node:async_hooks:227:14)\n      at Test.run (node:internal/test_runner/test:1382:25)\n      at Test.processPendingSubtests (node:internal/test_runner/test:960:18)\n      at Test.postRun (node:internal/test_runner/test:1522:19)\n      at Test.run (node:internal/test_runner/test:1447:12)\n      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7)\n"
+      "exit": 0,
+      "seconds": 0.97
     },
     {
       "file": "tests/e2e/test71-payroll-costing-boundary.unit.test.js",
       "exit": 0,
-      "seconds": 0.27,
-      "timeout": false,
-      "output": "✔ payroll remains salary authority and costing is allocation only (3.13877ms)\n✔ final salary costing requires reconciled monthly payroll (0.300785ms)\nℹ tests 2\nℹ suites 0\nℹ pass 2\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 122.901957\n"
+      "seconds": 0.24
+    },
+    {
+      "file": "tests/e2e/test71-payslip-delivery.unit.test.js",
+      "exit": 0,
+      "seconds": 1.09
+    },
+    {
+      "file": "tests/e2e/test71-payslip-pdf.unit.test.js",
+      "exit": 0,
+      "seconds": 0.91
     },
     {
       "file": "tests/e2e/test71-pi-batched-rate-context.unit.test.js",
       "exit": 0,
-      "seconds": 1.54,
-      "timeout": false,
-      "output": "✔ all seven quantities map bundled rates, discount and amounts without separate rate calls (51.655011ms)\n✔ saved PI rate snapshot remains unchanged while stock context refreshes (5.929405ms)\nℹ tests 2\nℹ suites 0\nℹ pass 2\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 1383.679663\n"
+      "seconds": 0.31
     },
     {
       "file": "tests/e2e/test71-pi-customer-receipt.unit.test.js",
       "exit": 0,
-      "seconds": 0.74,
-      "timeout": false,
-      "output": "89843ms)\n✔ long invoice creates all JPG pages in one atomic send request (14.499951ms)\n✔ JPEG rendering failure never sends an incomplete attachment message (7.136933ms)\n✔ approved layout includes image, size, box / loose breakdown and amount tables (12.25653ms)\n✔ explicit resend uses a retry-stable request ID, while a later deliberate resend is new (21.599952ms)\n✔ outside sharing attaches JPG files and saved details without sending Real Chat messages (10.676125ms)\n✔ RCI uses its saved return document and separate send RPC (7.410937ms)\n✔ missing item photo stops delivery rather than sending a receipt without its image (10.37504ms)\n✔ all customer document kinds show only final Rate and never a per-piece discount or gross rate (14.363684ms)\nℹ tests 10\nℹ suites 0\nℹ pass 10\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 664.016168\n"
+      "seconds": 1.22
     },
     {
       "file": "tests/e2e/test71-pi-latest-requirement.unit.test.js",
-      "exit": 1,
-      "seconds": 0.17,
-      "timeout": false,
-      "output": "t at tests/e2e/test71-pi-latest-requirement.unit.test.js:3:1\n✖ requirement URL replaces stale two-line session with latest seven lines (1.268736ms)\n  ReferenceError: groupArtLines is not defined\n      at loadRequirementUrl (eval at <anonymous> (/workspace/scratch/4d4d4ce23379/redzed-test71-review/tests/e2e/test71-pi-latest-requirement.unit.test.js:3:179), <anonymous>:30:5)\n      at async eval (eval at <anonymous> (/workspace/scratch/4d4d4ce23379/redzed-test71-review/tests/e2e/test71-pi-latest-requirement.unit.test.js:3:179), <anonymous>:41:18)\n      at async TestContext.<anonymous> (/workspace/scratch/4d4d4ce23379/redzed-test71-review/tests/e2e/test71-pi-latest-requirement.unit.test.js:3:551)\n      at async Test.run (node:internal/test_runner/test:1389:7)\n      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3)\n"
+      "exit": 0,
+      "seconds": 0.29
     },
     {
       "file": "tests/e2e/test71-pi-rate-recovery.unit.test.js",
       "exit": 0,
-      "seconds": 0.74,
-      "timeout": false,
-      "output": "✔ Owner gets positive rate approval action next to PI error (150.098184ms)\n✔ Sales sees owner request and retry without private costing or rate editor (18.565081ms)\nℹ tests 2\nℹ suites 0\nℹ pass 2\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 657.45072\n"
+      "seconds": 0.93
     },
     {
       "file": "tests/e2e/test71-positive-sale-rate.unit.test.js",
       "exit": 0,
-      "seconds": 1.44,
-      "timeout": false,
-      "output": "✔ Missing, pending and zero rates block handoff with relevant warnings (5.363819ms)\n✔ Positive approved sale rate permits handoff (2.027475ms)\nℹ tests 2\nℹ suites 0\nℹ pass 2\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 363.583396\n"
+      "seconds": 0.34
     },
     {
       "file": "tests/e2e/test71-public-customer-invite.unit.test.js",
       "exit": 0,
-      "seconds": 0.2,
-      "timeout": false,
-      "output": "✔ both single and queued invites use the public customer base even from a private Codespace (4.760612ms)\n✔ customer origin is locked against later staff/private URL overrides (1.005687ms)\nℹ tests 2\nℹ suites 0\nℹ pass 2\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 110.088025\n"
+      "seconds": 0.23
     },
     {
       "file": "tests/e2e/test71-public-customer-link-transport.unit.test.js",
       "exit": 0,
-      "seconds": 0.21,
-      "timeout": false,
-      "output": "✔ saved private invites preserve token, short code, collection parameters and fragment (2.463725ms)\n✔ clipboard repairs each saved customer link and leaves unrelated text intact (0.944748ms)\n✔ native share repairs both url and text without dropping attached files (1.171378ms)\n✔ WhatsApp and SMS outgoing messages repair encoded saved links (1.592776ms)\n✔ staff, supplier and third-party URLs remain unchanged (0.797385ms)\n✔ customer anchor clicks repair only the outgoing destination (1.000228ms)\nℹ tests 6\nℹ suites 0\nℹ pass 6\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 131.475417\n"
+      "seconds": 0.26
     },
     {
       "file": "tests/e2e/test71-push-subscription-dedupe.unit.test.js",
       "exit": 0,
-      "seconds": 0.21,
-      "timeout": false,
-      "output": "✔ Old five legacy origins yield only newest fallback subscription (1.339145ms)\n✔ Different identified devices are preserved; same device picks newest and legacy is suppressed (0.261324ms)\n✔ Atomic claim marks processed with token to avoid dispatch-token trigger recursion (0.338562ms)\nℹ tests 3\nℹ suites 0\nℹ pass 3\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 131.193411\n"
+      "seconds": 0.28
     },
     {
       "file": "tests/e2e/test71-readymade-art-sale.unit.test.js",
       "exit": 0,
-      "seconds": 1.19,
-      "timeout": false,
-      "output": "✔ PI dropdown offers Art and physical Lot; Art selection saves one logical item (440.366462ms)\n✔ Typing an Art without a prefix resolves to the same Art sale item (114.318972ms)\n✔ Saved physical Lot allocations reopen as one Art row with combined PCS (67.810788ms)\nℹ tests 3\nℹ suites 0\nℹ pass 3\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 1091.542477\n"
+      "seconds": 1.61
     },
     {
       "file": "tests/e2e/test71-readymade-chat.unit.test.js",
-      "exit": 1,
-      "seconds": 4.02,
-      "timeout": false,
-      "output": "\nℹ tests 37\nℹ suites 0\nℹ pass 36\nℹ fail 1\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 3935.301782\n\n✖ failing tests:\n\ntest at tests/e2e/test71-readymade-chat.unit.test.js:150:1\n✖ Real Chat shell opens Readymade first, switches OPEN/WORKING, and Back returns to directory (127.13481ms)\n  AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:\n  \n    assert.ok(w.document.querySelector('[data-new]'))\n  \n      at TestContext.<anonymous> (/workspace/scratch/4d4d4ce23379/redzed-test71-review/tests/e2e/test71-readymade-chat.unit.test.js:161:88)\n      at async Test.run (node:internal/test_runner/test:1389:7)\n      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {\n    generatedMessage: true,\n    code: 'ERR_ASSERTION',\n    actual: null,\n    expected: true,\n    operator: '==',\n    diff: 'simple'\n  }\n"
+      "exit": 0,
+      "seconds": 5.33
     },
     {
       "file": "tests/e2e/test71-readymade-market-search.unit.test.js",
       "exit": 0,
-      "seconds": 0.76,
-      "timeout": false,
-      "output": "✔ MW Art and Lot suggestions retain canonical card selection and show both identities (160.963983ms)\nℹ tests 1\nℹ suites 0\nℹ pass 1\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 627.033725\n"
+      "seconds": 0.9
     },
     {
       "file": "tests/e2e/test71-readymade-receipt-share.unit.test.js",
       "exit": 0,
-      "seconds": 2.8,
-      "timeout": false,
-      "output": "✔ Rendered and synchronous Proforma note are genuine downloadable JPEG images (176.882726ms)\n✔ Share starts synchronously with image only and no policy or link detour (106.133118ms)\n✔ CB-compatible PNG image fallback retains JPG download and never shares a link (93.277189ms)\n✔ Cancellation is not a handoff and unsupported API never sends text/link (45.866055ms)\n✔ Saved receipt panel offers one image send button and saveable JPG with no WhatsApp link prompts (127.267746ms)\nℹ tests 5\nℹ suites 0\nℹ pass 5\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 1491.932224\n"
+      "seconds": 1.9
     },
     {
       "file": "tests/e2e/test71-readymade-supplier-receipt.unit.test.js",
       "exit": 0,
-      "seconds": 0.72,
-      "timeout": false,
-      "output": "✔ Standalone receipt needs no session and shares verified JPG synchronously with native picker (127.989961ms)\n✔ Unsupported standalone picker retains JPG download and never sends a receipt link (34.288351ms)\n✔ Altered receipt bytes and unrelated URLs never enable JPG sharing (43.664414ms)\nℹ tests 3\nℹ suites 0\nℹ pass 3\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 643.170899\n"
+      "seconds": 0.79
     },
     {
       "file": "tests/e2e/test71-readymade-uppercase.unit.test.js",
       "exit": 0,
-      "seconds": 0.65,
-      "timeout": false,
-      "output": "✔ Readymade dynamically inserted business inputs normalize typed and pasted values before local handlers (77.823292ms)\n✔ Canonical uppercase exclusions preserve URL, notes, search and return reasons (18.531102ms)\n✔ Pilot loads canonical CAPS adapter before dynamic Readymade forms (1.182418ms)\n✔ Cursor in the middle stays there after insertion, including uppercase expansion and selection direction (11.93586ms)\n✔ Keyboard composition finishes before CAPS conversion and preserves the chosen edit position (9.027388ms)\nℹ tests 5\nℹ suites 0\nℹ pass 5\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 564.306185\n"
+      "seconds": 0.65
     },
     {
       "file": "tests/e2e/test71-readymade-wiring.unit.test.js",
       "exit": 0,
-      "seconds": 1.16,
-      "timeout": false,
-      "output": "✔ Readymade saved draft reloads and posts through the canonical purchase RPC with fixed margin (279.272687ms)\n✔ Rate approval and repeat tap produce one approval request; Purchase Return uses one stable request reference (140.839094ms)\n✔ Sales UI has no purchase, overhead or approval actions and no owner costing details (42.867959ms)\nℹ tests 3\nℹ suites 0\nℹ pass 3\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 1089.578957\n"
+      "seconds": 1.15
     },
     {
       "file": "tests/e2e/test71-requirement-session.unit.test.js",
       "exit": 0,
-      "seconds": 8.88,
-      "timeout": false,
-      "output": "a/click share one detail request (2710.280971ms)\n✔ failed cold prefetch is evicted and next tap succeeds (115.677266ms)\n✔ hung connection shows Retry; late response cannot replace the retry result (246.54083ms)\n✔ switching party or closing sheet prevents late render and stale PI actions (99.608974ms)\n✔ one-row refresh poll does not evict prefetched detail; actual update does (123.858229ms)\n✔ PDF decoration never refetches inbox/messages after unrelated DOM changes (266.695534ms)\n✔ fresh requirement context survives an inbox rerender without selected row (76.385921ms)\n✔ saved requirement exposes Open PI, Resend and Outside JPG actions (79.084787ms)\n✔ requirement resend sends its exact saved PI and party chat once on double tap (105.93467ms)\nℹ tests 9\nℹ suites 0\nℹ pass 9\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 8776.938048\n"
+      "seconds": 2.29
     },
     {
       "file": "tests/e2e/test71-salary-final-costing.unit.test.js",
       "exit": 0,
-      "seconds": 0.24,
-      "timeout": false,
-      "output": "✔ salary pools split production team from staff support (1.081526ms)\n✔ final salary authority requires reconciled payroll (0.166325ms)\n✔ final costing replaces legacy lapse staff once and blocks provisional completion (0.320589ms)\nℹ tests 3\nℹ suites 0\nℹ pass 3\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 124.776123\n"
+      "seconds": 0.31
     },
     {
       "file": "tests/e2e/test71-sales-collection-followup.unit.test.js",
-      "exit": 1,
-      "seconds": 1.02,
-      "timeout": false,
-      "output": "ror [ERR_ASSERTION]: The input did not match the regular expression /1 sent/. Input:\n  \n  'Party A: Collection confirmation missing. Reopen the customer chat to verify. | Party B: Collection confirmation missing. Reopen the customer chat to verify.'\n  \n      at TestContext.<anonymous> (/workspace/scratch/4d4d4ce23379/redzed-test71-review/tests/e2e/test71-sales-collection-followup.unit.test.js:123:10)\n      at async Test.run (node:internal/test_runner/test:1389:7)\n      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {\n    generatedMessage: true,\n    code: 'ERR_ASSERTION',\n    actual: 'Party A: Collection confirmation missing. Reopen the customer chat to verify. | Party B: Collection confirmation missing. Reopen the customer chat to verify.',\n    expected: /1 sent/,\n    operator: 'match',\n    diff: 'simple'\n  }\n"
+      "exit": 0,
+      "seconds": 1.73
     },
     {
       "file": "tests/e2e/test71-sim-internet-call.unit.test.js",
       "exit": 0,
-      "seconds": 0.67,
-      "timeout": false,
-      "output": "✔ SIM option opens tel link and never starts WebRTC or microphone (103.412049ms)\n✔ offer and early ICE wait for Answer; double Answer creates one microphone (47.010823ms)\n✔ double outgoing tap makes one call and cleanup stops audio (24.829003ms)\n✔ closing during microphone permission prevents late call start (23.447357ms)\nℹ tests 4\nℹ suites 0\nℹ pass 4\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 591.750949\n"
+      "seconds": 0.89
+    },
+    {
+      "file": "tests/e2e/test71-source-intake-page.unit.test.js",
+      "exit": 0,
+      "seconds": 0.99
+    },
+    {
+      "file": "tests/e2e/test71-source-intake.unit.test.js",
+      "exit": 0,
+      "seconds": 0.38
     },
     {
       "file": "tests/e2e/test71-staff-chat-hold-reply.unit.test.js",
       "exit": 0,
-      "seconds": 0.21,
-      "timeout": false,
-      "output": "✔ reply hold does not show a false selection highlight when message selection owns long press (0.969941ms)\nℹ tests 1\nℹ suites 0\nℹ pass 1\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 122.103446\n"
+      "seconds": 0.43
     },
     {
       "file": "tests/e2e/test71-staff-chat-multiselect-delete.unit.test.js",
       "exit": 0,
-      "seconds": 0.23,
-      "timeout": false,
-      "output": "ed (0.351649ms)\n✔ multi-delete confirms once and deletes both selected messages through existing RPC (0.830403ms)\n✔ everyone deletion blocks mixed ownership (0.428628ms)\n✔ partial deletion preserves failed selection for retry (0.491171ms)\n✔ selection cannot delete after switching conversation (0.282495ms)\n✔ hold selects while scrolling cancels hold and three-dot controls are removed (1.251426ms)\n✔ native touchend selects a second message without relying on synthetic click (0.606426ms)\n✔ Cancel and delete toolbar touches remain clickable during selection (0.434038ms)\n✔ scrolling in selection mode does not select another message (0.547198ms)\n✔ staff reply reader routes through deletion-aware API and observer avoids toolbar subtree (0.2091ms)\nℹ tests 13\nℹ suites 0\nℹ pass 13\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 144.17769\n"
+      "seconds": 0.31
     },
     {
       "file": "tests/e2e/test71-staff-chat-recovery.unit.test.js",
-      "exit": 1,
-      "seconds": 0.86,
-      "timeout": false,
-      "output": "ncelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 774.675041\n\n✖ failing tests:\n\ntest at tests/e2e/test71-staff-chat-recovery.unit.test.js:4:1\n✖ message actions use exact IDs, own message can delete for everyone, chat archive is separate (39.878744ms)\n  TypeError: Cannot read properties of null (reading 'click')\n      at TestContext.<anonymous> (/workspace/scratch/4d4d4ce23379/redzed-test71-review/tests/e2e/test71-staff-chat-recovery.unit.test.js:4:734)\n      at Test.runInAsyncScope (node:async_hooks:227:14)\n      at Test.run (node:internal/test_runner/test:1382:25)\n      at Test.processPendingSubtests (node:internal/test_runner/test:960:18)\n      at Test.postRun (node:internal/test_runner/test:1522:19)\n      at Test.run (node:internal/test_runner/test:1447:12)\n      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3)\n"
+      "exit": 0,
+      "seconds": 0.97
     },
     {
       "file": "tests/e2e/test71-staff-unread.unit.test.js",
       "exit": 0,
-      "seconds": 0.89,
-      "timeout": false,
-      "output": "✔ Unread totals count messages and customers; selected chat focuses first unread and does not ACK whole chat (167.068862ms)\nℹ tests 1\nℹ suites 0\nℹ pass 1\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 816.519766\n"
+      "seconds": 1.03
     },
     {
       "file": "tests/e2e/test71-terminal-chat.unit.test.js",
       "exit": 0,
-      "seconds": 0.24,
-      "timeout": false,
-      "output": "✔ PI_GENERATED terminal collection restores messages and composer (5.474619ms)\n✔ customer close handler also restores chat before hiding collection (1.450934ms)\nℹ tests 2\nℹ suites 0\nℹ pass 2\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 124.261715\n"
+      "seconds": 0.27
     },
     {
       "file": "tests/e2e/test71-universal-uppercase.unit.test.js",
-      "exit": 1,
-      "seconds": 0.88,
-      "timeout": false,
-      "output": " guarded v5 (1.414898ms)\n  AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:\n  \n    assert.ok(cb.includes('rr_cb_material_mapping_sync_v5'))\n  \n      at TestContext.<anonymous> (/workspace/scratch/4d4d4ce23379/redzed-test71-review/tests/e2e/test71-universal-uppercase.unit.test.js:307:303)\n      at Test.runInAsyncScope (node:async_hooks:227:14)\n      at Test.run (node:internal/test_runner/test:1382:25)\n      at Test.processPendingSubtests (node:internal/test_runner/test:960:18)\n      at Test.postRun (node:internal/test_runner/test:1522:19)\n      at Test.run (node:internal/test_runner/test:1447:12)\n      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {\n    generatedMessage: true,\n    code: 'ERR_ASSERTION',\n    actual: false,\n    expected: true,\n    operator: '==',\n    diff: 'simple'\n  }\n"
+      "exit": 0,
+      "seconds": 0.38
     },
     {
       "file": "tests/e2e/test71-voice.unit.test.js",
       "exit": 0,
-      "seconds": 1.08,
-      "timeout": false,
-      "output": "✔ staff records once on double tap and uploads audio to the original chat (327.265643ms)\n✔ customer records once and sends voice using verified session/device (171.317216ms)\nℹ tests 2\nℹ suites 0\nℹ pass 2\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 987.346699\n"
+      "seconds": 1.14
     },
     {
       "file": "tests/fabrication-open-consolidation.test.cjs",
       "exit": 0,
-      "seconds": 0.21,
-      "timeout": false,
-      "output": "✔ Lot 2640 six ready departments become one 108 PCS card with all department identities (1.155349ms)\n✔ different lots stay separate and WORKING handovers retain their individual actions (0.244664ms)\n✔ canonical UPM projection colours consolidate by lot+department+worker and retain exact assignments (9.706136ms)\n✔ notification selects the exact card action filter without changing unrelated chats or looping (1.318708ms)\n✔ every production department preserves worker and department boundaries and existing colour assignments (2.2631ms)\n✔ Fabrication ready summary never combines assigned workers (0.263859ms)\nℹ tests 6\nℹ suites 0\nℹ pass 6\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 124.393419\n"
+      "seconds": 0.37
     },
     {
       "file": "tests/pending-action-lanes.test.cjs",
       "exit": 0,
-      "seconds": 0.66,
-      "timeout": false,
-      "output": "iewer permission, not stale legacy label (0.290376ms)\n✔ every production group separates staff and worker; cards never occupy both lanes (0.490436ms)\n✔ staff and worker controls show exact pending counts and select a separate action list (407.30056ms)\n✔ STAFF 19 opens all 19; only populated action filters appear; accept count shows exact 13 (4.158149ms)\n✔ WORKER total opens all seven and breakdown filters show five Submit and two Alter (2.381196ms)\n✔ completed atomic handover with stale actions never remains in STAFF or WORKER pending counts (0.295588ms)\n✔ opening an action filter clears the old cards and old count before loading (12.040182ms)\n✔ disputed count remains staff final decision work, never accepted or worker Submit (0.342453ms)\nℹ tests 10\nℹ suites 0\nℹ pass 10\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 580.659576\n"
+      "seconds": 0.76
     },
     {
       "file": "tests/push-prompt-alter-save.test.cjs",
-      "exit": 1,
-      "seconds": 0.51,
-      "timeout": false,
-      "output": "as save failure (4.221377ms)\n✔ periodic active manufacturing refresh avoids global work-search before rendering its queue (3.598064ms)\nℹ tests 3\nℹ suites 0\nℹ pass 2\nℹ fail 1\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 430.72159\n\n✖ failing tests:\n\ntest at tests/push-prompt-alter-save.test.cjs:2:1\n✖ notification setup removes itself after at most 3 seconds without requesting permission (1.298061ms)\n  TypeError: Cannot read properties of null (reading '0')\n      at TestContext.<anonymous> (/workspace/scratch/4d4d4ce23379/redzed-test71-review/tests/push-prompt-alter-save.test.cjs:3:149)\n      at Test.runInAsyncScope (node:async_hooks:227:14)\n      at Test.run (node:internal/test_runner/test:1382:25)\n      at Test.start (node:internal/test_runner/test:1242:17)\n      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17)\n"
+      "exit": 0,
+      "seconds": 0.74
     },
     {
       "file": "tests/queue-read-cache.test.cjs",
       "exit": 0,
-      "seconds": 0.21,
-      "timeout": false,
-      "output": "✔ concurrent and warm queue reads share one request (2.736259ms)\n✔ different status and actor never reuse another queue (1.10521ms)\n✔ successful Save invalidates cached queue immediately (0.950509ms)\n✔ read failure is evicted and retry reaches backend (1.421858ms)\nℹ tests 4\nℹ suites 0\nℹ pass 4\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 125.155989\n"
+      "seconds": 0.29
     },
     {
       "file": "tests/queue-tab-switch.test.cjs",
       "exit": 0,
-      "seconds": 4.07,
-      "timeout": false,
-      "output": "pe (node:async_hooks:227:14)\n    at Test.run (node:internal/test_runner/test:1382:25)\n    at Test.processPendingSubtests (node:internal/test_runner/test:960:18)\n    at Test.postRun (node:internal/test_runner/test:1522:19)\n    at Test.run (node:internal/test_runner/test:1447:12)\n    at async Test.processPendingSubtests (node:internal/test_runner/test:960:7)\n✔ Working → Open → Working ignores late results, clears wrong counts immediately and renders without global load (192.478319ms)\n✔ projection failure is visible with Retry instead of empty forever (58.521573ms)\n✔ root and chat share one in-flight queue; timeout clears entry and retry starts fresh (2.178747ms)\n✔ slow Art enrichment does not block cards or rerender another tab (14.150269ms)\nℹ tests 5\nℹ suites 0\nℹ pass 5\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 3982.606858\n"
+      "seconds": 0.7
     },
     {
       "file": "tests/status-unread-bubbles.test.cjs",
       "exit": 0,
-      "seconds": 0.66,
-      "timeout": false,
-      "output": "✔ OPEN and WORKING badges scope to root, department and worker; reading one status leaves the other intact (134.436819ms)\nℹ tests 1\nℹ suites 0\nℹ pass 1\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 545.298212\n"
+      "seconds": 0.99
+    },
+    {
+      "file": "tests/test71-attendance-calendar.test.cjs",
+      "exit": 0,
+      "seconds": 0.32
+    },
+    {
+      "file": "tests/test71-financial-request.test.cjs",
+      "exit": 0,
+      "seconds": 0.26
+    },
+    {
+      "file": "tests/test71-mc1-request.test.cjs",
+      "exit": 0,
+      "seconds": 0.26
     },
     {
       "file": "tests/test71-upm-client-mode.test.cjs",
       "exit": 0,
-      "seconds": 0.19,
-      "timeout": false,
-      "output": "✔ UPM client scope test71-workspace.app.github.dev/test70-accept-work-v205.html (3.473378ms)\n✔ UPM client scope test71-workspace.app.github.dev/real-universal-production-v770-v9059.html?mode=TEST (1.16899ms)\n✔ UPM client scope test71-workspace.app.github.dev/real-universal-production-v770-v9059.html?mode=REAL (0.674567ms)\n✔ UPM client scope production.example/test70-cb-purchase-real-chat-pilot.html (0.597262ms)\nℹ tests 4\nℹ suites 0\nℹ pass 4\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 114.606825\n"
+      "seconds": 0.24
     },
     {
       "file": "tests/two-screen-cards.test.cjs",
       "exit": 0,
-      "seconds": 0.68,
-      "timeout": false,
-      "output": "✔ count opens card screen with exact header, and Back preserves search, filters, DOM and receipt ticks (75.809594ms)\n✔ worker and OPEN use same screen; changed pending count updates header; non-manufacturing untouched (20.273487ms)\nℹ tests 2\nℹ suites 0\nℹ pass 2\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 588.782278\n"
+      "seconds": 0.69
     },
     {
       "file": "tests/universal-chat-bubbles.test.cjs",
       "exit": 0,
-      "seconds": 1.17,
-      "timeout": false,
-      "output": " unread and ignore wrong status (24.845443ms)\n✔ MANAGER: personal rows and cards retain other workers unread and ignore wrong status (45.096875ms)\n✔ ADMIN: personal rows and cards retain other workers unread and ignore wrong status (36.326042ms)\n✔ ACCOUNTS: personal rows and cards retain other workers unread and ignore wrong status (40.450481ms)\n✔ SALES: personal rows and cards retain other workers unread and ignore wrong status (41.345287ms)\n✔ SUPER_ADMIN: personal rows and cards retain other workers unread and ignore wrong status (33.429885ms)\n✔ WORKER: personal rows and cards retain other workers unread and ignore wrong status (72.630229ms)\n✔ personal unread bubble navigates to exact worker, department, status and notice (25.343819ms)\nℹ tests 14\nℹ suites 0\nℹ pass 14\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 1073.467311\n"
+      "seconds": 0.9
     },
     {
       "file": "tests/worker-management-actions.test.cjs",
       "exit": 0,
-      "seconds": 0.22,
-      "timeout": false,
-      "output": "✔ assigned worker, Manager, Admin and Super Admin get all three buttons with exact worker identity (5.444251ms)\n✔ unrelated worker cannot act; unaccepted assignment cannot Submit (5.186025ms)\n✔ management Submit uses target-worker RPC; context never falls back to another worker (0.28567ms)\n✔ worker selection keeps overview; action counts open the separate cards page (0.197841ms)\n✔ Rectify uses actual cases and final accounting instead of normal Submit (2.078582ms)\nℹ tests 5\nℹ suites 0\nℹ pass 5\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 131.555883\n"
-    },
-    {
-      "file": "tests/e2e/test71-readymade-receipt-share.unit.test.js",
-      "exit": 0,
-      "seconds": 1.63,
-      "timeout": false,
-      "output": "✔ Rendered and synchronous Proforma note are genuine downloadable JPEG images (193.546028ms)\n✔ Share starts synchronously with image only and no policy or link detour (125.777333ms)\n✔ CB-compatible PNG image fallback retains JPG download and never shares a link (112.586621ms)\n✔ Cancellation is not a handoff and unsupported API never sends text/link (51.871711ms)\n✔ Saved receipt panel offers one image send button and saveable JPG with no WhatsApp link prompts (61.870922ms)\nℹ tests 5\nℹ suites 0\nℹ pass 5\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 1527.945683\n"
-    },
-    {
-      "file": "tests/e2e/test71-readymade-supplier-receipt.unit.test.js",
-      "exit": 0,
-      "seconds": 0.79,
-      "timeout": false,
-      "output": "✔ Standalone receipt needs no session and shares verified JPG synchronously with native picker (122.558143ms)\n✔ Unsupported standalone picker retains JPG download and never sends a receipt link (32.972293ms)\n✔ Altered receipt bytes and unrelated URLs never enable JPG sharing (44.934686ms)\nℹ tests 3\nℹ suites 0\nℹ pass 3\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 675.244968\n"
+      "seconds": 0.26
     }
-  ]
+  ],
+  "supersession_record": "test71-superseded-source-assertions-20261011.json",
+  "universal_clearance": false,
+  "import_clearance": false
 }

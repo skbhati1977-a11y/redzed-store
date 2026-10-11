@@ -92,8 +92,8 @@ test('Existing Add New master flows remain embedded in CB Art Combo',()=>{
 test('Additional Material manual UI is retired; derived requirement is visible instead',()=>{
   const cb=read('real-cb-new-v9130-fix2.html');
   assert.ok(cb.includes('id="extraMaterialCard" hidden'));
-  assert.ok(cb.includes('Yield · Consolidated Requirement'));
-  assert.ok(cb.includes('Art Combo → Yield PCS → Collar/Rib/Sticker/Metal ID requirement.'));
+  assert.ok(cb.includes('Appx Sheet · Consolidated Requirement'));
+  assert.ok(cb.includes('Art Combo → Appx PCS snapshot + Cutting PCS actual → Collar/Rib/Sticker/Metal ID requirement.'));
   assert.ok(cb.includes('rr_cb_refresh_derived_requirements_v1'));
   assert.ok(cb.includes('rr_cb_requirement_context_v1'));
 });
@@ -113,10 +113,10 @@ test('Yield drives initial Sticker and Metal ID planning and Cutting actual can 
 test('WhatsApp supports FIRST, RESEND and REVISED templates with send history',()=>{
   const cb=read('real-cb-new-v9130-fix2.html');
   const sql=read('supabase/migrations/20261003152600_test71_cb_yield_requirement_whatsapp_v1.sql');
-  assert.ok(cb.includes('SEND WHATSAPP'));
-  assert.ok(cb.includes('SEND REVISED'));
-  assert.ok(cb.includes('RESEND #'));
-  assert.ok(cb.includes('rr_cb_requirement_send_v1'));
+  assert.ok(cb.includes('SHARE RECEIPT'));
+  assert.ok(cb.includes('SHARE REVISED'));
+  assert.ok(cb.includes('RESHARE #'));
+  assert.ok(cb.includes('rr_cb_requirement_receipt_record_v2'));
   assert.ok(sql.includes("template_kind in('FIRST','RESEND','REVISED')"));
   assert.ok(sql.includes('REQUIREMENT STILL PENDING'));
   assert.ok(sql.includes('RESENDING PURCHASE ORDER'));
@@ -244,7 +244,7 @@ test('Reports PO WhatsApp and final Save flush pending field autosave first',()=
   const cb=read('real-cb-new-v9130-fix2.html');
   assert.ok(cb.includes('async function flushFieldAutosave()'));
   assert.ok(cb.includes('async function decideReconciliation(decision){await flushFieldAutosave();'));
-  assert.ok(cb.includes('async function reportReconciliationVariance(){await flushFieldAutosave();'));
+  const report=cb.slice(cb.indexOf('async function reportReconciliationVariance(){'),cb.indexOf('function reconciliationPanel(){'));assert.ok(report.includes("await flushFieldAutosave();return await sb().rpc('rr_cb_variance_whatsapp_prepare_v2'"));
   assert.ok(cb.includes('async function sendDerivedRequirementWhatsApp(type,sourceId,button){\n await flushFieldAutosave();'));
   assert.ok(cb.includes('async function generateAllSetPurchaseOrder(){await flushFieldAutosave();'));
   assert.ok(cb.includes('async function saveCanonical(confirming){if(saving)return;await flushFieldAutosave();'));

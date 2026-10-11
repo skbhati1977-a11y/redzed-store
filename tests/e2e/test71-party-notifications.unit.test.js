@@ -8,7 +8,7 @@ async function run(staff){
  d.window.eval(src);const call=async r=>{rows=r;await d.window.RF853.rpc(staff?'rr_chat_staff_messages_v9434':'rr_chat_customer_messages_v9434',{p_chat_id:'party',p_token:'token'});await new Promise(r=>setTimeout(r,5))};
  return {d,call,count:()=>notices};
 }
-test('Sales history and own activity silent; new customer activity alerts once',async()=>{const x=await run(true);try{await x.call([msg('old',Date.now()-86400000)]);await x.call([msg('new',Date.now()+1000)]);assert.equal(x.count(),0);await x.call([msg('customer',Date.now()+2000,'CUSTOMER')]);assert.equal(x.count(),1);await x.call([msg('customer',Date.now()+2000,'CUSTOMER')]);assert.equal(x.count(),1)}finally{x.d.window.close()}});
+test('Sales history and own activity silent; new customer activity alerts once',async()=>{const x=await run(true);try{const now=Date.now();await x.call([msg('old',now-86400000)]);await x.call([msg('new',now+1000)]);assert.equal(x.count(),0);await x.call([msg('customer',now+2000,'CUSTOMER')]);assert.equal(x.count(),1);await x.call([msg('customer',now+2000,'CUSTOMER')]);assert.equal(x.count(),1)}finally{x.d.window.close()}});
 test('party baseline and older history silent; new Sales activity alerts once; own activity silent',async()=>{const x=await run(false);try{const now=Date.now();await x.call([]);await x.call([msg('old',now-86400000)]);assert.equal(x.count(),0);await x.call([msg('fresh',now+1000)]);assert.equal(x.count(),1);await x.call([msg('fresh',now+1000)]);assert.equal(x.count(),1);await x.call([msg('own',now+2000,'CUSTOMER')]);assert.equal(x.count(),1)}finally{x.d.window.close()}});
 test('new collection notification carries its exact token and cycle',async()=>{
  const x=await run(false);try{
@@ -20,9 +20,10 @@ test('new collection notification carries its exact token and cycle',async()=>{
 test('notification tap navigates the matching collection tab and never another party surface',async()=>{
  const vm=require('node:vm'),listeners={},actions=[];
  const target='https://example.test/s.html?t=party-new&open=collection';
- const windows=[{url:'https://example.test/other.html',navigate:async()=>actions.push('wrong')},{url:'https://example.test/s.html?t=party-old',navigate:async url=>{actions.push(url);return {focus:async()=>actions.push('focus')}}}];
- const self={location:{href:'https://example.test/redzed-sw-test67.js',origin:'https://example.test'},addEventListener:(n,f)=>listeners[n]=f,clients:{matchAll:async()=>windows,openWindow:async u=>actions.push(u)}};
+ const expected='https://redzed-customer-collection.jggfab2011.chatgpt.site/s.html?t=party-new&open=chat&notification=1';
+ const windows=[{url:'https://example.test/other.html',navigate:async()=>actions.push('wrong')},{url:'https://redzed-customer-collection.jggfab2011.chatgpt.site/s.html?t=party-old',navigate:async url=>{actions.push(url);return {focus:async()=>actions.push('focus')}}}];
+ const self={location:{href:'https://example.test/redzed-sw-test67.js',origin:'https://example.test'},addEventListener:(n,f)=>listeners[n]=f,registration:{getNotifications:async()=>[]},clients:{matchAll:async()=>windows,openWindow:async u=>actions.push(u)}};
  vm.runInNewContext(fs.readFileSync(path.join(__dirname,'../../redzed-sw-test67.js'),'utf8'),{self,URL});
- let task;listeners.notificationclick({notification:{data:{url:target},close:()=>{}},waitUntil:p=>task=p});await task;assert.deepEqual(actions,[target,'focus']);
- actions.length=0;windows.length=0;listeners.notificationclick({notification:{data:{url:target},close:()=>{}},waitUntil:p=>task=p});await task;assert.deepEqual(actions,[target]);
+ let task;listeners.notificationclick({notification:{data:{url:target},close:()=>{}},waitUntil:p=>task=p});await task;assert.deepEqual(actions,[expected,'focus']);
+ actions.length=0;windows.length=0;listeners.notificationclick({notification:{data:{url:target},close:()=>{}},waitUntil:p=>task=p});await task;assert.deepEqual(actions,[expected]);
 });

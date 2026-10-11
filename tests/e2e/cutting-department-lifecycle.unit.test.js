@@ -52,18 +52,19 @@ test('reconciliation archives every non-ready Cutting projection, including unav
 test('Cutting App derives Material Hold and opens exact Art child identity', () => {
   assert.match(cutting, /function materialDueCount\(cbId\)/);
   assert.match(cutting, /rr_cutting_lifecycle_batch_v632/);
-  assert.match(cutting, /data-art-decision=/);
-  assert.match(cutting, /cb_unit_id=\$\{encodeURIComponent\(unitId\)\}/);
+  assert.match(cutting, /data-cb-combo=/);
+  assert.match(cutting, /real-cb-new-v9130-fix2\.html\?cb_id=/);
   assert.match(cutting, /Material Due — confirm material before Cutting/);
   const exactLookup = cutting.indexOf('if (requestedDivisionId) {\n    const exactDivision');
   const productionLookup = cutting.indexOf('let productionQuery = client');
   assert.ok(exactLookup >= 0 && exactLookup < productionLookup, 'deep links must resolve the exact child before the full gallery view');
 });
 
-test('Art deep link resolves the exact requested child before rendering', () => {
-  assert.match(art, /eq\("cb_unit_id",requestedId\)\.maybeSingle\(\)/);
-  assert.match(art, /Requested Art Decision child is not available/);
-  assert.match(art, /openDecision\(requested\)/);
+test('retired Art deep link resolves the requested unit to canonical parent CB',()=>{
+ assert.match(art,/from\("rr_cb_units"\)\.select\("purchase_id"\)\.eq\("id",unitId\)\.maybeSingle\(\)/);
+ assert.match(art,/goByCbId\(r\.data\.purchase_id\)/);
+ assert.match(art,/ART_DECISION_RETIRED#setDecisionCard/);
+ assert.doesNotMatch(art,/rr_pm_save_decision_bundle/);
 });
 
 test('rollback-only lifecycle proof covers every transition and leaves zero residue', () => {

@@ -1,6 +1,7 @@
 const CUSTOMER_ORIGIN='https://redzed-customer-collection.jggfab2011.chatgpt.site';
 function notificationRoute71(value){
  const u=new URL(value||'./s.html',self.location.href);
+ if(u.protocol!=='https:'||(u.origin!==self.location.origin&&u.origin!==CUSTOMER_ORIGIN))throw Error('Invalid notification destination');
  if(u.pathname.endsWith('/s.html'))return new URL(CUSTOMER_ORIGIN+'/s.html'+u.search);
  if(u.protocol!=='https:'||u.origin!==self.location.origin)throw Error('Invalid notification destination');
  return u;

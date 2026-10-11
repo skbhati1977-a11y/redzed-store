@@ -8,7 +8,7 @@ async function run(cycle='cycle-new',chat='chat-buyer',existing=false){
  vm.runInNewContext(source,context);for(let i=0;i<6;i++)await new Promise(setImmediate);return {dom,w,calls};
 }
 test('Return focus highlights and focuses the visible live belt even when workflow message is hidden',async()=>{
- const x=await run();try{const d=x.w.document,host=d.getElementById('rrSalesCycleLive71');assert.equal(host.hidden,false);assert.equal(x.calls[0].name,'rr_sales_collection_cycle_status_test71');assert.equal(x.calls[0].args.p_collection_cycle_id,'cycle-new');assert.ok(host.classList.contains('rrCollectionReturnFocus71'));assert.equal(d.activeElement,host.querySelector('.rrLiveBelt71'));assert.match(d.getElementById('flash').textContent,/Collection sent ✓ · COL1 · UPDATE 2/);assert.equal(d.querySelector('.msg').style.display,'none');}finally{x.dom.window.close()}
+ const x=await run();try{const d=x.w.document,host=d.getElementById('rrSalesCycleLive71');assert.equal(host.hidden,false);assert.equal(x.calls[0].name,'rr_sales_collection_live_status_test71');assert.equal(x.calls[0].args.p_chat_id,'chat-buyer');assert.ok(host.classList.contains('rrCollectionReturnFocus71'));assert.equal(d.activeElement,host.querySelector('.rrLiveBelt71'));assert.match(d.getElementById('flash').textContent,/Collection sent ✓ · COL1 · UPDATE 2/);assert.equal(d.querySelector('.msg').style.display,'none');}finally{x.dom.window.close()}
 });
 test('Return focus never highlights another customer or collection cycle',async()=>{
  for(const [cycle,chat] of [['other-cycle','chat-buyer'],['cycle-new','other-chat']]){const x=await run(cycle,chat);try{assert.ok(!x.w.document.querySelector('.rrCollectionReturnFocus71'));assert.equal(x.w.document.getElementById('flash').textContent,'');}finally{x.dom.window.close()}}
@@ -18,14 +18,12 @@ test('No-new-design return focuses existing collection belt and shows honest sta
  const x=await run('cycle-new','chat-buyer',true);try{assert.ok(x.w.document.querySelector('.rrCollectionReturnFocus71'));assert.match(x.w.document.getElementById('flash').textContent,/Existing collection/);assert.ok(!x.w.document.getElementById('flash').textContent.includes('Collection sent'));}finally{x.dom.window.close()}
 });
 
-test('Customer frozen belt fires delegated collection click and closed collection shows details',async()=>{
- for(const disabled of [false,true]){const dom=new JSDOM('<div id="rrFSChat" class="on"><div class="fsmsgs"></div><div class="fscompWrap"><div class="fscomp"></div></div></div><button id="fcOpen" '+(disabled?'disabled':'')+'>Collection</button>',{url:'https://example.com/s.html?t=token'}),w=dom.window;let opened=0,viewed=0;w.RRCustomerCollectionViewer71={open:state=>{viewed++;assert.equal(state.collection_status,'PI_GENERATED')}};w.document.addEventListener('click',e=>{if(e.target.id==='fcOpen')opened++});w.RF853={rpc:async()=>({collection_cycle_id:'cycle',collection_display_no:'COL',collection_status:'PI_GENERATED',collection_update_no:1,latest_collection_token:'token'})};const context={window:w,document:w.document,location:w.location,URLSearchParams,URL,CSS:{escape:x=>x},RF853:w.RF853,MutationObserver:w.MutationObserver,innerHeight:800,requestAnimationFrame:cb=>setImmediate(()=>cb()),setTimeout:()=>1,setInterval:()=>1,console};try{vm.runInNewContext(source,context);for(let i=0;i<6;i++)await new Promise(setImmediate);const belt=w.document.querySelector('.rrLiveBelt71');assert.ok(belt);belt.click();if(disabled){assert.ok(w.document.getElementById('rrLiveDetail71'));w.document.querySelector('#rrLiveDetail71 [data-live-action="collection"]').click();assert.equal(viewed,1);assert.equal(opened,0);assert.equal(w.document.getElementById('rrLiveDetail71'),null);}else assert.equal(opened,1);}finally{w.close()}}
-});
-
-test('Active collection View action opens editable requirement rather than read-only gallery',async()=>{
- const dom=new JSDOM('<div id="rrFSChat"><div class="fscompWrap"></div></div><button id="fcOpen">Open</button>',{url:'https://example.com/s.html?t=token'}),w=dom.window;let opened=0,readonly=0;
- w.document.getElementById('fcOpen').onclick=()=>opened++;w.RRCustomerCollectionViewer71={open:()=>readonly++};w.RF853={rpc:async()=>({collection_cycle_id:'cycle',collection_display_no:'COL',collection_status:'OPENED_NO_RESPONSE',collection_update_no:2,latest_collection_token:'token'})};
+test('Customer chat keeps the existing collection control without a second sticky belt',async()=>{
+ const dom=new JSDOM('<div id="rrFSChat" class="on"><div class="fsmsgs"></div><div class="fscompWrap"><div class="fscomp"></div></div></div><button id="fcOpen">Collection</button>',{url:'https://example.com/s.html?t=token'}),w=dom.window;let opened=0;
+ w.document.getElementById('fcOpen').onclick=()=>opened++;
+ w.RF853={rpc:async()=>({collection_cycle_id:'cycle',collection_display_no:'COL',collection_status:'OPENED_NO_RESPONSE',collection_update_no:1,latest_collection_token:'token'})};
  try{vm.runInNewContext(source,{window:w,document:w.document,location:w.location,URLSearchParams,URL,CSS:{escape:x=>x},RF853:w.RF853,MutationObserver:w.MutationObserver,innerHeight:800,requestAnimationFrame:cb=>setImmediate(cb),setTimeout:()=>1,setInterval:()=>1,console});for(let i=0;i<6;i++)await new Promise(setImmediate);
- const button=w.document.createElement('button');button.dataset.liveAction='collection';w.document.getElementById('rrCustomerCycleLive71').append(button);button.click();assert.equal(opened,1);assert.equal(readonly,0);
+ assert.equal(w.document.getElementById('rrCustomerCycleLive71'),null);assert.equal(w.document.querySelector('.rrLiveBelt71'),null);
+ w.document.getElementById('fcOpen').click();assert.equal(opened,1);
  }finally{w.close()}
 });

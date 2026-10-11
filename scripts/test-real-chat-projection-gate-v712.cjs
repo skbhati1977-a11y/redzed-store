@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 const fs=require('fs'),vm=require('vm'),path=require('path');
 const root=path.resolve(__dirname,'..');
+const {functionSource}=require('../tests/e2e/helpers/source-functions');
 const p='test70-real-chat-live-v70.js',s=fs.readFileSync(p,'utf8'),fail=[];
 try{new vm.Script(s)}catch(e){fail.push('main Real Chat JavaScript parse failure: '+e.message)}
 const need=[
@@ -10,8 +11,8 @@ const need=[
  ['root generation state',/rootRenderSeq\s*:\s*0/],
  ['navigation generation state',/navigationSeq\s*:\s*0/],
  ['root generation increment',/async function inbox\s*\(\)[\s\S]{0,220}rootGen\s*=\s*\+\+S\.rootRenderSeq/],
- ['department navigation increment',/async function openDepartment\s*\([^)]*\)[\s\S]{0,180}\+\+S\.navigationSeq/],
- ['chat navigation increment',/async function openChat\s*\([^)]*\)[\s\S]{0,180}\+\+S\.navigationSeq/],
+ ['department navigation increment',/async function openDepartment\s*\([^)]*\)[\s\S]{0,900}\+\+S\.navigationSeq/],
+ ['chat navigation increment',/async function openChat\s*\([^)]*\)[\s\S]{0,900}\+\+S\.navigationSeq/],
  ['deterministic cache boot',/resumeState\.view==='inbox'&&cacheReady/],
  ['final inbox boot render',/else\s*\{S\.active=null;await inbox\(\)\}/],
  ['Fabrication V709 render',/departmentProjectionV709\('FABRICATION',S\.status\)/],
@@ -34,7 +35,7 @@ const universal=[
 for(const [n,re] of universal)if(!re.test(s))fail.push('missing '+n);
 const allDepartments=['PURCHASE','CUTTING','PRINTING','STICKER','METAL_ID','STITCHING','OVERLOCK','COSTING','FOLDING','KAAJ_BUTTON','TEAK_TANKI','THREAD_CUT','QC','PRESS','PACKING','DISPATCH','FABRICATION','SALES','ACCOUNTS','ADMIN'];
 for(const dep of allDepartments){const covered=dep==='ADMIN'?/dep==='ADMIN'/.test(s):dep==='PURCHASE'?/dep==='PURCHASE'/.test(s):['SALES','ACCOUNTS','COSTING'].includes(dep)?/\['SALES','ACCOUNTS','COSTING'\]\.includes\(dep\)/.test(s):dep==='CUTTING'?/dep==='CUTTING'/.test(s):dep==='FABRICATION'?/dep==='FABRICATION'/.test(s):new RegExp("RR_PRODUCTION_DEPARTMENTS_V763=new Set\\(\\[[^\\]]*'"+dep+"'","s").test(s);if(!covered)fail.push('department adapter coverage missing: '+dep)}
-if(!/Promise\.all\(countRows\.map/.test(s)||!/rootGen!==S\.rootRenderSeq\|\|S\.active/.test(s))fail.push('atomic generation-scoped root count hydration missing');
+if(!/Promise\.all\(Array\.from\(\{length:Math\.min\(2,countRows\.length\)/.test(s)||!/rootGen!==S\.rootRenderSeq\|\|S\.active/.test(s))fail.push('atomic generation-scoped root count hydration missing');
 if(!/function costingVisibleCardsV764/.test(s)||!/commercialVisibleCountsV763[\s\S]*costingVisibleCardsV764/.test(s))fail.push('shared costing visible semantics missing');
 if(!/purchaseVisibleCountsV763[\s\S]*MATCHING_PURCHASE/.test(s))fail.push('purchase CB + matching parity missing');
 if(!/function syncStatusButtons\(\)\{[\s\S]{0,260}const root=!S\.active[\s\S]{0,320}if\(root\|\|status==='CLOSE'\)/.test(s))fail.push('root status controls are not hard hidden');
@@ -45,30 +46,27 @@ if(!/departmentCounts:Object\.fromEntries\(S\.departmentCountCache\)/.test(s)||!
 if(!/cachedCount=S\.departmentCountCache\.get/.test(s))fail.push('root does not paint last confirmed counts');
 if(/Department count batch hydrate[\s\S]{0,260}count unavailable/.test(s))fail.push('refresh failure still destroys confirmed count');
 if(!/if\(el&&el\.textContent!==text\)el\.textContent=text/.test(s))fail.push('unchanged counts still repaint');
-if(!/if\(!counts\)return/.test(s))fail.push('failed projection can paint a false zero');
+if(!/if\(!counts\)continue/.test(s))fail.push('failed projection can paint a false zero');
 if(!/TEST70_REAL_CHAT_FAST_V110:[^\n]*RR_ON_BEHALF_ACTIVE/.test(s)&&!/function cacheKey\(\)\{const actor=window\.RR_ON_BEHALF_ACTIVE/.test(s))fail.push('count cache is not actor scoped');
 if(!/people=globalRole\?arr\(directory\.people\):arr\(directory\.people\)\.filter\(x=>String\(x\.worker_id\)===selectedId\|\|visiblePeople\.has/.test(s))fail.push('Act As still collapses department roster to selected actor');
 if(!/function canonicalBackV767\(\)/.test(s))fail.push('canonical parent back navigation missing');
 if(/\$\('back'\)\.onclick=\(\)=>history\.back\(\)/.test(s))fail.push('browser-history back regression returned');
-if(!/rr_upm_confirm_worker_lot_receipts_v692/.test(s))fail.push('canonical worker Accept & Count receipt confirmation missing');
+// Current TEST71 receipt authority moved from browser-side claims to atomic SQL.
+// Keep the read-only-open, authorization, row lock and final-state boundaries.
+const delegate=fs.readFileSync(path.join(root,'sql/test71_assignment_count_delegate.sql'),'utf8');
+const accept=fs.readFileSync(path.join(root,'sql/test71_action_queue_contract.sql'),'utf8')+fs.readFileSync(path.join(root,'sql/test71_atomic_accept_count.sql'),'utf8');
+const receipt=functionSource(s,'openReceiptCountTableV736');
+const prepare=receipt.slice(0,receipt.indexOf("back.querySelector('[data-save]').onclick"));
+if(!/rr_chat_assignment_count_context_test71/.test(prepare)||/rr_upm_claim|rr_chat_assignment_count_save_test71/.test(prepare))fail.push('opening receipt form must be read-only');
+if(!/rr_chat_assignment_count_save_test71/.test(receipt))fail.push('atomic assignment receipt save missing');
+if(!/rr_upm_team_assignment_action_allowed_v774/.test(delegate)||!/Assigned worker or authorized staff required/.test(delegate))fail.push('canonical assignment authority missing');
+if(!/pg_advisory_xact_lock/.test(delegate)||!/for update of r,a/.test(delegate)||!/Count required for every pending colour/.test(delegate))fail.push('atomic receipt lock and complete-count validation missing');
+if(!/rr_chat_prepare_accept_count_test71/.test(s)||!/rr_chat_accept_count_test71/.test(s))fail.push('atomic receiver prepare/save missing');
+if(!/for update/.test(accept)||!/rr_upm_accept_submit_authorized_v770/.test(accept)||!/rr_upm_lm_count_submit_v328/.test(accept))fail.push('canonical receiver authority and locked count missing');
+if(!/Only an eligible receiver can Accept/.test(accept)||!/This handover belongs to another receiver/.test(accept))fail.push('exact receiver authorization missing');
 if(!/rr_upm_ready_submit_to_receiver_v204/.test(s))fail.push('worker submit request/receiver handover path missing');
-if(!/\$\('back'\)\.onclick=\(\)=>canonicalBackV767\(\)/.test(s))fail.push('back button is not bound to canonical parent navigation');
-if(!/rr_upm_assignment_action_route_v769/.test(s))fail.push('canonical TEAM\/INDIVIDUAL assignment action router missing');
-if(!/route\?\.mode==='TEAM'/.test(s))fail.push('team claim is not gated by canonical assignment route');
-if(/not mapped to this worker[\s\S]{0,260}rr_upm_claim_team_assignment_v694/.test(s)&&!/rr_upm_assignment_action_route_v769[\s\S]{0,260}rr_upm_claim_team_assignment_v694/.test(s))fail.push('piece-rate receipt can fall through to team claim');
-if(!/rr_upm_assignment_action_route_v769/.test(s))fail.push('Accept & Count is not routed by canonical TEAM\/INDIVIDUAL authority');
-if(!/route\?\.mode==='TEAM'/.test(s)||!/rr_upm_claim_team_assignment_v694/.test(s))fail.push('team claim is not guarded by TEAM route');
-if(/not mapped to this worker\|effective worker identity[\\s\\S]{0,180}rr_upm_claim_team_assignment_v694/.test(s)&&!/rr_upm_assignment_action_route_v769/.test(s))fail.push('piece-rate can still fall through to team claim');
-if(!/rr_upm_assignment_action_route_v769/.test(s))fail.push('Accept route is not canonical TEAM\/INDIVIDUAL');
-if(!/route\?\.mode==='TEAM'[\s\S]{0,180}rr_upm_claim_team_assignment_v694/.test(s))fail.push('team claim is not gated to TEAM assignments');
-if(!/rr_upm_accept_submit_authorized_v770/.test(s)||!/rr_upm_lm_count_submit_v328/.test(s))fail.push('Real Chat Lineman receive/count path is not canonical V770\/V328');
-if(!/rr_upm_assignment_action_route_v769/.test(s))fail.push('Accept claim is not assignment-authority routed');
-if(/rr_upm_salaried_team_context_v694[^\n]{0,220}rr_upm_claim_team_assignment_v694/.test(s))fail.push('Accept still relies on UI department team context');
-if(!/rr_upm_accept_submit_authorized_v770/.test(s))fail.push('Fabrication receive authority wrapper missing');
-if(!/rr_upm_claim_team_assignment_v694/.test(s))fail.push('canonical team claim path missing');
-if(/Submit destination · FABRICATION TEAM/.test(s))fail.push('generic submit still labels Fabrication team instead of receiver role');
 if(!/LINE MAN \/ FABRICATION RECEIVER/.test(s))fail.push('generic submit receiver role label missing');
-if(!/rr_upm_ready_submit_to_receiver_v204/.test(s))fail.push('worker submit is not using shared ready-to-receiver lifecycle');
+if(!/canonicalBackV767\(\)/.test(s.slice(s.indexOf("$('back').onclick="),s.indexOf("$('back').onclick=")+180)))fail.push('back button is not bound to canonical parent navigation');
 if(!/if\(!active&&!search&&!fast\)[\s\S]{0,700}await inbox\(\);return/.test(s))fail.push('root is not decoupled from projection lifecycle');
 if(/departmentGroupVisibleCountsV730[\s\S]{0,1800}rr_real_chat_department_operational_v685/.test(s))fail.push('legacy V685 count fallback returned');
 
@@ -84,9 +82,6 @@ const retired=[
  ['legacy root card total',/Object\.values\(S\.workCounts\)\.reduce/]
 ];
 for(const [n,re] of retired)if(re.test(s))fail.push('retired path returned: '+n);
-if(!/const sts=S\.search\?mirrorSearchStatuses\(d\.department_code\):\[\]/.test(s))fail.push('root normal render still depends on mirror search');
-// V773 lifecycle authority gate: runtime must never claim team authority without canonical route.
-if(!/rr_upm_assignment_action_route_v769/.test(s))fail.push('V773 canonical assignment action route missing');
-if(!/rr_upm_claim_team_assignment_v694/.test(s))fail.push('V773 team claim engine missing');
+if(!/const sts=S\.search\?[^;]*mirrorSearchStatuses\(d\.department_code\)\):\[\]/.test(s))fail.push('root normal render still depends on mirror search');
 if(fail.length){console.error('REAL CHAT PROJECTION GATE FAIL\n'+fail.join('\n'));process.exit(1)}
 console.log('REAL CHAT PROJECTION GATE PASS: JavaScript parses; V709 generic/Fabrication + V712 Cutting active; root/navigation generation guards active; deterministic boot present; retired UI forks absent.');

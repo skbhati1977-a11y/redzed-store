@@ -140,16 +140,15 @@ test('CB completion and Cutting readiness are separate canonical dimensions', ()
   assert.match(chat, /if\(!fast&&navOwned&&S\.returnFocusCb\)focusCbCard\(S\.returnFocusCb,true\)/);
 });
 
-test('Art picker uses effective authority, canonical media thumbnails and No Name fallback', () => {
-  assert.match(artPage, /rr_upm_effective_identity_v200/);
-  assert.doesNotMatch(artPage, /rpc\("rr_current_role"\)/);
-  assert.match(artPage, /\["OWNER","SUPER_ADMIN","ADMIN"\]/);
-  assert.match(artPage, /itemImage\(step,row\)/);
-  assert.match(artPage, /class="pick-media"/);
-  assert.match(artPage, /\|\|"No Name"/);
-  assert.match(artHtml, /\.pick-media img/);
-  assert.match(chat, /arr\(c\.next_actions\)/);
-  assert.match(workingCanonicalProjection, /real-art-decide-master\.html/);
+test('retired Art screen resolves canonical CB and current CB picker enforces authority',()=>{
+ assert.match(artPage,/__RR_ART_DECISION_RETIRED_TO_CB__/);
+ assert.match(artPage,/from\("rr_cb_units"\)\.select\("purchase_id"\)\.eq\("id",unitId\)/);
+ assert.match(artPage,/ART_DECISION_RETIRED#setDecisionCard/);
+ assert.match(form,/rr_upm_effective_identity_v200/);
+ assert.match(form,/requireRoles\(\['owner','super_admin','admin'\]\)/);
+ assert.match(form,/structuralSetCategoryIds\(key\)\.includes/);
+ assert.match(form,/rr_cb_select_art_v1/);
+ assert.match(form,/comboPreviewHtml/);assert.match(form,/No Name/);
 });
 
 test('deployed CB/Cutting UI fixtures are isolated, retry-safe and retire through canonical history', () => {
@@ -181,9 +180,9 @@ test('authority, idempotency and audit remain server enforced', () => {
   assert.match(migration, /previous_state/);
   assert.match(migration, /new_state/);
   assert.match(form, /if\(saving\)return/);
-  assert.match(form, /params=\{p_cb_id:cbId,p_action_id:pending\.actionId/);
-  assert.equal((form.match(/rr_cb_department_save_v600',params/g) || []).length, 2);
-  assert.match(form, /statement timeout\|57014\|canceling statement\|failed to fetch\|network/);
+  assert.match(form,/p_cb_id:cbId\|\|null,p_action_id:pa\.actionId/);
+  assert.equal((form.match(/rpc\('rr_cb_department_save_v601'/g)||[]).length,1);
+  assert.match(form,/statement timeout\|canceling statement\|query canceled/);assert.match(form,/failed to fetch\|network/);
 });
 
 test('CB directory preserves the canonical V85 volatility contract', () => {
@@ -237,7 +236,7 @@ test('CB create and Draft retry are backend serialized and identity guarded', ()
   assert.match(openDraftProof, /lower\(sqlerrm\) like '%already exists%'/);
   assert.match(openDraftProof, /No business row, duplicate guard, or canonical save behavior is changed/);
   assert.match(form, /RR_CB_PENDING_ACTION_V608/);
-  assert.match(form, /localStorage\.removeItem\(pending\.key\)/);
+  assert.match(form, /localStorage\.removeItem\(pa\.key\)/);
   assert.match(form, /materials\[0\]\.clientKey=cbClientKey/);
 });
 
@@ -249,7 +248,7 @@ test('CB 1004 audit is read-only and mobile messages clear the sticky footer', (
     openDraftInvariants.match(/create or replace function public\.rr_test_cb_snapshot_v608\(p_cb_no text\)[\s\S]*?\$function\$;/)?.[0] || '',
     /\b(insert|update|delete)\b/i
   );
-  assert.match(form, /calc\(156px \+ env\(safe-area-inset-bottom\)\)/);
+  assert.match(form,/\.actions\{position:static/);assert.match(form,/calc\(12px \+ env\(safe-area-inset-bottom\)\)/);
   assert.match(form, /function revealAboveFooter\(/);
   assert.match(form, /scrollIntoView\(\{behavior:'smooth',block:'center'\}\)/);
 });

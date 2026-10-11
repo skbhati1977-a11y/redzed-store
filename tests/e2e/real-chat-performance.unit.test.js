@@ -54,7 +54,9 @@ test('Alter mirror bounds canonical reads, deduplicates retries, and preserves L
   let inFlight = 0, peak = 0, calls = 0;
   const cards = Array.from({ length: 9 }, (_, i) => ({ canonical_lot_id: `uuid-${i}`, lot_no: String(i + 1) }));
   const S = { userId: 'one', actor: { role: 'ADMIN', id: 'admin' }, status: 'WORKING', search: '', cards, alterCustodyCache: new Map() };
-  const scope = { S, window: {}, arr: x => Array.isArray(x) ? x : [], friendlyStatus: x => x, console, rpc: async (_, { p_canonical_lot_id }) => {
+  const scope = { S, RR_PRODUCTION_DEPARTMENTS_V763:new Set(['PRINTING','STICKER','METAL_ID','STITCHING','OVERLOCK','FOLDING','KAAJ_BUTTON','TEAK_TANKI','THREAD_CUT','QC','PRESS','PACKING','DISPATCH']), window: {}, arr: x => Array.isArray(x) ? x : [], friendlyStatus: x => x, console, rpc: async (name, args={}) => {
+    if(name==='rr_chat_alter_lots_test71')return cards;
+    const {p_canonical_lot_id}=args;
     calls++; inFlight++; peak = Math.max(peak, inFlight);
     await new Promise(resolve => setTimeout(resolve, 3)); inFlight--;
     return { rows: [{ journey_id: p_canonical_lot_id, lot_no: p_canonical_lot_id, colour_code: 'C1', size_code: 'M', open_qty: 2, stage: 'ALTER_LM_ACCEPT_PENDING', next_action: 'LM_ACCEPT', enrolled_lm_id: 'admin' }] };

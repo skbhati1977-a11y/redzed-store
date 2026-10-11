@@ -15,10 +15,11 @@ test('WhatsApp link and code do not unlock login before validated Admin approval
  w.eval(source.replace('  const invalidSession =','  window.test={issue};\n  const invalidSession ='));
  const pending=w.test.issue({name:'Customer',mobile:'9000000000'},'trusted-device-12345678901234567890');
  await tick();const click=w.document.querySelector('[data-verification-wa]').onclick();await new Promise(resolve=>setTimeout(resolve,15));
- assert.equal(new URL(openedUrl).hostname,'wa.me');assert.match(decodeURIComponent(new URL(openedUrl).search),/ABCDEF1234567890/);assert.equal(w.document.querySelector('#rrSecureApprovalWaiting71'),null);assert(w.document.querySelector('#rrCustomerVerificationChoice71'));assert.equal(w.document.querySelector('[data-verification-wa]').disabled,false);
+ openedUrl=w.document.querySelector('[data-verification-wa]').dataset.whatsappUrl;assert.equal(new URL(openedUrl).hostname,'wa.me');assert.match(decodeURIComponent(new URL(openedUrl).search),/ABCDEF1234567890/);assert.equal(w.document.querySelector('#rrSecureApprovalWaiting71'),null);assert(w.document.querySelector('#rrCustomerVerificationChoice71'));assert.equal(w.document.querySelector('[data-verification-wa]').disabled,false);
  assert.equal(w.localStorage.getItem('rr_customer_secure_session_v9592'),null);
  assert(!calls.some(([name])=>name==='rr_customer_whatsapp_approve_test71'));
- approve();await click;await pending;
+ for(let attempt=0;attempt<100&&typeof approve!=='function';attempt++)await new Promise(resolve=>setTimeout(resolve,5));
+ assert.equal(typeof approve,'function');approve();await click;await pending;
  assert.equal(JSON.parse(w.localStorage.getItem('rr_customer_secure_session_v9592')).session_token,'approved-server-session');
  assert(calls.some(([name])=>name==='rr_customer_session_validate_v9590'));assert.equal(w.document.querySelector('[data-whatsapp-verification]'),null);dom.window.close();
 });

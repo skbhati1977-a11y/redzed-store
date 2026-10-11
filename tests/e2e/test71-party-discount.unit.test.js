@@ -6,7 +6,7 @@ async function setup({superadmin=true,discount=2,save,query='',detail,bootstrap,
  const html=fs.readFileSync(path.join(root,'real-pi-specimen-v9514.html'),'utf8');const d=new JSDOM(html,{url:'https://example.test/real-pi-specimen-v9514.html'+query,runScripts:'outside-only'});let current=discount;const calls=[];
  d.window.sessionStorage.setItem('rr_pi_requirement_v9514',JSON.stringify({customer_name:'Party A',lines:[{lot_no:'LOT-A',qty:2,rate:100,discount:9,stock_type:stockType},{lot_no:'LOT-B',qty:3,rate:200,discount:1}]}));
  d.window.RR={requireRoles:async roles=>{assert.ok(roles.includes('super_admin'));}};
- d.window.RF853={rpc:async(n,a)=>{calls.push({n,a});if(n==='rr_pi_actor_context_v9526')return {superadmin};if(n==='rr_sales_pi_detail_v500')return detail;if(n==='rr_pi_requirement_bootstrap_v9541')return bootstrap;
+ d.window.RF853={rpc:async(n,a)=>{calls.push({n,a});if(n==='rr_pi_actor_context_v9526')return {superadmin};if(n==='rr_sales_pi_detail_v500')return detail;if(n==='rr_pi_requirement_bootstrap_test71')return bootstrap;
  if(n==='rr_pi_lot_context_v9517')return {approved_rate:a.p_lot_no==='LOT-A'?100:200,allowed_discount:current,available_qty:100,customer_id:'party-id'};
  if(n==='rr_ws_stock_search_v9411')return search?search(a):[];
  if(n==='rr_trade_effective_rate_v849')return {target_sale_rate:120};

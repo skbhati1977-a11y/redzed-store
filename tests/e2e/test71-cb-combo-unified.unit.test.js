@@ -7,7 +7,7 @@ const read=p=>fs.readFileSync(path.join(root,p),'utf8');
 
 test('CB owns the complete Art Combo and reuses existing backend assignment engine',()=>{
   const cb=read('real-cb-new-v9130-fix2.html');
-  for(const token of ['ART COMBO','PRINT','STICKER','METAL ID','comboModeBtn','comboChoice','comboAddNew','comboAddArt','SAVE SET COMBO']) assert.ok(cb.includes(token),token);
+  for(const token of ['ART COMBO','PRINT','STICKER','METAL ID','comboModeBtn','comboChoice','comboAddNew','comboAddArt','SAVE / UPDATE COMBO']) assert.ok(cb.includes(token),token);
   assert.ok(cb.includes("rr_pm_save_decision_bundle_v804"));
   assert.ok(cb.includes("rr_sync_cb_mapping_from_art_v3"));
   assert.ok(cb.includes("p_sticker_master_ids:s.stickerIds"));
@@ -18,7 +18,7 @@ test('CB Combo Add New reuses original Art Print Sticker and Metal masters',()=>
   const cb=read('real-cb-new-v9130-fix2.html');
   for(const url of ['art-v9148/?v=9233&from=cb-combo','real-print-master.html?v=9233&from=cb-combo','real-sticker-master-v804.html?v=9233&from=cb-combo','real-metal-id-master-v804.html?v=9233&from=cb-combo']) assert.ok(cb.includes(url),url);
   assert.ok(cb.includes('RR_PRINT_MASTER_CAN_CLOSE'));
-  assert.ok(cb.includes('New '+"'+CB_COMBO_MASTER_META[ctx.kind].label+'"+' created and selected in CB Combo.'));
+  assert.ok(cb.includes("' created and selected in '+profileLabelForKey(profileKey)"));
 });
 
 test('one CB-level button generates all-Set Yield PO table and supplier drafts behind it',()=>{
@@ -36,7 +36,7 @@ test('one CB-level button generates all-Set Yield PO table and supplier drafts b
 test('standalone Art Decision is operationally retired into CB and Real Chat routes there',()=>{
   const art=read('real-art-decide-master-v9231.js');
   const chat=read('test70-real-chat-live-v70.js');
-  assert.ok(art.includes('retiredCbTarget'));
+  assert.ok(art.includes('goByCbId'));assert.ok(art.includes('goByCbNo'));
   assert.ok(art.includes('ART_DECISION_RETIRED#setDecisionCard'));
   assert.ok(chat.includes('EDIT ART COMBO'));
   assert.ok(chat.includes('data-action="CB_ART_COMBO"'));
@@ -73,6 +73,6 @@ test('Art Combo backend is locked after any Cutting Lot release',()=>{
 
 test('CB Combo libraries hydrate after the initial new-CB render',()=>{
   const cb=read('real-cb-new-v9130-fix2.html');
-  assert.ok(cb.includes("await Promise.all([loadCanonicalMasters(),loadCategories(),loadOptions()]);"));
+  assert.ok(cb.includes("await Promise.all([loadCanonicalMasters(),loadCategories(),loadOptions(),loadComboLibraries()]);"));
   assert.ok(cb.includes("loadComboLibraries().then(renderSetDecisions)"));
 });
