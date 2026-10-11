@@ -14,7 +14,7 @@ const need=[
  ['department navigation increment',/async function openDepartment\s*\([^)]*\)[\s\S]{0,900}\+\+S\.navigationSeq/],
  ['chat navigation increment',/async function openChat\s*\([^)]*\)[\s\S]{0,900}\+\+S\.navigationSeq/],
  ['deterministic cache boot',/resumeState\.view==='inbox'&&cacheReady/],
- ['final inbox boot render',/else\s*\{S\.active=null;await inbox\(\)\}/],
+ ['navigation-owned final inbox boot render',/async function restoreInitialView71\(resumeState,p,navigationSeq\)\{if\(navigationSeq!==S\.navigationSeq\)return;[\s\S]*?S\.active=null;await inbox\(\)\}/],
  ['Fabrication V709 render',/departmentProjectionV709\('FABRICATION',S\.status\)/],
  ['Cutting V712 render',/allRows=await cuttingProjectionV712\(S\.status\)/]
 ];

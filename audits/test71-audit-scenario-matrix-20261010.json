@@ -11,7 +11,7 @@
       "BLOCKED": 5
     },
     "completed_unblocked": false,
-    "phase": "Source regressions fixed; 665 source tests and projection gate pass. Latest MC1 runtime fix deployment blocked by Vercel quota. Archive isolation, approved openings and independent workflows still unresolved; NOT CLEARED."
+    "phase": "Vercel Pro deployment READY at 3db48156. 667 source tests and projection gate pass locally with late-navigation fix prepared. Financial role checks passed for 35 profiles across 11 roles by SQL identity simulation. Live browser MC1/CB checks failed; remaining browser suites running. Approved real openings, archive isolation and independent authenticated role journeys remain unresolved; NOT CLEARED."
   },
   "cases": [
     {
@@ -23,7 +23,8 @@
       "actual": "0",
       "status": "PASS",
       "evidence": "audits/test71-invariants-runtime-evidence-20261010.json",
-      "evidence_type": "Read-only SQL"
+      "evidence_type": "Read-only SQL",
+      "recheck_20261011": "audits/test71-financial-role-recheck-20261011.json"
     },
     {
       "id": "A002",
@@ -34,7 +35,8 @@
       "actual": "0 invalid transactions",
       "status": "PASS",
       "evidence": "audits/test71-invariants-runtime-evidence-20261010.json",
-      "evidence_type": "Read-only SQL"
+      "evidence_type": "Read-only SQL",
+      "recheck_20261011": "audits/test71-financial-role-recheck-20261011.json"
     },
     {
       "id": "A003",
@@ -1029,10 +1031,11 @@
       "feature": "All independent role sessions",
       "scenario": "Worker/LM/Manager/Admin/Accounts/Sales logins",
       "expected": "Each positive+negative and session persistence",
-      "actual": "Owner signed in; official TEST Act As + SQL role matrix only",
+      "actual": "35 active profiles across 11 roles pass backend financial permission checks; SQL identity simulation only. Independent authenticated browser sessions remain NOT_RUN.",
       "status": "NOT_RUN",
       "evidence": "audits/test71-browser-evidence-20261010.json",
-      "evidence_type": "SQL rollback"
+      "evidence_type": "SQL rollback",
+      "recheck_20261011": "audits/test71-financial-role-recheck-20261011.json"
     },
     {
       "id": "A080",
@@ -1062,10 +1065,11 @@
       "feature": "CI module coverage",
       "scenario": "Inspect workflow and SHA-run lookup",
       "expected": "Required module suites actually run",
-      "actual": "Four disabled suites enabled with --no-deps; GitHub push-triggered run38109959655 executed and failed required static tests before browser suites. CI is active; passing module execution still pending.",
+      "actual": "Deployment quota resolved. Exact 3db48156 preview READY. MC1 and CB browser suites FAIL; later suites still running. CI job separation prepared to preserve each module evidence.",
       "status": "BLOCKED",
       "evidence": "3adfb887 CI: static/auth success, MC1 failed because empty-state observer erased MC1 cards. Fixed and regression passed in 785f6176; latest deployment blocked by Vercel daily quota (402). Independent suite steps enabled.",
-      "evidence_type": "Workflow/source audit"
+      "evidence_type": "Workflow/source audit",
+      "recheck_20261011": "audits/test71-financial-role-recheck-20261011.json"
     },
     {
       "id": "A083",

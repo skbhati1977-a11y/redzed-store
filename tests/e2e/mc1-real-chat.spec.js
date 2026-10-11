@@ -21,8 +21,16 @@ async function openMc1(page, status = 'OPEN') {
 test('MC1 purchase form survives the empty-feed observer on the deployed app', async ({ page }) => {
   await ensureSession(page, { quiet: true });
   await page.evaluate(() => localStorage.removeItem('RR_MC1_PURCHASE_DRAFT_V504'));
+  // Exercise real navigation while the initial directory response is slow.
+  await page.route('**/rest/v1/rpc/rr_real_chat_directory_v85', async route => {
+    const response = await route.fetch();
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    await route.fulfill({ response });
+  });
   await openMc1(page, 'OPEN');
   await expect(page.locator('[data-mc-fabric]')).toBeVisible({ timeout: 30_000 });
+  await page.waitForTimeout(2000);
+  await expect(page.locator('#chatName')).toHaveText('MC1 / Matching Cloth');
   // The observer debounces for 40ms; verify the real DOM after it settles.
   await page.waitForTimeout(150);
   await expect(page.locator('[data-mc-fabric]')).toBeVisible();

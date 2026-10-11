@@ -95,3 +95,30 @@ test('empty-state observer still repairs a genuinely empty feed', () => {
   assert.equal(dom.window.document.querySelector('.rr-empty-v705').textContent, 'No cards');
   dom.window.close();
 });
+
+test('late initial directory preserves an MC1 workflow chosen while loading', async () => {
+  let finish, rootRenders=0;
+  const scope={S:{loadSeq:0,navigationSeq:0,status:'OPEN',search:'',active:null,history:[],departments:[],actor:{}},window:{},
+    $:()=>({textContent:''}),console,arr:x=>Array.isArray(x)?x:[],
+    rpc:()=>new Promise(resolve=>{finish=resolve}),
+    actAsScope:d=>d,updateProjectionState(){},saveCache(){},inbox:async()=>{rootRenders++;}};
+  installFunctions(chat,scope,['load']);
+  const pending=scope.load(false);
+  scope.S.navigationSeq++;
+  scope.S.active={kind:'workflow',id:'1:1'};
+  finish({departments:[],people:[],actor:{role:'SUPER_ADMIN'}});
+  await pending;
+  assert.equal(rootRenders,0);
+  assert.deepEqual(scope.S.active,{kind:'workflow',id:'1:1'});
+  assert.equal(scope.S.actor.role,'SUPER_ADMIN');
+});
+test('initial view restoration cannot replace a newer user navigation', async () => {
+  let rootRenders=0;
+  const active={kind:'workflow',id:'1:1'};
+  const scope={S:{navigationSeq:1,active},inbox:async()=>{rootRenders++;},restoreView(){throw Error('Stale restore');},openChat(){throw Error('Stale open');}};
+  installFunctions(chat,scope,['restoreInitialView71']);
+  await scope.restoreInitialView71({view:'inbox'},new URLSearchParams(),0);
+  assert.equal(rootRenders,0);assert.equal(scope.S.active,active);
+  await scope.restoreInitialView71({view:'inbox'},new URLSearchParams(),1);
+  assert.equal(rootRenders,1);assert.equal(scope.S.active,null);
+});

@@ -1,15 +1,25 @@
 begin;
 select set_config('request.jwt.claim.sub','893c58dd-420b-4dfa-aff7-844e20e634c5',true);
 create temp table audit_result(label text,result jsonb);
-do $$ declare r jsonb;r2 jsonb;p uuid;p2 uuid;a jsonb;tx uuid;begin
-r:=public.rr_committee_payment_post_v824('3b32ab0d-4e98-4c23-9e7b-7ee62a6036ff',1,1,'CASH','AUDIT-REPEAT',null,current_date,'Rollback audit');
-r2:=public.rr_committee_payment_post_v824('3b32ab0d-4e98-4c23-9e7b-7ee62a6036ff',1,1,'CASH','AUDIT-REPEAT',null,current_date,'Rollback audit');
+do $$ declare r jsonb;r2 jsonb;p uuid;p2 uuid;a jsonb;tx uuid;k uuid:=gen_random_uuid();payload jsonb;denied boolean:=false;begin
+payload:=jsonb_build_object('p_scheme_id','3b32ab0d-4e98-4c23-9e7b-7ee62a6036ff','p_month_no',1,'p_amount',1,'p_payment_mode','CASH','p_organizer_reference','AUDIT-'||k::text,'p_bank_reference',null,'p_payment_date',current_date,'p_remarks','Rollback audit');
+r:=public.rr_financial_request_post_test71('rr_committee_payment_post_v824','TEST',k,payload);
+r2:=public.rr_financial_request_post_test71('rr_committee_payment_post_v824','TEST',k,payload);
 p:=(r->>'payment_id')::uuid;p2:=(r2->>'payment_id')::uuid;
-insert into audit_result values('duplicate_reference',jsonb_build_object('two_payments',p<>p2));
-a:=public.rr_committee_payment_accounts_post_v825(p);tx:=(a->>'transaction_id')::uuid;
-insert into audit_result values('mirror_retry',public.rr_committee_payment_accounts_post_v825(p));
+IF p IS NULL OR p IS DISTINCT FROM p2 THEN RAISE EXCEPTION 'Committee payment retry created duplicate';END IF;
+insert into audit_result values('exact_retry_one_payment','true');
+BEGIN PERFORM public.rr_financial_request_post_test71('rr_committee_payment_post_v824','TEST',k,jsonb_set(payload,'{p_amount}','2'));EXCEPTION WHEN others THEN IF sqlerrm NOT ILIKE '%different payload%' AND sqlerrm NOT ILIKE '%payload%' THEN RAISE;END IF;denied:=true;END;
+IF NOT denied THEN RAISE EXCEPTION 'Changed Committee request payload accepted';END IF;
+insert into audit_result values('changed_payload_rejected','true');
+select accounts_transaction_id into tx from public.rr_committee_payments_v824 where id=p;
+IF tx IS NULL OR NOT EXISTS(select 1 from public.rr_account_transactions_v805 where id=tx and status='POSTED' and data_mode='TEST') THEN RAISE EXCEPTION 'Atomic Committee Accounts posting missing';END IF;
+a:=public.rr_committee_payment_accounts_post_v825(p);
+IF (a->>'transaction_id')::uuid IS DISTINCT FROM tx THEN RAISE EXCEPTION 'Committee mirror retry changed transaction';END IF;
+IF (select count(*) from public.rr_account_postings_v805 where transaction_id=tx)<2 OR (select sum(dr_amount-cr_amount) from public.rr_account_postings_v805 where transaction_id=tx)<>0 THEN RAISE EXCEPTION 'Committee journal not balanced';END IF;
+insert into audit_result values('atomic_balanced_journal_and_mirror_retry','true');
 perform public.rr_committee_payment_reverse_v824(p,'AUDIT rollback reversal');
-insert into audit_result select 'reversal',jsonb_build_object('payment_status',(select status from public.rr_committee_payments_v824 where id=p),'accounts_status',(select status from public.rr_account_transactions_v805 where id=tx));
+IF (select status from public.rr_committee_payments_v824 where id=p) IS DISTINCT FROM 'REVERSED' OR (select status from public.rr_account_transactions_v805 where id=tx) IS DISTINCT FROM 'REVERSED' THEN RAISE EXCEPTION 'Committee payment/Accounts reversal differs';END IF;
+insert into audit_result values('payment_and_accounts_reversed_together','true');
 end $$;
 select * from audit_result;
 rollback;

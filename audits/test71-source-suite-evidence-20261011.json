@@ -1,13 +1,13 @@
 {
   "date": "2026-10-11",
-  "base_commit": "d058a01bbc05a6b60bd491d172a532f80bec85a2",
-  "scope": "Authoritative clean checkout plus targeted fixes; source suite only",
+  "base_commit": "3db4815624c2eaf8ea298c2278b2342b910b4dfa",
+  "scope": "Current TEST71 source including late initial navigation fix; source suite only",
   "files": 116,
   "passed_files": 116,
   "failed_files": 0,
   "test_counts": {
-    "tests": 665,
-    "pass": 665,
+    "tests": 667,
+    "pass": 667,
     "fail": 0,
     "skipped": 0
   },
@@ -15,87 +15,87 @@
     {
       "file": "tests/action-read-details.test.cjs",
       "exit": 0,
-      "seconds": 1.92
+      "seconds": 1.56
     },
     {
       "file": "tests/alter-card-visibility.test.cjs",
       "exit": 0,
-      "seconds": 0.3
+      "seconds": 0.27
     },
     {
       "file": "tests/assigned-receipt-queue.test.cjs",
       "exit": 0,
-      "seconds": 1.03
+      "seconds": 0.83
     },
     {
       "file": "tests/atomic-accept-count.test.cjs",
       "exit": 0,
-      "seconds": 1.28
+      "seconds": 0.74
     },
     {
       "file": "tests/customer-collection-readonly.test.cjs",
       "exit": 0,
-      "seconds": 0.23
+      "seconds": 0.25
     },
     {
       "file": "tests/customer-login-admin-open.test.cjs",
       "exit": 0,
-      "seconds": 0.27
+      "seconds": 0.28
     },
     {
       "file": "tests/customer-login-approval.test.cjs",
       "exit": 0,
-      "seconds": 0.31
+      "seconds": 0.26
     },
     {
       "file": "tests/customer-login-notification-focus.test.cjs",
       "exit": 0,
-      "seconds": 0.43
+      "seconds": 0.34
     },
     {
       "file": "tests/customer-login-return.test.cjs",
       "exit": 0,
-      "seconds": 0.24
+      "seconds": 0.26
     },
     {
       "file": "tests/customer-mobile-contract.test.cjs",
       "exit": 0,
-      "seconds": 0.26
+      "seconds": 0.28
     },
     {
       "file": "tests/customer-phone-otp.test.cjs",
       "exit": 0,
-      "seconds": 0.31
+      "seconds": 0.29
     },
     {
       "file": "tests/customer-startup-retry.test.cjs",
       "exit": 0,
-      "seconds": 0.3
+      "seconds": 0.23
     },
     {
       "file": "tests/customer-whatsapp.test.cjs",
       "exit": 0,
-      "seconds": 0.92
+      "seconds": 0.86
     },
     {
       "file": "tests/department-controls-isolation.test.cjs",
       "exit": 0,
-      "seconds": 1.07
+      "seconds": 0.91
     },
     {
       "file": "tests/e2e/action-return.unit.test.js",
       "exit": 0,
-      "seconds": 0.35
+      "seconds": 0.26
     },
     {
       "file": "tests/e2e/cb-department.unit.test.js",
       "exit": 0,
-      "seconds": 0.32
+      "seconds": 0.34
     },
     {
       "file": "tests/e2e/checkpoint-2.unit.test.js",
       "exit": 0,
-      "seconds": 0.32
+      "seconds": 0.21
     },
     {
       "file": "tests/e2e/checkpoint-3.unit.test.js",
@@ -105,47 +105,47 @@
     {
       "file": "tests/e2e/checkpoint-4.unit.test.js",
       "exit": 0,
-      "seconds": 0.26
+      "seconds": 0.45
     },
     {
       "file": "tests/e2e/checkpoint-5.unit.test.js",
       "exit": 0,
-      "seconds": 0.28
+      "seconds": 0.25
     },
     {
       "file": "tests/e2e/checkpoint-6.unit.test.js",
       "exit": 0,
-      "seconds": 0.31
+      "seconds": 0.23
     },
     {
       "file": "tests/e2e/checkpoint-7.unit.test.js",
       "exit": 0,
-      "seconds": 0.25
+      "seconds": 0.24
     },
     {
       "file": "tests/e2e/checkpoint-mc1.unit.test.js",
       "exit": 0,
-      "seconds": 0.27
+      "seconds": 0.24
     },
     {
       "file": "tests/e2e/commercial-integration.unit.test.js",
       "exit": 0,
-      "seconds": 0.28
+      "seconds": 0.21
     },
     {
       "file": "tests/e2e/cutting-department-lifecycle.unit.test.js",
       "exit": 0,
-      "seconds": 0.28
+      "seconds": 0.21
     },
     {
       "file": "tests/e2e/cutting-handoff.unit.test.js",
       "exit": 0,
-      "seconds": 0.27
+      "seconds": 0.26
     },
     {
       "file": "tests/e2e/e2e-session.unit.test.js",
       "exit": 0,
-      "seconds": 0.26
+      "seconds": 0.23
     },
     {
       "file": "tests/e2e/full-factory-journey.unit.test.js",
@@ -155,82 +155,82 @@
     {
       "file": "tests/e2e/github-oidc.unit.test.js",
       "exit": 0,
-      "seconds": 0.31
+      "seconds": 0.35
     },
     {
       "file": "tests/e2e/material-unit.unit.test.js",
       "exit": 0,
-      "seconds": 0.28
+      "seconds": 0.21
     },
     {
       "file": "tests/e2e/print-frame-independence.unit.test.js",
       "exit": 0,
-      "seconds": 0.29
+      "seconds": 0.24
     },
     {
       "file": "tests/e2e/real-chat-performance.unit.test.js",
       "exit": 0,
-      "seconds": 0.27
+      "seconds": 0.28
     },
     {
       "file": "tests/e2e/real-chat-refresh-resilience.unit.test.js",
       "exit": 0,
-      "seconds": 0.66
+      "seconds": 0.69
     },
     {
       "file": "tests/e2e/recovery-redirect.unit.test.js",
       "exit": 0,
-      "seconds": 0.29
+      "seconds": 0.21
     },
     {
       "file": "tests/e2e/released-dcard-regression.unit.test.js",
       "exit": 0,
-      "seconds": 0.3
+      "seconds": 0.24
     },
     {
       "file": "tests/e2e/session-harness.unit.test.js",
       "exit": 0,
-      "seconds": 0.27
+      "seconds": 0.25
     },
     {
       "file": "tests/e2e/test71-act-as-customer.unit.test.js",
       "exit": 0,
-      "seconds": 0.98
+      "seconds": 0.76
     },
     {
       "file": "tests/e2e/test71-canonical-cleanup-authorities.unit.test.js",
       "exit": 0,
-      "seconds": 0.24
+      "seconds": 0.23
     },
     {
       "file": "tests/e2e/test71-canonical-cleanup-substantive.unit.test.js",
       "exit": 0,
-      "seconds": 0.27
+      "seconds": 0.26
     },
     {
       "file": "tests/e2e/test71-cb-appx-cutting-pcs.unit.test.js",
       "exit": 0,
-      "seconds": 0.23
+      "seconds": 0.26
     },
     {
       "file": "tests/e2e/test71-cb-art-two-way-mapping.unit.test.js",
       "exit": 0,
-      "seconds": 0.29
+      "seconds": 0.24
     },
     {
       "file": "tests/e2e/test71-cb-combo-unified.unit.test.js",
       "exit": 0,
-      "seconds": 0.27
+      "seconds": 0.25
     },
     {
       "file": "tests/e2e/test71-cb-costing-compatibility.unit.test.js",
       "exit": 0,
-      "seconds": 0.33
+      "seconds": 0.23
     },
     {
       "file": "tests/e2e/test71-cb-current-behavior.unit.test.js",
       "exit": 0,
-      "seconds": 0.35
+      "seconds": 0.29
     },
     {
       "file": "tests/e2e/test71-cb-pro-camera.unit.test.js",
@@ -240,37 +240,37 @@
     {
       "file": "tests/e2e/test71-cb-requirement-whatsapp-media-share.unit.test.js",
       "exit": 0,
-      "seconds": 0.29
+      "seconds": 0.23
     },
     {
       "file": "tests/e2e/test71-cb-variance-whatsapp.unit.test.js",
       "exit": 0,
-      "seconds": 0.27
+      "seconds": 0.23
     },
     {
       "file": "tests/e2e/test71-collection-return-belt.unit.test.js",
       "exit": 0,
-      "seconds": 0.89
+      "seconds": 0.77
     },
     {
       "file": "tests/e2e/test71-collection-view-only.unit.test.js",
       "exit": 0,
-      "seconds": 0.68
+      "seconds": 0.79
     },
     {
       "file": "tests/e2e/test71-compensation-lifecycle.unit.test.js",
       "exit": 0,
-      "seconds": 0.25
+      "seconds": 0.23
     },
     {
       "file": "tests/e2e/test71-contact-invite-loader.unit.test.js",
       "exit": 0,
-      "seconds": 0.31
+      "seconds": 0.25
     },
     {
       "file": "tests/e2e/test71-contact-invites.unit.test.js",
       "exit": 0,
-      "seconds": 1.03
+      "seconds": 0.85
     },
     {
       "file": "tests/e2e/test71-costing-rounding-lapse-policy.unit.test.js",
@@ -280,22 +280,22 @@
     {
       "file": "tests/e2e/test71-customer-chat-refresh.unit.test.js",
       "exit": 0,
-      "seconds": 0.3
+      "seconds": 0.27
     },
     {
       "file": "tests/e2e/test71-customer-inbox.unit.test.js",
       "exit": 0,
-      "seconds": 0.9
+      "seconds": 0.84
     },
     {
       "file": "tests/e2e/test71-customer-invite-refresh-route.unit.test.js",
       "exit": 0,
-      "seconds": 0.23
+      "seconds": 0.24
     },
     {
       "file": "tests/e2e/test71-customer-pull-refresh.unit.test.js",
       "exit": 0,
-      "seconds": 0.31
+      "seconds": 0.24
     },
     {
       "file": "tests/e2e/test71-customer-quantity-input.unit.test.js",
@@ -310,22 +310,22 @@
     {
       "file": "tests/e2e/test71-customer-remember-login.unit.test.js",
       "exit": 0,
-      "seconds": 1.01
+      "seconds": 0.72
     },
     {
       "file": "tests/e2e/test71-customer-stock-privacy-input.unit.test.js",
       "exit": 0,
-      "seconds": 0.27
+      "seconds": 0.23
     },
     {
       "file": "tests/e2e/test71-customer-web-push.unit.test.js",
       "exit": 0,
-      "seconds": 0.96
+      "seconds": 0.81
     },
     {
       "file": "tests/e2e/test71-delivery-ticks.unit.test.js",
       "exit": 0,
-      "seconds": 0.92
+      "seconds": 0.79
     },
     {
       "file": "tests/e2e/test71-directory-timeout.unit.test.js",
@@ -340,12 +340,12 @@
     {
       "file": "tests/e2e/test71-market-customer-first.unit.test.js",
       "exit": 0,
-      "seconds": 1.19
+      "seconds": 1.29
     },
     {
       "file": "tests/e2e/test71-market-internal-focus.unit.test.js",
       "exit": 0,
-      "seconds": 0.86
+      "seconds": 0.73
     },
     {
       "file": "tests/e2e/test71-market-window-metadata.unit.test.js",
@@ -355,147 +355,147 @@
     {
       "file": "tests/e2e/test71-notification-open.unit.test.js",
       "exit": 0,
-      "seconds": 0.24
+      "seconds": 0.2
     },
     {
       "file": "tests/e2e/test71-notification-read.unit.test.js",
       "exit": 0,
-      "seconds": 0.3
+      "seconds": 0.27
     },
     {
       "file": "tests/e2e/test71-party-discount.unit.test.js",
       "exit": 0,
-      "seconds": 2.89
+      "seconds": 2.79
     },
     {
       "file": "tests/e2e/test71-party-notifications.unit.test.js",
       "exit": 0,
-      "seconds": 0.93
+      "seconds": 0.9
     },
     {
       "file": "tests/e2e/test71-payroll-costing-boundary.unit.test.js",
       "exit": 0,
-      "seconds": 0.32
+      "seconds": 0.22
     },
     {
       "file": "tests/e2e/test71-payslip-delivery.unit.test.js",
       "exit": 0,
-      "seconds": 1.01
+      "seconds": 1.26
     },
     {
       "file": "tests/e2e/test71-payslip-pdf.unit.test.js",
       "exit": 0,
-      "seconds": 0.9
+      "seconds": 0.92
     },
     {
       "file": "tests/e2e/test71-pi-batched-rate-context.unit.test.js",
       "exit": 0,
-      "seconds": 0.25
+      "seconds": 0.23
     },
     {
       "file": "tests/e2e/test71-pi-customer-receipt.unit.test.js",
       "exit": 0,
-      "seconds": 0.98
+      "seconds": 0.85
     },
     {
       "file": "tests/e2e/test71-pi-latest-requirement.unit.test.js",
       "exit": 0,
-      "seconds": 0.28
+      "seconds": 0.22
     },
     {
       "file": "tests/e2e/test71-pi-rate-recovery.unit.test.js",
       "exit": 0,
-      "seconds": 0.8
+      "seconds": 0.84
     },
     {
       "file": "tests/e2e/test71-positive-sale-rate.unit.test.js",
       "exit": 0,
-      "seconds": 0.28
+      "seconds": 0.23
     },
     {
       "file": "tests/e2e/test71-public-customer-invite.unit.test.js",
       "exit": 0,
-      "seconds": 0.32
+      "seconds": 0.3
     },
     {
       "file": "tests/e2e/test71-public-customer-link-transport.unit.test.js",
       "exit": 0,
-      "seconds": 0.25
+      "seconds": 0.23
     },
     {
       "file": "tests/e2e/test71-push-subscription-dedupe.unit.test.js",
       "exit": 0,
-      "seconds": 0.27
+      "seconds": 0.23
     },
     {
       "file": "tests/e2e/test71-readymade-art-sale.unit.test.js",
       "exit": 0,
-      "seconds": 1.5
+      "seconds": 1.22
     },
     {
       "file": "tests/e2e/test71-readymade-chat.unit.test.js",
       "exit": 0,
-      "seconds": 5.04
+      "seconds": 4.75
     },
     {
       "file": "tests/e2e/test71-readymade-market-search.unit.test.js",
       "exit": 0,
-      "seconds": 0.96
+      "seconds": 0.76
     },
     {
       "file": "tests/e2e/test71-readymade-receipt-share.unit.test.js",
       "exit": 0,
-      "seconds": 1.75
+      "seconds": 1.7
     },
     {
       "file": "tests/e2e/test71-readymade-supplier-receipt.unit.test.js",
       "exit": 0,
-      "seconds": 1.0
+      "seconds": 1.02
     },
     {
       "file": "tests/e2e/test71-readymade-uppercase.unit.test.js",
       "exit": 0,
-      "seconds": 0.83
+      "seconds": 0.74
     },
     {
       "file": "tests/e2e/test71-readymade-wiring.unit.test.js",
       "exit": 0,
-      "seconds": 1.0
+      "seconds": 0.78
     },
     {
       "file": "tests/e2e/test71-requirement-session.unit.test.js",
       "exit": 0,
-      "seconds": 2.26
+      "seconds": 2.03
     },
     {
       "file": "tests/e2e/test71-salary-final-costing.unit.test.js",
       "exit": 0,
-      "seconds": 0.32
+      "seconds": 0.26
     },
     {
       "file": "tests/e2e/test71-sales-collection-followup.unit.test.js",
       "exit": 0,
-      "seconds": 1.36
+      "seconds": 1.5
     },
     {
       "file": "tests/e2e/test71-sim-internet-call.unit.test.js",
       "exit": 0,
-      "seconds": 0.94
+      "seconds": 0.73
     },
     {
       "file": "tests/e2e/test71-source-intake-page.unit.test.js",
       "exit": 0,
-      "seconds": 0.83
+      "seconds": 0.63
     },
     {
       "file": "tests/e2e/test71-source-intake.unit.test.js",
       "exit": 0,
-      "seconds": 0.26
+      "seconds": 0.23
     },
     {
       "file": "tests/e2e/test71-staff-chat-hold-reply.unit.test.js",
       "exit": 0,
-      "seconds": 0.25
+      "seconds": 0.23
     },
     {
       "file": "tests/e2e/test71-staff-chat-multiselect-delete.unit.test.js",
@@ -505,17 +505,17 @@
     {
       "file": "tests/e2e/test71-staff-chat-recovery.unit.test.js",
       "exit": 0,
-      "seconds": 0.92
+      "seconds": 0.83
     },
     {
       "file": "tests/e2e/test71-staff-unread.unit.test.js",
       "exit": 0,
-      "seconds": 1.0
+      "seconds": 0.62
     },
     {
       "file": "tests/e2e/test71-terminal-chat.unit.test.js",
       "exit": 0,
-      "seconds": 0.23
+      "seconds": 0.22
     },
     {
       "file": "tests/e2e/test71-universal-uppercase.unit.test.js",
@@ -525,72 +525,72 @@
     {
       "file": "tests/e2e/test71-voice.unit.test.js",
       "exit": 0,
-      "seconds": 1.26
+      "seconds": 1.18
     },
     {
       "file": "tests/fabrication-open-consolidation.test.cjs",
       "exit": 0,
-      "seconds": 0.29
+      "seconds": 0.25
     },
     {
       "file": "tests/pending-action-lanes.test.cjs",
       "exit": 0,
-      "seconds": 0.7
+      "seconds": 0.78
     },
     {
       "file": "tests/push-prompt-alter-save.test.cjs",
       "exit": 0,
-      "seconds": 0.67
+      "seconds": 0.7
     },
     {
       "file": "tests/queue-read-cache.test.cjs",
       "exit": 0,
-      "seconds": 0.24
+      "seconds": 0.26
     },
     {
       "file": "tests/queue-tab-switch.test.cjs",
       "exit": 0,
-      "seconds": 0.8
+      "seconds": 0.82
     },
     {
       "file": "tests/status-unread-bubbles.test.cjs",
       "exit": 0,
-      "seconds": 0.94
+      "seconds": 0.72
     },
     {
       "file": "tests/test71-attendance-calendar.test.cjs",
       "exit": 0,
-      "seconds": 0.24
+      "seconds": 0.31
     },
     {
       "file": "tests/test71-financial-request.test.cjs",
       "exit": 0,
-      "seconds": 0.26
+      "seconds": 0.29
     },
     {
       "file": "tests/test71-mc1-request.test.cjs",
       "exit": 0,
-      "seconds": 0.26
+      "seconds": 0.21
     },
     {
       "file": "tests/test71-upm-client-mode.test.cjs",
       "exit": 0,
-      "seconds": 0.28
+      "seconds": 0.27
     },
     {
       "file": "tests/two-screen-cards.test.cjs",
       "exit": 0,
-      "seconds": 0.88
+      "seconds": 0.61
     },
     {
       "file": "tests/universal-chat-bubbles.test.cjs",
       "exit": 0,
-      "seconds": 1.26
+      "seconds": 1.08
     },
     {
       "file": "tests/worker-management-actions.test.cjs",
       "exit": 0,
-      "seconds": 0.31
+      "seconds": 0.25
     }
   ],
   "supersession_record": "test71-superseded-source-assertions-20261011.json",

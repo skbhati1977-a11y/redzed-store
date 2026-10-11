@@ -1,0 +1,60 @@
+{
+  "date": "2026-10-11",
+  "scope": "TEST71 targeted backend rollback checks; no independent role browser login claimed",
+  "roles": {
+    "active_profiles": 35,
+    "distinct_roles": 11,
+    "permission_checks": "PASS",
+    "identity_method": "SQL request claim simulation",
+    "active_accounts_profile_present": false
+  },
+  "checks": {
+    "anonymous_financial_grants": "PASS: zero",
+    "worker_other_payroll_rows": "PASS: zero",
+    "worker_other_advance_rows": "PASS: zero",
+    "worker_global_finance_rows": "PASS: zero",
+    "payment_retry_and_changed_payload": "PASS",
+    "committee_payment_and_accounts_atomic_reversal": "PASS",
+    "ledger_prior_period_balance": "PASS: prior 10 plus current 2 equals 12",
+    "attendance_checkout_and_missing_checkout": "PASS",
+    "payroll_management_source_drift_and_duplicate_finalization": "PASS",
+    "salary_advance_recovery_and_reversal": "PASS: 15000 accrual minus 100 advance equals 14900 cash; reversal restores advance",
+    "opening_import_retry_and_changed_payload": "PASS",
+    "cb_bom_retry_category_snapshot_and_inheritance": "PASS",
+    "committee_cash_bank_prize_and_dividend": "PASS: six rollback assertions, separate cloned TEST schemes"
+  },
+  "costing": {
+    "app_chat_parity_lots": 43,
+    "mapped_bom_rate_quantity_lots": 39,
+    "direct_worker_assignment_parity_samples": 100,
+    "unmapped_lots": [
+      "2615",
+      "2634",
+      "2613",
+      "2614"
+    ],
+    "unmapped_art": "test 03",
+    "full_costing_clearance": false
+  },
+  "ledger": {
+    "posted_unbalanced_test_transactions": 0,
+    "posted_test_transactions_with_fewer_than_two_lines": 0,
+    "posted_test_transactions_checked": 326
+  },
+  "live_browser_run": {
+    "id": 38114770069,
+    "sha": "3db4815624c2eaf8ea298c2278b2342b910b4dfa",
+    "status": "IN_PROGRESS",
+    "mc1": "FAIL; logs pending job completion"
+  },
+  "full_clean_chit": false,
+  "remaining": [
+    "MC1 deployed browser failure diagnosis",
+    "independent authenticated role browser checks",
+    "approved real opening data and historical reconciliation",
+    "archive/rehearsal isolation",
+    "four unmapped historical test 03 lots",
+    "complete downstream commercial and departmental journeys"
+  ],
+  "mutation_policy": "All database evidence above ran inside BEGIN/ROLLBACK; no business payment committed."
+}

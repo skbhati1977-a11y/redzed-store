@@ -3,9 +3,9 @@ DO $t$ DECLARE party uuid;cash uuid;tx uuid;from_day date:=current_date;previous
 BEGIN
  SELECT id INTO party FROM rr_ledgers_v805 WHERE is_active AND ledger_kind='SUPPLIER' LIMIT 1;
  SELECT id INTO cash FROM rr_ledgers_v805 WHERE ledger_code='CASH_MAIN';
- tx:=(rr_accounts_post_payment_v805(party,cash,10,'PERIOD-PRIOR-AUDIT','rollback','TEST')->>'transaction_id')::uuid;
+ tx:=(rr_financial_request_post_test71('rr_accounts_post_payment_v805','TEST',gen_random_uuid(),jsonb_build_object('p_against_ledger_id',party,'p_cash_bank_ledger_id',cash,'p_amount',10,'p_ref_no','PERIOD-PRIOR-AUDIT','p_narration','rollback','p_data_mode','TEST'))->>'transaction_id')::uuid;
  UPDATE rr_account_postings_v805 SET created_at=(from_day-1)::timestamptz WHERE transaction_id=tx;
- tx:=(rr_accounts_post_payment_v805(party,cash,2,'PERIOD-CURRENT-AUDIT','rollback','TEST')->>'transaction_id')::uuid;
+ tx:=(rr_financial_request_post_test71('rr_accounts_post_payment_v805','TEST',gen_random_uuid(),jsonb_build_object('p_against_ledger_id',party,'p_cash_bank_ledger_id',cash,'p_amount',2,'p_ref_no','PERIOD-CURRENT-AUDIT','p_narration','rollback','p_data_mode','TEST'))->>'transaction_id')::uuid;
  SELECT coalesce(sum(dr_amount-cr_amount),0) INTO previous FROM rr_account_reporting_base_v806 WHERE ledger_id=party AND data_mode='TEST' AND created_at::date<from_day AND coalesce(transaction_status,'POSTED') NOT IN('VOIDED','CANCELLED');
  SELECT coalesce(sum(dr_amount-cr_amount),0)+previous INTO expected FROM rr_account_reporting_base_v806 WHERE ledger_id=party AND data_mode='TEST' AND created_at::date=from_day AND coalesce(transaction_status,'POSTED') NOT IN('VOIDED','CANCELLED');
  SELECT running_balance INTO actual FROM rr_ledger_statement_v806(party,from_day,from_day,'TEST') ORDER BY entry_date DESC,posting_id DESC LIMIT 1;

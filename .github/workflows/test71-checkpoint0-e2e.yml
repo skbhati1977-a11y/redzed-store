@@ -21,15 +21,16 @@ permissions:
   id-token: write
 
 concurrency:
-  group: test71-full-factory-${{ github.sha }}
+  group: test71-full-factory-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
-  checkpoint0:
+  mc1:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
       E2E_BASE_URL: https://redzed-test65-git-test71-real-chat-e2e-6adad3-skbhati1977-4414.vercel.app
+      PLAYWRIGHT_HTML_OUTPUT_DIR: playwright-report/mc1
     steps:
       - uses: actions/checkout@v4
         with:
@@ -45,22 +46,144 @@ jobs:
       - id: auth
         run: npx playwright test --project=auth-setup
       - if: ${{ !cancelled() && steps.auth.outcome == 'success' }}
-        run: npx playwright test --project=mc1 --no-deps
-      # MC1's auth-setup writes the reusable Super Admin storage state once.
-      # Later suites must reuse it instead of replaying the one-time OIDC token.
-      - if: ${{ !cancelled() && steps.auth.outcome == 'success' }}
-        run: npx playwright test --project=cb-department --no-deps
-      - if: ${{ !cancelled() && steps.auth.outcome == 'success' }}
-        run: npx playwright test --project=material-unit --no-deps
-      - if: ${{ !cancelled() && steps.auth.outcome == 'success' }}
-        run: npx playwright test --project=checkpoint-8 --no-deps
-      - if: ${{ !cancelled() && steps.auth.outcome == 'success' }}
-        run: npx playwright test --project=full-factory --no-deps
-      - name: Upload Playwright evidence
+        run: npx playwright test --project=mc1 --no-deps --output=test-results/mc1
+      - name: Upload mc1 evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: checkpoint8-playwright-evidence
+          name: test71-mc1-playwright-evidence
+          path: |
+            playwright-report/
+            test-results/
+          if-no-files-found: ignore
+          retention-days: 7
+  cb_department:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs: mc1
+    if: ${{ always() && !cancelled() }}
+    env:
+      E2E_BASE_URL: https://redzed-test65-git-test71-real-chat-e2e-6adad3-skbhati1977-4414.vercel.app
+      PLAYWRIGHT_HTML_OUTPUT_DIR: playwright-report/cb-department
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run e2e:env-status
+      - id: auth
+        run: npx playwright test --project=auth-setup
+      - if: ${{ !cancelled() && steps.auth.outcome == 'success' }}
+        run: npx playwright test --project=cb-department --no-deps --output=test-results/cb-department
+      - name: Upload cb-department evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test71-cb-department-playwright-evidence
+          path: |
+            playwright-report/
+            test-results/
+          if-no-files-found: ignore
+          retention-days: 7
+  material_unit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs: cb_department
+    if: ${{ always() && !cancelled() }}
+    env:
+      E2E_BASE_URL: https://redzed-test65-git-test71-real-chat-e2e-6adad3-skbhati1977-4414.vercel.app
+      PLAYWRIGHT_HTML_OUTPUT_DIR: playwright-report/material-unit
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run e2e:env-status
+      - id: auth
+        run: npx playwright test --project=auth-setup
+      - if: ${{ !cancelled() && steps.auth.outcome == 'success' }}
+        run: npx playwright test --project=material-unit --no-deps --output=test-results/material-unit
+      - name: Upload material-unit evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test71-material-unit-playwright-evidence
+          path: |
+            playwright-report/
+            test-results/
+          if-no-files-found: ignore
+          retention-days: 7
+  checkpoint_8:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs: material_unit
+    if: ${{ always() && !cancelled() }}
+    env:
+      E2E_BASE_URL: https://redzed-test65-git-test71-real-chat-e2e-6adad3-skbhati1977-4414.vercel.app
+      PLAYWRIGHT_HTML_OUTPUT_DIR: playwright-report/checkpoint-8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run e2e:env-status
+      - id: auth
+        run: npx playwright test --project=auth-setup
+      - if: ${{ !cancelled() && steps.auth.outcome == 'success' }}
+        run: npx playwright test --project=checkpoint-8 --no-deps --output=test-results/checkpoint-8
+      - name: Upload checkpoint-8 evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test71-checkpoint-8-playwright-evidence
+          path: |
+            playwright-report/
+            test-results/
+          if-no-files-found: ignore
+          retention-days: 7
+  full_factory:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs: checkpoint_8
+    if: ${{ always() && !cancelled() }}
+    env:
+      E2E_BASE_URL: https://redzed-test65-git-test71-real-chat-e2e-6adad3-skbhati1977-4414.vercel.app
+      PLAYWRIGHT_HTML_OUTPUT_DIR: playwright-report/full-factory
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run e2e:env-status
+      - id: auth
+        run: npx playwright test --project=auth-setup
+      - if: ${{ !cancelled() && steps.auth.outcome == 'success' }}
+        run: npx playwright test --project=full-factory --no-deps --output=test-results/full-factory
+      - name: Upload full-factory evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test71-full-factory-playwright-evidence
           path: |
             playwright-report/
             test-results/
