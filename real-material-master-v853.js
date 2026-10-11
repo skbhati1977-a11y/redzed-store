@@ -1,7 +1,7 @@
 (()=>{'use strict';
 const $=id=>document.getElementById(id),money=n=>new Intl.NumberFormat('en-IN',{style:'currency',currency:'INR'}).format(Number(n||0));
 let S={material_types:[],materials:[],ledgers:[],purchase_pi:[]},B={rows:[]},C=[];
-async function rpc(n,a={}){const r=await supabaseClient.rpc(n,a);if(r.error)throw r.error;return r.data}
+async function rpc(n,a={}){if(!window.RRFinancialRequests)throw new Error('Financial request protection unavailable. Reload this page.');const r=await window.RRFinancialRequests.rpc(supabaseClient,n,a);if(r.error)throw r.error;return r.data}
 function cur(){return S.materials.find(x=>x.material_id===$('material').value)}
 async function load(){const categoryReq=supabaseClient.from('rr_material_categories').select('id,category_code,category_name').order('category_name',{ascending:true});[S,B,C]=await Promise.all([rpc('rr_material_purchase_bootstrap_v805_2',{p_data_mode:$('mode').value}),rpc('rr_material_mapping_list_v656'),categoryReq.then(r=>{if(r.error)throw r.error;return r.data||[]})]);
  $('type').innerHTML='<option value="">Select…</option>'+S.material_types.map(x=>`<option value="${x.type_code}">${x.type_name}</option>`).join('');
