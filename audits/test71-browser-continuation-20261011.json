@@ -1,0 +1,28 @@
+{
+  "date": "2026-10-11",
+  "preview_commit": "34c5c939d99a6ccbb9f5e316c422c4745903bacb",
+  "preview_url": "https://redzed-test65-p7ltn9xvy-skbhati1977-4414.vercel.app",
+  "actor": "Signed-in Sudesh Bhati / Super Admin",
+  "mutation": "Read-only navigation only",
+  "checks": [
+    {
+      "id": "A045",
+      "status": "PASS",
+      "actual": "October attendance rendered 1–11; today PENDING; no future absence rows."
+    },
+    {
+      "id": "A075",
+      "status": "PASS",
+      "actual": "Cutting Group WORKING → STAFF → ALTER 6; six visible articles with correct worker/lot/source actions; no load error."
+    },
+    {
+      "id": "FABRICATION_WORKING_BROWSER",
+      "status": "PASS",
+      "actual": "Fabrication Group WORKING → ACCEPT & COUNT13; thirteen cards visible, including Printing/sanju → dhiraj, Overlock/javed → ali, Metal ID/balli → ali."
+    }
+  ],
+  "limits": [
+    "Latest Accounts/payroll UI commits are newer than this preview; Vercel daily quota blocks their deployment.",
+    "No actual mobile/push/GPS or full submitted financial workflow sign-off."
+  ]
+}
