@@ -229,7 +229,7 @@ async function attendanceQueue71(worker=null,force=false,month=attendanceMonth71
 }
 function attendanceCard71(c){
  const t=v=>v?new Date(v).toLocaleTimeString('en-IN',{timeZone:'Asia/Kolkata',hour:'2-digit',minute:'2-digit'}):'—';
- const completed=!!c.check_out_at,label=completed?'Day complete':c.check_in_at?'Checked in · '+(c.attendance_date===new Date().toLocaleDateString('en-CA',{timeZone:'Asia/Kolkata'})?'Check-out बाकी':'Review बाकी'):c.status==='PENDING'?'Check-in बाकी':String(c.status||'').replaceAll('_',' ');
+ const completed=!!c.check_out_at,label=c.status==='REVIEW_REQUIRED'?'Review बाकी':completed?'Day complete':c.check_in_at?'Checked in · '+(c.attendance_date===new Date().toLocaleDateString('en-CA',{timeZone:'Asia/Kolkata'})?'Check-out बाकी':'Review बाकी'):c.status==='PENDING'?'Check-in बाकी':String(c.status||'').replaceAll('_',' ');
  const moduleUrl='real-attendance-salary-v778.html?mode=TEST&attendance_worker='+encodeURIComponent(c.worker_id)+'&attendance_date='+encodeURIComponent(c.attendance_date);
  const action=c.action?'<button type="button" data-attendance-worker="'+safe(c.worker_id)+'" data-attendance-action="'+safe(c.action)+'">'+(c.action==='CHECK_IN'?'CHECK IN':'CHECK OUT')+'</button>':'';
  const next=c.action?(c.action==='CHECK_IN'?'CHECK IN · Live GPS':'CHECK OUT · Live GPS'):!c.policy_ready&&c.status==='PENDING'?'Attendance policy / Geo Fence setup बाकी':c.chat_status==='OPEN'?'Attendance review बाकी':'';
