@@ -5,13 +5,13 @@
     "date": "2026-10-11 Asia/Kolkata",
     "cases": 132,
     "status_counts": {
-      "PASS": 98,
+      "PASS": 99,
       "FAIL": 10,
       "NOT_RUN": 19,
-      "BLOCKED": 5
+      "BLOCKED": 4
     },
     "completed_unblocked": false,
-    "phase": "Vercel deployment READY at a2701bce. MC1 form stability passes on deployed app. Targeted backend financial permissions pass for 35 profiles/11 roles (SQL identity simulation). Derived DUE quantity-refresh and canonical-confirmation defects fixed and rollback-verified. MC1 closing stock adapted to current OPEN/WORKING UI, awaiting deployed verification. Approved real openings, archive isolation and independent authenticated role journeys remain unresolved; NOT CLEARED."
+    "phase": "Core live checkpoints carried forward and factory receipts completed. One factory SQL-timeout retry remains explicitly recorded; bounded definite-rollback retry has four behavioral checks. Approved openings, global archive boundary and independent role/department financial journeys remain incomplete; NOT CLEARED."
   },
   "cases": [
     {
@@ -1065,9 +1065,9 @@
       "feature": "CI module coverage",
       "scenario": "Inspect workflow and SHA-run lookup",
       "expected": "Required module suites actually run",
-      "actual": "Deployment quota resolved. Exact 3db48156 preview READY. MC1 and CB browser suites FAIL; later suites still running. CI job separation prepared to preserve each module evidence.",
-      "status": "BLOCKED",
-      "evidence": "3adfb887 CI: static/auth success, MC1 failed because empty-state observer erased MC1 cards. Fixed and regression passed in 785f6176; latest deployment blocked by Vercel daily quota (402). Independent suite steps enabled.",
+      "actual": "Required live checkpoint jobs executed: MC1, CB Department and Material Unit success at 10b8068; Commercial failed checks success at 0bea7e1; Factory receipt continuation success with one first-attempt SQL timeout/retry at e28f871. All pending retained factory receipt assignments are IN_PROGRESS. Execution coverage only; not universal or fully stable certification.",
+      "status": "PASS",
+      "evidence": "GitHub runs 38128366128, 38131480113/job114446535965, 38131837186/job114447592980; audits/test71-forward-checkpoint-20261011.json",
       "evidence_type": "Workflow/source audit",
       "recheck_20261011": "audits/test71-financial-role-recheck-20261011.json"
     },

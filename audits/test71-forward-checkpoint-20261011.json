@@ -1,0 +1,66 @@
+{
+  "date": "2026-10-11 Asia/Kolkata",
+  "tested_factory_commit": "e28f87144f43a3731c36515a100534700f3f089b",
+  "full_clean_chit": false,
+  "production_main_git_changed": false,
+  "carried_forward": {
+    "mc1_cb_material": {
+      "run_id": 38128366128,
+      "commit": "10b8068bb9fb80bd25a891c3b7017bcc3f2298ca",
+      "status": "SUCCESS"
+    },
+    "commercial_failed_checks": {
+      "run_id": 38131480113,
+      "job_id": 114446535965,
+      "commit": "0bea7e1803165530bbe0b430959feb8bdf80b0d5",
+      "status": "SUCCESS"
+    },
+    "factory_receipts": {
+      "run_id": 38131837186,
+      "job_id": 114447592980,
+      "status": "SUCCESS_WITH_ONE_FLAKY_SQL_TIMEOUT",
+      "all_three_previously_pending_lots": "IN_PROGRESS",
+      "colours_confirmed": 4,
+      "first_attempt_timeout_code": "57014",
+      "prior_failures_preserved": true
+    }
+  },
+  "targeted_timeout_fix": {
+    "retry_condition": "PostgreSQL 57014 definite transaction abort only",
+    "retry_limit": 1,
+    "ambiguous_network_error_replayed": false,
+    "tests": 4,
+    "live_fresh_timeout_replay_after_fix": "NOT_RUN"
+  },
+  "inbox_column_presence": {
+    "columns_count": 19,
+    "read_at": true,
+    "assignment_id": true,
+    "submit_request_id": true,
+    "worker_ids": true,
+    "chat_status": true,
+    "delivered_at": true,
+    "action_label": true,
+    "actor_user_id": true,
+    "action_detail": true,
+    "physical_push_and_independent_role_delivery_certified": false
+  },
+  "remaining": [
+    "Approved opening GL/stock/WIP source and cutoff",
+    "Universal fixture archive reader and aggregate separation",
+    "Untagged historical mode/worker source reconciliation",
+    "Independent role/mobile/offline/concurrency and complete department financial journeys",
+    "Costing/claim/payroll/despatch audit gaps retained"
+  ],
+  "new_costing_diagnostic": {
+    "lots": [
+      "2615",
+      "2634"
+    ],
+    "authoritative_category": "down sholder",
+    "existing_alias_v654": "Dropsholder",
+    "costing_v657_result": null,
+    "historical_mode": "UNTAGGED",
+    "business_category_or_mode_backfilled": false
+  }
+}

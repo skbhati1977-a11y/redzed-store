@@ -1,0 +1,9 @@
+const test=require('node:test'),assert=require('node:assert/strict'),vm=require('node:vm'),fs=require('node:fs');
+const source=fs.readFileSync('test70-real-chat-live-v70.js','utf8');
+const fn=source.slice(source.indexOf('async function saveReceiptCountTest71('),source.indexOf('async function openReceiptCountTableV736('));
+function setup(outcomes){const calls=[],delays=[];const c={Promise,setTimeout:(resolve,ms)=>{delays.push(ms);resolve()},rpc:async(name,payload)=>{calls.push({name,payload});const out=outcomes.shift();if(out instanceof Error)throw out;return out}};vm.createContext(c);vm.runInContext(fn,c);return{save:c.saveReceiptCountTest71,calls,delays}}
+const payload={p_assignment_id:'assignment',p_rows:[{assignment_id:'assignment',confirmed_qty:3}],p_note:null};
+test('Successful receipt is saved exactly once',async()=>{const x=setup([{ok:true}]);assert.equal((await x.save(payload)).ok,true);assert.equal(x.calls.length,1);assert.deepEqual(x.delays,[])});
+test('Definite SQL transaction timeout retries identical count once',async()=>{const e=Object.assign(Error('statement timeout'),{code:'57014'}),x=setup([e,{ok:true}]);assert.equal((await x.save(payload)).ok,true);assert.equal(x.calls.length,2);assert(x.calls.every(c=>c.name==='rr_chat_assignment_count_save_test71'&&c.payload===payload));assert.deepEqual(x.delays,[350])});
+test('Network and validation errors do not replay a receipt',async()=>{for(const code of [undefined,'42501','P0001']){const e=Object.assign(Error('save failed'),{code}),x=setup([e]);await assert.rejects(x.save(payload),error=>error===e);assert.equal(x.calls.length,1)}});
+test('Second SQL timeout exits without an unbounded retry loop',async()=>{const e=Object.assign(Error('statement timeout'),{code:'57014'}),x=setup([e,e]);await assert.rejects(x.save(payload),error=>error===e);assert.equal(x.calls.length,2)});

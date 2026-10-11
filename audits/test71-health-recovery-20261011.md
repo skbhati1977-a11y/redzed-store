@@ -28,3 +28,13 @@ Remaining evidence: rerun the complete live workflow at the new exact commit. Ap
 - Deployed commit 0bea7e1803165530bbe0b430959feb8bdf80b0d5: both formerly failing Commercial checks PASS in run 38131480113/job114446535965. Directory guard is HTTP200 and byte-identical to the committed asset.
 - Factory trace at that commit confirms the pending target card, both colours (6 PCS total), and visible ACCEPT & COUNT button in WORKER / ASSIGNED RECEIPT. The remaining assertion expected a retired anchor/iframe; the production interface uses data-receipt-accept and the inline receipt-count overlay. Adapt the test to visible controls, asserting one card, all colour counts, exact expected PCS total, popup closure and canonical assignment transition.
 - Next continuation runs factory only; passed Commercial evidence is retained alongside earlier MC1/CB/Material results.
+
+## Completed receipt continuation and quality limit
+
+Run 38131837186/job114447592980 at e28f871 completed SUCCESS **with one flaky first attempt**. Trace proves the first two receipts returned HTTP200; the third returned PostgreSQL57014 (transaction timeout), leaving the popup visible. The resumed attempt completed the pending third receipt. Independent read confirms all three target lots IN_PROGRESS (2+1+1 colours). Do not call this a zero-retry stable browser pass.
+
+Add a one-time retry only for definite PostgreSQL57014 rollback in the receipt save wrapper; four behavioral tests pass (single success, identical retry, no network/validation replay, stop on second timeout). This follow-up does not reset assignments or recreate factory purchases. A new live timeout branch after this fix is not certified.
+
+Inbox contains 19 columns, including persistent read_at and exact assignment/submit/worker/status/action fields. Column presence is complete; this does not certify real device push for every independent role.
+
+A082 execution-coverage blocker is resolved by the recorded live checkpoint jobs; matrix now99 PASS/10 FAIL/4 BLOCKED/19 NOT_RUN. Full clean chit and import clearance remain false. Additional costing diagnostic: 2615/2634 have existing down sholder→Dropsholder alias normalization in V654 while V657 returns null; historical source mode is untagged. No category, rate or mode was guessed.

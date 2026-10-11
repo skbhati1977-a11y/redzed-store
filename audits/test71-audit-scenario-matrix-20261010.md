@@ -1,6 +1,9 @@
 # TEST71 — scenario, expected, actual और evidence checklist
 
-> Current continuation — 11 October 2026: **NOT CLEARED for new business imports.** Authoritative scenario matrix: **97 PASS, 12 FAIL, 4 BLOCKED, 19 NOT_RUN** (132 total). See [current import readiness](test71-import-readiness-20261011.md). Earlier counts and deployment restrictions below are historical.
+> Current checkpoint: **99 PASS, 10 FAIL, 4 BLOCKED, 19 NOT_RUN**. Live MC1/CB/Material/Commercial checkpoints are retained; Factory receipt continuation completed with one explicitly recorded SQL-timeout retry. See [forward evidence](test71-forward-checkpoint-20261011.json). **Full clean chit and business imports remain NOT CLEARED.** Earlier deployment/failure notes below are historical.
+
+
+> Historical continuation — 11 October 2026: **NOT CLEARED for new business imports.** Authoritative scenario matrix: **97 PASS, 12 FAIL, 4 BLOCKED, 19 NOT_RUN** (132 total). See [current import readiness](test71-import-readiness-20261011.md). Earlier counts and deployment restrictions below are historical.
 >
 > Latest UI deployment is blocked by Vercel's 100-per-day deployment quota (402); new browser verification is pending. Canonical approved advance recovery and full audited reversal passed; see 20261011 source evidence in the JSON matrix.
 >
