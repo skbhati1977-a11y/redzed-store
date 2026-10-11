@@ -1,17 +1,17 @@
 {
   "metadata": {
     "scope": "Accounts wiring across manufacturing/trading/attendance/payroll/opening/isolation; NOT universal completion certificate",
-    "head": "6def397 + targeted continuation",
+    "head": "TEST71 targeted continuation 2026-10-11",
     "date": "2026-10-11 Asia/Kolkata",
     "cases": 132,
     "status_counts": {
-      "PASS": 89,
-      "FAIL": 19,
-      "BLOCKED": 5,
-      "NOT_RUN": 19
+      "PASS": 96,
+      "FAIL": 13,
+      "NOT_RUN": 19,
+      "BLOCKED": 4
     },
     "completed_unblocked": false,
-    "phase": "Targeted fixes deployed to TEST; existing Ci logical archive and universal opening/workflow verification pending; no clean chit"
+    "phase": "Database fixes verified; latest UI preview blocked by Vercel api-deployments-free-per-day 402. Archive/openings and independent workflows still pending; NOT CLEARED."
   },
   "cases": [
     {
@@ -105,9 +105,9 @@
       "feature": "Universal OPEN contributor coverage",
       "scenario": "Inspect source projection and rendered cards",
       "expected": "All relevant module pending financial actions",
-      "actual": "24 Committee cards; source view Committee-only",
+      "actual": "Pending bill/individual salary/finalized monthly salary/Committee source queue SQL5 PASS; untagged claims and updated browser coverage remain incomplete.",
       "status": "FAIL",
-      "evidence": "audits/test71-universal-accounts-mapping-20261010.md; audits/test71-browser-evidence-20261010.json",
+      "evidence": "tests/evidence/test71-accounts-open-source-queue-20261011.sql",
       "evidence_type": "Code + browser"
     },
     {
@@ -168,10 +168,15 @@
       "feature": "Payment retry",
       "scenario": "Same reference repeated",
       "expected": "Same scoped operation produces one payment",
-      "actual": "Two transactions created",
-      "status": "FAIL",
-      "evidence": "audits/test71-sql-runtime-rerun-evidence-20261010.json",
-      "evidence_type": "SQL rollback"
+      "actual": "Raw TEST payment denied; protected exact request retry yields one Accounts journal.",
+      "status": "PASS",
+      "evidence": "tests/evidence/test71-legacy-financial-request-guards-20261011.sql",
+      "evidence_type": "SQL rollback",
+      "previous_observation": {
+        "status": "FAIL",
+        "actual": "Two transactions created",
+        "evidence": "audits/test71-sql-runtime-rerun-evidence-20261010.json"
+      }
     },
     {
       "id": "A014",
@@ -269,10 +274,15 @@
       "feature": "Payment retry",
       "scenario": "Repeat same payment reference",
       "expected": "One operation",
-      "actual": "Second payment created",
-      "status": "FAIL",
-      "evidence": "audits/test71-sql-runtime-evidence-20261010.json",
-      "evidence_type": "SQL rollback"
+      "actual": "Raw TEST salary writer denied; protected exact retry makes one payment; alternate finalized monthly source blocked.",
+      "status": "PASS",
+      "evidence": "tests/evidence/test71-salary-source-exclusivity-20261011.sql",
+      "evidence_type": "SQL rollback",
+      "previous_observation": {
+        "status": "FAIL",
+        "actual": "Second payment created",
+        "evidence": "audits/test71-sql-runtime-evidence-20261010.json"
+      }
     },
     {
       "id": "A021",
@@ -299,10 +309,15 @@
       "feature": "Issue/recover/reverse full journey",
       "scenario": "First issue then approved payroll recovery",
       "expected": "Source/subledger/cash reconcile",
-      "actual": "First issue now accepted, but general Accounts journal delta0. Recovery/reversal end-to-end remains unverified.",
-      "status": "BLOCKED",
-      "evidence": "audits/test71-sql-runtime-evidence-20261010.json",
-      "evidence_type": "SQL rollback"
+      "actual": "Rollback: advance100; approved salary15000/recovery100/cash14900; reversal restores advance100 and salary0; three audited Accounts sources reversed; duplicate denied.",
+      "status": "PASS",
+      "evidence": "tests/evidence/test71-advance-salary-reversal-20261011.sql",
+      "evidence_type": "SQL rollback",
+      "previous_observation": {
+        "status": "BLOCKED",
+        "actual": "First issue now accepted, but general Accounts journal delta0. Recovery/reversal end-to-end remains unverified.",
+        "evidence": "audits/test71-sql-runtime-evidence-20261010.json"
+      }
     },
     {
       "id": "A023",
@@ -419,10 +434,15 @@
       "feature": "Purchase retry",
       "scenario": "Repeat same bill/payload",
       "expected": "Same request not duplicated",
-      "actual": "Two purchase IDs",
-      "status": "FAIL",
-      "evidence": "audits/test71-sql-runtime-rerun-evidence-20261010.json",
-      "evidence_type": "SQL rollback"
+      "actual": "Raw TEST material writers denied; existing protected material request retry replay passed.",
+      "status": "PASS",
+      "evidence": "tests/evidence/test71-legacy-financial-request-guards-20261011.sql",
+      "evidence_type": "SQL rollback",
+      "previous_observation": {
+        "status": "FAIL",
+        "actual": "Two purchase IDs",
+        "evidence": "audits/test71-sql-runtime-rerun-evidence-20261010.json"
+      }
     },
     {
       "id": "A032",
@@ -468,10 +488,15 @@
       "feature": "Payment retry",
       "scenario": "Same organizer reference twice",
       "expected": "One command result",
-      "actual": "2 payments",
-      "status": "FAIL",
-      "evidence": "audits/test71-sql-runtime-evidence-20261010.json",
-      "evidence_type": "SQL rollback"
+      "actual": "Raw TEST Committee payment denied; protected Committee exact request retry replay passed.",
+      "status": "PASS",
+      "evidence": "tests/evidence/test71-legacy-financial-request-guards-20261011.sql",
+      "evidence_type": "SQL rollback",
+      "previous_observation": {
+        "status": "FAIL",
+        "actual": "2 payments",
+        "evidence": "audits/test71-sql-runtime-evidence-20261010.json"
+      }
     },
     {
       "id": "A035",
@@ -610,10 +635,15 @@
       "feature": "Future day display",
       "scenario": "Oct10 view October month",
       "expected": "Future dates pending/future, not absent",
-      "actual": "Local calendar excludes future days; today virtual PENDING; 4 unit checks PASS. Updated preview browser verification BLOCKED by rejected GitHub push; browser criterion not yet passed.",
-      "status": "FAIL",
-      "evidence": "audits/test71-browser-evidence-20261010.json",
-      "evidence_type": "Signed-in browser"
+      "actual": "Signed-in Owner READY preview rendered Oct1–11; Oct11 PENDING; no Oct12–31 rows.",
+      "status": "PASS",
+      "evidence": "audits/test71-import-readiness-20261011.md",
+      "evidence_type": "Signed-in browser",
+      "previous_observation": {
+        "status": "FAIL",
+        "actual": "Local calendar excludes future days; today virtual PENDING; 4 unit checks PASS. Updated preview browser verification BLOCKED by rejected GitHub push; browser criterion not yet passed.",
+        "evidence": "audits/test71-browser-evidence-20261010.json"
+      }
     },
     {
       "id": "A046",
@@ -1634,10 +1664,15 @@
       "feature": "Generic suite fallback correctness",
       "scenario": "Inspect v857 readers/views/fallback",
       "expected": "Scoped complete canonical report, no guessed success",
-      "actual": "limit100, no explicit mode, raw guessed fallback",
-      "status": "FAIL",
-      "evidence": "audits/test71-universal-accounts-mapping-20261010.md",
-      "evidence_type": "Code audit"
+      "actual": "Current v857 JS contains only canonical Accounts redirect; guessed raw generic fallback retired.",
+      "status": "PASS",
+      "evidence": "real-accounts-suite-v857.js",
+      "evidence_type": "Code audit",
+      "previous_observation": {
+        "status": "FAIL",
+        "actual": "limit100, no explicit mode, raw guessed fallback",
+        "evidence": "audits/test71-universal-accounts-mapping-20261010.md"
+      }
     },
     {
       "id": "A128",
