@@ -1,5 +1,5 @@
 function attendancePushRoute71(target:string,subscriptionRoute:string):string{
- try{const u=new URL(subscriptionRoute);u.pathname=u.pathname.replace(/[^/]*$/,"test70-cb-purchase-real-chat-pilot.html");u.search=new URL(target,u).search;return u.href;}catch(_){try{const u=new URL(target);return u.pathname+u.search;}catch(_){return "test70-cb-purchase-real-chat-pilot.html";}}
+ try{const u=new URL(subscriptionRoute);u.pathname=u.pathname.replace(/[^/]*$/,"test70-cb-purchase-real-chat-pilot.html");u.search=new URL(target,u).search;return u.href;}catch(_){try{const u=new URL(target,"https://relative.invalid/");return u.pathname+u.search;}catch(_){return "test70-cb-purchase-real-chat-pilot.html";}}
 }
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
@@ -66,7 +66,7 @@ Deno.serve(async (request) => {
     if (body.targeted_outbox_id && body.dispatch_token) {
       const { data: outbox } = await db.from("rr_targeted_push_outbox_v708").select("*").eq("id", body.targeted_outbox_id).eq("dispatch_token", body.dispatch_token).is("processed_at", null).maybeSingle();
       if (!outbox) return new Response("already processed", { status: 200 });
-      if(["CUSTOMER_LOGIN_APPROVAL_TEST71","REAL_CHAT_ACTION_TEST71","ATTENDANCE_REMINDER_TEST71"].includes(outbox.payload?.source)){
+      if(["CUSTOMER_LOGIN_APPROVAL_TEST71","REAL_CHAT_ACTION_TEST71","ATTENDANCE_REMINDER_TEST71","PRESENCE_CHECK_TEST71","PRESENCE_REVIEW_TEST71"].includes(outbox.payload?.source)){
         const {data:claimed,error:claimError}=await db.from("rr_targeted_push_outbox_v708").update({processed_at:new Date().toISOString(),dispatch_token:crypto.randomUUID()}).eq("id",outbox.id).eq("dispatch_token",body.dispatch_token).is("processed_at",null).select("id").maybeSingle();
         if(claimError)throw claimError;if(!claimed)return new Response("already processed",{status:200});
         if(outbox.payload?.source==="CUSTOMER_LOGIN_APPROVAL_TEST71"){
@@ -80,11 +80,16 @@ Deno.serve(async (request) => {
         if(pendingError)throw pendingError;
         if(!pending)return new Response(JSON.stringify({ok:true,sent:0,skipped:"ATTENDANCE_RESOLVED_OR_INELIGIBLE"}),{headers:{"Content-Type":"application/json"}});
       }
+      if(["PRESENCE_CHECK_TEST71","PRESENCE_REVIEW_TEST71"].includes(outbox.payload?.source)){
+        const {data:pending,error:pendingError}=await db.rpc("rr_presence_push_pending_test71",{p_request_id:outbox.payload.request_id,p_recipient_worker_id:outbox.recipient_worker_id,p_review:outbox.payload.source==="PRESENCE_REVIEW_TEST71"});
+        if(pendingError)throw pendingError;
+        if(!pending)return new Response(JSON.stringify({ok:true,sent:0,skipped:"PRESENCE_RESOLVED_OR_INELIGIBLE"}),{headers:{"Content-Type":"application/json"}});
+      }
       const { data: worker } = await db.from("rr_worker_directory_unified_v1").select("worker_id,linked_auth_user_id").or("worker_id.eq."+outbox.recipient_worker_id+",linked_auth_user_id.eq."+outbox.recipient_worker_id).limit(1).maybeSingle();
       const ids=[...new Set([outbox.recipient_worker_id,worker?.worker_id].filter(Boolean))];
       let subscriptions:any[]=[]; if(ids.length){const {data}=await db.from("rr_web_push_subscriptions_v61").select("*").eq("enabled",true).in("worker_id",ids);const all=data||[],preferred=new Set(all.filter((x:any)=>x.device_key).map((x:any)=>String(x.worker_id)));subscriptions=all.filter((x:any)=>Boolean(x.device_key)||!preferred.has(String(x.worker_id)))}
       webpush.setVapidDetails("https://skbhati1977-a11y.github.io/redzed-store/",Deno.env.get("VAPID_PUBLIC_KEY")!,Deno.env.get("VAPID_PRIVATE_KEY")!);
-      let sent=0; for(const subscription of subscriptions){const payload=JSON.stringify({customer_name:outbox.title,preview:outbox.body,url:outbox.payload?.source==="ATTENDANCE_REMINDER_TEST71"?attendancePushRoute71(outbox.route_url,subscription.route_url):outbox.payload?.source==="CUSTOMER_LOGIN_APPROVAL_TEST71"?(()=>{try{const u=new URL(subscription.route_url);u.pathname=u.pathname.replace(/[^/]*$/,"test70-cb-purchase-real-chat-pilot.html");u.search=new URL(outbox.route_url,u).search;return u.href}catch(_){return outbox.route_url||"./"}})():outbox.route_url||subscription.route_url||"./",event_key:outbox.event_key,...(outbox.payload||{})});try{await webpush.sendNotification({endpoint:subscription.endpoint,keys:{p256dh:subscription.p256dh,auth:subscription.auth}},payload,{TTL:300,urgency:"high"});sent++}catch(error:any){if(error?.statusCode===404||error?.statusCode===410)await db.from("rr_web_push_subscriptions_v61").update({enabled:false,updated_at:new Date().toISOString()}).eq("id",subscription.id)}}
+      let sent=0; for(const subscription of subscriptions){const payload=JSON.stringify({customer_name:outbox.title,preview:outbox.body,url:["ATTENDANCE_REMINDER_TEST71","PRESENCE_CHECK_TEST71","PRESENCE_REVIEW_TEST71"].includes(outbox.payload?.source)?attendancePushRoute71(outbox.route_url,subscription.route_url):outbox.payload?.source==="CUSTOMER_LOGIN_APPROVAL_TEST71"?(()=>{try{const u=new URL(subscription.route_url);u.pathname=u.pathname.replace(/[^/]*$/,"test70-cb-purchase-real-chat-pilot.html");u.search=new URL(outbox.route_url,u).search;return u.href}catch(_){return outbox.route_url||"./"}})():outbox.route_url||subscription.route_url||"./",event_key:outbox.event_key,...(outbox.payload||{})});try{await webpush.sendNotification({endpoint:subscription.endpoint,keys:{p256dh:subscription.p256dh,auth:subscription.auth}},payload,{TTL:300,urgency:"high"});sent++}catch(error:any){if(error?.statusCode===404||error?.statusCode===410)await db.from("rr_web_push_subscriptions_v61").update({enabled:false,updated_at:new Date().toISOString()}).eq("id",subscription.id)}}
       await db.from("rr_targeted_push_outbox_v708").update({processed_at:new Date().toISOString(),dispatch_token:crypto.randomUUID()}).eq("id",outbox.id).eq("dispatch_token",body.dispatch_token);
       return new Response(JSON.stringify({ok:true,sent,subscriptions:subscriptions.length,kind:"TARGETED_BUSINESS_PUSH"}),{headers:{"Content-Type":"application/json"}});
     }
