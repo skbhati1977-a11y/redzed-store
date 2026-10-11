@@ -6,8 +6,6 @@ declare w uuid:='038f2ef4-ca5d-4ed0-a3da-264e2d727ac4';d date;r jsonb;p public.r
 begin
 select * into p from public.rr_active_payroll_profile_v778_2(w,'2026-09-30','TEST');
 if p.profile_id is null then raise exception 'Missing September fixture';end if;
-if (select earned_to_cutoff from public.rr_salary_monthly_earned_v782(w,'2026-09-30','TEST')) IS DISTINCT FROM round(p.monthly_salary-(public.rr_calculate_monthly_salary_v779_1(p.monthly_salary,360,0,0,0)->>'deduction_amount')::numeric,2) then raise exception 'Payment board ignored actual half day';end if;
-insert into payroll_coverage_result values('payment_board_actual_half_day','true');
 perform public.rr_attendance_save_v778(w,'2026-09-15','2026-09-15 10:00+05:30','2026-09-15 20:00+05:30','AUTO',false,'MANUAL',null,'Coverage rollback','TEST');
 begin perform public.rr_generate_worker_monthly_payroll_v779_1(w,'2026-09-01','TEST','Coverage rollback');
 exception when others then if sqlerrm not like '%Attendance incomplete%' then raise;end if;blocked:=true;end;
@@ -25,6 +23,9 @@ if not exists(select 1 from public.rr_attendance_day_v777_2 where worker_id=w an
 perform public.rr_attendance_save_v778(w,'2026-09-15','2026-09-15 10:00+05:30','2026-09-15 14:00+05:30','HALF_DAY',false,'MANUAL',null,'Actual hours rollback','TEST');
 if not exists(select 1 from public.rr_attendance_day_v777_2 where worker_id=w and attendance_date='2026-09-15' and data_mode='TEST' and approval_status='APPROVED' and net_deduction_minutes=360 and net_working_minutes=240) then raise exception 'Half day not using actual punch hours';end if;
 insert into payroll_coverage_result values('paid_monday_actual_half_day',jsonb_build_object('paid_monday_minutes',600,'half_day_actual_minutes',240,'half_day_deduction_minutes',360));
+if (select earned_to_cutoff from public.rr_salary_monthly_earned_v782(w,'2026-09-30','TEST')) IS DISTINCT FROM round(p.monthly_salary-(public.rr_calculate_monthly_salary_v779_1(p.monthly_salary,360,0,0,0)->>'deduction_amount')::numeric,2) then raise exception 'Payment board ignored actual half day';end if;
+insert into payroll_coverage_result values('payment_board_actual_half_day','true');
+
 perform public.rr_attendance_save_v778(w,'2026-09-15','2026-09-15 10:00+05:30','2026-09-15 20:00+05:30','AUTO',false,'MANUAL',null,'Coverage rollback','TEST');
 r:=public.rr_generate_worker_monthly_payroll_v779_1(w,'2026-09-01','TEST','Coverage rollback');
 select * into pay from public.rr_monthly_payroll_v779_1 where payroll_id=(r->>'payroll_id')::uuid;
