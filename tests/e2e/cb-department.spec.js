@@ -219,7 +219,9 @@ test('the seven read-only evidence CBs no longer remain in CB WORKING and mobile
   await expect(card).toBeVisible();
   await expect(card.locator('.closed-main')).toContainText('✓ CB 1002');
   await expect(card.locator('.grid > span').filter({ hasText: /^Art / })).toContainText('COMPLETE');
-  await expect(card.locator('.grid > span').filter({ hasText: /^Cutting / })).toContainText('READY');
+  const historical1002 = states.close.find((x) => x.cb_no === '1002');
+  await expect(card.locator('.grid > span').filter({ hasText: /^Cutting / }))
+    .toContainText(historical1002.cutting_ready_count > 0 ? 'READY' : 'RELEASED');
   await expect(page.locator('#workFilters')).toBeHidden();
   const width = await page.evaluate(() => ({ body: document.body.scrollWidth, viewport: document.documentElement.clientWidth }));
   expect(width.body).toBeLessThanOrEqual(width.viewport + 2);
