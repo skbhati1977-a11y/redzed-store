@@ -27,8 +27,8 @@ test('deployed Unit dropdown, creation, Material persistence, CB mirror and Work
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto('/real-cb-new-v9130-fix2.html?mode=TEST&v=610');
     await expect(page.locator('#bootMsg')).toBeHidden({ timeout: 30_000 });
-    await page.locator('#addMaterial').click();
-    const material = page.locator('#materialList [data-m="1"]');
+    await page.locator('#additionalMaterialList .addNextMaterial').click();
+    const material = page.locator('#additionalMaterialList [data-m="1"]');
     await expect(material.locator('.unitSelect')).toHaveValue('PCS');
     await material.locator('.newMaterial').click();
     await expect(page.locator('#cbMaterialModal')).toBeVisible();
@@ -87,8 +87,8 @@ test('deployed Unit dropdown, creation, Material persistence, CB mirror and Work
     // A fresh CB projection reads the linked category and allows an authorized Unit override.
     await page.goto('/real-cb-new-v9130-fix2.html?mode=TEST&v=610');
     await expect(page.locator('#bootMsg')).toBeHidden({ timeout: 30_000 });
-    await page.locator('#addMaterial').click();
-    const freshMaterial = page.locator('#materialList [data-m="1"]');
+    await page.locator('#additionalMaterialList .addNextMaterial').click();
+    const freshMaterial = page.locator('#additionalMaterialList [data-m="1"]');
     await freshMaterial.locator('.cat').selectOption({ label: materialName });
     await expect(freshMaterial.locator('.unitSelect')).toHaveValue(unitCode);
     await freshMaterial.locator('.reqState').selectOption('DUE');

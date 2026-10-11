@@ -319,7 +319,7 @@ test('Roll 1 Qty 120, Rate 365 and Value 43800 survive repeated Draft Save witho
   });
 });
 
-test('deployed mobile hydration and sticky-footer invariants are exact', async ({ page }) => {
+test('deployed mobile hydration and document-flow save actions remain unobstructed', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/real-cb-new-v9130-fix2.html?mode=TEST&v=608');
   await page.waitForFunction(() => Boolean(window.__CB_DEPARTMENT_TEST__));
@@ -356,17 +356,18 @@ test('deployed mobile hydration and sticky-footer invariants are exact', async (
   const layout = await page.evaluate(() => {
     const message = document.querySelector('#msg').getBoundingClientRect();
     const footer = document.querySelector('.actions').getBoundingClientRect();
-    const main = getComputedStyle(document.querySelector('main'));
+    const actions = getComputedStyle(document.querySelector('.actions'));
     return {
       messageBottom: message.bottom,
       footerTop: footer.top,
-      mainPaddingBottom: parseFloat(main.paddingBottom),
+      actionsPosition: actions.position,
       bodyWidth: document.body.scrollWidth,
       viewportWidth: document.documentElement.clientWidth
     };
   });
   expect(layout.messageBottom).toBeLessThan(layout.footerTop - 4);
-  expect(layout.mainPaddingBottom).toBeGreaterThan(120);
+  // Save actions now follow the form in normal flow; they cannot cover its fields.
+  expect(layout.actionsPosition).toBe('static');
   expect(layout.bodyWidth).toBeLessThanOrEqual(layout.viewportWidth + 2);
 });
 
