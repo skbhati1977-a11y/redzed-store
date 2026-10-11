@@ -67,3 +67,31 @@ test('CLOSE card expansion survives canonical and auxiliary refresh rerenders', 
   assert.match(chat,/function restoreExpandedClosedCards\(keys\)/);
   assert.match(chat,/const expandedClosed=expandedClosedCardKeys\(\);[\s\S]*?restoreExpandedClosedCards\(expandedClosed\)/);
 });
+
+
+test('empty-state observer preserves MC1 purchase form and stock cards', () => {
+  const { JSDOM } = require('jsdom');
+  for (const html of [
+    '<article class="mcv504-card" data-mc-draft><select data-mc-fabric><option>Fabric</option></select></article>',
+    '<article class="mcv504-card">LOT CONSUMPTION</article>',
+    '<article class="mcv504-card">CLOSING STOCK</article>'
+  ]) {
+    const dom = new JSDOM('<div id="messages">'+html+'</div>');
+    const box = dom.window.document.getElementById('messages');
+    const scope = { $: id => dom.window.document.getElementById(id), S:{status:'OPEN'}, emptyStateV705:()=>'<div class="rr-empty-v705">No cards</div>' };
+    installFunctions(chat, scope, ['ensureEmptyStateV708']);
+    const before = box.innerHTML;
+    scope.ensureEmptyStateV708();
+    assert.equal(box.innerHTML, before);
+    dom.window.close();
+  }
+});
+test('empty-state observer still repairs a genuinely empty feed', () => {
+  const { JSDOM } = require('jsdom');
+  const dom = new JSDOM('<div id="messages"></div>');
+  const scope = { $:id=>dom.window.document.getElementById(id), S:{status:'OPEN'}, emptyStateV705:()=>'<div class="rr-empty-v705">No cards</div>' };
+  installFunctions(chat, scope, ['ensureEmptyStateV708']);
+  scope.ensureEmptyStateV708();
+  assert.equal(dom.window.document.querySelector('.rr-empty-v705').textContent, 'No cards');
+  dom.window.close();
+});
