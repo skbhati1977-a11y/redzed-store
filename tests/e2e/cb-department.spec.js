@@ -217,8 +217,9 @@ test('the seven read-only evidence CBs no longer remain in CB WORKING and mobile
   await expect(page.locator('#chatName')).toContainText('CB Department', { timeout: 30_000 });
   const card = page.locator('details.closed-row[data-cb-no="1002"]');
   await expect(card).toBeVisible();
-  await expect(card).toContainText('CB Status CLOSE');
-  await expect(card).toContainText('Cutting Status READY FOR CUTTING');
+  await expect(card.locator('.closed-main')).toContainText('✓ CB 1002');
+  await expect(card.locator('.grid > span').filter({ hasText: /^Art / })).toContainText('COMPLETE');
+  await expect(card.locator('.grid > span').filter({ hasText: /^Cutting / })).toContainText('READY');
   await expect(page.locator('#workFilters')).toBeHidden();
   const width = await page.evaluate(() => ({ body: document.body.scrollWidth, viewport: document.documentElement.clientWidth }));
   expect(width.body).toBeLessThanOrEqual(width.viewport + 2);
@@ -232,8 +233,9 @@ test('retired mobile Art link opens the exact canonical CB planning screen', asy
     await page.goto(`/real-art-decide-master.html?mode=TEST&cb_unit_id=${encodeURIComponent(fixture.data.art_due_unit_id)}&v=619`);
     await expect(page).toHaveURL(new RegExp(`real-cb-new-v9130-fix2\\.html.*cb_id=${fixture.data.cb_id}`));
     await expect(page.locator('#bootMsg')).toContainText('CB review confirmed', { timeout: 30_000 });
-    await expect(page.locator('#setDecisionCard .canonicalSetArt').first()).toBeVisible();
-    await expect(page.locator('#setDecisionCard .profile-card')).toHaveCount(2);
+    await expect(page.locator('#artMaterialPlanState')).toBeVisible();
+    await expect(page.locator('#artMaterialPlanState')).toHaveValue('PENDING');
+    await expect(page.locator('#setDecisionList')).toContainText('Art & Material Decision PENDING');
     const layout = await page.evaluate(() => ({
       body: document.body.scrollWidth,
       viewport: document.documentElement.clientWidth
@@ -459,7 +461,9 @@ test('mobile Cutting App opens exact isolated Art child and Ready child remains 
     await artAction.click();
     await expect(page).toHaveURL(new RegExp(`real-cb-new-v9130-fix2\\.html.*cb_id=${fixture.data.cb_id}`));
     await expect(page.locator('#bootMsg')).toContainText('CB review confirmed', { timeout: 30_000 });
-    await expect(page.locator('#setDecisionCard .canonicalSetArt').first()).toBeVisible();
+    await expect(page.locator('#artMaterialPlanState')).toBeVisible();
+    await expect(page.locator('#artMaterialPlanState')).toHaveValue('PENDING');
+    await expect(page.locator('#setDecisionList')).toContainText('Art & Material Decision PENDING');
 
     await page.goto(`/real-cutting-master.html?mode=TEST&cb_unit_id=${encodeURIComponent(ready)}&v=619`);
     await expect(page.locator('#lotSheet')).not.toHaveClass(/cm-hidden/, { timeout: 30_000 });
