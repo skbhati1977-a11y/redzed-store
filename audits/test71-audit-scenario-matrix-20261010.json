@@ -1,17 +1,17 @@
 {
   "metadata": {
     "scope": "Accounts wiring across manufacturing/trading/attendance/payroll/opening/isolation; NOT universal completion certificate",
-    "head": "ecaf01f7 + local continuation changes",
-    "date": "2026-10-10 Asia/Kolkata",
+    "head": "6def397 + targeted continuation",
+    "date": "2026-10-11 Asia/Kolkata",
     "cases": 132,
     "status_counts": {
-      "PASS": 85,
-      "FAIL": 23,
+      "PASS": 89,
+      "FAIL": 19,
       "BLOCKED": 5,
       "NOT_RUN": 19
     },
     "completed_unblocked": false,
-    "phase": "Critical fixes partially verified in TEST; GitHub push rejected by automatic approval review; no full clean chit"
+    "phase": "Targeted fixes deployed to TEST; existing Ci logical archive and universal opening/workflow verification pending; no clean chit"
   },
   "cases": [
     {
@@ -321,10 +321,15 @@
       "feature": "Purchase general Accounts",
       "scenario": "Fresh purchase through current writer",
       "expected": "Supplier+purchase journal",
-      "actual": "Accounts source transactions0",
-      "status": "FAIL",
-      "evidence": "audits/test71-sql-runtime-evidence-20261010.json",
-      "evidence_type": "SQL rollback"
+      "actual": "Fresh protected MC1 master purchase now creates TEST mode tag and balanced supplier/purchase Accounts journal atomically; retry produces one purchase/journal; changed request payload denied.",
+      "status": "PASS",
+      "evidence": "tests/evidence/test71-matching-accounts-20261011.sql",
+      "evidence_type": "SQL rollback",
+      "previous_result": {
+        "status": "FAIL",
+        "actual": "Accounts source transactions0",
+        "evidence": "audits/test71-sql-runtime-evidence-20261010.json"
+      }
     },
     {
       "id": "A025",
@@ -570,10 +575,15 @@
       "feature": "Approved day authority mapping",
       "scenario": "Save v778 then count v777 days",
       "expected": "Authoritative monthly day updated",
-      "actual": "v777 delta0",
-      "status": "FAIL",
-      "evidence": "audits/test71-sql-runtime-evidence-20261010.json",
-      "evidence_type": "SQL rollback"
+      "actual": "Audited manual V778 save now creates/updates canonical V777 day; incomplete correction remains pending without final deduction; rollback delta1.",
+      "status": "PASS",
+      "evidence": "tests/evidence/test71-manual-payroll-coverage-20261011.sql",
+      "evidence_type": "SQL rollback",
+      "previous_result": {
+        "status": "FAIL",
+        "actual": "v777 delta0",
+        "evidence": "audits/test71-sql-runtime-evidence-20261010.json"
+      }
     },
     {
       "id": "A044",
@@ -633,10 +643,15 @@
       "feature": "Complete month gate",
       "scenario": "Inspect safe generation coverage predicate",
       "expected": "Every expected active day resolved",
-      "actual": "Approved day count>0; full coverage gate not found",
-      "status": "FAIL",
-      "evidence": "audits/test71-universal-accounts-mapping-20261010.md",
-      "evidence_type": "DB definition"
+      "actual": "TEST base generator now validates every active date; unresolved one-day month denied; complete month and fixed-30 partial active period passed.",
+      "status": "PASS",
+      "evidence": "tests/evidence/test71-manual-payroll-coverage-20261011.sql",
+      "evidence_type": "SQL rollback",
+      "previous_result": {
+        "status": "FAIL",
+        "actual": "Approved day count>0; full coverage gate not found",
+        "evidence": "audits/test71-universal-accounts-mapping-20261010.md"
+      }
     },
     {
       "id": "A049",
@@ -677,10 +692,15 @@
       "feature": "Changed payload conflict",
       "scenario": "Same ref qty10/value20 then15/30",
       "expected": "Reject conflict, expose original payload",
-      "actual": "ok duplicate_blocked; no conflict check",
-      "status": "FAIL",
-      "evidence": "audits/test71-sql-runtime-evidence-20261010.json",
-      "evidence_type": "SQL rollback"
+      "actual": "Opening exact retry preserves original source; changed quantity/value/date rejected under the same reference.",
+      "status": "PASS",
+      "evidence": "tests/evidence/test71-opening-payload-conflict-20261011.sql",
+      "evidence_type": "SQL rollback",
+      "previous_result": {
+        "status": "FAIL",
+        "actual": "ok duplicate_blocked; no conflict check",
+        "evidence": "audits/test71-sql-runtime-evidence-20261010.json"
+      }
     },
     {
       "id": "A053",
