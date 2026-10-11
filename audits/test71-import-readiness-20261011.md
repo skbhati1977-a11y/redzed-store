@@ -34,6 +34,13 @@ Partial-month salaried pay uses fixed 30-day basis. HALF_DAY uses actual punch h
 - The TEST salary management board now reports resolved/required active days and blocks unknown-history legacy generation. One approved day stays WAITING_FOR_ATTENDANCE (1/30); full resolved coverage is READY_TO_GENERATE. Existing historical records remain intact.
 - Signed-in Owner browser on READY preview 34c5c939d99a6ccbb9f5e316c422c4745903bacb rendered October 1–11 only, with October 11 PENDING and no future absence rows; annual calendar rendered all seven selected paid holidays. This supersedes the old future-day browser blocker. Current payroll coverage UI changes are newer than that preview and need redeployment.
 
+## Verified continuation: approved advance recovery and Accounts OPEN
+- Protected V785 TEST salary posting now routes through V786 and the canonical attendance-derived earned amount. Missing attendance is pending per worker, with null earned/payable amounts rather than guessed pay. Unselected workers are not accrued or recovered.
+- Approved September salary test: ₹15,000 accrual, ₹100 dedicated advance recovery, ₹14,900 cash payment; salary payable and advance balance both clear. Full audited TEST batch reversal restores the advance to ₹100 and salary balance to zero; duplicate reversal is rejected. Five rollback assertions passed.
+- Finalized V779 salary cannot be paid through alternate V785/V786 salary routes. Nineteen monthly-source/payment rollback assertions passed. Legacy V782/V782_2 TEST bulk writers are retired; REAL behavior remains as before. Nonzero opening monthly settlements are blocked until approved due allocation exists.
+- Accounts OPEN now includes canonical outstanding bills, individual salary dues, finalized mapped monthly salary settlements and TEST Committee dues. Five rollback assertions prove all pending bills, explicit modes, no TEST Committee leakage to REAL, invalid-mode rejection and anonymous rejection. This does not certify every untagged claim or source pipeline.
+- Accounts action UI syntax passed. Changes are committed only to TEST71 and require the next preview deployment.
+
 ## Remaining import blockers
 
 1. Implement and verify the selected old-fixture archive boundary in this same database, including readers and aggregated stock/balances, not merely a new label or URL.
