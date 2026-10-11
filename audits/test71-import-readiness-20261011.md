@@ -20,6 +20,16 @@ Partial-month salaried pay uses fixed 30-day basis. HALF_DAY uses actual punch h
 - New MC1 client routing/retry and syntax checks passed. Preview commit 6def39720bf4446145c61019b91ee4f30451a915 is READY at https://redzed-test65-djuijrqp9-skbhati1977-4414.vercel.app . Deployed MC1 JS and financial helper exactly match source. HTML source matches before Vercel's appended feedback script.
 - Fresh invariant check: unbalanced posted journals 0; duplicate active source mappings 0; rollback advance assets/purchases/manual attendance rows 0. No new business import was performed.
 
+## Further verified continuation: salary board and accrual
+- TEST earned-to-cutoff calculation now uses approved resolved canonical V777 attendance and the existing monthly calculator. Actual HALF_DAY, full-month and fixed-30 partial-month amounts match monthly payroll in rollback tests. Missing/unresolved active days block provisional payment rather than inventing an absence or full pay.
+- Safe V779_5 generation classifies departed TEST salaried workers at their last active day in the month. A September 15–25 active interval generates 11/30 salary and matches the earned board.
+- New TEST MONTHLY_SALARY_DUE entries now atomically create Salary Expense debit / worker payable credit. Negative MONTHLY_FINAL_ADJUSTMENT posts worker payable debit / Salary Expense credit. The existing active EXP_MONTHLY_SALARY ledger was verified before mapping.
+- Journaled accrual amount/source/mode edits are rejected. POSTED → VOID reverses the Accounts source; void reactivation is rejected. Historical dues were not backfilled.
+- Individual salary, Committee and material protected-request rollback evidence replayed successfully after the accrual trigger. Fresh unbalanced posted journals: 0; persisted rollback accrual/manual attendance rows: 0.
+- New accrual trigger is private (anon and authenticated direct EXECUTE false). Existing earned/safe-generation RPCs retain guarded authenticated access and anon EXECUTE false. Security advisors were fetched; existing project-wide notices remain outside this targeted proof.
+- Evidence: tests/evidence/test71-salary-earned-canonical-20261011.sql and tests/evidence/test71-salary-accrual-accounts-20261011.sql.
+- Boundary: V779 finalization/settlement still does not create the unified salary ledger accrual, and its old amount-only payment RPC remains a separate pipeline. V785 approved-run target uses V778 sources. This continuation is not a full accrual → claims/advance recovery → payment → reversal certificate.
+
 ## Remaining import blockers
 
 1. Implement and verify the selected old-fixture archive boundary in this same database, including readers and aggregated stock/balances, not merely a new label or URL.
