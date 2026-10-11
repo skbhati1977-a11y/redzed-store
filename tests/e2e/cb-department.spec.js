@@ -224,22 +224,19 @@ test('the seven read-only evidence CBs no longer remain in CB WORKING and mobile
   expect(width.body).toBeLessThanOrEqual(width.viewport + 2);
 });
 
-test('deployed mobile Art picker retains image/no-name records on an isolated canonical fixture', async ({ page }, testInfo) => {
+test('retired mobile Art link opens the exact canonical CB planning screen', async ({ page }, testInfo) => {
   const fixture = await setupCbUiFixture(page, 'art-picker', testInfo);
   try {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto(`/real-art-decide-master.html?mode=TEST&cb_unit_id=${encodeURIComponent(fixture.data.art_due_unit_id)}&v=619`);
-    await expect(page.locator('#decisionSheet')).not.toHaveClass(/hidden/, { timeout: 30_000 });
-    await expect(page.locator('#picker .pick').first()).toBeVisible();
-    await expect(page.locator('#picker .pick-media').first()).toBeVisible();
+    await expect(page).toHaveURL(new RegExp(`real-cb-new-v9130-fix2\\.html.*cb_id=${fixture.data.cb_id}`));
+    await expect(page.locator('#bootMsg')).toBeHidden({ timeout: 30_000 });
+    await expect(page.locator('#setDecisionCard .canonicalSetArt').first()).toBeVisible();
+    await expect(page.locator('#setDecisionCard .profile-card')).toHaveCount(2);
     const layout = await page.evaluate(() => ({
       body: document.body.scrollWidth,
-      viewport: document.documentElement.clientWidth,
-      namedFallbacks: [...document.querySelectorAll('#picker .pick small')]
-        .filter((node) => node.textContent.trim() === 'No Name').length,
-      rows: document.querySelectorAll('#picker .pick').length
+      viewport: document.documentElement.clientWidth
     }));
-    expect(layout.rows).toBeGreaterThan(0);
     expect(layout.body).toBeLessThanOrEqual(layout.viewport + 2);
   } finally {
     if (!page.isClosed()) await retireCbUiFixture(page, fixture.key);
@@ -455,11 +452,12 @@ test('mobile Cutting App opens exact isolated Art child and Ready child remains 
   try {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto(`/real-cutting-master.html?mode=TEST&cb_unit_id=${encodeURIComponent(artDue)}&v=619`);
-    const artAction = page.locator(`[data-art-decision="${artDue}"]`);
+    const artAction = page.locator(`[data-cb-combo="${fixture.data.cb_id}"]`);
     await expect(artAction).toBeVisible({ timeout: 30_000 });
     await artAction.click();
-    await expect(page).toHaveURL(new RegExp(`real-art-decide-master\\.html.*cb_unit_id=${artDue}`));
-    await expect(page.locator('#decisionSheet')).not.toHaveClass(/hidden/, { timeout: 30_000 });
+    await expect(page).toHaveURL(new RegExp(`real-cb-new-v9130-fix2\\.html.*cb_id=${fixture.data.cb_id}`));
+    await expect(page.locator('#bootMsg')).toBeHidden({ timeout: 30_000 });
+    await expect(page.locator('#setDecisionCard .canonicalSetArt').first()).toBeVisible();
 
     await page.goto(`/real-cutting-master.html?mode=TEST&cb_unit_id=${encodeURIComponent(ready)}&v=619`);
     await expect(page.locator('#lotSheet')).not.toHaveClass(/cm-hidden/, { timeout: 30_000 });
