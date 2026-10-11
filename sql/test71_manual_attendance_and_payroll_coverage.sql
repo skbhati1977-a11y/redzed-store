@@ -65,6 +65,8 @@ BEGIN
  SELECT * INTO p FROM public.rr_active_payroll_profile_v778_2(NEW.worker_id,NEW.business_date,'TEST');
  IF p.profile_id IS NULL OR p.worker_category<>'SALARIED' THEN RETURN NEW;END IF;
  IF NEW.business_date>(now() AT TIME ZONE 'Asia/Kolkata')::date THEN RAISE EXCEPTION 'Future attendance blocked.';END IF;
+ PERFORM pg_advisory_xact_lock(hashtextextended('ATT_PAY_TEST71|'||NEW.worker_id::text||'|'||date_trunc('month',NEW.business_date)::date::text,0));
+ IF EXISTS(SELECT 1 FROM public.rr_monthly_payroll_v779_1 r WHERE r.worker_id=NEW.worker_id AND r.payroll_month=date_trunc('month',NEW.business_date)::date AND r.data_mode='TEST' AND r.payroll_status IN('POSTED','FINAL','PAID')) THEN RAISE EXCEPTION 'Final payroll attendance is locked.';END IF;
  IF EXISTS(SELECT 1 FROM public.rr_payroll_runs_v778 r JOIN public.rr_payroll_run_lines_v778 l ON l.payroll_run_id=r.id
   WHERE l.worker_id=NEW.worker_id AND r.data_mode='TEST' AND NEW.business_date BETWEEN r.period_month AND r.period_end AND r.status IN ('APPROVED','PAID')) THEN RAISE EXCEPTION 'Approved payroll attendance is locked.';END IF;
  SELECT * INTO s FROM public.rr_shift_master_v777_2 WHERE shift_id=p.shift_id;
@@ -101,7 +103,7 @@ BEGIN
  net_working_minutes=excluded.net_working_minutes,updated_at=now();
  RETURN NEW;
 END $function$
-
+;
 CREATE OR REPLACE FUNCTION public.rr_generate_worker_monthly_payroll_v779_1(p_worker_id uuid, p_payroll_month date, p_data_mode text DEFAULT 'TEST'::text, p_reason text DEFAULT NULL::text)
  RETURNS jsonb
  LANGUAGE plpgsql
