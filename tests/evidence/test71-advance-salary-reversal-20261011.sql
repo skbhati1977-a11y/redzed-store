@@ -33,6 +33,9 @@ IF actual<>100 THEN RAISE EXCEPTION 'Reversal advance incorrect %',actual;END IF
 SELECT coalesce(sum(balance_effect),0) INTO actual FROM public.rr_worker_salary_ledger_v781 WHERE worker_id=w AND data_mode='TEST' AND status='POSTED';
 IF actual<>0 THEN RAISE EXCEPTION 'Reversal salary balance incorrect %',actual;END IF;
 INSERT INTO advance_payroll_result VALUES('reversal_restores_advance_100_salary_zero','true');
+IF (SELECT count(*) FROM public.rr_account_mirror_lifecycle_v806 WHERE source_module IN('WORKER_ADVANCE_TEST71','WORKER_SALARY_PAYMENT_TEST71','WORKER_SALARY_ACCRUAL_TEST71') AND source_record_id IN(rec::text,cash_pay::text,due::text) AND action_type='REVERSE')<>3 THEN RAISE EXCEPTION 'Three financial sources not reversed atomically';END IF;
+IF EXISTS(SELECT 1 FROM public.rr_account_source_links_v806 WHERE source_record_id IN(rec::text,cash_pay::text,due::text) AND status='ACTIVE') THEN RAISE EXCEPTION 'Reversed source remains active';END IF;
+INSERT INTO advance_payroll_result VALUES('all_three_accounts_sources_audited_reversed','true');
 BEGIN
 PERFORM public.rr_salary_batch_reverse_test71(salary_batch,'Second reversal blocked');
 RAISE EXCEPTION 'Duplicate reversal unexpectedly accepted';
