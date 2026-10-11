@@ -19,7 +19,7 @@ test('Sales list uses server eligibility, preserves identity and locks TEST scop
  const calls=[];const context={chat_id:'chat-a',customer_id:'party-a',customer_name:'Party A',collection_cycle_id:'cycle-a',
  requirement_id:'req-a',collection_display_no:'COLLECTION 01',categories:['Round Neck'],sent_lots:['OLD'],can_send:true};
  const d=dom(source('real-web-window-v9329.html'),'https://example.test/real-web-window-v9329.html?from_chat=1&chat_id=chat-a&collection_cycle_id=cycle-a&append_requirement_id=req-a',
- async(name,args)=>{calls.push({name,args});if(name==='rr_sales_collection_cards_test71')return {context,rows:[{lot_no:'NEW',category:'Round Neck',available_qty:24,media:[]}]};if(name==='rr_market_window_colours_v1')return {};throw Error('Unexpected RPC '+name)});
+ async(name,args)=>{calls.push({name,args});if(name==='rr_sales_collection_cards_test71')return {context,rows:[{lot_no:'NEW',category:'Round Neck',sale_rate:100,available_qty:24,media:[]}]};if(name==='rr_market_window_colours_v1')return {};throw Error('Unexpected RPC '+name)});
  try{
   d.window.eval(source('real-sales-collection-contract-test71.js'));
   d.window.eval(source('real-web-window-v9329.js'));await tick();
@@ -39,7 +39,7 @@ test('Select & Send is one call on double tap and returns to the same collection
  const context={chat_id:'chat-a',customer_id:'party-a',customer_name:'Party A',collection_cycle_id:'cycle-a',
  requirement_id:'req-a',collection_display_no:'COLLECTION 01',categories:['Round Neck'],sent_lots:[],can_send:true};
  const d=dom(source('real-web-window-v9329.html'),'https://example.test/real-web-window-v9329.html?from_chat=1&chat_id=chat-a&collection_cycle_id=cycle-a&append_requirement_id=req-a',
- async(name,args)=>{calls.push({name,args});if(name==='rr_sales_collection_cards_test71')return {context,rows:[{lot_no:'NEW',available_qty:24,media:[]}]};if(name==='rr_sales_collection_context_test71')return context;if(name==='rr_market_window_colours_v1')return {};if(name==='rr_sales_collection_send_test71')return new Promise(ok=>resolveSend=ok);throw Error(name)});
+ async(name,args)=>{calls.push({name,args});if(name==='rr_sales_collection_cards_test71')return {context,rows:[{lot_no:'NEW',sale_rate:100,available_qty:24,media:[]}]};if(name==='rr_sales_collection_context_test71')return context;if(name==='rr_market_window_colours_v1')return {};if(name==='rr_sales_collection_send_test71')return new Promise(ok=>resolveSend=ok);throw Error(name)});
  try{
   d.window.eval(source('real-sales-collection-contract-test71.js'));d.window.eval(source('real-web-window-v9329.js'));
   d.window.eval(source('real-web-window-chat-share-v9507.js'));await tick();
@@ -72,11 +72,11 @@ test('Detail follow-up keeps explicit cycle, switching parties cannot reuse it',
   assert.equal(calls.at(-1).args.p_chat_id,'chat-b');assert.equal(calls.at(-1).args.p_collection_cycle_id,null);
  }finally{d.window.close()}
 });
-test('Customer reload shows saved requirement and submits changed, zero and excess quantities unchanged',async()=>{
+test('Customer reload clamps stale saved requirement and prevents excess stock on submit',async()=>{
  const calls=[];const rows=[{lot_no:'NEW',available_qty:100,sale_rate:100,media:[]},{lot_no:'OLD',available_qty:2,sale_rate:100,media:[]}];
  const d=dom('<div id="rrFSChat"><div class="fstabs"></div><div class="fsmsgs"></div><div class="fscomp"></div></div>',
  'https://example.test/s.html?t=token',
- async(name,args)=>{calls.push({name,args});if(name==='rr_market_share_view_v9420')return {rows};
+ async(name,args)=>{calls.push({name,args});if(name==='rr_collection_current_state_v9633')return {collection_status:'OPEN',latest_collection_token:'token',collection_cycle_id:'cycle-a'};if(name==='rr_collection_cycle_share_view_v9686')return {rows};if(name==='rr_customer_collection_hidden_items_test71')return {hidden_lots:[]};
  if(name==='rr_collection_customer_requirement_summary_v9637')return {lines:[{lot_no:'OLD',requested_qty:12}]};
  if(name==='rr_collection_submit_requirement_v9588')return {requirement_no:'REQ 01'};throw Error(name)});
  try{
@@ -84,13 +84,13 @@ test('Customer reload shows saved requirement and submits changed, zero and exce
   d.window.eval(source('real-customer-chat-collection-card-v9605.js'));
   await new Promise(r=>setTimeout(r,230));
   d.window.document.getElementById('fcOpen').click();await tick();
-  assert.equal(d.window.document.querySelector('[data-fcq="OLD"]').value,'12');
+  assert.equal(d.window.document.querySelector('[data-fcq="OLD"]').value,'2');
   d.window.document.querySelector('[data-fcq="OLD"]').value='0';
   d.window.document.querySelector('[data-fcq="NEW"]').value='120';
   d.window.document.getElementById('fcSubmit').click();await tick();
   const call=calls.find(x=>x.name==='rr_collection_submit_requirement_v9588');
   assert.equal(call.args.p_lines.find(x=>x.lot_no==='OLD').qty,0);
-  assert.equal(call.args.p_lines.find(x=>x.lot_no==='NEW').qty,120);
+  assert.equal(call.args.p_lines.find(x=>x.lot_no==='NEW').qty,100);
   assert.deepEqual(d.errors,[]);
  }finally{d.window.close()}
 });
@@ -109,7 +109,7 @@ test('Bulk internal collection send targets each party with its own eligible des
  if(name==='rr_market_create_share_v9420')return {token:'outside-only'};
  if(name==='rr_sales_collection_cards_test71')return {context:{customer_id:'party-'+args.p_chat_id,collection_cycle_id:'cycle-'+args.p_chat_id,requirement_id:'req-'+args.p_chat_id},
  rows:args.p_chat_id==='a'?[{lot_no:'NEW'}]:[{lot_no:'OLD'}]};
- if(name==='rr_sales_collection_send_test71')return {token:'own-token',collection_cycle_id:args.p_collection_cycle_id};
+ if(name==='rr_sales_collection_send_test71')return {token:'own-token',chat_message_id:'message-'+args.p_chat_id,collection_cycle_id:args.p_collection_cycle_id};
  throw Error('Unexpected RPC '+name)});
  try{
   d.window.eval(source('real-web-window-share-chooser-v9510.js'));await tick();

@@ -1,0 +1,9 @@
+<!doctype html><html lang="hi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Ci TEST Data Mapping</title>
+<style>body{margin:0;background:#07111c;color:#f1f5f9;font:16px system-ui}main{max-width:860px;margin:auto;padding:20px}input,button{font:inherit;padding:12px;border:1px solid #49627a;border-radius:9px;background:#112335;color:inherit;box-sizing:border-box}label{display:block;margin:18px 0}input{display:block;width:100%;margin-top:8px}button{cursor:pointer}button:disabled{opacity:.5;cursor:default}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#112335;padding:18px;border-radius:10px}.muted{color:#b3c5d5}a{color:#96ccff}</style></head><body><main>
+<a href="test70-cb-purchase-real-chat-pilot.html">← Real Chat</a><h1>Ci TEST Data Mapping</h1>
+<p>पहले source की mapping और findings जाँचें। Stock, balances और working cards में posting तब होगी जब archive और reconciliation checks पूरे होंगे।</p>
+<label>Source reference<input id="sourceRef" placeholder="Original file name / Google Sheet URL and tab" autocomplete="off"></label>
+<label>Mapped CSV or JSON<input id="sourceFile" type="file" accept=".csv,.json,text/csv,application/json"></label>
+<p class="muted">CSV columns: module, source_key, record_date, evidence_status, values_json, references_json. Dates: YYYY-MM-DD. Blank, zero और unknown अलग रखें।</p>
+<button id="stageSource" disabled>Save source for review</button><p id="state" role="status">Source चुनें।</p><pre id="report" hidden></pre>
+</main><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="config.js?v=887"></script><script src="real-common.js?v=887"></script><script src="test71-source-intake.js?v=TEST71_INTAKE_20261011"></script><script src="test71-import-preflight.js?v=TEST71_INTAKE_20261011"></script></body></html>

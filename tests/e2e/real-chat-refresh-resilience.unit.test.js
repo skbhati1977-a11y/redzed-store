@@ -8,7 +8,7 @@ test('Real Chat requests the canonical bounded history window', () => {
   const bridge = functionSource(chat, 'loadBridge');
   assert.match(bridge, /rr_real_chat_conversation_history_v83',\{p_limit:2000\}/);
   assert.doesNotMatch(bridge, /p_limit:5000/);
-  assert.ok(Number.parseInt(shell.match(/test70-real-chat-live-v70\.js\?v=([^"\s]+)/)?.[1],10) >= 633);
+  assert.match(shell,/test70-real-chat-live-v70\.js\?v=(?:TEST71_[A-Z0-9_]+|\d{3,})"/);
 });
 test('auxiliary projection timeouts cannot discard canonical CB cards', () => {
   assert.match(chat, /\.then\(cb=>projectCanonicalCbCards\(cb,status,seq\)\)/);
@@ -25,7 +25,8 @@ test('CB projection renders before slow history and skips unrelated production s
   const progressive = chat.indexOf('.then(cb=>projectCanonicalCbCards(cb,status,seq))');
   const bridge = chat.indexOf('await refreshBridgeProjection()');
   assert.ok(progressive >= 0 && bridge > progressive);
-  assert.equal((chat.match(/!\['COSTING','PURCHASE'\]\.includes\(String\(id\)\.toUpperCase\(\)\)/g) || []).length, 2);
+  assert.match(chat,/!\['COSTING','PURCHASE'\]\.includes\(String\(id\)\.toUpperCase\(\)\)/);
+  assert.match(chat,/!RR_PRODUCTION_DEPARTMENTS_V763\.has\(String\(id\)\.toUpperCase\(\)\)&&!\['FABRICATION','COSTING','PURCHASE'\]\.includes/);
 });
 test('history refresh is global and single-flight despite a navigation change', async () => {
   let finish, calls=0, applied=0;
@@ -44,7 +45,8 @@ test('instant frontend search does not wait on history or launch three competing
   assert.match(load,/bridgeNeeded=fast&&!search&&!S\.history\.length/);
   assert.doesNotMatch(load,/bridgeBarrier\.then\(\(\)=>loadSearchWork/);
   assert.doesNotMatch(load,/Promise\.all\(\["OPEN","WORKING","CLOSE"\]\.map/);
-  assert.equal((chat.match(/kind==='group'&&!S\.search&&\['WORKING','CLOSE'\]/g)||[]).length,2);
+  assert.match(chat,/kind==='group'&&!S\.search&&\(S\.status==='CLOSE'\|\|S\.status==='WORKING'&&!RR_PRODUCTION_DEPARTMENTS_V763\.has/);
+  assert.match(chat,/kind==='group'&&!S\.search&&\['WORKING','CLOSE'\]\.includes\(S\.status\)&&!RR_PRODUCTION_DEPARTMENTS_V763\.has/);
 });
 test('embedded action close restores same-card focus before and after refresh', async () => {
   const events=[], origin={active:{kind:'group',id:'PURCHASE'},status:'WORKING',scroll:50};

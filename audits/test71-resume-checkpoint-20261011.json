@@ -1,0 +1,32 @@
+{
+  "date": "2026-10-11",
+  "scope": "TEST71 resume from 100/113 screenshot; no universal sign-off",
+  "full_run": {
+    "file_count": 115,
+    "passed": 108,
+    "failed": 7
+  },
+  "subsequent_targeted_rerun": {
+    "passed_tests": 32,
+    "failed_tests": 0
+  },
+  "remaining_failed_files": [
+    "tests/e2e/cb-department.unit.test.js",
+    "tests/e2e/cutting-department-lifecycle.unit.test.js",
+    "tests/e2e/test71-cb-art-two-way-mapping.unit.test.js",
+    "tests/e2e/test71-cb-combo-unified.unit.test.js",
+    "tests/e2e/test71-universal-uppercase.unit.test.js"
+  ],
+  "database_read_only": {
+    "project": "hruartsemierwhtzonei",
+    "source_staging_batches": 0,
+    "source_staging_rows": 0
+  },
+  "import_clearance": false,
+  "remaining_import_gates": [
+    "Universal fixture archive reader/aggregate isolation",
+    "Approved opening GL and stock/WIP reconciliation from real source evidence",
+    "Independent role/mobile/concurrency and department lifecycle verification"
+  ],
+  "fix": "Browser source intake validates opening values, exact decimal GL totals and unique reference resolution; historical data preserved"
+}
