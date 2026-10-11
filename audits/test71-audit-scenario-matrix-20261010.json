@@ -5,8 +5,8 @@
     "date": "2026-10-11 Asia/Kolkata",
     "cases": 132,
     "status_counts": {
-      "PASS": 96,
-      "FAIL": 13,
+      "PASS": 97,
+      "FAIL": 12,
       "NOT_RUN": 19,
       "BLOCKED": 4
     },
@@ -700,7 +700,7 @@
       "feature": "Accrual-to-payment full end-to-end",
       "scenario": "Attend → approve → generate → pay → reverse",
       "expected": "Salary due, Accounts and report reconcile",
-      "actual": "Authoritative-day/payment bridges fail",
+      "actual": "Canonical salary attendance/accrual/payment/reversal and approved dedicated advance recovery now pass rollback tests. Claim allocation, broader report reconciliation and full browser journey remain incomplete.",
       "status": "BLOCKED",
       "evidence": "audits/test71-sql-runtime-evidence-20261010.json; audits/test71-universal-accounts-mapping-20261010.md",
       "evidence_type": "SQL rollback"
@@ -749,7 +749,7 @@
       "feature": "Missing history handling",
       "scenario": "Inspect evidence status model",
       "expected": "UNKNOWN/ZERO/N/A with approved baseline",
-      "actual": "Unified evidence/batch contract not found",
+      "actual": "Source staging explicit KNOWN/ZERO/UNKNOWN/NOT_APPLICABLE contract and10 rollback checks now implemented; approved universal active opening baseline still pending.",
       "status": "FAIL",
       "evidence": "audits/test71-universal-accounts-mapping-20261010.md",
       "evidence_type": "Schema/code audit"
@@ -980,10 +980,15 @@
       "feature": "Browser Working load",
       "scenario": "Open Working and settle",
       "expected": "Cards rendered without load error",
-      "actual": "Cards load नहीं हुए; later OPEN rendered",
-      "status": "FAIL",
-      "evidence": "audits/test71-browser-evidence-20261010.json",
-      "evidence_type": "Signed-in browser"
+      "actual": "Signed-in Owner browser: Cutting WORKING → STAFF → ALTER 6 shows six visible articles with no card-load error.",
+      "status": "PASS",
+      "evidence": "audits/test71-browser-continuation-20261011.json",
+      "evidence_type": "Signed-in browser",
+      "previous_observation": {
+        "status": "FAIL",
+        "actual": "Cards load नहीं हुए; later OPEN rendered",
+        "evidence": "audits/test71-browser-evidence-20261010.json"
+      }
     },
     {
       "id": "A076",
@@ -1046,9 +1051,9 @@
       "feature": "Complete source suite",
       "scenario": "Run108 files with bounded per-file timeout",
       "expected": "All applicable assertions pass",
-      "actual": "77 files pass,30 fail,1 timeout after2 correct-cwd reruns",
+      "actual": "Current bounded rerun: 110 files,83 pass,27 fail,0 timeouts. Saved source evidence; remaining assertions not waived.",
       "status": "FAIL",
-      "evidence": "audits/test71-source-suite-evidence-20261010.json",
+      "evidence": "audits/test71-source-suite-evidence-20261011.json",
       "evidence_type": "Node source contracts"
     },
     {
@@ -1057,9 +1062,9 @@
       "feature": "CI module coverage",
       "scenario": "Inspect workflow and SHA-run lookup",
       "expected": "Required module suites actually run",
-      "actual": "MC1/CB/material/checkpoint8 steps if:false; connector returned no PR-triggered runs (not all CI runs)",
+      "actual": "Four disabled suites enabled with --no-deps; GitHub push-triggered run38109959655 executed and failed required static tests before browser suites. CI is active; passing module execution still pending.",
       "status": "FAIL",
-      "evidence": ".github/workflows/test71-checkpoint0-e2e.yml",
+      "evidence": ".github/workflows/test71-checkpoint0-e2e.yml; GitHub Actions38109959655",
       "evidence_type": "Workflow/source audit"
     },
     {
