@@ -83,6 +83,12 @@ blocked:=false;
 begin perform public.rr_monthly_salary_payment_post_test71(pay.payroll_id,before_balance,current_date,'CASH','OVERPAY','rollback','TEST');exception when others then if sqlerrm not like '%exceeds%' then raise;end if;blocked:=true;end;
 if not blocked then raise exception 'Overpayment accepted';end if;
 insert into payroll_coverage_result values('monthly_overpayment_blocked','true');
+delete from public.rr_payroll_cash_bank_routes_test71 where data_mode='TEST' and payment_mode='BANK';
+blocked:=false;
+begin perform public.rr_monthly_salary_payment_post_test71(pay.payroll_id,1,current_date,'BANK','UNMAPPED-BANK','rollback','TEST');exception when others then if sqlerrm not like '%Approved Cash/Bank route required%' then raise;end if;blocked:=true;end;
+if not blocked or exists(select 1 from public.rr_worker_salary_ledger_v781 where due_entry_id=due_id and reference_no='UNMAPPED-BANK') or (select closing_balance from public.rr_worker_settlements_v777_2 where settlement_id=(select settlement_id from public.rr_monthly_payroll_v779_1 where payroll_id=pay.payroll_id))<>before_balance-10 then raise exception 'Unmapped Bank payment not atomic';end if;
+insert into payroll_coverage_result values('unmapped_bank_fails_payment_and_settlement_atomically','true');
+
 perform public.rr_worker_salary_payment_reverse_v781(paid_id,'Rollback reversal proof');
 if (select closing_balance from public.rr_worker_settlements_v777_2 where settlement_id=(select settlement_id from public.rr_monthly_payroll_v779_1 where payroll_id=pay.payroll_id))<>before_balance then raise exception 'Reversal did not restore settlement';end if;
 insert into payroll_coverage_result values('monthly_reversal_restores_settlement','true');
