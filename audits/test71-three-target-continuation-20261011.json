@@ -1,0 +1,60 @@
+{
+  "date": "2026-10-11 Asia/Kolkata",
+  "branch": "test71-real-chat-e2e-finalization",
+  "base_commit": "b5a2a0242dd61a9a967a426923cecffb60a3d416",
+  "parallel_workstreams": 3,
+  "full_clean_chit": false,
+  "business_import_cleared": false,
+  "production_main_changed": false,
+  "live_business_records_changed": 0,
+  "live_schema_changed": false,
+  "passed_mc1_cb_material_commercial_factory_receipt_replayed": false,
+  "targeted_new_tests": {
+    "pass": 27,
+    "fail": 0,
+    "opening": 12,
+    "isolation": 8,
+    "role_runner": 7,
+    "evidence_kind": "local synthetic/mocked behavior; not live financial approval"
+  },
+  "opening": {
+    "tool": "scripts/test71-opening-readiness.cjs",
+    "live_staging_batches": 0,
+    "status": "BLOCKED_SOURCE_INPUT",
+    "stock_wip_gl_reconciliation_implemented": true,
+    "business_approval_verified": false,
+    "evidence": "audits/test71-opening-readiness-continuation-20261011.md"
+  },
+  "isolation": {
+    "tool": "scripts/test71-isolation-plan.cjs",
+    "status": "BLOCKED_LIVE_ISOLATION",
+    "archive_activated": false,
+    "complete_live_readers_aggregates_verified": false,
+    "provenance_and_coverage_dry_run_implemented": true,
+    "evidence": "audits/test71-isolation-progress-20261011.md"
+  },
+  "roles": {
+    "tool": "scripts/test71-independent-role-financial.cjs",
+    "status": "BLOCKED_CREDENTIALS",
+    "independent_authenticated_sessions": 0,
+    "roles_blocked": 6,
+    "active_accounts_profile": false,
+    "evidence": "audits/test71-independent-role-financial-20261011.json"
+  },
+  "matrix_counts_unchanged": {
+    "PASS": 99,
+    "FAIL": 10,
+    "BLOCKED": 4,
+    "NOT_RUN": 19
+  },
+  "next_required_inputs": [
+    "Actual approved opening file, cutoff, source-version approval and master/ledger mappings",
+    "Verified old TEST row provenance; untagged records need reviewed classification",
+    "Dedicated TEST role login access via secure environment; approved active Accounts profile"
+  ],
+  "next_implementation": [
+    "TEST reader/aggregate/writer isolation across verified dependency inventory",
+    "Controlled approved opening posting and physical-to-GL reconciliation",
+    "Independent browser financial approval/payment/reversal journeys"
+  ]
+}

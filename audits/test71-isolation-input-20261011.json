@@ -1,0 +1,9 @@
+{
+  "data_mode": "TEST",
+  "rows": [],
+  "coverage": [],
+  "reader_inventory_complete": false,
+  "approved_opening_reconciled": false,
+  "preview_sha_verified": false,
+  "note": "Actual snapshot/restore, verified row provenance, complete reader and aggregate isolation evidence and approved opening bridge have not been supplied. Names/prefixes are not source evidence. Empty rows intentionally prevent speculative archive activation."
+}

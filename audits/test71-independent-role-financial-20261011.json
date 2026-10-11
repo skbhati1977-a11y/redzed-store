@@ -1,0 +1,76 @@
+{
+  "scope": "TEST read-only independent financial API authority; browser and business transaction journeys not certified",
+  "roles": [
+    {
+      "role": "WORKER",
+      "status": "BLOCKED",
+      "reason": "independent_role_credentials_missing"
+    },
+    {
+      "role": "LINE_MANAGER",
+      "status": "BLOCKED",
+      "reason": "independent_role_credentials_missing"
+    },
+    {
+      "role": "MANAGER",
+      "status": "BLOCKED",
+      "reason": "independent_role_credentials_missing"
+    },
+    {
+      "role": "ADMIN",
+      "status": "BLOCKED",
+      "reason": "independent_role_credentials_missing"
+    },
+    {
+      "role": "ACCOUNTS",
+      "status": "BLOCKED",
+      "reason": "independent_role_credentials_missing"
+    },
+    {
+      "role": "SALES",
+      "status": "BLOCKED",
+      "reason": "independent_role_credentials_missing"
+    }
+  ],
+  "full_clean_chit": false,
+  "date": "2026-10-11",
+  "unit_verification": {
+    "passed": 7,
+    "failed": 0,
+    "method": "mocked local unit tests; not live role evidence"
+  },
+  "live_execution": {
+    "authenticated_role_sessions": 0,
+    "network_requests": 0,
+    "reason": "All six role credential pairs absent from current environment"
+  },
+  "profile_inventory": {
+    "method": "fresh read-only database counts, no credentials queried",
+    "active_profiles": 35,
+    "distinct_roles": 11,
+    "active_accounts_profile": false,
+    "counts": {
+      "ADMIN": 1,
+      "CUTTING_MASTER": 2,
+      "LINE_MANAGER": 3,
+      "MANAGER": 1,
+      "OWNER": 1,
+      "PACKING_OPERATOR": 2,
+      "PRINTING_OPERATOR": 2,
+      "SALES": 2,
+      "STICKER_OPERATOR": 3,
+      "SUPER_ADMIN": 1,
+      "WORKER": 17
+    }
+  },
+  "remaining": [
+    "Provide existing dedicated TEST role login credentials through environment; do not paste secrets into chat",
+    "Accounts requires an approved active role profile; no account was created or existing role changed",
+    "Independent browser flows and financial write/reversal journeys remain not certified by this read-only runner"
+  ],
+  "live_contract_verification": {
+    "rpc_arguments": "Confirmed live pg_proc: trial_balance p_from_date,p_to_date,p_data_mode; accounts_home p_status,p_data_mode",
+    "identity": "Confirmed live function on_behalf/operator_user_id/effective_auth_user_id. Runner requires no impersonation and IDs matching Auth user. Different roles must use distinct authenticated IDs.",
+    "cutoff": "Current Asia/Kolkata date at run time"
+  }
+}

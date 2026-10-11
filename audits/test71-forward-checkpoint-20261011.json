@@ -62,5 +62,6 @@
     "costing_v657_result": null,
     "historical_mode": "UNTAGGED",
     "business_category_or_mode_backfilled": false
-  }
+  },
+  "three_target_continuation": "audits/test71-three-target-continuation-20261011.json"
 }

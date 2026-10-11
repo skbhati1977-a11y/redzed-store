@@ -1,0 +1,96 @@
+{
+  "schema_version": 1,
+  "data_mode": "TEST",
+  "operation": "DRY_RUN",
+  "manifest_sha256": "8eb10d9f6f5bfc7d221ceb39e09429df4291f944f8a1000f00e91047a08d05c0",
+  "selected_rows": [],
+  "counts": {
+    "selected": 0,
+    "explicit_test": 0,
+    "real": 0,
+    "ambiguous": 0,
+    "business_rows_staged": 0
+  },
+  "blockers": [
+    {
+      "code": "SNAPSHOT_REQUIRED",
+      "detail": "Supply a preserved snapshot reference and SHA-256."
+    },
+    {
+      "code": "RESTORE_UNVERIFIED",
+      "detail": "Supply the successful snapshot restore evidence."
+    },
+    {
+      "code": "EMPTY_MANIFEST",
+      "detail": "No explicit legacy rows selected."
+    },
+    {
+      "code": "COVERAGE_INCOMPLETE",
+      "detail": "masters"
+    },
+    {
+      "code": "COVERAGE_INCOMPLETE",
+      "detail": "cards"
+    },
+    {
+      "code": "COVERAGE_INCOMPLETE",
+      "detail": "stock"
+    },
+    {
+      "code": "COVERAGE_INCOMPLETE",
+      "detail": "balances"
+    },
+    {
+      "code": "COVERAGE_INCOMPLETE",
+      "detail": "reports"
+    },
+    {
+      "code": "COVERAGE_INCOMPLETE",
+      "detail": "payroll"
+    },
+    {
+      "code": "COVERAGE_INCOMPLETE",
+      "detail": "calendar"
+    },
+    {
+      "code": "COVERAGE_INCOMPLETE",
+      "detail": "notifications"
+    },
+    {
+      "code": "COVERAGE_INCOMPLETE",
+      "detail": "storage"
+    },
+    {
+      "code": "COVERAGE_INCOMPLETE",
+      "detail": "cache"
+    },
+    {
+      "code": "COVERAGE_INCOMPLETE",
+      "detail": "writers"
+    },
+    {
+      "code": "COVERAGE_INCOMPLETE",
+      "detail": "unique_keys"
+    },
+    {
+      "code": "COVERAGE_INCOMPLETE",
+      "detail": "rls"
+    },
+    {
+      "code": "READER_INVENTORY_UNVERIFIED",
+      "detail": "All direct readers, security-definer RPCs and aggregates must be reviewed."
+    },
+    {
+      "code": "OPENING_UNRECONCILED",
+      "detail": "Approved opening stock, WIP and ledger bridge is required."
+    },
+    {
+      "code": "PREVIEW_UNVERIFIED",
+      "detail": "Verify the exact TEST preview source artifact."
+    }
+  ],
+  "ready_for_review": false,
+  "archive_activated": false,
+  "business_records_changed": 0,
+  "warning": "Offline evidence validation only. A reviewer must verify the referenced evidence against live sources before any separate archive activation."
+}
