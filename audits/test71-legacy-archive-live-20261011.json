@@ -1,0 +1,31 @@
+{
+  "project_id": "hruartsemierwhtzonei",
+  "archive_schema": "legacy_archive_test71_20261011",
+  "capture_table_count": 657,
+  "captured_records": 43205,
+  "capture_method": "Private CTAS copies in seven REPEATABLE READ batches; each table source/copy count and sorted row-content MD5 matched within its batch.",
+  "cross_table_single_snapshot": false,
+  "excluded": "Six existing function-backup tables: live retained, not active business history. Auth credentials and storage blobs unchanged; app row references copied.",
+  "verification": {
+    "worker_directory_full_rows_unchanged": true,
+    "profiles_full_rows_unchanged": true,
+    "archive_public_anon_authenticated_service_role_grants": 0,
+    "archive_tables_without_rls": 0,
+    "security_advisors": "Private archive tables reported only expected INFO RLS with no policies; all client schema/table/function grants revoked."
+  },
+  "active_removal_completed": false,
+  "clearance_for_new_business_import": false,
+  "migration_versions": [
+    "20261011122656",
+    "20261011122943",
+    "20261011123201",
+    "20261011123612"
+  ],
+  "archive_prefix_correction": "Final batch initially rejected RRQ prefix atomically; capture allowlist corrected and batch37 verified. No partial failed batch retained.",
+  "production_main_git_unchanged": true,
+  "auxiliary_schemas": [
+    "rr_chat_notifications_test71",
+    "rr_collection_rules_test71",
+    "rr_customer_auth_test71"
+  ]
+}

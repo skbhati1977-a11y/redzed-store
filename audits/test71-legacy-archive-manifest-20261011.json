@@ -1,0 +1,4601 @@
+[
+  {
+    "table_name": "erp_lots",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:36:12.919584+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "products",
+    "archived_rows": 3,
+    "content_hash": "17a408d5870391b72aef5f3a72f18946",
+    "captured_at": "2026-10-11 12:36:12.930534+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "released_lot_mapping",
+    "archived_rows": 4,
+    "content_hash": "e04587c0c9560eab0d043436026393d4",
+    "captured_at": "2026-10-11 12:36:12.936205+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_access_class_aliases_v848_9b",
+    "archived_rows": 8,
+    "content_hash": "dcf797ffc6ab153892f55c1ab91f56d1",
+    "captured_at": "2026-10-11 12:27:04.1545+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_access_classes_v848_9b",
+    "archived_rows": 2,
+    "content_hash": "d3c2eeb10a119cc00dbc1bace7446782",
+    "captured_at": "2026-10-11 12:27:04.168606+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_accessory_execution_policy_v681",
+    "archived_rows": 8,
+    "content_hash": "226963bd0e1c0cca50386a72a5e272e7",
+    "captured_at": "2026-10-11 12:27:04.183646+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_accessory_lot_requirements_v804",
+    "archived_rows": 18,
+    "content_hash": "f354abb4e8881862d734d72e7cd1c73d",
+    "captured_at": "2026-10-11 12:27:04.221786+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_accessory_purchase_alert_state_v9160",
+    "archived_rows": 4,
+    "content_hash": "8ecef61ea646e918968e7eb2bb0bbbc7",
+    "captured_at": "2026-10-11 12:27:04.237824+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_accessory_purchase_ledger_v804",
+    "archived_rows": 13,
+    "content_hash": "a19667d59a5aafd10ec4883c992ebdc4",
+    "captured_at": "2026-10-11 12:27:04.251722+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_accessory_requirement_alerts_v685",
+    "archived_rows": 2,
+    "content_hash": "037331add426fcca1f2c5baf73dee7e9",
+    "captured_at": "2026-10-11 12:27:04.264463+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_accessory_requirement_push_outbox_v685",
+    "archived_rows": 2,
+    "content_hash": "da32d3f9391bf763b77c518f719fb722",
+    "captured_at": "2026-10-11 12:27:04.272459+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_account_advances_v500",
+    "archived_rows": 6,
+    "content_hash": "6ccd4e8b59e8fca4f9a22d9dc22be91c",
+    "captured_at": "2026-10-11 12:27:04.284233+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_account_allocations_v500",
+    "archived_rows": 97,
+    "content_hash": "c97d549792593afb8aedfbbd5dce0487",
+    "captured_at": "2026-10-11 12:27:04.304537+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_account_bills_v500",
+    "archived_rows": 165,
+    "content_hash": "e449b17ea9501fe01f5852d5c9e16ce1",
+    "captured_at": "2026-10-11 12:27:04.334921+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_account_book_hidden_pairs_v1",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:27:04.34155+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_account_categories_v805",
+    "archived_rows": 106,
+    "content_hash": "38f0d1dd94a6ef9d595aa52642eeb827",
+    "captured_at": "2026-10-11 12:27:04.363293+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_account_category_headers_v819",
+    "archived_rows": 65,
+    "content_hash": "72176f58d7f809b5cc2081c07808c4f2",
+    "captured_at": "2026-10-11 12:27:04.37276+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_account_flow_field_map_v806",
+    "archived_rows": 6,
+    "content_hash": "f1055378a41f6d60a1334969327e15e4",
+    "captured_at": "2026-10-11 12:27:04.382401+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_account_groups_v805",
+    "archived_rows": 9,
+    "content_hash": "f223ddd89ac96a0ca9e9a5914eed3984",
+    "captured_at": "2026-10-11 12:27:04.403225+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_account_mirror_lifecycle_v806",
+    "archived_rows": 25,
+    "content_hash": "baec9abde01b6ae79fd92a71a2b6e53b",
+    "captured_at": "2026-10-11 12:27:04.422097+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_account_postings_v805",
+    "archived_rows": 904,
+    "content_hash": "a279cc7b5e6f73970615306c4e5c5c4c",
+    "captured_at": "2026-10-11 12:27:04.518004+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_account_report_map_v806",
+    "archived_rows": 65,
+    "content_hash": "b67e7eda718ed96e231fe8fe41252e79",
+    "captured_at": "2026-10-11 12:27:04.528374+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_account_source_links_v806",
+    "archived_rows": 273,
+    "content_hash": "e1126f06aca3a1aaee0b0fef505e493e",
+    "captured_at": "2026-10-11 12:27:04.562615+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_account_transactions_v805",
+    "archived_rows": 414,
+    "content_hash": "5e78fc624e3e1e43f31910c7f0471210",
+    "captured_at": "2026-10-11 12:27:04.60593+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_accounts_test_cycle_v846_1",
+    "archived_rows": 7,
+    "content_hash": "5d9652e13f499af14c690799c5046d9a",
+    "captured_at": "2026-10-11 12:27:04.614879+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_accounts_voucher_sequence_v847",
+    "archived_rows": 12,
+    "content_hash": "2eba7803a1203b6879b6715b91740ecf",
+    "captured_at": "2026-10-11 12:27:04.62165+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_accounts_voucher_test_v847_2",
+    "archived_rows": 8,
+    "content_hash": "d21b58c8aba1a253f3635834aad31e20",
+    "captured_at": "2026-10-11 12:27:04.628605+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_accounts_work_item_v500",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:27:04.63661+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_action_items",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:27:04.642697+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_action_master_v1",
+    "archived_rows": 39,
+    "content_hash": "3f2a1fd7e3c2184104e329506ac50a83",
+    "captured_at": "2026-10-11 12:27:04.649431+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_advance_payment_batch_lines_v785",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:27:04.65629+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_advance_payment_batches_v785",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:27:04.66538+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_app_data_mode_audit_v786",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:27:04.678787+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_app_data_mode_control_v786",
+    "archived_rows": 1,
+    "content_hash": "53a8c38f210b8ed253a9c442b07212b3",
+    "captured_at": "2026-10-11 12:27:04.685395+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_art_caption_links",
+    "archived_rows": 7,
+    "content_hash": "224565f2d456c7d7d5f7ef66ac9c7e89",
+    "captured_at": "2026-10-11 12:27:04.693796+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_art_categories",
+    "archived_rows": 9,
+    "content_hash": "2aaa6e7fae3a58f4aae6a7f0a3b08512",
+    "captured_at": "2026-10-11 12:27:04.700834+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_art_category_costs",
+    "archived_rows": 40,
+    "content_hash": "56cccc1ab71da1593f24dd9900b37c8b",
+    "captured_at": "2026-10-11 12:27:04.709418+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_art_category_crafts",
+    "archived_rows": 16,
+    "content_hash": "be134fed2494da53480f0129fbb65c09",
+    "captured_at": "2026-10-11 12:27:04.716105+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_art_costs",
+    "archived_rows": 4,
+    "content_hash": "8207c3edd3ee1281c19ba471ba050ae3",
+    "captured_at": "2026-10-11 12:27:04.725175+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_art_department_override_v753",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:27:04.732691+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_art_master_core_v402",
+    "archived_rows": 14,
+    "content_hash": "d3af40ebea51d4769d62075ead553635",
+    "captured_at": "2026-10-11 12:27:04.745506+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_art_metal_id_instructions_v801",
+    "archived_rows": 3,
+    "content_hash": "c301826cfdf4d92a0e33e4d93b4754e7",
+    "captured_at": "2026-10-11 12:27:04.754045+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_art_print_instructions",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:27:04.760005+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_art_process_costs",
+    "archived_rows": 90,
+    "content_hash": "db2a52c3c33070883b32395ca936a100",
+    "captured_at": "2026-10-11 12:27:04.771267+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_art_sticker_instructions",
+    "archived_rows": 5,
+    "content_hash": "1a97ae4573407c7caac92e68a80000fe",
+    "captured_at": "2026-10-11 12:27:04.77632+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_attendance_audit_v778",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:27:04.787465+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_attendance_checkout_violations_v778_2",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:27:04.796998+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_attendance_corrections_v778_2",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:27:04.80152+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_attendance_daily_minutes_v778_2",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:27:04.808891+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_attendance_day_v777_2",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:27:04.818374+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_attendance_day_v778",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:27:04.822489+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_attendance_events_v777_2",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:27:04.831418+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_attendance_geofence_audit_v778_1",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:27:04.837375+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_attendance_premises_v778_1",
+    "archived_rows": 2,
+    "content_hash": "c5339e95efb4786161db602e43f59826",
+    "captured_at": "2026-10-11 12:27:04.847518+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_attendance_presence_checks_test71",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:27:04.856919+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_attendance_reminder_state_v778_2",
+    "archived_rows": 14,
+    "content_hash": "210cde005c70c736841e572b270f00ec",
+    "captured_at": "2026-10-11 12:27:04.862778+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_attendance_video_evidence_v778_2",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:27:04.872521+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_boxes",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:27:04.880203+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_bundle_settings",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:27:04.883008+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_business_income_v850",
+    "archived_rows": 1,
+    "content_hash": "872df81f9bf81932588423662b8ca377",
+    "captured_at": "2026-10-11 12:27:04.891288+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_buyers_v787",
+    "archived_rows": 18,
+    "content_hash": "d9b99aed81924eebb038087c183cc4f2",
+    "captured_at": "2026-10-11 12:27:04.896949+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_caption_library",
+    "archived_rows": 56,
+    "content_hash": "2f164d1f244844461bc0f7dc57cad34a",
+    "captured_at": "2026-10-11 12:27:04.909301+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_category_department_map_v753",
+    "archived_rows": 3,
+    "content_hash": "f1101ab447083e95eaf89611037ab65e",
+    "captured_at": "2026-10-11 12:27:04.915579+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_cb_added_material_consumption_v650",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:27:04.919587+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_cb_art_assignments",
+    "archived_rows": 215,
+    "content_hash": "4ce459d7489d52bfd952c5cf3e2a6190",
+    "captured_at": "2026-10-11 12:27:04.938878+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_cb_category_construction_defaults_v1",
+    "archived_rows": 9,
+    "content_hash": "a4a95039a1c8cfeccb75b83ff0be50a1",
+    "captured_at": "2026-10-11 12:27:04.944268+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_cb_colours",
+    "archived_rows": 151,
+    "content_hash": "886b0cda78b84d073ad949dc3c20d9e5",
+    "captured_at": "2026-10-11 12:27:04.978466+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_cb_construction_defaults_v1",
+    "archived_rows": 1,
+    "content_hash": "07ac6e79a31cd27d5225a54797cf0ccb",
+    "captured_at": "2026-10-11 12:27:04.985535+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_cb_costing",
+    "archived_rows": 3,
+    "content_hash": "8b3538109d353cd4c1b3a09d13e3aaa1",
+    "captured_at": "2026-10-11 12:27:04.990997+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_cb_department_audit_v600",
+    "archived_rows": 142,
+    "content_hash": "5cfd7f7cb4e54a8aa0b7ebbf7fd60c62",
+    "captured_at": "2026-10-11 12:27:05.011784+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_cb_derived_requirement_v1",
+    "archived_rows": 34,
+    "content_hash": "3941023150a5871c56482030265ecf3f",
+    "captured_at": "2026-10-11 12:27:05.023087+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_cb_divisions",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:27:05.028013+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_cb_family_items",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:27:05.030628+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_cb_master",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:27:05.036706+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_cb_material_allocations",
+    "archived_rows": 252,
+    "content_hash": "b72e6bea0d585de63abe20f2f6965a00",
+    "captured_at": "2026-10-11 12:27:05.066089+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_cb_material_po_draft_v1",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:27:05.070027+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_cb_material_usage_v1",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:27:05.074386+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_cb_metal_id_assignments_v801",
+    "archived_rows": 3,
+    "content_hash": "158fc9299891376ecf7e9c1e913f0584",
+    "captured_at": "2026-10-11 12:27:05.082302+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_cb_print_assignments",
+    "archived_rows": 27,
+    "content_hash": "99df268ce53f70b6043448ce85da7048",
+    "captured_at": "2026-10-11 12:27:05.092164+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_cb_purchase_entries",
+    "archived_rows": 146,
+    "content_hash": "fb183d6826b303e2bfd336eef703def9",
+    "captured_at": "2026-10-11 12:27:05.124198+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_cb_purchase_rolls",
+    "archived_rows": 191,
+    "content_hash": "20b998e10fdd2848b255978b66aea6b6",
+    "captured_at": "2026-10-11 12:27:05.142524+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_cb_quantity_reconciliation_history_v1",
+    "archived_rows": 3,
+    "content_hash": "f4c684d0633767ac26a8afc624bcc826",
+    "captured_at": "2026-10-11 12:27:05.150795+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_cb_quantity_reconciliation_v1",
+    "archived_rows": 1,
+    "content_hash": "a7e1d53e7e57df7a15012ce3f233318e",
+    "captured_at": "2026-10-11 12:27:05.157229+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_cb_requirement_live_link_v1",
+    "archived_rows": 3,
+    "content_hash": "ae3d7604d3d58caefd23ed4061bfd828",
+    "captured_at": "2026-10-11 12:27:05.163241+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_cb_requirement_receipt_confirmation_v1",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:27:05.166661+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_cb_requirement_send_log_v1",
+    "archived_rows": 9,
+    "content_hash": "de9ecdf4782319bc01de99b63982cc35",
+    "captured_at": "2026-10-11 12:27:05.176867+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_cb_set_requirement_v1",
+    "archived_rows": 4,
+    "content_hash": "9778ecba808cfb2e591f7d3be3d54551",
+    "captured_at": "2026-10-11 12:27:05.189356+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_cb_shortage_reports_v1",
+    "archived_rows": 7,
+    "content_hash": "69eeb48a24f482d40d25959cc7884af6",
+    "captured_at": "2026-10-11 12:27:05.19543+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_cb_sticker_assignments",
+    "archived_rows": 5,
+    "content_hash": "40ca3f3a3544e28273583f0362dad149",
+    "captured_at": "2026-10-11 12:27:05.203477+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_cb_supplier_po_colour_v1",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:27:05.206176+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_cb_supplier_po_line_v1",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:27:05.209321+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_cb_supplier_po_v1",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:27:05.21327+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_cb_units",
+    "archived_rows": 247,
+    "content_hash": "97660b143cc07529c980db078af28e48",
+    "captured_at": "2026-10-11 12:27:05.275819+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_chat_internal_docs_v9495",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:27:05.281251+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_chat_member_hidden_v61",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:27:05.28513+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_chat_member_receipts_v61",
+    "archived_rows": 1039,
+    "content_hash": "6c188fdadc1059e315b8d11bf3a0ce39",
+    "captured_at": "2026-10-11 12:27:05.316605+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_chat_message_hidden_v9712",
+    "archived_rows": 20,
+    "content_hash": "aa5d6a699d5c0ec5a58f086af69c52c5",
+    "captured_at": "2026-10-11 12:27:05.320894+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_chat_message_redaction_v61",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:27:05.3245+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_chat_notifications_test71.card_receipts",
+    "archived_rows": 951,
+    "content_hash": "f1de0ce33962fa9ecdb3f6ad8d4b7f90",
+    "captured_at": "2026-10-11 12:32:02.949439+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_chat_notifications_test71.inbox",
+    "archived_rows": 1061,
+    "content_hash": "63325ebb0687445183857304019c11fa",
+    "captured_at": "2026-10-11 12:32:03.165168+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_chat_push_outbox_v61",
+    "archived_rows": 161,
+    "content_hash": "c74ba2af9b22be6c6de9b267ec127492",
+    "captured_at": "2026-10-11 12:27:05.338214+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_ci_rename_audit_v9632",
+    "archived_rows": 10,
+    "content_hash": "b6113d17c10c292a2b48fbe008d57941",
+    "captured_at": "2026-10-11 12:27:05.343661+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_cloth_conversion_v806",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:27:05.347872+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_collection_activity_v9633",
+    "archived_rows": 71,
+    "content_hash": "b1d77c3d188aa1c4fd884e2ef37ef7c3",
+    "captured_at": "2026-10-11 12:27:05.361383+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_collection_cycle_v9586",
+    "archived_rows": 29,
+    "content_hash": "736d3d7eab3c2b16eee7546e7e5cb921",
+    "captured_at": "2026-10-11 12:27:05.373004+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_collection_delete_audit_v61",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:27:13.257068+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_collection_requirement_link_v9586",
+    "archived_rows": 49,
+    "content_hash": "5815a9b2bf0e9d2bd699fd99dad11a39",
+    "captured_at": "2026-10-11 12:27:13.266316+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_collection_rules_test71.chat_cleanup_audit",
+    "archived_rows": 10,
+    "content_hash": "019da177deb0611a4b85a1e798f14f84",
+    "captured_at": "2026-10-11 12:32:03.183282+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_collection_rules_test71.customer_cycle_lock",
+    "archived_rows": 7,
+    "content_hash": "2bae7858f97963a6904ccd66e4bc592a",
+    "captured_at": "2026-10-11 12:32:03.195406+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_collection_rules_test71.customer_hidden_items",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:32:03.204433+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_collection_rules_test71.partner_cycles",
+    "archived_rows": 2,
+    "content_hash": "d75db7015b9ee94d0446c148a50cecac",
+    "captured_at": "2026-10-11 12:32:03.218683+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_collection_rules_test71.reconciliation_audit",
+    "archived_rows": 20,
+    "content_hash": "179abb5b2446a8f821a42d85718475d6",
+    "captured_at": "2026-10-11 12:32:03.226822+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_collection_rules_test71.wiring_cleanup_audit",
+    "archived_rows": 12,
+    "content_hash": "e103e58dddc7bbd884d2ef2907930de6",
+    "captured_at": "2026-10-11 12:32:03.240008+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_collection_send_v9586",
+    "archived_rows": 50,
+    "content_hash": "c595ad1aec1070f2de10b183bee0cb3f",
+    "captured_at": "2026-10-11 12:27:13.275948+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_collection_staff_batch_v9635",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:27:13.282488+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_collection_update_category_v9630",
+    "archived_rows": 48,
+    "content_hash": "0404733ca14a97c8b36a8d969ef9a930",
+    "captured_at": "2026-10-11 12:27:13.287323+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_collection_update_request_v9630",
+    "archived_rows": 27,
+    "content_hash": "3f4f2e17894f727e355648383d98e0e4",
+    "captured_at": "2026-10-11 12:27:13.292443+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_comm_ai_job_v853",
+    "archived_rows": 1,
+    "content_hash": "80374f6cafbdb9126ef1a5be4f178df4",
+    "captured_at": "2026-10-11 12:27:13.297105+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_comm_campaign_member_v853",
+    "archived_rows": 1,
+    "content_hash": "b49efcb2e6bf4c6f288fafff43f2362a",
+    "captured_at": "2026-10-11 12:27:13.300174+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_comm_campaign_v853",
+    "archived_rows": 1,
+    "content_hash": "c0e46d0fa3ebb463c235e0120e40d0ec",
+    "captured_at": "2026-10-11 12:27:13.304603+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_comm_consent_v853",
+    "archived_rows": 1,
+    "content_hash": "988294505bbf6d56c389e8e3bfa91ed9",
+    "captured_at": "2026-10-11 12:27:13.3098+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_comm_customer_profile_v853",
+    "archived_rows": 1,
+    "content_hash": "5fa652379dd133e512dfb5231e861d4b",
+    "captured_at": "2026-10-11 12:27:13.318342+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_comm_delivery_log_v853",
+    "archived_rows": 1,
+    "content_hash": "4f64e02380d17e846df65dbcbd72fac3",
+    "captured_at": "2026-10-11 12:27:13.321759+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_comm_event_v853",
+    "archived_rows": 280,
+    "content_hash": "dff0a39f8dfb89800b8de0de96e3b1ca",
+    "captured_at": "2026-10-11 12:27:13.359145+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_comm_inbound_v853",
+    "archived_rows": 1,
+    "content_hash": "7174c8bf90a3915e57d67ffa484f57c7",
+    "captured_at": "2026-10-11 12:27:13.364315+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_comm_outbox_v853",
+    "archived_rows": 278,
+    "content_hash": "1f222db5c203d41f886513d4581a0512",
+    "captured_at": "2026-10-11 12:27:13.439392+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_comm_policy_v853",
+    "archived_rows": 7,
+    "content_hash": "f66b60d17735e9a08f4421ec45e6a929",
+    "captured_at": "2026-10-11 12:27:13.443806+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_comm_template_v853",
+    "archived_rows": 7,
+    "content_hash": "1011a9385a8e3be4fa1d9843e308042f",
+    "captured_at": "2026-10-11 12:27:13.447998+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_comm_test_result_v853",
+    "archived_rows": 16,
+    "content_hash": "810fbca2324e77b05a2b94e96ce8face",
+    "captured_at": "2026-10-11 12:27:13.451197+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_committee_events_v820",
+    "archived_rows": 34,
+    "content_hash": "2182c9778ce9a9be4650cb89317307f8",
+    "captured_at": "2026-10-11 12:27:13.455723+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_committee_members_v820",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:27:13.459458+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_committee_months_v820",
+    "archived_rows": 82,
+    "content_hash": "b765052b3eeeb52c818af6531416eda8",
+    "captured_at": "2026-10-11 12:27:13.471664+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_committee_organizers_v821",
+    "archived_rows": 3,
+    "content_hash": "12e33de666970f51f1d57644e68ab3be",
+    "captured_at": "2026-10-11 12:27:13.476875+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_committee_payments_v824",
+    "archived_rows": 5,
+    "content_hash": "894b777249162e44fdb26dec24c598a0",
+    "captured_at": "2026-10-11 12:27:13.48417+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_committee_schemes_v820",
+    "archived_rows": 5,
+    "content_hash": "00be70a75616cf87ea137d95bf1bb226",
+    "captured_at": "2026-10-11 12:27:13.491084+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_cost_driver_v849_2c5",
+    "archived_rows": 8,
+    "content_hash": "f658fafbd2beaf57076dad6d24d10034",
+    "captured_at": "2026-10-11 12:27:13.495081+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_cost_expense_pool_v850",
+    "archived_rows": 2,
+    "content_hash": "b3551b5c79e6f0f404504193a497e1f5",
+    "captured_at": "2026-10-11 12:27:13.49982+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_cost_fixed_rule_v850",
+    "archived_rows": 9,
+    "content_hash": "f41e739e69aad847761443ce686b0c82",
+    "captured_at": "2026-10-11 12:27:13.504526+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_cost_head_v849_2c5",
+    "archived_rows": 18,
+    "content_hash": "a17d1b3728f77058876ea973c9583071",
+    "captured_at": "2026-10-11 12:27:13.508753+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_cost_input_test_v849_2c5",
+    "archived_rows": 14,
+    "content_hash": "29720730ce70ae449ac61e397525c894",
+    "captured_at": "2026-10-11 12:27:13.512799+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_cost_period_test_v849_2c5",
+    "archived_rows": 1,
+    "content_hash": "29d4b2ab917914d9d86000a012d13e27",
+    "captured_at": "2026-10-11 12:27:13.517167+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_cost_stream_v849_2c5",
+    "archived_rows": 3,
+    "content_hash": "f6bca788b48f95dec5bf01bf692f547f",
+    "captured_at": "2026-10-11 12:27:13.52019+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_cost_test_result_v850",
+    "archived_rows": 12,
+    "content_hash": "6d9eab56e12e8ec46f4c2d5d63197eb4",
+    "captured_at": "2026-10-11 12:27:13.526867+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_costing_component_rule_v289",
+    "archived_rows": 4,
+    "content_hash": "5974322ea684a38adac15f8ced6ef67a",
+    "captured_at": "2026-10-11 12:27:13.532299+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_costing_department_aliases_v760",
+    "archived_rows": 71,
+    "content_hash": "18f3f8d0360639304e99bd31b77fc4ff",
+    "captured_at": "2026-10-11 12:27:13.542966+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_costing_effective_boundary_v308",
+    "archived_rows": 1,
+    "content_hash": "d2f888f4b22f82c7db227f63df7d39da",
+    "captured_at": "2026-10-11 12:27:13.54647+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_costing_pack_freeze_v680",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:27:13.54977+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_costing_universal_settings_v760",
+    "archived_rows": 1,
+    "content_hash": "35a6e6398369517d9cc1afbcd67e9b69",
+    "captured_at": "2026-10-11 12:27:13.554105+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_cpi_accounts_link_v847",
+    "archived_rows": 11,
+    "content_hash": "e93144ef35eb9cbc5c7454fbe14d8788",
+    "captured_at": "2026-10-11 12:27:13.560184+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_cpi_month_sequence_v9517",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:27:13.561852+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_customer_auth_test71.customer_permissions",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:32:03.244663+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_customer_auth_test71.login_approvals",
+    "archived_rows": 3,
+    "content_hash": "7f098c0612e4ba884d73c63edf0e6a87",
+    "captured_at": "2026-10-11 12:32:03.265215+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_customer_auth_test71.otp_challenges",
+    "archived_rows": 2,
+    "content_hash": "4915761907507a0fb0de802c1b511932",
+    "captured_at": "2026-10-11 12:32:03.274693+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_customer_auth_test71.partner_discount_history",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:32:03.282715+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_customer_auth_test71.whatsapp_challenges",
+    "archived_rows": 3,
+    "content_hash": "a2a950019bdf6125e3143b99bae8f9a2",
+    "captured_at": "2026-10-11 12:32:03.300279+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_customer_auth_test71.whatsapp_verifications",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:32:03.308484+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_customer_call_recording_chunks_v9435",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:27:13.564792+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_customer_call_signal_v9435",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:27:13.568316+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_customer_calls_v9433",
+    "archived_rows": 2,
+    "content_hash": "5de96f3c4ce3ec8beb010b8a1bde66ac",
+    "captured_at": "2026-10-11 12:27:13.571727+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_customer_chat_archive_audit_v9433",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:27:13.575214+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_customer_chat_archive_v59",
+    "archived_rows": 64,
+    "content_hash": "c3aaf90478c22b32ac825c4e7bc73aa5",
+    "captured_at": "2026-10-11 12:27:13.582279+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_customer_chat_attachments_v9434",
+    "archived_rows": 139,
+    "content_hash": "b71e81a0db246a7c58c924784d6df56b",
+    "captured_at": "2026-10-11 12:27:49.190099+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_customer_chat_disappearing_v59",
+    "archived_rows": 1,
+    "content_hash": "26e84a385a15466bdea4ebc02f8a63d9",
+    "captured_at": "2026-10-11 12:27:49.413934+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_customer_chat_members_v9433",
+    "archived_rows": 98,
+    "content_hash": "22701133ce2c3355a96533b8aab0cc92",
+    "captured_at": "2026-10-11 12:27:49.47854+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_customer_chat_messages_v9433",
+    "archived_rows": 318,
+    "content_hash": "c506a401a6c5d1fa660f1acbe952be23",
+    "captured_at": "2026-10-11 12:27:49.685793+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_customer_chat_thumbnails_v51",
+    "archived_rows": 27,
+    "content_hash": "ef8077213af2a8830edb9466be9a1c6b",
+    "captured_at": "2026-10-11 12:27:49.81162+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_customer_chat_v9433",
+    "archived_rows": 27,
+    "content_hash": "8494832c1b5fd9561d33ce95396cbb2b",
+    "captured_at": "2026-10-11 12:27:49.872825+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_customer_chat_view_clear_v9433",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:27:49.891117+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_customer_chat_worker_members_v9439",
+    "archived_rows": 13,
+    "content_hash": "030aeffa171a25a2c4a4b4416cb9d7b3",
+    "captured_at": "2026-10-11 12:27:49.921119+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_customer_contact_phone_v67",
+    "archived_rows": 3,
+    "content_hash": "68ffd05cf45e2f1a75a8f43ad160528f",
+    "captured_at": "2026-10-11 12:27:49.956044+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_customer_discount_history_v9420",
+    "archived_rows": 23,
+    "content_hash": "3d04186154cfc9c71cf99cc1ab7ad04d",
+    "captured_at": "2026-10-11 12:27:49.984745+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_customer_lot_rate_history_v9517",
+    "archived_rows": 84,
+    "content_hash": "b5d1ac0fd32e05609f4373fc8aba2968",
+    "captured_at": "2026-10-11 12:27:50.010311+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_customer_lot_rate_v9517",
+    "archived_rows": 8,
+    "content_hash": "760ef9e2ea657490e437515b0fdd5a8e",
+    "captured_at": "2026-10-11 12:27:50.029418+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_customer_order_sessions_v9433",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:27:50.039851+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_customer_portal_api_registry_v848_9d",
+    "archived_rows": 8,
+    "content_hash": "5fd0c3e723ec1977397972d1afedcfd9",
+    "captured_at": "2026-10-11 12:27:50.082675+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_customer_sales_map_v9745",
+    "archived_rows": 13,
+    "content_hash": "ecce90b2c0b8a8ad5beac1ad1d75980c",
+    "captured_at": "2026-10-11 12:27:50.12219+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_customer_session_v9590",
+    "archived_rows": 412,
+    "content_hash": "287996e7290744aea4cb05193b915d0f",
+    "captured_at": "2026-10-11 12:27:50.227011+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_customers",
+    "archived_rows": 11,
+    "content_hash": "c7d5f514088f673707f1bc6ef54d2f13",
+    "captured_at": "2026-10-11 12:27:50.289252+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_cutting_breakup_v3",
+    "archived_rows": 231,
+    "content_hash": "2aca7adfca5c75e3233e0d37420230f6",
+    "captured_at": "2026-10-11 12:27:50.343007+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_cutting_cb_action_effects",
+    "archived_rows": 5,
+    "content_hash": "0086aeac28256f29d49fcf57cfd8efbf",
+    "captured_at": "2026-10-11 12:27:50.379049+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_cutting_cb_action_media",
+    "archived_rows": 12,
+    "content_hash": "78754019320c22e31316a6a77391e560",
+    "captured_at": "2026-10-11 12:27:50.397474+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_cutting_cb_actions",
+    "archived_rows": 13,
+    "content_hash": "e692a9ef1eea7380992d257240f7c15b",
+    "captured_at": "2026-10-11 12:27:50.432231+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_cutting_combo_variants",
+    "archived_rows": 10,
+    "content_hash": "c281ae13ad032e3609caa36f0c5065b6",
+    "captured_at": "2026-10-11 12:27:50.460341+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_cutting_combos",
+    "archived_rows": 5,
+    "content_hash": "11ea3c107c14785e4d7eac510474f252",
+    "captured_at": "2026-10-11 12:27:50.494309+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_cutting_cost_settings_v3",
+    "archived_rows": 1,
+    "content_hash": "d8a8dd3f3ca645c361fc7babc0c9d8e0",
+    "captured_at": "2026-10-11 12:27:50.507684+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_cutting_legacy_lot_link_v1",
+    "archived_rows": 1,
+    "content_hash": "4ceb887cecdb45a0ea29668316914203",
+    "captured_at": "2026-10-11 12:27:50.538893+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_cutting_lot_art_override_v1",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:27:50.560667+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_cutting_lot_drafts_v1",
+    "archived_rows": 29,
+    "content_hash": "ddaeded734cffae8d6eccf670cd731f5",
+    "captured_at": "2026-10-11 12:27:50.607185+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_cutting_lots_v3",
+    "archived_rows": 33,
+    "content_hash": "087c66d3916fd1a44b164926d4722dfb",
+    "captured_at": "2026-10-11 12:27:50.66558+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_cutting_multi_art_decisions_v1",
+    "archived_rows": 2,
+    "content_hash": "ad06bca358783d2e437e3f0a4afdd644",
+    "captured_at": "2026-10-11 12:27:50.68015+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_cutting_quantities",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:27:50.702746+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_cutting_roll_lot_binding_v1",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:27:50.730493+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_cutting_sheets",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:27:50.7567+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_cutting_yield_observation_v1",
+    "archived_rows": 14,
+    "content_hash": "7166f340e2780fb3b566cc3c4c03af34",
+    "captured_at": "2026-10-11 12:27:50.772066+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_damage_records",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:27:50.804425+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_dataset_import_batches_test71",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:27:50.832848+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_dataset_import_findings_test71",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:27:50.846145+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_dataset_import_rows_test71",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:27:50.857499+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_delivery_routing_audit_v770_1",
+    "archived_rows": 2,
+    "content_hash": "dadc2de028605e75ce33e2eda07d8d56",
+    "captured_at": "2026-10-11 12:27:50.889927+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_delivery_test_config_events_v770_1",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:27:50.904128+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_delivery_test_config_v770_1",
+    "archived_rows": 1,
+    "content_hash": "cca703b28dd4b1b04816fcc0096c873a",
+    "captured_at": "2026-10-11 12:27:50.914448+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_department_action_permissions_v1",
+    "archived_rows": 897,
+    "content_hash": "236fbd8782112f476cf0d536cf319de0",
+    "captured_at": "2026-10-11 12:27:50.97169+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_department_field_permissions_v1",
+    "archived_rows": 1556,
+    "content_hash": "8b2ac1ec8bea70d3d80f890bacf1f814",
+    "captured_at": "2026-10-11 12:27:51.043376+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_department_witness_policy_events_v774",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:27:51.051604+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_department_witness_policy_v774",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:27:51.062525+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_departments",
+    "archived_rows": 26,
+    "content_hash": "256371efa17c2733e30463ffa2d89531",
+    "captured_at": "2026-10-11 12:27:51.090283+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_departments_v1",
+    "archived_rows": 23,
+    "content_hash": "2d223fc20513067924d0eb6dd8155fe4",
+    "captured_at": "2026-10-11 12:27:51.115215+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_due_test_enrollment_v843",
+    "archived_rows": 2,
+    "content_hash": "476e0f058be7c62efe52211b770d40b2",
+    "captured_at": "2026-10-11 12:27:51.136648+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_dynamic_field_values_v1",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:27:51.158431+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_dynamic_impact_postings_v1",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:27:51.168586+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_external_action_delivery_v121",
+    "archived_rows": 8,
+    "content_hash": "02755638255b2def5fd94121d7901c87",
+    "captured_at": "2026-10-11 12:27:51.186481+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_fabric_master",
+    "archived_rows": 15,
+    "content_hash": "519e18c5d54e64d38e0a51407578e9e0",
+    "captured_at": "2026-10-11 12:27:51.197826+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_fabric_purchases",
+    "archived_rows": 131,
+    "content_hash": "3ebdbf5c9eb1d5d872828f40190bc751",
+    "captured_at": "2026-10-11 12:27:51.297745+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_fg_boxes_v787",
+    "archived_rows": 1238,
+    "content_hash": "b1fe70aefebd7560e361f5fec569d18a",
+    "captured_at": "2026-10-11 12:27:51.631217+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_fg_despatch_acceptance_v9356",
+    "archived_rows": 12,
+    "content_hash": "8e40d3632ae20b177af4643da602e0b2",
+    "captured_at": "2026-10-11 12:27:51.642706+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_fg_despatch_boxes_v787",
+    "archived_rows": 131,
+    "content_hash": "f297c470fe29c75bfbb3b9d0814f88a0",
+    "captured_at": "2026-10-11 12:27:51.656752+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_fg_despatch_custody_v9361",
+    "archived_rows": 12,
+    "content_hash": "c57a8ae010aa57a65bb4e7ab6094b24c",
+    "captured_at": "2026-10-11 12:27:51.664627+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_fg_despatch_receive_groups_v9356",
+    "archived_rows": 21,
+    "content_hash": "e6c268415b46a647ca890859f8a60b33",
+    "captured_at": "2026-10-11 12:27:52.637918+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_fg_despatch_v787",
+    "archived_rows": 14,
+    "content_hash": "708f12950f35b89e7831eba551552a74",
+    "captured_at": "2026-10-11 12:27:52.658287+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_fg_pack_plan_box_material_v259",
+    "archived_rows": 91,
+    "content_hash": "28a59467fece167190c8f4a30d1bab22",
+    "captured_at": "2026-10-11 12:27:52.723976+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_fg_pack_plans_v787",
+    "archived_rows": 96,
+    "content_hash": "06ce67d8a2cec599bb785180ab34864f",
+    "captured_at": "2026-10-11 12:27:52.982633+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_fg_packing_assignments_v788",
+    "archived_rows": 13,
+    "content_hash": "a4419616cabc413a759c11279c055110",
+    "captured_at": "2026-10-11 12:27:53.037174+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_fg_pi_lines_v787",
+    "archived_rows": 50,
+    "content_hash": "5e02ddea42575b0340e4e3fd0b2ee229",
+    "captured_at": "2026-10-11 12:27:53.094243+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_fg_pi_v787",
+    "archived_rows": 21,
+    "content_hash": "51c7c85b7babc8c34d76ccacae182598",
+    "captured_at": "2026-10-11 12:27:53.152881+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_fg_pi_versions_v787",
+    "archived_rows": 53,
+    "content_hash": "fa95250271733fe29983d3a7c2538ec3",
+    "captured_at": "2026-10-11 12:27:53.474687+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_fg_products_v787",
+    "archived_rows": 10,
+    "content_hash": "1d8ed6eaa60d83fe15438d2f4575f0a8",
+    "captured_at": "2026-10-11 12:27:53.487111+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_fg_receive_correction_audit_v9408",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:27:53.501149+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_fg_returns_v787",
+    "archived_rows": 3,
+    "content_hash": "622e91b84e37414020069e3679bcc810",
+    "captured_at": "2026-10-11 12:27:53.519765+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_fg_sequences_v787",
+    "archived_rows": 6,
+    "content_hash": "2bb6cf9555d1dc85d6ec033196e1e334",
+    "captured_at": "2026-10-11 12:27:53.54189+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_fg_stock_ledger_v787",
+    "archived_rows": 120,
+    "content_hash": "561401b41d8388178317af0548ff766a",
+    "captured_at": "2026-10-11 12:27:53.601658+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_field_attendance_sessions_v778_1",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:27:53.621091+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_field_business_events_v778_1",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:27:53.635886+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_field_demo_runs_v1",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:27:53.668807+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_field_impact_adapters_v1",
+    "archived_rows": 7,
+    "content_hash": "b268879751ccb079a4cdf58285df8efc",
+    "captured_at": "2026-10-11 12:27:53.715698+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_field_impact_rules_v1",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:27:53.73116+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_field_master_v1",
+    "archived_rows": 68,
+    "content_hash": "08f110e2ad4d73e69d3a1b99372c0df5",
+    "captured_at": "2026-10-11 12:27:53.798501+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_field_module_routes_v1",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:27:53.812665+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_field_versions_v1",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:27:53.825077+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_financial_requests_test71",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:27:53.891278+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_foc_monthly_summary_v706",
+    "archived_rows": 2,
+    "content_hash": "c480425df1111cfd5249c03ffd818a3c",
+    "captured_at": "2026-10-11 12:27:53.963494+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_foc_policy_v704",
+    "archived_rows": 5,
+    "content_hash": "cb6775e1e1c1fb3f38195a176b22e5ef",
+    "captured_at": "2026-10-11 12:27:54.054644+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_foc_push_outbox_v706",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:27:54.074288+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_frames",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:27:54.087772+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_global_alert_inbox_v797_5",
+    "archived_rows": 47,
+    "content_hash": "c3495192327f1e0a5a23fcc7366c3166",
+    "captured_at": "2026-10-11 12:27:54.17743+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_global_name_aliases_v805",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:27:54.191683+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_holiday_calendar_v777_2",
+    "archived_rows": 7,
+    "content_hash": "c6e0dcb6b05ba365e6aa7bd10c5e18df",
+    "captured_at": "2026-10-11 12:27:54.216637+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_import_batches_test71",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:27:54.285008+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_import_findings_test71",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:27:54.319122+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_import_rows_test71",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:27:54.349445+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_inventory_ledger",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:27:54.497146+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_invoice_items",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:27:54.525162+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_invoices",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:27:54.576521+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_ledgers_v805",
+    "archived_rows": 176,
+    "content_hash": "70d99a954e46906db23ff307eae711be",
+    "captured_at": "2026-10-11 12:27:54.775923+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_live_commercial_binding_v849",
+    "archived_rows": 5,
+    "content_hash": "0ca483be68afb753e731cf56dc4cd834",
+    "captured_at": "2026-10-11 12:27:54.80198+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_lot_colour_sizes",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:27:54.830071+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_lot_colours",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:27:54.856796+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_lot_costs",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:27:54.875799+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_lot_department_override_v753",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:27:54.892748+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_lot_metal_id_jobs_v835",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:27:54.915868+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_lot_print_jobs",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:27:54.934863+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_lot_process_actuals_v1",
+    "archived_rows": 513,
+    "content_hash": "9e282a48358443d1e1881240856c4118",
+    "captured_at": "2026-10-11 12:27:55.09815+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_lot_sizes",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:27:55.108826+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_lot_sticker_jobs",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:27:55.11614+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_lot_timeline",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:27:55.121573+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_lots_core_v403",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:27:55.136952+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_manual_contact_queue_v797_6",
+    "archived_rows": 3,
+    "content_hash": "c188d68776f09a4006be397e27b478d8",
+    "captured_at": "2026-10-11 12:27:55.158719+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_market_origin_reference_v61",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:27:55.190715+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_market_origin_sequence_v61",
+    "archived_rows": 1,
+    "content_hash": "fec122249bc75d8073bd65380836f926",
+    "captured_at": "2026-10-11 12:27:55.204153+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_market_owner_sequence_v67",
+    "archived_rows": 3,
+    "content_hash": "514e942c03d762f154e71d42add628cd",
+    "captured_at": "2026-10-11 12:27:55.220341+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_market_partner_batch_member_v67",
+    "archived_rows": 1,
+    "content_hash": "1aa990ddc5650a4775c3009df2dafecf",
+    "captured_at": "2026-10-11 12:27:55.234832+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_market_partner_batch_pi_extra_line_v67",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:27:55.246217+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_market_partner_batch_v67",
+    "archived_rows": 1,
+    "content_hash": "408632cd0776f49fce98099fca7a3487",
+    "captured_at": "2026-10-11 12:27:55.27015+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_market_partner_collection_line_duplicate_archive_v78",
+    "archived_rows": 20,
+    "content_hash": "9d7d5d3e46055b4c621969eeb2bce83b",
+    "captured_at": "2026-10-11 12:27:55.294003+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_market_partner_collection_line_v67",
+    "archived_rows": 20,
+    "content_hash": "d49a053085cca19b0764793621eb47b9",
+    "captured_at": "2026-10-11 12:27:55.322787+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_market_partner_collection_v67",
+    "archived_rows": 16,
+    "content_hash": "5d4d138cf8176695722aac40f6d0d6fd",
+    "captured_at": "2026-10-11 12:27:55.350581+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_market_partner_customer_ci_line_v67",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:27:55.359927+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_market_partner_customer_ci_v67",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:27:55.372587+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_market_partner_customer_session_v67",
+    "archived_rows": 66,
+    "content_hash": "89b8845aebece70e74c1980f65f5a9d7",
+    "captured_at": "2026-10-11 12:27:55.422424+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_market_partner_customer_v67",
+    "archived_rows": 2,
+    "content_hash": "0607fff2ce4e772e899033ef0a17848d",
+    "captured_at": "2026-10-11 12:27:55.437022+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_market_partner_document_sequence_v67",
+    "archived_rows": 2,
+    "content_hash": "d65cb3cacf78c58b682c3098e5e6db39",
+    "captured_at": "2026-10-11 12:27:55.444129+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_market_partner_event_v67",
+    "archived_rows": 23,
+    "content_hash": "9892862b4660d3572f400baefb2ba914",
+    "captured_at": "2026-10-11 12:27:55.456671+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_market_partner_global_sequence_v67",
+    "archived_rows": 2,
+    "content_hash": "e4daabadcb97ba342e74317fe9b5464b",
+    "captured_at": "2026-10-11 12:27:55.463597+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_market_partner_group_v67",
+    "archived_rows": 3,
+    "content_hash": "cf40e493674389e3fa7cebfaa24ada42",
+    "captured_at": "2026-10-11 12:27:55.473684+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_market_partner_order_line_v67",
+    "archived_rows": 19,
+    "content_hash": "1ca450ea28f2679235ef6e25f049326f",
+    "captured_at": "2026-10-11 12:27:55.503986+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_market_partner_order_v67",
+    "archived_rows": 2,
+    "content_hash": "74ca95a78cc4449e0c7b5518abe2ab89",
+    "captured_at": "2026-10-11 12:27:55.603544+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_market_partner_relation_chat_v67",
+    "archived_rows": 13,
+    "content_hash": "5b40f0f1cba0bcc048a22e250be03643",
+    "captured_at": "2026-10-11 12:27:55.718627+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_market_partner_staff_group_v67",
+    "archived_rows": 2,
+    "content_hash": "c386d8cfbded3b9100b0a6cfe9048199",
+    "captured_at": "2026-10-11 12:27:55.771021+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_market_partner_staff_v67",
+    "archived_rows": 1,
+    "content_hash": "3db9b681f9a650eb396418e4923d1bd9",
+    "captured_at": "2026-10-11 12:27:55.792773+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_market_requirement_lines_v9420",
+    "archived_rows": 122,
+    "content_hash": "d9f307cf5a25be21f68e6741c48c8e56",
+    "captured_at": "2026-10-11 12:27:55.834349+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_market_requirement_voice_v9432",
+    "archived_rows": 4,
+    "content_hash": "b80a4f89023ebf79c22f308bac69bd9c",
+    "captured_at": "2026-10-11 12:27:56.527121+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_market_requirements_v9420",
+    "archived_rows": 50,
+    "content_hash": "141e50e33dc0819b9bf1a57e784e7ba0",
+    "captured_at": "2026-10-11 12:27:56.615597+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_market_seller_identity_v61",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:27:56.632957+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_market_share_lots_v9420",
+    "archived_rows": 397,
+    "content_hash": "457096f5ec5e484220f3724329a15824",
+    "captured_at": "2026-10-11 12:27:56.696185+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_market_share_v9420",
+    "archived_rows": 142,
+    "content_hash": "f70af986875cce09df36e5bd6c0608ca",
+    "captured_at": "2026-10-11 12:27:56.78052+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_market_workspace_access_v61",
+    "archived_rows": 2,
+    "content_hash": "934ec283ec2557e9de4178fc49b84a69",
+    "captured_at": "2026-10-11 12:27:56.803032+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_matching_cloth_consumptions_v1",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:27:56.828305+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_matching_cloth_items_v1",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:27:56.842144+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_matching_cloth_purchases_v1",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:27:56.858739+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_matching_purchase_entries",
+    "archived_rows": 4,
+    "content_hash": "4e222314d7f798cc6d9b12c6bf9998e1",
+    "captured_at": "2026-10-11 12:27:56.870815+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_matching_purchase_rolls",
+    "archived_rows": 6,
+    "content_hash": "6e47e920784a0450bf5f420604570853",
+    "captured_at": "2026-10-11 12:27:56.882096+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_matching_stock_items",
+    "archived_rows": 4,
+    "content_hash": "e02068c6964fb1969126fe8416f68ee9",
+    "captured_at": "2026-10-11 12:27:56.891108+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_matching_stock_ledger",
+    "archived_rows": 4,
+    "content_hash": "164356a01b0081a76260c0474105c7f8",
+    "captured_at": "2026-10-11 12:27:56.909041+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_material_art_category_rule_v1",
+    "archived_rows": 5,
+    "content_hash": "397732d5b86b3568f440177cc2c10bfc",
+    "captured_at": "2026-10-11 12:27:56.916274+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_material_categories",
+    "archived_rows": 31,
+    "content_hash": "98fbadb2dae5c7092960d7ba5ef666bf",
+    "captured_at": "2026-10-11 12:27:56.937865+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_material_category_alias_v1",
+    "archived_rows": 1,
+    "content_hash": "3da92ae5f1d2964c54b734182e9b99ff",
+    "captured_at": "2026-10-11 12:27:56.946285+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_material_consumption_mapping_v655",
+    "archived_rows": 84,
+    "content_hash": "8914aa10cb447c682d39f7ff7d46db83",
+    "captured_at": "2026-10-11 12:27:56.974198+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_material_consumption_rule_v1",
+    "archived_rows": 2,
+    "content_hash": "0d5ec71ff34ec4c473207d2c529f043c",
+    "captured_at": "2026-10-11 12:27:56.984624+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_material_consumption_v805",
+    "archived_rows": 5,
+    "content_hash": "0a5ed37bf56924dbdc76dab2a9c9772c",
+    "captured_at": "2026-10-11 12:27:56.999109+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_material_execution_consumption_v655",
+    "archived_rows": 1,
+    "content_hash": "6dff51671628e89ffba1f7f236b083b0",
+    "captured_at": "2026-10-11 12:27:57.012062+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_material_master_v805",
+    "archived_rows": 28,
+    "content_hash": "302846ce143768aaa0a61c6a8c209b9d",
+    "captured_at": "2026-10-11 12:27:57.033781+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_material_purchase_pi_v805_2",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:27:57.045827+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_material_purchases_v805",
+    "archived_rows": 22,
+    "content_hash": "b37f0d35763fe624313b3577d18438a1",
+    "captured_at": "2026-10-11 12:27:57.059119+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_material_reorder_alerts_v805_2",
+    "archived_rows": 8,
+    "content_hash": "d97201b345348613651671e2752e275b",
+    "captured_at": "2026-10-11 12:27:57.069965+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_material_reorder_push_outbox_v675",
+    "archived_rows": 9,
+    "content_hash": "c1e6e549a49d0ca1ad0a422a8fb62be6",
+    "captured_at": "2026-10-11 12:27:57.086147+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_material_requirements",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:27:57.090825+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_material_source_supplier_map_v805_31",
+    "archived_rows": 8,
+    "content_hash": "7a6f024d232fef37fd071b1558c0b53b",
+    "captured_at": "2026-10-11 12:27:57.100067+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_material_types_v805",
+    "archived_rows": 12,
+    "content_hash": "043dd3d5b308f147eda7cc1c0763dfa3",
+    "captured_at": "2026-10-11 12:27:57.109878+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_mc1_account",
+    "archived_rows": 1,
+    "content_hash": "655742657b9a5e9f7a4e632bcfc9fefd",
+    "captured_at": "2026-10-11 12:27:57.871192+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_mc1_fabrics",
+    "archived_rows": 4,
+    "content_hash": "e0cc9c55c77a37fe3f877018c784e9dc",
+    "captured_at": "2026-10-11 12:27:57.896692+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_mc1_ledger",
+    "archived_rows": 38,
+    "content_hash": "fa14a64b8b9909ae30fdbfbb8ba3938b",
+    "captured_at": "2026-10-11 12:27:57.939651+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_mc1_lot_matchings_v2",
+    "archived_rows": 14,
+    "content_hash": "9898a795e0077b0d24d1411ca3ecc1b7",
+    "captured_at": "2026-10-11 12:27:57.961036+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_mc1_purchases",
+    "archived_rows": 32,
+    "content_hash": "9b0c412b6381eb758d8e1bfd887e7c3f",
+    "captured_at": "2026-10-11 12:27:57.982269+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_media",
+    "archived_rows": 213,
+    "content_hash": "d21a026946ac6d92782ebff10316a44d",
+    "captured_at": "2026-10-11 12:27:58.153716+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_media_ai_audit_v808",
+    "archived_rows": 1,
+    "content_hash": "9bf479958b0b53f30236907901ffc17a",
+    "captured_at": "2026-10-11 12:27:58.189408+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_media_ai_flow_v808",
+    "archived_rows": 70,
+    "content_hash": "3e13e75229e4b6d81b9a9cd0dd9df70e",
+    "captured_at": "2026-10-11 12:27:58.261138+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_metal_id_master_v803",
+    "archived_rows": 4,
+    "content_hash": "c59cc4ed9f3d58052237c26f298ac955",
+    "captured_at": "2026-10-11 12:27:58.280708+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_module_layout_versions_v1",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:27:58.291594+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_module_role_permissions_v1",
+    "archived_rows": 64,
+    "content_hash": "b5517e6b37f81c9ecb23d8e0daf60d57",
+    "captured_at": "2026-10-11 12:27:58.309438+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_monthly_payroll_v779_1",
+    "archived_rows": 3,
+    "content_hash": "857aaf647fa68b0111405c24e552a6f2",
+    "captured_at": "2026-10-11 12:27:58.412268+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_name_creation_requests_v805",
+    "archived_rows": 1,
+    "content_hash": "2e1d650b557d696a4919e787c5b018bb",
+    "captured_at": "2026-10-11 12:27:58.430126+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_notifications",
+    "archived_rows": 276,
+    "content_hash": "2ef0e7ac1044a26caf6b8f989a2b07ef",
+    "captured_at": "2026-10-11 12:27:58.515202+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_opening_approvals_test71",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:27:58.534496+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_ot_work_sessions_v778_2",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:27:58.553888+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_pack_ai_candidates_v9340",
+    "archived_rows": 16,
+    "content_hash": "723c4b050cd30c1627443fbf37b4ec1a",
+    "captured_at": "2026-10-11 12:27:58.587739+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_pack_ai_style_refs_v9340",
+    "archived_rows": 20,
+    "content_hash": "9b0ed46639ad67f14bc7e90639642d52",
+    "captured_at": "2026-10-11 12:27:58.663296+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_pack_plan_box_cells",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:27:58.680272+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_pack_plan_boxes",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:27:58.688015+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_pack_plans",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:27:58.705535+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_pack_rate_approval_v9340",
+    "archived_rows": 13,
+    "content_hash": "5c8fe47516b93cdf3fc1c90938a2da8a",
+    "captured_at": "2026-10-11 12:27:58.729731+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_pack_rate_link_v9346",
+    "archived_rows": 271,
+    "content_hash": "c50fed028294444a58a453764d643d8c",
+    "captured_at": "2026-10-11 12:27:58.810035+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_packing_runs",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:27:58.83749+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_party_requirement_sequence_v9543",
+    "archived_rows": 7,
+    "content_hash": "f12d232869692d4d090f9081373211bd",
+    "captured_at": "2026-10-11 12:27:58.867269+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_payment_commitment_events_v9433",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:27:58.87707+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_payment_commitment_v9433",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:27:58.889382+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_payment_confirmation_v9433",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:27:58.894362+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_payroll_adjustments_v778",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:27:58.917472+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_payroll_cash_bank_routes_test71",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:27:58.928968+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_payroll_claim_reserve_v800",
+    "archived_rows": 10,
+    "content_hash": "100b82e7715d78322c87f55e84d912a9",
+    "captured_at": "2026-10-11 12:27:58.959069+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_payroll_disputes_v779_3",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:27:58.974025+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_payroll_events_v779_1",
+    "archived_rows": 10,
+    "content_hash": "c8aee788adf46bc3b701841d763b0a66",
+    "captured_at": "2026-10-11 12:27:59.025201+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_payroll_holidays_v778",
+    "archived_rows": 7,
+    "content_hash": "d7a1a6004833eb49a3f39679a8441fa2",
+    "captured_at": "2026-10-11 12:27:59.036505+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_payroll_incentives_v779_1",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:27:59.059184+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_payroll_payslip_requests_v779_3",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:27:59.065168+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_payroll_run_lines_v778",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:27:59.087318+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_payroll_runs_v778",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:27:59.104032+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_payroll_source_applications_v779_1",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:27:59.115027+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_pcs_payment_batch_lines_v784",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:27:59.138231+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_pcs_payment_batches_v784",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:27:59.167274+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_pcs_work_claims_v784",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:27:59.180868+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_performance_policy_v846",
+    "archived_rows": 5,
+    "content_hash": "d88bc3903bffe0b500d38123c9460115",
+    "captured_at": "2026-10-11 12:27:59.196411+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_permission_audit_v1",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:27:59.203638+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_pi_chat_deliveries_test71",
+    "archived_rows": 17,
+    "content_hash": "650d8a4523b11d2991cd81b4a7c8be9c",
+    "captured_at": "2026-10-11 12:27:59.229421+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_pi_display_month_sequence_v9533",
+    "archived_rows": 3,
+    "content_hash": "91f48ee49113c9acae23318754c82206",
+    "captured_at": "2026-10-11 12:27:59.249479+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_pi_document_item_meta_test71",
+    "archived_rows": 13,
+    "content_hash": "3aaa8a9b5907f72088de827e9da3fd86",
+    "captured_at": "2026-10-11 12:27:59.269324+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_pi_internal_rrq_v9517",
+    "archived_rows": 137,
+    "content_hash": "aad3b4c0fc8fb9246e722cdd76ae42fc",
+    "captured_at": "2026-10-11 12:27:59.302881+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_pi_month_sequence_v9420",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:27:59.308018+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_pi_number_migration_audit_v9584",
+    "archived_rows": 12,
+    "content_hash": "be7ccac1dd85ae43433bfcaada46f237",
+    "captured_at": "2026-10-11 12:27:59.319504+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_pi_party_year_sequence_v9583",
+    "archived_rows": 8,
+    "content_hash": "ba2974781f21dc832fc991ba01ef78f4",
+    "captured_at": "2026-10-11 12:27:59.330886+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_pi_qty_exception_v9516",
+    "archived_rows": 37,
+    "content_hash": "d262292c12c9c256fc8e01755b6325eb",
+    "captured_at": "2026-10-11 12:27:59.348408+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_pi_reservation_audit_v9630",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:27:59.354387+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_pi_reservation_v9630",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:27:59.36054+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_pi_serial_audit_v9577",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:27:59.367046+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_pi_serial_state_v9577",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:27:59.370989+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_pi_superadmin_hold_v9433",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:27:59.375905+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_piece_adjustments_v779",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:27:59.388031+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_piece_attendance_audit_v779",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:27:59.394402+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_piece_attendance_day_v779",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:27:59.403884+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_piece_job_presence_v777_2",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:27:59.409169+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_piece_payroll_details_v779",
+    "archived_rows": 138,
+    "content_hash": "901e3ee7591f2d099388b9abb9d592bb",
+    "captured_at": "2026-10-11 12:27:59.513707+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_piece_payroll_run_lines_v779",
+    "archived_rows": 25,
+    "content_hash": "a4c789f934de673ba6e10abb45e4f26a",
+    "captured_at": "2026-10-11 12:27:59.614687+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_piece_payroll_runs_v779",
+    "archived_rows": 3,
+    "content_hash": "ec1953a8b0a509b097e8f8e84633ba09",
+    "captured_at": "2026-10-11 12:27:59.622983+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_planned_actual_conflict_audit_v841",
+    "archived_rows": 9,
+    "content_hash": "27f93ce1c82eaed7c6dff143d7de80bc",
+    "captured_at": "2026-10-11 12:27:59.632513+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_premise_code_alias_v796",
+    "archived_rows": 2,
+    "content_hash": "0c3239faf0c572f32cf5a7ed5f26b7b9",
+    "captured_at": "2026-10-11 12:27:59.641526+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_presence_worker_control_test71",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:27:59.648235+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_print_caption_links",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:27:59.657699+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_print_frame_asset_v298",
+    "archived_rows": 6,
+    "content_hash": "4262aebcda9d67f34ed649d4faeb248a",
+    "captured_at": "2026-10-11 12:27:59.667852+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_print_frame_job_recovery_v302",
+    "archived_rows": 8,
+    "content_hash": "7379e56d7eb04bf53b7db4a311b7734b",
+    "captured_at": "2026-10-11 12:27:59.683782+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_print_frame_recovery_event_v298",
+    "archived_rows": 7,
+    "content_hash": "b7151e46b76bfef47f7a48c5114fe15f",
+    "captured_at": "2026-10-11 12:27:59.693497+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_print_frames",
+    "archived_rows": 10,
+    "content_hash": "e2c022e26de1a640c4f0a0dd197db6af",
+    "captured_at": "2026-10-11 12:27:59.711877+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_print_locations",
+    "archived_rows": 15,
+    "content_hash": "ed08b56553b8b4da3f3f7a51a90926e1",
+    "captured_at": "2026-10-11 12:27:59.719326+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_print_master",
+    "archived_rows": 5,
+    "content_hash": "6c0d4fe1fc0665dab29e96080562ab0e",
+    "captured_at": "2026-10-11 12:27:59.735718+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_print_presets",
+    "archived_rows": 6,
+    "content_hash": "94f82a8f70bfabca1ba91c01c2d6b277",
+    "captured_at": "2026-10-11 12:27:59.743165+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_process_entries",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:27:59.747923+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_process_runs",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:27:59.754926+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_product_cost_snapshot",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:27:59.762398+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_product_cutting_colours",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:27:59.772761+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_product_damage_claims",
+    "archived_rows": 6,
+    "content_hash": "21bec500987c807e805e014aa818e3ea",
+    "captured_at": "2026-10-11 12:27:59.797674+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_product_damage_media",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:27:59.801789+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_product_exchange_entries",
+    "archived_rows": 1,
+    "content_hash": "0729421bbfe391bdf0d2823442cba2dc",
+    "captured_at": "2026-10-11 12:27:59.821239+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_product_gr_entries",
+    "archived_rows": 1,
+    "content_hash": "20e22ea2c402a557bb8896732f5c1bbf",
+    "captured_at": "2026-10-11 12:27:59.840194+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_product_lot_cost_adjustments",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:27:59.852262+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_product_master",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:27:59.863069+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_product_print_links",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:27:59.868294+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_product_timeline",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:27:59.876702+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_production_lot_breakup_v3",
+    "archived_rows": 60,
+    "content_hash": "9c697fd26e82c487b47cdadcc91a1f96",
+    "captured_at": "2026-10-11 12:27:59.889681+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_production_lots",
+    "archived_rows": 10,
+    "content_hash": "9cb4a01b0087df2f00972094ded0f5ea",
+    "captured_at": "2026-10-11 12:27:59.919658+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_purchase_returns_v806",
+    "archived_rows": 79,
+    "content_hash": "0363e6f27f9fde0d9650c60cfcf4eee6",
+    "captured_at": "2026-10-11 12:28:00.023917+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_rci_accounts_link_v9754",
+    "archived_rows": 20,
+    "content_hash": "d57b8eebc6beccf4a215efb9efa4e0f0",
+    "captured_at": "2026-10-11 12:28:00.037114+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_rci_category_lots_v9740",
+    "archived_rows": 8,
+    "content_hash": "ac5a490afe7de2d23b10befd5c2f2004",
+    "captured_at": "2026-10-11 12:28:00.062927+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_rci_chat_deliveries_test71",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:28:00.076079+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_rci_lines_v9740",
+    "archived_rows": 22,
+    "content_hash": "5bc28588eee89984c04819c8a4ad0cf5",
+    "captured_at": "2026-10-11 12:28:00.105294+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_rci_sequence_v9740",
+    "archived_rows": 1,
+    "content_hash": "f2190ffd0307fbbfed14c16be4a39db2",
+    "captured_at": "2026-10-11 12:28:00.114112+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_rci_v9740",
+    "archived_rows": 22,
+    "content_hash": "7c029179ff5aa81159e8903047758b0a",
+    "captured_at": "2026-10-11 12:28:00.14049+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_real_chat_action_registry_v70",
+    "archived_rows": 46,
+    "content_hash": "d4ad42a442557c34291c4168170c6612",
+    "captured_at": "2026-10-11 12:28:00.160969+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_real_chat_canonical_events_v96",
+    "archived_rows": 389,
+    "content_hash": "8c777adc6432eef094ffa5788b38e323",
+    "captured_at": "2026-10-11 12:28:00.606484+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_real_chat_department_alias_v83",
+    "archived_rows": 9,
+    "content_hash": "96525d2dfe4fa0d37587d24837ce629b",
+    "captured_at": "2026-10-11 12:28:00.613009+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_real_chat_department_membership_v70",
+    "archived_rows": 1016,
+    "content_hash": "4943e9853fe3d93b86064bfb0a31b200",
+    "captured_at": "2026-10-11 12:28:00.6654+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_real_chat_department_receiver_v86",
+    "archived_rows": 1,
+    "content_hash": "9adc0a13bc8dbefb3ff0f84b0f35868f",
+    "captured_at": "2026-10-11 12:28:01.460919+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_real_chat_membership_audit_v136",
+    "archived_rows": 44,
+    "content_hash": "a68d453a479da1ca34cb3ac86ac3f358",
+    "captured_at": "2026-10-11 12:28:01.471273+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_real_chat_membership_reconcile_log_v279",
+    "archived_rows": 486,
+    "content_hash": "adaf8c433ffc17d92e8702a17766d505",
+    "captured_at": "2026-10-11 12:28:01.508639+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_real_chat_message_bridge_v70",
+    "archived_rows": 4820,
+    "content_hash": "15f2b8cfdfb7825c879766abc0be51db",
+    "captured_at": "2026-10-11 12:28:14.658404+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_real_chat_notification_links_v70",
+    "archived_rows": 3529,
+    "content_hash": "63d2bec905211fd3a6ca2f4364ce0960",
+    "captured_at": "2026-10-11 12:28:15.700625+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_real_chat_receipts_v70",
+    "archived_rows": 5654,
+    "content_hash": "f9990a111a502d172952856701c6004e",
+    "captured_at": "2026-10-11 12:28:16.191865+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_real_chat_worker_membership_control_v136",
+    "archived_rows": 6,
+    "content_hash": "cfe9d27690ae70a59f4bf8ff10a17773",
+    "captured_at": "2026-10-11 12:28:16.200219+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_real_data_import_policy_v846",
+    "archived_rows": 3,
+    "content_hash": "fcc4146befb4f8f6ce883ce14020ce3f",
+    "captured_at": "2026-10-11 12:28:16.212311+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_regular_attendance_sessions_v778_2",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:28:16.231904+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_remakes",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:28:16.248857+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_report_question_log_v807",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:28:16.256601+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_report_questions_v807",
+    "archived_rows": 1,
+    "content_hash": "769d4ce30e5c756b709a6613ff2a605a",
+    "captured_at": "2026-10-11 12:28:16.267162+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_report_template_registry_v806",
+    "archived_rows": 5,
+    "content_hash": "fcce5431e7a7e9f34e69e909ecc1a2fb",
+    "captured_at": "2026-10-11 12:28:16.279788+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_report_template_registry_v807",
+    "archived_rows": 8,
+    "content_hash": "ee5d6a7fda69613ca44a4db4dd97bce0",
+    "captured_at": "2026-10-11 12:28:16.291088+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_report_templates_v807",
+    "archived_rows": 5,
+    "content_hash": "0cee22e2c67f548662a70866452cb083",
+    "captured_at": "2026-10-11 12:28:16.301477+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_rm_art_versions_test71",
+    "archived_rows": 2,
+    "content_hash": "29371cddb48e429b3a5a27331d622854",
+    "captured_at": "2026-10-11 12:28:16.314602+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_rm_lot_renumber_test71",
+    "archived_rows": 5,
+    "content_hash": "f5640c441d746971bff378a3dffb46ad",
+    "captured_at": "2026-10-11 12:28:16.325598+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_rm_lot_sequence_test71",
+    "archived_rows": 1,
+    "content_hash": "fce92923903218886764859ce4d1426e",
+    "captured_at": "2026-10-11 12:28:16.33314+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_rm_module_state_v849_2c6",
+    "archived_rows": 1,
+    "content_hash": "4f4bb88d6c819ff10cd7ed1d98655bd8",
+    "captured_at": "2026-10-11 12:28:16.349792+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_rm_purchase_audit_v849_2c6",
+    "archived_rows": 19,
+    "content_hash": "f7a6c4ff9384bd7dc0587b3d64ba9c4b",
+    "captured_at": "2026-10-11 12:28:16.359105+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_rm_purchase_header_v849_2c6",
+    "archived_rows": 5,
+    "content_hash": "898273155b9a73c5603b704bb8be5109",
+    "captured_at": "2026-10-11 12:28:16.369457+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_rm_purchase_lines_v849_2c6",
+    "archived_rows": 6,
+    "content_hash": "8c34ac298d321d510225f736bc969210",
+    "captured_at": "2026-10-11 12:28:16.382987+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_rm_purchase_number_state_v849_2c6",
+    "archived_rows": 1,
+    "content_hash": "ef00853ccd07512b80880c832c1a7835",
+    "captured_at": "2026-10-11 12:28:16.393606+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_rm_receipt_assets_test71",
+    "archived_rows": 2,
+    "content_hash": "2be035da428e11b0fbc4ef582111b249",
+    "captured_at": "2026-10-11 12:28:16.401232+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_rm_receipt_renumber_archive_test71",
+    "archived_rows": 1,
+    "content_hash": "9ffbdc9c55a00d4eca4ef92531e58f67",
+    "captured_at": "2026-10-11 12:28:16.407672+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_rm_retired_share_cards_test71",
+    "archived_rows": 13,
+    "content_hash": "71a06d715c38204b1d0705059b8777af",
+    "captured_at": "2026-10-11 12:28:16.416095+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_rm_stock_v849_2c6",
+    "archived_rows": 6,
+    "content_hash": "abeca874900bebcedc9e0830b5aed5d0",
+    "captured_at": "2026-10-11 12:28:16.438445+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_role_department_map_v1",
+    "archived_rows": 37,
+    "content_hash": "87fe5c3d15c92e6fe30863a54d08cd0c",
+    "captured_at": "2026-10-11 12:28:16.49373+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_roles",
+    "archived_rows": 13,
+    "content_hash": "33a27254b497b4bceb07060aa74c41f6",
+    "captured_at": "2026-10-11 12:28:16.508818+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_salaried_team_session_v299",
+    "archived_rows": 7,
+    "content_hash": "a9e7d9f9439be9f75464ad8154c571db",
+    "captured_at": "2026-10-11 12:28:16.614049+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_salary_bulk_batch_lines_v782",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:28:16.697904+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_salary_bulk_batches_v782",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:28:16.708254+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_salary_bulk_rules_v782",
+    "archived_rows": 2,
+    "content_hash": "c37e9a14c727f11874290ce9b94f030e",
+    "captured_at": "2026-10-11 12:28:16.714965+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_salary_current_claims_v785",
+    "archived_rows": 3,
+    "content_hash": "39efc0e685acd2f687825bb2b6800d0d",
+    "captured_at": "2026-10-11 12:28:16.7302+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_salary_payment_batch_lines_v785",
+    "archived_rows": 8,
+    "content_hash": "3c96356ec865522c73ad16093782e8ca",
+    "captured_at": "2026-10-11 12:28:16.747839+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_salary_payment_batches_v785",
+    "archived_rows": 2,
+    "content_hash": "663cf26acf0f2e3641098ed349e15a77",
+    "captured_at": "2026-10-11 12:28:16.780688+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_salary_pcs_work_claims_v785",
+    "archived_rows": 46,
+    "content_hash": "14b73497c0b31a0e4db2ef40f9b3e8cf",
+    "captured_at": "2026-10-11 12:28:16.790585+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_salary_voucher_sequence_v786",
+    "archived_rows": 1,
+    "content_hash": "0cae306d2ba896535205270e4da32a17",
+    "captured_at": "2026-10-11 12:28:16.803002+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_salary_worker_alias_v9786",
+    "archived_rows": 9,
+    "content_hash": "f4890a358c2d590eb46a9a4daa4c6181",
+    "captured_at": "2026-10-11 12:28:16.809854+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_sale_adjustments",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:28:16.816406+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_sale_base_rate_policy_v849_2a",
+    "archived_rows": 2,
+    "content_hash": "b71acfd19b33b0b13787a490eac0b4ea",
+    "captured_at": "2026-10-11 12:28:16.824722+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_sale_base_rate_test_snapshot_v849_2c",
+    "archived_rows": 1,
+    "content_hash": "fe739db8426fd71cae384208afd46097",
+    "captured_at": "2026-10-11 12:28:16.835188+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_sale_salary_allocation_class_v849_2c4",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:28:16.839292+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_sale_salary_cost_policy_v849_2c4",
+    "archived_rows": 2,
+    "content_hash": "61bf0d4138a7237562d04e7e88ac3fde",
+    "captured_at": "2026-10-11 12:28:16.847022+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_sale_test_cloth_fixture_lines_v849_2c2",
+    "archived_rows": 3,
+    "content_hash": "b1d872a28eb63f8506bb1cc8540fd230",
+    "captured_at": "2026-10-11 12:28:16.858596+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_sale_test_cloth_fixture_v849_2c2",
+    "archived_rows": 1,
+    "content_hash": "0a7cb4107f3f99817121ddae94be8020",
+    "captured_at": "2026-10-11 12:28:16.863293+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_sales_journey_line_test_v849",
+    "archived_rows": 2,
+    "content_hash": "cfd307df11b8129caf0f6b91f8d5975a",
+    "captured_at": "2026-10-11 12:28:16.870533+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_sales_journey_test_v849",
+    "archived_rows": 2,
+    "content_hash": "6b2bd029ab6d1b4425645a06e383d839",
+    "captured_at": "2026-10-11 12:28:16.877882+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_sales_lot_identity_contract_v849",
+    "archived_rows": 1,
+    "content_hash": "68c7fef6d29783467d58b49dff812b52",
+    "captured_at": "2026-10-11 12:28:16.885532+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_sales_order_items",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:28:16.888711+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_sales_orders",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:28:16.895417+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_sales_party_discount_test_v849",
+    "archived_rows": 4,
+    "content_hash": "f49d464112c86cf4f1b076e7548b84ac",
+    "captured_at": "2026-10-11 12:28:16.901308+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_sales_return_test_v849",
+    "archived_rows": 3,
+    "content_hash": "5bef828641d5ea272a9b3d0b483293b9",
+    "captured_at": "2026-10-11 12:28:16.925632+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_settings",
+    "archived_rows": 13,
+    "content_hash": "79e9908856c25552a834a5d7ae4adbcf",
+    "captured_at": "2026-10-11 12:28:16.948026+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_share_events",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:28:16.958176+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_share_package_items",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:28:16.963349+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_share_package_media",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:28:16.970748+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_share_packages",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:28:16.983109+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_shift_master_v777_2",
+    "archived_rows": 1,
+    "content_hash": "99e350c675e62840d63c6d50ea086ac6",
+    "captured_at": "2026-10-11 12:28:16.993305+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_size_family_master_v1",
+    "archived_rows": 8,
+    "content_hash": "2585caea0dc2529528bb0ea9762ceb7c",
+    "captured_at": "2026-10-11 12:28:17.030126+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_source_data_mode_tag_v806",
+    "archived_rows": 213,
+    "content_hash": "aa9c6b7d51b119a95372bbc619171ced",
+    "captured_at": "2026-10-11 12:28:17.054004+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_source_datasets_test71",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:28:17.09268+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_sticker_lot_consumption_v646",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:28:17.101523+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_sticker_master_v803",
+    "archived_rows": 6,
+    "content_hash": "139c54280cf07201526cd2a29399413f",
+    "captured_at": "2026-10-11 12:28:17.11399+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_sticker_material_consumption_lines_v687",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:28:17.120143+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_stream_pnl_test_v849",
+    "archived_rows": 6,
+    "content_hash": "48211a0fa6e2176f6379fb1c404d6e5d",
+    "captured_at": "2026-10-11 12:28:17.127407+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_supplier_accounts_map_v9763",
+    "archived_rows": 20,
+    "content_hash": "b1afaa086a4fe88aeee247700eb6f9b7",
+    "captured_at": "2026-10-11 12:28:17.153729+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_supplier_alias_map_v806",
+    "archived_rows": 26,
+    "content_hash": "788251156242ac1fd1f65984eea1a1c0",
+    "captured_at": "2026-10-11 12:28:17.181626+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_suppliers",
+    "archived_rows": 20,
+    "content_hash": "69095dda1b0a78082e3f92e9ccbb7b52",
+    "captured_at": "2026-10-11 12:28:17.208279+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_system_migration_registry_v1",
+    "archived_rows": 1,
+    "content_hash": "01f417dec7aa8f3a57f065fc82225176",
+    "captured_at": "2026-10-11 12:28:17.233929+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_system_rulebook_v1",
+    "archived_rows": 8,
+    "content_hash": "99ede5142bf528ed29e961c084d9b841",
+    "captured_at": "2026-10-11 12:28:17.271828+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_system_rules_v841",
+    "archived_rows": 43,
+    "content_hash": "92c445cfad0dfbfa9cbd10bdde7e791c",
+    "captured_at": "2026-10-11 12:28:17.361862+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_targeted_push_outbox_v708",
+    "archived_rows": 1328,
+    "content_hash": "cfee4abdb6253db2573ac96158187e46",
+    "captured_at": "2026-10-11 12:28:17.824891+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_test_e2e_admin_runner_audit_v9088",
+    "archived_rows": 5,
+    "content_hash": "ed7a0810efa73044be30193784c1de60",
+    "captured_at": "2026-10-11 12:28:17.835464+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_test_geofence_evidence_v796",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:28:17.841794+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_test_location_allocation_v796",
+    "archived_rows": 37,
+    "content_hash": "99f7b48c1d4de7a2c47dbd7cebaaa36b",
+    "captured_at": "2026-10-11 12:28:17.881122+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_test_on_behalf_context_v176",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:28:17.969255+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_test_worker_auth_map_v811",
+    "archived_rows": 33,
+    "content_hash": "1a1bad72fd57ee904cf257ae6961499c",
+    "captured_at": "2026-10-11 12:28:17.992715+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_test_worker_location_v796",
+    "archived_rows": 29,
+    "content_hash": "8010734f60122089c96781f0da4c4b3f",
+    "captured_at": "2026-10-11 12:28:18.005428+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_test_worker_login_credentials_v811",
+    "archived_rows": 33,
+    "content_hash": "30d2d5d93b230aa203e0458e40855a5e",
+    "captured_at": "2026-10-11 12:28:18.013264+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_thumbnail_policy_v52",
+    "archived_rows": 1,
+    "content_hash": "c7d0b2e32a04827ad775f1a56154fef1",
+    "captured_at": "2026-10-11 12:28:18.023287+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_trade_commercial_policy_v849",
+    "archived_rows": 1,
+    "content_hash": "901a597aaf98331ae24422f33a679c2c",
+    "captured_at": "2026-10-11 12:28:18.031633+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_trade_party_discount_v849",
+    "archived_rows": 1,
+    "content_hash": "824e8ae46808dbd5aa6bd8bca8df7b92",
+    "captured_at": "2026-10-11 12:28:18.052107+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_trade_pricing_policy_v849_2c5",
+    "archived_rows": 1,
+    "content_hash": "1fc716520d6a4a8546572a9532778b7b",
+    "captured_at": "2026-10-11 12:28:18.060918+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_trade_special_offer_v849",
+    "archived_rows": 1,
+    "content_hash": "2e0da464f10121de3c7326b81c4cda45",
+    "captured_at": "2026-10-11 12:28:18.06575+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_unit_master_v606",
+    "archived_rows": 18,
+    "content_hash": "0fc8e6102403ff4577941ceb55891056",
+    "captured_at": "2026-10-11 12:28:18.080121+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_universal_login_v61",
+    "archived_rows": 1,
+    "content_hash": "1e9ed905dc72c8ae02a3cf0cd41451d9",
+    "captured_at": "2026-10-11 12:28:18.090882+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_universal_lot_registry_v849",
+    "archived_rows": 7,
+    "content_hash": "b25dea841a656c81e3b3ebaf269bacf8",
+    "captured_at": "2026-10-11 12:28:18.102281+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_up_alter_lines",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:28:18.120578+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_up_alter_media",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:28:18.130223+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_up_alter_repair_v3",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:28:18.154318+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_up_alter_status_log",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:28:18.157898+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_up_alters",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:28:18.172047+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_up_damage_lines",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:28:18.178001+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_up_damages",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:28:18.181655+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_up_remake_completion_v3",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:28:18.190362+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_up_remake_lines",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:28:18.198519+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_up_remakes",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:28:18.210486+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_upm_action_requests_v9112",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:28:18.256732+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_upm_actions_v726",
+    "archived_rows": 57,
+    "content_hash": "aabda321a606352dca018ca7f60f14d8",
+    "captured_at": "2026-10-11 12:28:18.402448+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_upm_activity_lease_v794",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:28:21.618187+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_upm_alert_events_v794",
+    "archived_rows": 41,
+    "content_hash": "e1bad0bdd9bb82c867716a2c1816d58c",
+    "captured_at": "2026-10-11 12:28:21.73631+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_upm_alter_events_v737",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:28:21.872718+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_upm_alter_events_v740",
+    "archived_rows": 166,
+    "content_hash": "4f66e8ecf957532c552851c05ce7c91b",
+    "captured_at": "2026-10-11 12:28:22.088293+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_upm_alter_journey_v737",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:28:22.164203+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_upm_alter_journey_v740",
+    "archived_rows": 28,
+    "content_hash": "5168f31c66159fa1c5e4781b02604cf0",
+    "captured_at": "2026-10-11 12:28:22.384744+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_upm_alter_legacy_repair_audit_v772",
+    "archived_rows": 1,
+    "content_hash": "178242bd2f7ceec9f3b97940f9593bec",
+    "captured_at": "2026-10-11 12:28:22.467752+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_upm_alter_requests",
+    "archived_rows": 1,
+    "content_hash": "8dee644676c01064fcdbee9545c597be",
+    "captured_at": "2026-10-11 12:28:22.553096+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_upm_alter_responsibility_events_v767",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:28:22.630682+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_upm_alter_responsibility_v767",
+    "archived_rows": 2,
+    "content_hash": "e4e41309808edaad4c3ef23b77b086b0",
+    "captured_at": "2026-10-11 12:28:22.719147+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_upm_alter_sla_alerts_v767",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:28:22.744176+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_upm_alter_sla_policy_v767",
+    "archived_rows": 1,
+    "content_hash": "9c9429a99c29d27461c528c97e7f7f40",
+    "captured_at": "2026-10-11 12:28:22.759002+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_upm_alter_transfer_requests_v767",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:28:22.777356+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_upm_assignment_rate_log_v772",
+    "archived_rows": 346,
+    "content_hash": "5465b83b6355342729c5bf9ac04784f6",
+    "captured_at": "2026-10-11 12:28:22.896313+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_upm_assignment_receipts_v9112",
+    "archived_rows": 76,
+    "content_hash": "c6f2fb2834092121832468a15ebe0f4d",
+    "captured_at": "2026-10-11 12:28:22.940344+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_upm_assignment_worker_identity_log_v282",
+    "archived_rows": 387,
+    "content_hash": "24455c5a70425b84b33b589e355c2b1b",
+    "captured_at": "2026-10-11 12:28:22.969693+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_upm_audit",
+    "archived_rows": 5,
+    "content_hash": "0c0be0e38c2ccf13353e0882757f57b1",
+    "captured_at": "2026-10-11 12:28:22.978302+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_upm_business_event_location_v795",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:28:22.988843+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_upm_colour_custody_v204",
+    "archived_rows": 70,
+    "content_hash": "61fadbeb101529abd417352090308564",
+    "captured_at": "2026-10-11 12:28:23.028246+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_upm_colour_department_lock_v754",
+    "archived_rows": 15,
+    "content_hash": "31ab8c6c612cd7280e1c805d3b537f08",
+    "captured_at": "2026-10-11 12:28:23.081+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_upm_colour_queue_v741",
+    "archived_rows": 98,
+    "content_hash": "488ac19c99298864f76846c38e0436c1",
+    "captured_at": "2026-10-11 12:28:23.124741+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_upm_colour_state",
+    "archived_rows": 68,
+    "content_hash": "753b8161caf70505ced53a6607a2872a",
+    "captured_at": "2026-10-11 12:28:23.160513+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_upm_costing_inputs_v9300",
+    "archived_rows": 29,
+    "content_hash": "95dfe89e637d5134d4a891d78bd6bb15",
+    "captured_at": "2026-10-11 12:28:23.190437+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_upm_department_direct_cost_v9160",
+    "archived_rows": 1,
+    "content_hash": "c6dac5dc80cd8ed98a89e0aaea8c3bd8",
+    "captured_at": "2026-10-11 12:28:23.227924+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_upm_department_handoffs_v727",
+    "archived_rows": 12,
+    "content_hash": "791ddcf71cd10a18d0a33e3374f9f058",
+    "captured_at": "2026-10-11 12:28:23.272585+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_upm_department_rate_log_v2",
+    "archived_rows": 197,
+    "content_hash": "0c96ab5a07d0e980b6aa077b285379fa",
+    "captured_at": "2026-10-11 12:28:23.327069+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_upm_department_rates_v2",
+    "archived_rows": 155,
+    "content_hash": "f7ff4bbfdadb02e111b7aaaefc8eaf71",
+    "captured_at": "2026-10-11 12:28:23.396284+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_upm_departments",
+    "archived_rows": 19,
+    "content_hash": "2bda98f7c3e9f5313a9234b2b6a6259c",
+    "captured_at": "2026-10-11 12:28:23.440687+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_upm_dispatch_cost_snapshot_v723",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:28:23.495729+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_upm_due_age_policy_v9107",
+    "archived_rows": 1,
+    "content_hash": "08dee24679ac7a6491622668e1c72fbb",
+    "captured_at": "2026-10-11 12:28:23.520746+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_upm_dynamic_submit_history_v741",
+    "archived_rows": 1084,
+    "content_hash": "ccd0850e2b1214c905fb5da8f62f85bb",
+    "captured_at": "2026-10-11 12:28:24.169502+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_upm_entries",
+    "archived_rows": 57,
+    "content_hash": "6028ab9ab10e00a307f5ae0f1a4f9334",
+    "captured_at": "2026-10-11 12:28:24.261294+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_upm_excess_count_v224",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:28:24.316423+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_upm_identity_audit_v761",
+    "archived_rows": 135,
+    "content_hash": "1f7cc91d40786b4a397bec8ff968e1a2",
+    "captured_at": "2026-10-11 12:28:24.764086+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_upm_identity_guard_failures_v237",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:28:24.776308+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_upm_lot_costing_v760",
+    "archived_rows": 43,
+    "content_hash": "2af4eb4e32d016297cead23afcd67472",
+    "captured_at": "2026-10-11 12:28:24.836468+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_upm_lot_cut_size_map_v5",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:28:24.848443+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_upm_lot_department_disposition_v204",
+    "archived_rows": 70,
+    "content_hash": "171bb448f776d37730ee9cbacbc7c316",
+    "captured_at": "2026-10-11 12:28:24.86158+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_upm_lot_identity_lock_v740",
+    "archived_rows": 41,
+    "content_hash": "70e645befd66102408acba2569723dcf",
+    "captured_at": "2026-10-11 12:28:24.894042+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_upm_lot_registry",
+    "archived_rows": 43,
+    "content_hash": "55b19f727c073636de345099ec9959ac",
+    "captured_at": "2026-10-11 12:28:24.945405+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_upm_lot_role_enrolment_v740",
+    "archived_rows": 2,
+    "content_hash": "a0410780ef2915b912340ca9277e7f20",
+    "captured_at": "2026-10-11 12:28:24.965157+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_upm_lot_role_transfer_v740",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:28:24.972557+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_upm_material_ledger_v9300",
+    "archived_rows": 3,
+    "content_hash": "978d5fec46d39685cf84d99c207dd161",
+    "captured_at": "2026-10-11 12:28:24.983729+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_upm_material_purchases_v9300",
+    "archived_rows": 3,
+    "content_hash": "309d93ff017bae991250ef833977ba79",
+    "captured_at": "2026-10-11 12:28:24.993447+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_upm_message_outbox_v800",
+    "archived_rows": 12,
+    "content_hash": "f2687a35bd9810bcb5c6fd18119a3f8f",
+    "captured_at": "2026-10-11 12:28:25.026508+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_upm_missing_qty_v800",
+    "archived_rows": 8,
+    "content_hash": "67a2b480499eefecf47a2997d32f8bfa",
+    "captured_at": "2026-10-11 12:28:25.053952+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_upm_missing_recovery_events_v215",
+    "archived_rows": 4,
+    "content_hash": "4446d4e934829c0292b336dc47dce61f",
+    "captured_at": "2026-10-11 12:28:25.077737+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_upm_owner_margin_v723",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:28:25.096361+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_upm_owner_margin_v726",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:28:25.123024+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_upm_print_jobs",
+    "archived_rows": 16,
+    "content_hash": "4bc0ef4bcbffb66e4d5b5c8ff8a5218f",
+    "captured_at": "2026-10-11 12:28:25.138045+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_upm_quality_ledger_v1",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:28:25.145304+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_upm_quality_state_v1",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:28:25.1664+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_upm_quantity_adjustments_v721",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:28:25.178023+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_upm_rate_requests_v760",
+    "archived_rows": 20,
+    "content_hash": "38da700b2bfc7d73a792ef7bf568ec0e",
+    "captured_at": "2026-10-11 12:28:25.208108+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_upm_receipt_resolution_audit_v287",
+    "archived_rows": 1,
+    "content_hash": "f3301cfe366aac9fdd1b3b530a6763d5",
+    "captured_at": "2026-10-11 12:28:25.217251+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_upm_rectification_cases_v9101",
+    "archived_rows": 1,
+    "content_hash": "4d96878bcbe5d0d3f7778ea9d4f664df",
+    "captured_at": "2026-10-11 12:28:25.23146+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_upm_remake_flow_ledger_v729",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:28:25.243511+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_upm_remake_flow_v729",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:28:25.260131+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_upm_responsibility_events_v800",
+    "archived_rows": 26,
+    "content_hash": "81fcaf522055ca8eedf91e9fa5c1c714",
+    "captured_at": "2026-10-11 12:28:25.28687+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_upm_route_lock_v740",
+    "archived_rows": 2,
+    "content_hash": "be055dbb4983a302f930f84c287d8235",
+    "captured_at": "2026-10-11 12:28:25.294654+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_upm_salaried_team_identity_v694",
+    "archived_rows": 3,
+    "content_hash": "4b8831d7858bdcaace639fd095434edb",
+    "captured_at": "2026-10-11 12:28:25.316016+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_upm_short_decisions_v226",
+    "archived_rows": 1,
+    "content_hash": "33e2d89760d69a5220d08e955271b024",
+    "captured_at": "2026-10-11 12:28:25.326929+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_upm_size_breakup",
+    "archived_rows": 72,
+    "content_hash": "41fe005437fe022b4cc2c76404db789e",
+    "captured_at": "2026-10-11 12:28:25.344782+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_upm_standard_rates_v723",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:28:25.349585+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_upm_standard_rates_v726",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:28:25.356503+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_upm_submit_audit_v794",
+    "archived_rows": 56,
+    "content_hash": "48a09d61be71a3f4311472635c0b98a5",
+    "captured_at": "2026-10-11 12:28:25.385353+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_upm_submit_confirmations_v9111",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:28:25.394751+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_upm_submit_confirmations_v9112",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:28:25.403295+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_upm_submit_ledger_v2",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:28:25.416806+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_upm_submit_lm_candidates_v794",
+    "archived_rows": 33,
+    "content_hash": "63045055650681d7e5778040becc1bdf",
+    "captured_at": "2026-10-11 12:28:25.519132+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_upm_submit_requests_v794",
+    "archived_rows": 25,
+    "content_hash": "003f0abc3a002e8ffef3ed86b1c27bd6",
+    "captured_at": "2026-10-11 12:28:25.672241+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_upm_submit_reversal_log_v3",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:28:25.679675+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_upm_untraceable_request_v740",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:28:25.693226+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_upm_whatsapp_outbox_v737",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:28:25.70554+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_upm_whatsapp_outbox_v740",
+    "archived_rows": 121,
+    "content_hash": "d613b3e05c4a074da406866a747d5b32",
+    "captured_at": "2026-10-11 12:28:25.736643+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_upm_work_assignments_v8",
+    "archived_rows": 444,
+    "content_hash": "52b71f4d0d90ba2b5da7619cfa293ec0",
+    "captured_at": "2026-10-11 12:28:26.211983+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_upm_work_media_v2",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:28:26.238654+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_upm_worker_claim_warning_v769",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:28:26.279252+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_upm_worker_ledger_v721",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:28:26.325969+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_upm_worker_ledger_v723",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:28:26.379223+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_upm_worker_transfers_v721",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:28:26.389058+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_user_access_audit_v1",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:28:26.39889+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_user_access_class_v848_9b",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:28:26.408887+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_user_action_overrides_v1",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:28:26.418272+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_user_admin_audit_v1",
+    "archived_rows": 1,
+    "content_hash": "28ca53ffdbedb6a1d1f6a945e3fd2610",
+    "captured_at": "2026-10-11 12:28:26.432283+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_user_assignments_v2",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:28:26.440694+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_user_field_overrides_v1",
+    "archived_rows": 19,
+    "content_hash": "cbce8155c46e8ddd0293cca9f05a5914",
+    "captured_at": "2026-10-11 12:28:26.449428+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_user_profiles",
+    "archived_rows": 41,
+    "content_hash": "da99292c2a1f5bb94a04b35e705f8971",
+    "captured_at": "2026-10-11 12:28:26.482217+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_user_record_scopes_v1",
+    "archived_rows": 1,
+    "content_hash": "500e905c9570fb4d85bcd3e9a29c5995",
+    "captured_at": "2026-10-11 12:28:26.498881+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_v843_1_test_result",
+    "archived_rows": 1,
+    "content_hash": "fac06929f04e54c022477cfd51dcb9ab",
+    "captured_at": "2026-10-11 12:28:26.510422+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_v843_2_test_result",
+    "archived_rows": 2,
+    "content_hash": "fb086a7363d1b9d2b8e5c0653927f895",
+    "captured_at": "2026-10-11 12:28:26.521374+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_v843_6_test_result",
+    "archived_rows": 2,
+    "content_hash": "f9dfe4d7eb0c25fdcdef90afacfd3189",
+    "captured_at": "2026-10-11 12:28:26.529571+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_voucher_numbering_rules_v846",
+    "archived_rows": 6,
+    "content_hash": "651f35d46cd8b7dafad2e3d79f926392",
+    "captured_at": "2026-10-11 12:28:26.539137+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_web_push_subscriptions_v61",
+    "archived_rows": 22,
+    "content_hash": "f9be84bba0abb51d2b1d0a6dcdc48df6",
+    "captured_at": "2026-10-11 12:28:26.582592+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_web_window_allocation_events_v9329",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:28:26.613926+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_web_window_allocation_v9329",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:28:26.623394+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_web_window_lot_profile_v9329",
+    "archived_rows": 3,
+    "content_hash": "52531333bae6485508a62d18186ef75e",
+    "captured_at": "2026-10-11 12:28:26.672081+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_work_analytics_events_v777_2",
+    "archived_rows": 9,
+    "content_hash": "e638e68318a437267015c02214ffbe20",
+    "captured_at": "2026-10-11 12:28:26.712613+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_worker_accounts_map_v9785",
+    "archived_rows": 36,
+    "content_hash": "480b60ddddd84b49c20aff1877625e1f",
+    "captured_at": "2026-10-11 12:28:26.724783+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_worker_activity_evidence_v800",
+    "archived_rows": 23,
+    "content_hash": "c0f7a300beb1251d16eedce0181802da",
+    "captured_at": "2026-10-11 12:28:26.735416+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_worker_advance_ledger_v785",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:28:49.510059+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_worker_advances_v777_2",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:28:49.516495+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_worker_app_notifications_v784",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:28:49.520204+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_worker_app_notifications_v785",
+    "archived_rows": 1847,
+    "content_hash": "83a07340caea139d88920947104df461",
+    "captured_at": "2026-10-11 12:28:49.601009+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_worker_attendance_policy_v778_1",
+    "archived_rows": 14,
+    "content_hash": "7a53d46ab418fe4df0952d87b86278c7",
+    "captured_at": "2026-10-11 12:28:49.607118+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_worker_attendance_premises_v778_1",
+    "archived_rows": 51,
+    "content_hash": "34a9c561f927f6a60ba42e96ae76e877",
+    "captured_at": "2026-10-11 12:28:49.610558+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_worker_claim_debit_v800",
+    "archived_rows": 2,
+    "content_hash": "3e35188151298c640dabed53b1b8b862",
+    "captured_at": "2026-10-11 12:28:49.612749+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_worker_claims_v777_2",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:28:49.614785+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_worker_department_map_v1",
+    "archived_rows": 65,
+    "content_hash": "15d8320ef9b989aef3608628a859e14e",
+    "captured_at": "2026-10-11 12:28:49.618486+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_worker_directory_v1",
+    "archived_rows": 36,
+    "content_hash": "2bf17ad42f27ccbc0b80be6a9047163b",
+    "captured_at": "2026-10-11 12:28:49.621709+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_worker_identity_alerts_v770",
+    "archived_rows": 27,
+    "content_hash": "5f842dfd1a5bc0e19ff230889971c2d0",
+    "captured_at": "2026-10-11 12:28:49.624258+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_worker_identity_events_v770",
+    "archived_rows": 27,
+    "content_hash": "7bf421b50a629b74211c96e499ad3561",
+    "captured_at": "2026-10-11 12:28:49.627318+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_worker_identity_v770",
+    "archived_rows": 19,
+    "content_hash": "bf6e27bff2d1403b30615fa6bfff297a",
+    "captured_at": "2026-10-11 12:28:49.629896+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_worker_leadership_departments_v776",
+    "archived_rows": 23,
+    "content_hash": "f3f9a76ead035a8a5295317efd360fef",
+    "captured_at": "2026-10-11 12:28:49.632295+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_worker_leadership_events_v776",
+    "archived_rows": 53,
+    "content_hash": "e035d1d694c7bedddafe4a3a1c91bd5e",
+    "captured_at": "2026-10-11 12:28:49.642236+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_worker_leadership_profile_v776",
+    "archived_rows": 29,
+    "content_hash": "ec3b63564a02fe057ea48d94b04ef8f8",
+    "captured_at": "2026-10-11 12:28:49.648874+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_worker_leave_requests_v778_2",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:28:49.652503+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_worker_leave_v778_2",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:28:49.654977+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_worker_lifecycle_events_v768",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:28:49.658813+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_worker_lifecycle_policy_v768",
+    "archived_rows": 1,
+    "content_hash": "81d6368aedadfbf9efc5eec9aa477a96",
+    "captured_at": "2026-10-11 12:28:49.661727+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_worker_lifecycle_v768",
+    "archived_rows": 52,
+    "content_hash": "2609b1f5d9bb64edd2cc24dd8bc44500",
+    "captured_at": "2026-10-11 12:28:49.666349+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_worker_message_outbox_v784",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:28:49.669763+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_worker_message_outbox_v785",
+    "archived_rows": 8,
+    "content_hash": "fa71fb59f29520e62c2051355e38ca4f",
+    "captured_at": "2026-10-11 12:28:49.675357+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_worker_operational_status_v777_2",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:28:49.677203+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_worker_payroll_profile_events_v777_2",
+    "archived_rows": 47,
+    "content_hash": "d9539938e584cdc78b0cf4984b9fde68",
+    "captured_at": "2026-10-11 12:28:49.694149+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_worker_payroll_profile_v777_2",
+    "archived_rows": 33,
+    "content_hash": "d8a70f904bb86d5b9111fda217522192",
+    "captured_at": "2026-10-11 12:28:49.698398+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_worker_reactivation_requests_v778_2",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:28:49.701242+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_worker_real_chat_map_v9787",
+    "archived_rows": 1,
+    "content_hash": "127df72740ec155b8fe24b4fde3f3ebb",
+    "captured_at": "2026-10-11 12:28:49.703885+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_worker_salary_ledger_v781",
+    "archived_rows": 28,
+    "content_hash": "95eea3c97927d08f12dc44b0076c4dcb",
+    "captured_at": "2026-10-11 12:28:49.712275+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_worker_settlements_v777_2",
+    "archived_rows": 1,
+    "content_hash": "8ef837c9b0936a262ff136d3d541e330",
+    "captured_at": "2026-10-11 12:28:49.716204+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_worker_test_phone_events_v773_2",
+    "archived_rows": 4,
+    "content_hash": "23172f64748d45d08fab3d3638c4e4b5",
+    "captured_at": "2026-10-11 12:28:49.719989+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_worker_test_phone_mode_v773_2",
+    "archived_rows": 23,
+    "content_hash": "460ca2576656abe4827d657196dea8c3",
+    "captured_at": "2026-10-11 12:28:49.724678+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_worker_witness_map_v768",
+    "archived_rows": 2,
+    "content_hash": "f6a39c51049fde4f2808d7bfa2afa71b",
+    "captured_at": "2026-10-11 12:28:49.729184+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rr_worker_witness_replacement_alerts_v768",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:28:49.730955+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rrq_balance_v9300",
+    "archived_rows": 2,
+    "content_hash": "3269ba53b21941ec4595bb16564752e7",
+    "captured_at": "2026-10-11 12:28:49.736283+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rrq_lot_rates_v9300",
+    "archived_rows": 15,
+    "content_hash": "4e3a1ddc2a8a66561007da572220e443",
+    "captured_at": "2026-10-11 12:28:49.74816+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "rrq_rate_ledger_v9300",
+    "archived_rows": 61,
+    "content_hash": "fce47cbcf2887f045feba3ac0c2d7671",
+    "captured_at": "2026-10-11 12:28:49.762758+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "settings",
+    "archived_rows": 4,
+    "content_hash": "9db2f11cf6b32b9b83b13a0e2b91f66a",
+    "captured_at": "2026-10-11 12:36:12.944403+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "upm_registry",
+    "archived_rows": 2,
+    "content_hash": "15d66a5fc2b9169027fb64ff81ca1aa2",
+    "captured_at": "2026-10-11 12:36:12.958662+00",
+    "active_removal_completed": false
+  },
+  {
+    "table_name": "whatsapp_numbers",
+    "archived_rows": 0,
+    "content_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "captured_at": "2026-10-11 12:36:12.970216+00",
+    "active_removal_completed": false
+  }
+]

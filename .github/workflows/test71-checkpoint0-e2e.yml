@@ -23,6 +23,13 @@ on:
       - '!supabase/migrations/*_test71_opening_approval_plan.sql'
       - '!supabase/migrations/*_test71_independent_financial_run_guard.sql'
       - '!supabase/migrations/*_test71_independent_run_reconciliation.sql'
+      - '!supabase/migrations/*_test71_independent_role_transactions.sql'
+      - '!supabase/migrations/*_test71_dataset_accounts_boundary.sql'
+      - '!supabase/migrations/*_test71_dataset_fifo_boundary.sql'
+      - '!supabase/migrations/*_test71_legacy_archive_snapshot.sql'
+      - '!supabase/migrations/*_test71_archive_rrq_capture_fix.sql'
+      - '!supabase/migrations/*_test71_auxiliary_legacy_archive.sql'
+      - '!supabase/migrations/*_test71_remaining_legacy_archive.sql'
       - scripts/e2e-env-status.js
       - playwright.config.js
       - package.json
