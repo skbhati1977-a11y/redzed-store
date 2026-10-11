@@ -4,7 +4,7 @@ const {readFileSync}=require('node:fs');
 const {webcrypto}=require('node:crypto');
 const {JSDOM}=require('jsdom');
 const {createCanvas}=require('@napi-rs/canvas');
-const source=readFileSync('redzed-store/test71-readymade-receipt-share.js','utf8');
+const source=readFileSync('test71-readymade-receipt-share.js','utf8');
 const fixture={status:'POSTED',purchase_id:'purchase-1',purchase_no:'RM-1',bill_no:'B1',supplier_name:'Supplier',purchase_date:'2026-10-06',prepared_at:'2026-10-06T12:00:00Z',bill_value:81000,received_value:79500,lines:[{lot_no:'L1',art_no:'A1',item_name:'Shirt',category:'Shirts',size_text:'M',colours_text:'Blue',bill_qty:540,received_qty:530,purchase_rate:150,difference_qty:-10,note_type:'DEBIT_NOTE',note_amount:1500,voucher_no:'DN1',bill_value:81000,received_value:79500}]};
 function env(){const d=new JSDOM('<div id="modal"><div data-message></div><footer data-footer></footer></div>',{runScripts:'outside-only',url:'https://example.com/test70-cb-purchase-real-chat-pilot.html'}),w=d.window;Object.defineProperty(w,'crypto',{value:webcrypto});w.Blob=Blob;w.File=File;w.AbortSignal=AbortSignal;w.URL.createObjectURL=()=> 'blob:receipt';w.URL.revokeObjectURL=()=>{};const labels=[];w.HTMLCanvasElement.prototype.getContext=function(){this.real=createCanvas(this.width,this.height);const c=this.real.getContext('2d'),fill=c.fillText.bind(c);c.fillText=(s,...a)=>{labels.push(s);fill(s,...a)};return c};w.HTMLCanvasElement.prototype.toBlob=function(cb){cb(new Blob([this.real.toBuffer('image/jpeg')],{type:'image/jpeg'}))};w.HTMLCanvasElement.prototype.toDataURL=function(type){return this.real.toDataURL(type)};w.eval(source);return{w,d,labels}}
 const tick=()=>new Promise(r=>setTimeout(r,10));
