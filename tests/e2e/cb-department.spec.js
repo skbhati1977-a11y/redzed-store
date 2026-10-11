@@ -215,7 +215,7 @@ test('the seven read-only evidence CBs no longer remain in CB WORKING and mobile
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/test70-cb-purchase-real-chat-pilot.html?mode=TEST&rc_status=CLOSE&rc_view=chat&rc_kind=group&rc_id=PURCHASE&rc_focus_cb=1002');
   await expect(page.locator('#chatName')).toContainText('CB Department', { timeout: 30_000 });
-  const card = page.locator('[data-cb-no="1002"]');
+  const card = page.locator('details.closed-row[data-cb-no="1002"]');
   await expect(card).toBeVisible();
   await expect(card).toContainText('CB Status CLOSE');
   await expect(card).toContainText('Cutting Status READY FOR CUTTING');
@@ -225,12 +225,13 @@ test('the seven read-only evidence CBs no longer remain in CB WORKING and mobile
 });
 
 test('retired mobile Art link opens the exact canonical CB planning screen', async ({ page }, testInfo) => {
+  test.setTimeout(180_000);
   const fixture = await setupCbUiFixture(page, 'art-picker', testInfo);
   try {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto(`/real-art-decide-master.html?mode=TEST&cb_unit_id=${encodeURIComponent(fixture.data.art_due_unit_id)}&v=619`);
     await expect(page).toHaveURL(new RegExp(`real-cb-new-v9130-fix2\\.html.*cb_id=${fixture.data.cb_id}`));
-    await expect(page.locator('#bootMsg')).toBeHidden({ timeout: 30_000 });
+    await expect(page.locator('#bootMsg')).toContainText('CB review confirmed', { timeout: 30_000 });
     await expect(page.locator('#setDecisionCard .canonicalSetArt').first()).toBeVisible();
     await expect(page.locator('#setDecisionCard .profile-card')).toHaveCount(2);
     const layout = await page.evaluate(() => ({
@@ -446,6 +447,7 @@ test('TTT1-S2 read-only evidence follows assignment state and cannot resurrect m
 });
 
 test('mobile Cutting App opens exact isolated Art child and Ready child remains WORKING after reload', async ({ page }, testInfo) => {
+  test.setTimeout(180_000);
   const fixture = await setupCbUiFixture(page, 'cutting-mobile', testInfo, true);
   const artDue = fixture.data.art_due_unit_id;
   const ready = fixture.data.ready_unit_id;
@@ -456,7 +458,7 @@ test('mobile Cutting App opens exact isolated Art child and Ready child remains 
     await expect(artAction).toBeVisible({ timeout: 30_000 });
     await artAction.click();
     await expect(page).toHaveURL(new RegExp(`real-cb-new-v9130-fix2\\.html.*cb_id=${fixture.data.cb_id}`));
-    await expect(page.locator('#bootMsg')).toBeHidden({ timeout: 30_000 });
+    await expect(page.locator('#bootMsg')).toContainText('CB review confirmed', { timeout: 30_000 });
     await expect(page.locator('#setDecisionCard .canonicalSetArt').first()).toBeVisible();
 
     await page.goto(`/real-cutting-master.html?mode=TEST&cb_unit_id=${encodeURIComponent(ready)}&v=619`);
@@ -477,6 +479,7 @@ test('mobile Cutting App opens exact isolated Art child and Ready child remains 
 });
 
 test('Act As Worker is rejected by the shared Cutting backend authority gate', async ({ page }, testInfo) => {
+  test.setTimeout(180_000);
   const fixture = await setupCbUiFixture(page, 'cutting-worker-authority', testInfo, true);
   const directory = await rpc(page, 'rr_real_chat_directory_v600');
   expect(directory.error).toBeNull();

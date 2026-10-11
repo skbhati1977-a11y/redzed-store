@@ -4,6 +4,12 @@ const {installFunctions,functionSource}=require('./helpers/source-functions');
 const cb=fs.readFileSync('real-cb-new-v9130-fix2.html','utf8');
 const categories=['self-collar','crew-neck','drop-shoulder','flat-polo'].map(category_code=>({id:category_code,category_code}));
 const families=['L, XL, XXL','2XL, 3XL, 4XL','3XL, 4XL, 5XL','M, L, XL, XXL','M, L, XL','L, XL','L, XXL','FREE SIZE'];
+test('confirmed CB hydrates without the retired add-material button and preserves DUE editing',()=>{
+ const nodes=Object.fromEntries(['bootMsg','cbNo','divisionCount','colourCount','remarks','saveBtn','draftBtn'].map(id=>[id,{style:{},classList:{add(){}}}]));
+ const s=installFunctions(cb,{$:id=>nodes[id]||null,cbState:'WORKING',materials:[{state:'DUE'}]},['applyConfirmedCbFreeze']);
+ s.applyConfirmedCbFreeze();assert.match(nodes.bootMsg.textContent,/CB review confirmed/);assert.equal(nodes.cbNo.disabled,true);assert.equal(nodes.saveBtn.hidden,true);assert.equal(nodes.draftBtn.disabled,false);
+ s.materials=[];s.cbState='CLOSE';s.applyConfirmedCbFreeze();assert.match(nodes.bootMsg.textContent,/SENT TO CUTTING/);assert.equal(nodes.draftBtn.disabled,true);
+});
 function scope(extra={},names=[]){return installFunctions(cb,{setRequirements:{},artCategories:categories,arts:[],SIZE_FAMILIES:families,categoryDefaults:new Map(),...extra},['rootSetNoForKey','structuralSetCategoryIds','categoryForId','normalizeBorderPounchi','normalizeSharedFinish','canonicalSizeFamilyDisplay','categoryDefaultsFor',...names]);}
 test('S1 Self Collar, S2/S3 Round Drop and S4 Flat remain exact category authorities for child profiles',()=>{
  const s=scope({setRequirements:{'22':{rootSetNo:2}}});
