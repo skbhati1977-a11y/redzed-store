@@ -36,10 +36,10 @@ Partial-month salaried pay uses fixed 30-day basis. HALF_DAY uses actual punch h
 
 ## Verified continuation: approved advance recovery and Accounts OPEN
 - Protected V785 TEST salary posting now routes through V786 and the canonical attendance-derived earned amount. Missing attendance is pending per worker, with null earned/payable amounts rather than guessed pay. Unselected workers are not accrued or recovered.
-- Approved September salary test: ₹15,000 accrual, ₹100 dedicated advance recovery, ₹14,900 cash payment; salary payable and advance balance both clear. Full audited TEST batch reversal restores the advance to ₹100 and salary balance to zero; duplicate reversal is rejected. Five rollback assertions passed.
+- Approved September salary test: ₹15,000 accrual, ₹100 dedicated advance recovery, ₹14,900 cash payment; salary payable and advance balance both clear. Full audited TEST batch reversal restores the advance to ₹100 and salary balance to zero; duplicate reversal is rejected. Six rollback assertions passed, including all three audited Accounts source reversals.
 - Finalized V779 salary cannot be paid through alternate V785/V786 salary routes. Nineteen monthly-source/payment rollback assertions passed. Legacy V782/V782_2 TEST bulk writers are retired; REAL behavior remains as before. Nonzero opening monthly settlements are blocked until approved due allocation exists.
 - Accounts OPEN now includes canonical outstanding bills, individual salary dues, finalized mapped monthly salary settlements and TEST Committee dues. Five rollback assertions prove all pending bills, explicit modes, no TEST Committee leakage to REAL, invalid-mode rejection and anonymous rejection. This does not certify every untagged claim or source pipeline.
-- Accounts action UI syntax passed. Changes are committed only to TEST71 and require the next preview deployment.
+- Accounts action UI syntax passed. Changes are committed only to TEST71. The next preview deployment was rejected with Vercel 402 api-deployments-free-per-day (>100 deployments); CLI fallback is unavailable. No billing/settings change was made.
 
 ## Remaining import blockers
 
@@ -52,3 +52,12 @@ Partial-month salaried pay uses fixed 30-day basis. HALF_DAY uses actual punch h
 7. Future source contracts that change salary within a month currently require reviewed segmented payroll; no guessed rate is applied.
 
 Evidence SQL is committed under tests/evidence/*20261011.sql. Each business-record scenario ends in ROLLBACK. Existing imaginary records and production/main git remain intact.
+
+## Latest checkpoint: bounded source rerun and current blockers
+- Current scenario matrix: 97 PASS, 12 FAIL, 4 BLOCKED, 19 NOT_RUN. No universal clean chit.
+- Current bounded source suite: 110 files, 83 pass, 27 fail, zero timeouts. Evidence saved in test71-source-suite-evidence-20261011.json; assertions were not waived.
+- Four required CI suites were enabled; the real push-triggered workflow ran and stopped at failing static contracts. This is execution evidence, not CI success.
+- Customer approval security suite: 38 tests passed after current DOM fixture fixes. Session/notification/OTP suite: 18 tests passed; native rendered garment receipt suite: 8 tests passed. An actual missing OTP identity-change control was restored. The renderer's @napi-rs/canvas dependency is pinned at1.0.11 with the lockfile.
+- Signed-in existing READY preview Cutting WORKING → STAFF → ALTER6 rendered all six articles. Fabrication WORKING → Accept & Count13 rendered source submitter and department mapping. Latest newer UI code cannot be browser-certified until deployment becomes available.
+- Fresh posted journal imbalance count0; persisted rollback salary records0.
+- Archive/aggregate isolation, approved openings and source reconciliation, claim policy wiring, remaining static failures and independent role/mobile/GPS/push/workflows still remain. Actual CSV/Sheet source has not been supplied; no new business records were imported.
