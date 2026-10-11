@@ -123,7 +123,7 @@ test('mobile Sales, Costing and Accounts group projections stay inside viewport'
   }
 });
 
-test('released D-card succeeds once, closes action state and rolls its fixture back', async ({ page }) => {
+test('released D-card succeeds once, waits for worker assignment and rolls its fixture back', async ({ page }) => {
   const proof = await rpc(page, 'rr_test_released_dcard_regression_v502');
   expect(proof.error).toBeNull();
   expect(proof.data.first_release_count).toBe(1);
@@ -132,9 +132,10 @@ test('released D-card succeeds once, closes action state and rolls its fixture b
   expect(proof.data.gallery_state).toBe('released');
   expect(proof.data.actionable_ready_count).toBe(0);
   expect(proof.data.history_count).toBe(1);
-  expect(proof.data.real_chat_state).toBe('CLOSE');
-  expect(proof.data.real_chat_action).toBeNull();
-  expect(proof.data.real_chat_next_actions).toEqual([]);
+  expect(proof.data.real_chat_state).toBe('WORKING');
+  expect(proof.data.real_chat_action).toBe('ASSIGN_WORKER');
+  expect(proof.data.real_chat_next_actions).toHaveLength(1);
+  expect(proof.data.real_chat_next_actions[0]).toMatchObject({ code: 'ASSIGN_WORKER' });
   expect(proof.data.rolled_back).toBe(true);
   expect(proof.data.fixture_residue).toBe(0);
 });

@@ -25,31 +25,28 @@ test('deployed Unit dropdown, creation, Material persistence, CB mirror and Work
 
   try {
     await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto('/real-cb-new-v9130-fix2.html?mode=TEST&v=610');
-    await expect(page.locator('#bootMsg')).toBeHidden({ timeout: 30_000 });
-    await page.locator('#additionalMaterialList .addNextMaterial').click();
-    const material = page.locator('#additionalMaterialList [data-m="1"]');
-    await expect(material.locator('.unitSelect')).toHaveValue('PCS');
-    await material.locator('.newMaterial').click();
-    await expect(page.locator('#cbMaterialModal')).toBeVisible();
-    await expect(page.locator('#cbNewPurchaseUnit')).toHaveValue('PCS');
-
-    await page.locator('#cbNewPurchaseUnit').selectOption('__NEW_UNIT__');
-    await expect(page.locator('#cbUnitModal')).toBeVisible();
-    await page.locator('#cbNewUnitName').fill(unitName);
-    // Unit Code is canonically normalized from Unit Name. Re-entering it here
-    // races the app-wide mobile fill helper and does not model the user flow.
-    await expect(page.locator('#cbNewUnitCode')).toHaveValue(unitCode);
-    await page.locator('#saveCbUnit').click();
-    await expect(page.locator('#cbUnitModal')).toBeHidden({ timeout: 15_000 });
-    await expect(page.locator('#cbNewPurchaseUnit')).toHaveValue(unitCode);
-    await page.locator('#cbNewStockUnit').selectOption(unitCode);
-    await page.locator('#cbNewConsumptionUnit').selectOption(unitCode);
-    await page.locator('#cbNewMaterialName').fill(materialName);
-    await page.locator('#saveCbMaterial').click();
-    await expect(page.locator('#cbMaterialModal')).toBeHidden({ timeout: 20_000 });
-    await expect(material.locator('.cat')).toHaveValue(/.+/);
-    await expect(material.locator('.unitSelect')).toHaveValue(unitCode);
+    await page.goto('/real-material-master-v805.html?mode=TEST&v=TEST71');
+    await expect(page.locator('#who')).toContainText(/Super Admin|OWNER/i, { timeout: 30_000 });
+    await page.locator('#type').selectOption('OTHER_MATERIAL');
+    await page.locator('#addMaterial').click();
+    await expect(page.locator('#materialModal')).toBeVisible();
+    await expect(page.locator('#newPurchaseUnit')).toHaveValue('PCS');
+    await page.locator('#newPurchaseUnit').selectOption('__NEW_UNIT__');
+    await expect(page.locator('#unitModal')).toBeVisible();
+    await page.locator('#newUnitName').fill(unitName);
+    await expect(page.locator('#newUnitCode')).toHaveValue(unitCode);
+    await page.locator('#saveNewUnit').click();
+    await expect(page.locator('#unitModal')).toBeHidden({ timeout: 15_000 });
+    await expect(page.locator('#newPurchaseUnit')).toHaveValue(unitCode);
+    await page.locator('#newConsumptionMethod').selectOption('DIRECT_ACTUAL');
+    await page.locator('#newConsumptionUnit').selectOption(unitCode);
+    await page.locator('#newMaterialName').fill(materialName);
+    await page.locator('#saveNewMaterial').click();
+    await expect(page.locator('#materialModal')).toBeHidden({ timeout: 20_000 });
+    await page.locator('#name').fill(materialName);
+    await expect(page.locator('#suggestions .suggestion')).toHaveCount(1, { timeout: 15_000 });
+    await page.locator('#suggestions .suggestion').first().click();
+    await expect(page.locator('#purchaseUnit')).toHaveValue(unitCode);
 
     const materialArgs = {
       p_type_code: 'OTHER_MATERIAL', p_material_name: materialName, p_material_no: null,
@@ -84,15 +81,11 @@ test('deployed Unit dropdown, creation, Material persistence, CB mirror and Work
     await page.locator('#suggestions .suggestion').first().click();
     await expect(page.locator('#purchaseUnit')).toHaveValue(unitCode);
 
-    // A fresh CB projection reads the linked category and allows an authorized Unit override.
-    await page.goto('/real-cb-new-v9130-fix2.html?mode=TEST&v=610');
+    // Manual additional-material entry is retired in CB. The canonical backend
+    // proof below verifies the shared material/unit mapping and DUE invariants.
+    await page.goto('/real-cb-new-v9130-fix2.html?mode=TEST&v=TEST71');
     await expect(page.locator('#bootMsg')).toBeHidden({ timeout: 30_000 });
-    await page.locator('#additionalMaterialList .addNextMaterial').click();
-    const freshMaterial = page.locator('#additionalMaterialList [data-m="1"]');
-    await freshMaterial.locator('.cat').selectOption({ label: materialName });
-    await expect(freshMaterial.locator('.unitSelect')).toHaveValue(unitCode);
-    await freshMaterial.locator('.reqState').selectOption('DUE');
-    await expect(freshMaterial.locator('.materialQty')).toHaveValue('');
+    await expect(page.locator('#extraMaterialCard')).toBeHidden();
 
     const backendProof = await rpc(page, 'rr_test_cb_material_unit_v610');
     expect(backendProof.error).toBeNull();

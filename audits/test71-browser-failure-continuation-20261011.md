@@ -31,3 +31,33 @@ Remaining failures:
 
 No opening balances, business purchases or payments were invented. No old records
 were deleted or moved to manufacture a pass.
+
+## Continuation at 12:40 IST
+
+Run 38119117716 on 072834: MC1 success; CB 7 passed/7 failed;
+Material Unit failed on hidden additional-material UI; commercial 5 passed/2 failed;
+full factory failed. The progressive button correction above was insufficient:
+manual additional materials are intentionally retired. The current test now creates
+and reloads Units/Materials through Material Master and retains CB backend invariants.
+
+Applied 20261011065351: unchanged TEST OPEN Cutting cards avoid repeat updates;
+release proof locks its existing TEST parent and uses the next canonical division;
+released/unassigned lots assert WORKING/ASSIGN_WORKER under v632. A rollback check
+confirmed normalized OPEN state and zero repeat normalization. Related 11 checks pass.
+
+Applied 20261011070325: exact unchanged TEST CB projection upserts and Art receiver
+bindings avoid repeat writes; REAL behavior is preserved. Experimental combined
+D-card rollback proof passed in 19 seconds, once-only release, blocked retry/cross-mode,
+zero residue. Post-apply repetition timed out at another trigger: this is NOT a stable
+performance pass. Art rollback proof also timed out in child reconciliation.
+
+Notification focus now resolves read notifications through loaded action history,
+not just unread inbox, preserving department/worker/status checks. Consolidated event
+matching precedes CB fallback; an exact UPM assignment never falls back to another
+card sharing CB/lot. Ten notification tests pass including group/personal exact
+focus and unrelated-worker rejection. Full local suite: 522 pass before the final
+fallback-order change; notification suite rerun after it passes. Preview/mobile tap
+verification is still required; local DOM checks do not establish physical push delivery.
+
+No opening balances were invented, history deleted, security grants broadened,
+production deployed or main changed. Full clean chit remains NOT CLEARED.
