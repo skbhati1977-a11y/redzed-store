@@ -82,5 +82,5 @@
  }finally{busy=false}}
 
  window.RRChatNotifications71={refresh,visible,paint,target,rpc,unread:()=>notices};
- document.addEventListener('scroll',()=>visible(),true);setInterval(()=>{if(!document.hidden){paint();refresh()}},3000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)refresh()});setTimeout(refresh,1000);
+ document.addEventListener('scroll',()=>visible(),true);setInterval(()=>{if(!document.hidden){paint();refresh()}},15000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)refresh()});setTimeout(refresh,1000);
 })();
