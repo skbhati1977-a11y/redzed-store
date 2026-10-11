@@ -18,6 +18,17 @@ async function openMc1(page, status = 'OPEN') {
   await expect(page.locator('#kind')).toContainText(status === 'OPEN' ? 'Purchase / Stock IN' : status === 'WORKING' ? 'Lot Consumption' : 'Closing Stock');
 }
 
+test('MC1 purchase form survives the empty-feed observer on the deployed app', async ({ page }) => {
+  await ensureSession(page, { quiet: true });
+  await page.evaluate(() => localStorage.removeItem('RR_MC1_PURCHASE_DRAFT_V504'));
+  await openMc1(page, 'OPEN');
+  await expect(page.locator('[data-mc-fabric]')).toBeVisible({ timeout: 30_000 });
+  // The observer debounces for 40ms; verify the real DOM after it settles.
+  await page.waitForTimeout(150);
+  await expect(page.locator('[data-mc-fabric]')).toBeVisible();
+  await expect(page.locator('[data-mc-save-draft]')).toBeVisible();
+});
+
 test('MC1 purchase, consumption, costing, close and idempotency stay canonical', async ({ page }, testInfo) => {
   test.setTimeout(180_000);
   await ensureSession(page, { quiet: true });
