@@ -196,6 +196,10 @@
         display: none !important;
       }
       @media (max-width: 760px) {
+        /* Fixed chat controls belong to the selected chat, never the inbox. */
+        #inbox:not(.hide) ~ .chat {
+          display: none !important;
+        }
         .shell {
           grid-template-columns: 1fr;
         }
