@@ -10,6 +10,8 @@ begin
  and x.department_code not in('PRESS','PACKING') and x.target_department_code='FABRICATION'
  and exists(select 1 from public.rr_user_profiles p where p.auth_user_id=x.selected_receiver_auth_id and p.is_active)
  and not exists(select 1 from public.rr_upm_work_assignments_v8 a where a.id=any(x.assignment_ids) and a.status<>'IN_PROGRESS')
+ and not exists(select 1 from public.rr_upm_work_assignments_v8 a where a.id=any(x.assignment_ids)
+   and not exists(select 1 from public.rr_worker_directory_unified_v1 w where w.worker_id=a.worker_id))
  order by (x.lot_no='2634') desc,x.created_at limit 1;
  if q.id is null then raise exception 'Claimed-but-uncounted rollback fixture required'; end if;
  uid:=q.selected_receiver_auth_id;

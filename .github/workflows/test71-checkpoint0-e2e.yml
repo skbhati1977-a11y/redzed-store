@@ -40,14 +40,20 @@ jobs:
       - run: npx playwright install --with-deps chromium
       - run: npm run e2e:env-status
       - run: npm run test:e2e:static
-      - run: npx playwright test --project=auth-setup
-      - run: npx playwright test --project=mc1 --no-deps
+      - id: auth
+        run: npx playwright test --project=auth-setup
+      - if: ${{ !cancelled() && steps.auth.outcome == 'success' }}
+        run: npx playwright test --project=mc1 --no-deps
       # MC1's auth-setup writes the reusable Super Admin storage state once.
       # Later suites must reuse it instead of replaying the one-time OIDC token.
-      - run: npx playwright test --project=cb-department --no-deps
-      - run: npx playwright test --project=material-unit --no-deps
-      - run: npx playwright test --project=checkpoint-8 --no-deps
-      - run: npx playwright test --project=full-factory --no-deps
+      - if: ${{ !cancelled() && steps.auth.outcome == 'success' }}
+        run: npx playwright test --project=cb-department --no-deps
+      - if: ${{ !cancelled() && steps.auth.outcome == 'success' }}
+        run: npx playwright test --project=material-unit --no-deps
+      - if: ${{ !cancelled() && steps.auth.outcome == 'success' }}
+        run: npx playwright test --project=checkpoint-8 --no-deps
+      - if: ${{ !cancelled() && steps.auth.outcome == 'success' }}
+        run: npx playwright test --project=full-factory --no-deps
       - name: Upload Playwright evidence
         if: always()
         uses: actions/upload-artifact@v4

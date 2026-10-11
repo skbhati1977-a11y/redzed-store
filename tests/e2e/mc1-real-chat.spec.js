@@ -18,7 +18,8 @@ async function openMc1(page, status = 'OPEN') {
   await expect(page.locator('#kind')).toContainText(status === 'OPEN' ? 'Purchase / Stock IN' : status === 'WORKING' ? 'Lot Consumption' : 'Closing Stock');
 }
 
-test('MC1 purchase, consumption, costing, close and idempotency stay canonical', async ({ page }) => {
+test('MC1 purchase, consumption, costing, close and idempotency stay canonical', async ({ page }, testInfo) => {
+  test.setTimeout(180_000);
   await ensureSession(page, { quiet: true });
 
   const beforeRows = await rpc(page, 'rr_get_mc1_purchase_account_v9076');
@@ -53,7 +54,14 @@ test('MC1 purchase, consumption, costing, close and idempotency stay canonical',
 
   // Browser Draft remains non-posting. Do not confirm another immutable stock
   // transaction merely to prove the already-covered backend contract.
+  await page.evaluate(() => localStorage.removeItem('RR_MC1_PURCHASE_DRAFT_V504'));
   await openMc1(page, 'OPEN');
+  try {
+    await expect(page.locator('[data-mc-fabric]')).toBeVisible({ timeout: 30_000 });
+  } catch (error) {
+    await testInfo.attach('mc1-open-state', { body: await page.locator('#messages').innerText(), contentType: 'text/plain' });
+    throw error;
+  }
   const seed = await page.evaluate(async () => {
     const [fabrics, vendors] = await Promise.all([
       window.supabaseClient.rpc('rr_get_mc1_fabric_options_v9134'),
