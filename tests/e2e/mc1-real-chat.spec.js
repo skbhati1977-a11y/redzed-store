@@ -37,7 +37,7 @@ test('MC1 purchase form survives the empty-feed observer on the deployed app', a
   await expect(page.locator('[data-mc-save-draft]')).toBeVisible();
 });
 
-test('MC1 purchase, consumption, costing, close and idempotency stay canonical', async ({ page }, testInfo) => {
+test('MC1 canonical purchase, consumption, costing and retry proof leaves no residue', async ({ page }, testInfo) => {
   test.setTimeout(180_000);
   await ensureSession(page, { quiet: true });
 
@@ -71,6 +71,12 @@ test('MC1 purchase, consumption, costing, close and idempotency stay canonical',
   expect(afterProofRows.filter((x) => String(x.bill_no || '').startsWith('MC1-E2E-'))).toHaveLength(retainedBefore);
   expect(afterProofRows.filter((x) => x.bill_no === proof.fixture.bill_no)).toHaveLength(0);
 
+});
+
+test('MC1 draft, consumption and closing stock remain visible through navigation and reload', async ({ page }, testInfo) => {
+  test.setTimeout(180_000);
+  await ensureSession(page, { quiet: true });
+
   // Browser Draft remains non-posting. Do not confirm another immutable stock
   // transaction merely to prove the already-covered backend contract.
   await page.evaluate(() => localStorage.removeItem('RR_MC1_PURCHASE_DRAFT_V504'));
@@ -93,7 +99,7 @@ test('MC1 purchase, consumption, costing, close and idempotency stay canonical',
     if (!fabric || !vendor) throw new Error('Safe MC1 E2E fabric/vendor fixture missing');
     return { fabric, vendor };
   });
-  const draftBill = `TEST71-DRAFT-${proof.fixture.idempotency_key.slice(0, 8)}`;
+  const draftBill = `TEST71-DRAFT-${Date.now()}`;
   await page.locator('[data-mc-fabric]').selectOption(String(seed.fabric.id || seed.fabric.matching_item_id));
   await page.locator('[data-mc-vendor]').selectOption(String(seed.vendor.supplier_ledger_id));
   await page.locator('[data-mc-bill]').fill(draftBill);
