@@ -6,8 +6,9 @@ on:
       scope:
         description: 'Continue remaining gates, or explicitly recheck all modules'
         type: choice
-        default: remaining
+        default: factory
         options:
+          - factory
           - remaining
           - all
   push:
@@ -136,7 +137,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     needs: material_unit
-    if: ${{ always() && !cancelled() }}
+    if: ${{ always() && !cancelled() && github.event_name == 'workflow_dispatch' && inputs.scope != 'factory' }}
     env:
       E2E_BASE_URL: https://redzed-test65-git-test71-real-chat-e2e-6adad3-skbhati1977-4414.vercel.app
       PLAYWRIGHT_HTML_OUTPUT_DIR: playwright-report/checkpoint-8

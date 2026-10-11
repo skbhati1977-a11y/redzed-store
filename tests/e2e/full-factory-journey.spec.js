@@ -558,14 +558,20 @@ test('three new TEST71 CBs complete deployed New/Open/Draft/Confirm invariants',
     // Follow the same worker receipt lane and card screen used by the operator.
     await page.locator('[data-work-lane="WORKER"]').click();
     await page.locator('[data-work-filter="ASSIGNED_RECEIPT"]').click();
-    const card = page.locator('#messages .work-card').filter({ hasText: lot }).filter({ has: page.locator('a[data-action="CONFIRM_RECEIVED_PCS"]') }).first();
+    const card = page.locator('#messages .work-card').filter({ hasText: lot }).filter({ has: page.locator('[data-receipt-accept]') }).first();
     await expect(card).toBeVisible({ timeout: 30_000 });
-    await card.locator('a[data-action="CONFIRM_RECEIVED_PCS"]').click();
-    await expect(page.locator('#actionSheet')).toBeVisible();
-    const receipt = page.frameLocator('#actionFrame');
-    await expect(receipt.locator('#accept')).toBeVisible({ timeout: 30_000 });
-    expect(await receipt.locator('.qty').count()).toBe(pending.length);
-    await receipt.locator('#accept').click();
+    // One canonical card consolidates every pending colour for this worker/lot.
+    await expect(page.locator('#messages .work-card').filter({ hasText: lot })).toHaveCount(1);
+    await card.locator('[data-receipt-accept]').click();
+    const receipt = page.locator('.receipt-count-overlay');
+    await expect(receipt).toBeVisible({ timeout: 30_000 });
+    await expect(receipt).toContainText(lot);
+    await expect(receipt.locator('[data-count]')).toHaveCount(pending.length);
+    const displayedTotal = await receipt.locator('[data-exp]').evaluateAll(rows => rows.reduce((n, row) => n + Number(row.textContent), 0));
+    expect(displayedTotal).toBe(pending.reduce((n, row) => n + Number(row.assigned_qty), 0));
+    await receipt.locator('[data-accept-all]').click();
+    await receipt.locator('[data-save]').click();
+    await expect(receipt).toBeHidden({ timeout: 60_000 });
     await expect.poll(async () => {
       const current = await page.evaluate(async (lotNo) => {
         const result = await window.supabaseClient.from('rr_upm_work_assignments_canonical_v282').select('status').eq('lot_no', lotNo).eq('department_code', 'STITCHING');

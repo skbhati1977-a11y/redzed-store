@@ -24,3 +24,7 @@ Remaining evidence: rerun the complete live workflow at the new exact commit. Ap
 - Cutting CLOSED tabs were removed by the established interface. Verify released E2E-CB-3 through its supported focused CB read-only history route, preserving backend release-history, canonical lifecycle and disabled-action checks.
 - Workflow defaults to remaining gates only; explicit manual scope=all retains full regression option. Prior passed checkpoints are carried forward rather than recreated.
 - Deployed verification of these continuation changes remains pending at commit time. Universal clean chit is not claimed.
+
+- Deployed commit 0bea7e1803165530bbe0b430959feb8bdf80b0d5: both formerly failing Commercial checks PASS in run 38131480113/job114446535965. Directory guard is HTTP200 and byte-identical to the committed asset.
+- Factory trace at that commit confirms the pending target card, both colours (6 PCS total), and visible ACCEPT & COUNT button in WORKER / ASSIGNED RECEIPT. The remaining assertion expected a retired anchor/iframe; the production interface uses data-receipt-accept and the inline receipt-count overlay. Adapt the test to visible controls, asserting one card, all colour counts, exact expected PCS total, popup closure and canonical assignment transition.
+- Next continuation runs factory only; passed Commercial evidence is retained alongside earlier MC1/CB/Material results.
