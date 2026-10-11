@@ -29,7 +29,7 @@ BEGIN
   WHERE a.data_mode='TEST' AND a.attendance_date BETWEEN greatest(v_from,p.effective_from) AND least(v_to,coalesce(p.effective_to,v_to))
   UNION ALL
   SELECT a.worker_id,a.business_date,a.session_id::text,'GEOFENCE',a.checkin_at,a.checkout_at,
-    CASE WHEN a.checkout_at IS NULL THEN 'CHECKED_IN' ELSE 'PRESENT' END,a.updated_at,
+    CASE WHEN a.forgot_checkout THEN 'REVIEW_REQUIRED' WHEN a.checkout_at IS NULL THEN 'CHECKED_IN' ELSE 'PRESENT' END,a.updated_at,
     CASE WHEN a.checkout_at IS NULL THEN a.checkin_inside_geofence ELSE a.checkout_inside_geofence END,
     coalesce(a.checkout_premise_name,a.checkin_premise_name),false,1
   FROM public.rr_regular_attendance_sessions_v778_2 a JOIN profiles p USING(worker_id)
@@ -50,7 +50,7 @@ BEGIN
    AND NOT EXISTS(SELECT 1 FROM actual a WHERE a.worker_id=p.worker_id AND a.attendance_date=v_today)
  ), classified AS (
   SELECT d.*,pol.attendance_type,pol.policy_id,
-   CASE WHEN d.check_in_at IS NULL AND d.status IN ('PENDING','INCOMPLETE','REVIEW_REQUIRED')
+   CASE WHEN d.status='REVIEW_REQUIRED' OR d.check_in_at IS NULL AND d.status IN ('PENDING','INCOMPLETE','REVIEW_REQUIRED')
       OR d.attendance_date<v_today AND d.status IN ('INCOMPLETE','REVIEW_REQUIRED','CHECKED_IN') AND d.check_out_at IS NULL THEN 'OPEN' ELSE 'WORKING' END chat_status,
    (v_role IN ('OWNER','SUPER_ADMIN','ADMIN') OR d.worker_id=v_self) can_punch
   FROM daily d LEFT JOIN LATERAL (SELECT policy_id,attendance_type FROM public.rr_worker_attendance_policy_v778_1 pol
