@@ -1,6 +1,8 @@
 # TEST71 — scenario, expected, actual और evidence checklist
 
-> Current continuation — 11 October 2026: **NOT CLEARED for new business imports.** Authoritative scenario matrix: **89 PASS, 19 FAIL, 5 BLOCKED, 19 NOT_RUN** (132 total). See [current import readiness](test71-import-readiness-20261011.md). Earlier counts and deployment restrictions below are historical.
+> Current continuation — 11 October 2026: **NOT CLEARED for new business imports.** Authoritative scenario matrix: **96 PASS, 13 FAIL, 4 BLOCKED, 19 NOT_RUN** (132 total). See [current import readiness](test71-import-readiness-20261011.md). Earlier counts and deployment restrictions below are historical.
+>
+> Latest UI deployment is blocked by Vercel's 100-per-day deployment quota (402); new browser verification is pending. Canonical approved advance recovery and full audited reversal passed; see 20261011 source evidence in the JSON matrix.
 >
 > Existing Ci / TEST target retained by user decision. Old imaginary records must be archived separately; global archive boundary is not implemented or activated. No old records were deleted and no new business dataset was imported.
 >
