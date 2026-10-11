@@ -24,7 +24,7 @@ async function bootstrap(page) {
   const headers = await runnerHeaders();
   let response;
   let session;
-  const expectedSha = process.env.GITHUB_SHA || null;
+  const expectedSha = process.env.E2E_EXPECTED_DEPLOYMENT_SHA || process.env.GITHUB_SHA || null;
   for (let attempt = 0; attempt < 24; attempt += 1) {
     response = await page.request.post("/api/e2e-session", { headers });
     if (response.ok()) {

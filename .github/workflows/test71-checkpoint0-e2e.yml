@@ -29,9 +29,12 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
-      E2E_BASE_URL: https://redzed-test65-git-test71-real-chat-e2e-6adad3-skbhati1977-4414.vercel.app
+      E2E_BASE_URL: https://redzed-test65-dvcpl29xw-skbhati1977-4414.vercel.app
+      E2E_EXPECTED_DEPLOYMENT_SHA: 3adfb887978a82651d7fc115652b4aa60735f5c4
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -40,6 +43,10 @@ jobs:
       - run: npx playwright install --with-deps chromium
       - run: npm run e2e:env-status
       - run: npm run test:e2e:static
+      # A test-only continuation may reuse the exact READY preview during quota
+      # limits. Fail closed if any deployable source differs from that commit.
+      - name: Verify pinned preview has identical runtime source
+        run: git diff --exit-code "$E2E_EXPECTED_DEPLOYMENT_SHA" HEAD -- . ':!tests' ':!.github' ':!audits'
       - id: auth
         run: npx playwright test --project=auth-setup
       - if: ${{ !cancelled() && steps.auth.outcome == 'success' }}
