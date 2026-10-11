@@ -190,6 +190,10 @@ test('E2E-CB-3 is retained RELEASED history across backend, App and Real Chat', 
   expect(child.state).toBe('RELEASED');
   expect(purchase.personal_payload.canonical_state).toBe('CLOSE');
 
+  const lifecycle = await rpc(page, 'rr_cutting_child_lifecycle_v615', { p_cb_unit_id: snapshot.lot.cb_unit_id });
+  expect(lifecycle.error).toBeNull();
+  expect(lifecycle.data).toMatchObject({ state: 'RELEASED', canonical_state: 'CLOSE', production_assigned: true });
+
   await page.setViewportSize({ width: 390, height: 844 });
   const dialogMessages = [];
   page.on('dialog', async (dialog) => {
@@ -204,7 +208,7 @@ test('E2E-CB-3 is retained RELEASED history across backend, App and Real Chat', 
   await expect(card).toContainText('E2E-CB-3');
   await expect(card).toContainText(/released/i);
   await expect(card.locator('[data-single], [data-multi]')).toHaveCount(0);
-  await expect(card.getByRole('button', { name: 'RELEASED' })).toBeDisabled();
+  await expect(card.getByRole('button', { name: 'CUTTING CLOSE' })).toBeDisabled();
   await expect(card.getByRole('button', { name: 'HISTORY ONLY' })).toBeDisabled();
   await expect(page.locator('#cmMessage')).toContainText(/history/i);
   expect(dialogMessages).toEqual([]);
@@ -213,7 +217,7 @@ test('E2E-CB-3 is retained RELEASED history across backend, App and Real Chat', 
   await expect(card).toBeVisible({ timeout: 30_000 });
   await expect(page.locator('#divisionGallery .cm-card')).toHaveCount(1);
   await expect(card.locator('[data-single], [data-multi]')).toHaveCount(0);
-  await expect(card.getByRole('button', { name: 'RELEASED' })).toBeDisabled();
+  await expect(card.getByRole('button', { name: 'CUTTING CLOSE' })).toBeDisabled();
   await expect(card.getByRole('button', { name: 'HISTORY ONLY' })).toBeDisabled();
   expect(dialogMessages).toEqual([]);
 

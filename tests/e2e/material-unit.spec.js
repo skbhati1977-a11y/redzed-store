@@ -94,13 +94,13 @@ test('deployed Unit dropdown, creation, Material persistence, CB mirror and Work
       additional_unit: 'MTR', additional_state: 'DUE', same_action_audits: 1
     });
 
-    // Real Chat renderer uses the same unit field without a second selector.
+    // The current CB summary renders the canonical quantity/unit fields. Manual
+    // additional-material rows are retired; their shared mapping is proved above.
     await page.goto('/test70-cb-purchase-real-chat-pilot.html?mode=TEST&v=610');
     await page.waitForFunction(() => typeof window.__TEST70_REAL_CHAT__?.renderCbDepartmentCard === 'function');
     const rendered = await page.evaluate(({ materialName, unitCode }) => window.__TEST70_REAL_CHAT__.renderCbDepartmentCard({
-      source_status: 'WORKING', cb_no: 'TEST71-UNIT', quantity: 1, materials: [
-        { name: materialName, state: 'CONFIRMED', qty: 250, unit: unitCode }
-      ]
+      source_status: 'WORKING', cb_no: 'TEST71-UNIT', quantity: 250, quantity_unit: unitCode,
+      fabric_name: materialName
     }), { materialName, unitCode });
     expect(rendered).toContain(`250 ${unitCode}`);
 
