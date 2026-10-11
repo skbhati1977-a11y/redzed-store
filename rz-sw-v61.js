@@ -1,4 +1,4 @@
-const VERSION='rz61-universal-action-focus-test71';
+const VERSION='rz61-attendance-focus-test71-20261011';
 self.addEventListener('install',e=>{self.skipWaiting()});
 self.addEventListener('activate',e=>e.waitUntil(self.clients.claim()));
 self.addEventListener('push',e=>{
@@ -8,9 +8,10 @@ self.addEventListener('push',e=>{
  const destination=new URL(rel,self.registration.scope);
  const loginRequestId=String(d.login_request_id||destination.searchParams.get('rc_login_request')||'');
  if(loginRequestId){destination.pathname=new URL('test70-cb-purchase-real-chat-pilot.html',self.registration.scope).pathname;destination.search='';for(const [key,value] of Object.entries({rc_view:'chat',rc_kind:'group',rc_id:'ADMIN',rc_parent:'ADMIN',rc_status:'OPEN',rc_login_request:loginRequestId,source:'customer_login_approval',v:'TEST71'}))destination.searchParams.set(key,value);}
+ if(d.source==='ATTENDANCE_REMINDER_TEST71'){destination.protocol=self.location.protocol;destination.host=self.location.host;destination.pathname=new URL('test70-cb-purchase-real-chat-pilot.html',self.registration.scope).pathname;}
  const url=destination.href;
  try{if(unread>0&&self.navigator&&typeof self.navigator.setAppBadge==='function')await self.navigator.setAppBadge(unread)}catch(_){}
- await self.registration.showNotification('RZ · '+customer,{body,icon:new URL('rz-icon-v61.svg?v=61push6',self.registration.scope).href,badge:new URL('rz-icon-v61.svg?v=61push6',self.registration.scope).href,tag:d.login_request_id?'rz-login-approval-'+String(d.login_request_id):d.notice_id?'rz-notice-'+String(d.notice_id):'rz-chat-'+(chatId||Date.now()),renotify:!d.notice_id,requireInteraction:false,silent:false,vibrate:[220,100,220],timestamp:Date.now(),data:{chatId,url,loginRequestId,noticeId:String(d.notice_id||''),materialAlertId:String(d.material_alert_id||''),version:VERSION}});
+ await self.registration.showNotification('RZ · '+customer,{body,icon:new URL('rz-icon-v61.svg?v=61push6',self.registration.scope).href,badge:new URL('rz-icon-v61.svg?v=61push6',self.registration.scope).href,tag:d.source==='ATTENDANCE_REMINDER_TEST71'?'rz-attendance-'+String(d.reminder_id):d.login_request_id?'rz-login-approval-'+String(d.login_request_id):d.notice_id?'rz-notice-'+String(d.notice_id):'rz-chat-'+(chatId||Date.now()),renotify:!d.notice_id,requireInteraction:false,silent:false,vibrate:[220,100,220],timestamp:Date.now(),data:{chatId,url,loginRequestId,noticeId:String(d.notice_id||''),materialAlertId:String(d.material_alert_id||''),version:VERSION}});
  })();e.waitUntil(work);
 });
 self.addEventListener('notificationclick',e=>{e.notification.close();e.waitUntil((async()=>{
