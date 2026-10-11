@@ -5,6 +5,7 @@ s public.rr_worker_salary_ledger_v781%rowtype;a public.rr_worker_advance_ledger_
 actor text;reason text:=nullif(btrim(p_reason),'');n int:=0;
 BEGIN
 IF auth.uid() IS NULL OR NOT public.rr_worker_salary_can_reverse_v781() THEN RAISE EXCEPTION 'Salary reversal permission required.' USING ERRCODE='42501';END IF;
+PERFORM pg_advisory_xact_lock(hashtextextended('SALARY_SOURCE_TEST71',0));
 IF reason IS NULL OR length(reason)<5 THEN RAISE EXCEPTION 'Reversal reason minimum 5 characters required.';END IF;
 SELECT * INTO b FROM public.rr_salary_payment_batches_v785 WHERE id=p_batch_id AND data_mode='TEST' AND payroll_category='SALARIED' AND status='POSTED' FOR UPDATE;
 IF NOT FOUND THEN RAISE EXCEPTION 'Active TEST salaried batch required; already reversed or unsupported.';END IF;
