@@ -9,7 +9,7 @@
   'use strict';
   const operations=new Set([
     'rr_accounts_post_payment_v805','rr_accounts_post_receipt_v805',
-    'rr_material_post_purchase_v805_1','rr_material_post_purchase_txn_v661',
+    'rr_material_post_purchase_v805_1','rr_material_post_purchase_v805_2','rr_material_post_purchase_txn_v661',
     'rr_worker_salary_payment_post_v781','rr_committee_payment_post_v824',
     'rr_salary_payment_post_v785','rr_salary_payment_post_v786','rr_advance_payment_post_v785',
     'rr_post_mc_purchase_accounts_test71','rr_monthly_salary_payment_post_test71'
