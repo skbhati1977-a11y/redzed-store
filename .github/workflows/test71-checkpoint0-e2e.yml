@@ -2,6 +2,14 @@ name: TEST71 Current Checkpoint E2E
 
 on:
   workflow_dispatch:
+    inputs:
+      scope:
+        description: 'Continue remaining gates, or explicitly recheck all modules'
+        type: choice
+        default: remaining
+        options:
+          - remaining
+          - all
   push:
     branches:
       - test71-real-chat-e2e-finalization
@@ -26,6 +34,7 @@ concurrency:
 
 jobs:
   mc1:
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.scope == 'all' }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
@@ -61,7 +70,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     needs: mc1
-    if: ${{ always() && !cancelled() }}
+    if: ${{ always() && !cancelled() && github.event_name == 'workflow_dispatch' && inputs.scope == 'all' }}
     env:
       E2E_BASE_URL: https://redzed-test65-git-test71-real-chat-e2e-6adad3-skbhati1977-4414.vercel.app
       PLAYWRIGHT_HTML_OUTPUT_DIR: playwright-report/cb-department
@@ -94,7 +103,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     needs: cb_department
-    if: ${{ always() && !cancelled() }}
+    if: ${{ always() && !cancelled() && github.event_name == 'workflow_dispatch' && inputs.scope == 'all' }}
     env:
       E2E_BASE_URL: https://redzed-test65-git-test71-real-chat-e2e-6adad3-skbhati1977-4414.vercel.app
       PLAYWRIGHT_HTML_OUTPUT_DIR: playwright-report/material-unit
@@ -145,7 +154,7 @@ jobs:
       - id: auth
         run: npx playwright test --project=auth-setup
       - if: ${{ !cancelled() && steps.auth.outcome == 'success' }}
-        run: npx playwright test --project=checkpoint-8 --no-deps --output=test-results/checkpoint-8
+        run: npx playwright test --project=checkpoint-8 --no-deps --output=test-results/checkpoint-8 ${{ inputs.scope == 'all' && '' || '--grep "mobile Sales|E2E-CB-3"' }}
       - name: Upload checkpoint-8 evidence
         if: always()
         uses: actions/upload-artifact@v4

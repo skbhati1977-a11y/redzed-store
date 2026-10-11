@@ -27,7 +27,7 @@ async function e2eDcardSnapshot(page) {
         .maybeSingle(),
       window.supabaseClient
         .from('rr_cutting_lots_v3')
-        .select('id,lot_no,status,cb_unit_id')
+        .select('id,lot_no,status,cb_unit_id,cb_purchase_id')
         .eq('cb_unit_id', unitId)
         .maybeSingle(),
       window.supabaseClient.rpc('rr_real_chat_conversation_history_v83', { p_limit: 2000 })
@@ -221,13 +221,18 @@ test('E2E-CB-3 is retained RELEASED history across backend, App and Real Chat', 
   await expect(card.getByRole('button', { name: 'HISTORY ONLY' })).toBeDisabled();
   expect(dialogMessages).toEqual([]);
 
-  await page.goto('/test70-cb-purchase-real-chat-pilot.html?mode=TEST&rc_status=CLOSE');
-  await expect(page.locator('#state')).toContainText(/departments · .* people/, { timeout: 30_000 });
-  await page.locator('[data-department="CUTTING"]').click();
-  await page.locator('[data-dept-group="CUTTING"]').click();
-  await page.locator('[data-chat-status="CLOSE"]').click();
-  await page.locator('#chatFind').fill('E2E-FRESH-03');
-  await page.locator('#chatFind').press('Enter');
-  await expect(page.locator('#messages')).toContainText('E2E-FRESH-03', { timeout: 30_000 });
-  await expect(page.locator('#messages')).not.toContainText(/SINGLE LOT|MULTI LOT/);
+  // Closed Cutting is historical; its retained CB has the supported read-only
+  // history route. OPEN/WORKING chat tabs never reopen that released lot.
+  const parent = await page.evaluate(async (cbId) => {
+    const result = await window.supabaseClient.from('rr_fabric_purchases')
+      .select('cb_no').eq('id', cbId).single();
+    if (result.error) throw new Error(result.error.message);
+    return result.data;
+  }, snapshot.lot.cb_purchase_id);
+  expect(parent.cb_no).toBeTruthy();
+  await page.goto(`/test70-cb-purchase-real-chat-pilot.html?mode=TEST&rc_status=CLOSE&rc_view=chat&rc_kind=group&rc_id=PURCHASE&rc_focus_cb=${encodeURIComponent(parent.cb_no)}`);
+  const retained = page.locator(`details.closed-row[data-cb-no="${parent.cb_no}"]`);
+  await expect(retained).toBeVisible({ timeout: 30_000 });
+  await expect(retained).toContainText(/RELEASED|SENT TO CUTTING/i);
+  await expect(retained.locator('[data-single], [data-multi], [data-assign-action]')).toHaveCount(0);
 });

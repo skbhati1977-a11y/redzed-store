@@ -15,3 +15,12 @@ The Material Unit live failure used retired `materials[]` renderer input. The up
 Local regression: 536 static checks passed without skips. Notification focus: 12 targeted behavioral checks passed. Security and performance advisors were retrieved; existing advisory findings remain outside this targeted change and prevent treating health recovery as universal security approval.
 
 Remaining evidence: rerun the complete live workflow at the new exact commit. Approved real opening balances, historical worker/mode mappings, universal fixture isolation and the remaining role/mobile/offline/concurrency financial scenarios still require their own evidence.
+
+## Forward continuation after passed checkpoints
+
+- Run 38128366128 retained successful MC1, CB Department and Material Unit live gates. No rerun requested for these modules.
+- Actual commercial-directory defect: the V708 empty-card observer mistook department navigation for an empty operational queue and erased Group/Worker buttons. Guard department/division views; three behavioral tests pass.
+- Factory receipt projection independently returns CONFIRM_RECEIVED_PCS for both pending assignments of TEST71-MUE2Y0Z2-8GDH5. Failure screenshot shows STAFF selected while WORKER has nine pending cards. Resume through visible WORKER / ASSIGNED RECEIPT controls, retaining UI accept and canonical status assertions.
+- Cutting CLOSED tabs were removed by the established interface. Verify released E2E-CB-3 through its supported focused CB read-only history route, preserving backend release-history, canonical lifecycle and disabled-action checks.
+- Workflow defaults to remaining gates only; explicit manual scope=all retains full regression option. Prior passed checkpoints are carried forward rather than recreated.
+- Deployed verification of these continuation changes remains pending at commit time. Universal clean chit is not claimed.

@@ -555,6 +555,9 @@ test('three new TEST71 CBs complete deployed New/Open/Draft/Confirm invariants',
       ]);
       return { actor:dir.data?.actor, workActor:work.data?.actor, error:work.error?.message, cards:(work.data?.cards||[]).filter(c=>c.lot_no===lotNo).map(c=>({ worker_id:c.worker_id,assignment_id:c.assignment_id,responsibility_event_id:c.responsibility_event_id,receipt_status:c.receipt_status,actions:c.actions,event_key:c.event_key,department_code:c.department_code })), visible:document.querySelector('#messages')?.innerText.slice(0,1200) };
     }, lot)));
+    // Follow the same worker receipt lane and card screen used by the operator.
+    await page.locator('[data-work-lane="WORKER"]').click();
+    await page.locator('[data-work-filter="ASSIGNED_RECEIPT"]').click();
     const card = page.locator('#messages .work-card').filter({ hasText: lot }).filter({ has: page.locator('a[data-action="CONFIRM_RECEIVED_PCS"]') }).first();
     await expect(card).toBeVisible({ timeout: 30_000 });
     await card.locator('a[data-action="CONFIRM_RECEIVED_PCS"]').click();
