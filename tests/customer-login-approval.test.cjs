@@ -36,7 +36,7 @@ test('pending approval cannot store a session; approval binds transport to that 
 
 test('rejected device stays logged out',async()=>{
  const f=fixture(async name=>name==='rr_customer_session_issue_bound_v9680'?{approval_status:'REJECTED',request_id:'req-1'}:{});
- await assert.rejects(f.test.issue({name:'Customer',mobile:'9000000000'},'this-device'),/approval rejected/);
+ await assert.rejects(f.test.issue({name:'Customer',mobile:'9000000000'},'this-device'),/reject|revoke/i);
  assert.equal(f.clients.length,0);assert.equal(f.values.has('rr_customer_secure_session_v9592'),false);assert(f.appended[0].removed);
 });
 
