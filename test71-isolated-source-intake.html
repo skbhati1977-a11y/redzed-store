@@ -1,0 +1,12 @@
+<!doctype html>
+<html lang="hi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>नया data — अलग समीक्षा</title>
+<style>body{margin:0;background:#07111c;color:#f1f5f9;font:16px system-ui}main{max-width:860px;margin:auto;padding:20px}label{display:block;margin:16px 0}input,button{font:inherit;padding:12px;border:1px solid #49627a;border-radius:9px;background:#112335;color:inherit;box-sizing:border-box}input{display:block;width:100%;margin-top:7px}button{cursor:pointer;margin:4px 0}button:disabled{opacity:.5;cursor:default}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#112335;padding:16px;border-radius:10px}a{color:#96ccff}.muted{color:#b3c5d5}</style></head>
+<body><main><a href="test71-import-preflight.html">← Source mapping</a><h1>नया data — अलग समीक्षा</h1>
+<p>इस जगह save किया data पुराने stock, balances और working cards में नहीं जुड़ेगा। हिसाब की approval और बाकी जाँच पूरी होने पर ही business में इस्तेमाल होगा।</p>
+<label>नई समीक्षा का नाम<input id="datasetName" autocomplete="off" placeholder="जैसे October opening source"></label><button id="createDataset">अलग समीक्षा बनाएँ</button>
+<label>समीक्षा ID<input id="datasetId" autocomplete="off" spellcheck="false" data-rr-uppercase="off" placeholder="पहले से बनी समीक्षा की ID भी डाल सकते हैं"></label>
+<label>Source का नाम या reference<input id="sourceRef" autocomplete="off" data-rr-uppercase="off"></label>
+<label>Mapped CSV या JSON<input id="sourceFile" type="file" accept=".csv,.json,text/csv,application/json"></label>
+<p class="muted">CSV columns: module, source_key, record_date, evidence_status, values_json, references_json. तारीख YYYY-MM-DD में रखें। Unknown को zero न लिखें।</p>
+<button id="stageSource" disabled>अलग समीक्षा में source save करें</button><p id="state" role="status" aria-live="polite">नई समीक्षा बनाएँ या उसकी ID डालें।</p><pre id="report" hidden></pre>
+</main><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="config.js?v=887"></script><script src="test71-source-intake.js?v=TEST71_DATASET_INTAKE"></script><script src="test71-isolated-source-intake.js?v=TEST71_DATASET_INTAKE"></script></body></html>

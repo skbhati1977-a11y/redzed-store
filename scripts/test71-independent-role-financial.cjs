@@ -26,7 +26,7 @@ async function checkRole(role, env=process.env, fetcher=fetch){
   const checks=[];
   for(const [rpc,args] of [['rr_trial_balance_v806',{p_from_date:'2026-01-01',p_to_date:new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Kolkata',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date()),p_data_mode:'TEST'}],['rr_accounts_real_chat_home_v500',{p_status:'OPEN',p_data_mode:'TEST'}]]){
    const answer=await call('/rest/v1/rpc/'+rpc,args);
-   const passed=expected?answer.ok:(!answer.ok&&answer.data.code==='42501');
+   const passed=expected?answer.ok:(!answer.ok&&(answer.data.code==='42501'||(rpc==='rr_accounts_real_chat_home_v500'&&answer.data.code==='P0001'&&answer.data.message==='Accounts permission required.')));
    checks.push({rpc,expected:expected?'ALLOW':'DENY',status:passed?'PASS':'FAIL',http_status:answer.status});
   }
   result={role,status:checks.every(c=>c.status==='PASS')?'PASS':'FAIL',method:'independent_authenticated_api',checks};

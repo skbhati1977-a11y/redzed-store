@@ -1,0 +1,47 @@
+name: TEST71 Focused Financial Readiness
+on:
+  workflow_dispatch:
+  push:
+    branches: [test71-real-chat-e2e-finalization]
+    paths:
+      - api/_github-oidc.js
+      - supabase/functions/test71-independent-financial/**
+      - scripts/test71-edge-role-financial.cjs
+      - test71-isolated-source-intake.*
+      - tests/test71-isolated-source-intake.test.cjs
+      - supabase/migrations/*_test71_isolated_source_dataset.sql
+      - supabase/migrations/*_test71_opening_approval_plan.sql
+      - supabase/migrations/*_test71_independent_financial_run_guard.sql
+      - .github/workflows/test71-financial-readiness.yml
+permissions:
+  contents: read
+  id-token: write
+concurrency:
+  group: test71-financial-readiness-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  independent_roles:
+    if: ${{ github.ref == 'refs/heads/test71-real-chat-e2e-finalization' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      E2E_BASE_URL: https://redzed-test65-git-test71-real-chat-e2e-6adad3-skbhati1977-4414.vercel.app
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Verify only changed financial and identity contracts
+        run: node --test tests/test71-isolated-source-intake.test.cjs tests/test71-financial-oidc.test.cjs tests/test71-independent-financial-edge.test.cjs tests/e2e/github-oidc.unit.test.js
+      - name: Actual independent TEST role authority
+        run: node scripts/test71-edge-role-financial.cjs
+      - name: Retain sanitized proof
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test71-independent-financial-role-proof
+          path: test-results/test71-independent-financial-role-proof.json
+          if-no-files-found: ignore
+          retention-days: 7

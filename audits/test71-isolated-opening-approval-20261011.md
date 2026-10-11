@@ -1,0 +1,17 @@
+# TEST71 isolated opening approval workflow — 2026-10-11
+
+Engineering implemented: an authenticated Owner/Admin/Super Admin can explicitly approve a supplied, validated isolated dataset's opening plan. Approval binds dataset, immutable source batch/version/SHA256/payload, earliest supplied cutoff, business approval evidence reference, complete financial coverage and reviewed master mappings. No source, balance, rate or approval is invented by this implementation.
+
+Migration: `supabase/migrations/20261011114421_test71_opening_approval_plan.sql`, after isolated-source migration `20261011114419`. RPCs:
+
+- `rr_opening_approve_test71(dataset,batch,request,cutoff,evidence,coverage,ledger_mapping,item_mapping)` — validate and record explicit approved plan; exact retry returns one approval. Changed input under approved dataset is rejected. Table UPDATE/DELETE are rejected by an immutable evidence trigger.
+- `rr_opening_approval_report_test71(dataset)` — guarded approved plan and evidence report.
+- `rr_opening_post_test71(dataset,approval,request)` — **always blocks** shared financial/stock posting with SQLSTATE 55000 until downstream dataset archive readers and financial aggregates are verified.
+
+Coverage is explicit KNOWN/ZERO/NOT_APPLICABLE, with evidence for Cash/Bank, receivables, payables, advances, salary payable, claims, stock, WIP, equity and other accounts. NOT_APPLICABLE requires a reason; missing/UNKNOWN coverage stays pending. Known/zero financial classes require explicit source ledger rows. STOCK/WIP require physical rows unless explicitly not applicable. Values must be finite, exact nonnegative decimals; monetary values have at most two decimals. Debit/credit must balance exactly, and physical stock/WIP valuations must reconcile to approved GL classes. Approved mappings resolve to existing active ledgers and material/product masters; unknown identities are rejected. A ledger cannot be assigned conflicting opening classes.
+
+**17/17 focused SQL checks passed in a single combined DDL/test transaction ending in ROLLBACK**, using synthetic evidence only. Verified cutoff, complete coverage, master mapping, source retry, changed approval rejection, immutable approval, always-closed posting, zero shared journal writes, null/missing/invalid item kinds, explicit ledger classes, balanced GL with incorrect physical value rejection, NaN rejection, successful physical reconciliation, required posting request, private tables/builder and anonymous denial. Prior MC1/CB/factory passed suites were not replayed. DDL and synthetic approval/source records were not persisted by this validation.
+
+This closes the missing backend approval/version/reconciliation engineering path. It does **not** certify actual business openings, source-file SHA against original bytes, complete unit/WIP-stage operational allocation, downstream archived aggregate isolation, or journal posting. The live source staging checkpoint had zero actual batches. Actual approved source export, cutoff, business approval reference, all opening schedules/physical valuations and reviewed mappings remain required. No real approval or financial posting occurred.
+
+Live application checkpoint: migration is now applied and recorded. Focused evidence was then replayed against the applied schema inside ROLLBACK; no synthetic source or approval remains. Actual source datasets/batches/approvals remain zero.

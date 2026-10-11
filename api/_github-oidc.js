@@ -4,7 +4,10 @@ const ISSUER = "https://token.actions.githubusercontent.com";
 const AUDIENCE = "redzed-test71-e2e";
 const REPOSITORY = "skbhati1977-a11y/redzed-store";
 const REF = "refs/heads/test71-real-chat-e2e-finalization";
-const WORKFLOW_REF_PREFIX = `${REPOSITORY}/.github/workflows/test71-checkpoint0-e2e.yml@${REF}`;
+const WORKFLOW_REFS = new Set([
+  `${REPOSITORY}/.github/workflows/test71-checkpoint0-e2e.yml@${REF}`,
+  `${REPOSITORY}/.github/workflows/test71-financial-readiness.yml@${REF}`
+]);
 
 let cachedKeys = null;
 let cachedUntil = 0;
@@ -50,7 +53,7 @@ async function verifyGithubOidc(token, fetchImpl = fetch) {
     !audiences.includes(AUDIENCE) ||
     payload.repository !== REPOSITORY ||
     payload.ref !== REF ||
-    !String(payload.workflow_ref || "").startsWith(WORKFLOW_REF_PREFIX) ||
+    !WORKFLOW_REFS.has(String(payload.workflow_ref || "")) ||
     !Number.isFinite(payload.exp) || payload.exp <= now ||
     !Number.isFinite(payload.iat) || payload.iat > now + 60 ||
     (Number.isFinite(payload.nbf) && payload.nbf > now + 60)
