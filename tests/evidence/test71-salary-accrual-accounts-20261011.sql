@@ -26,6 +26,11 @@ blocked:=false;
 begin update public.rr_worker_salary_ledger_v781 set status='POSTED' where id=eid;exception when others then if sqlerrm not like '%transition denied%' then raise;end if;blocked:=true;end;
 if not blocked then raise exception 'Voided accrual revived';end if;
 insert into salary_accrual_result values('void_reactivation_blocked',true);
+insert into public.rr_worker_salary_ledger_v781(data_mode,worker_id,payroll_category,source_module,period_month,entry_date,entry_type,amount,balance_effect,remarks,created_by)
+values('TEST','038f2ef4-ca5d-4ed0-a3da-264e2d727ac4','SALARIED','TEST71_ROLLBACK_ACCRUAL','2026-09-01',current_date,'MONTHLY_FINAL_ADJUSTMENT',3,-3,'Rollback adjustment proof',auth.uid()) returning id into eid;
+select id into tx from public.rr_account_transactions_v805 where source_module='WORKER_SALARY_ACCRUAL_TEST71' and source_record_id=eid::text and data_mode='TEST' and status='POSTED';
+if tx is null or not exists(select 1 from public.rr_account_postings_v805 where transaction_id=tx and ledger_id=expense and cr_amount=3 and dr_amount=0) or not exists(select 1 from public.rr_account_postings_v805 where transaction_id=tx and ledger_id=payable and dr_amount=3 and cr_amount=0) then raise exception 'Wrong final adjustment mapping';end if;
+insert into salary_accrual_result values('final_adjustment_payable_debit_expense_credit',true);
 end;$test$;
 select * from salary_accrual_result;
 rollback;
