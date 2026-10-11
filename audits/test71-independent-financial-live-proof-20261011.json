@@ -1,0 +1,153 @@
+{
+  "run_id": "f63f4e97-c899-4db5-82d4-6c0ee61dcc9b",
+  "scope": "TEST read-only financial authority using six fresh independent Auth sessions",
+  "complete": true,
+  "full_clean_chit": false,
+  "deployment_sha": "bf1a9110df91dc5d64855e1ca7e57aa71f069a9f",
+  "roles": [
+    {
+      "role": "WORKER",
+      "status": "PASS",
+      "method": "independent_authenticated_api",
+      "checks": [
+        {
+          "rpc": "rr_trial_balance_v806",
+          "expected": "DENY",
+          "status": "PASS",
+          "http_status": 403
+        },
+        {
+          "rpc": "rr_accounts_real_chat_home_v500",
+          "expected": "DENY",
+          "status": "PASS",
+          "http_status": 400
+        }
+      ],
+      "cleanup": {
+        "logout": true,
+        "auth_banned": true,
+        "profile_inactive": true
+      }
+    },
+    {
+      "role": "LINE_MANAGER",
+      "status": "PASS",
+      "method": "independent_authenticated_api",
+      "checks": [
+        {
+          "rpc": "rr_trial_balance_v806",
+          "expected": "DENY",
+          "status": "PASS",
+          "http_status": 403
+        },
+        {
+          "rpc": "rr_accounts_real_chat_home_v500",
+          "expected": "DENY",
+          "status": "PASS",
+          "http_status": 400
+        }
+      ],
+      "cleanup": {
+        "logout": true,
+        "auth_banned": true,
+        "profile_inactive": true
+      }
+    },
+    {
+      "role": "MANAGER",
+      "status": "PASS",
+      "method": "independent_authenticated_api",
+      "checks": [
+        {
+          "rpc": "rr_trial_balance_v806",
+          "expected": "DENY",
+          "status": "PASS",
+          "http_status": 403
+        },
+        {
+          "rpc": "rr_accounts_real_chat_home_v500",
+          "expected": "DENY",
+          "status": "PASS",
+          "http_status": 400
+        }
+      ],
+      "cleanup": {
+        "logout": true,
+        "auth_banned": true,
+        "profile_inactive": true
+      }
+    },
+    {
+      "role": "ADMIN",
+      "status": "PASS",
+      "method": "independent_authenticated_api",
+      "checks": [
+        {
+          "rpc": "rr_trial_balance_v806",
+          "expected": "ALLOW",
+          "status": "PASS",
+          "http_status": 200
+        },
+        {
+          "rpc": "rr_accounts_real_chat_home_v500",
+          "expected": "ALLOW",
+          "status": "PASS",
+          "http_status": 200
+        }
+      ],
+      "cleanup": {
+        "logout": true,
+        "auth_banned": true,
+        "profile_inactive": true
+      }
+    },
+    {
+      "role": "ACCOUNTS",
+      "status": "PASS",
+      "method": "independent_authenticated_api",
+      "checks": [
+        {
+          "rpc": "rr_trial_balance_v806",
+          "expected": "ALLOW",
+          "status": "PASS",
+          "http_status": 200
+        },
+        {
+          "rpc": "rr_accounts_real_chat_home_v500",
+          "expected": "ALLOW",
+          "status": "PASS",
+          "http_status": 200
+        }
+      ],
+      "cleanup": {
+        "logout": true,
+        "auth_banned": true,
+        "profile_inactive": true
+      }
+    },
+    {
+      "role": "SALES",
+      "status": "PASS",
+      "method": "independent_authenticated_api",
+      "checks": [
+        {
+          "rpc": "rr_trial_balance_v806",
+          "expected": "DENY",
+          "status": "PASS",
+          "http_status": 403
+        },
+        {
+          "rpc": "rr_accounts_real_chat_home_v500",
+          "expected": "DENY",
+          "status": "PASS",
+          "http_status": 400
+        }
+      ],
+      "cleanup": {
+        "logout": true,
+        "auth_banned": true,
+        "profile_inactive": true
+      }
+    }
+  ]
+}

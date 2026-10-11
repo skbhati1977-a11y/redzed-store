@@ -2,11 +2,11 @@
 
 Decision: NOT CLEARED for new business-data import. This is an evidence checkpoint, not a universal sign-off.
 
-## Current three-workstream continuation — 2026-10-11
+## Current live implementation — 2026-10-11
 
 Current matrix remains **99 PASS, 10 FAIL, 4 BLOCKED, 19 NOT_RUN**. Passed MC1/CB/Material/Commercial/Factory receipt checkpoints are carried forward. Historical counts, preview URLs and quota restrictions in the dated notes below do not replace the current checkpoint.
 
-Opening source readiness, evidence-based archive planning and independent authenticated financial-role tooling were completed as source tooling in three parallel workstreams. Actual approved opening source, complete live reader/aggregate isolation and independent role sessions remain prerequisites; no new business records or fabricated approvals are introduced. See [three-target continuation](test71-three-target-continuation-20261011.md) for concrete results and live limitations.
+Opening source readiness, evidence-based archive planning and independent authenticated financial-role tooling were completed as source tooling in three parallel workstreams. Live isolated source review and opening approval-plan workflows are now applied. Six independent Auth roles passed 12 financial API authority checks and were retired with zero sessions remaining. Actual approved opening source, complete operational reader/aggregate isolation and browser financial journeys remain prerequisites. See [live implementation](test71-live-readiness-implementation-20261011.md). See [three-target continuation](test71-three-target-continuation-20261011.md) for concrete results and live limitations.
 
 ## Authorized target and selected rules
 

@@ -63,5 +63,6 @@
     "historical_mode": "UNTAGGED",
     "business_category_or_mode_backfilled": false
   },
-  "three_target_continuation": "audits/test71-three-target-continuation-20261011.json"
+  "three_target_continuation": "audits/test71-three-target-continuation-20261011.json",
+  "live_readiness_continuation": "audits/test71-live-readiness-implementation-20261011.json"
 }

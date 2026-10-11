@@ -11,7 +11,7 @@
       "BLOCKED": 4
     },
     "completed_unblocked": false,
-    "phase": "Core live checkpoints carried forward and factory receipts completed. One factory SQL-timeout retry remains explicitly recorded; bounded definite-rollback retry has four behavioral checks. Approved openings, global archive boundary and independent role/department financial journeys remain incomplete; NOT CLEARED."
+    "phase": "Live isolated source-review intake and source-bound opening approval plans implemented; actual independent six-role financial API permissions PASS. Approved business source, complete operational isolation and browser financial/department journeys still required. NOT CLEARED."
   },
   "cases": [
     {
@@ -740,10 +740,18 @@
       "feature": "General opening reconciliation",
       "scenario": "Qty/value opening and compare GL",
       "expected": "Approved opening journal batch reconciles",
-      "actual": "GL delta0; no universal batch",
+      "actual": "Backend isolated opening approval now verifies exact GL and physical STOCK/WIP mapping/reconciliation; 17 applied-schema rollback checks PASS. No actual approved source or posted universal opening exists.",
       "status": "FAIL",
       "evidence": "audits/test71-sql-runtime-evidence-20261010.json",
-      "evidence_type": "SQL rollback"
+      "evidence_type": "SQL rollback",
+      "history": [
+        {
+          "status": "FAIL",
+          "actual": "GL delta0; no universal batch",
+          "evidence": "audits/test71-sql-runtime-evidence-20261010.json"
+        }
+      ],
+      "progress_evidence_20261011": "audits/test71-live-readiness-implementation-20261011.json"
     },
     {
       "id": "A054",
@@ -751,10 +759,18 @@
       "feature": "Missing history handling",
       "scenario": "Inspect evidence status model",
       "expected": "UNKNOWN/ZERO/N/A with approved baseline",
-      "actual": "Source staging explicit KNOWN/ZERO/UNKNOWN/NOT_APPLICABLE contract and10 rollback checks now implemented; approved universal active opening baseline still pending.",
+      "actual": "Explicit evidence statuses and immutable source-version/cutoff/full-coverage approval plan now exist live. Actual approved opening baseline and operational posting remain pending.",
       "status": "FAIL",
       "evidence": "audits/test71-universal-accounts-mapping-20261010.md",
-      "evidence_type": "Schema/code audit"
+      "evidence_type": "Schema/code audit",
+      "history": [
+        {
+          "status": "FAIL",
+          "actual": "Source staging explicit KNOWN/ZERO/UNKNOWN/NOT_APPLICABLE contract and10 rollback checks now implemented; approved universal active opening baseline still pending.",
+          "evidence": "audits/test71-universal-accounts-mapping-20261010.md"
+        }
+      ],
+      "progress_evidence_20261011": "audits/test71-live-readiness-implementation-20261011.json"
     },
     {
       "id": "A055",
@@ -762,10 +778,18 @@
       "feature": "Rehearsal scope",
       "scenario": "Public schema catalog",
       "expected": "Full scoped dataset or separate environment",
-      "actual": "Dataset/workspace/rehearsal columns0",
+      "actual": "Dedicated TEST source datasets with scoped readers/source totals now live; 15 applied-schema rollback checks PASS. Complete operational reader/aggregate/writer isolation remains unverified; historical untagged records unchanged.",
       "status": "FAIL",
       "evidence": "audits/test71-universal-accounts-mapping-20261010.md",
-      "evidence_type": "Catalog SQL"
+      "evidence_type": "Catalog SQL",
+      "history": [
+        {
+          "status": "FAIL",
+          "actual": "Dataset/workspace/rehearsal columns0",
+          "evidence": "audits/test71-universal-accounts-mapping-20261010.md"
+        }
+      ],
+      "progress_evidence_20261011": "audits/test71-live-readiness-implementation-20261011.json"
     },
     {
       "id": "A056",
@@ -784,10 +808,18 @@
       "feature": "New-data rehearsal",
       "scenario": "Import sample separate dataset and rerun",
       "expected": "No mixed fixture balances/identities",
-      "actual": "Boundary absent; import not performed",
+      "actual": "New source can be staged in an isolated review dataset; cross-dataset/source-total checks PASS. Actual new business source has not been provided and operational activation/import remains blocked.",
       "status": "BLOCKED",
       "evidence": "audits/test71-universal-accounts-mapping-20261010.md",
-      "evidence_type": "SQL rollback"
+      "evidence_type": "SQL rollback",
+      "history": [
+        {
+          "status": "BLOCKED",
+          "actual": "Boundary absent; import not performed",
+          "evidence": "audits/test71-universal-accounts-mapping-20261010.md"
+        }
+      ],
+      "progress_evidence_20261011": "audits/test71-live-readiness-implementation-20261011.json"
     },
     {
       "id": "A058",
@@ -1031,11 +1063,19 @@
       "feature": "All independent role sessions",
       "scenario": "Worker/LM/Manager/Admin/Accounts/Sales logins",
       "expected": "Each positive+negative and session persistence",
-      "actual": "35 active profiles across 11 roles pass backend financial permission checks; SQL identity simulation only. Independent authenticated browser sessions remain NOT_RUN.",
+      "actual": "Six fresh independent Auth roles now passed 12 TEST financial API allow/deny checks with logout/ban/inactive cleanup and zero residual sessions. Independent browser approval/payment/reversal journeys remain NOT_RUN.",
       "status": "NOT_RUN",
       "evidence": "audits/test71-browser-evidence-20261010.json",
       "evidence_type": "SQL rollback",
-      "recheck_20261011": "audits/test71-financial-role-recheck-20261011.json"
+      "recheck_20261011": "audits/test71-financial-role-recheck-20261011.json",
+      "history": [
+        {
+          "status": "NOT_RUN",
+          "actual": "35 active profiles across 11 roles pass backend financial permission checks; SQL identity simulation only. Independent authenticated browser sessions remain NOT_RUN.",
+          "evidence": "audits/test71-browser-evidence-20261010.json"
+        }
+      ],
+      "progress_evidence_20261011": "audits/test71-live-readiness-implementation-20261011.json"
     },
     {
       "id": "A080",

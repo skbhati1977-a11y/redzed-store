@@ -8,7 +8,8 @@
   "live_migrations": [
     "20261011114419_test71_isolated_source_dataset.sql",
     "20261011114421_test71_opening_approval_plan.sql",
-    "20261011114851_test71_independent_financial_run_guard.sql"
+    "20261011114851_test71_independent_financial_run_guard.sql",
+    "20261011115314_test71_independent_run_reconciliation.sql"
   ],
   "post_apply_sql_checks": {
     "intake": 15,
@@ -18,8 +19,7 @@
   },
   "local_targeted_checks": {
     "pass": 30,
-    "fail": 0,
-    "independent_auth_live_not_claimed": true
+    "fail": 0
   },
   "mobile_layout_mocked_widths": [
     360,
@@ -30,7 +30,10 @@
     "slug": "test71-independent-financial",
     "version": 1,
     "verify_jwt": true,
-    "actual_ci_status": "PENDING"
+    "actual_ci_status": "SUCCESS",
+    "run_id": 38137072013,
+    "job_id": 114463398199,
+    "tested_commit": "bf1a9110df91dc5d64855e1ca7e57aa71f069a9f"
   },
   "source_rows": 0,
   "approved_opening_rows": 0,
@@ -47,5 +50,29 @@
     "Admin assertions guard source/approval RPCs; anonymous/worker denial exercised",
     "TEST-only Auth fixture function pinned to existing dedicated E2E UID; no arbitrary inputs",
     "Run guard caches duplicate requests and blocks unresolved cleanup"
-  ]
+  ],
+  "independent_live_roles": {
+    "roles": 6,
+    "permission_checks": 12,
+    "all_passed": true,
+    "auth_sessions_remaining": 0,
+    "active_fixture_profiles": 0,
+    "unbanned_fixture_auth_users": 0,
+    "fixture_history_preserved": 6,
+    "scope": "read-only API authority; browser payment/reversal not certified",
+    "evidence": "audits/test71-independent-financial-live-proof-20261011.json"
+  },
+  "synthetic_guard_reconciliation": {
+    "coordination_records_preserved": 2,
+    "auth_users_created_by_synthetic_check": 0,
+    "proof_marker": "RECONCILED",
+    "explicit_transaction_wrapper_now_enforced": true
+  },
+  "preview": {
+    "state": "READY",
+    "commit": "bf1a9110df91dc5d64855e1ca7e57aa71f069a9f",
+    "id": "dpl_DcZUVxchJx9SJjTxMoXzMeTDS7iE",
+    "source_html_js_exact": true,
+    "target": null
+  }
 }

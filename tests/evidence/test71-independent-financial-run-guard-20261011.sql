@@ -1,4 +1,5 @@
 -- Run after guard migration inside BEGIN/ROLLBACK; no Auth actor or business fixture writes.
+BEGIN;
 DO $test$
 DECLARE a jsonb;b jsonb;run uuid;proof jsonb;blocked boolean:=false;n integer:=0;
 BEGIN
@@ -20,3 +21,4 @@ BEGIN
  PERFORM set_config('test71.run_guard_checks',n::text,true);
 END $test$;
 SELECT current_setting('test71.run_guard_checks')::int AS passed_checks;
+ROLLBACK;

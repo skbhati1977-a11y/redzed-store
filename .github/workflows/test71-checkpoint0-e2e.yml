@@ -22,6 +22,7 @@ on:
       - '!supabase/migrations/*_test71_isolated_source_dataset.sql'
       - '!supabase/migrations/*_test71_opening_approval_plan.sql'
       - '!supabase/migrations/*_test71_independent_financial_run_guard.sql'
+      - '!supabase/migrations/*_test71_independent_run_reconciliation.sql'
       - scripts/e2e-env-status.js
       - playwright.config.js
       - package.json
