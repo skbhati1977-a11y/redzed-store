@@ -52,6 +52,12 @@ r:=public.rr_generate_worker_monthly_payroll_v779_1(w,'2026-09-01','TEST','Parti
 select * into pay from public.rr_monthly_payroll_v779_1 where payroll_id=(r->>'payroll_id')::uuid;
 if pay.monthly_salary_amount<>round(p.monthly_salary*16/30.0,2) or pay.scheduled_minutes_snapshot<>9600 then raise exception 'Fixed thirty day partial salary incorrect: % / %',pay.monthly_salary_amount,pay.scheduled_minutes_snapshot;end if;
 if pay.per_minute_rate<>round(p.monthly_salary/18000.0,8) then raise exception 'Partial month altered time rate';end if;
+update public.rr_monthly_payroll_v779_1 set payroll_status='FINAL' where payroll_id=pay.payroll_id;
+blocked:=false;begin
+perform public.rr_attendance_save_v778(w,'2026-09-16',null,null,'ABSENT',false,'CORRECTION',null,'Final lock rollback','TEST');
+exception when others then if sqlerrm not like '%payroll attendance is locked%' then raise;end if;blocked:=true;end;
+if not blocked then raise exception 'Final payroll attendance mutated';end if;
+insert into payroll_coverage_result values('final_payroll_attendance_locked','true');
 insert into payroll_coverage_result values('complete_month_and_partial_30_day',jsonb_build_object('full_month_passed',true,'partial_days',16,'partial_fixed_30_passed',true,'outside_activation_days_excluded',true,'minute_rate_preserved',true));
 end;$test$;
 select * from payroll_coverage_result;
