@@ -5,13 +5,13 @@
     "date": "2026-10-11 Asia/Kolkata",
     "cases": 132,
     "status_counts": {
-      "PASS": 97,
-      "FAIL": 12,
+      "PASS": 98,
+      "FAIL": 10,
       "NOT_RUN": 19,
-      "BLOCKED": 4
+      "BLOCKED": 5
     },
     "completed_unblocked": false,
-    "phase": "Database fixes verified; latest UI preview blocked by Vercel api-deployments-free-per-day 402. Archive/openings and independent workflows still pending; NOT CLEARED."
+    "phase": "Source regressions fixed; 665 source tests and projection gate pass. Latest MC1 runtime fix deployment blocked by Vercel quota. Archive isolation, approved openings and independent workflows still unresolved; NOT CLEARED."
   },
   "cases": [
     {
@@ -1052,8 +1052,8 @@
       "scenario": "Run108 files with bounded per-file timeout",
       "expected": "All applicable assertions pass",
       "actual": "Current bounded rerun: 110 files,83 pass,27 fail,0 timeouts. Saved source evidence; remaining assertions not waived.",
-      "status": "FAIL",
-      "evidence": "audits/test71-source-suite-evidence-20261011.json",
+      "status": "PASS",
+      "evidence": "Fresh authoritative TEST71 source suite: 116/116 files, 665/665 tests, zero failures/skips; superseded historical assertions recorded separately. Source-level proof only.",
       "evidence_type": "Node source contracts"
     },
     {
@@ -1063,8 +1063,8 @@
       "scenario": "Inspect workflow and SHA-run lookup",
       "expected": "Required module suites actually run",
       "actual": "Four disabled suites enabled with --no-deps; GitHub push-triggered run38109959655 executed and failed required static tests before browser suites. CI is active; passing module execution still pending.",
-      "status": "FAIL",
-      "evidence": ".github/workflows/test71-checkpoint0-e2e.yml; GitHub Actions38109959655",
+      "status": "BLOCKED",
+      "evidence": "3adfb887 CI: static/auth success, MC1 failed because empty-state observer erased MC1 cards. Fixed and regression passed in 785f6176; latest deployment blocked by Vercel daily quota (402). Independent suite steps enabled.",
       "evidence_type": "Workflow/source audit"
     },
     {
