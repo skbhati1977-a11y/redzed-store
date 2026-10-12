@@ -101,10 +101,18 @@ function buildOperationalImportPlan({ dataset, adapters }) {
 
 async function runOperationalImport({ plan, adapters, repository, mode = 'DRY_RUN', environment = 'TEST', backupReference = null }) {
   if (!plan || !Array.isArray(plan.records)) throw new Error('A validated import plan is required.');
-  if (!repository || typeof repository.transaction !== 'function') throw new Error('Transactional repository is required.');
+  if (!repository || (typeof repository.transaction !== 'function' && typeof repository.runOperationalBatch !== 'function')) throw new Error('Transactional repository is required.');
   if (!['DRY_RUN', 'APPLY'].includes(mode)) throw new Error('Mode must be DRY_RUN or APPLY.');
   if (mode === 'APPLY' && (environment !== 'TEST' || !backupReference || !String(backupReference).trim())) {
     throw new Error('Apply requires TEST environment and a recorded target backup reference.');
+  }
+
+  // A database RPC can provide a single atomic transaction across operational
+  // rows, source-identity mappings, media, and row logs. Prefer that explicit
+  // batch contract when the repository supplies it; keep the generic
+  // transaction adapter path below for in-process repositories and tests.
+  if (typeof repository.runOperationalBatch === 'function') {
+    return repository.runOperationalBatch({ plan, adapters, mode, environment, backupReference });
   }
 
   return repository.transaction(async (tx) => {
