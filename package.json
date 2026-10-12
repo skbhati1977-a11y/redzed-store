@@ -4,6 +4,7 @@
   "scripts": {
     "e2e:env-status": "node scripts/e2e-env-status.js",
     "test:e2e:static": "node --test tests/e2e/*.unit.test.js",
+    "test:redzed-operational-import": "node tests/redzed-operational-import-core.test71.cjs",
     "test:e2e": "playwright test",
     "test:e2e:auth": "playwright test --project=auth-setup",
     "test:e2e:checkpoint0": "playwright test --project=checkpoint-0",
